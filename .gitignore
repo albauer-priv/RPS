@@ -187,7 +187,7 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #  you could uncomment the following to ignore the entire vscode folder
 .vscode/
-*.code-workspace
+openai_playgounrd.code-workspace
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -198,6 +198,9 @@ cython_debug/
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+openai_playgounrd.code-workspace
+
 
 
 # Ruff stuff:
