@@ -428,6 +428,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--week", type=int, help="ISO calendar week, e.g. 43")
     parser.add_argument("--from", dest="from_date", type=str, help="Start date YYYY-MM-DD")
     parser.add_argument("--to", dest="to_date", type=str, help="End date YYYY-MM-DD")
+    parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
     parser.add_argument(
         "--skip-validate",
         action="store_true",
@@ -1748,14 +1749,12 @@ def compile_activities_trend(
 def main() -> int:
     """Run the end-to-end Intervals.icu pipeline."""
     load_env()
-
-    athlete_id = resolve_athlete_id()
+    args = parse_args()
+    athlete_id = args.athlete or resolve_athlete_id()
     api_key = require_env("API_KEY")
     base_url = require_env("BASE_URL")
 
     session.auth = HTTPBasicAuth("API_KEY", api_key)
-
-    args = parse_args()
     has_week = args.year is not None and args.week is not None
     has_range = args.from_date is not None and args.to_date is not None
 

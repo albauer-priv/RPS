@@ -10,7 +10,7 @@ Last-Updated: 2026-01-20
 
 Typical weekly flow:
 
-1. Ensure inputs: season brief, KPI profile, events.
+1. Ensure inputs: season brief, KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events.
 2. Run **Macro** if goals or A/B events changed.
 3. Run **Meso** for the current block (phase-aligned).
 4. Run **Micro** for the target ISO week.

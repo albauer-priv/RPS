@@ -27,14 +27,17 @@ from scripts.data_pipeline.common import (
 TIMEOUT_S = 30
 
 
-def parse_args(default_json: Path, default_base_url: str) -> argparse.Namespace:
+def parse_args(default_base_url: str) -> argparse.Namespace:
     """Parse CLI arguments for posting workouts."""
     parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
     parser.add_argument(
         "--json",
         "-j",
-        default=str(default_json),
-        help=f"Path to JSON file with events array (default: {default_json})",
+        help=(
+            "Path to JSON file with events array "
+            "(default: var/athletes/<athlete_id>/latest/intervals_workouts.json)"
+        ),
     )
     parser.add_argument("--base-url", default=default_base_url, help="Base API URL")
     parser.add_argument("--timeout", type=int, default=TIMEOUT_S, help="HTTP timeout (seconds)")
@@ -62,14 +65,16 @@ def main() -> int:
     """CLI entry point for posting workout events."""
     load_env()
 
-    athlete_id = resolve_athlete_id()
-    api_key = require_env("API_KEY")
     base_url = require_env("BASE_URL")
+    args = parse_args(default_base_url=base_url)
+    athlete_id = args.athlete or resolve_athlete_id()
+    api_key = require_env("API_KEY")
 
-    default_json = athlete_latest_dir(athlete_id) / "intervals_workouts.json"
-    args = parse_args(default_json=default_json, default_base_url=base_url)
-
-    json_path = Path(args.json)
+    json_path = (
+        Path(args.json)
+        if args.json
+        else athlete_latest_dir(athlete_id) / "intervals_workouts.json"
+    )
     if not json_path.exists():
         print(f"ERROR: JSON file not found: {json_path}", file=sys.stderr)
         return 2

@@ -9,7 +9,7 @@ Last-Updated: 2026-01-20
 ## Quickstart (1-page)
 
 1) Create `season_brief_yyyy.md`.  
-2) Select or create `kpi_profile_des_*.json`.  
+2) Select a `kpi_profile_des_*.json`, copy it to `var/athletes/<athlete_id>/latest/`, and rename to `kpi_profile.json`.  
 3) Update `events.md`.  
 4) Run **Macro** (Mode A is a two-step scenario + overview flow).  
 5) Run **Meso** -> `block_governance_yyyy-ww--yyyy-ww.json` + `block_execution_arch_yyyy-ww--yyyy-ww.json`.  
@@ -27,6 +27,14 @@ Place `season_brief_yyyy.md` and `events.md` under:
 ```
 var/athletes/<athlete_id>/inputs/
 ```
+
+Place the selected KPI profile at:
+
+```
+var/athletes/<athlete_id>/latest/kpi_profile.json
+```
+
+Predefined KPI profiles live under `kpi_profiles/` at repo root.
 
 Macro Mode A CLI (two-step):
 

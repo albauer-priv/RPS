@@ -52,6 +52,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Only export the newest ISO week found in the input",
     )
+    parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
     return parser.parse_args()
 
 
@@ -227,11 +228,10 @@ def main() -> int:
     warnings.warn(warn_msg, DeprecationWarning, stacklevel=2)
 
     load_env()
-    athlete_id = resolve_athlete_id()
+    args = parse_args()
+    athlete_id = args.athlete or resolve_athlete_id()
     schema_dir = resolve_schema_dir()
     validator = SchemaRegistry(schema_dir).validator_for("activities_actual.schema.json")
-
-    args = parse_args()
 
     # === Load data ===
     df = pd.read_csv(args.input_csv, sep=SEPARATOR, quotechar=QUOTECHAR)

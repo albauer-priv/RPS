@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent prompts now treat instructions as a single file with section-based guidance; removed bundle/BEGIN/END marker references.
 - Agent prompts now point to schema files instead of deprecated templates and year-specific filenames.
 - Agent prompts are simplified further by removing legacy template/YAML language and redundant checks.
+- Planning docs now specify copying the selected KPI profile into `latest/kpi_profile.json`.
+- Artefact flow docs now describe the two-step Macro Mode A scripts.
+- KPI profile JSON sources moved to top-level `kpi_profiles/` and removed from vector store manifests.
+- Data pipeline scripts now accept `--athlete` with `.env` fallback for multi-athlete runs.
+- Data pipeline docs now include multi-athlete CLI examples.
 - JSON schemas normalized for strict tool compatibility (explicit types/required, flattened `allOf`, removed unsupported constraints).
 - Version key derivation now supports string-based `iso_week` and `iso_week_range` metadata.
 - Docs and README now document the two-step Macro Mode A workflow.

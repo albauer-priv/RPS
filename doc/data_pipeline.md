@@ -29,11 +29,24 @@ python scripts/data_pipeline/get_intervals_data.py --year 2026 --week 6
 python scripts/validate_outputs.py --year 2026 --week 6
 ```
 
+With an explicit athlete id:
+
+```bash
+python scripts/data_pipeline/get_intervals_data.py --year 2026 --week 6 --athlete ath_001
+python scripts/validate_outputs.py --year 2026 --week 6 --athlete ath_001
+```
+
 ### Post planned workouts
 
 ```bash
 python scripts/data_pipeline/post_workout.py \
   --json var/athletes/<athlete_id>/latest/intervals_workouts.json
+```
+
+With an explicit athlete id:
+
+```bash
+python scripts/data_pipeline/post_workout.py --athlete ath_001
 ```
 
 ---

@@ -31,29 +31,14 @@ from scripts.data_pipeline.common import (
 )
 
 # ======================================================
-# Configuration
+# Configuration (initialized in main)
 # ======================================================
 
-load_env()
-
-ATHLETE_ID = resolve_athlete_id()
-API_KEY = require_env("API_KEY")
-BASE_URL = require_env("BASE_URL")
-AUTH = HTTPBasicAuth("API_KEY", API_KEY)
-
-# HTTP session with retries and a fixed timeout
-session = requests.Session()
-session.auth = AUTH
-session.mount(
-    "https://",
-    HTTPAdapter(
-        max_retries=Retry(
-            total=3,
-            backoff_factor=0.3,
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-    ),
-)
+ATHLETE_ID: str | None = None
+API_KEY: str | None = None
+BASE_URL: str | None = None
+AUTH: HTTPBasicAuth | None = None
+session: requests.Session | None = None
 DEFAULT_TIMEOUT = 15
 
 
@@ -70,9 +55,17 @@ year: int | None = None
 
 def _get(url: str) -> requests.Response:
     """Perform a GET request with retry/timeout settings."""
+    if session is None:
+        raise RuntimeError("Session not initialized. Run main() first.")
     resp = session.get(url, timeout=DEFAULT_TIMEOUT)
     resp.raise_for_status()
     return resp
+
+
+def _require_config() -> None:
+    """Ensure required runtime config is initialized."""
+    if BASE_URL is None or ATHLETE_ID is None:
+        raise RuntimeError("Missing config. Ensure BASE_URL and ATHLETE_ID are set.")
 
 
 def iso_week_to_dates(iso_year: int, iso_week: int) -> tuple[datetime.date, datetime.date]:
@@ -105,18 +98,21 @@ def resolve_default_range(weeks: int = 24) -> tuple[datetime.date, datetime.date
 
 def get_activities(start_date: datetime.date, end_date: datetime.date) -> list[dict]:
     """Fetch activities for a date range."""
+    _require_config()
     url = f"{BASE_URL}/athlete/{ATHLETE_ID}/activities?oldest={start_date}&newest={end_date}"
     return _get(url).json()
 
 
 def get_activity_detail(activity_id: str | int) -> dict:
     """Fetch detailed activity data by activity id."""
+    _require_config()
     url = f"{BASE_URL}/activity/{activity_id}"
     return _get(url).json()
 
 
 def get_power_curves_csv(start_date: datetime.date, end_date: datetime.date) -> str:
     """Fetch the power curves CSV for a date range."""
+    _require_config()
     url = (
         f"{BASE_URL}/athlete/{ATHLETE_ID}/activity-power-curves.csv"
         f"?oldest={start_date}&newest={end_date}"
@@ -156,6 +152,7 @@ def export_week(iso_year: int, iso_week: int) -> None:
 
 def export_range(from_date: datetime.date, to_date: datetime.date) -> None:
     """Export activities for a date range and write CSV outputs."""
+    _require_config()
     print(f"Range: {from_date} to {to_date}")
 
     activities = get_activities(from_date, to_date)
@@ -647,6 +644,7 @@ def main() -> int:
     warnings.warn(warn_msg, DeprecationWarning, stacklevel=2)
 
     global week, year
+    load_env()
     parser = argparse.ArgumentParser(
         description=(
             "Export Intervals.icu data (ISO week OR date range). "
@@ -659,8 +657,30 @@ def main() -> int:
     parser.add_argument("--week", type=int, help="ISO calendar week, e.g. 43")
     parser.add_argument("--from", dest="from_date", type=str, help="Start date YYYY-MM-DD")
     parser.add_argument("--to", dest="to_date", type=str, help="End date YYYY-MM-DD")
+    parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
 
     args = parser.parse_args()
+    athlete_id = args.athlete or resolve_athlete_id()
+    api_key = require_env("API_KEY")
+    base_url = require_env("BASE_URL")
+
+    global ATHLETE_ID, API_KEY, BASE_URL, AUTH, session
+    ATHLETE_ID = athlete_id
+    API_KEY = api_key
+    BASE_URL = base_url
+    AUTH = HTTPBasicAuth("API_KEY", API_KEY)
+    session = requests.Session()
+    session.auth = AUTH
+    session.mount(
+        "https://",
+        HTTPAdapter(
+            max_retries=Retry(
+                total=3,
+                backoff_factor=0.3,
+                status_forcelist=[429, 500, 502, 503, 504],
+            )
+        ),
+    )
 
     # Decision logic: either (year & week) OR (from & to)
     has_week = args.year is not None and args.week is not None

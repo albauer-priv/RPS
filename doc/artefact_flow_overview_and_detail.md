@@ -107,6 +107,9 @@ flowchart TD
 - Determine season intent, priorities, and constraints (8-32 weeks horizon).
 - Define phase structure and load corridors.
 - Emit optional feed-forward if the next block needs explicit guidance.
+- Mode A (CLI) is a two-step flow:
+  1) `scripts/macro_mode_a.py scenarios` (scenario dialogue saved to `.cache/macro_scenarios/<run-id>.md`)
+  2) `scripts/macro_mode_a.py overview` (writes `macro_overview_yyyy-ww--yyyy-ww.json`)
 
 **Outputs (Artefacts)**
 - `macro_overview_yyyy-ww--yyyy-ww.json` (binding)
@@ -121,12 +124,18 @@ flowchart LR
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MA
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MA
 
+  S1[macro_mode_a.py scenarios]:::script --> MA
+  MA --> SCN[scenario_dialogue<br/>.cache/macro_scenarios]:::component --> U
+  U --> S2[macro_mode_a.py overview]:::script --> MA
+
   MA --> MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact
   MA -. optional .-> MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact
 
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+  classDef script fill:#f3f0ff,stroke:#5b4db8,stroke-width:1px,stroke-dasharray: 2 2;
+  classDef component fill:#eef8ee,stroke:#2f6b2f,stroke-width:1px;
 ```
 
 ---

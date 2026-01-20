@@ -165,7 +165,7 @@ ws.put_validated(
 Render human-readable sidecars for JSON artefacts:
 
 ```bash
-python3 scripts/artefact_renderer.py knowledge/_shared/sources/kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json
+python3 scripts/artefact_renderer.py kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json
 ```
 
 ## Vector store runtime

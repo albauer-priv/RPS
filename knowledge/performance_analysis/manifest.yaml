@@ -4,15 +4,5 @@ description: Performance metrics and analytics.
 sources:
 - path: sources/contracts/analyst__macro_contract.md
 - path: sources/contracts/data_pipeline__analyst_contract.md
-- path: sources/kpi_profiles/kpi_profile_des_bikepacking_multiday_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_bikepacking_multiday_non_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_1200_km_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_1200_km_non_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_200_400_km_non_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_600_km_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_600_km_non_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_gravel_4-20h_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_gravel_4-20h_non_masters.json
 - path: sources/policies/des_evaluation_policy.md
 - path: sources/specs/data_confidence_spec.md
