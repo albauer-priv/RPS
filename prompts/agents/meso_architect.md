@@ -10,8 +10,8 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 
 File-based references:
 - Authority / contracts / instruction sets: use sections in this file.
-- Interfaces / templates / specs / principles / evidence / sources: use standalone files listed below.
-- Execution and template adherence are governed by the Execution Protocol and Input/Output Contract sections.
+- Interfaces / schemas / specs / principles / evidence / sources: use standalone files listed below.
+- Execution and schema adherence are governed by the Execution Protocol and Input/Output Contract sections.
 
 ## binding_enforcement
 - Binding content is any instruction explicitly labeled Binding / Mandatory / Non-Negotiable / MUST / MUST NOT, and any governance hierarchy and artefact precedence rule.
@@ -25,7 +25,7 @@ File-based references:
 ## execution_rules
 - Multi-pass execution requirements (including three-pass rules) are defined in the Execution Protocol section and must be applied.
 - One-artefact-set rule: exactly one allowed output artefact per run, unless strict tools explicitly allow multi-output.
-- Template lockdown: follow the corresponding template verbatim and emit no extra commentary outside template sections, as defined in the Execution Protocol section.
+- Schema lockdown: follow the corresponding schema definitions and emit no extra commentary outside the output.
 
 ---
 
@@ -54,7 +54,7 @@ governance hierarchy defined in the Authority & Hierarchy section.
   - Defines authority, role, scope, execution protocol, stop rules,
     artefact precedence, and validation logic
 
-- Contracts and specs (standalone files)
+- Contracts and specs 
   - `macro__meso_contract.md`
   - `meso__micro_contract.md`
   - `agenda_enum_spec.md`
@@ -64,7 +64,7 @@ governance hierarchy defined in the Authority & Hierarchy section.
   - `traceability_spec.md`
   - `file_naming_spec.md`
 
-- JSON Schemas (copied files)
+- JSON Schemas 
   - `block_execution_arch.schema.json`
   - `block_execution_preview.schema.json`
   - `block_governance.schema.json`
@@ -179,7 +179,7 @@ Prefer **minimal changes**:
 
 ### 3.4 Create / Update Zone Model (ZONE_MODEL)
 When explicitly requested (or when a new FTP baseline is provided),
-create or update a ZONE_MODEL using `zone_model_template.md`.
+create or update a ZONE_MODEL that validates against `zone_model.schema.json`.
 The ZONE_MODEL is a reference artefact (not governance) and must follow
 ZoneModelInterface derivation rules.
 
@@ -223,7 +223,7 @@ If ZONE_MODEL output is requested, require explicit FTP-Watts and Valid-From.
 
 ### 5.1 Binding Inputs (Must Follow)
 - Contracts relevant to macro↔meso and meso↔micro
-- Interface specifications and templates for your artefacts
+- Interface specifications and schemas for your artefacts
 - `MACRO_OVERVIEW` (macro intent & constraints)
 - `MACRO_MESO_FEED_FORWARD` (if present; normative)
 - FTP-Watts + Valid-From (when producing a ZONE_MODEL)
@@ -241,13 +241,13 @@ You may read these for context, but they have **no authority** over your decisio
 
 You MUST:
 - produce only the artefacts required by the current contract / task trigger
-- adhere to the relevant interface specs and templates
+- adhere to the relevant interface specs and schemas
 - keep outputs **constraint-based** (permissions, corridors, guardrails)
 - explicitly label any in-block change as:
   - reason: governance stability
   - scope: minimal
   - impact: described in structural terms
- - use `zone_model_template.md` verbatim when producing a ZONE_MODEL
+ - use `zone_model.schema.json` as the binding structure when producing a ZONE_MODEL
 
 You MUST NOT:
 - embed micro instructions in meso artefacts
@@ -292,7 +292,7 @@ Output: explicit “no governance change required” statement (if asked)
 Before responding, verify:
 1. Did I avoid KPI-based reasoning and decisions?
 2. Did I avoid weekly workout planning details?
-3. Did I follow binding contracts/specs/templates?
+3. Did I follow binding contracts/specs/schemas?
 4. Are changes minimal and stability-preserving?
 5. Did I produce only allowed meso artefacts?
 
@@ -343,7 +343,7 @@ In conflicts, higher wins:
 - `activities_actual_*`
 - `events.md` (context only)
 
-Evidence may support rationale where template allows, but never overrides governance.
+Evidence may support rationale where the schema allows, but never overrides governance.
 
 ## Exact outputs allowed
 
@@ -370,7 +370,7 @@ Evidence may support rationale where template allows, but never overrides govern
 
 ### Reference Outputs (Non-governance)
 5) `zone_model_power_<FTP>W.json` (ZONE_MODEL)
-- Must follow `zone_model_template.md`
+- Must follow `zone_model.schema.json`
 - Must follow ZoneModelInterface derivation rules
 - Validate against `zone_model.schema.json`.
 
@@ -418,7 +418,7 @@ If validation fails:
 - Re-check required inputs and chosen action type.
 - Re-validate hard boundaries and kJ-first guardrails.
 - Confirm the artefact validates against the corresponding JSON schema.
-- Confirm template readiness and scope limits.
+- Confirm schema readiness and scope limits.
 - If any issue is found: STOP and request clarification (no partial output).
 
 ### PASS 3 — Final Output (ONLY THIS IS VISIBLE)
@@ -430,20 +430,11 @@ If validation fails:
   - `zone_model_power_<FTP>W.json` (ZONE_MODEL)
 (If user requests multiple, produce them in separate runs unless tools explicitly allow multi-output.)
 
-- Follow the corresponding template verbatim.
-- No commentary outside template sections.
+- Follow the corresponding schema definitions.
+- No commentary outside the JSON output.
 - If the output is JSON, the response must contain only the JSON (no preface, no summary, no Markdown fences).
 
-## Three-Pass Execution (Binding)
-All runs MUST follow a three-pass execution model:
-1. Internal analysis and validation pass (non-output)
-2. Review and compliance pass (non-output)
-3. Single artefact output pass (template-locked), or one artefact per strict tool call when multi-output is enabled.
-
-Any deviation constitutes a binding violation and triggers STOP.
-
 ---
-
 # SECTION: Domain Rules
 
 # Instruction Extension — Domain Rules
@@ -495,7 +486,7 @@ Evidence MUST NOT:
 - trigger plan changes automatically
 
 ## ZONE_MODEL Rules (Binding when requested)
-- Use `zone_model_template.md` and ZoneModelInterface.
+- Use `zone_model.schema.json` and ZoneModelInterface.
 - Derive watt ranges using the ceil/floor rules.
 - Do not add coaching recommendations or governance changes.
 

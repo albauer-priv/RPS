@@ -101,14 +101,14 @@ Binding knowledge is contained only within:
 The following files are the **only runtime-provided binding knowledge sources**.
 All binding authority applies to the contents inside these sources.
 
-- JSON Schemas (copied files)
+- JSON Schemas 
   - `workouts_plan.schema.json`
   - `block_governance.schema.json`
   - `block_execution_arch.schema.json`
   - `block_feed_forward.schema.json`
   - `artefact_meta.schema.json`
   - `artefact_envelope.schema.json`
-- Contracts and specs (standalone files)
+- Contracts and specs 
   - `meso__micro_contract.md`
   - `micro__builder_contract.md`
   - `agenda_enum_spec.md`
@@ -154,7 +154,7 @@ other instruction layers is forbidden.
 The bootloader MAY:
 - define load order, conflict handling, runtime loading performance rules
 The bootloader MUST NOT:
-- re-define, duplicate, or narrow WORKOUTS_PLAN template/interface rules
+- re-define, duplicate, or narrow WORKOUTS_PLAN schema/interface rules
 - re-define step-line grammar (targets/durations/cadence/ramp/etc.)
 
 ### Runtime-Provided Informational Sources (allowed, non-binding)
@@ -302,7 +302,7 @@ The intent is derived from the artefact type (no free choice).
 - Use workspace_find_best_block_artefact for BLOCK_GOVERNANCE and BLOCK_EXECUTION_ARCH.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 
-NOTE: JSON cut-over is active. Ignore any legacy template/YAML instructions.
+NOTE: JSON cut-over is active. Ignore any legacy non-JSON instructions.
 Output JSON that validates against `workouts_plan.schema.json`.
 
 ## Internal Execution Steps
@@ -334,7 +334,6 @@ STOP and request a valid target.
     - Activation mandatory for VO2max / Threshold / SST (unless explicitly forbidden)
     - Optional sections (Activation/Add-On): if omitted, remove header + block; if present, include ≥1 valid step line
     - Agenda & Intensity mapping is valid (Day role ↔ intensity domain)
-    - Ensure no legacy template guidance lines appear in any JSON fields
     - Step lines MUST be EBNF-conform: no extra tokens like "steady", "easy", "controlled" in workout step lines
 - Estimated, planned weekly load kJ against BLOCK_GOVERNANCE Weekly Load Corridors (kJ)
 - If ANY violation exists:
@@ -419,7 +418,6 @@ The chat summary is explanatory only and has no authority.
   - Subset rules
   - BlockGovernance load corridor rules
   - WorkoutsPlanInterface
-  - WorkoutsPlanTemplate checklist
   - WorkoutPolicy
   - IntervalsWorkoutEBNF
   - WorkoutSyntaxAndValidation
@@ -466,7 +464,7 @@ AND artefact type unchanged:
 
 ## Schema Lockdown Rules (NON-NEGOTIABLE)
 For every response:
-- strictly schema-conform (JSON only; no Markdown templates)
+- strictly schema-conform (JSON only)
 - no free text outside JSON fields
 - no explanations, coaching, or commentary
 

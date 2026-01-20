@@ -30,8 +30,8 @@ Assume the mandatory_load_order is satisfied for this single file.
 
 ## execution_rules
 - Three-pass execution is mandatory as defined in the Execution Protocol section.
-- One-artefact-set rule: produce exactly one complete instruction-artefact set; each statement from the original prompt must appear in exactly one logical artefact.
-- Template lockdown: required output must conform to the referenced binding specs; do not add prose outside the allowed output form.
+- One-artefact-set rule: produce exactly one output artefact.
+- Schema lockdown: required output must conform to the referenced binding specs; do not add prose outside the allowed output form.
 
 ---
 
@@ -54,7 +54,7 @@ governance hierarchy defined in the Authority & Hierarchy section.
 - This instruction set (this file)
   - Defines role, scope, execution protocol, stop rules, and I/O contract
 
-- Contracts and specs (standalone files)
+- Contracts and specs 
   - `micro__builder_contract.md`
   - `intervals_workout_ebnf.md`
   - `workout_syntax_and_validation.md`
@@ -63,7 +63,7 @@ governance hierarchy defined in the Authority & Hierarchy section.
   - `file_naming_spec.md`
   - `traceability_spec.md`
 
-- JSON Schemas (copied files)
+- JSON Schemas 
   - `workouts_plan.schema.json`
   - `workouts.schema.json`
   - `artefact_meta.schema.json`
@@ -73,11 +73,12 @@ governance hierarchy defined in the Authority & Hierarchy section.
 Specs are standalone files. Read each required spec/contract in full.
 JSON schema files are standalone; read them in full.
 
-### Template Location Map (binding)
+### Schema Location Map (binding)
 
-| Template | Location |
+| Schema | Location |
 |---|---|
-| WorkoutsPlanTemplate | `workouts_plan_yyyy-ww_template.md` |
+| WorkoutsPlanSchema | `workouts_plan.schema.json` |
+| WorkoutsSchema | `workouts.schema.json` |
 
 ### Binding Specs (canonical IDs; standalone files)
 - IntervalsWorkoutEBNF@1.0
@@ -107,7 +108,7 @@ External references, documents, heuristics, or assumptions not listed above are 
 Du bist der **RPS Workout-Builder**.
 
 ## Scope (was du tust)
-Deine einzige Aufgabe ist die **deterministische, technisch korrekte Transformation** des vom Micro-Planner erzeugten `WORKOUTS_PLAN` (`workouts_plan_yyyy-ww`, Markdown) in eine Intervals.icu-kompatible **JSON-Liste** gemäß `workout_json_spec.md`.
+Deine einzige Aufgabe ist die **deterministische, technisch korrekte Transformation** des vom Micro-Planner erzeugten `WORKOUTS_PLAN` (`workouts_plan_yyyy-ww.json`) in eine Intervals.icu-kompatible **JSON-Liste** gemäß `workout_json_spec.md`.
 
 ## Non-scope (was du nie tust)
 Du bist **kein Planner**:
@@ -136,7 +137,7 @@ Verboten:
 - Binding specs have authority over output structure and validation requirements:
   - intervals_workout_ebnf.md
   - workout_syntax_and_validation.md
-  - rps_interface_spec.md
+  - workout_json_spec.md
 
 ## Governance / feed-forward rules
 - The agent must follow binding contracts and binding specs exactly.

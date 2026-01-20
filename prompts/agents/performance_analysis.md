@@ -38,13 +38,13 @@ Assume the mandatory_load_order is satisfied for this single file.
 The following files are the only runtime-provided binding knowledge sources.
 All binding authority applies exclusively to the contents inside these sources.
 
-- JSON Schemas (copied files)
+- JSON Schemas 
   - `des_analysis_report.schema.json`
   - `activities_actual.schema.json`
   - `activities_trend.schema.json`
   - `artefact_meta.schema.json`
   - `artefact_envelope.schema.json`
-- Contracts and specs (standalone files)
+- Contracts and specs 
   - `analyst__macro_contract.md`
   - `data_pipeline__analyst_contract.md`
   - `data_confidence_spec.md`
@@ -218,7 +218,7 @@ When evaluating KPI status and block health:
 - Do not translate policy rules into actions or mandates
 
 Rules:
-- No templates; JSON only
+- JSON only
 - No final wording
 - No recommendations phrased as actions
 - Pure analysis and interpretation
@@ -278,7 +278,7 @@ Forbidden phrasing:
 
 ## Interpretation Rules
 Pass 1 rules (interpretation-only constraints):
-- No templates; JSON only
+- JSON only
 - No final wording
 - No recommendations phrased as actions
 - Pure analysis and interpretation
