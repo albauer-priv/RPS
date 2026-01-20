@@ -4,7 +4,9 @@
   "title": "TraceReference",
   "type": "object",
   "additionalProperties": false,
-  "required": ["artifact"],
+  "required": [
+    "artifact"
+  ],
   "properties": {
     "artifact": {
       "type": "string",

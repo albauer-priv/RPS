@@ -197,9 +197,11 @@ Tools available to agents:
   - `workspace_resolve_macro_phase`
   - `workspace_resolve_block_range`
   - `workspace_find_best_block_artefact`
+  - `workspace_get_input` (season brief, events)
 - Strict store tools (one per output artefact, schema-bound)
 
 These tool sets are wired by the runtime and are consistent across agents.
+File search is forced by default; use `--no-file-search` if you need to disable it.
 
 #### 4.1.4 Operational Limits
 
@@ -340,6 +342,23 @@ Routing uses:
 - Automatic scheduling without explicit artifacts.
 - Silent edits of existing artifacts.
 - Embeddings or vector store state inside the repo.
+
+---
+
+## 10. Build & Setup Checklist
+
+Use this checklist to initialize a fresh environment:
+
+1. Copy `.env.example` to `.env` and set `OPENAI_API_KEY`, `ATHLETE_ID`,
+   `API_KEY`, and `BASE_URL`.
+2. Install dependencies: `pip install -r requirements.txt` or `pip install -e .`
+   (depending on how you set up the repo).
+3. Add knowledge sources under `knowledge/<agent>/sources/` and update manifests.
+4. Build bundled schemas: `python scripts/bundle_schemas.py`.
+5. Sync vector stores: `python scripts/sync_vectorstores.py`.
+6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --agent micro_planner --force-tool`.
+7. Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.
+8. Validate outputs: `python scripts/validate_outputs.py`.
 
 ---
 

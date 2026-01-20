@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "artefact_envelope.schema.json",
+  "title": "ArtefactEnvelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "artefact_meta.schema.json",
+      "title": "ArtefactMeta",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "trace_upstream"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "schema_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "Binding",
+            "Informational",
+            "Derived",
+            "Factual"
+          ]
+        },
+        "owner_agent": {
+          "type": "string",
+          "enum": [
+            "Data-Pipeline",
+            "Macro-Planner",
+            "Meso-Architect",
+            "Micro-Planner",
+            "Workout-Builder",
+            "Performance-Analyst",
+            "Policy-Owner"
+          ]
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Shared",
+            "Macro",
+            "Meso",
+            "Micro",
+            "Context"
+          ]
+        },
+        "iso_week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "iso_week.schema.json",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "iso_week_range": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "iso_week_range.schema.json",
+          "title": "IsoWeekRange",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}--\\d{4}-\\d{2}(?:\\+\\d+)?$"
+        },
+        "temporal_scope": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "date_range.schema.json",
+          "title": "DateRange",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "trace_upstream": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "trace_reference.schema.json",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_data": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "trace_reference.schema.json",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_events": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "trace_reference.schema.json",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {}
+  }
+}

@@ -138,6 +138,7 @@ Agents can resolve phases and block ranges directly via tools:
 - `workspace_resolve_macro_phase(year, week)`
 - `workspace_resolve_block_range(year, week, block_len=4)`
 - `workspace_find_best_block_artefact(artifact_type, year, week)`
+- `workspace_get_input(input_type, year)` for athlete-specific markdown inputs
 
 This avoids manual version-key guessing and ensures macro-phase alignment.
 

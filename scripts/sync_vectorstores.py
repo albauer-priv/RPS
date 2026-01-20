@@ -44,6 +44,11 @@ def main() -> None:
     parser.add_argument("--agent", help="Sync only a single agent")
     parser.add_argument("--delete-removed", action="store_true")
     parser.add_argument("--prune", action="store_true", help="Alias for --delete-removed")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Delete all files from the vector store before syncing",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE_PATH)
     args = parser.parse_args()
@@ -63,6 +68,8 @@ def main() -> None:
             manifest_path=manifest_path,
             delete_removed=delete_removed,
             dry_run=args.dry_run,
+            reset=args.reset,
+            progress=True,
             state=None if args.dry_run else state,
         )
         print(

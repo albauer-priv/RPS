@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+import os
+import re
 
 import yaml
 
@@ -84,15 +86,19 @@ def run_agent(
     agent_name: str,
     user_input: str,
     *,
-    model: str = "gpt-4.1",
+    model: str | None = None,
     knowledge_root: Path = DEFAULT_KNOWLEDGE_ROOT,
     state_path: Path = DEFAULT_STATE_PATH,
     include_shared: bool = True,
     max_num_results: int = 5,
     include_results: bool = False,
+    force_file_search: bool = True,
     prompts_dir: Path = Path("prompts"),
 ):
     """Run a simple Responses API request with file_search attached."""
+    if model is None:
+        key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
+        model = os.getenv(f"OPENAI_MODEL_{key}") or os.getenv("OPENAI_MODEL", "gpt-4.1")
     client = get_client()
     system_prompt = agent_system_prompt(agent_name, prompts_dir=prompts_dir)
     tool = build_file_search_tool(
@@ -111,6 +117,8 @@ def run_agent(
         ],
         "tools": [tool],
     }
+    if force_file_search:
+        payload["tool_choice"] = {"type": "file_search"}
     if include_results:
         payload["include"] = ["file_search_call.results"]
     return client.responses.create(**payload)

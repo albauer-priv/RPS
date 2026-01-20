@@ -56,10 +56,13 @@ def run_agent(
     user_input: str,
     workspace_root: Path,
     schema_dir: Path,
+    model_override: str | None = None,
     include_debug_file_search: bool = False,
+    force_file_search: bool = True,
     max_num_results: int = 6,
 ) -> str:
     """Run an agent with workspace tools and file search attached."""
+    model = model_override or runtime.model
     shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
 
@@ -83,13 +86,16 @@ def run_agent(
         {"role": "user", "content": user_input},
     ]
 
+    force_search = force_file_search
     response = runtime.client.responses.create(
-        model=runtime.model,
+        model=model,
         tools=tools,
         input=input_list,
         include=include,
+        tool_choice={"type": "file_search"} if force_search else None,
     )
     input_list += response.output
+    force_search = False
 
     safety_counter = 0
     while True:
@@ -127,10 +133,11 @@ def run_agent(
             )
 
         response = runtime.client.responses.create(
-            model=runtime.model,
+            model=model,
             tools=tools,
             input=input_list,
             include=include,
+            tool_choice={"type": "file_search"} if force_search else None,
         )
         input_list += response.output
 

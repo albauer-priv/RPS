@@ -15,6 +15,7 @@ This directory contains system-level documentation for the platform.
 - `workspace.md`: local workspace layout and rules.
 - `schema_versioning.md`: schema change policy and compatibility.
 - `deployment.md`: environment setup and deployment notes.
+- `recommended_models.md`: model selection guidance for cost-optimized runs.
 
 ## Conventions
 

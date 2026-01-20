@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 from app.workspace.api import Workspace
@@ -24,6 +25,37 @@ def _parse_artifact_type(value: str) -> ArtifactType:
     except ValueError:
         key = "".join([ch if ch.isalnum() else "_" for ch in cleaned]).upper()
         return ArtifactType[key]
+
+
+def _find_input_file(
+    athlete_root: Path,
+    input_type: str,
+    year: int | None = None,
+) -> Path:
+    patterns: list[str] = []
+    if input_type == "season_brief":
+        if year is not None:
+            patterns.append(f"season_brief_{year}.md")
+        patterns.append("season_brief_*.md")
+    elif input_type == "events":
+        patterns.append("events.md")
+        patterns.append("events_*.md")
+    else:
+        raise ValueError(f"Unsupported input_type: {input_type}")
+
+    candidates: list[Path] = []
+    for folder in (athlete_root / "inputs", athlete_root / "latest"):
+        if not folder.exists():
+            continue
+        for pattern in patterns:
+            candidates.extend(folder.glob(pattern))
+
+    if not candidates:
+        raise FileNotFoundError(
+            f"No input files found for {input_type}. Place files in inputs/ or latest/."
+        )
+
+    return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
 def read_tool_defs() -> list[dict[str, Any]]:
@@ -111,6 +143,20 @@ def read_tool_defs() -> list[dict[str, Any]]:
                     "block_len": {"type": "integer", "default": 4},
                 },
                 "required": ["artifact_type", "year", "week"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "workspace_get_input",
+            "description": "Load athlete-specific Markdown inputs like season brief or events.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "input_type": {"type": "string", "enum": ["season_brief", "events"]},
+                    "year": {"type": "integer"},
+                },
+                "required": ["input_type"],
                 "additionalProperties": False,
             },
         },
@@ -235,6 +281,17 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             "document": doc,
         }
 
+    def workspace_get_input(args: dict[str, Any]) -> Any:
+        input_type = str(args["input_type"]).strip()
+        year = int(args["year"]) if args.get("year") is not None else None
+        path = _find_input_file(workspace.store.athlete_root(workspace.athlete_id), input_type, year=year)
+        return {
+            "ok": True,
+            "input_type": input_type,
+            "path": str(path),
+            "content": path.read_text(encoding="utf-8"),
+        }
+
     return {
         "workspace_get_latest": workspace_get_latest,
         "workspace_get_version": workspace_get_version,
@@ -242,4 +299,5 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         "workspace_resolve_macro_phase": workspace_resolve_macro_phase,
         "workspace_resolve_block_range": workspace_resolve_block_range,
         "workspace_find_best_block_artefact": workspace_find_best_block_artefact,
+        "workspace_get_input": workspace_get_input,
     }

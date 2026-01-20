@@ -22,6 +22,12 @@ Last-Updated: 2026-01-20
 
 Macro changes are rare (months). Meso every block. Micro weekly. Analysis weekly.
 
+Place `season_brief_yyyy.md` and `events.md` under:
+
+```
+var/athletes/<athlete_id>/inputs/
+```
+
 ---
 
 ## 1. Overview

@@ -62,11 +62,14 @@ def run_agent_multi_output(
     tasks: list[AgentTask],
     user_input: str,
     run_id: str,
+    model_override: str | None = None,
+    force_file_search: bool = True,
     max_num_results: int = 6,
 ) -> dict[str, Any]:
     """Run an agent that can emit multiple strict tool outputs."""
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
 
+    model = model_override or runtime.model
     shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
@@ -98,12 +101,15 @@ def run_agent_multi_output(
     produced: dict[str, Any] = {}
     wanted_tool_names = {spec.tool_name for spec in output_specs}
 
+    force_search = force_file_search
     response = runtime.client.responses.create(
-        model=runtime.model,
+        model=model,
         tools=tools,
         input=input_list,
+        tool_choice={"type": "file_search"} if force_search else None,
     )
     input_list += response.output
+    force_search = False
 
     safety = 0
     while True:
@@ -178,8 +184,9 @@ def run_agent_multi_output(
             return {"ok": True, "produced": produced}
 
         response = runtime.client.responses.create(
-            model=runtime.model,
+            model=model,
             tools=tools,
             input=input_list,
+            tool_choice={"type": "file_search"} if force_search else None,
         )
         input_list += response.output

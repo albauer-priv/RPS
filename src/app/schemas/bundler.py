@@ -36,4 +36,10 @@ class SchemaBundler:
             return json.loads(path.read_text(encoding="utf-8"))
 
         bundled = jsonref.JsonRef.replace_refs(root, loader=loader)
-        return json.loads(json.dumps(bundled))
+
+        def _to_builtin(obj: Any) -> Any:
+            if isinstance(obj, jsonref.JsonRef):
+                return dict(obj)
+            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+        return json.loads(json.dumps(bundled, default=_to_builtin))

@@ -46,6 +46,7 @@ def main() -> None:
         run_parser.add_argument("--athlete", default=default_athlete)
         run_parser.add_argument("--text", required=True)
         run_parser.add_argument("--debug-file-search", action="store_true")
+        run_parser.add_argument("--no-file-search", action="store_true")
 
         args = parser.parse_args()
 
@@ -68,6 +69,8 @@ def main() -> None:
                 year=args.year,
                 week=args.week,
                 run_id=args.run_id,
+                model_resolver=settings.model_for_agent,
+                force_file_search=not args.no_file_search,
             )
             print({"ok": result.ok, "steps": result.steps})
             return
@@ -81,7 +84,9 @@ def main() -> None:
             user_input=args.text,
             workspace_root=settings.workspace_root,
             schema_dir=settings.schema_dir,
+            model_override=settings.model_for_agent(spec.name),
             include_debug_file_search=args.debug_file_search,
+            force_file_search=not args.no_file_search,
         )
         print(output)
         return
@@ -91,6 +96,7 @@ def main() -> None:
     parser.add_argument("--athlete", default=default_athlete)
     parser.add_argument("--text", required=True)
     parser.add_argument("--debug-file-search", action="store_true")
+    parser.add_argument("--no-file-search", action="store_true")
     args = parser.parse_args()
 
     if not args.athlete:
@@ -106,7 +112,9 @@ def main() -> None:
         user_input=args.text,
         workspace_root=settings.workspace_root,
         schema_dir=settings.schema_dir,
+        model_override=settings.model_for_agent(spec.name),
         include_debug_file_search=args.debug_file_search,
+        force_file_search=not args.no_file_search,
     )
     print(output)
 

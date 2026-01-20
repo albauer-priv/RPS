@@ -28,12 +28,37 @@ Scaffold for OpenAI hosted vector stores with versioned, per-agent knowledge.
 - `doc/workspace.md`: local workspace layout and rules.
 - `doc/schema_versioning.md`: schema change policy and compatibility.
 - `doc/deployment.md`: environment setup and deployment notes.
+- `doc/recommended_models.md`: model selection guidance for cost-optimized runs.
 
 ## Quick start
 
 1. Copy `.env.example` to `.env` and fill in `OPENAI_API_KEY` and `ATHLETE_ID` (Intervals.icu).
 2. Add documents under `knowledge/<agent>/sources/` and update `manifest.yaml`.
-3. Run `python scripts/sync_vectorstores.py`.
+3. Run `python scripts/bundle_schemas.py` (build bundled schemas for retrieval).
+4. Run `python scripts/sync_vectorstores.py`.
+
+Per-agent model overrides (optional):
+
+```
+OPENAI_MODEL=gpt-4.1
+OPENAI_MODEL_MICRO_PLANNER=gpt-4.1-mini
+OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
+```
+
+## Build checklist
+
+Prerequisites:
+
+- Python 3.11+ (3.14 works)
+- `pip` / virtualenv recommended
+
+1. Copy `.env.example` to `.env` and set required keys.
+2. Install dependencies (`pip install -r requirements.txt` or `pip install -e .`).
+3. Build bundled schemas: `python scripts/bundle_schemas.py`.
+4. Sync vector stores: `python scripts/sync_vectorstores.py`.
+5. Smoke test: `python scripts/smoke_vectorstores.py --agent micro_planner --force-tool`.
+6. Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.
+7. Validate outputs: `python scripts/validate_outputs.py`.
 
 ## Data pipeline (Intervals.icu)
 
@@ -165,6 +190,7 @@ PYTHONPATH=src python -m app.main plan-week \\
 ```
 
 If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
+Use `--no-file-search` to disable forced vector store retrieval.
 
 ## Notes
 

@@ -24,6 +24,15 @@ knowledge/
 
 Each agent has its own vector store. Shared knowledge can be included via `_shared`.
 
+Schemas are source-of-truth in `schemas/`. Bundled copies are generated for
+vector store retrieval and stored under:
+
+```
+knowledge/_shared/sources/schemas/bundled/
+```
+
+Run `python scripts/bundle_schemas.py` before syncing vector stores.
+
 ---
 
 ## 2. Manifest Format
@@ -59,6 +68,7 @@ Useful flags:
 - `--agent <name>`: sync one agent only
 - `--manifest <path>`: sync one manifest
 - `--delete-removed` / `--prune`: remove remote files missing locally
+- `--reset`: delete all remote files before syncing (reinitialize)
 - `--dry-run`: preview changes
 
 The sync writes `.cache/vectorstores_state.json`, which maps store names to IDs.
@@ -111,6 +121,7 @@ agent_id = resolver.id_for_store_name("vs_micro_planner")
 - Keep sources small and well scoped.
 - Use `tags` to support metadata filtering later.
 - Avoid committing private PDFs; store locally and update only manifests if needed.
+- Do not include rendered sidecars (`*.rendered.md`) in vector stores.
 - `.cache/` is gitignored by default.
 
 For operational limits, data sensitivity, and incident response, see

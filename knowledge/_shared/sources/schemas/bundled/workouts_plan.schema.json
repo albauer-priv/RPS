@@ -1,0 +1,623 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workouts_plan.schema.json",
+  "title": "WorkoutsPlan",
+  "allOf": [
+    {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "artefact_envelope.schema.json",
+      "title": "ArtefactEnvelope",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "meta",
+        "data"
+      ],
+      "properties": {
+        "meta": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "artefact_meta.schema.json",
+          "title": "ArtefactMeta",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "version",
+            "authority",
+            "owner_agent",
+            "run_id",
+            "created_at",
+            "trace_upstream"
+          ],
+          "properties": {
+            "artifact_type": {
+              "type": "string",
+              "pattern": "^[A-Z0-9_]+$"
+            },
+            "schema_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "schema_version": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+            },
+            "authority": {
+              "type": "string",
+              "enum": [
+                "Binding",
+                "Informational",
+                "Derived",
+                "Factual"
+              ]
+            },
+            "owner_agent": {
+              "type": "string",
+              "enum": [
+                "Data-Pipeline",
+                "Macro-Planner",
+                "Meso-Architect",
+                "Micro-Planner",
+                "Workout-Builder",
+                "Performance-Analyst",
+                "Policy-Owner"
+              ]
+            },
+            "run_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "Shared",
+                "Macro",
+                "Meso",
+                "Micro",
+                "Context"
+              ]
+            },
+            "iso_week": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "iso_week.schema.json",
+              "title": "IsoWeek",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
+            },
+            "iso_week_range": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "iso_week_range.schema.json",
+              "title": "IsoWeekRange",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}--\\d{4}-\\d{2}(?:\\+\\d+)?$"
+            },
+            "temporal_scope": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "date_range.schema.json",
+              "title": "DateRange",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "from",
+                "to"
+              ],
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "to": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            },
+            "trace_upstream": {
+              "type": "array",
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "$id": "trace_reference.schema.json",
+                "title": "TraceReference",
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "artifact"
+                ],
+                "properties": {
+                  "artifact": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+                  },
+                  "run_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "trace_data": {
+              "type": "array",
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "$id": "trace_reference.schema.json",
+                "title": "TraceReference",
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "artifact"
+                ],
+                "properties": {
+                  "artifact": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+                  },
+                  "run_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "trace_events": {
+              "type": "array",
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "$id": "trace_reference.schema.json",
+                "title": "TraceReference",
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "artifact"
+                ],
+                "properties": {
+                  "artifact": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+                  },
+                  "run_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "data": {}
+      }
+    },
+    {
+      "properties": {
+        "meta": {
+          "properties": {
+            "artifact_type": {
+              "const": "WORKOUTS_PLAN"
+            },
+            "schema_id": {
+              "const": "WorkoutsPlanInterface"
+            },
+            "schema_version": {
+              "const": "1.2"
+            },
+            "authority": {
+              "const": "Binding"
+            },
+            "owner_agent": {
+              "const": "Micro-Planner"
+            }
+          },
+          "required": [
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "authority",
+            "owner_agent",
+            "iso_week"
+          ]
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "week_summary",
+            "agenda",
+            "workouts"
+          ],
+          "properties": {
+            "week_summary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "week_objective",
+                "weekly_load_corridor_kj",
+                "planned_weekly_load_kj"
+              ],
+              "properties": {
+                "week_objective": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "weekly_load_corridor_kj": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "load_band.schema.json",
+                  "title": "LoadBand",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "properties": {
+                    "min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "planned_weekly_load_kj": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "cross_check_tss": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "notes": {
+                  "type": "string"
+                }
+              }
+            },
+            "agenda": {
+              "type": "array",
+              "minItems": 7,
+              "maxItems": 7,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "day",
+                  "date",
+                  "day_role",
+                  "planned_duration",
+                  "planned_kj",
+                  "workout_id"
+                ],
+                "properties": {
+                  "day": {
+                    "type": "string",
+                    "enum": [
+                      "Mon",
+                      "Tue",
+                      "Wed",
+                      "Thu",
+                      "Fri",
+                      "Sat",
+                      "Sun"
+                    ]
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "day_role": {
+                    "type": "string",
+                    "enum": [
+                      "REST",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "QUALITY",
+                      "OPTIONAL",
+                      "FLEX",
+                      "TRAVEL",
+                      "EVENT",
+                      "OFF_BIKE"
+                    ]
+                  },
+                  "planned_duration": {
+                    "type": "string",
+                    "pattern": "^\\d{2}:\\d{2}$"
+                  },
+                  "planned_kj": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "planned_tss": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "workout_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Mon"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Tue"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Wed"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Thu"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Fri"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Sat"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "properties": {
+                      "day": {
+                        "const": "Sun"
+                      }
+                    },
+                    "required": [
+                      "day"
+                    ]
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                }
+              ]
+            },
+            "workouts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "workout_id",
+                  "title",
+                  "date",
+                  "start",
+                  "duration",
+                  "workout_text"
+                ],
+                "properties": {
+                  "workout_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "start": {
+                    "type": "string",
+                    "pattern": "^\\d{2}:\\d{2}$"
+                  },
+                  "duration": {
+                    "type": "string",
+                    "pattern": "^\\d{2}:\\d{2}:\\d{2}$"
+                  },
+                  "workout_text": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "agenda_day": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "day",
+        "date",
+        "day_role",
+        "planned_duration",
+        "planned_kj",
+        "workout_id"
+      ],
+      "properties": {
+        "day": {
+          "type": "string",
+          "enum": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "day_role": {
+          "type": "string",
+          "enum": [
+            "REST",
+            "RECOVERY",
+            "ENDURANCE",
+            "QUALITY",
+            "OPTIONAL",
+            "FLEX",
+            "TRAVEL",
+            "EVENT",
+            "OFF_BIKE"
+          ]
+        },
+        "planned_duration": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "planned_kj": {
+          "type": "number",
+          "minimum": 0
+        },
+        "planned_tss": {
+          "type": "number",
+          "minimum": 0
+        },
+        "workout_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "workout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workout_id",
+        "title",
+        "date",
+        "start",
+        "duration",
+        "workout_text"
+      ],
+      "properties": {
+        "workout_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "start": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "duration": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}$"
+        },
+        "workout_text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

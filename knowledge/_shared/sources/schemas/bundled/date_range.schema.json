@@ -4,7 +4,10 @@
   "title": "DateRange",
   "type": "object",
   "additionalProperties": false,
-  "required": ["from", "to"],
+  "required": [
+    "from",
+    "to"
+  ],
   "properties": {
     "from": {
       "type": "string",

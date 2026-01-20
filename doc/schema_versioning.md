@@ -42,6 +42,7 @@ Guidelines:
 2. Bump `schema_version` (and update const fields if required).
 3. Update producers (agent prompts, pipeline scripts).
 4. If needed, provide a migration script for existing artefacts.
+5. Rebuild bundled schemas for retrieval (`python scripts/bundle_schemas.py`).
 
 ---
 

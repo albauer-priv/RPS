@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Per-agent model overrides via `OPENAI_MODEL_<AGENT>` and CLI plumbing to honor them.
+- `workspace_get_input` tool for athlete-specific markdown inputs (season brief, events).
+- Vector store sync progress output and `--reset` to reinitialize stores.
+- Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `knowledge/_shared/sources/schemas/bundled/`.
+- Vector store smoke test script: `scripts/smoke_vectorstores.py`.
+- Build checklist and recommended model guidance docs.
+
+### Changed
+- Force `file_search` by default in agent runs; add `--no-file-search` to disable.
+- Shared knowledge manifests now reference bundled schemas; rendered KPI sidecars removed.
+- Schema bundler handles `jsonref` serialization for bundled outputs.
+
+### Removed
+- Legacy schema copies under `knowledge/_shared/sources/schemas/` (replaced by bundled variants).
+- Obsolete shared schemas `data_confidence` and `macro_cycle_enum` from knowledge sources.
+
 ## [0.1.0] - 2026-01-20
 
 ### Changed

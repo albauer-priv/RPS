@@ -31,7 +31,10 @@
     },
     "load_modality": {
       "type": "string",
-      "enum": ["NONE", "K3"]
+      "enum": [
+        "NONE",
+        "K3"
+      ]
     }
   }
 }

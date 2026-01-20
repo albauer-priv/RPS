@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from app.agents.registry import AGENTS
@@ -25,6 +26,8 @@ def plan_week(
     year: int,
     week: int,
     run_id: str,
+    model_resolver: Callable[[str], str] | None = None,
+    force_file_search: bool = True,
 ) -> PlanWeekResult:
     """Run the Macro -> Meso -> Micro -> Builder -> Analysis flow if needed."""
     workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
@@ -46,6 +49,8 @@ def plan_week(
                 f"Create macro artefacts needed for planning. Target ISO week: {year}-{week:02d}."
             ),
             run_id=f"{run_id}_macro",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            force_file_search=force_file_search,
         )
         steps.append({"agent": "macro_planner", "tasks": [t.value for t in macro_tasks], "result": out})
 
@@ -63,6 +68,8 @@ def plan_week(
                 f"Read macro_overview and use workspace_get_latest to pull required inputs."
             ),
             run_id=f"{run_id}_meso",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            force_file_search=force_file_search,
         )
         steps.append({"agent": "meso_architect", "tasks": [t.value for t in meso_tasks], "result": out})
 
@@ -80,6 +87,8 @@ def plan_week(
                 f"Read block_governance and block_execution_arch from workspace."
             ),
             run_id=f"{run_id}_micro",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            force_file_search=force_file_search,
         )
         steps.append({"agent": "micro_planner", "tasks": [t.value for t in micro_tasks], "result": out})
 
@@ -97,6 +106,8 @@ def plan_week(
                 f"Read workouts_plan from workspace."
             ),
             run_id=f"{run_id}_builder",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            force_file_search=force_file_search,
         )
         steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
 
@@ -114,6 +125,8 @@ def plan_week(
                 f"Read activities_actual, activities_trend, KPI profile, macro overview, meso artefacts from workspace."
             ),
             run_id=f"{run_id}_analysis",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            force_file_search=force_file_search,
         )
         steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})
 

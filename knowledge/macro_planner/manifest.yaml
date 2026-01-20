@@ -12,7 +12,6 @@ sources:
 - path: sources/kpi_profiles/kpi_profile_des_brevet_1200_km_masters.json
 - path: sources/kpi_profiles/kpi_profile_des_brevet_1200_km_non_masters.json
 - path: sources/kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json
-- path: sources/kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.rendered.md
 - path: sources/kpi_profiles/kpi_profile_des_brevet_200_400_km_non_masters.json
 - path: sources/kpi_profiles/kpi_profile_des_brevet_600_km_masters.json
 - path: sources/kpi_profiles/kpi_profile_des_brevet_600_km_non_masters.json

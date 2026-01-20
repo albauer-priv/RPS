@@ -47,11 +47,14 @@ def run_agent_task_strict(
     task: AgentTask,
     user_input: str,
     run_id: str,
+    model_override: str | None = None,
+    force_file_search: bool = True,
     max_num_results: int = 6,
 ) -> dict[str, Any]:
     """Run one strict task and persist the resulting artifact."""
     output_spec = OUTPUT_SPECS[task]
 
+    model = model_override or runtime.model
     shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
 
@@ -76,12 +79,15 @@ def run_agent_task_strict(
         {"role": "user", "content": user_input},
     ]
 
+    force_search = force_file_search
     response = runtime.client.responses.create(
-        model=runtime.model,
+        model=model,
         tools=tools,
         input=input_list,
+        tool_choice={"type": "file_search"} if force_search else None,
     )
     input_list += response.output
+    force_search = False
 
     safety = 0
     while True:
@@ -125,8 +131,9 @@ def run_agent_task_strict(
             return result
 
         response = runtime.client.responses.create(
-            model=runtime.model,
+            model=model,
             tools=tools,
             input=input_list,
+            tool_choice={"type": "file_search"} if force_search else None,
         )
         input_list += response.output

@@ -4,7 +4,10 @@
   "title": "NumberRange",
   "type": "object",
   "additionalProperties": false,
-  "required": ["min", "max"],
+  "required": [
+    "min",
+    "max"
+  ],
   "properties": {
     "min": {
       "type": "number",

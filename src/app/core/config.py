@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import re
 
 
 @dataclass(frozen=True)
@@ -22,11 +23,23 @@ class AppSettings:
     """Application-level runtime settings for storage and prompts."""
 
     openai_model: str
+    openai_model_overrides: dict[str, str]
     workspace_root: Path
     schema_dir: Path
     prompts_dir: Path
     vs_state_path: Path
     shared_vs_name: str
+
+    def model_for_agent(self, agent_name: str) -> str:
+        """Return the model override for an agent, or the default model."""
+        key = normalize_agent_name(agent_name)
+        return self.openai_model_overrides.get(key, self.openai_model)
+
+
+def normalize_agent_name(value: str) -> str:
+    """Normalize an agent name for env key mapping."""
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_")
+    return cleaned.lower()
 
 
 def load_env_file(path: str | Path) -> None:
@@ -64,8 +77,19 @@ def load_settings() -> Settings:
 
 def load_app_settings() -> AppSettings:
     """Return application runtime settings with sensible defaults."""
+    overrides: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("OPENAI_MODEL_") or key == "OPENAI_MODEL":
+            continue
+        if not value:
+            continue
+        agent_key = normalize_agent_name(key[len("OPENAI_MODEL_"):])
+        if agent_key:
+            overrides[agent_key] = value
+
     return AppSettings(
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4.1"),
+        openai_model_overrides=overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),
