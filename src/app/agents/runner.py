@@ -19,6 +19,7 @@ class AgentRuntime:
     """Runtime dependencies for running an agent."""
     client: OpenAI
     model: str
+    temperature: float | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
     shared_vs_name: str
@@ -57,12 +58,14 @@ def run_agent(
     workspace_root: Path,
     schema_dir: Path,
     model_override: str | None = None,
+    temperature_override: float | None = None,
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
     max_num_results: int = 6,
 ) -> str:
     """Run an agent with workspace tools and file search attached."""
     model = model_override or runtime.model
+    temperature = temperature_override if temperature_override is not None else runtime.temperature
     shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
 
@@ -87,13 +90,21 @@ def run_agent(
     ]
 
     force_search = force_file_search
-    response = runtime.client.responses.create(
-        model=model,
-        tools=tools,
-        input=input_list,
-        include=include,
-        tool_choice={"type": "file_search"} if force_search else None,
-    )
+    def _create_response(force_search_flag: bool):
+        payload: dict[str, Any] = {
+            "model": model,
+            "tools": tools,
+            "input": input_list,
+        }
+        if include is not None:
+            payload["include"] = include
+        if force_search_flag:
+            payload["tool_choice"] = {"type": "file_search"}
+        if temperature is not None:
+            payload["temperature"] = temperature
+        return runtime.client.responses.create(**payload)
+
+    response = _create_response(force_search)
     input_list += response.output
     force_search = False
 
@@ -132,13 +143,7 @@ def run_agent(
                 }
             )
 
-        response = runtime.client.responses.create(
-            model=model,
-            tools=tools,
-            input=input_list,
-            include=include,
-            tool_choice={"type": "file_search"} if force_search else None,
-        )
+        response = _create_response(force_search)
         input_list += response.output
 
     return response.output_text

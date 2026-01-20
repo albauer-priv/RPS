@@ -32,9 +32,26 @@ OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
 
 ---
 
+## Temperature Overrides
+
+Set a global temperature and (optionally) per-agent overrides:
+
+```
+OPENAI_TEMPERATURE=0.2
+OPENAI_TEMPERATURE_MACRO_PLANNER=0.2
+OPENAI_TEMPERATURE_MESO_ARCHITECT=0.2
+OPENAI_TEMPERATURE_MICRO_PLANNER=0.2
+OPENAI_TEMPERATURE_WORKOUT_BUILDER=0.2
+OPENAI_TEMPERATURE_PERFORMANCE_ANALYSIS=0.3
+```
+
+Lower values reduce creative variance for schema-heavy outputs.
+
+---
+
 ## Notes
 
-- Per-agent overrides are optional; unset values fall back to `OPENAI_MODEL`.
+- Per-agent overrides are optional; unset values fall back to `OPENAI_MODEL` / `OPENAI_TEMPERATURE`.
 - Keep heavier models for Macro/Meso/Analysis if schema errors rise.
 - For Macro Mode A scenarios, keep `--max-num-results 1` to limit token throughput.
 

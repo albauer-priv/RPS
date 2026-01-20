@@ -26,6 +26,7 @@ def main() -> None:
     runtime = AgentRuntime(
         client=get_client(),
         model=settings.openai_model,
+        temperature=settings.openai_temperature,
         prompt_loader=PromptLoader(settings.prompts_dir),
         vs_resolver=VectorStoreResolver(settings.vs_state_path),
         shared_vs_name=settings.shared_vs_name,
@@ -57,6 +58,7 @@ def main() -> None:
             multi_runtime = MultiRuntime(
                 client=runtime.client,
                 model=runtime.model,
+                temperature=runtime.temperature,
                 prompt_loader=runtime.prompt_loader,
                 vs_resolver=runtime.vs_resolver,
                 shared_vs_name=runtime.shared_vs_name,
@@ -70,6 +72,7 @@ def main() -> None:
                 week=args.week,
                 run_id=args.run_id,
                 model_resolver=settings.model_for_agent,
+                temperature_resolver=settings.temperature_for_agent,
                 force_file_search=not args.no_file_search,
             )
             print({"ok": result.ok, "steps": result.steps})
@@ -85,6 +88,7 @@ def main() -> None:
             workspace_root=settings.workspace_root,
             schema_dir=settings.schema_dir,
             model_override=settings.model_for_agent(spec.name),
+            temperature_override=settings.temperature_for_agent(spec.name),
             include_debug_file_search=args.debug_file_search,
             force_file_search=not args.no_file_search,
         )
@@ -113,6 +117,7 @@ def main() -> None:
         workspace_root=settings.workspace_root,
         schema_dir=settings.schema_dir,
         model_override=settings.model_for_agent(spec.name),
+        temperature_override=settings.temperature_for_agent(spec.name),
         include_debug_file_search=args.debug_file_search,
         force_file_search=not args.no_file_search,
     )

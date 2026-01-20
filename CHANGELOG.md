@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Per-agent model overrides via `OPENAI_MODEL_<AGENT>` and CLI plumbing to honor them.
+- Per-agent temperature overrides via `OPENAI_TEMPERATURE_<AGENT>` (plus global `OPENAI_TEMPERATURE`).
 - `workspace_get_input` tool for athlete-specific markdown inputs (season brief, events).
 - Vector store sync progress output and `--reset` to reinitialize stores.
 - Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `knowledge/_shared/sources/schemas/bundled/`.
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version key derivation now supports string-based `iso_week` and `iso_week_range` metadata.
 - Docs and README now document the two-step Macro Mode A workflow.
 - Model guidance notes include Macro Mode A scenario token-throughput tip.
+- Agent runners now pass optional temperature settings; `.env.example` and model docs reflect temperature overrides.
 
 ### Removed
 - Legacy schema copies under `knowledge/_shared/sources/schemas/` (replaced by bundled variants).

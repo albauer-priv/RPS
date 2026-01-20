@@ -82,11 +82,25 @@ def build_file_search_tool(
     }
 
 
+def _parse_float(value: str | None) -> float | None:
+    """Parse a float from env, returning None on invalid input."""
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
 def run_agent(
     agent_name: str,
     user_input: str,
     *,
     model: str | None = None,
+    temperature: float | None = None,
     knowledge_root: Path = DEFAULT_KNOWLEDGE_ROOT,
     state_path: Path = DEFAULT_STATE_PATH,
     include_shared: bool = True,
@@ -99,6 +113,11 @@ def run_agent(
     if model is None:
         key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
         model = os.getenv(f"OPENAI_MODEL_{key}") or os.getenv("OPENAI_MODEL", "gpt-4.1")
+    if temperature is None:
+        key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
+        temperature = _parse_float(
+            os.getenv(f"OPENAI_TEMPERATURE_{key}") or os.getenv("OPENAI_TEMPERATURE")
+        )
     client = get_client()
     system_prompt = agent_system_prompt(agent_name, prompts_dir=prompts_dir)
     tool = build_file_search_tool(
@@ -121,4 +140,6 @@ def run_agent(
         payload["tool_choice"] = {"type": "file_search"}
     if include_results:
         payload["include"] = ["file_search_call.results"]
+    if temperature is not None:
+        payload["temperature"] = temperature
     return client.responses.create(**payload)

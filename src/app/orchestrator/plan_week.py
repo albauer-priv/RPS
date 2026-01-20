@@ -27,6 +27,7 @@ def plan_week(
     week: int,
     run_id: str,
     model_resolver: Callable[[str], str] | None = None,
+    temperature_resolver: Callable[[str], float | None] | None = None,
     force_file_search: bool = True,
 ) -> PlanWeekResult:
     """Run the Macro -> Meso -> Micro -> Builder -> Analysis flow if needed."""
@@ -50,6 +51,7 @@ def plan_week(
             ),
             run_id=f"{run_id}_macro",
             model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
         )
         steps.append({"agent": "macro_planner", "tasks": [t.value for t in macro_tasks], "result": out})
@@ -69,6 +71,7 @@ def plan_week(
             ),
             run_id=f"{run_id}_meso",
             model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
         )
         steps.append({"agent": "meso_architect", "tasks": [t.value for t in meso_tasks], "result": out})
@@ -88,6 +91,7 @@ def plan_week(
             ),
             run_id=f"{run_id}_micro",
             model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
         )
         steps.append({"agent": "micro_planner", "tasks": [t.value for t in micro_tasks], "result": out})
@@ -107,6 +111,7 @@ def plan_week(
             ),
             run_id=f"{run_id}_builder",
             model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
         )
         steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
@@ -126,6 +131,7 @@ def plan_week(
             ),
             run_id=f"{run_id}_analysis",
             model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
         )
         steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})

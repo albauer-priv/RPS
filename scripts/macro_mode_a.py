@@ -16,25 +16,26 @@ if SYS_PATH not in sys.path:
 from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output  # noqa: E402
 from app.agents.registry import AGENTS  # noqa: E402
 from app.agents.tasks import AgentTask  # noqa: E402
-from app.core.config import load_app_settings, load_env_file  # noqa: E402
+from app.core.config import AppSettings, load_app_settings, load_env_file  # noqa: E402
 from app.openai.client import get_client  # noqa: E402
 from app.openai.vectorstore_state import VectorStoreResolver  # noqa: E402
 from app.prompts.loader import PromptLoader  # noqa: E402
 
 
-def _runtime() -> tuple[AgentRuntime, str]:
+def _runtime() -> tuple[AgentRuntime, AppSettings]:
     load_env_file(ROOT / ".env")
     settings = load_app_settings()
     runtime = AgentRuntime(
         client=get_client(),
         model=settings.openai_model,
+        temperature=settings.openai_temperature,
         prompt_loader=PromptLoader(settings.prompts_dir),
         vs_resolver=VectorStoreResolver(settings.vs_state_path),
         shared_vs_name=settings.shared_vs_name,
         schema_dir=settings.schema_dir,
         workspace_root=settings.workspace_root,
     )
-    return runtime, settings.openai_model
+    return runtime, settings
 
 
 def _default_athlete() -> str | None:
@@ -45,7 +46,7 @@ def _default_athlete() -> str | None:
 
 
 def run_scenarios(args: argparse.Namespace) -> int:
-    runtime, _ = _runtime()
+    runtime, settings = _runtime()
     spec = AGENTS["macro_planner"]
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
@@ -53,6 +54,8 @@ def run_scenarios(args: argparse.Namespace) -> int:
         f"Target ISO week: {args.year}-{args.week:02d}."
     )
 
+    model_override = args.model or settings.model_for_agent(spec.name)
+    temperature_override = settings.temperature_for_agent(spec.name)
     result = run_agent_multi_output(
         runtime,
         agent_name=spec.name,
@@ -61,7 +64,8 @@ def run_scenarios(args: argparse.Namespace) -> int:
         tasks=[],
         user_input=user_input,
         run_id=args.run_id,
-        model_override=args.model,
+        model_override=model_override,
+        temperature_override=temperature_override,
         force_file_search=not args.no_file_search,
         max_num_results=args.max_num_results,
     )
@@ -83,7 +87,7 @@ def run_scenarios(args: argparse.Namespace) -> int:
 
 
 def run_overview(args: argparse.Namespace) -> int:
-    runtime, _ = _runtime()
+    runtime, settings = _runtime()
     spec = AGENTS["macro_planner"]
 
     scenario = args.scenario.upper()
@@ -111,6 +115,8 @@ def run_overview(args: argparse.Namespace) -> int:
         "Call store_macro_overview with schema-compliant JSON only."
     )
 
+    model_override = args.model or settings.model_for_agent(spec.name)
+    temperature_override = settings.temperature_for_agent(spec.name)
     result = run_agent_multi_output(
         runtime,
         agent_name=spec.name,
@@ -119,7 +125,8 @@ def run_overview(args: argparse.Namespace) -> int:
         tasks=[AgentTask.CREATE_MACRO_OVERVIEW],
         user_input=user_input,
         run_id=args.run_id,
-        model_override=args.model,
+        model_override=model_override,
+        temperature_override=temperature_override,
         force_file_search=not args.no_file_search,
         max_num_results=args.max_num_results,
     )

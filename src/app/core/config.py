@@ -24,6 +24,8 @@ class AppSettings:
 
     openai_model: str
     openai_model_overrides: dict[str, str]
+    openai_temperature: float | None
+    openai_temperature_overrides: dict[str, float]
     workspace_root: Path
     schema_dir: Path
     prompts_dir: Path
@@ -35,11 +37,29 @@ class AppSettings:
         key = normalize_agent_name(agent_name)
         return self.openai_model_overrides.get(key, self.openai_model)
 
+    def temperature_for_agent(self, agent_name: str) -> float | None:
+        """Return the temperature override for an agent, or the default temperature."""
+        key = normalize_agent_name(agent_name)
+        return self.openai_temperature_overrides.get(key, self.openai_temperature)
+
 
 def normalize_agent_name(value: str) -> str:
     """Normalize an agent name for env key mapping."""
     cleaned = re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_")
     return cleaned.lower()
+
+
+def _parse_float(value: str | None) -> float | None:
+    """Parse a float from env, returning None on invalid input."""
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
 
 
 def load_env_file(path: str | Path) -> None:
@@ -87,9 +107,22 @@ def load_app_settings() -> AppSettings:
         if agent_key:
             overrides[agent_key] = value
 
+    temp_overrides: dict[str, float] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("OPENAI_TEMPERATURE_") or key == "OPENAI_TEMPERATURE":
+            continue
+        parsed = _parse_float(value)
+        if parsed is None:
+            continue
+        agent_key = normalize_agent_name(key[len("OPENAI_TEMPERATURE_"):])
+        if agent_key:
+            temp_overrides[agent_key] = parsed
+
     return AppSettings(
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4.1"),
         openai_model_overrides=overrides,
+        openai_temperature=_parse_float(os.getenv("OPENAI_TEMPERATURE")),
+        openai_temperature_overrides=temp_overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),

@@ -23,6 +23,7 @@ class AgentRuntime:
     """Runtime dependencies for multi-output agent runs."""
     client: OpenAI
     model: str
+    temperature: float | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
     shared_vs_name: str
@@ -63,6 +64,7 @@ def run_agent_multi_output(
     user_input: str,
     run_id: str,
     model_override: str | None = None,
+    temperature_override: float | None = None,
     force_file_search: bool = True,
     max_num_results: int = 6,
 ) -> dict[str, Any]:
@@ -70,6 +72,7 @@ def run_agent_multi_output(
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
 
     model = model_override or runtime.model
+    temperature = temperature_override if temperature_override is not None else runtime.temperature
     shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
@@ -98,16 +101,23 @@ def run_agent_multi_output(
         {"role": "user", "content": user_input},
     ]
 
+    def _create_response(force_search_flag: bool):
+        payload: dict[str, Any] = {
+            "model": model,
+            "tools": tools,
+            "input": input_list,
+        }
+        if force_search_flag:
+            payload["tool_choice"] = {"type": "file_search"}
+        if temperature is not None:
+            payload["temperature"] = temperature
+        return runtime.client.responses.create(**payload)
+
     produced: dict[str, Any] = {}
     wanted_tool_names = {spec.tool_name for spec in output_specs}
 
     force_search = force_file_search
-    response = runtime.client.responses.create(
-        model=model,
-        tools=tools,
-        input=input_list,
-        tool_choice={"type": "file_search"} if force_search else None,
-    )
+    response = _create_response(force_search)
     input_list += response.output
     force_search = False
 
@@ -183,10 +193,5 @@ def run_agent_multi_output(
         if wanted_tool_names.issubset(set(produced.keys())):
             return {"ok": True, "produced": produced}
 
-        response = runtime.client.responses.create(
-            model=model,
-            tools=tools,
-            input=input_list,
-            tool_choice={"type": "file_search"} if force_search else None,
-        )
+        response = _create_response(force_search)
         input_list += response.output
