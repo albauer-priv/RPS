@@ -36,6 +36,7 @@ OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
 
 - Per-agent overrides are optional; unset values fall back to `OPENAI_MODEL`.
 - Keep heavier models for Macro/Meso/Analysis if schema errors rise.
+- For Macro Mode A scenarios, keep `--max-num-results 1` to limit token throughput.
 
 ---
 

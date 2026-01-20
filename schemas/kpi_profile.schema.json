@@ -2,69 +2,102 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "kpi_profile.schema.json",
   "title": "KPIProfile",
-  "allOf": [
-    {"$ref": "artefact_envelope.schema.json"},
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "KPI_PROFILE"},
-            "schema_id": {"const": "KPIProfileInterface"},
-            "schema_version": {"const": "1.0"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Policy-Owner"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent"
-          ]
-        },
-        "data": {"$ref": "#/$defs/kpi_profile_data"}
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "threshold": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["green", "yellow", "red"],
+      "required": [
+        "green",
+        "yellow",
+        "red",
+        "context",
+        "notes"
+      ],
       "properties": {
-        "green": {"type": "string", "minLength": 1},
-        "yellow": {"type": "string", "minLength": 1},
-        "red": {"type": "string", "minLength": 1},
-        "context": {"type": "string"},
-        "notes": {"type": "string"}
+        "green": {
+          "type": "string",
+          "minLength": 1
+        },
+        "yellow": {
+          "type": "string",
+          "minLength": 1
+        },
+        "red": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "progression_limit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["allowed", "warning", "stop"],
+      "required": [
+        "allowed",
+        "warning",
+        "stop"
+      ],
       "properties": {
-        "allowed": {"type": "string", "minLength": 1},
-        "warning": {"type": "string", "minLength": 1},
-        "stop": {"type": "string", "minLength": 1}
+        "allowed": {
+          "type": "string",
+          "minLength": 1
+        },
+        "warning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stop": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "number_range": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["min", "max"],
+      "required": [
+        "min",
+        "max"
+      ],
       "properties": {
-        "min": {"type": "number", "minimum": 0},
-        "max": {"type": "number", "minimum": 0}
+        "min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0
+        }
       }
     },
     "number_range_nullable": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["min", "max"],
+      "required": [
+        "min",
+        "max"
+      ],
       "properties": {
-        "min": {"type": ["number", "null"], "minimum": 0},
-        "max": {"type": ["number", "null"], "minimum": 0}
+        "min": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "max": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
       }
     },
     "kpi_profile_data": {
@@ -94,32 +127,62 @@
             "primary_objective"
           ],
           "properties": {
-            "profile_id": {"type": "string", "minLength": 1},
+            "profile_id": {
+              "type": "string",
+              "minLength": 1
+            },
             "event_type": {
               "type": "string",
-              "enum": ["Brevet", "Ultra", "Stage", "Bikepacking"]
+              "enum": [
+                "Brevet",
+                "Ultra",
+                "Stage",
+                "Bikepacking"
+              ]
             },
-            "distance_range": {"type": "string", "minLength": 1},
-            "athlete_class": {"type": "string", "minLength": 1},
+            "distance_range": {
+              "type": "string",
+              "minLength": 1
+            },
+            "athlete_class": {
+              "type": "string",
+              "minLength": 1
+            },
             "primary_objective": {
               "type": "string",
-              "enum": ["Finish", "Performance", "Podium"]
+              "enum": [
+                "Finish",
+                "Performance",
+                "Podium"
+              ]
             }
           }
         },
         "energetic_load_targets": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["weekly_load_kj", "progression_limits"],
+          "required": [
+            "weekly_load_kj",
+            "progression_limits"
+          ],
           "properties": {
-            "weekly_load_kj": {"$ref": "#/$defs/threshold"},
+            "weekly_load_kj": {
+              "$ref": "#/$defs/threshold"
+            },
             "progression_limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["weekly_kj_increase", "long_ride_kj_increase"],
+              "required": [
+                "weekly_kj_increase",
+                "long_ride_kj_increase"
+              ],
               "properties": {
-                "weekly_kj_increase": {"$ref": "#/$defs/progression_limit"},
-                "long_ride_kj_increase": {"$ref": "#/$defs/progression_limit"}
+                "weekly_kj_increase": {
+                  "$ref": "#/$defs/progression_limit"
+                },
+                "long_ride_kj_increase": {
+                  "$ref": "#/$defs/progression_limit"
+                }
               }
             }
           }
@@ -127,18 +190,41 @@
         "durability": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["energetic_preload", "kpis"],
+          "required": [
+            "energetic_preload",
+            "kpis"
+          ],
           "properties": {
             "energetic_preload": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["single_ride_kj_per_kg", "back_to_back_kj_per_kg"],
+              "required": [
+                "single_ride_kj_per_kg",
+                "back_to_back_kj_per_kg",
+                "single_ride_kj",
+                "back_to_back_kj",
+                "derived_from",
+                "mass_window_kj_per_kg"
+              ],
               "properties": {
-                "single_ride_kj_per_kg": {"$ref": "#/$defs/number_range_nullable"},
-                "back_to_back_kj_per_kg": {"$ref": "#/$defs/number_range_nullable"},
-                "single_ride_kj": {"type": "number", "minimum": 0},
-                "back_to_back_kj": {"type": "number", "minimum": 0},
-                "derived_from": {"type": "string", "minLength": 1},
+                "single_ride_kj_per_kg": {
+                  "$ref": "#/$defs/number_range_nullable"
+                },
+                "back_to_back_kj_per_kg": {
+                  "$ref": "#/$defs/number_range_nullable"
+                },
+                "single_ride_kj": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "back_to_back_kj": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "derived_from": {
+                  "type": "string",
+                  "minLength": 1
+                },
                 "mass_window_kj_per_kg": {
                   "type": "array",
                   "minItems": 1,
@@ -151,9 +237,15 @@
                       "back_to_back_kj_per_kg"
                     ],
                     "properties": {
-                      "mass_window_kg": {"$ref": "#/$defs/number_range"},
-                      "single_ride_kj_per_kg": {"$ref": "#/$defs/number_range"},
-                      "back_to_back_kj_per_kg": {"$ref": "#/$defs/number_range"}
+                      "mass_window_kg": {
+                        "$ref": "#/$defs/number_range"
+                      },
+                      "single_ride_kj_per_kg": {
+                        "$ref": "#/$defs/number_range"
+                      },
+                      "back_to_back_kj_per_kg": {
+                        "$ref": "#/$defs/number_range"
+                      }
                     }
                   }
                 }
@@ -169,10 +261,18 @@
                 "fir_5min_20min"
               ],
               "properties": {
-                "durability_index": {"$ref": "#/$defs/threshold"},
-                "sustained_power_drop_3h_vs_1h_percent": {"$ref": "#/$defs/threshold"},
-                "back_to_back_ratio": {"$ref": "#/$defs/threshold"},
-                "fir_5min_20min": {"$ref": "#/$defs/threshold"}
+                "durability_index": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "sustained_power_drop_3h_vs_1h_percent": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "back_to_back_ratio": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "fir_5min_20min": {
+                  "$ref": "#/$defs/threshold"
+                }
               }
             }
           }
@@ -191,10 +291,19 @@
             "applies_to": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
-            "evaluation_window": {"type": "string", "minLength": 1},
-            "purpose": {"type": "string", "minLength": 1},
+            "evaluation_window": {
+              "type": "string",
+              "minLength": 1
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1
+            },
             "kpis": {
               "type": "object",
               "additionalProperties": false,
@@ -204,21 +313,41 @@
                 "hr_drift_trend"
               ],
               "properties": {
-                "bbr_trend_day_n_vs_day_n_minus_1": {"$ref": "#/$defs/threshold"},
-                "if_stability_delta_day_to_day": {"$ref": "#/$defs/threshold"},
-                "hr_drift_trend": {"$ref": "#/$defs/threshold"}
+                "bbr_trend_day_n_vs_day_n_minus_1": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "if_stability_delta_day_to_day": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "hr_drift_trend": {
+                  "$ref": "#/$defs/threshold"
+                }
               }
             },
-            "dominance_rule": {"type": "string", "minLength": 1}
+            "dominance_rule": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "fueling_stability": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["validity_requirement", "purpose", "kpis", "interpretation_rule"],
+          "required": [
+            "validity_requirement",
+            "purpose",
+            "kpis",
+            "interpretation_rule"
+          ],
           "properties": {
-            "validity_requirement": {"type": "string", "minLength": 1},
-            "purpose": {"type": "string", "minLength": 1},
+            "validity_requirement": {
+              "type": "string",
+              "minLength": 1
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1
+            },
             "kpis": {
               "type": "object",
               "additionalProperties": false,
@@ -228,27 +357,48 @@
                 "decoupling_under_preload"
               ],
               "properties": {
-                "if_decline_under_preload": {"$ref": "#/$defs/threshold"},
-                "hr_drift_under_preload": {"$ref": "#/$defs/threshold"},
-                "decoupling_under_preload": {"$ref": "#/$defs/threshold"}
+                "if_decline_under_preload": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "hr_drift_under_preload": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "decoupling_under_preload": {
+                  "$ref": "#/$defs/threshold"
+                }
               }
             },
-            "interpretation_rule": {"type": "string", "minLength": 1}
+            "interpretation_rule": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "efficiency_drift": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kpis"],
+          "required": [
+            "kpis"
+          ],
           "properties": {
             "kpis": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["pa_hr_z2_90min", "hr_drift_race_pace", "ef_trend"],
+              "required": [
+                "pa_hr_z2_90min",
+                "hr_drift_race_pace",
+                "ef_trend"
+              ],
               "properties": {
-                "pa_hr_z2_90min": {"$ref": "#/$defs/threshold"},
-                "hr_drift_race_pace": {"$ref": "#/$defs/threshold"},
-                "ef_trend": {"$ref": "#/$defs/threshold"}
+                "pa_hr_z2_90min": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "hr_drift_race_pace": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "ef_trend": {
+                  "$ref": "#/$defs/threshold"
+                }
               }
             }
           }
@@ -256,15 +406,24 @@
         "intensity_control": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kpis"],
+          "required": [
+            "kpis"
+          ],
           "properties": {
             "kpis": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["vo2_tiz_per_week", "sst_tiz_per_week"],
+              "required": [
+                "vo2_tiz_per_week",
+                "sst_tiz_per_week"
+              ],
               "properties": {
-                "vo2_tiz_per_week": {"$ref": "#/$defs/threshold"},
-                "sst_tiz_per_week": {"$ref": "#/$defs/threshold"}
+                "vo2_tiz_per_week": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "sst_tiz_per_week": {
+                  "$ref": "#/$defs/threshold"
+                }
               }
             }
           }
@@ -272,15 +431,24 @@
         "recovery_tolerability": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kpis"],
+          "required": [
+            "kpis"
+          ],
           "properties": {
             "kpis": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["tsb_sun", "subjective_fatigue"],
+              "required": [
+                "tsb_sun",
+                "subjective_fatigue"
+              ],
               "properties": {
-                "tsb_sun": {"$ref": "#/$defs/threshold"},
-                "subjective_fatigue": {"$ref": "#/$defs/threshold"}
+                "tsb_sun": {
+                  "$ref": "#/$defs/threshold"
+                },
+                "subjective_fatigue": {
+                  "$ref": "#/$defs/threshold"
+                }
               }
             }
           }
@@ -288,26 +456,87 @@
         "decision_rules": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["green", "yellow", "red"],
+          "required": [
+            "green",
+            "yellow",
+            "red"
+          ],
           "properties": {
-            "green": {"type": "string", "minLength": 1},
-            "yellow": {"type": "string", "minLength": 1},
-            "red": {"type": "string", "minLength": 1}
+            "green": {
+              "type": "string",
+              "minLength": 1
+            },
+            "yellow": {
+              "type": "string",
+              "minLength": 1
+            },
+            "red": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "traceability": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requirements"],
+          "required": [
+            "requirements"
+          ],
           "properties": {
             "requirements": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
       }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "KPI_PROFILE",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "KPIProfileInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Policy-Owner",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/kpi_profile_data"
     }
   }
 }

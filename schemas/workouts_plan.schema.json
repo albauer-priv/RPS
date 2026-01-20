@@ -2,136 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workouts_plan.schema.json",
   "title": "WorkoutsPlan",
-  "allOf": [
-    {
-      "$ref": "artefact_envelope.schema.json"
-    },
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "WORKOUTS_PLAN"},
-            "schema_id": {"const": "WorkoutsPlanInterface"},
-            "schema_version": {"const": "1.2"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Micro-Planner"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week"
-          ]
-        },
-        "data": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["week_summary", "agenda", "workouts"],
-          "properties": {
-            "week_summary": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "week_objective",
-                "weekly_load_corridor_kj",
-                "planned_weekly_load_kj"
-              ],
-              "properties": {
-                "week_objective": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "weekly_load_corridor_kj": {
-                  "$ref": "load_band.schema.json"
-                },
-                "planned_weekly_load_kj": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "cross_check_tss": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "notes": {
-                  "type": "string"
-                }
-              }
-            },
-            "agenda": {
-              "type": "array",
-              "minItems": 7,
-              "maxItems": 7,
-              "items": {"$ref": "#/$defs/agenda_day"},
-              "allOf": [
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Mon"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Tue"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Wed"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Thu"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Fri"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Sat"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                },
-                {
-                  "contains": {
-                    "properties": {"day": {"const": "Sun"}},
-                    "required": ["day"]
-                  },
-                  "minContains": 1,
-                  "maxContains": 1
-                }
-              ]
-            },
-            "workouts": {
-              "type": "array",
-              "items": {"$ref": "#/$defs/workout"}
-            }
-          }
-        }
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "agenda_day": {
       "type": "object",
@@ -142,12 +13,21 @@
         "day_role",
         "planned_duration",
         "planned_kj",
-        "workout_id"
+        "workout_id",
+        "planned_tss"
       ],
       "properties": {
         "day": {
           "type": "string",
-          "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+          "enum": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
         },
         "date": {
           "type": "string",
@@ -169,7 +49,10 @@
           "minimum": 0
         },
         "workout_id": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -182,7 +65,8 @@
         "date",
         "start",
         "duration",
-        "workout_text"
+        "workout_text",
+        "notes"
       ],
       "properties": {
         "workout_id": {
@@ -211,6 +95,103 @@
         "workout_text": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "WORKOUTS_PLAN",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "WorkoutsPlanInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.2",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Micro-Planner",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week_summary",
+        "agenda",
+        "workouts"
+      ],
+      "properties": {
+        "week_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "week_objective",
+            "weekly_load_corridor_kj",
+            "planned_weekly_load_kj",
+            "cross_check_tss",
+            "notes"
+          ],
+          "properties": {
+            "week_objective": {
+              "type": "string",
+              "minLength": 1
+            },
+            "weekly_load_corridor_kj": {
+              "$ref": "load_band.schema.json"
+            },
+            "planned_weekly_load_kj": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cross_check_tss": {
+              "type": "number",
+              "minimum": 0
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "agenda": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "$ref": "#/$defs/agenda_day"
+          }
+        },
+        "workouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workout"
+          }
         }
       }
     }

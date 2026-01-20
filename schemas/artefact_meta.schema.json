@@ -13,7 +13,14 @@
     "owner_agent",
     "run_id",
     "created_at",
-    "trace_upstream"
+    "trace_upstream",
+    "scope",
+    "iso_week",
+    "iso_week_range",
+    "temporal_scope",
+    "trace_data",
+    "trace_events",
+    "notes"
   ],
   "properties": {
     "artifact_type": {
@@ -34,7 +41,12 @@
     },
     "authority": {
       "type": "string",
-      "enum": ["Binding", "Informational", "Derived", "Factual"]
+      "enum": [
+        "Binding",
+        "Informational",
+        "Derived",
+        "Factual"
+      ]
     },
     "owner_agent": {
       "type": "string",
@@ -58,7 +70,13 @@
     },
     "scope": {
       "type": "string",
-      "enum": ["Shared", "Macro", "Meso", "Micro", "Context"]
+      "enum": [
+        "Shared",
+        "Macro",
+        "Meso",
+        "Micro",
+        "Context"
+      ]
     },
     "iso_week": {
       "$ref": "iso_week.schema.json"

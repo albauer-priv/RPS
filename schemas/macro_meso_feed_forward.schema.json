@@ -2,35 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "macro_meso_feed_forward.schema.json",
   "title": "MacroMesoFeedForward",
-  "allOf": [
-    {
-      "$ref": "artefact_envelope.schema.json"
-    },
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "MACRO_MESO_FEED_FORWARD"},
-            "schema_id": {"const": "MacroMesoFeedForwardInterface"},
-            "schema_version": {"const": "1.0"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Macro-Planner"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week"
-          ]
-        },
-        "data": {
-          "$ref": "#/$defs/macro_meso_feed_forward_data"
-        }
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "macro_meso_feed_forward_data": {
       "type": "object",
@@ -38,7 +10,8 @@
       "required": [
         "source_context",
         "decision_summary",
-        "explicit_non_actions"
+        "explicit_non_actions",
+        "block_adjustment"
       ],
       "properties": {
         "source_context": {
@@ -50,61 +23,109 @@
             "affected_block_id"
           ],
           "properties": {
-            "macro_overview_ref": {"type": "string", "minLength": 1},
-            "des_analysis_report_ref": {"type": "string", "minLength": 1},
-            "affected_block_id": {"type": "string", "minLength": 1}
+            "macro_overview_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "des_analysis_report_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "affected_block_id": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "decision_summary": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["conclusion", "rationale"],
+          "required": [
+            "conclusion",
+            "rationale"
+          ],
           "properties": {
             "conclusion": {
               "type": "string",
-              "enum": ["no_change", "adjust_block", "reweight_macro"]
+              "enum": [
+                "no_change",
+                "adjust_block",
+                "reweight_macro"
+              ]
             },
             "rationale": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
         "block_adjustment": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["applies_to_weeks", "adjustments"],
+          "required": [
+            "applies_to_weeks",
+            "adjustments"
+          ],
           "properties": {
             "applies_to_weeks": {
               "type": "array",
               "minItems": 1,
-              "items": {"$ref": "iso_week.schema.json"}
+              "items": {
+                "$ref": "iso_week.schema.json"
+              }
             },
             "adjustments": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["kj_corridor", "quality_density"],
+              "required": [
+                "kj_corridor",
+                "quality_density"
+              ],
               "properties": {
                 "kj_corridor": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["direction", "percent"],
+                  "required": [
+                    "direction",
+                    "percent"
+                  ],
                   "properties": {
                     "direction": {
                       "type": "string",
-                      "enum": ["increase", "decrease"]
+                      "enum": [
+                        "increase",
+                        "decrease"
+                      ]
                     },
-                    "percent": {"type": "number", "minimum": 0}
+                    "percent": {
+                      "type": "number",
+                      "minimum": 0
+                    }
                   }
                 },
                 "quality_density": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["action", "details"],
+                  "required": [
+                    "action",
+                    "details"
+                  ],
                   "properties": {
-                    "action": {"type": "string", "enum": ["allow", "restrict"]},
-                    "details": {"type": "string", "minLength": 1}
+                    "action": {
+                      "type": "string",
+                      "enum": [
+                        "allow",
+                        "restrict"
+                      ]
+                    },
+                    "details": {
+                      "type": "string",
+                      "minLength": 1
+                    }
                   }
                 }
               }
@@ -115,7 +136,6 @@
           "type": "array",
           "minItems": 3,
           "maxItems": 3,
-          "uniqueItems": true,
           "items": {
             "type": "string",
             "enum": [
@@ -125,31 +145,51 @@
             ]
           }
         }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "decision_summary": {
-                "properties": {"conclusion": {"const": "adjust_block"}}
-              }
-            }
-          },
-          "then": {"required": ["block_adjustment"]}
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "MACRO_MESO_FEED_FORWARD",
+          "type": "string"
         },
-        {
-          "if": {
-            "properties": {
-              "decision_summary": {
-                "properties": {"conclusion": {"const": "adjust_block"}}
-              }
-            }
-          },
-          "else": {
-            "not": {"required": ["block_adjustment"]}
-          }
+        "schema_id": {
+          "const": "MacroMesoFeedForwardInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Macro-Planner",
+          "type": "string"
         }
-      ]
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/macro_meso_feed_forward_data"
     }
   }
 }

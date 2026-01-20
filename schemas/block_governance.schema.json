@@ -2,35 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "block_governance.schema.json",
   "title": "BlockGovernance",
-  "allOf": [
-    {
-      "$ref": "artefact_envelope.schema.json"
-    },
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "BLOCK_GOVERNANCE"},
-            "schema_id": {"const": "BlockGovernanceInterface"},
-            "schema_version": {"const": "1.0"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Meso-Architect"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week_range"
-          ]
-        },
-        "data": {
-          "$ref": "#/$defs/block_governance_data"
-        }
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "block_governance_data": {
       "type": "object",
@@ -54,17 +26,44 @@
             "block_id",
             "block_type",
             "block_status",
-            "change_type"
+            "change_type",
+            "derived_from",
+            "upstream_inputs"
           ],
           "properties": {
-            "block_id": {"type": "string", "minLength": 1},
-            "block_type": {"type": "string", "minLength": 1},
-            "block_status": {"type": "string", "enum": ["Green", "Yellow", "Red"]},
-            "change_type": {"type": "string", "enum": ["NEW", "ADJUSTED", "NONE"]},
-            "derived_from": {"type": "string"},
+            "block_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "block_type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "block_status": {
+              "type": "string",
+              "enum": [
+                "Green",
+                "Yellow",
+                "Red"
+              ]
+            },
+            "change_type": {
+              "type": "string",
+              "enum": [
+                "NEW",
+                "ADJUSTED",
+                "NONE"
+              ]
+            },
+            "derived_from": {
+              "type": "string"
+            },
             "upstream_inputs": {
               "type": "array",
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
@@ -74,23 +73,36 @@
           "required": [
             "primary_objective",
             "key_risks_warnings",
-            "non_negotiables"
+            "non_negotiables",
+            "secondary_objectives"
           ],
           "properties": {
-            "primary_objective": {"type": "string", "minLength": 1},
+            "primary_objective": {
+              "type": "string",
+              "minLength": 1
+            },
             "secondary_objectives": {
               "type": "array",
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "key_risks_warnings": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "non_negotiables": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
@@ -99,42 +111,75 @@
           "additionalProperties": false,
           "required": [
             "weekly_kj_bands",
-            "confidence_assumptions"
+            "confidence_assumptions",
+            "weekly_tss_bands"
           ],
           "properties": {
             "weekly_kj_bands": {
               "type": "array",
               "minItems": 4,
               "maxItems": 4,
-              "items": {"$ref": "#/$defs/weekly_band_entry"}
+              "items": {
+                "$ref": "#/$defs/weekly_band_entry"
+              }
             },
             "weekly_tss_bands": {
               "type": "array",
               "minItems": 4,
               "maxItems": 4,
-              "items": {"$ref": "#/$defs/weekly_band_entry"}
+              "items": {
+                "$ref": "#/$defs/weekly_band_entry"
+              }
             },
             "confidence_assumptions": {
               "type": "object",
               "additionalProperties": false,
               "required": [
                 "kj_estimation_method",
-                "confidence"
+                "confidence",
+                "ftp_watts_used",
+                "zone_model_version"
               ],
               "properties": {
-                "ftp_watts_used": {"type": "number", "minimum": 0},
-                "zone_model_version": {"type": "string"},
+                "ftp_watts_used": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "zone_model_version": {
+                  "type": "string"
+                },
                 "kj_estimation_method": {
                   "type": "string",
-                  "enum": ["AvgPower-based", "IF+r heuristic", "Mixed"]
+                  "enum": [
+                    "AvgPower-based",
+                    "IF+r heuristic",
+                    "Mixed"
+                  ]
                 },
                 "confidence": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["kj"],
+                  "required": [
+                    "kj",
+                    "tss"
+                  ],
                   "properties": {
-                    "kj": {"type": "string", "enum": ["HIGH", "MED", "LOW"]},
-                    "tss": {"type": "string", "enum": ["HIGH", "MED", "LOW"]}
+                    "kj": {
+                      "type": "string",
+                      "enum": [
+                        "HIGH",
+                        "MED",
+                        "LOW"
+                      ]
+                    },
+                    "tss": {
+                      "type": "string",
+                      "enum": [
+                        "HIGH",
+                        "MED",
+                        "LOW"
+                      ]
+                    }
                   }
                 }
               }
@@ -148,48 +193,77 @@
             "allowed_day_roles",
             "allowed_intensity_domains",
             "allowed_load_modalities",
-            "quality_density"
+            "quality_density",
+            "forbidden_day_roles",
+            "forbidden_intensity_domains",
+            "forbidden_load_modalities"
           ],
           "properties": {
             "allowed_day_roles": {
               "type": "array",
               "minItems": 1,
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/day_role"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/day_role"
+              }
             },
             "forbidden_day_roles": {
               "type": "array",
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/day_role"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/day_role"
+              }
             },
             "allowed_intensity_domains": {
               "type": "array",
               "minItems": 1,
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/intensity_domain"
+              }
             },
             "forbidden_intensity_domains": {
               "type": "array",
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/intensity_domain"
+              }
             },
             "allowed_load_modalities": {
               "type": "array",
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/load_modality"
+              }
             },
             "forbidden_load_modalities": {
               "type": "array",
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/load_modality"
+              }
             },
             "quality_density": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["max_quality_days_per_week"],
+              "required": [
+                "max_quality_days_per_week",
+                "quality_intent",
+                "forbidden_patterns"
+              ],
               "properties": {
-                "max_quality_days_per_week": {"type": "integer", "minimum": 0},
+                "max_quality_days_per_week": {
+                  "type": "integer",
+                  "minimum": 0
+                },
                 "quality_intent": {
                   "type": "string",
-                  "enum": ["Stabilization", "Build", "Overload"]
+                  "enum": [
+                    "Stabilization",
+                    "Build",
+                    "Overload"
+                  ]
                 },
                 "forbidden_patterns": {
                   "type": "array",
-                  "items": {"type": "string", "minLength": 1}
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               }
             }
@@ -198,19 +272,42 @@
         "events_constraints": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["events"],
+          "required": [
+            "events",
+            "logistics_time_constraints"
+          ],
           "properties": {
             "events": {
               "type": "array",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["date", "week", "type", "constraint"],
+                "required": [
+                  "date",
+                  "week",
+                  "type",
+                  "constraint"
+                ],
                 "properties": {
-                  "date": {"type": "string", "format": "date"},
-                  "week": {"$ref": "iso_week.schema.json"},
-                  "type": {"type": "string", "enum": ["A", "B", "C"]},
-                  "constraint": {"type": "string", "minLength": 1}
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "week": {
+                    "$ref": "iso_week.schema.json"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "B",
+                      "C"
+                    ]
+                  },
+                  "constraint": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               }
             },
@@ -218,10 +315,21 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "travel_days": {"type": "string"},
-                "work_constraints": {"type": "string"},
-                "weather_or_indoor_constraints": {"type": "string"}
-              }
+                "travel_days": {
+                  "type": "string"
+                },
+                "work_constraints": {
+                  "type": "string"
+                },
+                "weather_or_indoor_constraints": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "travel_days",
+                "work_constraints",
+                "weather_or_indoor_constraints"
+              ]
             }
           }
         },
@@ -235,21 +343,39 @@
             "no_catch_up_rule"
           ],
           "properties": {
-            "recovery_protection_rules": {"type": "string", "minLength": 1},
-            "long_endurance_anchor_protection": {"type": "string", "minLength": 1},
-            "minimum_recovery_opportunities": {"type": "string", "minLength": 1},
-            "no_catch_up_rule": {"type": "string", "minLength": 1}
+            "recovery_protection_rules": {
+              "type": "string",
+              "minLength": 1
+            },
+            "long_endurance_anchor_protection": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minimum_recovery_opportunities": {
+              "type": "string",
+              "minLength": 1
+            },
+            "no_catch_up_rule": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "escalation_change_control": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["warning_signals", "required_response"],
+          "required": [
+            "warning_signals",
+            "required_response"
+          ],
           "properties": {
             "warning_signals": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "required_response": {
               "type": "object",
@@ -263,12 +389,18 @@
                 "micro_planner_must": {
                   "type": "array",
                   "minItems": 1,
-                  "items": {"type": "string", "minLength": 1}
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 },
                 "micro_planner_must_not": {
                   "type": "array",
                   "minItems": 1,
-                  "items": {"type": "string", "minLength": 1}
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 },
                 "meso_architect_decides": {
                   "type": "string",
@@ -282,7 +414,6 @@
           "type": "array",
           "minItems": 6,
           "maxItems": 6,
-          "uniqueItems": true,
           "items": {
             "type": "string",
             "enum": [
@@ -306,11 +437,26 @@
             "header_includes_implements_iso_week_range_trace"
           ],
           "properties": {
-            "weekly_kj_bands_present": {"const": true},
-            "max_quality_days_specified": {"const": true},
-            "allowed_forbidden_enums_specified": {"const": true},
-            "no_micro_planning_content": {"const": true},
-            "header_includes_implements_iso_week_range_trace": {"const": true}
+            "weekly_kj_bands_present": {
+              "const": true,
+              "type": "boolean"
+            },
+            "max_quality_days_specified": {
+              "const": true,
+              "type": "boolean"
+            },
+            "allowed_forbidden_enums_specified": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_micro_planning_content": {
+              "const": true,
+              "type": "boolean"
+            },
+            "header_includes_implements_iso_week_range_trace": {
+              "const": true,
+              "type": "boolean"
+            }
           }
         }
       }
@@ -318,11 +464,62 @@
     "weekly_band_entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["week", "band"],
+      "required": [
+        "week",
+        "band"
+      ],
       "properties": {
-        "week": {"$ref": "iso_week.schema.json"},
-        "band": {"$ref": "load_band.schema.json"}
+        "week": {
+          "$ref": "iso_week.schema.json"
+        },
+        "band": {
+          "$ref": "load_band.schema.json"
+        }
       }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "BLOCK_GOVERNANCE",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "BlockGovernanceInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Meso-Architect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week_range"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/block_governance_data"
     }
   }
 }

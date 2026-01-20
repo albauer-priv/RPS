@@ -3,30 +3,26 @@
 # Runtime Governance Layer — Bootloader
 
 ## mandatory_load_order
-The following instruction artefacts MUST be loaded and applied in this mandatory order:
-1) instr_binding_knowledge.md  
-2) instr_authority_and_hierarchy.md  
-3) instr_role_and_scope.md  
-4) instr_input_output_contract.md  
-5) instr_execution_protocol.md  
-6) instr_domain_rules.md  
-7) instr_stop_and_validation.md  
+The instruction set is consolidated into this file. Treat the section order
+in this file as the binding sequence:
+Binding Knowledge -> Role & Scope -> Authority & Hierarchy -> Input/Output Contract ->
+Execution Protocol -> Domain Rules -> Stop & Validation.
 
-All references to authority, contracts, instruction sets, schemas, specs, principles, evidence, and sources are bundle-aware and MUST be resolved within the loaded artefacts above.
+All references to authority, contracts, instruction sets, schemas, specs, principles, evidence, and sources are file-based and MUST be resolved within the sources listed below.
 
 ## runtime_context (binding)
 The bootloader is already loaded in the Instructions field.  
-All knowledge bundles listed in the Knowledge section are already available.  
-Do NOT search for, open, or reload the bootloader or instruction set.  
-Assume the mandatory_load_order is satisfied.
+All binding knowledge sources listed below are already available.  
+Do NOT search for, open, or reload separate bootloader/instruction files.  
+Assume the mandatory_load_order is satisfied for this single file.
 
 ## binding_enforcement
 “Binding” content is mandatory and MUST be followed exactly. “Informational” content may be considered only when explicitly allowed by binding rules.  
-Bundling or presentation format does NOT weaken binding force.
+Presentation format does NOT weaken binding force.
 
 ## execution_rules
-- Execution is **three-pass** (analysis + review + output), as defined in `instr_execution_protocol.md`.
-- One-artefact-set rule and schema lockdown apply per `instr_execution_protocol.md` and `instr_input_output_contract.md`.
+- Execution is **three-pass** (analysis + review + output), as defined in the Execution Protocol section.
+- One-artefact-set rule and schema lockdown apply per the Execution Protocol and Input/Output Contract sections.
 
 ## runtime_context_loading_rules (Binding, Performance)
 - Default runtime context MUST include ONLY binding artefacts required for production:
@@ -61,14 +57,14 @@ If any required binding artefact is missing/truncated/ambiguous/unreadable/unres
 ---
 
 ## WORKOUTS_PLAN Production Rules (Binding)
-WORKOUTS_PLAN-specific production rules (A–E) are defined in `instr_domain_rules.md` (binding).
+WORKOUTS_PLAN-specific production rules (A–E) are defined in the Domain Rules section (binding).
 The bootloader MUST NOT duplicate or narrow schema rules.
 
 ---
 
 ## precedence_and_failfast (Binding)
-Precedence follows instr_authority_and_hierarchy.md and instr_binding_knowledge.md.
-On any binding violation or unresolved conflict → fail fast per instr_stop_and_validation.md.
+Precedence follows the Authority & Hierarchy and Binding Knowledge sections.
+On any binding violation or unresolved conflict → fail fast per Stop & Validation.
 
 ---
 
@@ -95,14 +91,14 @@ No external references, documents, heuristics, or assumptions apply.
 - Binding content is explicitly marked as HARD RULE / NON-NEGOTIABLE / MANDATORY within this instruction set.
 - Informational content is explicitly marked as informational only (e.g., context & data artefacts listed as informational).
 
-## Binding Knowledge Files / Bundles
+## Binding Knowledge Files
 Binding knowledge is contained only within:
-- this instruction set (as loaded via instructions_bootloader.md)
+- this instruction set (this file)
 
 ## Binding Knowledge Files / Bundles (Explicit List)
 
 ### Binding Knowledge Carriers (runtime-provided; source of truth)
-The following files and bundles are the **only runtime-provided binding knowledge sources**.
+The following files are the **only runtime-provided binding knowledge sources**.
 All binding authority applies to the contents inside these sources.
 
 - JSON Schemas (copied files)
@@ -112,14 +108,21 @@ All binding authority applies to the contents inside these sources.
   - `block_feed_forward.schema.json`
   - `artefact_meta.schema.json`
   - `artefact_envelope.schema.json`
-- `contract_specs_bundle.md`
-  - Contains binding derivation/mapping specs, contracts, and the data-confidence model
+- Contracts and specs (standalone files)
+  - `meso__micro_contract.md`
+  - `micro__builder_contract.md`
+  - `agenda_enum_spec.md`
+  - `load_estimation_spec.md`
+  - `macro_cycle_enum_spec.md`
+  - `intervals_workout_ebnf.md`
+  - `workout_syntax_and_validation.md`
+  - `workout_policy.md`
+  - `file_naming_spec.md`
+  - `traceability_spec.md`
 
-### Bundle Markers (parsing)
-- `## === BEGIN: <filename> ===`
-- `## === END: <filename> ===`
-- Parse only between matching BEGIN/END markers.
-- JSON schema files are standalone; read them in full.
+### Parsing Rules
+Specs are standalone files. Read each required spec/contract in full.
+JSON schema files are standalone; read them in full.
 
 ## Binding Resolver Map (HARD RULE)
 
@@ -133,18 +136,18 @@ other instruction layers is forbidden.
 
 ### Workout Text – Formal Grammar & Allowed Tokens
 - Formal grammar authority: IntervalsWorkoutEBNF
-  - Location: contract_specs_bundle.md
+  - Location: intervals_workout_ebnf.md
   - Source file: intervals_workout_ebnf.md
 
 ### Workout Text – Project Subset (Restrictions ONLY)
 - Subset authority: WorkoutSyntaxAndValidation
-  - Location: contract_specs_bundle.md
+  - Location: workout_syntax_and_validation.md
   - Source file: workout_syntax_and_validation.md
 - Rule: This specification MAY only restrict the EBNF and MUST never extend it.
 
 ### Workout Construction Policy (Design Guardrails)
 - Policy authority: WorkoutPolicy
-  - Location: contract_specs_bundle.md
+  - Location: workout_policy.md
   - Source file: workout_policy.md
 
 ### Bootloader Constraint
@@ -154,30 +157,12 @@ The bootloader MUST NOT:
 - re-define, duplicate, or narrow WORKOUTS_PLAN template/interface rules
 - re-define step-line grammar (targets/durations/cadence/ramp/etc.)
 
-### Runtime-Provided Informational Bundles (allowed, non-binding)
+### Runtime-Provided Informational Sources (allowed, non-binding)
 
-The runtime MAY also provide additional bundles marked as Authority: Informational.
-These bundles are discoverable at runtime and may be referenced ONLY when explicitly
-permitted by binding rules. They MUST NOT create authority, define decisions,
-override governance, or introduce new constraints.
-
-- `principles_bundle.md`
-  - Contains non-prescriptive planning principles and guardrails
-  - Provides conceptual framing (e.g. durability-first, kJ-first hierarchy)
-  - Does NOT define numeric thresholds, decision gates, or execution rules
-  - Decision authority remains exclusively with governance artefacts and KPI profiles
-
-- `evidence_and_traceability_bundle.md`
-  - Contains evidence usage rules and traceability-related reference specifications
-  - Defines how scientific literature, practitioner knowledge, and observations
-    may be cited for explanation and rationale only
-  - Explicitly forbids using evidence to justify, trigger, or override decisions
-
-- `sources_and_references_bundle.md`
-  - Contains curated reference lists (scientific literature, practitioner sources,
-    podcasts, tools, and research backlogs)
-  - Serves as a reference index for background understanding and explanation only
-  - Does NOT define rules, principles, thresholds, or decision logic
+The runtime MAY also provide additional informational sources.
+These sources may be referenced ONLY when explicitly permitted by binding rules.
+They MUST NOT create authority, define decisions, override governance, or introduce
+new constraints.
 
 ## Forbidden Knowledge (if present)
 External references, documents, heuristics, or assumptions are forbidden.
@@ -587,9 +572,9 @@ No additional structural rules are allowed here if they duplicate or constrain t
 
 ### D) Workout Syntax Authority (Binding)
 All workout text inside `workout_text` MUST be:
-- EBNF-conformant per `IntervalsWorkoutEBNF` (Specification-ID; Binding; `contract_specs_bundle.md`), AND
-- restricted by the project subset per `WorkoutSyntaxAndValidation` (Specification-ID; Binding; `contract_specs_bundle.md`), AND
-- adhere to `WorkoutPolicy` (Specification-ID; Binding; `contract_specs_bundle.md`).
+- EBNF-conformant per `IntervalsWorkoutEBNF` (Binding; `intervals_workout_ebnf.md`), AND
+- restricted by the project subset per `WorkoutSyntaxAndValidation` (Binding; `workout_syntax_and_validation.md`), AND
+- adhere to `WorkoutPolicy` (Binding; `workout_policy.md`).
 
 No additional ad-hoc step-line format constraints may be introduced here.
 In particular, ramp targets and forbidden tokens are governed exclusively by `IntervalsWorkoutEBNF` and `WorkoutSyntaxAndValidation`.

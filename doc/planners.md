@@ -155,6 +155,28 @@ PYTHONPATH=src python3 -m app.main plan-week \
   --run-id run_2026_06
 ```
 
+### CLI: Macro Mode A (two-step)
+
+Scenarios first (pre-decision), then the selected scenario:
+
+```bash
+python3 scripts/macro_mode_a.py scenarios \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_scenarios_2026_w06
+```
+
+```bash
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
+  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06
+```
+
+By default, scenarios are written to `.cache/macro_scenarios/<run-id>.md`.
+
 ### CLI: Single agent
 
 ```bash

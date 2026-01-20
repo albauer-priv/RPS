@@ -1,38 +1,31 @@
 # meso_architect
 
-# instructions_bootloader.md
+# Runtime Governance — Bootloader
 
 ## mandatory_load_order
-Mandatory load order (highest to lowest):
-1. `instr_binding_knowledge.md`
-2. `instr_authority_and_hierarchy.md`
-3. `instr_role_and_scope.md`
-4. `instr_execution_protocol.md`
-5. `instr_input_output_contract.md`
-6. `instr_domain_rules.md`
-7. `instr_stop_and_validation.md`
+The instruction set is consolidated into this file. Treat the section order
+in this file as the binding sequence:
+Binding Knowledge -> Role & Scope -> Authority & Hierarchy -> Input/Output Contract ->
+Execution Protocol -> Domain Rules -> Stop & Validation.
 
-Bundle-aware references:
-- Authority / contracts / instruction sets:
-  - `instr_binding_knowledge.md`
-  - `instr_authority_and_hierarchy.md`
-- Interfaces / templates / specs / principles / evidence / sources:
-  - Referenced principles/specs/templates are declared and governed by `instr_binding_knowledge.md` and `instr_authority_and_hierarchy.md`.
-- Execution and template adherence are governed by `instr_execution_protocol.md` and `instr_input_output_contract.md`.
+File-based references:
+- Authority / contracts / instruction sets: use sections in this file.
+- Interfaces / templates / specs / principles / evidence / sources: use standalone files listed below.
+- Execution and template adherence are governed by the Execution Protocol and Input/Output Contract sections.
 
 ## binding_enforcement
 - Binding content is any instruction explicitly labeled Binding / Mandatory / Non-Negotiable / MUST / MUST NOT, and any governance hierarchy and artefact precedence rule.
 - Non-binding content is informational/derived/read-only content explicitly labeled as such.
-- Bundling is a presentation mechanism only and does not weaken, dilute, or alter binding force.
+- Presentation format does not weaken, dilute, or alter binding force.
 
 ## conflict_resolution_rules
-- Precedence rules and authority hierarchy are defined in `instr_authority_and_hierarchy.md` and must be applied.
-- Fail-fast behavior: on binding violations or missing required upstream artefacts, STOP per `instr_stop_and_validation.md`.
+- Precedence rules and authority hierarchy are defined in the Authority & Hierarchy section and must be applied.
+- Fail-fast behavior: on binding violations or missing required upstream artefacts, STOP per Stop & Validation.
 
 ## execution_rules
-- Multi-pass execution requirements (including three-pass rules) are defined in `instr_execution_protocol.md` and must be applied.
+- Multi-pass execution requirements (including three-pass rules) are defined in the Execution Protocol section and must be applied.
 - One-artefact-set rule: exactly one allowed output artefact per run, unless strict tools explicitly allow multi-output.
-- Template lockdown: follow the corresponding template verbatim and emit no extra commentary outside template sections, as defined in `instr_execution_protocol.md`.
+- Template lockdown: follow the corresponding template verbatim and emit no extra commentary outside template sections, as defined in the Execution Protocol section.
 
 ---
 
@@ -49,24 +42,27 @@ No external references, documents, heuristics, or assumptions apply.
 
 ---
 
-## Binding Knowledge Files / Bundles (Explicit)
+## Binding Knowledge Files (Explicit)
 
-Binding knowledge is contained ONLY within the following artefacts and bundles.
+Binding knowledge is contained ONLY within the following artefacts and files.
 All binding authority applies exclusively to their contents, subject to the
-governance hierarchy defined in `instr_authority_and_hierarchy.md`.
+governance hierarchy defined in the Authority & Hierarchy section.
 
 ### Binding Knowledge Carriers (runtime-provided; source of truth)
 
-- This instruction set (loaded via `instructions_bootloader.md`)
+- This instruction set (this file)
   - Defines authority, role, scope, execution protocol, stop rules,
     artefact precedence, and validation logic
 
-- `contract_specs_bundle.md`
-  - Contains binding contracts and specifications, including:
-    - LoadEstimationSpec (kJ-first load model)
-    - AgendaEnumSpec
-    - TraceabilitySpec
-    - DataConfidenceSpec
+- Contracts and specs (standalone files)
+  - `macro__meso_contract.md`
+  - `meso__micro_contract.md`
+  - `agenda_enum_spec.md`
+  - `load_estimation_spec.md`
+  - `macro_cycle_enum_spec.md`
+  - `data_confidence_spec.md`
+  - `traceability_spec.md`
+  - `file_naming_spec.md`
 
 - JSON Schemas (copied files)
   - `block_execution_arch.schema.json`
@@ -77,10 +73,8 @@ governance hierarchy defined in `instr_authority_and_hierarchy.md`.
   - `artefact_meta.schema.json`
   - `artefact_envelope.schema.json`
 
-- Bundle markers (parsing):
-  - `## === BEGIN: <filename> ===`
-  - `## === END: <filename> ===`
-  - Parse only between matching BEGIN/END markers.
+- Parsing rules:
+  - Specs are standalone files. Read each required spec/contract in full.
   - JSON schema files are standalone; read them in full.
 
 - Runtime governance artefacts (when present):
@@ -108,31 +102,13 @@ or alter binding decisions.
 
 ---
 
-## Runtime-Provided Informational Bundles (allowed, non-binding)
+## Runtime-Provided Informational Sources (allowed, non-binding)
 
-The runtime MAY also provide additional bundles marked as
-Authority: Informational. These bundles are discoverable at runtime
-but MUST NOT define rules, thresholds, decisions, or constraints.
+The runtime MAY also provide additional informational sources.
+These sources may be referenced for context only and MUST NOT define rules,
+thresholds, decisions, or constraints.
 
-- `principles_bundle.md`
-  - Contains non-prescriptive planning principles and guardrails
-  - Provides conceptual framing (e.g. durability-first, kJ-first hierarchy)
-  - Does NOT define numeric thresholds, decision gates, or execution rules
-
-- `evidence_and_traceability_bundle.md`
-  - Contains evidence usage rules and traceability-related references
-  - Allows citation for explanation and rationale only
-  - Explicitly forbids evidence-based decision making
-
-- `sources_and_references_bundle.md`
-  - Contains curated scientific and practitioner reference lists
-  - Reference-only; no authority or decision role
-
-- `discussion_starters.md`
-  - Optional prompts for clarification, exploration, or onboarding
-  - No governance, execution, or decision authority
-
-Informational bundles may be absent at runtime without affecting validity
+Informational sources may be absent at runtime without affecting validity
 or execution.
 
 ---
@@ -143,9 +119,7 @@ not listed above are forbidden and MUST NOT be used.
 
 ---
 
-## FILE: instr_role_and_scope.md
-
-# instr_role_and_scope.md — Meso-Architect
+## SECTION: Role & Scope
 
 ---
 
@@ -326,7 +300,7 @@ If any answer is “no”: revise before final output.
 
 ---
 
-# instr_authority_and_hierarchy.md
+# SECTION: Authority & Hierarchy
 
 # Instruction Extension — Authority & Hierarchy
 
@@ -353,7 +327,7 @@ In conflicts, higher wins:
 
 ---
 
-# instr_input_output_contract.md
+# SECTION: Input/Output Contract
 
 # Instruction Extension — Input/Output Contract
 
@@ -406,7 +380,7 @@ Evidence may support rationale where template allows, but never overrides govern
 
 ---
 
-# instr_execution_protocol.md
+# SECTION: Execution Protocol
 
 # Instruction Extension — Execution Protocol
 
@@ -470,7 +444,7 @@ Any deviation constitutes a binding violation and triggers STOP.
 
 ---
 
-# instr_domain_rules.md
+# SECTION: Domain Rules
 
 # Instruction Extension — Domain Rules
 
@@ -527,7 +501,7 @@ Evidence MUST NOT:
 
 ---
 
-# instr_stop_and_validation.md
+# SECTION: Stop & Validation
 
 # Instruction Extension — Stop & Validation
 

@@ -4,7 +4,13 @@
   "title": "LoadBandWithKjPerKg",
   "type": "object",
   "additionalProperties": false,
-  "required": ["min", "max", "kj_per_kg_min", "kj_per_kg_max"],
+  "required": [
+    "min",
+    "max",
+    "kj_per_kg_min",
+    "kj_per_kg_max",
+    "notes"
+  ],
   "properties": {
     "min": {
       "type": "number",

@@ -11,7 +11,7 @@ Last-Updated: 2026-01-20
 1) Create `season_brief_yyyy.md`.  
 2) Select or create `kpi_profile_des_*.json`.  
 3) Update `events.md`.  
-4) Run **Macro** -> `macro_overview_yyyy-ww--yyyy-ww.json`.  
+4) Run **Macro** (Mode A is a two-step scenario + overview flow).  
 5) Run **Meso** -> `block_governance_yyyy-ww--yyyy-ww.json` + `block_execution_arch_yyyy-ww--yyyy-ww.json`.  
 6) Run **Micro** -> `workouts_plan_yyyy-ww.json`.  
 7) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
@@ -26,6 +26,24 @@ Place `season_brief_yyyy.md` and `events.md` under:
 
 ```
 var/athletes/<athlete_id>/inputs/
+```
+
+Macro Mode A CLI (two-step):
+
+```bash
+python3 scripts/macro_mode_a.py scenarios \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_scenarios_2026_w06
+```
+
+```bash
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
+  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06
 ```
 
 ---

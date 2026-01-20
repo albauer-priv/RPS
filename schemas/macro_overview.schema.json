@@ -2,35 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "macro_overview.schema.json",
   "title": "MacroOverview",
-  "allOf": [
-    {
-      "$ref": "artefact_envelope.schema.json"
-    },
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "MACRO_OVERVIEW"},
-            "schema_id": {"const": "MacroOverviewInterface"},
-            "schema_version": {"const": "1.0"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Macro-Planner"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week_range"
-          ]
-        },
-        "data": {
-          "$ref": "#/$defs/macro_overview_data"
-        }
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "macro_overview_data": {
       "type": "object",
@@ -56,7 +28,8 @@
             "season_brief_ref",
             "kpi_profile_ref",
             "reference_mass_window_kg",
-            "energetic_preload_references_kj_per_kg"
+            "energetic_preload_references_kj_per_kg",
+            "athlete_profile_ref"
           ],
           "properties": {
             "planning_horizon_weeks": {
@@ -81,7 +54,10 @@
             "energetic_preload_references_kj_per_kg": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["single_day", "back_to_back"],
+              "required": [
+                "single_day",
+                "back_to_back"
+              ],
               "properties": {
                 "single_day": {
                   "$ref": "number_range.schema.json"
@@ -109,7 +85,11 @@
             },
             "success_definition": {
               "type": "string",
-              "enum": ["event-focused", "durability-focused", "mixed"]
+              "enum": [
+                "event-focused",
+                "durability-focused",
+                "mixed"
+              ]
             },
             "non_negotiable_principles": {
               "type": "array",
@@ -141,7 +121,8 @@
           "additionalProperties": false,
           "required": [
             "availability_assumptions",
-            "risk_constraints"
+            "risk_constraints",
+            "planned_event_windows"
           ],
           "properties": {
             "availability_assumptions": {
@@ -271,7 +252,10 @@
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["principle", "influence"],
+                "required": [
+                  "principle",
+                  "influence"
+                ],
                 "properties": {
                   "principle": {
                     "type": "string",
@@ -299,7 +283,12 @@
                   "items": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["authors", "year", "title", "link"],
+                    "required": [
+                      "authors",
+                      "year",
+                      "title",
+                      "link"
+                    ],
                     "properties": {
                       "authors": {
                         "type": "string",
@@ -337,7 +326,6 @@
           "type": "array",
           "minItems": 6,
           "maxItems": 6,
-          "uniqueItems": true,
           "items": {
             "type": "string",
             "enum": [
@@ -367,17 +355,50 @@
             "header_includes_implements_iso_week_range_trace"
           ],
           "properties": {
-            "planning_horizon_is_at_least_8_weeks": {"const": true},
-            "every_phase_defines_weekly_kj_corridor": {"const": true},
-            "every_phase_includes_kj_per_kg_guardrails_and_reference_mass": {"const": true},
-            "every_phase_maps_to_cycle_and_deload_intent": {"const": true},
-            "every_phase_includes_narrative_and_metabolic_focus": {"const": true},
-            "every_phase_includes_evaluation_focus_and_exit_assumptions": {"const": true},
-            "season_load_envelope_and_assumptions_documented": {"const": true},
-            "principles_and_scientific_foundation_documented": {"const": true},
-            "allowed_forbidden_domains_listed": {"const": true},
-            "no_meso_or_micro_planning_content": {"const": true},
-            "header_includes_implements_iso_week_range_trace": {"const": true}
+            "planning_horizon_is_at_least_8_weeks": {
+              "const": true,
+              "type": "boolean"
+            },
+            "every_phase_defines_weekly_kj_corridor": {
+              "const": true,
+              "type": "boolean"
+            },
+            "every_phase_includes_kj_per_kg_guardrails_and_reference_mass": {
+              "const": true,
+              "type": "boolean"
+            },
+            "every_phase_maps_to_cycle_and_deload_intent": {
+              "const": true,
+              "type": "boolean"
+            },
+            "every_phase_includes_narrative_and_metabolic_focus": {
+              "const": true,
+              "type": "boolean"
+            },
+            "every_phase_includes_evaluation_focus_and_exit_assumptions": {
+              "const": true,
+              "type": "boolean"
+            },
+            "season_load_envelope_and_assumptions_documented": {
+              "const": true,
+              "type": "boolean"
+            },
+            "principles_and_scientific_foundation_documented": {
+              "const": true,
+              "type": "boolean"
+            },
+            "allowed_forbidden_domains_listed": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_meso_or_micro_planning_content": {
+              "const": true,
+              "type": "boolean"
+            },
+            "header_includes_implements_iso_week_range_trace": {
+              "const": true,
+              "type": "boolean"
+            }
           }
         }
       }
@@ -398,7 +419,8 @@
         "weekly_load_corridor",
         "allowed_forbidden_semantics",
         "structural_emphasis",
-        "events_constraints"
+        "events_constraints",
+        "deload_rationale"
       ],
       "properties": {
         "phase_id": {
@@ -417,7 +439,12 @@
         },
         "cycle": {
           "type": "string",
-          "enum": ["Base", "Build", "Peak", "Transition"]
+          "enum": [
+            "Base",
+            "Build",
+            "Peak",
+            "Transition"
+          ]
         },
         "deload": {
           "type": "boolean"
@@ -457,7 +484,10 @@
             "phase_goals": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["primary"],
+              "required": [
+                "primary",
+                "secondary"
+              ],
               "properties": {
                 "primary": {
                   "type": "string",
@@ -513,7 +543,10 @@
         "weekly_load_corridor": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["weekly_kj"],
+          "required": [
+            "weekly_kj",
+            "weekly_tss"
+          ],
           "properties": {
             "weekly_kj": {
               "$ref": "load_band_kj_per_kg.schema.json"
@@ -526,27 +559,40 @@
         "allowed_forbidden_semantics": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["allowed_intensity_domains", "allowed_load_modalities"],
+          "required": [
+            "allowed_intensity_domains",
+            "allowed_load_modalities",
+            "forbidden_intensity_domains"
+          ],
           "properties": {
             "allowed_intensity_domains": {
               "type": "array",
               "minItems": 1,
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/intensity_domain"
+              }
             },
             "allowed_load_modalities": {
               "type": "array",
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/load_modality"
+              }
             },
             "forbidden_intensity_domains": {
               "type": "array",
-              "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+              "items": {
+                "$ref": "agenda_enum.schema.json#/$defs/intensity_domain"
+              }
             }
           }
         },
         "structural_emphasis": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["typical_focus", "not_emphasized"],
+          "required": [
+            "typical_focus",
+            "not_emphasized"
+          ],
           "properties": {
             "typical_focus": {
               "type": "string",
@@ -563,7 +609,11 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["window", "type", "constraint"],
+            "required": [
+              "window",
+              "type",
+              "constraint"
+            ],
             "properties": {
               "window": {
                 "type": "string",
@@ -571,7 +621,11 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["A", "B", "C"]
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
               },
               "constraint": {
                 "type": "string",
@@ -580,31 +634,51 @@
             }
           }
         }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "deload": {"const": true}
-            }
-          },
-          "then": {
-            "required": ["deload_rationale"]
-          }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "MACRO_OVERVIEW",
+          "type": "string"
         },
-        {
-          "if": {
-            "properties": {
-              "deload": {"const": false}
-            }
-          },
-          "then": {
-            "not": {
-              "required": ["deload_rationale"]
-            }
-          }
+        "schema_id": {
+          "const": "MacroOverviewInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Macro-Planner",
+          "type": "string"
         }
-      ]
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week_range"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/macro_overview_data"
     }
   }
 }

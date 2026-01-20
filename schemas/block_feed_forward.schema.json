@@ -2,45 +2,31 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "block_feed_forward.schema.json",
   "title": "BlockFeedForward",
-  "allOf": [
-    {
-      "$ref": "artefact_envelope.schema.json"
-    },
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "BLOCK_FEED_FORWARD"},
-            "schema_id": {"const": "BlockFeedForwardInterface"},
-            "schema_version": {"const": "1.0"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Meso-Architect"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week_range"
-          ]
-        },
-        "data": {
-          "$ref": "#/$defs/block_feed_forward_data"
-        }
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "delta_band_entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["week", "band"],
+      "required": [
+        "week",
+        "band",
+        "rationale",
+        "notes"
+      ],
       "properties": {
-        "week": {"$ref": "iso_week.schema.json"},
-        "band": {"$ref": "load_band.schema.json"},
-        "rationale": {"type": "string", "minLength": 1},
-        "notes": {"type": "string"}
+        "week": {
+          "$ref": "iso_week.schema.json"
+        },
+        "band": {
+          "$ref": "load_band.schema.json"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "block_feed_forward_data": {
@@ -53,7 +39,8 @@
         "temporary_non_negotiables",
         "micro_planner_operating_rules",
         "explicit_forbidden_content",
-        "self_check"
+        "self_check",
+        "temporary_semantic_overrides"
       ],
       "properties": {
         "body_metadata": {
@@ -63,23 +50,39 @@
             "applies_to_weeks",
             "valid_until",
             "change_type",
-            "derived_from"
+            "derived_from",
+            "upstream_triggers"
           ],
           "properties": {
             "applies_to_weeks": {
               "type": "array",
               "minItems": 1,
-              "items": {"$ref": "iso_week.schema.json"}
+              "items": {
+                "$ref": "iso_week.schema.json"
+              }
             },
-            "valid_until": {"type": "string", "format": "date"},
+            "valid_until": {
+              "type": "string",
+              "format": "date"
+            },
             "change_type": {
               "type": "string",
-              "enum": ["NEW", "ADJUSTED", "NONE"]
+              "enum": [
+                "NEW",
+                "ADJUSTED",
+                "NONE"
+              ]
             },
-            "derived_from": {"type": "string", "minLength": 1},
+            "derived_from": {
+              "type": "string",
+              "minLength": 1
+            },
             "upstream_triggers": {
               "type": "array",
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
@@ -92,24 +95,40 @@
             "intent_of_adjustment"
           ],
           "properties": {
-            "trigger_summary": {"type": "string", "minLength": 1},
-            "observed_risk_deviation": {"type": "string", "minLength": 1},
-            "intent_of_adjustment": {"type": "string", "minLength": 1}
+            "trigger_summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "observed_risk_deviation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "intent_of_adjustment": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "delta_load_guardrails": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["adjusted_weekly_kj_bands"],
+          "required": [
+            "adjusted_weekly_kj_bands",
+            "adjusted_weekly_tss_bands"
+          ],
           "properties": {
             "adjusted_weekly_kj_bands": {
               "type": "array",
               "minItems": 1,
-              "items": {"$ref": "#/$defs/delta_band_entry"}
+              "items": {
+                "$ref": "#/$defs/delta_band_entry"
+              }
             },
             "adjusted_weekly_tss_bands": {
               "type": "array",
-              "items": {"$ref": "#/$defs/delta_band_entry"}
+              "items": {
+                "$ref": "#/$defs/delta_band_entry"
+              }
             }
           }
         },
@@ -123,13 +142,21 @@
               "properties": {
                 "newly_forbidden": {
                   "type": "array",
-                  "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+                  "items": {
+                    "$ref": "agenda_enum.schema.json#/$defs/intensity_domain"
+                  }
                 },
                 "newly_allowed": {
                   "type": "array",
-                  "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+                  "items": {
+                    "$ref": "agenda_enum.schema.json#/$defs/intensity_domain"
+                  }
                 }
-              }
+              },
+              "required": [
+                "newly_forbidden",
+                "newly_allowed"
+              ]
             },
             "load_modality": {
               "type": "object",
@@ -137,51 +164,84 @@
               "properties": {
                 "newly_forbidden": {
                   "type": "array",
-                  "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+                  "items": {
+                    "$ref": "agenda_enum.schema.json#/$defs/load_modality"
+                  }
                 },
                 "newly_allowed": {
                   "type": "array",
-                  "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+                  "items": {
+                    "$ref": "agenda_enum.schema.json#/$defs/load_modality"
+                  }
                 }
-              }
+              },
+              "required": [
+                "newly_forbidden",
+                "newly_allowed"
+              ]
             },
             "quality_density_override": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["max_quality_days_per_week"],
+              "required": [
+                "max_quality_days_per_week",
+                "additional_forbidden_patterns"
+              ],
               "properties": {
-                "max_quality_days_per_week": {"type": "integer", "minimum": 0},
+                "max_quality_days_per_week": {
+                  "type": "integer",
+                  "minimum": 0
+                },
                 "additional_forbidden_patterns": {
                   "type": "array",
-                  "items": {"type": "string", "minLength": 1}
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               }
             }
-          }
+          },
+          "required": [
+            "intensity_domain",
+            "load_modality",
+            "quality_density_override"
+          ]
         },
         "temporary_non_negotiables": {
           "type": "object",
           "additionalProperties": false,
           "required": [
             "recovery_protection_changes",
-            "anchor_protection_changes"
+            "anchor_protection_changes",
+            "explicit_expiry_condition"
           ],
           "properties": {
-            "recovery_protection_changes": {"type": "string", "minLength": 1},
-            "anchor_protection_changes": {"type": "string", "minLength": 1},
-            "explicit_expiry_condition": {"type": "string"}
+            "recovery_protection_changes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "anchor_protection_changes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "explicit_expiry_condition": {
+              "type": "string"
+            }
           }
         },
         "micro_planner_operating_rules": {
           "type": "array",
           "minItems": 1,
-          "items": {"type": "string", "minLength": 1}
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "explicit_forbidden_content": {
           "type": "array",
           "minItems": 4,
           "maxItems": 4,
-          "uniqueItems": true,
           "items": {
             "type": "string",
             "enum": [
@@ -202,13 +262,69 @@
             "no_micro_content_present"
           ],
           "properties": {
-            "applies_to_weeks_specified": {"const": true},
-            "valid_until_defined": {"const": true},
-            "only_deltas_vs_baseline_included": {"const": true},
-            "no_micro_content_present": {"const": true}
+            "applies_to_weeks_specified": {
+              "const": true,
+              "type": "boolean"
+            },
+            "valid_until_defined": {
+              "const": true,
+              "type": "boolean"
+            },
+            "only_deltas_vs_baseline_included": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_micro_content_present": {
+              "const": true,
+              "type": "boolean"
+            }
           }
         }
       }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "BLOCK_FEED_FORWARD",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "BlockFeedForwardInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Meso-Architect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week_range"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/block_feed_forward_data"
     }
   }
 }

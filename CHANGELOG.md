@@ -14,11 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `knowledge/_shared/sources/schemas/bundled/`.
 - Vector store smoke test script: `scripts/smoke_vectorstores.py`.
 - Build checklist and recommended model guidance docs.
+- Mode A macro helper script for scenarios + macro overview (`scripts/macro_mode_a.py`).
 
 ### Changed
 - Force `file_search` by default in agent runs; add `--no-file-search` to disable.
 - Shared knowledge manifests now reference bundled schemas; rendered KPI sidecars removed.
 - Schema bundler handles `jsonref` serialization for bundled outputs.
+- Agent prompts now treat instructions as a single file with section-based guidance; removed bundle/BEGIN/END marker references.
+- JSON schemas normalized for strict tool compatibility (explicit types/required, flattened `allOf`, removed unsupported constraints).
+- Version key derivation now supports string-based `iso_week` and `iso_week_range` metadata.
+- Docs and README now document the two-step Macro Mode A workflow.
+- Model guidance notes include Macro Mode A scenario token-throughput tip.
 
 ### Removed
 - Legacy schema copies under `knowledge/_shared/sources/schemas/` (replaced by bundled variants).

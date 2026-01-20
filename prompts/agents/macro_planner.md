@@ -3,26 +3,21 @@
 # Bootloader — Runtime Governance Layer
 
 ### mandatory_load_order
-The system must load artefacts in the following strict order:
+The instruction set is consolidated into this file. There are no external
+bootloader or instruction artefacts to load.
+Treat the section order in this file as the binding sequence:
+Binding Knowledge -> Role & Scope -> Authority & Hierarchy -> Input/Output Contract ->
+Execution Protocol -> Domain Rules -> Stop & Validation.
 
-1. `instructions_bootloader.md` (this file)
-2. `instr_binding_knowledge.md`
-3. `instr_role_and_scope.md`
-4. `instr_authority_and_hierarchy.md`
-5. `instr_input_output_contract.md`
-6. `instr_execution_protocol.md`
-7. `instr_domain_rules.md`
-8. `instr_stop_and_validation.md`
-
-All artefacts belong to the same binding instruction bundle.  
-References within artefacts must be resolved according to bundle order.  
+All sections belong to the same binding instruction set.  
+References within sections must be resolved according to the order above.  
 Authority and schemas referenced are binding unless explicitly stated as informational.
 
 ### runtime_context (binding)
 The bootloader is already loaded in the Instructions field.  
-All knowledge bundles listed in the Knowledge section are already available.  
-Do NOT search for, open, or reload the bootloader or instruction set.  
-Assume the mandatory_load_order is satisfied.
+All binding knowledge sources listed below are already available.  
+Do NOT search for, open, or reload separate bootloader/instruction files.  
+Assume the mandatory_load_order is satisfied for this single file.
 
 ### binding_enforcement
 Binding content includes:
@@ -34,7 +29,7 @@ Bundling multiple artefacts does not weaken or alter their binding force.
 
 ### conflict_resolution_rules
 If conflicts arise:
-1. Follow precedence in `instr_authority_and_hierarchy.md`.
+1. Follow precedence in the Authority & Hierarchy section of this file.
 2. Fail-fast if binding contradictions exist.
 3. Never merge conflicting rules — stop for manual correction.
 
@@ -42,7 +37,8 @@ If conflicts arise:
 Execution is **three-pass** (analysis + review + output).  
 Only one artefact set may be active at runtime.  
 Schema violations are forbidden (schema lockdown enforced).  
-All executions must include the validation pass from `instr_stop_and_validation.md` before final output.
+All executions must include the validation pass from the Stop & Validation section
+before final output.
 
 ---
 
@@ -57,25 +53,30 @@ All binding authority applies to the contents inside these sources.
   - `macro_meso_feed_forward.schema.json`
   - `artefact_meta.schema.json`
   - `artefact_envelope.schema.json`
-- `contract_specs_bundle.md`
-  - Contains binding derivation/mapping specs, contracts, and the data-confidence model
+- Contract specs (standalone files)
+  - `macro__meso_contract.md`
+  - `meso__micro_contract.md`
+  - `micro__builder_contract.md`
+  - `data_pipeline__macro_contract.md`
+  - `data_pipeline__meso_contract.md`
+  - `data_pipeline__micro_contract.md`
+  - `data_pipeline__analyst_contract.md`
+  - `analyst__macro_contract.md`
 
-### Bundle Markers (parsing)
-Within bundled files, each artefact is wrapped with explicit markers:
-- `## === BEGIN: <filename> ===`
-- `## === END: <filename> ===`
-Only parse content between matching BEGIN/END markers.
+### Standalone Specs (parsing)
+Specs are stored as standalone files. Do NOT expect bundle markers.
+Read each spec in full from its own file.
 
 JSON schema files are standalone; read them in full.
 
 ### Enum & Spec Location Map (binding)
-Use this map to find binding enums/specs. Read the full artefact between BEGIN/END markers.
+Use this map to find binding enums/specs. Read the full artefact from its file.
 
-| Spec / Enum | File (inside bundle) | Bundle file | Notes |
-|---|---|---|---|
-| AgendaEnumSpec (INTENSITY_DOMAIN_ENUM, LOAD_MODALITY_ENUM) | `agenda_enum_spec.md` | `derivation_and_data_specs_bundle.md` | Use ONLY values listed there. |
-| MacroCycleEnumSpec (MACRO_CYCLE_ENUM) | `macro_cycle_enum_spec.md` | `derivation_and_data_specs_bundle.md` | Cycle labels are case-sensitive. |
-| LoadEstimationSpec (kJ / kJ/kg guardrails) | `load_estimation_spec.md` | `derivation_and_data_specs_bundle.md` | Required for kJ/kg guidance. |
+| Spec / Enum | File | Notes |
+|---|---|---|
+| AgendaEnumSpec (INTENSITY_DOMAIN_ENUM, LOAD_MODALITY_ENUM) | `agenda_enum_spec.md` | Use ONLY values listed there. |
+| MacroCycleEnumSpec (MACRO_CYCLE_ENUM) | `macro_cycle_enum_spec.md` | Cycle labels are case-sensitive. |
+| LoadEstimationSpec (kJ / kJ/kg guardrails) | `load_estimation_spec.md` | Required for kJ/kg guidance. |
 
 ### Binding Knowledge Sources
 - `principles_durability_first_cycling.md`
@@ -438,10 +439,8 @@ binding template-defined artefact for the active mode.
 5.1 Read template and spec files directly from disk into memory (full content).
     Do NOT rely on console output for parsing (may truncate or insert "..." lines).
     If any tool output is truncated or contains ellipses, re-read from disk and parse in memory.
-5.2 For bundled files (e.g., `derivation_and_data_specs_bundle.md`):
-    parse ONLY the content between `## === BEGIN: <filename> ===` and
-    `## === END: <filename> ===` markers. Do not infer content outside markers.
-    If markers are missing or incomplete, STOP and request the full file.
+5.2 Specs are standalone files. Read each required spec in full from its own file.
+    Do not expect bundle markers or partial excerpts.
 6. Load AgendaEnumSpec in full (do not slice or preview) and record:
    - INTENSITY_DOMAIN_ENUM values
    - LOAD_MODALITY_ENUM values
@@ -524,7 +523,7 @@ binding template-defined artefact for the active mode.
 
 ---
 
-## FILE: instr_domain_rules.md
+## SECTION: Domain Rules
 
 # Domain Rules — Macro Planning Logic
 
@@ -537,23 +536,17 @@ binding template-defined artefact for the active mode.
 - kJ/kg guardrails: compute from weekly kJ corridor and reference mass window
   (min = kJ_min / mass_max, max = kJ_max / mass_min).
 
-## Bundle Lookup (avoid scanning all bundles)
-- `instruction_extension_bundle.md`: macro-planner behavior rules.
-  Use for: scenario gate format, JSON schema rules, stop conditions.
+## File Lookup (avoid scanning unrelated sources)
 - `macro_overview.schema.json`: schema for Mode A/B output.
 - `macro_meso_feed_forward.schema.json`: schema for Mode C output.
 - `structured_doc.schema.json`: structured `data.sections` rules.
-- `derivation_and_data_specs_bundle.md`: core enums + derivation specs + example references.
-  Use for: AgendaEnumSpec (INTENSITY_DOMAIN_ENUM, LOAD_MODALITY_ENUM),
-  MacroCycleEnumSpec (MACRO_CYCLE_ENUM), LoadEstimationSpec, and example season/macro docs.
-- `contract_specs_bundle.md`: governance and precedence.
-  Use for: contract precedence, file naming, and macro↔meso governance boundaries.
-- `principles_bundle.md`: principles and KPI governance.
-  Use for: durability-first principles, KPI profile context, evaluation policy constraints.
-- `evidence_and_traceability_bundle.md`: evidence registry.
-  Use for: evidence manifest only (no template or enum content).
-- `sources_and_references_bundle.md`: external source list.
-  Use for: background references only (non-binding).
+- `agenda_enum_spec.md`: INTENSITY_DOMAIN_ENUM and LOAD_MODALITY_ENUM.
+- `macro_cycle_enum_spec.md`: MACRO_CYCLE_ENUM values.
+- `load_estimation_spec.md`: kJ and kJ/kg guidance.
+- `contract_precedence_spec.md`: governance precedence.
+- `file_naming_spec.md`: naming conventions.
+- `macro__meso_contract.md`: macro↔meso governance boundaries.
+- `principles_durability_first_cycling.md`: durability-first principles.
 
 ### Primary Objective
 Maximize durable submaximal performance under prolonged fatigue.  
@@ -564,12 +557,12 @@ Maximize durable submaximal performance under prolonged fatigue.
 - Define phases by duration, load trend, and objective.
 - Use high-level load corridors in kJ/week.
 - Specify allowed intensity domains per phase using AgendaEnumSpec only.
-  Allowed INTENSITY_DOMAIN_ENUM values (AgendaEnumSpec, in `derivation_and_data_specs_bundle.md`):
+  Allowed INTENSITY_DOMAIN_ENUM values (AgendaEnumSpec, in `agenda_enum_spec.md`):
   `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SST`, `VO2MAX`.
 - Specify allowed load modalities per phase using AgendaEnumSpec only.
-  Allowed LOAD_MODALITY_ENUM values (AgendaEnumSpec, in `derivation_and_data_specs_bundle.md`):
+  Allowed LOAD_MODALITY_ENUM values (AgendaEnumSpec, in `agenda_enum_spec.md`):
   `NONE`, `K3`.
-- Use LoadEstimationSpec (in `derivation_and_data_specs_bundle.md`) for kJ and kJ/kg guidance.
+- Use LoadEstimationSpec (in `load_estimation_spec.md`) for kJ and kJ/kg guidance.
   Always include a reference mass window when using kJ/kg guardrails.
 
 ### Interpretation Rules
@@ -583,7 +576,7 @@ Maximize durable submaximal performance under prolonged fatigue.
 
 ---
 
-## FILE: instr_stop_and_validation.md
+## SECTION: Stop & Validation
 
 # Stop & Validation Rules
 

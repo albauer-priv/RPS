@@ -192,6 +192,28 @@ PYTHONPATH=src python -m app.main plan-week \\
 If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
 Use `--no-file-search` to disable forced vector store retrieval.
 
+## Macro Mode A (two-step)
+
+Generate scenarios first, then pick A/B/C for the macro overview:
+
+```bash
+python3 scripts/macro_mode_a.py scenarios \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_scenarios_2026_w06
+```
+
+```bash
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
+  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06
+```
+
+Scenarios are written to `.cache/macro_scenarios/<run-id>.md` by default.
+
 ## Notes
 
 - Vector stores are remote state; this repo only keeps sources + manifests.

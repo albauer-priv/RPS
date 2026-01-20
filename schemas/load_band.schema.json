@@ -4,7 +4,11 @@
   "title": "LoadBand",
   "type": "object",
   "additionalProperties": false,
-  "required": ["min", "max"],
+  "required": [
+    "min",
+    "max",
+    "notes"
+  ],
   "properties": {
     "min": {
       "type": "number",

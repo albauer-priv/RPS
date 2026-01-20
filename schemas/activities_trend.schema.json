@@ -2,34 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "activities_trend.schema.json",
   "title": "ActivitiesTrend",
-  "allOf": [
-    {"$ref": "artefact_envelope.schema.json"},
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "ACTIVITIES_TREND"},
-            "schema_id": {"const": "ActivitiesTrendInterface"},
-            "schema_version": {"const": "1.0"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Data-Pipeline"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week"
-          ]
-        },
-        "data": {"$ref": "#/$defs/activities_trend_data"}
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
     "duration_hm": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "pattern": "^\\d{1,3}:\\d{2}(:\\d{2})?$"
     },
     "duration_hms": {
@@ -37,44 +16,64 @@
       "pattern": "^\\d{2}:\\d{2}:\\d{2}$"
     },
     "nullable_duration_hms": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "pattern": "^\\d{2}:\\d{2}:\\d{2}$"
     },
     "activities_trend_data": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["weekly_trends"],
+      "required": [
+        "weekly_trends",
+        "notes"
+      ],
       "properties": {
         "weekly_trends": {
           "type": "array",
           "minItems": 1,
-          "items": {"$ref": "#/$defs/weekly_trend"}
+          "items": {
+            "$ref": "#/$defs/weekly_trend"
+          }
         },
-        "notes": {"type": "string"}
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "weekly_trend": {
       "type": "object",
       "additionalProperties": false,
-        "required": [
-          "year",
-          "iso_week",
-          "period",
-          "weekly_aggregates",
-          "intensity_load_metrics",
-          "power_tiz",
-          "hr_tiz",
-          "optional_tiz",
-          "distribution_metrics",
-          "peak_metrics",
-          "flag_counts",
-          "flag_any",
-          "metrics"
-        ],
+      "required": [
+        "year",
+        "iso_week",
+        "period",
+        "weekly_aggregates",
+        "intensity_load_metrics",
+        "power_tiz",
+        "hr_tiz",
+        "optional_tiz",
+        "distribution_metrics",
+        "peak_metrics",
+        "flag_counts",
+        "flag_any",
+        "metrics"
+      ],
       "properties": {
-        "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
-        "iso_week": {"type": "integer", "minimum": 1, "maximum": 53},
-        "period": {"$ref": "date_range.schema.json"},
+        "year": {
+          "type": "integer",
+          "minimum": 2000,
+          "maximum": 2100
+        },
+        "iso_week": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 53
+        },
+        "period": {
+          "$ref": "date_range.schema.json"
+        },
         "weekly_aggregates": {
           "type": "object",
           "additionalProperties": false,
@@ -86,11 +85,37 @@
             "work_kj"
           ],
           "properties": {
-            "activity_count": {"type": ["integer", "null"], "minimum": 0},
-            "moving_time": {"$ref": "#/$defs/duration_hm"},
-            "distance_km": {"type": ["number", "null"], "minimum": 0},
-            "load_tss": {"type": ["number", "null"], "minimum": 0},
-            "work_kj": {"type": ["number", "null"], "minimum": 0}
+            "activity_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "moving_time": {
+              "$ref": "#/$defs/duration_hm"
+            },
+            "distance_km": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "load_tss": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "work_kj": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            }
           }
         },
         "intensity_load_metrics": {
@@ -107,14 +132,57 @@
             "vo2_ftp"
           ],
           "properties": {
-            "normalized_power_w": {"type": ["number", "null"], "minimum": 0},
-            "intensity_factor": {"type": ["number", "null"], "minimum": 0},
-            "decoupling_percent": {"type": ["number", "null"]},
-            "durability_index": {"type": ["number", "null"]},
-            "efficiency_factor": {"type": ["number", "null"]},
-            "functional_intensity_ratio": {"type": ["number", "null"]},
-            "ftp_estimated_w": {"type": ["number", "null"], "minimum": 0},
-            "vo2_ftp": {"type": ["number", "null"]}
+            "normalized_power_w": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "intensity_factor": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "decoupling_percent": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "durability_index": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "efficiency_factor": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "functional_intensity_ratio": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ftp_estimated_w": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "vo2_ftp": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
           }
         },
         "power_tiz": {
@@ -130,13 +198,27 @@
             "z7"
           ],
           "properties": {
-            "z1": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z2": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z3": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z4": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z5": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z6": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z7": {"$ref": "#/$defs/nullable_duration_hms"}
+            "z1": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z2": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z3": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z4": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z5": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z6": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z7": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            }
           }
         },
         "hr_tiz": {
@@ -152,13 +234,27 @@
             "z7"
           ],
           "properties": {
-            "z1": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z2": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z3": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z4": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z5": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z6": {"$ref": "#/$defs/nullable_duration_hms"},
-            "z7": {"$ref": "#/$defs/nullable_duration_hms"}
+            "z1": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z2": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z3": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z4": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z5": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z6": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "z7": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            }
           }
         },
         "optional_tiz": {
@@ -171,10 +267,18 @@
             "vo2max_tiz_efficiency"
           ],
           "properties": {
-            "sweet_spot": {"$ref": "#/$defs/nullable_duration_hms"},
-            "vo2max_power": {"$ref": "#/$defs/nullable_duration_hms"},
-            "vo2max_hr": {"$ref": "#/$defs/nullable_duration_hms"},
-            "vo2max_tiz_efficiency": {"$ref": "#/$defs/nullable_duration_hms"}
+            "sweet_spot": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "vo2max_power": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "vo2max_hr": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            },
+            "vo2max_tiz_efficiency": {
+              "$ref": "#/$defs/nullable_duration_hms"
+            }
           }
         },
         "distribution_metrics": {
@@ -188,11 +292,37 @@
             "back_to_back_z2_days_count"
           ],
           "properties": {
-            "z1_z2_time_percent": {"type": ["number", "null"]},
-            "z5_time_percent": {"type": ["number", "null"]},
-            "z2_share_power_percent": {"type": ["number", "null"]},
-            "adherence_percent": {"type": ["number", "null"]},
-            "back_to_back_z2_days_count": {"type": ["integer", "null"], "minimum": 0}
+            "z1_z2_time_percent": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "z5_time_percent": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "z2_share_power_percent": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "adherence_percent": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "back_to_back_z2_days_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
           }
         },
         "peak_metrics": {
@@ -215,20 +345,90 @@
             "mmp_21600s"
           ],
           "properties": {
-            "mmp_60s": {"type": ["number", "null"]},
-            "mmp_180s": {"type": ["number", "null"]},
-            "mmp_300s": {"type": ["number", "null"]},
-            "mmp_600s": {"type": ["number", "null"]},
-            "mmp_1200s": {"type": ["number", "null"]},
-            "mmp_1800s": {"type": ["number", "null"]},
-            "mmp_3600s": {"type": ["number", "null"]},
-            "mmp_5400s": {"type": ["number", "null"]},
-            "mmp_7200s": {"type": ["number", "null"]},
-            "mmp_9000s": {"type": ["number", "null"]},
-            "mmp_10800s": {"type": ["number", "null"]},
-            "mmp_14400s": {"type": ["number", "null"]},
-            "mmp_18000s": {"type": ["number", "null"]},
-            "mmp_21600s": {"type": ["number", "null"]}
+            "mmp_60s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_180s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_300s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_600s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_1200s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_1800s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_3600s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_5400s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_7200s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_9000s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_10800s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_14400s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_18000s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mmp_21600s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
           }
         },
         "flag_counts": {
@@ -248,17 +448,83 @@
             "brevet_long_candidate"
           ],
           "properties": {
-            "long_ride_150min": {"type": ["integer", "null"], "minimum": 0},
-            "long_ride_180min": {"type": ["integer", "null"], "minimum": 0},
-            "long_ride_240min": {"type": ["integer", "null"], "minimum": 0},
-            "if_at_or_below_0_75": {"type": ["integer", "null"], "minimum": 0},
-            "if_at_or_below_0_80": {"type": ["integer", "null"], "minimum": 0},
-            "z2_share_at_or_above_60": {"type": ["integer", "null"], "minimum": 0},
-            "z2_share_at_or_above_70": {"type": ["integer", "null"], "minimum": 0},
-            "drift_valid_z2_90min": {"type": ["integer", "null"], "minimum": 0},
-            "des_long_base_candidate": {"type": ["integer", "null"], "minimum": 0},
-            "des_long_build_candidate": {"type": ["integer", "null"], "minimum": 0},
-            "brevet_long_candidate": {"type": ["integer", "null"], "minimum": 0}
+            "long_ride_150min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "long_ride_180min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "long_ride_240min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "if_at_or_below_0_75": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "if_at_or_below_0_80": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "z2_share_at_or_above_60": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "z2_share_at_or_above_70": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "drift_valid_z2_90min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "des_long_base_candidate": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "des_long_build_candidate": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "brevet_long_candidate": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
           }
         },
         "flag_any": {
@@ -278,17 +544,72 @@
             "brevet_long_candidate"
           ],
           "properties": {
-            "long_ride_150min": {"type": ["boolean", "null"]},
-            "long_ride_180min": {"type": ["boolean", "null"]},
-            "long_ride_240min": {"type": ["boolean", "null"]},
-            "if_at_or_below_0_75": {"type": ["boolean", "null"]},
-            "if_at_or_below_0_80": {"type": ["boolean", "null"]},
-            "z2_share_at_or_above_60": {"type": ["boolean", "null"]},
-            "z2_share_at_or_above_70": {"type": ["boolean", "null"]},
-            "drift_valid_z2_90min": {"type": ["boolean", "null"]},
-            "des_long_base_candidate": {"type": ["boolean", "null"]},
-            "des_long_build_candidate": {"type": ["boolean", "null"]},
-            "brevet_long_candidate": {"type": ["boolean", "null"]}
+            "long_ride_150min": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "long_ride_180min": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "long_ride_240min": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "if_at_or_below_0_75": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "if_at_or_below_0_80": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "z2_share_at_or_above_60": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "z2_share_at_or_above_70": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "drift_valid_z2_90min": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "des_long_base_candidate": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "des_long_build_candidate": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "brevet_long_candidate": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
           }
         },
         "metrics": {
@@ -313,25 +634,163 @@
             "weekly_z2_time_des_build_sum_min"
           ],
           "properties": {
-            "tsb_today": {"type": ["number", "null"]},
-            "weekly_moving_time_total_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_total_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_share": {"type": ["number", "null"]},
-            "weekly_moving_time_max_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_max_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_moving_time_150min_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_moving_time_180min_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_moving_time_240min_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_150min_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_180min_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_240min_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_moving_time_des_base_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_moving_time_des_build_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_des_base_sum_min": {"type": ["integer", "null"], "minimum": 0},
-            "weekly_z2_time_des_build_sum_min": {"type": ["integer", "null"], "minimum": 0}
+            "tsb_today": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "weekly_moving_time_total_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_total_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_share": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "weekly_moving_time_max_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_max_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_moving_time_150min_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_moving_time_180min_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_moving_time_240min_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_150min_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_180min_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_240min_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_moving_time_des_base_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_moving_time_des_build_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_des_base_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weekly_z2_time_des_build_sum_min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
           }
         }
       }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "ACTIVITIES_TREND",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "ActivitiesTrendInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Data-Pipeline",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/activities_trend_data"
     }
   }
 }

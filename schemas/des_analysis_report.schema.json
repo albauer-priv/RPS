@@ -2,34 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "des_analysis_report.schema.json",
   "title": "DESAnalysisReport",
-  "allOf": [
-    {"$ref": "artefact_envelope.schema.json"},
-    {
-      "properties": {
-        "meta": {
-          "properties": {
-            "artifact_type": {"const": "DES_ANALYSIS_REPORT"},
-            "schema_id": {"const": "DESAnalysisInterface"},
-            "schema_version": {"const": "1.1"},
-            "authority": {"const": "Binding"},
-            "owner_agent": {"const": "Performance-Analyst"}
-          },
-          "required": [
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "authority",
-            "owner_agent",
-            "iso_week"
-          ]
-        },
-        "data": {"$ref": "#/$defs/des_analysis_report_data"}
-      }
-    }
-  ],
+  "type": "object",
   "$defs": {
-    "status": {"type": "string", "enum": ["green", "yellow", "red"]},
-    "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+    "status": {
+      "type": "string",
+      "enum": [
+        "green",
+        "yellow",
+        "red"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
     "des_analysis_report_data": {
       "type": "object",
       "additionalProperties": false,
@@ -45,11 +35,26 @@
         "summary_meta": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["year", "iso_week", "run_id"],
+          "required": [
+            "year",
+            "iso_week",
+            "run_id"
+          ],
           "properties": {
-            "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
-            "iso_week": {"type": "integer", "minimum": 1, "maximum": 53},
-            "run_id": {"type": "string", "minLength": 1}
+            "year": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2100
+            },
+            "iso_week": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 53
+            },
+            "run_id": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         "kpi_summary": {
@@ -61,23 +66,43 @@
             "fueling_stability"
           ],
           "properties": {
-            "durability": {"$ref": "#/$defs/kpi_status_entry"},
-            "fatigue_resistance": {"$ref": "#/$defs/kpi_status_entry"},
-            "fueling_stability": {"$ref": "#/$defs/kpi_status_entry"}
+            "durability": {
+              "$ref": "#/$defs/kpi_status_entry"
+            },
+            "fatigue_resistance": {
+              "$ref": "#/$defs/kpi_status_entry"
+            },
+            "fueling_stability": {
+              "$ref": "#/$defs/kpi_status_entry"
+            }
           }
         },
         "weekly_analysis": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["context", "signals", "interpretation"],
+          "required": [
+            "context",
+            "signals",
+            "interpretation"
+          ],
           "properties": {
             "context": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["block_week", "block_focus"],
+              "required": [
+                "block_week",
+                "block_focus"
+              ],
               "properties": {
-                "block_week": {"type": "integer", "minimum": 1, "maximum": 4},
-                "block_focus": {"type": "string", "minLength": 1}
+                "block_week": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4
+                },
+                "block_focus": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
             },
             "signals": {
@@ -86,20 +111,37 @@
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["metric", "observation", "confidence"],
+                "required": [
+                  "metric",
+                  "observation",
+                  "confidence"
+                ],
                 "properties": {
-                  "metric": {"type": "string", "minLength": 1},
-                  "observation": {"type": "string", "minLength": 1},
-                  "confidence": {"$ref": "#/$defs/confidence"}
+                  "metric": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "observation": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "$ref": "#/$defs/confidence"
+                  }
                 }
               }
             },
             "interpretation": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["summary"],
+              "required": [
+                "summary"
+              ],
               "properties": {
-                "summary": {"type": "string", "minLength": 1}
+                "summary": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
             }
           }
@@ -107,20 +149,43 @@
         "trend_analysis": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["horizon_weeks", "observations"],
+          "required": [
+            "horizon_weeks",
+            "observations"
+          ],
           "properties": {
-            "horizon_weeks": {"type": "integer", "minimum": 1},
+            "horizon_weeks": {
+              "type": "integer",
+              "minimum": 1
+            },
             "observations": {
               "type": "array",
               "minItems": 1,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["metric", "trend", "interpretation"],
+                "required": [
+                  "metric",
+                  "trend",
+                  "interpretation"
+                ],
                 "properties": {
-                  "metric": {"type": "string", "minLength": 1},
-                  "trend": {"type": "string", "enum": ["improving", "stable", "declining"]},
-                  "interpretation": {"type": "string", "minLength": 1}
+                  "metric": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "trend": {
+                    "type": "string",
+                    "enum": [
+                      "improving",
+                      "stable",
+                      "declining"
+                    ]
+                  },
+                  "interpretation": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               }
             }
@@ -138,27 +203,48 @@
             "explicitly_not"
           ],
           "properties": {
-            "type": {"const": "advisory"},
-            "scope": {"const": "Macro-Planner"},
-            "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
+            "type": {
+              "const": "advisory",
+              "type": "string"
+            },
+            "scope": {
+              "const": "Macro-Planner",
+              "type": "string"
+            },
+            "urgency": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
             "rationale": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "suggested_considerations": {
               "type": "array",
               "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "explicitly_not": {
               "type": "array",
               "minItems": 2,
               "maxItems": 2,
-              "uniqueItems": true,
               "items": {
                 "type": "string",
-                "enum": ["direct_block_change", "weekly_intervention"]
+                "enum": [
+                  "direct_block_change",
+                  "weekly_intervention"
+                ]
               }
             }
           }
@@ -174,11 +260,26 @@
             "interpretation_recommendation"
           ],
           "properties": {
-            "overview_current_status": {"type": "string", "minLength": 1},
-            "detailed_analysis_last_week": {"type": "string", "minLength": 1},
-            "trend_analysis_within_block": {"type": "string", "minLength": 1},
-            "trend_analysis_macro": {"type": "string", "minLength": 1},
-            "interpretation_recommendation": {"type": "string", "minLength": 1}
+            "overview_current_status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "detailed_analysis_last_week": {
+              "type": "string",
+              "minLength": 1
+            },
+            "trend_analysis_within_block": {
+              "type": "string",
+              "minLength": 1
+            },
+            "trend_analysis_macro": {
+              "type": "string",
+              "minLength": 1
+            },
+            "interpretation_recommendation": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         }
       }
@@ -186,20 +287,81 @@
     "kpi_status_entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "confidence", "evidence_window", "delta_vs_baseline"],
+      "required": [
+        "status",
+        "confidence",
+        "evidence_window",
+        "delta_vs_baseline"
+      ],
       "properties": {
-        "status": {"$ref": "#/$defs/status"},
-        "confidence": {"$ref": "#/$defs/confidence"},
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
         "evidence_window": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["weeks"],
+          "required": [
+            "weeks"
+          ],
           "properties": {
-            "weeks": {"type": "integer", "minimum": 1}
+            "weeks": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         },
-        "delta_vs_baseline": {"type": "string", "minLength": 1}
+        "delta_vs_baseline": {
+          "type": "string",
+          "minLength": 1
+        }
       }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "DES_ANALYSIS_REPORT",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "DESAnalysisInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.1",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Performance-Analyst",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/des_analysis_report_data"
     }
   }
 }

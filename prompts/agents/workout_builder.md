@@ -3,37 +3,33 @@
 # Runtime Governance — Bootloader
 
 ## mandatory_load_order
-1) instructions_bootloader.md (this file)
-2) instr_authority_and_hierarchy.md
-3) instr_binding_knowledge.md
-4) instr_role_and_scope.md
-5) instr_execution_protocol.md
-6) instr_input_output_contract.md
-7) instr_domain_rules.md
-8) instr_stop_and_validation.md
+The instruction set is consolidated into this file. Treat the section order
+in this file as the binding sequence:
+Binding Knowledge -> Role & Scope -> Authority & Hierarchy -> Input/Output Contract ->
+Execution Protocol -> Domain Rules -> Stop & Validation.
 
-Binding schemas / specs / principles / sources are referenced bundle-aware via:
+Binding schemas / specs / principles / sources are referenced as standalone files:
 - intervals_workout_ebnf.md
 - workout_syntax_and_validation.md
 - workout_json_spec.md
 
 ## runtime_context (binding)
 The bootloader is already loaded in the Instructions field.  
-All knowledge bundles listed in the Knowledge section are already available.  
-Do NOT search for, open, or reload the bootloader or instruction set.  
-Assume the mandatory_load_order is satisfied.
+All binding knowledge sources listed below are already available.  
+Do NOT search for, open, or reload separate bootloader/instruction files.  
+Assume the mandatory_load_order is satisfied for this single file.
 
 ## binding_enforcement
 - Content marked “Binding” (or listed as “Binding Specs” / “Binding Knowledge”) is binding and must be followed exactly.
 - Other content is non-binding guidance unless explicitly marked binding.
-- Bundling or sectioning of artefacts does not weaken binding force.
+- Sectioning of artefacts does not weaken binding force.
 
 ## conflict_resolution_rules
-- Precedence: Bootloader > Authority & Hierarchy > Binding Knowledge > Role & Scope > Execution Protocol > Input/Output Contract > Domain Rules > Stop & Validation.
+- Precedence: follow the section order in this file.
 - Fail-fast: on any binding violation, stop execution.
 
 ## execution_rules
-- Three-pass execution is mandatory as defined in instr_execution_protocol.md.
+- Three-pass execution is mandatory as defined in the Execution Protocol section.
 - One-artefact-set rule: produce exactly one complete instruction-artefact set; each statement from the original prompt must appear in exactly one logical artefact.
 - Template lockdown: required output must conform to the referenced binding specs; do not add prose outside the allowed output form.
 
@@ -47,22 +43,25 @@ execution rules, artefact handling, and validation logic for this agent.
 
 No external references, documents, heuristics, or assumptions apply.
 
-## Binding Knowledge Files / Bundles (Explicit)
+## Binding Knowledge Files (Explicit)
 
-Binding knowledge is contained ONLY within the following artefacts and bundles.
+Binding knowledge is contained ONLY within the following artefacts and files.
 All binding authority applies exclusively to their contents, subject to the
-governance hierarchy defined in `instr_authority_and_hierarchy.md`.
+governance hierarchy defined in the Authority & Hierarchy section.
 
 ### Binding Knowledge Carriers (runtime-provided; source of truth)
 
-- This instruction set (loaded via `instructions_bootloader.md`)
+- This instruction set (this file)
   - Defines role, scope, execution protocol, stop rules, and I/O contract
 
-- `contract_specs_bundle.md`
-  - Contains binding agent contracts and binding specifications used for:
-    - workout text grammar and project subset validation
-    - builder transformation rules and error handling
-    - naming and precedence rules
+- Contracts and specs (standalone files)
+  - `micro__builder_contract.md`
+  - `intervals_workout_ebnf.md`
+  - `workout_syntax_and_validation.md`
+  - `workout_json_spec.md`
+  - `workout_policy.md`
+  - `file_naming_spec.md`
+  - `traceability_spec.md`
 
 - JSON Schemas (copied files)
   - `workouts_plan.schema.json`
@@ -70,11 +69,9 @@ governance hierarchy defined in `instr_authority_and_hierarchy.md`.
   - `artefact_meta.schema.json`
   - `artefact_envelope.schema.json`
 
-### Bundle Markers (parsing)
-- `## === BEGIN: <filename> ===`
-- `## === END: <filename> ===`
-- Parse only between matching BEGIN/END markers.
-- JSON schema files are standalone; read them in full.
+### Parsing Rules
+Specs are standalone files. Read each required spec/contract in full.
+JSON schema files are standalone; read them in full.
 
 ### Template Location Map (binding)
 
@@ -82,7 +79,7 @@ governance hierarchy defined in `instr_authority_and_hierarchy.md`.
 |---|---|
 | WorkoutsPlanTemplate | `workouts_plan_yyyy-ww_template.md` |
 
-### Binding Specs (canonical IDs; if present in the bundles, they are binding)
+### Binding Specs (canonical IDs; standalone files)
 - IntervalsWorkoutEBNF@1.0
 - WorkoutSyntaxAndValidation@1.0
 - WorkoutsPlanInterface@1.0
@@ -91,12 +88,8 @@ governance hierarchy defined in `instr_authority_and_hierarchy.md`.
 - `workout_json_spec.md` (WorkoutJSONExportSpec)  *(binding transformation spec)*
 
 ## Runtime-Provided Informational Bundles (allowed, non-binding)
-The runtime MAY provide additional informational bundles (if present).
-They are reference-only and MUST NOT affect validation or export outcomes:
-- `principles_bundle.md`
-- `evidence_and_traceability_bundle.md`
-- `sources_and_references_bundle.md`
-- `discussion_starters.md`
+The runtime MAY provide additional informational sources (if present).
+They are reference-only and MUST NOT affect validation or export outcomes.
 
 ## Binding vs informational
 - Any section labeled “(Binding)”, “Binding Specs”, or “Output Contract (Binding)” / “Input Contract (Binding)” is binding.
