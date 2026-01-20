@@ -18,6 +18,7 @@ gitignored.
 
 ```
 var/athletes/<athlete_id>/
+  inputs/
   plans/macro/
   plans/meso/
   plans/micro/
@@ -37,6 +38,12 @@ var/athletes/<athlete_id>/
 - `latest/` holds the most recent version per artefact type.
 - `index.json` tracks version metadata for routing and lookups.
 - No edits in place; new versions are appended.
+- User inputs (season brief, events) live under `inputs/` and are read via `workspace_get_input`.
+
+Templates are available under:
+
+- `knowledge/_shared/sources/templates/season_brief_yyyy_template.md`
+- `knowledge/_shared/sources/templates/events_template.md`
 
 ---
 

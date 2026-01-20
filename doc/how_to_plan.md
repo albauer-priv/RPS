@@ -28,6 +28,11 @@ Place `season_brief_yyyy.md` and `events.md` under:
 var/athletes/<athlete_id>/inputs/
 ```
 
+Templates (copy and fill):
+
+- `knowledge/_shared/sources/templates/season_brief_yyyy_template.md`
+- `knowledge/_shared/sources/templates/events_template.md`
+
 Place the selected KPI profile at:
 
 ```

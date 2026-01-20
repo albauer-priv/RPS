@@ -493,6 +493,8 @@ binding schema-defined artefact for the active mode.
 - `load_estimation_spec.md`: kJ and kJ/kg guidance.
 - `contract_precedence_spec.md`: governance precedence.
 - `file_naming_spec.md`: naming conventions.
+- `season_brief_interface_spec.md`: season brief required fields.
+- `events_interface_spec.md`: events context format.
 - `macro__meso_contract.md`: macro↔meso governance boundaries.
 - `principles_durability_first_cycling.md`: durability-first principles.
 

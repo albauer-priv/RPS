@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - KPI profile JSON sources moved to top-level `kpi_profiles/` and removed from vector store manifests.
 - Data pipeline scripts now accept `--athlete` with `.env` fallback for multi-athlete runs.
 - Data pipeline docs now include multi-athlete CLI examples.
+- User input interface specs/templates for season briefs and events moved to shared knowledge sources.
+- Workspace docs now mention `inputs/` and the user-input templates.
 - JSON schemas normalized for strict tool compatibility (explicit types/required, flattened `allOf`, removed unsupported constraints).
 - Version key derivation now supports string-based `iso_week` and `iso_week_range` metadata.
 - Docs and README now document the two-step Macro Mode A workflow.

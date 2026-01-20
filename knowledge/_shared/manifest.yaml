@@ -45,11 +45,15 @@ sources:
 - path: sources/specs/artefact_json_schema_spec.md
 - path: sources/specs/contract_precedence_spec.md
 - path: sources/specs/data_confidence_spec.md
+- path: sources/specs/events_interface_spec.md
 - path: sources/specs/file_naming_spec.md
 - path: sources/specs/header_schema_spec.md
 - path: sources/specs/load_estimation_spec.md
 - path: sources/specs/macro_cycle_enum_spec.md
+- path: sources/specs/season_brief_interface_spec.md
 - path: sources/specs/traceability_spec.md
+- path: sources/templates/events_template.md
+- path: sources/templates/season_brief_yyyy_template.md
 - path: sources/specs/workouts/intervals_workout_ebnf.md
 - path: sources/specs/workouts/workout_json_spec.md
 - path: sources/specs/workouts/workout_syntax_and_validation.md
