@@ -1,0 +1,96 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+## YAML_SUMMARY
+```yaml
+---
+meta:
+  year: {{ summary_meta.year }}
+  iso_week: {{ summary_meta.iso_week }}
+  run_id: {{ summary_meta.run_id }}
+
+kpi_summary:
+  durability:
+    status: {{ kpi_summary.durability.status }}
+    confidence: {{ kpi_summary.durability.confidence }}
+    evidence_window:
+      weeks: {{ kpi_summary.durability.evidence_weeks }}
+    delta_vs_baseline: {{ kpi_summary.durability.delta_vs_baseline }}
+  fatigue_resistance:
+    status: {{ kpi_summary.fatigue_resistance.status }}
+    confidence: {{ kpi_summary.fatigue_resistance.confidence }}
+    evidence_window:
+      weeks: {{ kpi_summary.fatigue_resistance.evidence_weeks }}
+    delta_vs_baseline: {{ kpi_summary.fatigue_resistance.delta_vs_baseline }}
+  fueling_stability:
+    status: {{ kpi_summary.fueling_stability.status }}
+    confidence: {{ kpi_summary.fueling_stability.confidence }}
+    evidence_window:
+      weeks: {{ kpi_summary.fueling_stability.evidence_weeks }}
+    delta_vs_baseline: {{ kpi_summary.fueling_stability.delta_vs_baseline }}
+
+weekly_analysis:
+  context:
+    block_week: {{ weekly_analysis.context.block_week }}
+    block_focus: {{ weekly_analysis.context.block_focus }}
+  signals:
+{% if weekly_analysis.signals %}{% for signal in weekly_analysis.signals %}    - metric: {{ signal.metric }}
+      observation: {{ signal.observation }}
+      confidence: {{ signal.confidence }}
+{% endfor %}{% else %}    - metric: N/A
+      observation: N/A
+      confidence: N/A
+{% endif %}  interpretation:
+    summary: {{ weekly_analysis.interpretation.summary }}
+
+trend_analysis:
+  horizon_weeks: {{ trend_analysis.horizon_weeks }}
+  observations:
+{% if trend_analysis.observations %}{% for obs in trend_analysis.observations %}    - metric: {{ obs.metric }}
+      trend: {{ obs.trend }}
+      interpretation: {{ obs.interpretation }}
+{% endfor %}{% else %}    - metric: N/A
+      trend: N/A
+      interpretation: N/A
+{% endif %}
+
+recommendation:
+  type: {{ recommendation.type }}
+  scope: {{ recommendation.scope }}
+  urgency: {{ recommendation.urgency }}
+  rationale:
+{% for item in recommendation.rationale %}    - {{ item }}
+{% endfor %}  suggested_considerations:
+{% for item in recommendation.suggested_considerations %}    - {{ item }}
+{% endfor %}  explicitly_not:
+{% for item in recommendation.explicitly_not %}    - {{ item }}
+{% endfor %}---
+```
+
+## Narrative Report
+
+### 1) Overview - current status
+{{ narrative_report.overview_current_status }}
+
+### 2) Detailed analysis - last week
+{{ narrative_report.detailed_analysis_last_week }}
+
+### 3) Trend analysis - block and macro
+
+#### 3.1 Within-block development
+{{ narrative_report.trend_analysis_within_block }}
+
+#### 3.2 Macro trend
+{{ narrative_report.trend_analysis_macro }}
+
+### 4) Interpretation and recommendation
+{{ narrative_report.interpretation_recommendation }}
+
+Language guardrail: recommendations must not contain verbs implying execution, change, or control.

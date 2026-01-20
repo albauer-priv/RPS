@@ -144,6 +144,11 @@ ENV/
 env.bak/
 venv.bak/
 
+# Runtime state
+var/
+legacy/
+.DS_Store
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -206,6 +211,9 @@ openai_playgounrd.code-workspace
 # Ruff stuff:
 .ruff_cache/
 
+# Local cache
+.cache/
+
 # PyPI configuration file
 .pypirc
 
@@ -220,3 +228,12 @@ openai_playgounrd.code-workspace
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# OpenAI vector store artifacts (local only)
+vectorstore_cache/
+vectorstore_exports/
+.vectorstore/
+*.vectorstore
+*.embeddings
+*.faiss
+retrieval_cache/

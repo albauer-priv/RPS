@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trace_reference.schema.json",
+  "title": "TraceReference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifact"],
+  "properties": {
+    "artifact": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "block_execution_preview.schema.json",
+  "title": "BlockExecutionPreview",
+  "allOf": [
+    {
+      "$ref": "artefact_envelope.schema.json"
+    },
+    {
+      "properties": {
+        "meta": {
+          "properties": {
+            "artifact_type": {"const": "BLOCK_EXECUTION_PREVIEW"},
+            "schema_id": {"const": "BlockExecutionPreviewInterface"},
+            "schema_version": {"const": "1.0"},
+            "authority": {"const": "Binding"},
+            "owner_agent": {"const": "Meso-Architect"}
+          },
+          "required": [
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "authority",
+            "owner_agent",
+            "iso_week_range"
+          ]
+        },
+        "data": {
+          "$ref": "#/$defs/block_execution_preview_data"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "weekday": {
+      "type": "string",
+      "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    },
+    "agenda_day": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "day_of_week",
+        "day_role",
+        "intensity_domain",
+        "load_modality"
+      ],
+      "properties": {
+        "day_of_week": {"$ref": "#/$defs/weekday"},
+        "day_role": {"$ref": "agenda_enum.schema.json#/$defs/day_role"},
+        "intensity_domain": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"},
+        "load_modality": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"},
+        "notes": {"type": "string"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"day_role": {"const": "REST"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {"const": "NONE"},
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "OFF_BIKE"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {"const": "NONE"},
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "TRAVEL"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {"const": "NONE"},
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "FLEX"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {"const": "NONE"},
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "RECOVERY"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {
+                "enum": ["NONE", "RECOVERY"]
+              },
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "ENDURANCE"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {
+                "enum": ["NONE", "ENDURANCE"]
+              },
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "OPTIONAL"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {
+                "enum": ["NONE", "ENDURANCE"]
+              },
+              "load_modality": {"const": "NONE"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "QUALITY"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {
+                "enum": ["TEMPO", "SST", "VO2MAX"]
+              },
+              "load_modality": {"enum": ["NONE", "K3"]}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"day_role": {"const": "EVENT"}}},
+          "then": {
+            "properties": {
+              "intensity_domain": {
+                "enum": ["ENDURANCE", "TEMPO", "SST", "VO2MAX"]
+              },
+              "load_modality": {"enum": ["NONE", "K3"]}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"load_modality": {"const": "K3"}}},
+          "then": {
+            "not": {
+              "properties": {"intensity_domain": {"const": "VO2MAX"}},
+              "required": ["intensity_domain"]
+            }
+          }
+        }
+      ]
+    },
+    "week_agenda": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["week", "days"],
+      "properties": {
+        "week": {"$ref": "iso_week.schema.json"},
+        "days": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {"$ref": "#/$defs/agenda_day"},
+          "allOf": [
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Mon"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Tue"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Wed"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Thu"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Fri"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Sat"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {"day_of_week": {"const": "Sun"}},
+                "required": ["day_of_week"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          ]
+        }
+      }
+    },
+    "block_execution_preview_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_intent_summary",
+        "feel_overview",
+        "weekly_agenda_preview",
+        "week_to_week_narrative",
+        "deviation_rules",
+        "traceability"
+      ],
+      "properties": {
+        "block_intent_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "block_type",
+            "primary_objective",
+            "non_negotiables",
+            "key_risks_warnings"
+          ],
+          "properties": {
+            "block_type": {"type": "string", "minLength": 1},
+            "primary_objective": {"type": "string", "minLength": 1},
+            "non_negotiables": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "key_risks_warnings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "feel_overview": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dominant_theme",
+            "intensity_handling_conceptual",
+            "recovery_protection_conceptual"
+          ],
+          "properties": {
+            "dominant_theme": {"type": "string", "minLength": 1},
+            "intensity_handling_conceptual": {"type": "string", "minLength": 1},
+            "recovery_protection_conceptual": {"type": "string", "minLength": 1}
+          }
+        },
+        "weekly_agenda_preview": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/week_agenda"}
+        },
+        "week_to_week_narrative": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "direction",
+            "what_will_not_change",
+            "what_is_flexible"
+          ],
+          "properties": {
+            "direction": {"type": "string", "minLength": 1},
+            "what_will_not_change": {"type": "string", "minLength": 1},
+            "what_is_flexible": {"type": "string", "minLength": 1}
+          }
+        },
+        "deviation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "traceability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["derived_from", "conflict_resolution"],
+          "properties": {
+            "derived_from": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "conflict_resolution": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    }
+  }
+}

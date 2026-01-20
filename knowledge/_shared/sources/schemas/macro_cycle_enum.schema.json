@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "macro_cycle_enum.schema.json",
+  "title": "MacroCycleEnum",
+  "type": "string",
+  "enum": ["Base", "Build", "Peak", "Transition"]
+}

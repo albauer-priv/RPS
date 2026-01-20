@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "artifact_type": "KPI_PROFILE",
+    "schema_id": "KPIProfileInterface",
+    "schema_version": "1.0",
+    "version": "1.0",
+    "authority": "Binding",
+    "owner_agent": "Policy-Owner",
+    "run_id": "manual-kpi-profile-bikepacking-multiday-masters",
+    "created_at": "2026-01-17T06:21:32.377139+00:00",
+    "scope": "Shared",
+    "data_confidence": "UNKNOWN",
+    "trace_upstream": [
+      {
+        "artifact": "kpi_profile_des_bikepacking_multiday_masters.md",
+        "version": "1.0"
+      }
+    ],
+    "notes": "Converted from v1 markdown spec."
+  },
+  "data": {
+    "profile_metadata": {
+      "profile_id": "KPI_Profile_DES_Bikepacking_MultiDay_Masters",
+      "event_type": "Bikepacking",
+      "distance_range": "multi-day (>= 3 days)",
+      "athlete_class": "Masters 50+",
+      "primary_objective": "Finish"
+    },
+    "energetic_load_targets": {
+      "weekly_load_kj": {
+        "green": "target +/-4 %",
+        "yellow": "+/-4-8 %",
+        "red": "> +/-8 %",
+        "notes": "conservative due to orthopaedic and recovery stress"
+      },
+      "progression_limits": {
+        "weekly_kj_increase": {
+          "allowed": "<= 4 %",
+          "warning": "4-6 %",
+          "stop": "> 6 %"
+        },
+        "long_ride_kj_increase": {
+          "allowed": "<= 6 %",
+          "warning": "6-9 %",
+          "stop": "> 9 %"
+        }
+      }
+    },
+    "durability": {
+      "energetic_preload": {
+        "single_ride_kj": 3500,
+        "back_to_back_kj": 8000,
+        "single_ride_kj_per_kg": {
+          "min": 36.1,
+          "max": 41.2
+        },
+        "back_to_back_kj_per_kg": {
+          "min": 82.5,
+          "max": 94.1
+        },
+        "derived_from": "kJ / body_mass_window_variants_75_107kg",
+        "mass_window_kj_per_kg": [
+          {
+            "mass_window_kg": {
+              "min": 75,
+              "max": 87
+            },
+            "single_ride_kj_per_kg": {
+              "min": 40.2,
+              "max": 46.7
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 92.0,
+              "max": 106.7
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 80,
+              "max": 92
+            },
+            "single_ride_kj_per_kg": {
+              "min": 38.0,
+              "max": 43.8
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 87.0,
+              "max": 100.0
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 85,
+              "max": 97
+            },
+            "single_ride_kj_per_kg": {
+              "min": 36.1,
+              "max": 41.2
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 82.5,
+              "max": 94.1
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 90,
+              "max": 102
+            },
+            "single_ride_kj_per_kg": {
+              "min": 34.3,
+              "max": 38.9
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 78.4,
+              "max": 88.9
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 95,
+              "max": 107
+            },
+            "single_ride_kj_per_kg": {
+              "min": 32.7,
+              "max": 36.8
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 74.8,
+              "max": 84.2
+            }
+          }
+        ]
+      },
+      "kpis": {
+        "durability_index": {
+          "green": ">= 1.00",
+          "yellow": "0.98-1.00",
+          "red": "< 0.98",
+          "context": "post preload"
+        },
+        "sustained_power_drop_3h_vs_1h_percent": {
+          "green": "<= 6 %",
+          "yellow": "6-10 %",
+          "red": "> 10 %",
+          "context": "endurance focus (5-8h vs 1h)"
+        },
+        "back_to_back_ratio": {
+          "green": ">= 0.92",
+          "yellow": "0.88-0.92",
+          "red": "< 0.88",
+          "context": "IF day2/day1"
+        },
+        "fir_5min_20min": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A",
+          "notes": "Not specified for bikepacking profile."
+        }
+      }
+    },
+    "multi_day_durability": {
+      "applies_to": [
+        "multi-day bikepacking"
+      ],
+      "evaluation_window": ">= 72 h",
+      "purpose": "Assess repeatability across consecutive days under cumulative fatigue.",
+      "kpis": {
+        "bbr_trend_day_n_vs_day_n_minus_1": {
+          "green": "stable >= 0.90",
+          "yellow": "0.85-0.90",
+          "red": "< 0.85",
+          "context": "cumulative fatigue"
+        },
+        "if_stability_delta_day_to_day": {
+          "green": "<= 4 %",
+          "yellow": "4-7 %",
+          "red": "> 7 %",
+          "context": "comparable terrain"
+        },
+        "hr_drift_trend": {
+          "green": "stable <= 5 %",
+          "yellow": "rising 5-8 %",
+          "red": "accelerating > 8 %",
+          "context": "under load"
+        }
+      },
+      "dominance_rule": "Multi-Day Durability overrides all single-day KPIs and Recovery."
+    },
+    "fueling_stability": {
+      "validity_requirement": "Energetic preload criteria must be met.",
+      "purpose": "Evaluate metabolic and pacing stability under preload.",
+      "kpis": {
+        "if_decline_under_preload": {
+          "green": "<= 4 %",
+          "yellow": "4-7 %",
+          "red": "> 7 %",
+          "context": "long steady days"
+        },
+        "hr_drift_under_preload": {
+          "green": "<= 5 %",
+          "yellow": "5-8 %",
+          "red": "> 8 %",
+          "context": "adequate intake"
+        },
+        "decoupling_under_preload": {
+          "green": "<= 5 %",
+          "yellow": "5-8 %",
+          "red": "> 8 %",
+          "context": "metabolic stress"
+        }
+      },
+      "interpretation_rule": "Fueling stability is evaluated only under preload conditions."
+    },
+    "efficiency_drift": {
+      "kpis": {
+        "pa_hr_z2_90min": {
+          "green": "<= 5 %",
+          "yellow": "5-8 %",
+          "red": "> 8 %",
+          "context": "long steady days"
+        },
+        "hr_drift_race_pace": {
+          "green": "<= 5 %",
+          "yellow": "5-8 %",
+          "red": "> 8 %",
+          "context": "variable terrain"
+        },
+        "ef_trend": {
+          "green": "stable / up",
+          "yellow": "flat",
+          "red": "down",
+          "context": "multi-day trend"
+        }
+      }
+    },
+    "intensity_control": {
+      "kpis": {
+        "vo2_tiz_per_week": {
+          "green": "<= 15 min",
+          "yellow": "15-25 min",
+          "red": "> 25 min"
+        },
+        "sst_tiz_per_week": {
+          "green": "phase +/-8 %",
+          "yellow": "+/-12 %",
+          "red": "> +12 %"
+        }
+      }
+    },
+    "recovery_tolerability": {
+      "kpis": {
+        "tsb_sun": {
+          "green": "-5 to -20",
+          "yellow": "-20 to -30",
+          "red": "< -30",
+          "context": "rolling"
+        },
+        "subjective_fatigue": {
+          "green": "stable",
+          "yellow": "localized pain",
+          "red": "progressive pain",
+          "context": "musculoskeletal status"
+        }
+      }
+    },
+    "decision_rules": {
+      "green": "maintain load, focus on repeatability",
+      "yellow": "hold load, reduce intensity density",
+      "red": "deload (-30-50 % kJ), reassess event suitability"
+    },
+    "traceability": {
+      "requirements": [
+        "KPI & DES System",
+        "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload, Section 6 Recovery)",
+        "Energetic preload: >= 3,500-4,000 kJ single-day; >= 8,000-9,500 kJ over 48 h; >= 12,000-15,000 kJ over >= 72 h.",
+        "Relative preload preferred: >= 40 kJ/kg single-day; >= 85 kJ/kg over 72 h.",
+        "Persistent or progressive pain forces RED classification regardless of numeric KPIs.",
+        "Absence of breakdown and repeatability matter more than daily peak output.",
+        "For bikepacking profiles, long_ride_kj_increase refers to daily ride kJ increase."
+      ]
+    }
+  }
+}

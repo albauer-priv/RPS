@@ -1,0 +1,179 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# MACRO_OVERVIEW - Annual / Multi-Phase Training Plan
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week-Range: "{{ meta.iso_week_range }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 0) Body Metadata
+
+- Planning-Horizon (weeks): {{ body_metadata.planning_horizon_weeks }}
+- Season-Brief-Ref: {{ body_metadata.season_brief_ref }}
+- KPI-Profile-Ref: {{ body_metadata.kpi_profile_ref }}
+- Athlete-Profile-Ref: {{ body_metadata.athlete_profile_ref or "N/A" }}
+- Reference mass window (kg): {{ body_metadata.reference_mass_window }}
+- Energetic pre-load references (kJ/kg):
+  - Single-day: {{ body_metadata.energetic_preload_single_day }}
+  - Back-to-back: {{ body_metadata.energetic_preload_back_to_back }}
+
+## 1) Macro Intent & Principles
+
+- Season objective: {{ macro_intent.season_objective }}
+- Success definition: {{ macro_intent.success_definition }}
+- Non-negotiable principles:
+{{ bullet_list(macro_intent.non_negotiable_principles) }}
+
+- kJ corridor design notes:
+{{ bullet_list(macro_intent.kj_corridor_design_notes) }}
+
+## 2) Phases (REQUIRED)
+
+{% for phase in phases %}
+### Phase {{ loop.index }} - {{ phase.name }}
+
+- Phase-ID: {{ phase.phase_id }}
+- Date range: {{ phase.date_range }}
+- ISO-Week range: {{ phase.iso_week_range }}
+- Cycle: {{ phase.cycle }}
+- Deload: {{ phase.deload }}{% if phase.deload_rationale %} ({{ phase.deload_rationale }}){% endif %}
+- Reference mass window (kg): {{ phase.reference_mass_window }}
+
+#### Phase narrative
+{{ phase.narrative }}
+
+#### Phase Overview (Structured)
+
+| Area | Content |
+|---|---|
+| Core focus and characteristics | {% if phase.overview.core_focus_and_characteristics %}{{ phase.overview.core_focus_and_characteristics | join('<br>') }}{% else %}N/A{% endif %} |
+| Phase goals | - Primary: {{ phase.overview.phase_goals_primary }}{% if phase.overview.phase_goals_secondary %}<br>- Secondary: {{ phase.overview.phase_goals_secondary }}{% endif %} |
+| Metabolic focus | {{ phase.overview.metabolic_focus }} |
+| Expected adaptations (conceptual) | {% if phase.overview.expected_adaptations %}{{ phase.overview.expected_adaptations | join('<br>') }}{% else %}N/A{% endif %} |
+| Evaluation focus (non-binding) | {% if phase.overview.evaluation_focus %}{{ phase.overview.evaluation_focus | join('<br>') }}{% else %}N/A{% endif %} |
+| Phase exit assumptions | {% if phase.overview.phase_exit_assumptions %}{{ phase.overview.phase_exit_assumptions | join('<br>') }}{% else %}N/A{% endif %} |
+| Typical duration and intensity pattern (conceptual) | {{ phase.overview.typical_duration_intensity_pattern }} |
+| Non-negotiables | {% if phase.overview.non_negotiables %}{{ phase.overview.non_negotiables | join('<br>') }}{% else %}N/A{% endif %} |
+
+#### Weekly Load Corridor (kJ-first, REQUIRED)
+
+| Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
+|---|---:|---:|---:|---:|---|
+| Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes or '' }} |
+{% if phase.weekly_tss %}| Optional: Weekly TSS | {{ phase.weekly_tss.min }} | {{ phase.weekly_tss.max }} |  |  | {{ phase.weekly_tss.notes or '' }} |
+{% endif %}
+
+#### Allowed / Forbidden Semantics (REQUIRED)
+
+| Allowed INTENSITY_DOMAIN_ENUM | Allowed LOAD_MODALITY_ENUM | Forbidden INTENSITY_DOMAIN_ENUM |
+|---|---|---|
+| {{ phase.allowed_intensity_domains | join_or_na }} | {{ phase.allowed_load_modalities | join_or_na }} | {{ phase.forbidden_intensity_domains | join_or_na }} |
+
+#### Structural Emphasis (NON-PRESCRIPTIVE)
+
+- Typical focus: {{ phase.structural_emphasis.typical_focus }}
+- Not emphasized: {{ phase.structural_emphasis.not_emphasized }}
+
+#### Events & Constraints (if applicable)
+
+| Window | Type | Constraint |
+|---|---|---|
+{% if phase.events_constraints %}{% for event in phase.events_constraints %}| {{ event.window }} | {{ event.type }} | {{ event.constraint }} |
+{% endfor %}{% else %}| N/A | N/A | N/A |
+{% endif %}
+
+{% endfor %}
+## 3) Global Constraints (REQUIRED)
+
+- Availability assumptions:
+{{ bullet_list(global_constraints.availability_assumptions) }}
+
+- Planned event windows:
+{{ bullet_list(global_constraints.planned_event_windows) }}
+
+- Risk constraints:
+{{ bullet_list(global_constraints.risk_constraints) }}
+
+## 4) Season Load Envelope (REQUIRED)
+
+- Expected average weekly kJ range: {{ season_load_envelope.expected_average_weekly_kj_range }}
+- Expected high-load weeks (count): {{ season_load_envelope.expected_high_load_weeks_count }}
+- Expected deload / low-load weeks (count): {{ season_load_envelope.expected_deload_or_low_load_weeks_count }}
+
+## 5) Explicit Assumptions & Unknowns (REQUIRED)
+
+- Assumptions made at macro level:
+{{ bullet_list(assumptions_unknowns.assumptions) }}
+
+- Known uncertainties entering the season:
+{{ bullet_list(assumptions_unknowns.uncertainties) }}
+
+- Items to revisit after the first build phase:
+{{ bullet_list(assumptions_unknowns.revisit_items) }}
+
+## 6) Phase Transitions & Guardrails
+
+- Expected progression between phases: {{ phase_transitions_guardrails.expected_progression }}
+- Conditions that trigger conservative handling:
+{{ bullet_list(phase_transitions_guardrails.conservative_triggers) }}
+
+- Absolute no-go rules across the macro plan:
+{{ bullet_list(phase_transitions_guardrails.absolute_no_go_rules) }}
+
+## 7) Principles & Scientific Foundation
+
+### Principles
+
+{% if principles_scientific_foundation.principle_applications %}
+{% for entry in principles_scientific_foundation.principle_applications %}- {{ entry.principle }}: {{ entry.influence }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+
+### Scientific Foundation
+
+{% set foundation = principles_scientific_foundation.scientific_foundation %}
+{% if foundation.publications %}
+{% for pub in foundation.publications %}- {{ pub.authors }} ({{ pub.year }}). {{ pub.title }}. {{ pub.link }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+
+- Plan alignment check: {{ foundation.plan_alignment_check or "N/A" }}
+- Rationale for sources used: {{ foundation.rationale or "N/A" }}
+
+## 8) Explicit Forbidden Content (VALIDATION)
+
+{{ bullet_list(explicit_forbidden_content) }}
+
+## 9) Self-Check (MUST be true)
+
+{% for item in self_check %}- [{{ "x" if item.value else " " }}] {{ item.label }}
+{% endfor %}

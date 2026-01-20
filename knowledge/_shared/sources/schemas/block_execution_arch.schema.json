@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "block_execution_arch.schema.json",
+  "title": "BlockExecutionArch",
+  "allOf": [
+    {
+      "$ref": "artefact_envelope.schema.json"
+    },
+    {
+      "properties": {
+        "meta": {
+          "properties": {
+            "artifact_type": {"const": "BLOCK_EXECUTION_ARCH"},
+            "schema_id": {"const": "BlockExecutionArchInterface"},
+            "schema_version": {"const": "1.0"},
+            "authority": {"const": "Binding"},
+            "owner_agent": {"const": "Meso-Architect"}
+          },
+          "required": [
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "authority",
+            "owner_agent",
+            "iso_week_range"
+          ]
+        },
+        "data": {
+          "$ref": "#/$defs/block_execution_arch_data"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "weekday": {
+      "type": "string",
+      "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    },
+    "block_execution_arch_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "upstream_intent",
+        "execution_principles",
+        "structural_building_blocks",
+        "week_skeleton_logic",
+        "adaptation_rules",
+        "relationships",
+        "self_check"
+      ],
+      "properties": {
+        "upstream_intent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "block_type",
+            "primary_objective",
+            "block_status",
+            "non_negotiables",
+            "constraints",
+            "key_risks_warnings"
+          ],
+          "properties": {
+            "block_type": {"type": "string", "minLength": 1},
+            "primary_objective": {"type": "string", "minLength": 1},
+            "block_status": {"type": "string", "enum": ["Green", "Yellow", "Red"]},
+            "non_negotiables": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "constraints": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "key_risks_warnings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "execution_principles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "load_intensity_handling",
+            "recovery_protection",
+            "consistency_over_optimization"
+          ],
+          "properties": {
+            "load_intensity_handling": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_quality_days_per_week",
+                "allowed_intensity_domains",
+                "forbidden_intensity_domains",
+                "load_modality_constraints"
+              ],
+              "properties": {
+                "max_quality_days_per_week": {"type": "integer", "minimum": 0},
+                "quality_intent": {
+                  "type": "string",
+                  "enum": ["Stabilization", "Build", "Overload"]
+                },
+                "allowed_intensity_domains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+                },
+                "forbidden_intensity_domains": {
+                  "type": "array",
+                  "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+                },
+                "load_modality_constraints": {
+                  "type": "array",
+                  "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+                }
+              }
+            },
+            "recovery_protection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mandatory_recovery_spacing_rules",
+                "forbidden_sequences",
+                "long_endurance_anchor_protection"
+              ],
+              "properties": {
+                "fixed_non_training_days": {
+                  "type": "array",
+                  "items": {"$ref": "#/$defs/weekday"}
+                },
+                "mandatory_recovery_spacing_rules": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {"type": "string", "minLength": 1}
+                },
+                "forbidden_sequences": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {"type": "string", "minLength": 1}
+                },
+                "long_endurance_anchor_protection": {"type": "string", "minLength": 1}
+              }
+            },
+            "consistency_over_optimization": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["statements"],
+              "properties": {
+                "statements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {"type": "string", "minLength": 1}
+                }
+              }
+            }
+          }
+        },
+        "structural_building_blocks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_day_roles",
+            "allowed_intensity_domains",
+            "allowed_load_modalities"
+          ],
+          "properties": {
+            "allowed_day_roles": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "agenda_enum.schema.json#/$defs/day_role"}
+            },
+            "allowed_intensity_domains": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+            },
+            "allowed_load_modalities": {
+              "type": "array",
+              "items": {"$ref": "agenda_enum.schema.json#/$defs/load_modality"}
+            }
+          }
+        },
+        "week_skeleton_logic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "week_roles",
+            "mandatory_elements",
+            "optional_elements",
+            "forbidden_patterns"
+          ],
+          "properties": {
+            "week_roles": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "week_1_role",
+                "week_2_role",
+                "week_3_role",
+                "week_4_role",
+                "allowed_role_set"
+              ],
+              "properties": {
+                "week_1_role": {"type": "string", "minLength": 1},
+                "week_2_role": {"type": "string", "minLength": 1},
+                "week_3_role": {"type": "string", "minLength": 1},
+                "week_4_role": {"type": "string", "minLength": 1},
+                "allowed_role_set": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {"type": "string", "minLength": 1}
+                }
+              }
+            },
+            "mandatory_elements": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["recovery_opportunities_min", "endurance_anchor_required"],
+              "properties": {
+                "recovery_opportunities_min": {"type": "integer", "minimum": 1},
+                "endurance_anchor_required": {"type": "boolean"}
+              }
+            },
+            "optional_elements": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["quality_days", "optional_flex_days"],
+              "properties": {
+                "quality_days": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "capped_by_upstream_limits",
+                    "never_adjacent_unless_allowed"
+                  ],
+                  "properties": {
+                    "capped_by_upstream_limits": {"type": "boolean"},
+                    "never_adjacent_unless_allowed": {"type": "boolean"}
+                  }
+                },
+                "optional_flex_days": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["removable_without_compensation"],
+                  "properties": {
+                    "removable_without_compensation": {"type": "boolean"}
+                  }
+                }
+              }
+            },
+            "forbidden_patterns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "adaptation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "relationships": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["guides", "does_not_replace"],
+          "properties": {
+            "guides": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "does_not_replace": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "self_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "block_status_respected",
+            "four_week_range_covered",
+            "week_roles_defined_for_all_weeks",
+            "no_new_decision_introduced",
+            "no_numeric_target_introduced",
+            "no_kpi_gate_inferred"
+          ],
+          "properties": {
+            "block_status_respected": {"const": true},
+            "four_week_range_covered": {"const": true},
+            "week_roles_defined_for_all_weeks": {"const": true},
+            "no_new_decision_introduced": {"const": true},
+            "no_numeric_target_introduced": {"const": true},
+            "no_kpi_gate_inferred": {"const": true}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "load_band.schema.json",
+  "title": "LoadBand",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["min", "max"],
+  "properties": {
+    "min": {
+      "type": "number",
+      "minimum": 0
+    },
+    "max": {
+      "type": "number",
+      "minimum": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

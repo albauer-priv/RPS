@@ -1,0 +1,346 @@
+# System Architecture
+
+Version: 2.0  
+Status: Updated  
+Last-Updated: 2026-01-20
+
+---
+
+## 1. Purpose & Scope
+
+This document describes the technical architecture of the training planning system.
+It covers:
+
+- system components and responsibilities
+- artifact contracts and validation
+- prompt and knowledge delivery
+- runtime storage and traceability
+
+It is a system document, not a coaching manual.
+
+---
+
+## 2. System Overview
+
+The system decomposes planning into specialized roles with strict authority boundaries.
+Agents communicate via validated artifacts and never share implicit state.
+
+### 2.1 End-to-End Flow (High Level)
+
+```mermaid
+flowchart TD
+  SB[season_brief] --> MA[Macro-Planner]
+  KP[kpi_profile] --> MA
+  EV[events] -. info .-> MA
+  MA --> MO[macro_overview]
+  MA -. optional .-> MMFF[macro_meso_feed_forward]
+
+  MO --> ME[Meso-Architect]
+  MMFF -. optional .-> ME
+  ME --> BG[block_governance]
+  ME --> BEA[block_execution_arch]
+  ME -. optional .-> BEP[block_execution_preview]
+
+  BG --> MI[Micro-Planner]
+  BEA --> MI
+  MI --> WP[workouts_plan]
+  WP --> WB[Workout-Builder]
+  WB --> WJ[intervals_workouts]
+
+  DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual]
+  DP --> AT[activities_trend]
+  VA[Validation\nvalidate_outputs.py] -. checks .-> AA
+  VA -. checks .-> AT
+  AA --> PA[Performance-Analyst]
+  AT --> PA
+  PA --> DR[des_analysis_report]
+  DR -. advisory .-> MA
+```
+
+**Core components**
+
+1. **OpenAI Responses Runtime**
+   - Tool-calling loop (file_search + function tools).
+2. **Hosted Vector Stores**
+   - Remote knowledge base (sources only in repo; embeddings remote).
+3. **Prompt Loader**
+   - Shared system prompt + per-agent prompt from `prompts/`.
+4. **Workspace Storage**
+   - Local file store under `var/athletes/` with versioned artifacts and `index.json`.
+5. **Schema Validation**
+   - JSON schema validation for all artifacts (envelope or raw payload).
+6. **Orchestrator (optional)**
+   - `plan-week` for Macro → Meso → Micro → Builder → Analysis sequencing.
+
+---
+
+## 3. Agent Roles & Responsibilities
+
+### 3.1 Performance-Analyst
+- Diagnostic only, advisory output.
+- Consumes factual data + planning context.
+- Produces `des_analysis_report` (advisory).
+
+### 3.1.1 Data Pipeline (Assumed)
+
+- Deterministic scripts ingest external activity data.
+- Writes `activities_actual` and `activities_trend` into the athlete workspace.
+- Updates `latest/` so planners always read the freshest factual data.
+- Pipeline entrypoint: `scripts/data_pipeline/get_intervals_data.py`.
+- Validation helper: `scripts/validate_outputs.py`.
+- Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
+
+### 3.2 Macro-Planner
+- Defines long-term intent (8–32 weeks).
+- Produces `macro_overview` and optional `macro_meso_feed_forward`.
+- **Important:** Macro phases define ISO week ranges, but MUST NOT define meso blocks.
+
+### 3.3 Meso-Architect
+- Converts macro phase intent into block governance and execution architecture.
+- **Block ranges are derived from macro phases**, not calendar alignment.
+
+### 3.4 Micro-Planner
+- Produces weekly execution plan (`workouts_plan`).
+- Must comply with governance + execution architecture.
+
+### 3.5 Workout-Builder
+- Deterministic conversion into Intervals.icu JSON (raw export payload).
+- No planning decisions.
+
+---
+
+## 4. Knowledge Delivery
+
+- **Prompts** live in `prompts/` and are loaded at runtime.
+- **Knowledge sources** live in `knowledge/` and are synced to OpenAI hosted vector stores.
+- At runtime, the Responses API attaches **shared + agent vector stores** via file_search.
+
+### 4.1 Vector Stores
+
+#### 4.1.1 Stores, Purpose, and Contents
+
+The system uses one shared store plus one store per agent:
+
+- `vs_shared_training`: shared policies, safety, terminology, KPI definitions, general planning principles.
+- `vs_macro_planner`: season strategy, long-horizon planning guidelines.
+- `vs_meso_architect`: block design, deload logic, block-level constraints.
+- `vs_micro_planner`: weekly scheduling rules, fatigue management, session distribution.
+- `vs_workout_builder`: workout construction rules, interval text grammar, exercise library.
+- `vs_performance_analysis`: metrics, trend interpretation, readiness logic.
+
+Knowledge sources live in `knowledge/<agent>/sources/` and are described in
+`knowledge/<agent>/manifest.yaml`. The vector store itself is remote state.
+
+```mermaid
+flowchart LR
+  SRC[knowledge/*/sources] --> SYNC[sync_vectorstores.py]
+  SYNC --> VS[(OpenAI Vector Stores)]
+  VS --> FS[file_search tool]
+  FS --> AG[Agent Runtime]
+```
+
+#### 4.1.2 Handling (Init / Update / Delete)
+
+The repo uses a single sync entrypoint to manage stores:
+
+```bash
+python scripts/sync_vectorstores.py
+```
+
+Internally, the flow is:
+
+1. Create or resolve the vector store by name.
+2. Upload changed files (hash-based delta).
+3. Optionally prune remote files that no longer exist locally.
+
+Example (minimal, direct API usage):
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# 1) Ensure store
+store = client.vector_stores.create(name="vs_micro_planner")
+
+# 2) Upload file and attach
+file_obj = client.files.create(file=open("knowledge/micro_planner/sources/rules.md", "rb"),
+                               purpose="assistants")
+client.vector_stores.file_batches.create_and_poll(
+    vector_store_id=store.id,
+    files=[{"file_id": file_obj.id, "attributes": {"path": "rules.md"}}],
+)
+
+# 3) Remove a file from a store (detach)
+client.vector_stores.files.delete(vector_store_id=store.id, file_id=file_obj.id)
+```
+
+Notes:
+- The sync script writes `.cache/vectorstores_state.json` to map store names to IDs.
+- IDs can be overridden via `.env` when needed.
+- Deleting a file from the Files API is global; prefer detaching from the store.
+
+#### 4.1.3 Per-Agent Mapping and Available Tools
+
+Each agent attaches two stores at runtime:
+
+- Shared: `vs_shared_training`
+- Agent-specific: store that matches the agent name (e.g. `vs_micro_planner`)
+
+Tools available to agents:
+
+- `file_search` (with `vector_store_ids=[shared, agent]`)
+- Workspace read tools:
+  - `workspace_get_latest`
+  - `workspace_get_version`
+  - `workspace_list_versions`
+  - `workspace_resolve_macro_phase`
+  - `workspace_resolve_block_range`
+  - `workspace_find_best_block_artefact`
+- Strict store tools (one per output artefact, schema-bound)
+
+These tool sets are wired by the runtime and are consistent across agents.
+
+#### 4.1.4 Operational Limits
+
+- Keep single files reasonably small (split large PDFs into chapters).
+- Prefer fewer, higher-signal sources over many redundant files.
+- Avoid frequent full resyncs; use delta upload in `sync_vectorstores.py`.
+- Remember that chunking and embeddings are managed by OpenAI (remote state).
+
+#### 4.1.5 Data Sensitivity
+
+- Never upload private or licensed material without explicit permission.
+- Keep athlete-specific data out of vector stores; use `var/athletes/`.
+- Avoid placing any API keys or secrets in `knowledge/`.
+
+#### 4.1.6 Incident Playbook
+
+If a store gets out of sync or corrupted:
+
+1. Re-run `python scripts/sync_vectorstores.py` (default is safe, delta-based).
+2. If needed, use `--prune` to remove remote files missing locally.
+3. If a store must be rebuilt:
+   - Create a new store name.
+   - Update `manifest.yaml` and re-sync.
+   - Update `.env` or `.cache/vectorstores_state.json`.
+
+---
+
+## 5. Workspace & Traceability
+
+### 5.1 Workspace Handling (Local Files)
+
+The workspace is a **local, append-only file store** under `var/athletes/<athlete_id>/`.
+It is the single source of truth for planning artefacts and factual data in dev.
+
+**Directory layout**
+
+```
+var/athletes/<athlete_id>/
+  plans/macro/
+  plans/meso/
+  plans/micro/
+  workouts/
+  analysis/
+  exports/
+  data/
+  latest/
+  index.json
+```
+
+```mermaid
+flowchart LR
+  AG[Agent Runtime] --> WS[Workspace Writer]
+  DP[Data Pipeline] --> WS
+  WS --> VERS[Versioned Files]
+  WS --> LATEST[latest/ pointers]
+  WS --> IDX[index.json]
+  RENDER[artefact_renderer.py] -. optional .-> VERS
+```
+
+**Key rules**
+
+- Every write creates a **versioned file** (e.g. `block_execution_arch_2026-05--2026-08.json`).
+- `latest/` holds the most recent version per artefact type.
+- `index.json` tracks per-version metadata for routing and exact range lookups.
+- The workspace is **gitignored** and should never be committed.
+
+**Data pipeline outputs**
+
+The data pipeline writes factual artefacts and mirrors them to `latest/`:
+
+- `activities_actual_yyyy-ww.json`
+- `activities_trend_yyyy-ww.json`
+
+These are validated against schemas and indexed for downstream analysis.
+
+**Rendering (optional)**
+
+Use `scripts/artefact_renderer.py` to generate human-readable sidecars from JSON.
+
+---
+
+Artifacts are stored under `var/athletes/<athlete_id>/`:
+
+- `plans/macro/`, `plans/meso/`, `plans/micro/`, `workouts/`, `analysis/`, `exports/`
+- `data/` holds pipeline outputs (CSV + JSON).
+- `latest/` contains the most recent artifact per type.
+- `index.json` records per-version metadata for lookup and routing.
+
+All artifacts are **append-only**; updates are new versions with new run IDs.
+
+---
+
+## 6. Validation & Contracts
+
+- Artifacts are validated against schemas under `schemas/`.
+- Envelope artifacts use `{ "meta": { ... }, "data": { ... } }`.
+- Raw payloads (e.g., Intervals export) are validated against their raw schema.
+
+Authority values are enforced by schema (Binding/Derived/Informational/Factual).
+The local store normalizes legacy labels (e.g., Structural → Derived).
+
+## 6.1 Artefact Renderer
+
+- Script: `scripts/artefact_renderer.py`
+- Templates: `scripts/renderers/*.md.j2`
+- Purpose: produce human-readable `.rendered.md` sidecars (informational only).
+
+---
+
+## 7. Orchestration (Optional)
+
+The `plan-week` command runs a staged plan if required artifacts are missing:
+
+1. Macro
+2. Meso (block governance + execution arch)
+3. Micro (weekly plan)
+4. Builder (Intervals export)
+5. Analysis (DES report)
+
+Routing uses:
+- Macro phase → block range resolution
+- `index.json` for exact range matching
+
+---
+
+## 8. Design Principles
+
+- **Contract-first:** inputs/outputs are explicit.
+- **Deterministic storage:** local workspace is append-only.
+- **Separation of concerns:** knowledge vs runtime data.
+- **Strict validation:** schema compliance before persistence.
+- **Traceability:** every artifact records run ID and upstream references.
+
+---
+
+## 9. Non-Goals
+
+- Automatic scheduling without explicit artifacts.
+- Silent edits of existing artifacts.
+- Embeddings or vector store state inside the repo.
+
+---
+
+## End

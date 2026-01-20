@@ -1,0 +1,276 @@
+{
+  "meta": {
+    "artifact_type": "KPI_PROFILE",
+    "schema_id": "KPIProfileInterface",
+    "schema_version": "1.0",
+    "version": "1.1",
+    "authority": "Binding",
+    "owner_agent": "Policy-Owner",
+    "run_id": "manual-kpi-profile-brevet-200-400-non-masters",
+    "created_at": "2026-01-17T06:21:32.377139+00:00",
+    "scope": "Shared",
+    "data_confidence": "UNKNOWN",
+    "trace_upstream": [
+      {
+        "artifact": "kpi_profile_des_brevet_200_400_km_non_masters.md",
+        "version": "1.1"
+      }
+    ],
+    "notes": "Converted from v1 markdown spec."
+  },
+  "data": {
+    "profile_metadata": {
+      "profile_id": "KPI_Profile_DES_Brevet_200-400km_NonMasters",
+      "event_type": "Brevet",
+      "distance_range": "200-400 km",
+      "athlete_class": "Non-Masters",
+      "primary_objective": "Performance"
+    },
+    "energetic_load_targets": {
+      "weekly_load_kj": {
+        "green": "target +/-6 %",
+        "yellow": "+/-6-12 %",
+        "red": "> +/-12 %"
+      },
+      "progression_limits": {
+        "weekly_kj_increase": {
+          "allowed": "<= 8 %",
+          "warning": "8-12 %",
+          "stop": "> 12 %"
+        },
+        "long_ride_kj_increase": {
+          "allowed": "<= 12 %",
+          "warning": "12-18 %",
+          "stop": "> 18 %"
+        }
+      }
+    },
+    "durability": {
+      "energetic_preload": {
+        "single_ride_kj": 3200,
+        "back_to_back_kj": 6500,
+        "single_ride_kj_per_kg": {
+          "min": 33.0,
+          "max": 37.6
+        },
+        "back_to_back_kj_per_kg": {
+          "min": 67.0,
+          "max": 76.5
+        },
+        "derived_from": "kJ / body_mass_window_variants_75_107kg",
+        "mass_window_kj_per_kg": [
+          {
+            "mass_window_kg": {
+              "min": 75,
+              "max": 87
+            },
+            "single_ride_kj_per_kg": {
+              "min": 36.8,
+              "max": 42.7
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 74.7,
+              "max": 86.7
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 80,
+              "max": 92
+            },
+            "single_ride_kj_per_kg": {
+              "min": 34.8,
+              "max": 40.0
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 70.7,
+              "max": 81.2
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 85,
+              "max": 97
+            },
+            "single_ride_kj_per_kg": {
+              "min": 33.0,
+              "max": 37.6
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 67.0,
+              "max": 76.5
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 90,
+              "max": 102
+            },
+            "single_ride_kj_per_kg": {
+              "min": 31.4,
+              "max": 35.6
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 63.7,
+              "max": 72.2
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 95,
+              "max": 107
+            },
+            "single_ride_kj_per_kg": {
+              "min": 29.9,
+              "max": 33.7
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 60.7,
+              "max": 68.4
+            }
+          }
+        ]
+      },
+      "kpis": {
+        "durability_index": {
+          "green": ">= 1.00",
+          "yellow": "0.98-1.00",
+          "red": "< 0.98",
+          "context": "post preload"
+        },
+        "sustained_power_drop_3h_vs_1h_percent": {
+          "green": "<= 9 %",
+          "yellow": "9-13 %",
+          "red": "> 13 %",
+          "context": "long Z2 (3h vs 1h)"
+        },
+        "back_to_back_ratio": {
+          "green": ">= 0.90",
+          "yellow": "0.86-0.90",
+          "red": "< 0.86",
+          "context": "IF day2/day1"
+        },
+        "fir_5min_20min": {
+          "green": "1.08-1.14",
+          "yellow": "1.03-1.08",
+          "red": "< 1.03",
+          "context": "under fatigue"
+        }
+      }
+    },
+    "multi_day_durability": {
+      "applies_to": [
+        "Not applicable for 200-400 km"
+      ],
+      "evaluation_window": "Not applicable",
+      "purpose": "Not applicable",
+      "kpis": {
+        "bbr_trend_day_n_vs_day_n_minus_1": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        },
+        "if_stability_delta_day_to_day": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        },
+        "hr_drift_trend": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        }
+      },
+      "dominance_rule": "Not applicable"
+    },
+    "fueling_stability": {
+      "validity_requirement": "Not applicable",
+      "purpose": "Not applicable",
+      "kpis": {
+        "if_decline_under_preload": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        },
+        "hr_drift_under_preload": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        },
+        "decoupling_under_preload": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        }
+      },
+      "interpretation_rule": "Not applicable"
+    },
+    "efficiency_drift": {
+      "kpis": {
+        "pa_hr_z2_90min": {
+          "green": "<= 6 %",
+          "yellow": "6-8 %",
+          "red": "> 8 %",
+          "context": "incl. fatigue"
+        },
+        "hr_drift_race_pace": {
+          "green": "<= 6 %",
+          "yellow": "6-9 %",
+          "red": "> 9 %",
+          "context": "late hours"
+        },
+        "ef_trend": {
+          "green": "stable / up",
+          "yellow": "flat",
+          "red": "down",
+          "context": "block trend"
+        }
+      }
+    },
+    "intensity_control": {
+      "kpis": {
+        "vo2_tiz_per_week": {
+          "green": "20-35 min",
+          "yellow": "35-45 min",
+          "red": "> 45 min"
+        },
+        "sst_tiz_per_week": {
+          "green": "phase +/-12 %",
+          "yellow": "+/-18 %",
+          "red": "> +18 %"
+        }
+      }
+    },
+    "recovery_tolerability": {
+      "kpis": {
+        "tsb_sun": {
+          "green": "-10 to -28",
+          "yellow": "-28 to -38",
+          "red": "< -38"
+        },
+        "subjective_fatigue": {
+          "green": "manageable",
+          "yellow": "elevated",
+          "red": "persistent"
+        }
+      }
+    },
+    "decision_rules": {
+      "green": "progress via kJ, duration, or controlled intensity density",
+      "yellow": "hold load, repeat block",
+      "red": "mandatory deload (-20-40 % kJ)"
+    },
+    "traceability": {
+      "requirements": [
+        "KPI & DES System",
+        "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload)",
+        "Energetic preload: >= 3,200-3,800 kJ single-day; >= 6,500-8,500 kJ back-to-back.",
+        "Relative preload preferred: >= 38-48 kJ/kg single-day; >= 75-95 kJ/kg back-to-back.",
+        "VO2 TiZ caps apply primarily in Build/Specificity phases.",
+        "Base/early Build may increase VO2 TiZ by +5-10 min/week only if Durability is GREEN and weekly kJ stays inside corridor.",
+        "Micro-Planner MAY report KPI observations factually.",
+        "Micro-Planner MUST NOT trigger progression, hold/deload decisions, or interpret KPI color states."
+      ]
+    }
+  }
+}

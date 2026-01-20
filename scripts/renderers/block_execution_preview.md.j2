@@ -1,0 +1,134 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# BLOCK_EXECUTION_PREVIEW - {{ meta.iso_week_range or "N/A" }}
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week-Range: "{{ meta.iso_week_range }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Block intent (Read-only summary)
+
+- Block type: {{ block_intent_summary.block_type }}
+- Primary objective: {{ block_intent_summary.primary_objective }}
+- Non-Negotiables:
+{{ bullet_list(block_intent_summary.non_negotiables) }}
+- Key risks / warnings:
+{{ bullet_list(block_intent_summary.key_risks_warnings) }}
+
+## 2) What the next 4 weeks will feel like
+
+- Dominant theme: {{ feel_overview.dominant_theme }}
+- Intensity handling (conceptual): {{ feel_overview.intensity_handling_conceptual }}
+- Recovery protection (conceptual): {{ feel_overview.recovery_protection_conceptual }}
+
+## 3) Agenda Specification (Validation Rules)
+
+### 3.1 DAY_ROLE_ENUM (mandatory, exactly 1 per day)
+Allowed values:
+- REST
+- RECOVERY
+- ENDURANCE
+- QUALITY
+- OPTIONAL
+- FLEX
+- TRAVEL
+- EVENT
+- OFF_BIKE
+
+### 3.2 INTENSITY_DOMAIN_ENUM (optional, max 1; default = NONE)
+Allowed values:
+- NONE
+- RECOVERY
+- ENDURANCE
+- TEMPO
+- SST
+- VO2MAX
+
+### 3.3 LOAD_MODALITY_ENUM (optional, max 1; default = NONE)
+Allowed values:
+- NONE
+- K3
+
+### 3.4 Combination Rules (Strict)
+Base rules:
+- DAY_ROLE is mandatory.
+- INTENSITY_DOMAIN defaults to NONE.
+- LOAD_MODALITY defaults to NONE.
+- No durations, no zones (Z1-Z7), no %FTP, no intervals, no kJ/TSS in agendas.
+
+Allowed combinations:
+- REST -> INTENSITY_DOMAIN=NONE, LOAD_MODALITY=NONE
+- OFF_BIKE -> INTENSITY_DOMAIN=NONE, LOAD_MODALITY=NONE
+- TRAVEL -> INTENSITY_DOMAIN=NONE, LOAD_MODALITY=NONE
+- FLEX -> INTENSITY_DOMAIN=NONE, LOAD_MODALITY=NONE
+- RECOVERY -> INTENSITY_DOMAIN in {NONE, RECOVERY}, LOAD_MODALITY=NONE
+- ENDURANCE -> INTENSITY_DOMAIN in {NONE, ENDURANCE}, LOAD_MODALITY=NONE
+- OPTIONAL -> INTENSITY_DOMAIN in {NONE, ENDURANCE}, LOAD_MODALITY=NONE
+- QUALITY -> INTENSITY_DOMAIN in {TEMPO, SST, VO2MAX}, LOAD_MODALITY in {NONE, K3}
+- EVENT -> INTENSITY_DOMAIN in {ENDURANCE, TEMPO, SST, VO2MAX}, LOAD_MODALITY in {NONE, K3}
+
+Forbidden combinations (examples):
+- ENDURANCE + SST / VO2MAX
+- RECOVERY + SST / VO2MAX
+- QUALITY + NONE
+- QUALITY + ENDURANCE / RECOVERY
+- Any DAY_ROLE + (zones, durations, %FTP, interval notation)
+- LOAD_MODALITY=K3 with INTENSITY_DOMAIN=VO2MAX (for this preview layer)
+
+## 4) Weekly Agenda Preview (Mon-Sun, intent only)
+
+{% if weekly_agenda_preview %}
+{% for week in weekly_agenda_preview %}
+### {{ week.week }}
+
+| Day | Day Role | Intensity Domain | Load Modality | Notes (non-training) |
+|---|---|---|---|---|
+{% if week.days %}{% for day in week.days %}| {{ day.day_of_week }} | {{ day.day_role }} | {{ day.intensity_domain }} | {{ day.load_modality }} | {{ day.notes or "" }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A | N/A |
+{% endif %}
+
+{% endfor %}
+{% else %}
+N/A
+{% endif %}
+
+## 5) Week-to-week narrative (non-numeric)
+
+- Direction (conceptual): {{ week_to_week_narrative.direction }}
+- What will NOT change (non-negotiables upheld): {{ week_to_week_narrative.what_will_not_change }}
+- What is flexible (allowed micro adjustments): {{ week_to_week_narrative.what_is_flexible }}
+
+## 6) If reality deviates (Ops rules)
+{{ bullet_list(deviation_rules) }}
+
+## 7) Traceability
+
+- Derived from:
+{{ bullet_list(traceability.derived_from) }}
+- Conflict resolution:
+{{ bullet_list(traceability.conflict_resolution) }}

@@ -1,0 +1,52 @@
+"""Delete managed files that are no longer attached to any vector store."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import sys
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SYS_PATH = str(ROOT / "src")
+if SYS_PATH not in sys.path:
+    # Allow running this script directly without installing the package.
+    sys.path.insert(0, SYS_PATH)
+
+from app.core.config import load_env_file  # noqa: E402
+from app.openai.client import get_client  # noqa: E402
+from app.openai.vectorstores import MANAGED_BY, list_files, list_vector_store_files, list_vector_stores  # noqa: E402
+
+
+def main() -> None:
+    """Delete managed files that are no longer attached to any vector store."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+
+    load_env_file(ROOT / ".env")
+    client = get_client()
+
+    attached_file_ids: set[str] = set()
+    for store in list_vector_stores(client):
+        for vs_file in list_vector_store_files(client, store.id):
+            attached_file_ids.add(vs_file.file_id)
+
+    removed = 0
+    for file_obj in list_files(client):
+        metadata = getattr(file_obj, "metadata", {}) or {}
+        if metadata.get("managed_by") != MANAGED_BY:
+            continue
+        if file_obj.id in attached_file_ids:
+            continue
+        if args.dry_run:
+            print(f"Would delete: {file_obj.id} {file_obj.filename}")
+        else:
+            client.files.delete(file_obj.id)
+        removed += 1
+
+    print(f"Removed {removed} orphaned files.")
+
+
+if __name__ == "__main__":
+    main()

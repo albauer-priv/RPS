@@ -1,0 +1,144 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# BLOCK_GOVERNANCE - {{ meta.iso_week_range or "N/A" }}
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week-Range: "{{ meta.iso_week_range }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 0) Body Metadata
+
+- Block-ID: {{ body_metadata.block_id }}
+- Block-Type: {{ body_metadata.block_type }}
+- Block-Status: {{ body_metadata.block_status }}
+- Change-Type: {{ body_metadata.change_type }}
+- Derived-From: {{ body_metadata.derived_from or "N/A" }}
+- Upstream-Inputs:
+{{ bullet_list(body_metadata.upstream_inputs) }}
+
+## 1) Block Summary (Readable, non-prescriptive)
+
+- Primary Objective: {{ block_summary.primary_objective }}
+- Secondary Objectives:
+{{ bullet_list(block_summary.secondary_objectives) }}
+- Key Risks / Warnings:
+{{ bullet_list(block_summary.key_risks_warnings) }}
+- Non-Negotiables:
+{{ bullet_list(block_summary.non_negotiables) }}
+
+## 2) Load Guardrails (kJ-first, REQUIRED)
+
+### 2.1 Weekly kJ Band (REQUIRED)
+| Week | kJ min | kJ max | Notes (non-prescriptive) |
+|---|---:|---:|---|
+{% if weekly_kj_bands %}{% for row in weekly_kj_bands %}| {{ row.week }} | {{ row.min }} | {{ row.max }} | {{ row.notes or "" }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
+{% endif %}
+
+### 2.2 Optional: Weekly TSS Band (Cross-check)
+| Week | TSS min | TSS max | Notes |
+|---|---:|---:|---|
+{% if weekly_tss_bands %}{% for row in weekly_tss_bands %}| {{ row.week }} | {{ row.min }} | {{ row.max }} | {{ row.notes or "" }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
+{% endif %}
+
+### 2.3 Confidence & Assumptions (REQUIRED)
+{% set conf = confidence_assumptions.confidence or {} %}
+- FTP_W used (if applicable): {{ confidence_assumptions.ftp_watts_used or "N/A" }}
+- ZoneModelVersion (if applicable): {{ confidence_assumptions.zone_model_version or "N/A" }}
+- kJ Estimation Method: {{ confidence_assumptions.kj_estimation_method or "N/A" }}
+- Confidence:
+  - kJ: {{ conf.kj or "N/A" }}
+  - TSS: {{ conf.tss or "N/A" }}
+
+## 3) Allowed / Forbidden Semantics (REQUIRED)
+
+### 3.1 Allowed DAY_ROLE_ENUM
+- Allowed: {{ allowed_forbidden_semantics.allowed_day_roles | join_or_na }}
+- Forbidden: {{ allowed_forbidden_semantics.forbidden_day_roles | join_or_na }}
+
+### 3.2 Allowed INTENSITY_DOMAIN_ENUM
+- Allowed: {{ allowed_forbidden_semantics.allowed_intensity_domains | join_or_na }}
+- Forbidden: {{ allowed_forbidden_semantics.forbidden_intensity_domains | join_or_na }}
+
+### 3.3 Allowed LOAD_MODALITY_ENUM
+- Allowed: {{ allowed_forbidden_semantics.allowed_load_modalities | join_or_na }}
+- Forbidden: {{ allowed_forbidden_semantics.forbidden_load_modalities | join_or_na }}
+
+### 3.4 Max QUALITY Density (REQUIRED)
+{% set quality = allowed_forbidden_semantics.quality_density or {} %}
+- Max QUALITY days per week: {{ quality.max_quality_days_per_week }}
+- QUALITY intent (optional): {{ quality.quality_intent or "N/A" }}
+- Forbidden patterns:
+{{ bullet_list(quality.forbidden_patterns) }}
+
+## 4) Events & Constraints (REQUIRED if any)
+
+### 4.1 Events / Races / Brevets
+| Date | Week | Type | Constraint |
+|---|---|---|---|
+{% if events %}{% for event in events %}| {{ event.date }} | {{ event.week }} | {{ event.type }} | {{ event.constraint }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
+{% endif %}
+
+### 4.2 Logistics / Time Constraints
+- Travel days: {{ logistics.travel_days or "N/A" }}
+- Work constraints: {{ logistics.work_constraints or "N/A" }}
+- Weather / indoor constraint (if relevant): {{ logistics.weather_or_indoor_constraints or "N/A" }}
+
+## 5) Execution Non-Negotiables (REQUIRED)
+
+- Recovery protection rules (conceptual, non-numeric): {{ execution_non_negotiables.recovery_protection_rules }}
+- Long endurance anchor protection: {{ execution_non_negotiables.long_endurance_anchor_protection }}
+- Minimum recovery opportunities per week: {{ execution_non_negotiables.minimum_recovery_opportunities }}
+- No catch-up rule: {{ execution_non_negotiables.no_catch_up_rule }}
+
+## 6) Escalation & Change Control (REQUIRED)
+
+### 6.1 Warning signals (examples)
+{{ bullet_list(escalation_change_control.warning_signals) }}
+
+### 6.2 Required response (governance-level)
+{% set response = escalation_change_control.required_response or {} %}
+- Micro-Planner must:
+{{ bullet_list(response.micro_planner_must) }}
+- Micro-Planner must not:
+{{ bullet_list(response.micro_planner_must_not) }}
+- Meso-Architect decides: {{ response.meso_architect_decides or "N/A" }}
+
+## 7) Explicit Forbidden Content (VALIDATION)
+
+{{ bullet_list(explicit_forbidden_content) }}
+
+## 8) Self-Check (MUST be true)
+{% set check = self_check or {} %}
+- [{{ "x" if check.weekly_kj_bands_present else " " }}] Weekly kJ bands are present for all 4 weeks
+- [{{ "x" if check.max_quality_days_specified else " " }}] Max QUALITY/week is specified
+- [{{ "x" if check.allowed_forbidden_enums_specified else " " }}] Allowed/Forbidden enums are specified
+- [{{ "x" if check.no_micro_planning_content else " " }}] No micro planning content exists
+- [{{ "x" if check.header_includes_implements_iso_week_range_trace else " " }}] Header includes Implements, ISO-Week-Range, and Trace-Upstream

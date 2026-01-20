@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "artifact_type": "KPI_PROFILE",
+    "schema_id": "KPIProfileInterface",
+    "schema_version": "1.0",
+    "version": "1.0",
+    "authority": "Binding",
+    "owner_agent": "Policy-Owner",
+    "run_id": "manual-kpi-profile-gravel-4-20h-non-masters",
+    "created_at": "2026-01-17T06:21:32.377139+00:00",
+    "scope": "Shared",
+    "data_confidence": "UNKNOWN",
+    "trace_upstream": [
+      {
+        "artifact": "kpi_profile_des_gravel_4-20h_non_masters.md",
+        "version": "1.0"
+      }
+    ],
+    "notes": "Converted from v1 markdown spec."
+  },
+  "data": {
+    "profile_metadata": {
+      "profile_id": "KPI_Profile_DES_Gravel_NonMasters",
+      "event_type": "Gravel",
+      "distance_range": "4-20 h",
+      "athlete_class": "Non-Masters",
+      "primary_objective": "Performance"
+    },
+    "energetic_load_targets": {
+      "weekly_load_kj": {
+        "green": "target +/-5 %",
+        "yellow": "+/-5-10 %",
+        "red": "> +/-10 %",
+        "notes": "higher tolerance"
+      },
+      "progression_limits": {
+        "weekly_kj_increase": {
+          "allowed": "<= 6 %",
+          "warning": "6-10 %",
+          "stop": "> 10 %"
+        },
+        "long_ride_kj_increase": {
+          "allowed": "<= 10 %",
+          "warning": "10-15 %",
+          "stop": "> 15 %"
+        }
+      }
+    },
+    "durability": {
+      "energetic_preload": {
+        "single_ride_kj": 3200,
+        "back_to_back_kj": 7000,
+        "single_ride_kj_per_kg": {
+          "min": 33.0,
+          "max": 37.6
+        },
+        "back_to_back_kj_per_kg": {
+          "min": 72.2,
+          "max": 82.4
+        },
+        "derived_from": "kJ / body_mass_window_variants_75_107kg",
+        "mass_window_kj_per_kg": [
+          {
+            "mass_window_kg": {
+              "min": 75,
+              "max": 87
+            },
+            "single_ride_kj_per_kg": {
+              "min": 36.8,
+              "max": 42.7
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 80.5,
+              "max": 93.3
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 80,
+              "max": 92
+            },
+            "single_ride_kj_per_kg": {
+              "min": 34.8,
+              "max": 40.0
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 76.1,
+              "max": 87.5
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 85,
+              "max": 97
+            },
+            "single_ride_kj_per_kg": {
+              "min": 33.0,
+              "max": 37.6
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 72.2,
+              "max": 82.4
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 90,
+              "max": 102
+            },
+            "single_ride_kj_per_kg": {
+              "min": 31.4,
+              "max": 35.6
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 68.6,
+              "max": 77.8
+            }
+          },
+          {
+            "mass_window_kg": {
+              "min": 95,
+              "max": 107
+            },
+            "single_ride_kj_per_kg": {
+              "min": 29.9,
+              "max": 33.7
+            },
+            "back_to_back_kj_per_kg": {
+              "min": 65.4,
+              "max": 73.7
+            }
+          }
+        ]
+      },
+      "kpis": {
+        "durability_index": {
+          "green": ">= 1.00",
+          "yellow": "0.98-1.00",
+          "red": "< 0.98",
+          "context": "post preload"
+        },
+        "sustained_power_drop_3h_vs_1h_percent": {
+          "green": "<= 8 %",
+          "yellow": "8-12 %",
+          "red": "> 12 %",
+          "context": "rolling gravel (3-5h vs 1h)"
+        },
+        "back_to_back_ratio": {
+          "green": ">= 0.90",
+          "yellow": "0.86-0.90",
+          "red": "< 0.86",
+          "context": "IF day2/day1"
+        },
+        "fir_5min_20min": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A",
+          "notes": "Not specified for gravel profile."
+        }
+      }
+    },
+    "multi_day_durability": {
+      "applies_to": [
+        ">= 24 h or multi-day staging"
+      ],
+      "evaluation_window": "Not specified (conditional)",
+      "purpose": "Not specified (conditional)",
+      "kpis": {
+        "bbr_trend_day_n_vs_day_n_minus_1": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        },
+        "if_stability_delta_day_to_day": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        },
+        "hr_drift_trend": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A"
+        }
+      },
+      "dominance_rule": "Not applicable"
+    },
+    "fueling_stability": {
+      "validity_requirement": "Energetic preload criteria must be met.",
+      "purpose": "Fueling errors are a primary failure mode in gravel endurance.",
+      "kpis": {
+        "if_decline_under_preload": {
+          "green": "<= 6 %",
+          "yellow": "6-9 %",
+          "red": "> 9 %",
+          "context": "competitive pace"
+        },
+        "hr_drift_under_preload": {
+          "green": "<= 7 %",
+          "yellow": "7-10 %",
+          "red": "> 10 %",
+          "context": "adequate intake"
+        },
+        "decoupling_under_preload": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A",
+          "notes": "Not specified for gravel profile."
+        }
+      },
+      "interpretation_rule": "Fueling stability is evaluated under preload conditions."
+    },
+    "efficiency_drift": {
+      "kpis": {
+        "pa_hr_z2_90min": {
+          "green": "<= 6 %",
+          "yellow": "6-9 %",
+          "red": "> 9 %",
+          "context": "long steady rides"
+        },
+        "hr_drift_race_pace": {
+          "green": "<= 6 %",
+          "yellow": "6-9 %",
+          "red": "> 9 %",
+          "context": "variable terrain"
+        },
+        "ef_trend": {
+          "green": "stable / up",
+          "yellow": "flat",
+          "red": "down",
+          "context": "multi-block trend"
+        }
+      }
+    },
+    "intensity_control": {
+      "kpis": {
+        "vo2_tiz_per_week": {
+          "green": "<= 25 min",
+          "yellow": "25-35 min",
+          "red": "> 35 min"
+        },
+        "sst_tiz_per_week": {
+          "green": "phase +/-10 %",
+          "yellow": "+/-15 %",
+          "red": "> +15 %"
+        }
+      }
+    },
+    "recovery_tolerability": {
+      "kpis": {
+        "tsb_sun": {
+          "green": "-10 to -25",
+          "yellow": "-25 to -35",
+          "red": "< -35"
+        },
+        "subjective_fatigue": {
+          "green": "N/A",
+          "yellow": "N/A",
+          "red": "N/A",
+          "notes": "Not specified for gravel profile."
+        }
+      }
+    },
+    "decision_rules": {
+      "green": "controlled progression",
+      "yellow": "hold load, rebalance intensity vs volume",
+      "red": "deload (-20-40 % kJ)"
+    },
+    "traceability": {
+      "requirements": [
+        "KPI & DES System",
+        "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload)",
+        "Variability tolerance: IF stability delta <= 7 % green, 7-11 % yellow, > 11 % red.",
+        "Variability tolerance: HR drift under variability <= 7 % green, 7-10 % yellow, > 10 % red.",
+        "Variability tolerance never overrides Durability and must not justify higher intensity density."
+      ]
+    }
+  }
+}

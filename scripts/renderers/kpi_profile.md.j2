@@ -1,0 +1,149 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# KPI_PROFILE - Decision Thresholds
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+Scope: {{ meta.scope or "N/A" }}
+Data-Confidence: {{ meta.data_confidence or "N/A" }}
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Profile Metadata
+
+- Profile ID: {{ profile_metadata.profile_id }}
+- Event type: {{ profile_metadata.event_type }}
+- Distance range: {{ profile_metadata.distance_range }}
+- Athlete class: {{ profile_metadata.athlete_class }}
+- Primary objective: {{ profile_metadata.primary_objective }}
+
+## 2) Energetic Load Targets
+
+### 2.1 Weekly Load
+
+| KPI | Green | Yellow | Red | Notes |
+|---|---|---|---|---|
+| {{ energetic_load_targets.weekly_load_kj.label }} | {{ energetic_load_targets.weekly_load_kj.green }} | {{ energetic_load_targets.weekly_load_kj.yellow }} | {{ energetic_load_targets.weekly_load_kj.red }} | {{ energetic_load_targets.weekly_load_kj.notes or "N/A" }} |
+
+### 2.2 Progression Limits
+
+| KPI | Allowed | Warning | Stop |
+|---|---|---|---|
+{% for row in energetic_load_targets.progression_limits %}| {{ row.label }} | {{ row.allowed }} | {{ row.warning }} | {{ row.stop }} |
+{% endfor %}
+
+## 3) Durability
+
+### 3.1 Energetic Pre-Load Requirement
+
+- Single-ride preload (kJ/kg): {{ durability.energetic_preload.single_ride_kj_per_kg }}
+- Back-to-back preload (kJ/kg): {{ durability.energetic_preload.back_to_back_kj_per_kg }}
+- Single-ride preload (kJ): {{ durability.energetic_preload.single_ride_kj }}
+- Back-to-back preload (kJ): {{ durability.energetic_preload.back_to_back_kj }}
+- Derived from: {{ durability.energetic_preload.derived_from or "N/A" }}
+
+### 3.2 Body Mass Window Sensitivity
+
+{% if durability.energetic_preload.mass_window_kj_per_kg %}
+| Body mass window (kg) | Single-day kJ/kg | Back-to-back kJ/kg |
+|---|---:|---:|
+{% for row in durability.energetic_preload.mass_window_kj_per_kg %}| {{ row.mass_window_kg }} | {{ row.single_ride_kj_per_kg }} | {{ row.back_to_back_kj_per_kg }} |
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+
+### 3.3 Durability KPIs
+
+| KPI | Green | Yellow | Red | Context | Notes |
+|---|---|---|---|---|---|
+{% for row in durability.kpis %}| {{ row.label }} | {{ row.green }} | {{ row.yellow }} | {{ row.red }} | {{ row.context or "N/A" }} | {{ row.notes or "N/A" }} |
+{% endfor %}
+
+## 4) Multi-Day Durability
+
+### 4.1 Applicability
+{{ bullet_list(multi_day_durability.applies_to) }}
+
+### 4.2 Evaluation Window
+{{ multi_day_durability.evaluation_window }}
+
+### 4.3 Purpose
+{{ multi_day_durability.purpose }}
+
+### 4.4 Multi-Day KPIs
+
+| KPI | Green | Yellow | Red | Context | Notes |
+|---|---|---|---|---|---|
+{% for row in multi_day_durability.kpis %}| {{ row.label }} | {{ row.green }} | {{ row.yellow }} | {{ row.red }} | {{ row.context or "N/A" }} | {{ row.notes or "N/A" }} |
+{% endfor %}
+
+### 4.5 Dominance Rule
+{{ multi_day_durability.dominance_rule }}
+
+## 5) Fueling Stability
+
+- Validity requirement: {{ fueling_stability.validity_requirement }}
+- Purpose: {{ fueling_stability.purpose }}
+- Interpretation rule: {{ fueling_stability.interpretation_rule }}
+
+### 5.1 Fueling KPIs
+
+| KPI | Green | Yellow | Red | Context | Notes |
+|---|---|---|---|---|---|
+{% for row in fueling_stability.kpis %}| {{ row.label }} | {{ row.green }} | {{ row.yellow }} | {{ row.red }} | {{ row.context or "N/A" }} | {{ row.notes or "N/A" }} |
+{% endfor %}
+
+## 6) Efficiency and Drift
+
+| KPI | Green | Yellow | Red | Context | Notes |
+|---|---|---|---|---|---|
+{% for row in efficiency_drift.kpis %}| {{ row.label }} | {{ row.green }} | {{ row.yellow }} | {{ row.red }} | {{ row.context or "N/A" }} | {{ row.notes or "N/A" }} |
+{% endfor %}
+
+## 7) Intensity Control
+
+| KPI | Green | Yellow | Red | Context | Notes |
+|---|---|---|---|---|---|
+{% for row in intensity_control.kpis %}| {{ row.label }} | {{ row.green }} | {{ row.yellow }} | {{ row.red }} | {{ row.context or "N/A" }} | {{ row.notes or "N/A" }} |
+{% endfor %}
+
+## 8) Recovery and Tolerability
+
+| KPI | Green | Yellow | Red | Context | Notes |
+|---|---|---|---|---|---|
+{% for row in recovery_tolerability.kpis %}| {{ row.label }} | {{ row.green }} | {{ row.yellow }} | {{ row.red }} | {{ row.context or "N/A" }} | {{ row.notes or "N/A" }} |
+{% endfor %}
+
+## 9) Decision Rules
+
+- Green: {{ decision_rules.green }}
+- Yellow: {{ decision_rules.yellow }}
+- Red: {{ decision_rules.red }}
+
+## 10) Traceability
+
+{{ bullet_list(traceability.requirements) }}

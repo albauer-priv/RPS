@@ -1,0 +1,36 @@
+{% set columns = columns or [] %}
+# ACTIVITIES_TREND - Weekly Aggregates ({{ meta.iso_week or "N/A" }})
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week: "{{ meta.iso_week }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Weekly Trend Table
+
+|{% for column in columns %} {{ column.label }} |{% endfor %}{{ "\n" -}}
+|{% for _ in columns %} --- |{% endfor %}{{ "\n" -}}
+{%- for row in rows %}
+|{% for column in columns %} {{ row[column.key] }} |{% endfor %}{{ "\n" -}}
+{%- endfor %}
+
+{% if notes %}
+## Notes
+{{ notes }}
+{% endif %}

@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "macro_meso_feed_forward.schema.json",
+  "title": "MacroMesoFeedForward",
+  "allOf": [
+    {
+      "$ref": "artefact_envelope.schema.json"
+    },
+    {
+      "properties": {
+        "meta": {
+          "properties": {
+            "artifact_type": {"const": "MACRO_MESO_FEED_FORWARD"},
+            "schema_id": {"const": "MacroMesoFeedForwardInterface"},
+            "schema_version": {"const": "1.0"},
+            "authority": {"const": "Binding"},
+            "owner_agent": {"const": "Macro-Planner"}
+          },
+          "required": [
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "authority",
+            "owner_agent",
+            "iso_week"
+          ]
+        },
+        "data": {
+          "$ref": "#/$defs/macro_meso_feed_forward_data"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "macro_meso_feed_forward_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_context",
+        "decision_summary",
+        "explicit_non_actions"
+      ],
+      "properties": {
+        "source_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "macro_overview_ref",
+            "des_analysis_report_ref",
+            "affected_block_id"
+          ],
+          "properties": {
+            "macro_overview_ref": {"type": "string", "minLength": 1},
+            "des_analysis_report_ref": {"type": "string", "minLength": 1},
+            "affected_block_id": {"type": "string", "minLength": 1}
+          }
+        },
+        "decision_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conclusion", "rationale"],
+          "properties": {
+            "conclusion": {
+              "type": "string",
+              "enum": ["no_change", "adjust_block", "reweight_macro"]
+            },
+            "rationale": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "block_adjustment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["applies_to_weeks", "adjustments"],
+          "properties": {
+            "applies_to_weeks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "iso_week.schema.json"}
+            },
+            "adjustments": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kj_corridor", "quality_density"],
+              "properties": {
+                "kj_corridor": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["direction", "percent"],
+                  "properties": {
+                    "direction": {
+                      "type": "string",
+                      "enum": ["increase", "decrease"]
+                    },
+                    "percent": {"type": "number", "minimum": 0}
+                  }
+                },
+                "quality_density": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["action", "details"],
+                  "properties": {
+                    "action": {"type": "string", "enum": ["allow", "restrict"]},
+                    "details": {"type": "string", "minLength": 1}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "explicit_non_actions": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "No weekly workout changes",
+              "No micro-level intervention",
+              "No KPI threshold enforcement"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decision_summary": {
+                "properties": {"conclusion": {"const": "adjust_block"}}
+              }
+            }
+          },
+          "then": {"required": ["block_adjustment"]}
+        },
+        {
+          "if": {
+            "properties": {
+              "decision_summary": {
+                "properties": {"conclusion": {"const": "adjust_block"}}
+              }
+            }
+          },
+          "else": {
+            "not": {"required": ["block_adjustment"]}
+          }
+        }
+      ]
+    }
+  }
+}

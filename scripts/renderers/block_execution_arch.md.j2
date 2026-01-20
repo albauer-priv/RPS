@@ -1,0 +1,124 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# BLOCK_EXECUTION_ARCH - {{ meta.iso_week_range or "N/A" }}
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week-Range: "{{ meta.iso_week_range }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Upstream Intent (Read-only)
+
+- Block type: {{ upstream_intent.block_type }}
+- Primary objective: {{ upstream_intent.primary_objective }}
+- Block-Status: {{ upstream_intent.block_status }}
+- Non-Negotiables:
+{{ bullet_list(upstream_intent.non_negotiables) }}
+- Constraints (time, recovery, intensity density):
+{{ bullet_list(upstream_intent.constraints) }}
+- Key risks / warnings:
+{{ bullet_list(upstream_intent.key_risks_warnings) }}
+
+## 2) Execution Principles (Block-level, non-numeric)
+
+### 2.1 Load & Intensity Handling (conceptual)
+{% set load = execution_principles.load_intensity_handling %}
+- Max number of QUALITY days per week: {{ load.max_quality_days_per_week }}
+- QUALITY intent (from governance, if provided): {{ load.quality_intent or "N/A" }}
+- Allowed INTENSITY_DOMAINs (from upstream): {{ load.allowed_intensity_domains | join_or_na }}
+- Forbidden INTENSITY_DOMAINs: {{ load.forbidden_intensity_domains | join_or_na }}
+- LOAD_MODALITY constraints: {{ load.load_modality_constraints | join_or_na }}
+
+### 2.2 Recovery Protection
+{% set recovery = execution_principles.recovery_protection %}
+- Fixed non-training days (if any): {{ recovery.fixed_non_training_days | join_or_na }}
+- Mandatory recovery spacing rules (conceptual):
+{{ bullet_list(recovery.mandatory_recovery_spacing_rules) }}
+- Forbidden sequences (e.g. quality -> quality):
+{{ bullet_list(recovery.forbidden_sequences) }}
+- Protection of long endurance anchor: {{ recovery.long_endurance_anchor_protection }}
+
+### 2.3 Consistency over Optimization
+{{ bullet_list(execution_principles.consistency_over_optimization.statements) }}
+
+## 3) Structural Building Blocks (Abstract)
+
+### 3.1 Allowed Day Roles
+{{ bullet_list(structural_building_blocks.allowed_day_roles) }}
+
+### 3.2 Allowed Intensity Domains
+{{ bullet_list(structural_building_blocks.allowed_intensity_domains) }}
+
+### 3.3 Allowed Load Modalities
+{{ bullet_list(structural_building_blocks.allowed_load_modalities) }}
+
+## 4) Week Skeleton Logic (Structural Only)
+
+### 4.0 Week Roles (Required)
+{% set week_roles = week_skeleton_logic.week_roles %}
+- Week 1 role: {{ week_roles.week_1_role }}
+- Week 2 role: {{ week_roles.week_2_role }}
+- Week 3 role: {{ week_roles.week_3_role }}
+- Week 4 role: {{ week_roles.week_4_role }}
+- Allowed role set:
+{{ bullet_list(week_roles.allowed_role_set) }}
+
+### 4.1 Mandatory Elements
+{% set mandatory = week_skeleton_logic.mandatory_elements %}
+- Each week MUST contain:
+  - >= 1 recovery opportunity (min): {{ mandatory.recovery_opportunities_min }}
+  - >= 1 endurance anchor required: {{ mandatory.endurance_anchor_required }}
+
+### 4.2 Optional Elements
+{% set optional = week_skeleton_logic.optional_elements %}
+- QUALITY days:
+  - capped by upstream limits: {{ optional.quality_days.capped_by_upstream_limits }}
+  - never adjacent unless explicitly allowed upstream: {{ optional.quality_days.never_adjacent_unless_allowed }}
+- OPTIONAL / FLEX days:
+  - removable without compensation: {{ optional.optional_flex_days.removable_without_compensation }}
+
+### 4.3 Forbidden Patterns
+{{ bullet_list(week_skeleton_logic.forbidden_patterns) }}
+
+## 5) Adaptation Rules (Ops Only)
+{{ bullet_list(adaptation_rules) }}
+
+## 6) Relationship to Other Artefacts
+
+- Guides:
+{{ bullet_list(relationships.guides) }}
+- Does not replace:
+{{ bullet_list(relationships.does_not_replace) }}
+
+## 7) Consistency & Self-Check
+{% set check = self_check %}
+- [{{ "x" if check.block_status_respected else " " }}] Block-Status respected
+- [{{ "x" if check.four_week_range_covered else " " }}] 4-week range covered
+- [{{ "x" if check.week_roles_defined_for_all_weeks else " " }}] Week roles defined for all 4 weeks
+- [{{ "x" if check.no_new_decision_introduced else " " }}] No new decision introduced
+- [{{ "x" if check.no_numeric_target_introduced else " " }}] No numeric target introduced
+- [{{ "x" if check.no_kpi_gate_inferred else " " }}] No KPI gate inferred

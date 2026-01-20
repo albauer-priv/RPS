@@ -1,0 +1,57 @@
+# WORKOUTS_PLAN - ISO-Week {{ meta.iso_week or "N/A" }}
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week: "{{ meta.iso_week }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Week Summary
+{% set corridor = week_summary.weekly_load_corridor_kj %}
+- Week objective (1 sentence): {{ week_summary.week_objective }}
+- Weekly load corridor (kJ): {{ corridor.min }}-{{ corridor.max }}{% if corridor.notes %} ({{ corridor.notes }}){% endif %}
+- Planned weekly load (kJ): {{ week_summary.planned_weekly_load_kj }}
+- Cross-check TSS (optional): {{ week_summary.cross_check_tss or "N/A" }}
+- Notes (factual, optional): {{ week_summary.notes or "N/A" }}
+
+## 2) Weekly Agenda (Mon-Sun)
+
+| Day | Date (YYYY-MM-DD) | Day-Role (AGENDA_ENUM) | Planned Duration (hh:mm) | Planned Load (kJ) | TSS (opt) | Workout-ID |
+|---|---|---|---|---:|---:|---|
+{% if agenda %}{% for row in agenda %}| {{ row.day }} | {{ row.date }} | {{ row.day_role }} | {{ row.planned_duration }} | {{ row.planned_kj }} | {{ row.planned_tss }} | {{ row.workout_id }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+{% endif %}
+
+## 3) Workout Definitions (Intervals.icu Text, EBNF-based)
+{% if workouts %}
+{% for workout in workouts %}
+---
+```
+# Workout-ID: {{ workout.workout_id }}
+# Title: {{ workout.title }}
+# Notes: {{ workout.notes or "" }}
+# Date: {{ workout.date }}
+# Start: {{ workout.start }}
+# Duration: {{ workout.duration }}
+
+{{ workout.workout_text }}
+```
+{% endfor %}
+{% else %}
+N/A
+{% endif %}

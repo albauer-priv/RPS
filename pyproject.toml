@@ -1,0 +1,23 @@
+[project]
+name = "my-openai-platform"
+version = "0.1.0"
+description = "Scaffold for OpenAI hosted vector stores with versioned knowledge."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "openai>=1.40.0",
+  "pyyaml>=6.0.1",
+  "jsonschema>=4.21.1",
+  "referencing>=0.34.0",
+  "jsonref>=1.1.0",
+  "jinja2>=3.1.3",
+  "numpy>=1.26.4",
+  "pandas>=2.2.2",
+  "requests>=2.31.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

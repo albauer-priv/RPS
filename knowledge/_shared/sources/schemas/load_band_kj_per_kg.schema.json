@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "load_band_kj_per_kg.schema.json",
+  "title": "LoadBandWithKjPerKg",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["min", "max", "kj_per_kg_min", "kj_per_kg_max"],
+  "properties": {
+    "min": {
+      "type": "number",
+      "minimum": 0
+    },
+    "max": {
+      "type": "number",
+      "minimum": 0
+    },
+    "kj_per_kg_min": {
+      "type": "number",
+      "minimum": 0
+    },
+    "kj_per_kg_max": {
+      "type": "number",
+      "minimum": 0
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

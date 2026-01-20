@@ -1,0 +1,98 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# BLOCK_FEED_FORWARD - {{ meta.iso_week_range or "N/A" }}
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week-Range: "{{ meta.iso_week_range }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 0) Body Metadata
+
+- Applies-To (ISO weeks): {{ body_metadata.applies_to_weeks | join_or_na }}
+- Valid-Until (date): {{ body_metadata.valid_until }}
+- Change-Type: {{ body_metadata.change_type }}
+- Derived-From: {{ body_metadata.derived_from }}
+- Upstream-Triggers:
+{{ bullet_list(body_metadata.upstream_triggers) }}
+
+## 1) Reason & Context (Required)
+
+- Trigger summary: {{ reason_context.trigger_summary }}
+- Observed risk / deviation: {{ reason_context.observed_risk_deviation }}
+- Intent of adjustment: {{ reason_context.intent_of_adjustment }}
+
+## 2) Delta Load Guardrails (kJ-first)
+
+### 2.1 Adjusted Weekly kJ Bands (only affected weeks)
+| Week | kJ min | kJ max | Rationale |
+|---|---:|---:|---|
+{% if delta_load_guardrails.adjusted_weekly_kj_bands %}{% for row in delta_load_guardrails.adjusted_weekly_kj_bands %}| {{ row.week }} | {{ row.min }} | {{ row.max }} | {{ row.rationale }}{% if row.notes %} ({{ row.notes }}){% endif %} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
+{% endif %}
+
+### 2.2 Optional: Adjusted TSS Bands (cross-check)
+| Week | TSS min | TSS max | Notes |
+|---|---:|---:|---|
+{% if delta_load_guardrails.adjusted_weekly_tss_bands %}{% for row in delta_load_guardrails.adjusted_weekly_tss_bands %}| {{ row.week }} | {{ row.min }} | {{ row.max }} | {{ row.notes or row.rationale }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
+{% endif %}
+
+## 3) Temporary Semantic Overrides (if any)
+
+### 3.1 INTENSITY_DOMAIN_ENUM
+- Newly Forbidden: {{ temporary_semantic_overrides.intensity_domain.newly_forbidden | join_or_na }}
+- Newly Allowed: {{ temporary_semantic_overrides.intensity_domain.newly_allowed | join_or_na }}
+
+### 3.2 LOAD_MODALITY_ENUM
+- Newly Forbidden: {{ temporary_semantic_overrides.load_modality.newly_forbidden | join_or_na }}
+- Newly Allowed: {{ temporary_semantic_overrides.load_modality.newly_allowed | join_or_na }}
+
+### 3.3 QUALITY Density Override
+{% set quality = temporary_semantic_overrides.quality_density_override %}
+- Max QUALITY days/week (temporary): {{ quality.max_quality_days_per_week }}
+- Additional forbidden patterns:
+{{ bullet_list(quality.additional_forbidden_patterns) }}
+
+## 4) Temporary Non-Negotiables
+
+- Recovery protection changes: {{ temporary_non_negotiables.recovery_protection_changes }}
+- Anchor protection changes: {{ temporary_non_negotiables.anchor_protection_changes }}
+- Explicit expiry condition (if not date-based): {{ temporary_non_negotiables.explicit_expiry_condition or "N/A" }}
+
+## 5) Micro-Planner Operating Rules (Required)
+{{ bullet_list(micro_planner_operating_rules) }}
+
+## 6) Explicit Forbidden Content
+{{ bullet_list(explicit_forbidden_content) }}
+
+## 7) Self-Check
+{% set check = self_check %}
+- [{{ "x" if check.applies_to_weeks_specified else " " }}] Applies-To weeks specified
+- [{{ "x" if check.valid_until_defined else " " }}] Valid-Until defined
+- [{{ "x" if check.only_deltas_vs_baseline_included else " " }}] Only deltas vs baseline included
+- [{{ "x" if check.no_micro_content_present else " " }}] No micro content present

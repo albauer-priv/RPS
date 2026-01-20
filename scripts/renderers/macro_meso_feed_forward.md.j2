@@ -1,0 +1,59 @@
+{% macro bullet_list(items) -%}
+{% if items %}
+{% for item in items %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- N/A
+{% endif %}
+{%- endmacro %}
+
+# MACRO_MESO_FEED_FORWARD - {{ meta.iso_week or "N/A" }}
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week: "{{ meta.iso_week }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## Source Context
+- Macro Overview: {{ source_context.macro_overview_ref }}
+- DES Analysis Report: {{ source_context.des_analysis_report_ref }}
+- Affected Block: {{ source_context.affected_block_id }}
+
+## Decision Summary
+- Conclusion: {{ decision_summary.conclusion }}
+
+### Rationale
+{{ bullet_list(decision_summary.rationale) }}
+
+{% if block_adjustment %}
+## Block Adjustment
+
+### Applies To Weeks
+{{ bullet_list(block_adjustment.applies_to_weeks) }}
+
+### Adjustments
+{% set kj = block_adjustment.adjustments.kj_corridor %}
+{% set quality = block_adjustment.adjustments.quality_density %}
+- kJ Corridor: {{ kj.direction }} by {{ kj.percent }}%
+- Quality Density: {{ quality.action }} - {{ quality.details }}
+{% endif %}
+
+## Explicit Non-Actions
+{{ bullet_list(explicit_non_actions) }}
