@@ -301,6 +301,8 @@ The intent is derived from the artefact type (no free choice).
 ## Current System Tooling
 - Use workspace_find_best_block_artefact for BLOCK_GOVERNANCE and BLOCK_EXECUTION_ARCH.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
+- Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
+  Do NOT use file_search for user inputs.
 
 NOTE: JSON cut-over is active. Ignore any legacy non-JSON instructions.
 Output JSON that validates against `workouts_plan.schema.json`.

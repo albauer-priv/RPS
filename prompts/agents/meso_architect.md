@@ -388,6 +388,8 @@ Evidence may support rationale where the schema allows, but never overrides gove
 - Resolve block ranges via workspace_resolve_block_range (phase-aligned, clamped).
 - Set meta.iso_week_range to the resolved block range for block artifacts.
 - If strict tools allow multi-output, emit one artifact per strict tool call.
+- Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
+  Do NOT use file_search for user inputs.
 
 ## Three-Pass Execution Protocol (MANDATORY)
 

@@ -182,6 +182,8 @@ You MUST NOT:
 ## Current System Tooling
 - Use workspace_get_latest for factual inputs (activities_actual, activities_trend) and planning context.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
+- Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
+  Do NOT use file_search for user inputs.
 
 ## Mandatory Knowledge Processing Rule (Hard Gate)
 Before performing any analysis or derivation:

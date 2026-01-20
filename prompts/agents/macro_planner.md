@@ -328,6 +328,8 @@ If contradictions arise:
 - Mode B: Season Brief + existing `MACRO_OVERVIEW` (Season Brief must conform).
 - Mode C: `DES_ANALYSIS_REPORT`.
 - KPI Profile: exactly one if KPI-governed planning is requested (Mode A/B).
+- User inputs (season brief, events) MUST be loaded via `workspace_get_input` from `inputs/`.
+  Do NOT use file_search for user inputs.
 
 ## Output Targets
 - Mode A/B: one JSON artefact named `macro_overview_yyyy-ww--yyyy-ww.json`
@@ -402,6 +404,7 @@ Ignore any other text in the same message.
 
 ## Current System Tooling
 - Use workspace_get_latest/workspace_list_versions to load inputs.
+- Use workspace_get_input to load `season_brief_yyyy.md` and `events.md` from the athlete `inputs/` folder.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Macro overview defines phases with iso_week_range and MUST NOT define meso blocks.
 

@@ -59,6 +59,57 @@ python3 scripts/macro_mode_a.py overview \
   --scenario-run-id macro_scenarios_2026_w06
 ```
 
+Macro, Meso, Micro cycles (concrete CLI):
+
+```bash
+# Macro cycle (Mode A, two-step)
+python3 scripts/macro_mode_a.py scenarios \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_scenarios_2026_w06 \
+  --athlete ath_001
+
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
+  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06 \
+  --athlete ath_001
+```
+
+```bash
+# Meso cycle (target ISO week = 2026-06)
+PYTHONPATH=src python3 -m app.main \
+  --agent meso_architect \
+  --athlete ath_001 \
+  --text "Create block_governance and block_execution_arch for the 4-week block covering ISO week 2026-06. Read macro_overview and events via workspace_get_input."
+```
+
+```bash
+# Micro cycle (target ISO week = 2026-06)
+PYTHONPATH=src python3 -m app.main \
+  --agent micro_planner \
+  --athlete ath_001 \
+  --text "Create workouts_plan for ISO week 2026-06. Read block_governance and block_execution_arch; use events via workspace_get_input."
+```
+
+```bash
+# Workout-Builder (target ISO week = 2026-06)
+PYTHONPATH=src python3 -m app.main \
+  --agent workout_builder \
+  --athlete ath_001 \
+  --text "Convert workouts_plan into Intervals.icu workouts JSON for ISO week 2026-06. Read workouts_plan from workspace."
+```
+
+```bash
+# Performance-Analyst (target ISO week = 2026-06)
+PYTHONPATH=src python3 -m app.main \
+  --agent performance_analysis \
+  --athlete ath_001 \
+  --text "Create des_analysis_report for ISO week 2026-06. Read activities_actual, activities_trend, KPI profile, macro overview, and meso artefacts from workspace."
+```
+
 ---
 
 ## 1. Overview
