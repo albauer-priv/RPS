@@ -385,11 +385,31 @@ Evidence may support rationale where the schema allows, but never overrides gove
 # Instruction Extension — Execution Protocol
 
 ## Current System Tooling
-- Resolve block ranges via workspace_resolve_block_range (phase-aligned, clamped).
+- Resolve block ranges via workspace_get_block_context (phase-aligned, clamped).
 - Set meta.iso_week_range to the resolved block range for block artifacts.
 - If strict tools allow multi-output, emit one artifact per strict tool call.
 - Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
   Do NOT use file_search for user inputs.
+- Require target ISO week (year + week) in the user input. If missing, STOP and request it.
+- Do not require tool usage instructions in the user prompt.
+
+## Access Hints (Tools)
+- Mode A (new block governance):
+  - Block context (current block): `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - Block context (next block): `workspace_get_block_context({ "year": YYYY, "week": WW, "offset_blocks": 1 })`
+  - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
+  - Events (optional; if present): `workspace_get_input("events")`
+  - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
+- Mode B (running block update):
+  - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
+  - Events (optional; if present): `workspace_get_input("events")`
+  - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
+- Mode C (no-change):
+  - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - Events (optional; if present): `workspace_get_input("events")`
+
+If an optional input is missing, proceed without it (do not retry indefinitely).
 
 ## Three-Pass Execution Protocol (MANDATORY)
 

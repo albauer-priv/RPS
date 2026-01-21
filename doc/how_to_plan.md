@@ -83,7 +83,7 @@ python3 scripts/macro_mode_a.py overview \
 PYTHONPATH=src python3 -m app.main \
   --agent meso_architect \
   --athlete ath_001 \
-  --text "Create block_governance and block_execution_arch for the 4-week block covering ISO week 2026-06. Read macro_overview and events via workspace_get_input."
+  --text "Create block_governance and block_execution_arch for the 4-week block covering ISO week 2026-06."
 ```
 
 ```bash
@@ -91,7 +91,7 @@ PYTHONPATH=src python3 -m app.main \
 PYTHONPATH=src python3 -m app.main \
   --agent micro_planner \
   --athlete ath_001 \
-  --text "Create workouts_plan for ISO week 2026-06. Read block_governance and block_execution_arch; use events via workspace_get_input."
+  --text "Create workouts_plan for ISO week 2026-06."
 ```
 
 ```bash
@@ -99,7 +99,7 @@ PYTHONPATH=src python3 -m app.main \
 PYTHONPATH=src python3 -m app.main \
   --agent workout_builder \
   --athlete ath_001 \
-  --text "Convert workouts_plan into Intervals.icu workouts JSON for ISO week 2026-06. Read workouts_plan from workspace."
+  --text "Convert workouts_plan into Intervals.icu workouts JSON for ISO week 2026-06."
 ```
 
 ```bash
@@ -107,7 +107,7 @@ PYTHONPATH=src python3 -m app.main \
 PYTHONPATH=src python3 -m app.main \
   --agent performance_analysis \
   --athlete ath_001 \
-  --text "Create des_analysis_report for ISO week 2026-06. Read activities_actual, activities_trend, KPI profile, macro overview, and meso artefacts from workspace."
+  --text "Create des_analysis_report for ISO week 2026-06."
 ```
 
 ---
@@ -192,10 +192,10 @@ flowchart TD
 - Macro must not define meso blocks.
 - Meso block ranges are derived **inside** a macro phase.
 
-Use the workspace tools to resolve the phase and block range when needed:
+Agents resolve the phase and block range internally via workspace tools
+(no user prompt hints required):
 
-- `workspace_resolve_macro_phase(year, week)`
-- `workspace_resolve_block_range(year, week, block_len=4)`
+- `workspace_get_block_context({ "year": YYYY, "week": WW })`
 
 ---
 

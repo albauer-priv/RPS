@@ -133,12 +133,11 @@ against the local schemas.
 
 ## 5. Tooling for Agents
 
-Agents can resolve phases and block ranges directly via tools:
+Agents resolve phases and block ranges internally via workspace tools (no user
+prompt hints required):
 
-- `workspace_resolve_macro_phase(year, week)`
-- `workspace_resolve_block_range(year, week, block_len=4)`
-- `workspace_find_best_block_artefact(artifact_type, year, week)`
-- `workspace_get_input(input_type, year)` for athlete-specific markdown inputs
+- `workspace_get_block_context({ "year": YYYY, "week": WW })`
+- `workspace_get_input("season_brief")` and `workspace_get_input("events")`
 
 This avoids manual version-key guessing and ensures macro-phase alignment.
 

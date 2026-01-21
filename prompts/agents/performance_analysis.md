@@ -184,6 +184,20 @@ You MUST NOT:
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
   Do NOT use file_search for user inputs.
+- Require target ISO week (year + week) in the user input. If missing, STOP and request it.
+- Do not require tool usage instructions in the user prompt.
+
+## Access Hints (Tools)
+- Required inputs:
+  - Activities actual: `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
+  - Activities trend: `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
+  - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+- Planning context (optional; if present):
+  - Macro overview: `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })`
+  - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - Events: `workspace_get_input("events")`
+
+If an optional input is missing, proceed without it (do not retry indefinitely).
 
 ## Mandatory Knowledge Processing Rule (Hard Gate)
 Before performing any analysis or derivation:

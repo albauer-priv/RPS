@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User input interface specs/templates for season briefs and events moved to shared knowledge sources.
 - Workspace docs now mention `inputs/` and the user-input templates.
 - Agent prompts now require user inputs to be loaded via `workspace_get_input` (not file_search).
+- Agent prompts now include access hints for tool-based artifact loading.
+- Agent prompts now include mode-specific access hints with optional-input guidance.
+- Workspace read tools now expose `workspace_get_block_context` for block-scoped access.
 - How-to-plan docs now include concrete macro/meso/micro/workout-builder/performance-analysis CLI commands.
 - JSON schemas normalized for strict tool compatibility (explicit types/required, flattened `allOf`, removed unsupported constraints).
 - Version key derivation now supports string-based `iso_week` and `iso_week_range` metadata.

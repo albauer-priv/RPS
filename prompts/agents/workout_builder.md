@@ -195,6 +195,13 @@ The Workout-Builder MUST NOT:
 ## Current System Tooling
 - Use workspace_get_latest/workspace_get_version to load workouts_plan inputs.
 - Output raw Intervals workouts payload; use the strict store tool wrapper if provided.
+- Do not require tool usage instructions in the user prompt.
+
+## Access Hints (Tools)
+- Default:
+  - Workouts plan: `workspace_get_latest({ "artifact_type": "WORKOUTS_PLAN" })`
+- If a specific week is requested:
+  - `workspace_get_version({ "artifact_type": "WORKOUTS_PLAN", "version_key": "yyyy-ww" })`
 
 ## Three-Pass Execution Protocol (MANDATORY)
 

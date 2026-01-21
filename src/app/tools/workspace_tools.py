@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app.workspace.api import Workspace
+from app.workspace.block_from_macro import IsoWeek
+from app.workspace.block_resolution import add_weeks
+from app.workspace.index_exact import IndexExactQuery
+from app.workspace.macro_phase_service import resolve_block_range_from_macro
 from app.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from app.workspace.types import ArtifactType
 
@@ -67,6 +71,25 @@ def get_tool_defs() -> list[dict[str, Any]]:
         },
         {
             "type": "function",
+            "name": "workspace_get_block_context",
+            "description": (
+                "Resolve the phase-aligned block range for a target ISO week and return the "
+                "newest exact-range block artefacts for that range. Supports offset_blocks "
+                "to shift into the next or previous block."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "year": {"type": "integer"},
+                    "week": {"type": "integer"},
+                    "block_len": {"type": "integer", "default": 4},
+                    "offset_blocks": {"type": "integer", "default": 0},
+                },
+                "required": ["year", "week"],
+            },
+        },
+        {
+            "type": "function",
             "name": "workspace_put_validated",
             "description": "Validate (against JSON schema) and store an artifact in the local athlete workspace.",
             "parameters": {
@@ -102,6 +125,36 @@ class ToolContext:
 def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], Any]]:
     """Return tool handler callables bound to the context."""
     workspace = ctx.workspace()
+    index_query = IndexExactQuery(
+        root=workspace.store.root,
+        athlete_id=workspace.athlete_id,
+    )
+
+    def _best_exact_range_doc(artifact_type: ArtifactType, block_range) -> dict[str, Any]:
+        """Load the newest exact-range artifact for a block range."""
+        best_vk = index_query.best_exact_range_version(artifact_type.value, block_range)
+        if not best_vk:
+            return {
+                "ok": False,
+                "error": f"No exact-range {artifact_type.value} found for block {block_range.key}",
+                "block_range_key": block_range.key,
+            }
+        try:
+            doc = workspace.get(artifact_type, best_vk)
+        except Exception as exc:
+            return {
+                "ok": False,
+                "error": f"Found version_key={best_vk} but failed to load: {exc}",
+                "version_key": best_vk,
+                "block_range_key": block_range.key,
+            }
+        return {
+            "ok": True,
+            "artifact_type": artifact_type.value,
+            "version_key": best_vk,
+            "block_range_key": block_range.key,
+            "document": doc,
+        }
 
     def workspace_get_latest(args: dict[str, Any]) -> Any:
         """Load the latest artifact for a type."""
@@ -117,6 +170,48 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         """List known versions for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.list_versions(artifact_type)
+
+    def workspace_get_block_context(args: dict[str, Any]) -> Any:
+        """Resolve a block range and return the newest exact-range block artifacts."""
+        year = int(args["year"])
+        week = int(args["week"])
+        block_len = int(args.get("block_len", 4))
+        offset_blocks = int(args.get("offset_blocks", 0))
+
+        target = IsoWeek(year, week)
+        if offset_blocks:
+            target = add_weeks(target, offset_blocks * block_len)
+
+        try:
+            macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
+        except FileNotFoundError:
+            return {
+                "ok": False,
+                "error": "MACRO_OVERVIEW latest missing. Cannot resolve block range.",
+            }
+
+        block_range = resolve_block_range_from_macro(macro, target, block_len=block_len)
+
+        return {
+            "ok": True,
+            "target_week": {"year": target.year, "week": target.week},
+            "block_len": block_len,
+            "offset_blocks": offset_blocks,
+            "block_range": {
+                "start": {"year": block_range.start.year, "week": block_range.start.week},
+                "end": {"year": block_range.end.year, "week": block_range.end.week},
+                "range_key": block_range.key,
+            },
+            "artifacts": {
+                "block_governance": _best_exact_range_doc(ArtifactType.BLOCK_GOVERNANCE, block_range),
+                "block_execution_arch": _best_exact_range_doc(
+                    ArtifactType.BLOCK_EXECUTION_ARCH, block_range
+                ),
+                "block_execution_preview": _best_exact_range_doc(
+                    ArtifactType.BLOCK_EXECUTION_PREVIEW, block_range
+                ),
+            },
+        }
 
     def workspace_put_validated(args: dict[str, Any]) -> Any:
         """Validate and persist an artifact using the schema registry."""
@@ -143,5 +238,6 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         "workspace_get_latest": workspace_get_latest,
         "workspace_get": workspace_get,
         "workspace_list_versions": workspace_list_versions,
+        "workspace_get_block_context": workspace_get_block_context,
         "workspace_put_validated": workspace_put_validated,
     }

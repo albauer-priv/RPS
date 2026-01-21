@@ -403,10 +403,28 @@ Ignore any other text in the same message.
 # Execution Protocol — Three-Pass
 
 ## Current System Tooling
-- Use workspace_get_latest/workspace_list_versions to load inputs.
-- Use workspace_get_input to load `season_brief_yyyy.md` and `events.md` from the athlete `inputs/` folder.
+- Use workspace tools to load inputs; follow Access Hints for concrete calls.
+- User inputs (season brief, events) MUST be loaded via `workspace_get_input` from `inputs/`
+  (do NOT use file_search for user inputs).
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Macro overview defines phases with iso_week_range and MUST NOT define meso blocks.
+- Do not require tool usage instructions in the user prompt.
+
+## Access Hints (Tools)
+- Mode A (Season Brief only):
+  - Season brief: `workspace_get_input("season_brief")`
+  - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+  - Events (optional; if present): `workspace_get_input("events")`
+- Mode B (Season Brief + existing macro):
+  - Season brief: `workspace_get_input("season_brief")`
+  - Existing macro overview: `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })`
+  - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+  - Events (optional; if present): `workspace_get_input("events")`
+- Mode C (DES analysis only):
+  - DES report: `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
+  - Events (optional; if present): `workspace_get_input("events")`
+
+If an optional input is missing, proceed without it (do not retry indefinitely).
 
 The Macro-Planner operates strictly at macro level and must output only the
 binding schema-defined artefact for the active mode.
