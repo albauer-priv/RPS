@@ -1,8 +1,8 @@
 # Planner Workflow
 
-Version: 2.0  
+Version: 2.1  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-01-22
 
 ---
 
@@ -11,19 +11,25 @@ Last-Updated: 2026-01-20
 Typical weekly flow:
 
 1. Ensure inputs: season brief, KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events.
-2. Run **Macro** if goals or A/B events changed.
-3. Run **Meso** for the current block (phase-aligned).
-4. Run **Micro** for the target ISO week.
-5. Run **Workout-Builder** to export Intervals JSON.
-6. Run **Performance-Analyst** after factual data is available.
+2. Run **Season-Scenario-Agent** when a new macro plan is needed.
+3. Store a scenario selection (A/B/C).
+4. Run **Macro** (scenario optional if selection exists).
+5. Run **Meso** for the current block (phase-aligned).
+6. Run **Micro** for the target ISO week.
+7. Run **Workout-Builder** to export Intervals JSON.
+8. Run **Performance-Analyst** after factual data is available.
 
 ### 1.1 Flow Overview
 
 ```mermaid
 flowchart TD
-  SB[season_brief] --> MA[Macro-Planner]
-  KP[kpi_profile] --> MA
-  EV[events] -. info .-> MA
+  SB[season_brief] --> SS[Season-Scenario-Agent]
+  KP[kpi_profile] --> SS
+  SS --> SC[season_scenarios]
+  SC -. advisory .-> MA[Macro-Planner]
+  EV[events] -. info .-> SS
+  EV -. info .-> MA
+  KP --> MA
   MA --> MO[macro_overview]
   MA -. optional .-> MMFF[macro_meso_feed_forward]
 
@@ -95,9 +101,13 @@ against the local schemas.
 
 ## 3. Agent Responsibilities
 
+### Season-Scenario-Agent
+- Outputs: `season_scenarios` (advisory).
+- Inputs: season brief, KPI profile, events (optional).
+
 ### Macro-Planner
 - Outputs: `macro_overview` (+ optional `macro_meso_feed_forward`).
-- Inputs: season brief, KPI profile, events, analysis (advisory).
+- Inputs: season brief, KPI profile, season scenarios (advisory), events, analysis (advisory).
 
 ### Meso-Architect
 - Outputs: `block_governance`, `block_execution_arch` (+ optional preview/feed-forward/zone model).
@@ -179,12 +189,14 @@ By default, scenarios are written to `.cache/macro_scenarios/<run-id>.md`.
 ### CLI: Single agent
 
 ```bash
-PYTHONPATH=src python3 -m app.main \
+PYTHONPATH=src python3 -m app.main run-agent \
   --agent micro_planner \
-  --text "Create workouts plan for ISO week 2026-06"
+  --task CREATE_WORKOUTS_PLAN \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create workouts_plan for ISO week 2026-06."
 ```
 
 If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
+`run-agent` defaults to strict tool mode for JSON-producing agents; use `--non-strict` for text-only outputs.
 
 ---
 

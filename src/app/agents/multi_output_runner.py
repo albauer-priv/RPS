@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,13 +11,23 @@ from typing import Any
 from openai import OpenAI
 
 from app.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
+from app.openai.reasoning import build_reasoning_payload
+from app.openai.model_capabilities import supports_temperature
+from app.openai.response_utils import (
+    extract_file_search_results,
+    extract_reasoning_summaries,
+    extract_text_output,
+)
 from app.openai.vectorstore_state import VectorStoreResolver
 from app.prompts.loader import PromptLoader
 from app.schemas.bundler import SchemaBundler
 from app.tools.store_output_tools import build_strict_store_tool
 from app.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from app.workspace.guarded_store import GuardedValidatedStore
+from app.workspace.schema_registry import SchemaValidationError
+from app.workspace.types import ArtifactType
 
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class AgentRuntime:
@@ -24,6 +35,8 @@ class AgentRuntime:
     client: OpenAI
     model: str
     temperature: float | None
+    reasoning_effort: str | None
+    reasoning_summary: str | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
     shared_vs_name: str
@@ -54,6 +67,22 @@ def _item_field(item: Any, name: str) -> Any:
     return getattr(item, name, None)
 
 
+def _log_file_search_results(response: Any) -> None:
+    """Log file_search results for debugging."""
+    results = extract_file_search_results(response)
+    if not results:
+        logger.info("file_search results: none")
+        return
+    logger.info("file_search results: %d", len(results))
+    for idx, result in enumerate(results, start=1):
+        logger.info(
+            "file_search[%d] file=%s score=%s attrs=%s",
+            idx,
+            result.get("filename"),
+            result.get("score"),
+            result.get("attributes"),
+        )
+
 def run_agent_multi_output(
     runtime: AgentRuntime,
     *,
@@ -65,6 +94,7 @@ def run_agent_multi_output(
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
+    include_debug_file_search: bool = False,
     force_file_search: bool = True,
     max_num_results: int = 6,
 ) -> dict[str, Any]:
@@ -101,15 +131,185 @@ def run_agent_multi_output(
         {"role": "user", "content": user_input},
     ]
 
-    def _create_response(force_search_flag: bool):
+    def _coerce_envelope_args(args: dict[str, Any]) -> dict[str, Any]:
+        """Try to recover an envelope object from common tool-arg shapes."""
+        if "meta" in args and "data" in args:
+            return args
+
+        def _maybe_parse(value: Any) -> dict[str, Any] | None:
+            if isinstance(value, dict) and "meta" in value and "data" in value:
+                return value
+            if isinstance(value, str):
+                try:
+                    parsed = json.loads(value)
+                except json.JSONDecodeError:
+                    return None
+                if isinstance(parsed, dict) and "meta" in parsed and "data" in parsed:
+                    return parsed
+            return None
+
+        if len(args) == 1:
+            recovered = _maybe_parse(next(iter(args.values())))
+            if recovered:
+                return recovered
+
+        for key in ("document", "payload", "envelope", "json", "content"):
+            if key in args:
+                recovered = _maybe_parse(args[key])
+                if recovered:
+                    return recovered
+
+        return args
+
+    def _fill_season_scenarios(document: dict[str, Any]) -> dict[str, Any]:
+        """Ensure required season_scenarios fields exist to satisfy strict schema."""
+        if not isinstance(document, dict):
+            return document
+        meta = document.get("meta") or {}
+        artifact_type = str(meta.get("artifact_type", "")).upper()
+        if artifact_type == "SEASON_SCENARIO_SELECTION":
+            if meta.get("authority") != "Informational":
+                meta["authority"] = "Informational"
+            if meta.get("owner_agent") != "Season-Scenario-Agent":
+                meta["owner_agent"] = "Season-Scenario-Agent"
+            if meta.get("schema_id") != "SeasonScenarioSelectionInterface":
+                meta["schema_id"] = "SeasonScenarioSelectionInterface"
+            if meta.get("schema_version") != "1.0":
+                meta["schema_version"] = "1.0"
+            if "notes" not in meta:
+                meta["notes"] = ""
+            elif isinstance(meta.get("notes"), list):
+                meta["notes"] = " ".join(str(item) for item in meta.get("notes") if item is not None)
+            document["meta"] = meta
+            data = document.get("data") or {}
+            if not isinstance(data, dict):
+                data = {}
+            data.setdefault("selection_rationale", "")
+            data.setdefault("notes", [])
+            document["data"] = data
+            return document
+        if artifact_type != "SEASON_SCENARIOS":
+            return document
+        if meta.get("authority") != "Informational":
+            meta["authority"] = "Informational"
+        if meta.get("owner_agent") != "Season-Scenario-Agent":
+            meta["owner_agent"] = "Season-Scenario-Agent"
+        if meta.get("schema_id") != "SeasonScenariosInterface":
+            meta["schema_id"] = "SeasonScenariosInterface"
+        if meta.get("schema_version") != "1.0":
+            meta["schema_version"] = "1.0"
+        if "notes" not in meta:
+            meta["notes"] = ""
+        elif isinstance(meta.get("notes"), list):
+            meta["notes"] = " ".join(str(item) for item in meta.get("notes") if item is not None)
+        document["meta"] = meta
+        data = document.get("data") or {}
+        if not isinstance(data, dict):
+            data = {}
+        allowed_data_keys = {
+            "season_brief_ref",
+            "kpi_profile_ref",
+            "athlete_profile_ref",
+            "planning_horizon_weeks",
+            "scenarios",
+            "notes",
+        }
+        data = {key: value for key, value in data.items() if key in allowed_data_keys}
+        data.setdefault("notes", [])
+        scenarios = data.get("scenarios") or []
+        cleaned_scenarios: list[dict[str, Any]] = []
+        if isinstance(scenarios, list):
+            for scenario in scenarios:
+                if not isinstance(scenario, dict):
+                    continue
+                allowed_scenario_keys = {
+                    "scenario_id",
+                    "name",
+                    "core_idea",
+                    "load_philosophy",
+                    "risk_profile",
+                    "key_differences",
+                    "best_suited_if",
+                    "scenario_guidance",
+                }
+                scenario = {key: value for key, value in scenario.items() if key in allowed_scenario_keys}
+                guidance = scenario.get("scenario_guidance") or {}
+                if not isinstance(guidance, dict):
+                    guidance = {}
+                allowed_guidance_keys = {
+                    "deload_cadence",
+                    "phase_length_weeks",
+                    "phase_recommendations",
+                    "event_alignment_notes",
+                    "risk_flags",
+                    "fixed_rest_days",
+                    "constraint_summary",
+                    "kpi_guardrail_notes",
+                    "decision_notes",
+                    "intensity_guidance",
+                    "assumptions",
+                    "unknowns",
+                }
+                guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
+                guidance.setdefault("event_alignment_notes", [])
+                guidance.setdefault("risk_flags", [])
+                guidance.setdefault("fixed_rest_days", [])
+                guidance.setdefault("constraint_summary", [])
+                guidance.setdefault("kpi_guardrail_notes", [])
+                guidance.setdefault("decision_notes", [])
+                guidance.setdefault("assumptions", [])
+                guidance.setdefault("unknowns", [])
+                guidance.setdefault("intensity_guidance", {"allowed_domains": [], "avoid_domains": []})
+                scenario["scenario_guidance"] = guidance
+                cleaned_scenarios.append(scenario)
+        data["scenarios"] = cleaned_scenarios
+        document["data"] = data
+        return document
+
+    def _fill_macro_overview(document: dict[str, Any]) -> dict[str, Any]:
+        """Normalize common MACRO_OVERVIEW placement issues."""
+        if not isinstance(document, dict):
+            return document
+        meta = document.get("meta") or {}
+        if str(meta.get("artifact_type", "")).upper() != "MACRO_OVERVIEW":
+            return document
+        data = document.get("data") or {}
+        if not isinstance(data, dict):
+            return document
+        phases = data.get("phases")
+        if isinstance(phases, list):
+            top_semantics = data.get("allowed_forbidden_semantics")
+            if isinstance(top_semantics, dict):
+                for phase in phases:
+                    if isinstance(phase, dict) and "allowed_forbidden_semantics" not in phase:
+                        phase["allowed_forbidden_semantics"] = top_semantics
+                data.pop("allowed_forbidden_semantics", None)
+        document["data"] = data
+        return document
+
+    def _is_envelope(value: Any) -> bool:
+        return isinstance(value, dict) and "meta" in value and "data" in value
+
+    def _create_response(force_search_flag: bool, forced_tool_name: str | None = None):
         payload: dict[str, Any] = {
             "model": model,
             "tools": tools,
             "input": input_list,
         }
+        if include_debug_file_search:
+            payload["include"] = ["file_search_call.results"]
+        reasoning = build_reasoning_payload(
+            model,
+            runtime.reasoning_effort,
+            runtime.reasoning_summary,
+        )
+        if reasoning:
+            payload["reasoning"] = reasoning
         if force_search_flag:
             payload["tool_choice"] = {"type": "file_search"}
-        if temperature is not None:
+        elif forced_tool_name:
+            payload["tool_choice"] = {"type": "function", "name": forced_tool_name}
+        if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
         return runtime.client.responses.create(**payload)
 
@@ -117,11 +317,21 @@ def run_agent_multi_output(
     wanted_tool_names = {spec.tool_name for spec in output_specs}
 
     force_search = force_file_search
+    seen_summaries: set[str] = set()
     response = _create_response(force_search)
+    last_text = response.output_text or extract_text_output(response) or ""
+    if include_debug_file_search:
+        _log_file_search_results(response)
+    for summary in extract_reasoning_summaries(response):
+        if summary in seen_summaries:
+            continue
+        seen_summaries.add(summary)
+        logger.info("Reasoning summary: %s", summary)
     input_list += response.output
     force_search = False
 
     safety = 0
+    attempted_forced_store = False
     while True:
         safety += 1
         if safety > 30:
@@ -130,7 +340,99 @@ def run_agent_multi_output(
         function_calls = [item for item in response.output if _item_type(item) == "function_call"]
         if not function_calls:
             all_done = wanted_tool_names.issubset(set(produced.keys()))
-            return {"ok": all_done, "produced": produced, "final_text": response.output_text}
+            final_text = response.output_text or last_text
+            if (
+                not all_done
+                and len(output_specs) == 1
+                and output_specs[0].envelope
+                and not attempted_forced_store
+            ):
+                spec = output_specs[0]
+                if spec.artifact_type in {
+                    ArtifactType.SEASON_SCENARIOS,
+                    ArtifactType.SEASON_SCENARIO_SELECTION,
+                    ArtifactType.MACRO_OVERVIEW,
+                }:
+                    attempted_forced_store = True
+                    input_list.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                "Return only a schema-compliant JSON envelope and call the "
+                                f"{spec.tool_name} tool. Do not include any other text."
+                            ),
+                        }
+                    )
+                    response = _create_response(False, forced_tool_name=spec.tool_name)
+                    if response.output_text:
+                        last_text = response.output_text
+                    else:
+                        text_out = extract_text_output(response)
+                        if text_out:
+                            last_text = text_out
+                    if include_debug_file_search:
+                        _log_file_search_results(response)
+                    for summary in extract_reasoning_summaries(response):
+                        if summary in seen_summaries:
+                            continue
+                        seen_summaries.add(summary)
+                        logger.info("Reasoning summary: %s", summary)
+                    input_list += response.output
+                    continue
+            if (
+                not all_done
+                and len(output_specs) == 1
+                and output_specs[0].envelope
+                and final_text
+            ):
+                spec = output_specs[0]
+                try:
+                    parsed = json.loads(final_text.strip())
+                except json.JSONDecodeError:
+                    logger.warning("Fallback store skipped: response text was not valid JSON.")
+                else:
+                    parsed = _fill_season_scenarios(parsed)
+                    parsed = _fill_macro_overview(parsed)
+                    try:
+                        saved = guarded.guard_put_validated(
+                            output_spec=spec,
+                            document=parsed,
+                            run_id=run_id,
+                            producer_agent=agent_name,
+                            update_latest=True,
+                        )
+                        produced[spec.tool_name] = saved
+                        logger.warning(
+                            "Fallback store used for %s (missing tool call).",
+                            spec.artifact_type.value,
+                        )
+                        return {"ok": True, "produced": produced}
+                    except SchemaValidationError as exc:
+                        logger.warning(
+                            "Fallback schema validation failed for %s: %s",
+                            spec.artifact_type.value,
+                            exc.errors,
+                        )
+                        return {
+                            "ok": False,
+                            "produced": produced,
+                            "final_text": final_text,
+                            "error": "Schema validation failed",
+                            "details": exc.errors,
+                        }
+                    except Exception as exc:
+                        logger.warning(
+                            "Fallback store failed for %s: %s",
+                            spec.artifact_type.value,
+                            exc,
+                        )
+                        return {
+                            "ok": False,
+                            "produced": produced,
+                            "final_text": final_text,
+                            "error": str(exc),
+                        }
+            return {"ok": all_done, "produced": produced, "final_text": final_text}
 
         for call in function_calls:
             name = _item_field(call, "name")
@@ -141,11 +443,14 @@ def run_agent_multi_output(
             except json.JSONDecodeError:
                 args = {}
 
+            logger.debug("Tool call %s args=%s", name, args)
+
             if name in read_handlers:
                 try:
                     result = read_handlers[name](args)
                 except Exception as exc:
                     result = {"ok": False, "error": str(exc)}
+                    logger.warning("Read tool failed %s: %s", name, exc)
 
                 input_list.append(
                     {
@@ -168,7 +473,19 @@ def run_agent_multi_output(
                 )
                 continue
 
-            document = args if spec.envelope else args.get("workouts")
+            document = _coerce_envelope_args(args) if spec.envelope else args.get("workouts")
+            document = _fill_season_scenarios(document)
+            document = _fill_macro_overview(document)
+            if spec.envelope and not _is_envelope(document):
+                result = {"ok": False, "error": "Envelope artefact must be an object with meta and data"}
+                input_list.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": call_id,
+                        "output": json.dumps(result, ensure_ascii=False),
+                    }
+                )
+                continue
             try:
                 saved = guarded.guard_put_validated(
                     output_spec=spec,
@@ -179,8 +496,12 @@ def run_agent_multi_output(
                 )
                 produced[name] = saved
                 result = saved
+            except SchemaValidationError as exc:
+                result = {"ok": False, "error": str(exc), "details": exc.errors}
+                logger.warning("Schema validation failed for %s: %s", spec.artifact_type.value, exc.errors)
             except Exception as exc:
                 result = {"ok": False, "error": str(exc)}
+                logger.warning("Store failed for %s: %s", spec.artifact_type.value, exc)
 
             input_list.append(
                 {
@@ -194,4 +515,17 @@ def run_agent_multi_output(
             return {"ok": True, "produced": produced}
 
         response = _create_response(force_search)
+        if response.output_text:
+            last_text = response.output_text
+        else:
+            text_out = extract_text_output(response)
+            if text_out:
+                last_text = text_out
+        if include_debug_file_search:
+            _log_file_search_results(response)
+        for summary in extract_reasoning_summaries(response):
+            if summary in seen_summaries:
+                continue
+            seen_summaries.add(summary)
+            logger.info("Reasoning summary: %s", summary)
         input_list += response.output

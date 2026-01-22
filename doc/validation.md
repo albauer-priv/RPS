@@ -68,3 +68,26 @@ python scripts/validate_outputs.py \
 - Schemas live in `schemas/` and are loaded with `$ref` resolution.
 - The validator reports all schema errors with JSON paths.
 - Output is non-destructive; it does not modify files.
+
+---
+
+## Per-Artifact Checklists
+
+Manual validation checklists live under `doc/validation/`:
+
+- `doc/validation/season_brief_validation.md`
+- `doc/validation/season_scenarios_validation.md`
+- `doc/validation/events_validation.md`
+- `doc/validation/kpi_profile_validation.md`
+- `doc/validation/macro_overview_validation.md`
+- `doc/validation/macro_meso_feed_forward_validation.md`
+- `doc/validation/block_governance_validation.md`
+- `doc/validation/block_execution_arch_validation.md`
+- `doc/validation/block_execution_preview_validation.md`
+- `doc/validation/block_feed_forward_validation.md`
+- `doc/validation/zone_model_validation.md`
+- `doc/validation/workouts_plan_validation.md`
+- `doc/validation/intervals_workouts_validation.md`
+- `doc/validation/activities_actual_validation.md`
+- `doc/validation/activities_trend_validation.md`
+- `doc/validation/des_analysis_report_validation.md`

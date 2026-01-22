@@ -20,6 +20,8 @@ ARTIFACT_PATHS: dict[ArtifactType, ArtifactPathConfig] = {
     ArtifactType.SEASON_BRIEF: ArtifactPathConfig("inputs", "season_brief"),
     ArtifactType.EVENTS: ArtifactPathConfig("inputs", "events"),
     ArtifactType.KPI_PROFILE: ArtifactPathConfig("inputs", "kpi_profile"),
+    ArtifactType.SEASON_SCENARIOS: ArtifactPathConfig("plans/macro", "season_scenarios"),
+    ArtifactType.SEASON_SCENARIO_SELECTION: ArtifactPathConfig("plans/macro", "season_scenario_selection"),
     ArtifactType.MACRO_OVERVIEW: ArtifactPathConfig("plans/macro", "macro_overview"),
     ArtifactType.MACRO_MESO_FEED_FORWARD: ArtifactPathConfig("plans/macro", "macro_meso_feed_forward"),
     ArtifactType.BLOCK_GOVERNANCE: ArtifactPathConfig("plans/meso", "block_governance"),

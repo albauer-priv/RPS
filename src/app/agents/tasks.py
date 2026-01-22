@@ -10,6 +10,8 @@ from app.workspace.types import ArtifactType
 
 class AgentTask(str, Enum):
     """Named tasks that an agent can execute."""
+    CREATE_SEASON_SCENARIOS = "CREATE_SEASON_SCENARIOS"
+    CREATE_SEASON_SCENARIO_SELECTION = "CREATE_SEASON_SCENARIO_SELECTION"
     CREATE_MACRO_OVERVIEW = "CREATE_MACRO_OVERVIEW"
     CREATE_MACRO_MESO_FEED_FORWARD = "CREATE_MACRO_MESO_FEED_FORWARD"
 
@@ -38,6 +40,20 @@ class OutputSpec:
 
 
 OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
+    AgentTask.CREATE_SEASON_SCENARIOS: OutputSpec(
+        task=AgentTask.CREATE_SEASON_SCENARIOS,
+        artifact_type=ArtifactType.SEASON_SCENARIOS,
+        schema_file="season_scenarios.schema.json",
+        tool_name="store_season_scenarios",
+        envelope=True,
+    ),
+    AgentTask.CREATE_SEASON_SCENARIO_SELECTION: OutputSpec(
+        task=AgentTask.CREATE_SEASON_SCENARIO_SELECTION,
+        artifact_type=ArtifactType.SEASON_SCENARIO_SELECTION,
+        schema_file="season_scenario_selection.schema.json",
+        tool_name="store_season_scenario_selection",
+        envelope=True,
+    ),
     AgentTask.CREATE_MACRO_OVERVIEW: OutputSpec(
         task=AgentTask.CREATE_MACRO_OVERVIEW,
         artifact_type=ArtifactType.MACRO_OVERVIEW,

@@ -1,8 +1,8 @@
 # HOW_TO_PLAN.md
 
-Version: 2.0  
+Version: 2.1  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-01-22
 
 ---
 
@@ -11,14 +11,15 @@ Last-Updated: 2026-01-20
 1) Create `season_brief_yyyy.md`.  
 2) Select a `kpi_profile_des_*.json`, copy it to `var/athletes/<athlete_id>/latest/`, and rename to `kpi_profile.json`.  
 3) Update `events.md`.  
-4) Run **Macro** (Mode A is a two-step scenario + overview flow).  
-5) Run **Meso** -> `block_governance_yyyy-ww--yyyy-ww.json` + `block_execution_arch_yyyy-ww--yyyy-ww.json`.  
-6) Run **Micro** -> `workouts_plan_yyyy-ww.json`.  
-7) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
-8) Post workouts: `python scripts/data_pipeline/post_workout.py`.  
-9) Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.  
-10) Validate outputs: `python scripts/validate_outputs.py`.  
-11) Run **Performance-Analyst** -> `des_analysis_report_yyyy-ww.json`.  
+4) Run **Season-Scenario-Agent** (generates `season_scenarios`).  
+5) Run **Macro** (Mode A uses selected scenario).  
+6) Run **Meso** -> `block_governance_yyyy-ww--yyyy-ww.json` + `block_execution_arch_yyyy-ww--yyyy-ww.json`.  
+7) Run **Micro** -> `workouts_plan_yyyy-ww.json`.  
+8) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
+9) Post workouts: `python scripts/data_pipeline/post_workout.py`.  
+10) Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.  
+11) Validate outputs: `python scripts/validate_outputs.py`.  
+12) Run **Performance-Analyst** -> `des_analysis_report_yyyy-ww.json`.  
 
 Macro changes are rare (months). Meso every block. Micro weekly. Analysis weekly.
 
@@ -41,7 +42,7 @@ var/athletes/<athlete_id>/latest/kpi_profile.json
 
 Predefined KPI profiles live under `kpi_profiles/` at repo root.
 
-Macro Mode A CLI (two-step):
+Macro Mode A CLI (two-step, scenario generation via Season-Scenario-Agent):
 
 ```bash
 python3 scripts/macro_mode_a.py scenarios \
@@ -50,12 +51,35 @@ python3 scripts/macro_mode_a.py scenarios \
   --run-id macro_scenarios_2026_w06
 ```
 
+This stores `season_scenarios_yyyy-ww--yyyy-ww.json` under `plans/macro/` and
+writes the human-readable scenario dialogue to `.cache/macro_scenarios/`.
+
+Select scenario (stores `season_scenario_selection`):
+
+```bash
+python3 scripts/macro_mode_a.py select \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_select_2026_w06 \
+  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06
+```
+
+Macro overview (scenario optional if selection exists):
+
 ```bash
 python3 scripts/macro_mode_a.py overview \
   --year 2026 \
   --week 6 \
   --run-id macro_overview_2026_w06 \
-  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06
+```
+
+```bash
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
   --scenario-run-id macro_scenarios_2026_w06
 ```
 
@@ -73,42 +97,47 @@ python3 scripts/macro_mode_a.py overview \
   --year 2026 \
   --week 6 \
   --run-id macro_overview_2026_w06 \
-  --scenario A \
   --scenario-run-id macro_scenarios_2026_w06 \
   --athlete ath_001
 ```
 
 ```bash
 # Meso cycle (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main \
+PYTHONPATH=src python3 -m app.main run-agent \
   --agent meso_architect \
   --athlete ath_001 \
-  --text "Create block_governance and block_execution_arch for the 4-week block covering ISO week 2026-06."
+  --task CREATE_BLOCK_GOVERNANCE CREATE_BLOCK_EXECUTION_ARCH \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create block_governance and block_execution_arch for the 4-week block covering ISO week 2026-06."
 ```
 
 ```bash
 # Micro cycle (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main \
+PYTHONPATH=src python3 -m app.main run-agent \
   --agent micro_planner \
   --athlete ath_001 \
-  --text "Create workouts_plan for ISO week 2026-06."
+  --task CREATE_WORKOUTS_PLAN \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create workouts_plan for ISO week 2026-06."
 ```
 
 ```bash
 # Workout-Builder (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main \
+PYTHONPATH=src python3 -m app.main run-agent \
   --agent workout_builder \
   --athlete ath_001 \
+  --task CREATE_INTERVALS_WORKOUTS_EXPORT \
   --text "Convert workouts_plan into Intervals.icu workouts JSON for ISO week 2026-06."
 ```
 
 ```bash
 # Performance-Analyst (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main \
+PYTHONPATH=src python3 -m app.main run-agent \
   --agent performance_analysis \
   --athlete ath_001 \
-  --text "Create des_analysis_report for ISO week 2026-06."
+  --task CREATE_DES_ANALYSIS_REPORT \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create des_analysis_report for ISO week 2026-06."
 ```
+
+Note: `run-agent` defaults to strict tool mode for JSON-producing agents. Use `--non-strict` only for text-only outputs.
 
 ---
 
@@ -117,6 +146,7 @@ PYTHONPATH=src python3 -m app.main \
 This guide explains the planning sequence, artefacts, and cadence.
 
 **Governance and cycles**
+- **Season-Scenario**: generates advisory A/B/C scenarios from the season brief.
 - **Macro**: long-horizon intent (8-32 weeks), phases, load corridors.
 - **Meso**: phase-aligned blocks (default 4 weeks).
 - **Micro**: weekly plan and sessions.
@@ -126,7 +156,7 @@ This guide explains the planning sequence, artefacts, and cadence.
 
 **Artefact types**
 - **Binding**: must be followed (macro, governance, execution arch, workouts plan).
-- **Informational**: context only (events, previews).
+- **Informational**: context only (season_scenarios, events, previews).
 - **Advisory**: analysis report (macro may use to adjust later).
 
 **Formats**
@@ -149,9 +179,13 @@ This guide explains the planning sequence, artefacts, and cadence.
 
 ```mermaid
 flowchart TD
-  SB[season_brief_yyyy.md] --> MA[Macro cycle]
-  KP[kpi_profile_des_*.json] --> MA
-  EV[events.md] -. info .-> MA
+  SB[season_brief_yyyy.md] --> SS[Season-Scenario]
+  KP[kpi_profile_des_*.json] --> SS
+  SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]
+  SC -. advisory .-> MA[Macro cycle]
+  KP --> MA
+  EV[events.md] -. info .-> SS
+  EV -. info .-> MA
 
   MA --> MO[macro_overview_yyyy-ww--yyyy-ww.json]
   MA -. optional .-> MMFF[macro_meso_feed_forward_yyyy-ww.json]

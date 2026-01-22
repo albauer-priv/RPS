@@ -1,8 +1,8 @@
 # System Architecture
 
-Version: 2.0  
+Version: 2.1  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-01-22
 
 ---
 
@@ -29,9 +29,13 @@ Agents communicate via validated artifacts and never share implicit state.
 
 ```mermaid
 flowchart TD
-  SB[season_brief] --> MA[Macro-Planner]
-  KP[kpi_profile] --> MA
-  EV[events] -. info .-> MA
+  SB[season_brief] --> SS[Season-Scenario-Agent]
+  KP[kpi_profile] --> SS
+  SS --> SC[season_scenarios]
+  SC -. advisory .-> MA[Macro-Planner]
+  KP --> MA
+  EV[events] -. info .-> SS
+  EV -. info .-> MA
   MA --> MO[macro_overview]
   MA -. optional .-> MMFF[macro_meso_feed_forward]
 
@@ -90,20 +94,25 @@ flowchart TD
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
 
-### 3.2 Macro-Planner
+### 3.2 Season-Scenario-Agent
+- Produces `season_scenarios` (informational).
+- Uses Season Brief + KPI Profile to propose A/B/C options.
+- No planning decisions; Macro-Planner remains binding authority.
+
+### 3.3 Macro-Planner
 - Defines long-term intent (8–32 weeks).
 - Produces `macro_overview` and optional `macro_meso_feed_forward`.
 - **Important:** Macro phases define ISO week ranges, but MUST NOT define meso blocks.
 
-### 3.3 Meso-Architect
+### 3.4 Meso-Architect
 - Converts macro phase intent into block governance and execution architecture.
 - **Block ranges are derived from macro phases**, not calendar alignment.
 
-### 3.4 Micro-Planner
+### 3.5 Micro-Planner
 - Produces weekly execution plan (`workouts_plan`).
 - Must comply with governance + execution architecture.
 
-### 3.5 Workout-Builder
+### 3.6 Workout-Builder
 - Deterministic conversion into Intervals.icu JSON (raw export payload).
 - No planning decisions.
 
@@ -122,6 +131,7 @@ flowchart TD
 The system uses one shared store plus one store per agent:
 
 - `vs_shared_training`: shared policies, safety, terminology, KPI definitions, general planning principles.
+- `vs_season_scenario`: scenario generation rules, season-brief interpretation, trade-off framing.
 - `vs_macro_planner`: season strategy, long-horizon planning guidelines.
 - `vs_meso_architect`: block design, deload logic, block-level constraints.
 - `vs_micro_planner`: weekly scheduling rules, fatigue management, session distribution.

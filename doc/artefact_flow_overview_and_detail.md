@@ -13,6 +13,7 @@ Format: GitHub-renderable Markdown + Mermaid
 flowchart TD
   %% Actors / Components
   U[User]:::actor
+  SS[Season-Scenario-Agent]:::agent
   MA[Macro-Planner]:::agent
   ME[Meso-Architect]:::agent
   MI[Micro-Planner]:::agent
@@ -27,6 +28,7 @@ flowchart TD
   SB[season_brief_yyyy.md]:::artefact
   KP[kpi_profile_des_*.json]:::artefact
   EV[events.md]:::artefact
+  SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
   MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact
   MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact
   BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact
@@ -42,10 +44,13 @@ flowchart TD
   DR[des_analysis_report_yyyy-ww.json]:::artefact
 
   %% Planning chain
-  U --> SB --> MA
-  U --> KP --> MA
+  U --> SB --> SS
+  U --> KP --> SS
+  SS --> SC --> MA
+  KP --> MA
   KP --> PA
   U --> EV --> MA
+  EV -. info .-> SS
 
   MA --> MO --> ME
   MA -. optional .-> MMFF --> ME
@@ -94,12 +99,39 @@ flowchart TD
 
 ## 2. Detail Flows
 
-### 2.1 Macro-Planner Detail Flow
+### 2.1 Season-Scenario Detail Flow
 
 **Inputs (Artefacts)**
 - `season_brief_yyyy.md` (user-authored)
 - `kpi_profile_des_*.json`
 - `events.md` (contextual)
+
+**Processing (Conceptual)**
+- Extract season goals, constraints, and event priorities.
+- Propose three scenario options (A/B/C) with clear trade-offs.
+- Store scenarios for Macro-Planner consumption (advisory only).
+
+**Outputs (Artefacts)**
+- `season_scenarios_yyyy-ww--yyyy-ww.json` (informational)
+
+```mermaid
+flowchart LR
+  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> SS[Season-Scenario-Agent]:::agent
+  U --> KP[kpi_profile_des_*.json]:::artefact --> SS
+  U --> EV[events.md]:::artefact --> SS
+  SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
+  classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
+  classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
+  classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+```
+
+### 2.2 Macro-Planner Detail Flow
+
+**Inputs (Artefacts)**
+- `season_brief_yyyy.md` (user-authored)
+- `kpi_profile_des_*.json`
+- `events.md` (contextual)
+- `season_scenarios_yyyy-ww--yyyy-ww.json` (advisory, if available)
 - `des_analysis_report_yyyy-ww.json` (advisory)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational, if available)
 
@@ -108,7 +140,7 @@ flowchart TD
 - Define phase structure and load corridors.
 - Emit optional feed-forward if the next block needs explicit guidance.
 - Mode A (CLI) is a two-step flow:
-  1) `scripts/macro_mode_a.py scenarios` (scenario dialogue saved to `.cache/macro_scenarios/<run-id>.md`)
+  1) `scripts/macro_mode_a.py scenarios` (stores `season_scenarios` and writes the scenario dialogue to `.cache/macro_scenarios/<run-id>.md`)
   2) `scripts/macro_mode_a.py overview` (writes `macro_overview_yyyy-ww--yyyy-ww.json`)
 
 **Outputs (Artefacts)**
@@ -120,6 +152,7 @@ flowchart LR
   U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> MA[Macro-Planner]:::agent
   U --> KP[kpi_profile_des_*.json]:::artefact --> MA
   U --> EV[events.md]:::artefact --> MA
+  SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact -. advisory .-> MA
   DR[des_analysis_report_yyyy-ww.json]:::artefact -. advisory .-> MA
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MA
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MA
@@ -140,7 +173,7 @@ flowchart LR
 
 ---
 
-### 2.2 Meso-Architect Detail Flow
+### 2.3 Meso-Architect Detail Flow
 
 **Inputs (Artefacts)**
 - `macro_overview_yyyy-ww--yyyy-ww.json` (binding)
@@ -180,7 +213,7 @@ flowchart LR
 
 ---
 
-### 2.3 Micro-Planner Detail Flow
+### 2.4 Micro-Planner Detail Flow
 
 **Inputs (Artefacts)**
 - `block_governance_yyyy-ww--yyyy-ww.json`
@@ -213,7 +246,7 @@ flowchart LR
 
 ---
 
-### 2.4 Workout-Builder + Posting Detail Flow
+### 2.5 Workout-Builder + Posting Detail Flow
 
 **Inputs (Artefacts)**
 - `workouts_plan_yyyy-ww.json`
@@ -240,7 +273,7 @@ flowchart LR
 
 ---
 
-### 2.5 Data Pipeline Detail Flow (Fetch + Compile + Validate)
+### 2.6 Data Pipeline Detail Flow (Fetch + Compile + Validate)
 
 **Inputs**
 - Intervals.icu API data (executed activities and related metrics)
@@ -271,7 +304,7 @@ flowchart LR
 
 ---
 
-### 2.6 Artefact Renderer (Sidecars)
+### 2.7 Artefact Renderer (Sidecars)
 
 **Purpose**
 - Produce human-readable `.rendered.md` sidecars from JSON artefacts.
@@ -288,7 +321,7 @@ flowchart LR
 
 ---
 
-### 2.7 Performance-Analyst Detail Flow
+### 2.8 Performance-Analyst Detail Flow
 
 **Inputs (Artefacts)**
 - `activities_actual_yyyy-ww.json`
@@ -331,30 +364,33 @@ flowchart LR
 - `events.md`
 - `kpi_profile_des_*.json`
 
-### 3.2 Macro-Planner
+### 3.2 Season-Scenario-Agent
+- `season_scenarios_yyyy-ww--yyyy-ww.json`
+
+### 3.3 Macro-Planner
 - `macro_overview_yyyy-ww--yyyy-ww.json`
 - `macro_meso_feed_forward_yyyy-ww.json` (optional)
 
-### 3.3 Meso-Architect
+### 3.4 Meso-Architect
 - `block_governance_yyyy-ww--yyyy-ww.json`
 - `block_execution_arch_yyyy-ww--yyyy-ww.json`
 - `block_execution_preview_yyyy-ww--yyyy-ww.json` (optional)
 - `block_feed_forward_yyyy-ww.json` (optional)
 - `zone_model_power_<FTP>W.json` (optional)
 
-### 3.4 Micro-Planner
+### 3.5 Micro-Planner
 - `workouts_plan_yyyy-ww.json`
 
-### 3.5 Workout-Builder / Posting
+### 3.6 Workout-Builder / Posting
 - `intervals_workouts_yyyy-ww.json`
 - Planned calendar activities (Intervals.icu)
 
-### 3.6 Data Pipeline
+### 3.7 Data Pipeline
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
 - Raw CSVs (implementation detail)
 
-### 3.7 Performance-Analyst
+### 3.8 Performance-Analyst
 - `des_analysis_report_yyyy-ww.json`
 
 ---
@@ -363,7 +399,7 @@ flowchart LR
 
 - **Binding:** `macro_overview`, `block_governance`, `block_execution_arch`, `workouts_plan`,
   `activities_actual`, `activities_trend`
-- **Informational:** `block_execution_preview`, `zone_model` (when present)
+- **Informational:** `season_scenarios`, `block_execution_preview`, `zone_model` (when present)
 - **Scoped Override:** feed-forward artefacts (use only within their stated scope)
 - **Advisory:** `des_analysis_report`
 

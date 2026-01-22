@@ -7,6 +7,8 @@ from .types import ArtifactType
 
 ARTIFACT_SCHEMA_FILE: dict[ArtifactType, str] = {
     ArtifactType.KPI_PROFILE: "kpi_profile.schema.json",
+    ArtifactType.SEASON_SCENARIOS: "season_scenarios.schema.json",
+    ArtifactType.SEASON_SCENARIO_SELECTION: "season_scenario_selection.schema.json",
     ArtifactType.MACRO_OVERVIEW: "macro_overview.schema.json",
     ArtifactType.MACRO_MESO_FEED_FORWARD: "macro_meso_feed_forward.schema.json",
     ArtifactType.BLOCK_GOVERNANCE: "block_governance.schema.json",

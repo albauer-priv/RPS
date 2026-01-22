@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Season-Scenario-Agent with `SEASON_SCENARIOS` artefact + schema, plus strict store tool support.
+- Season scenarios contract + interface spec for scenario → macro handoff.
+- Season scenarios template and new `vs_season_scenario` vector store manifest.
+- Season scenarios schema now includes advisory guidance (cadence, phase recommendations, risks, constraints, intensity guidance).
+- Season scenario selection artefact + schema (`SEASON_SCENARIO_SELECTION`) with deterministic CLI write.
+- New validation checklist for `SEASON_SCENARIOS`.
+- Per-agent reasoning overrides via `OPENAI_REASONING_EFFORT_<AGENT>` and `OPENAI_REASONING_SUMMARY_<AGENT>`.
+- CLI logging switches (`--log-level`, `--log-file`) with structured log output.
+- Tool-call debug logging for agent runners.
+- Responses API reasoning settings via `OPENAI_REASONING_EFFORT` / `OPENAI_REASONING_SUMMARY`.
+- Reasoning summaries (when returned) are logged to CLI and log files.
+- Meso-Architect prompt now specifies workspace_put_validated usage and block governance schema requirements.
+- Added a BLOCK_GOVERNANCE template for Meso-Architect with fill markers.
+- `--debug-file-search` now logs file_search results to CLI/logs.
+- `run-task` CLI for strict schema-validated agent outputs (uses read tools + strict store tools).
+- Meso-Architect prompt now enforces exact template structure when a template is found.
+- Debug file_search logging now captures `file_search_call` results in strict runs.
+- `run-task` now supports `--max-results` for file_search.
+- Meso-Architect file_search guidance prioritizes the BLOCK_GOVERNANCE template filter.
+- Meso-Architect prompt now requires strict store tool calls instead of raw JSON when available.
+- `run-agent` now accepts `--task`, `--run-id`, `--max-results`, and strict mode toggles.
+- Macro overview schema now supports structured recovery protection (`fixed_rest_days` + `notes`) and requires it under global constraints.
+- Block execution architecture schema now includes structured weekly load ranges with a required `source` field.
+- Added a BLOCK_EXECUTION_ARCH template for Meso-Architect with fill markers.
+- Added a BLOCK_EXECUTION_PREVIEW template for Meso-Architect with fill markers.
+- Added templates for Macro-Planner (MACRO_OVERVIEW, MACRO_MESO_FEED_FORWARD).
+- Added templates for Micro-Planner (WORKOUTS_PLAN).
+- Added templates for Workout-Builder (INTERVALS_WORKOUTS).
+- Added templates for Performance-Analyst (DES_ANALYSIS_REPORT).
+- Principles validation checks added to macro overview, block governance, and block execution arch validation docs.
+- Macro overview justification section with structured citations and per-phase rationale.
+
+### Fixed
+- Workspace tool writes now tolerate missing `run_id` by falling back to meta/context defaults.
+- Agent runner now auto-generates a run id for tool-based writes.
+- Schema validation errors now return detailed failure lists in tool results.
+- Agent runners now preserve the last non-empty text output after tool-call iterations.
+- Agent runners now recover text from message output items when output_text is empty.
+- Mode A scenarios now inline the season brief to avoid tool-call loops that suppressed scenario output.
+- Strict multi-output runner now falls back to storing validated JSON when the model omits the store tool call.
+- Strict runner now forces tool calls for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `MACRO_OVERVIEW` when missing.
+- Runner normalizes season-scenario payloads (required arrays, disallowed keys) before validation.
+- Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
+
+### Changed
+- Macro Mode A scenarios now run Season-Scenario-Agent, store `season_scenarios`, and render the same cached scenario dialogue for selection.
+- Macro-Planner prompt can optionally load `SEASON_SCENARIOS` as advisory input.
+- System architecture, planner workflow, how-to-plan, and artefact flow docs updated to include Season-Scenario-Agent and `season_scenarios`.
+- Season-Scenario prompt and template expanded to emit guidance fields; scenario cache output now includes guidance + phase outline.
+- Macro-Planner prompt now consumes scenario guidance when present.
+- Macro Mode A selection (`select`) is now deterministic (no LLM) and `overview` accepts optional `--scenario` if selection exists.
+- `run-agent` now defaults to strict tool mode for JSON-producing agents; use `--non-strict` to opt out.
+- Macro Mode A helper now passes reasoning settings into the strict runner.
+- Macro-Planner now writes structured fixed rest days when provided.
+- Meso-Architect now propagates macro-level availability/risk constraints into governance and execution architecture.
+- Meso-Architect now mirrors block governance load ranges into execution architecture.
+- Guarded store now rejects Meso outputs that fail macro-constraint propagation checks.
+- Block governance template now embeds macro-constraint mapping placeholders.
+- Agent prompts now include conditional template usage guidance.
+- Guarded store now enforces execution preview traceability to execution architecture.
+- Meso-Architect prompt now requires weekly kJ/TSS progression patterns (default 3:1) unless macro specifies steady-state.
+- Durability-first principles updated to v1.1 with expanded progressive overload guidance, intensity distribution rules, and 3:1 alternatives.
+- Principles paper translated to English and synced for macro/meso knowledge sources.
+- Macro-Planner prompt now requires applying Principles sections 2-6.
+- Meso-Architect prompt now requires applying Principles sections 3.3, 3.4, 4, 5, and 6.
+- Macro-Planner prompt now requires populating `data.justification` with citations and per-phase rationale.
+- Macro-Planner validation now enforces narrative/domain consistency and deload flag alignment.
+- Macro overview template updated to v1.1 to include justification fields.
+- Macro Mode A overview now injects selected scenario details into the prompt when available.
+
 ## [0.2.0] - 2026-01-22
 
 ### Added

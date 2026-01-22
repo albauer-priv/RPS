@@ -4,6 +4,12 @@ from app.agents.spec import AgentSpec
 
 
 AGENTS: dict[str, AgentSpec] = {
+    "season_scenario": AgentSpec(
+        name="season_scenario",
+        display_name="Season-Scenario-Agent",
+        vector_store_name="vs_season_scenario",
+        prompt_file_stem="season_scenario",
+    ),
     "macro_planner": AgentSpec(
         name="macro_planner",
         display_name="Macro-Planner",

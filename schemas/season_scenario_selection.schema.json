@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "season_scenario_selection.schema.json",
+  "title": "SeasonScenarioSelection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "data"],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "SEASON_SCENARIO_SELECTION",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "SeasonScenarioSelectionInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Informational",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Season-Scenario-Agent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week",
+        "iso_week_range"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "season_scenarios_ref",
+        "selected_scenario_id",
+        "selection_source",
+        "selection_rationale",
+        "notes"
+      ],
+      "properties": {
+        "season_scenarios_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_scenario_id": {
+          "type": "string",
+          "enum": ["A", "B", "C"]
+        },
+        "selection_source": {
+          "type": "string",
+          "enum": ["user", "system"]
+        },
+        "selection_rationale": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "season_scenarios.schema.json",
+  "title": "SeasonScenarios",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "data"],
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id",
+        "name",
+        "core_idea",
+        "load_philosophy",
+        "risk_profile",
+        "key_differences",
+        "best_suited_if",
+        "scenario_guidance"
+      ],
+      "properties": {
+        "scenario_id": {
+          "type": "string",
+          "enum": ["A", "B", "C"]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "core_idea": {
+          "type": "string",
+          "minLength": 1
+        },
+        "load_philosophy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "risk_profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key_differences": {
+          "type": "string",
+          "minLength": 1
+        },
+        "best_suited_if": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_guidance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deload_cadence",
+            "phase_length_weeks",
+            "phase_recommendations",
+            "event_alignment_notes",
+            "risk_flags",
+            "fixed_rest_days",
+            "constraint_summary",
+            "kpi_guardrail_notes",
+            "decision_notes",
+            "intensity_guidance",
+            "assumptions",
+            "unknowns"
+          ],
+          "properties": {
+            "deload_cadence": {
+              "type": "string",
+              "pattern": "^(3:1|2:1|2:1:1)$"
+            },
+            "phase_length_weeks": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "phase_recommendations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "phase_id",
+                  "name",
+                  "cycle",
+                  "date_range",
+                  "iso_week_range",
+                  "focus",
+                  "load_trend",
+                  "key_constraints",
+                  "notes"
+                ],
+                "properties": {
+                  "phase_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "cycle": {
+                    "type": "string",
+                    "enum": [
+                      "Base",
+                      "Build",
+                      "Peak",
+                      "Transition"
+                    ]
+                  },
+                  "date_range": {
+                    "$ref": "date_range.schema.json"
+                  },
+                  "iso_week_range": {
+                    "$ref": "iso_week_range.schema.json"
+                  },
+                  "focus": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "load_trend": {
+                    "type": "string",
+                    "enum": [
+                      "build",
+                      "steady",
+                      "taper"
+                    ]
+                  },
+                  "key_constraints": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "notes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              }
+            },
+            "event_alignment_notes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "risk_flags": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "fixed_rest_days": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "constraint_summary": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "kpi_guardrail_notes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "decision_notes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "intensity_guidance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "allowed_domains",
+                "avoid_domains"
+              ],
+              "properties": {
+                "allowed_domains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "avoid_domains": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "assumptions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "unknowns": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "season_scenarios_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "season_brief_ref",
+        "kpi_profile_ref",
+        "athlete_profile_ref",
+        "planning_horizon_weeks",
+        "scenarios",
+        "notes"
+      ],
+      "properties": {
+        "season_brief_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kpi_profile_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "athlete_profile_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planning_horizon_weeks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/scenario" }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "SEASON_SCENARIOS",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "SeasonScenariosInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Informational",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Season-Scenario-Agent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week",
+        "iso_week_range"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/season_scenarios_data"
+    }
+  }
+}
