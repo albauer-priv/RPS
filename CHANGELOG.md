@@ -60,6 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro overview schema/template replaces per-kg preload references with `moving_time_rate_guidance`.
 - Macro-Planner now derives weekly kJ corridors from body mass, kJ/kg/h guidance, and weekly hours.
 - Meso-Architect governance now targets upper-third load bands for build/peak weeks by default.
+- Macro overview schema now requires `body_mass_kg` and removes `reference_mass_window_kg`.
+- KPI profile narrative guidance now references moving-time rate bands instead of legacy kJ/kg preloads.
 - Macro Mode A scenarios now run Season-Scenario-Agent, store `season_scenarios`, and render the same cached scenario dialogue for selection.
 - Macro-Planner prompt can optionally load `SEASON_SCENARIOS` as advisory input.
 - System architecture, planner workflow, how-to-plan, and artefact flow docs updated to include Season-Scenario-Agent and `season_scenarios`.
