@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import hashlib
+import json
 import os
 import re
 from typing import Any, Iterable
@@ -80,6 +81,178 @@ def compute_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _extract_front_matter(text: str) -> dict[str, Any] | None:
+    lines = text.splitlines()
+    if not lines:
+        return None
+    if lines[0].strip() != "---":
+        return None
+    end_index = None
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            end_index = idx
+            break
+    if end_index is None:
+        return None
+    raw = "\n".join(lines[1:end_index])
+    try:
+        data = yaml.safe_load(raw) or {}
+    except Exception:
+        return None
+    if isinstance(data, dict):
+        return data
+    return None
+
+
+def _join_list(values: Any) -> str | None:
+    if not values:
+        return None
+    if isinstance(values, list):
+        items = [str(item).strip() for item in values if str(item).strip()]
+    else:
+        items = [str(values).strip()]
+    if not items:
+        return None
+    return "|".join(items)
+
+
+def _format_dependency(item: Any) -> str | None:
+    if not isinstance(item, dict):
+        value = str(item).strip()
+        return value or None
+    for key in ("Specification-ID", "Interface-ID", "ID"):
+        value = item.get(key)
+        if value:
+            version = item.get("Version")
+            if version:
+                return f"{value}@{version}"
+            return str(value)
+    return None
+
+
+def _flatten_header_attributes(header: dict[str, Any]) -> dict[str, str]:
+    attrs: dict[str, str] = {}
+
+    def add(key: str, value: Any) -> None:
+        if value is None:
+            return
+        text = str(value).strip()
+        if text:
+            attrs[key] = text
+
+    def add_list(key: str, value: Any) -> None:
+        joined = _join_list(value)
+        if joined:
+            attrs[key] = joined
+
+    add("doc_type", "Markdown")
+    add("type", header.get("Type"))
+    add("specification_for", header.get("Specification-For"))
+    add("specification_id", header.get("Specification-ID"))
+    add("interface_for", header.get("Interface-For"))
+    add("interface_id", header.get("Interface-ID"))
+    add("template_for", header.get("Template-For"))
+    add("template_id", header.get("Template-ID"))
+    add("contract_name", header.get("Contract-Name"))
+    add("status", header.get("Status"))
+    add("scope", header.get("Scope"))
+    add("authority", header.get("Authority"))
+    add("version", header.get("Version"))
+    add("normative_role", header.get("Normative-Role"))
+    add("decision_authority", header.get("Decision-Authority"))
+    add("owner_agent", header.get("Owner-Agent"))
+    add("from_agent", header.get("From-Agent"))
+    add("to_agent", header.get("To-Agent"))
+
+    add_list("applies_to", header.get("Applies-To"))
+    add_list("explicitly_not_for", header.get("Explicitly-Not-For"))
+    add_list("related_evidence", header.get("Related-Evidence"))
+
+    implements = header.get("Implements")
+    if isinstance(implements, dict):
+        add("implements_interface_id", implements.get("Interface-ID"))
+        add("implements_interface_version", implements.get("Version"))
+
+    dependencies = header.get("Dependencies")
+    if isinstance(dependencies, list):
+        dep_values = [_format_dependency(item) for item in dependencies]
+        dep_values = [item for item in dep_values if item]
+        add_list("dependencies_ids", dep_values)
+
+    binding_specs = header.get("Binding-Specs")
+    if isinstance(binding_specs, list):
+        spec_values = [_format_dependency(item) for item in binding_specs]
+        spec_values = [item for item in spec_values if item]
+        add_list("binding_specs_ids", spec_values)
+
+    temporal_scope = header.get("Temporal-Scope")
+    if isinstance(temporal_scope, dict):
+        add("temporal_scope_from", temporal_scope.get("From"))
+        add("temporal_scope_to", temporal_scope.get("To"))
+
+    return attrs
+
+
+def _extract_markdown_attributes(source_path: Path) -> dict[str, str]:
+    try:
+        text = source_path.read_text(encoding="utf-8")
+    except Exception:
+        return {}
+    header = _extract_front_matter(text)
+    if not header:
+        return {}
+    return _flatten_header_attributes(header)
+
+
+def _extract_json_attributes(source_path: Path) -> dict[str, str]:
+    try:
+        data = json.loads(source_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+
+    meta = data.get("meta")
+    if isinstance(meta, dict) and "artifact_type" in meta:
+        attrs: dict[str, str] = {"doc_type": "ArtifactJson"}
+        for key in (
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "version",
+            "authority",
+            "owner_agent",
+            "run_id",
+            "iso_week",
+            "iso_week_range",
+            "scope",
+        ):
+            value = meta.get(key)
+            if value:
+                attrs[key] = str(value)
+        return attrs
+
+    schema_id = data.get("$id")
+    if schema_id:
+        attrs = {"doc_type": "JsonSchema", "schema_id": str(schema_id)}
+        title = data.get("title")
+        if title:
+            attrs["schema_title"] = str(title)
+        if isinstance(schema_id, str) and schema_id.endswith(".schema.json"):
+            attrs["schema_for"] = schema_id[: -len(".schema.json")]
+        return attrs
+
+    return {}
+
+
+def build_source_attributes(source_path: Path) -> dict[str, str]:
+    if source_path.suffix.lower() == ".md":
+        return _extract_markdown_attributes(source_path)
+    if source_path.suffix.lower() == ".json":
+        return _extract_json_attributes(source_path)
+    return {}
 
 
 def env_key_for_agent(agent: str) -> str:
@@ -267,6 +440,7 @@ def upload_source(
         "sha256": sha256,
         "tags": ",".join(source.tags) if source.tags else "",
     }
+    attributes.update(build_source_attributes(source_path))
     _attach_file(client, vector_store_id, file_obj.id, attributes)
     return file_obj.id, sha256
 

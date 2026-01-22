@@ -203,6 +203,14 @@ The Workout-Builder MUST NOT:
 - If a specific week is requested:
   - `workspace_get_version({ "artifact_type": "WORKOUTS_PLAN", "version_key": "yyyy-ww" })`
 
+## File Search Filters (Knowledge)
+- Use attribute filters for knowledge sources (not workspace artefacts).
+- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
+- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
+- Templates: `type=Template` + `template_for=<...>`.
+- Contracts: `type=Contract` + `contract_name=<...>`.
+- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
+
 ## Three-Pass Execution Protocol (MANDATORY)
 
 ### PASS 1 — Internal Validation (DO NOT OUTPUT)

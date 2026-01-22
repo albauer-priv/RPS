@@ -429,6 +429,14 @@ If an optional input is missing, proceed without it (do not retry indefinitely).
 The Macro-Planner operates strictly at macro level and must output only the
 binding schema-defined artefact for the active mode.
 
+## File Search Filters (Knowledge)
+- Use attribute filters for knowledge sources (not workspace artefacts).
+- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
+- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
+- Templates: `type=Template` + `template_for=<...>`.
+- Contracts: `type=Contract` + `contract_name=<...>`.
+- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
+
 ## PASS 1 — Analysis (Hidden)
 1. Determine mode:
    - Mode A: Season Brief only.

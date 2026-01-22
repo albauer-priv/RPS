@@ -1,3 +1,25 @@
+---
+Type: Specification
+Specification-For: EVIDENCE_LAYER
+Specification-ID: DurabilityBibliography
+Version: 1.0
+
+Scope: Shared
+Authority: Informational
+
+Normative-Role: JustificationOnly
+Decision-Authority: None
+
+Applies-To:
+  - Macro-Planner
+  - Meso-Architect
+  - Micro-Planner
+
+Notes: >
+  Curated bibliography supporting durability-first planning principles and
+  related training domains. Informational only; not a source of governance.
+---
+
 # Bibliography: Durability, VO₂max, Sweet Spot, VLamax & Brevets
 Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style thematic grouping
 

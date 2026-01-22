@@ -180,7 +180,59 @@ Notes:
 - IDs can be overridden via `.env` when needed.
 - Deleting a file from the Files API is global; prefer detaching from the store.
 
-#### 4.1.3 Per-Agent Mapping and Available Tools
+#### 4.1.3 Vector Store Attributes and Filters
+
+During sync, each source file is annotated with attributes derived from its
+YAML header (Markdown) or schema/meta fields (JSON). These attributes are used
+to filter `file_search` results.
+
+Common attributes:
+- `type`, `specification_for`, `specification_id`
+- `interface_for`, `interface_id`
+- `template_for`, `template_id`
+- `contract_name`, `status`
+- `scope`, `authority`, `version`
+- `applies_to`, `explicitly_not_for`
+- `normative_role`, `decision_authority`
+- `doc_type`, `schema_id`, `schema_title`, `schema_for`
+
+Example filters:
+- Specs/policies/principles: `type=Specification` + `specification_for=WORKOUT_POLICY`
+- Interfaces: `type=InterfaceSpecification` + `interface_for=SEASON_BRIEF`
+- Templates: `type=Template` + `template_for=SEASON_BRIEF`
+- Schemas: `doc_type=JsonSchema` + `schema_id=workouts_plan.schema.json`
+
+`file_search` is for static knowledge sources only. Runtime athlete artifacts
+are fetched via workspace tools.
+
+#### 4.1.4 Agent Access Hints (Summary)
+
+These are runtime access expectations per agent/mode. Knowledge sources should be
+queried via `file_search` with attribute filters; athlete artefacts come from
+workspace tools.
+
+Macro-Planner
+- Mode A: Season brief via `workspace_get_input("season_brief")`, KPI via `workspace_get_latest(KPI_PROFILE)`, optional events via `workspace_get_input("events")`.
+- Mode B: Season brief, KPI, existing macro overview via `workspace_get_latest(MACRO_OVERVIEW)`, optional events.
+- Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)`, optional events.
+
+Meso-Architect
+- Mode A (new block): `workspace_get_block_context(year, week)` and optional `offset_blocks=1`; optional `MACRO_MESO_FEED_FORWARD`, `ACTIVITIES_TREND`, `events`.
+- Mode B (update): `workspace_get_block_context`, optional `MACRO_MESO_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, `events`.
+- Mode C (no-change): `workspace_get_block_context`, optional `events`.
+
+Micro-Planner
+- Mode A/B: `workspace_get_block_context`, optional `events`.
+- Mode C: `workspace_get_block_context`, optional `BLOCK_FEED_FORWARD`, `events`.
+
+Performance-Analyst
+- Required: `ACTIVITIES_ACTUAL`, `ACTIVITIES_TREND`, `KPI_PROFILE` via `workspace_get_latest`.
+- Optional: `MACRO_OVERVIEW`, `workspace_get_block_context`, `events`.
+
+Workout-Builder
+- Required: `WORKOUTS_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
+
+#### 4.1.5 Per-Agent Mapping and Available Tools
 
 Each agent attaches two stores at runtime:
 
@@ -194,9 +246,7 @@ Tools available to agents:
   - `workspace_get_latest`
   - `workspace_get_version`
   - `workspace_list_versions`
-  - `workspace_resolve_macro_phase`
-  - `workspace_resolve_block_range`
-  - `workspace_find_best_block_artefact`
+  - `workspace_get_block_context`
   - `workspace_get_input` (season brief, events)
 - Strict store tools (one per output artefact, schema-bound)
 

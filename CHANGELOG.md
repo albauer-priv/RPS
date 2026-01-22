@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-agent temperature overrides via `OPENAI_TEMPERATURE_<AGENT>` (plus global `OPENAI_TEMPERATURE`).
 - `workspace_get_input` tool for athlete-specific markdown inputs (season brief, events).
 - Vector store sync progress output and `--reset` to reinitialize stores.
+- Vector store sync now attaches header/schema-derived attributes for filtered file_search.
 - Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `knowledge/_shared/sources/schemas/bundled/`.
 - Vector store smoke test script: `scripts/smoke_vectorstores.py`.
 - Build checklist and recommended model guidance docs.
@@ -34,13 +35,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent prompts now require user inputs to be loaded via `workspace_get_input` (not file_search).
 - Agent prompts now include access hints for tool-based artifact loading.
 - Agent prompts now include mode-specific access hints with optional-input guidance.
+- Agent prompts now include file_search filter guidance for knowledge sources.
 - Workspace read tools now expose `workspace_get_block_context` for block-scoped access.
 - How-to-plan docs now include concrete macro/meso/micro/workout-builder/performance-analysis CLI commands.
+- Planning docs now reference `workspace_get_block_context` and avoid embedding tool-usage hints in CLI examples.
 - JSON schemas normalized for strict tool compatibility (explicit types/required, flattened `allOf`, removed unsupported constraints).
 - Version key derivation now supports string-based `iso_week` and `iso_week_range` metadata.
 - Docs and README now document the two-step Macro Mode A workflow.
 - Model guidance notes include Macro Mode A scenario token-throughput tip.
 - Agent runners now pass optional temperature settings; `.env.example` and model docs reflect temperature overrides.
+- System architecture docs now describe vector store attributes, filtering, and agent access hints.
+- Durability bibliography now carries a compliant YAML header.
 
 ### Removed
 - Legacy schema copies under `knowledge/_shared/sources/schemas/` (replaced by bundled variants).

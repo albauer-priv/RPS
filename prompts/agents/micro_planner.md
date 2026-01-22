@@ -314,6 +314,7 @@ The intent is derived from the artefact type (no free choice).
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Events (optional; if present): `workspace_get_input("events")`
 - Mode C (apply feed-forward):
+  - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Block feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "BLOCK_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
 
@@ -321,6 +322,14 @@ If an optional input is missing, proceed without it (do not retry indefinitely).
 
 NOTE: JSON cut-over is active. Ignore any legacy non-JSON instructions.
 Output JSON that validates against `workouts_plan.schema.json`.
+
+## File Search Filters (Knowledge)
+- Use attribute filters for knowledge sources (not workspace artefacts).
+- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
+- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
+- Templates: `type=Template` + `template_for=<...>`.
+- Contracts: `type=Contract` + `contract_name=<...>`.
+- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Internal Execution Steps
 You MUST execute every task in exactly three passes.

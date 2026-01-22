@@ -411,6 +411,14 @@ Evidence may support rationale where the schema allows, but never overrides gove
 
 If an optional input is missing, proceed without it (do not retry indefinitely).
 
+## File Search Filters (Knowledge)
+- Use attribute filters for knowledge sources (not workspace artefacts).
+- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
+- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
+- Templates: `type=Template` + `template_for=<...>`.
+- Contracts: `type=Contract` + `contract_name=<...>`.
+- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
+
 ## Three-Pass Execution Protocol (MANDATORY)
 
 ### PASS 1 — Internal Analysis (DO NOT OUTPUT)
