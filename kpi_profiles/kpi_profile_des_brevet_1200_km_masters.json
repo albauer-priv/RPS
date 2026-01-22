@@ -235,7 +235,7 @@
         "KPI & DES System",
         "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload, Section 6 Recovery)",
         "Energetic preload: >= 3,800-4,200 kJ single-day; >= 8,500-10,000 kJ back-to-back; >= 12,000-16,000 kJ over >= 48 h preferred.",
-        "Relative preload preferred: >= 40-45 kJ/kg single-day; >= 80-95 kJ/kg over 48 h.",
+        "Relative preload preferred: use moving_time_rate_guidance (kJ/kg/h) for moving-time pacing; do not use legacy kJ/kg preloads.",
         "Recovery never overrides Multi-Day Durability."
       ]
     }

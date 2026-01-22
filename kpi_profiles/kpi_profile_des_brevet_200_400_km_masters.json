@@ -227,7 +227,7 @@
         "KPI & DES System",
         "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload)",
         "Energetic preload: >= 3,000-3,500 kJ single-day; >= 6,000-8,000 kJ back-to-back.",
-        "Relative preload preferred: >= 35-45 kJ/kg single-day; >= 70-90 kJ/kg back-to-back.",
+        "Relative preload preferred: use moving_time_rate_guidance (kJ/kg/h) for moving-time pacing; do not use legacy kJ/kg preloads.",
         "Micro-Planner MAY report KPI observations factually.",
         "Micro-Planner MUST NOT trigger progression, hold/deload decisions, or interpret KPI color states."
       ]

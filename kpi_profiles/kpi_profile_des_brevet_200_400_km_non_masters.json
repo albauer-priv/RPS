@@ -227,7 +227,7 @@
         "KPI & DES System",
         "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload)",
         "Energetic preload: >= 3,200-3,800 kJ single-day; >= 6,500-8,500 kJ back-to-back.",
-        "Relative preload preferred: >= 38-48 kJ/kg single-day; >= 75-95 kJ/kg back-to-back.",
+        "Relative preload preferred: use moving_time_rate_guidance (kJ/kg/h) for moving-time pacing; do not use legacy kJ/kg preloads.",
         "VO2 TiZ caps apply primarily in Build/Specificity phases.",
         "Base/early Build may increase VO2 TiZ by +5-10 min/week only if Durability is GREEN and weekly kJ stays inside corridor.",
         "Micro-Planner MAY report KPI observations factually.",

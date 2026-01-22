@@ -489,9 +489,7 @@ binding schema-defined artefact for the active mode.
 - kJ/kg guardrails: compute from weekly kJ corridor and reference mass window
   (min = kJ_min / mass_max, max = kJ_max / mass_min).
 - `Body-Mass-kg` from Season Brief is REQUIRED and MUST be copied to
-  `body_metadata.body_mass_kg`.
-  Set `reference_mass_window_kg` to the same value (min = max).
-  If body mass is missing, STOP and request it.
+  `body_metadata.body_mass_kg`. If body mass is missing, STOP and request it.
 
 ## kJ/TSS Derivation (Binding)
 Use KPI Profile moving-time guidance (kJ/kg/h) as the primary anchor for absolute kJ corridors.

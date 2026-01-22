@@ -210,7 +210,6 @@ def build_macro_overview_context(doc):
                 "cycle": phase.get("cycle", ""),
                 "deload": fmt_bool(phase.get("deload")),
                 "deload_rationale": phase.get("deload_rationale"),
-                "reference_mass_window": fmt_range(phase.get("reference_mass_window_kg")),
                 "narrative": phase.get("narrative", ""),
                 "overview": {
                     "core_focus_and_characteristics": overview.get(
@@ -260,7 +259,6 @@ def build_macro_overview_context(doc):
             "kpi_profile_ref": body.get("kpi_profile_ref"),
             "athlete_profile_ref": body.get("athlete_profile_ref"),
             "body_mass_kg": body.get("body_mass_kg"),
-            "reference_mass_window": fmt_range(body.get("reference_mass_window_kg")),
             "moving_time_rate_guidance": {
                 "segment": (body.get("moving_time_rate_guidance") or {}).get("segment"),
                 "w_per_kg": fmt_range(

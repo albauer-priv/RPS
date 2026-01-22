@@ -111,7 +111,6 @@
             "planning_horizon_weeks",
             "season_brief_ref",
             "kpi_profile_ref",
-            "reference_mass_window_kg",
             "athlete_profile_ref",
             "moving_time_rate_guidance",
             "body_mass_kg"
@@ -132,27 +131,6 @@
             },
             "athlete_profile_ref": {
               "type": "string"
-            },
-            "reference_mass_window_kg": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "$id": "number_range.schema.json",
-              "title": "NumberRange",
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "min",
-                "max"
-              ],
-              "properties": {
-                "min": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "max": {
-                  "type": "number",
-                  "minimum": 0
-                }
-              }
             },
             "moving_time_rate_guidance": {
               "type": "object",
@@ -238,7 +216,6 @@
               "iso_week_range",
               "cycle",
               "deload",
-              "reference_mass_window_kg",
               "narrative",
               "overview",
               "weekly_load_corridor",
@@ -298,27 +275,6 @@
               },
               "deload_rationale": {
                 "type": "string"
-              },
-              "reference_mass_window_kg": {
-                "$schema": "https://json-schema.org/draft/2020-12/schema",
-                "$id": "number_range.schema.json",
-                "title": "NumberRange",
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "min",
-                  "max"
-                ],
-                "properties": {
-                  "min": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "max": {
-                    "type": "number",
-                    "minimum": 0
-                  }
-                }
               },
               "narrative": {
                 "type": "string",
@@ -1018,7 +974,6 @@
         "iso_week_range",
         "cycle",
         "deload",
-        "reference_mass_window_kg",
         "narrative",
         "overview",
         "weekly_load_corridor",
@@ -1078,27 +1033,6 @@
         },
         "deload_rationale": {
           "type": "string"
-        },
-        "reference_mass_window_kg": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "$id": "number_range.schema.json",
-          "title": "NumberRange",
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "min",
-            "max"
-          ],
-          "properties": {
-            "min": {
-              "type": "number",
-              "minimum": 0
-            },
-            "max": {
-              "type": "number",
-              "minimum": 0
-            }
-          }
         },
         "narrative": {
           "type": "string",
@@ -1593,7 +1527,6 @@
             "planning_horizon_weeks",
             "season_brief_ref",
             "kpi_profile_ref",
-            "reference_mass_window_kg",
             "athlete_profile_ref",
             "moving_time_rate_guidance"
           ],
@@ -1613,27 +1546,6 @@
             },
             "athlete_profile_ref": {
               "type": "string"
-            },
-            "reference_mass_window_kg": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "$id": "number_range.schema.json",
-              "title": "NumberRange",
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "min",
-                "max"
-              ],
-              "properties": {
-                "min": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "max": {
-                  "type": "number",
-                  "minimum": 0
-                }
-              }
             },
             "moving_time_rate_guidance": {
               "type": "object",
@@ -1715,7 +1627,6 @@
               "iso_week_range",
               "cycle",
               "deload",
-              "reference_mass_window_kg",
               "narrative",
               "overview",
               "weekly_load_corridor",
@@ -1775,27 +1686,6 @@
               },
               "deload_rationale": {
                 "type": "string"
-              },
-              "reference_mass_window_kg": {
-                "$schema": "https://json-schema.org/draft/2020-12/schema",
-                "$id": "number_range.schema.json",
-                "title": "NumberRange",
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "min",
-                  "max"
-                ],
-                "properties": {
-                  "min": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "max": {
-                    "type": "number",
-                    "minimum": 0
-                  }
-                }
               },
               "narrative": {
                 "type": "string",

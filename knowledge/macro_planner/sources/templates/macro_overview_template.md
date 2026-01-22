@@ -60,7 +60,6 @@ Use this JSON envelope shape for `MACRO_OVERVIEW`. Fill all markers.
       "season_brief_ref": "<!--- FILL --->",
       "kpi_profile_ref": "<!--- FILL --->",
       "body_mass_kg": 0,
-      "reference_mass_window_kg": { "min": 0, "max": 0 },
       "moving_time_rate_guidance": {
         "segment": "<!--- FILL --->",
         "w_per_kg": { "min": 0, "max": 0 },
@@ -84,7 +83,6 @@ Use this JSON envelope shape for `MACRO_OVERVIEW`. Fill all markers.
         "cycle": "Base",
         "deload": false,
         "deload_rationale": "<!--- FILL --->",
-        "reference_mass_window_kg": { "min": 0, "max": 0 },
         "narrative": "<!--- FILL --->",
         "overview": {
           "core_focus_and_characteristics": ["<!--- FILL --->"],

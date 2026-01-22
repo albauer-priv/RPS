@@ -2,7 +2,7 @@
 
 ## Schema
 - [ ] Validates against `kpi_profile.schema.json`.
-- [ ] `reference_mass_window_kg` and energetic preload references are present.
+- [ ] Moving-time rate guidance (`moving_time_rate_guidance`) is present.
 
 ## Consistency
 - [ ] KPI values are consistent with the athlete profile.

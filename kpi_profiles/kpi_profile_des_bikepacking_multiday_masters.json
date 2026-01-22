@@ -236,7 +236,7 @@
         "KPI & DES System",
         "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload, Section 6 Recovery)",
         "Energetic preload: >= 3,500-4,000 kJ single-day; >= 8,000-9,500 kJ over 48 h; >= 12,000-15,000 kJ over >= 72 h.",
-        "Relative preload preferred: >= 40 kJ/kg single-day; >= 85 kJ/kg over 72 h.",
+        "Relative preload preferred: use moving_time_rate_guidance (kJ/kg/h) for moving-time pacing; do not use legacy kJ/kg preloads.",
         "Persistent or progressive pain forces RED classification regardless of numeric KPIs.",
         "Absence of breakdown and repeatability matter more than daily peak output.",
         "For bikepacking profiles, long_ride_kj_increase refers to daily ride kJ increase."

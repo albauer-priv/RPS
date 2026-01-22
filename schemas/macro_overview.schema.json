@@ -111,7 +111,6 @@
             "planning_horizon_weeks",
             "season_brief_ref",
             "kpi_profile_ref",
-            "reference_mass_window_kg",
             "moving_time_rate_guidance",
             "athlete_profile_ref",
             "body_mass_kg"
@@ -132,9 +131,6 @@
             },
             "athlete_profile_ref": {
               "type": "string"
-            },
-            "reference_mass_window_kg": {
-              "$ref": "number_range.schema.json"
             },
             "moving_time_rate_guidance": {
               "type": "object",
@@ -564,7 +560,6 @@
         "iso_week_range",
         "cycle",
         "deload",
-        "reference_mass_window_kg",
         "narrative",
         "overview",
         "weekly_load_corridor",
@@ -602,9 +597,6 @@
         },
         "deload_rationale": {
           "type": "string"
-        },
-        "reference_mass_window_kg": {
-          "$ref": "number_range.schema.json"
         },
         "narrative": {
           "type": "string",
