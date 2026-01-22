@@ -10,6 +10,8 @@ import re
 import yaml
 
 from app.openai.client import get_client
+from app.openai.model_capabilities import supports_temperature
+from app.openai.reasoning import build_reasoning_payload
 from app.openai.vectorstore_state import DEFAULT_STATE_PATH, load_vectorstore_id
 from app.prompts.loader import agent_system_prompt
 
@@ -118,6 +120,9 @@ def run_agent(
         temperature = _parse_float(
             os.getenv(f"OPENAI_TEMPERATURE_{key}") or os.getenv("OPENAI_TEMPERATURE")
         )
+    key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
+    reasoning_effort = os.getenv(f"OPENAI_REASONING_EFFORT_{key}") or os.getenv("OPENAI_REASONING_EFFORT")
+    reasoning_summary = os.getenv(f"OPENAI_REASONING_SUMMARY_{key}") or os.getenv("OPENAI_REASONING_SUMMARY")
     client = get_client()
     system_prompt = agent_system_prompt(agent_name, prompts_dir=prompts_dir)
     tool = build_file_search_tool(
@@ -140,6 +145,9 @@ def run_agent(
         payload["tool_choice"] = {"type": "file_search"}
     if include_results:
         payload["include"] = ["file_search_call.results"]
-    if temperature is not None:
+    if temperature is not None and supports_temperature(model):
         payload["temperature"] = temperature
+    reasoning = build_reasoning_payload(model, reasoning_effort, reasoning_summary)
+    if reasoning:
+        payload["reasoning"] = reasoning
     return client.responses.create(**payload)

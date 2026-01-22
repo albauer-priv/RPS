@@ -5,17 +5,21 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from app.workspace.block_resolution import add_weeks, iso_week_monday
-from app.workspace.iso_helpers import IsoWeek, IsoWeekRange, range_contains, week_index
+from app.workspace.iso_helpers import (
+    IsoWeek,
+    IsoWeekRange,
+    parse_iso_week_range as _parse_iso_week_range,
+    range_contains,
+    week_index,
+)
 
 
-def parse_iso_week_range(obj: dict[str, Any]) -> IsoWeekRange:
+def parse_iso_week_range(obj: Any) -> IsoWeekRange:
     """Parse a schema-style iso_week_range into an IsoWeekRange."""
-    start = obj["start"]
-    end = obj["end"]
-    return IsoWeekRange(
-        start=IsoWeek(int(start["year"]), int(start["week"])),
-        end=IsoWeek(int(end["year"]), int(end["week"])),
-    )
+    parsed = _parse_iso_week_range(obj)
+    if not parsed:
+        raise ValueError("Invalid iso_week_range format")
+    return parsed
 
 
 def resolve_current_phase(

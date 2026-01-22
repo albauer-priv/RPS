@@ -7,17 +7,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 from app.workspace.index_manager import WorkspaceIndexManager
-from app.workspace.iso_helpers import IsoWeek, IsoWeekRange
+from app.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range
 
 
-def _normalize_range_dict(range_obj: dict[str, Any]) -> IsoWeekRange:
-    """Normalize a range dict into an IsoWeekRange."""
-    start = range_obj["start"]
-    end = range_obj["end"]
-    return IsoWeekRange(
-        start=IsoWeek(int(start["year"]), int(start["week"])),
-        end=IsoWeek(int(end["year"]), int(end["week"])),
-    )
+def _normalize_range(range_obj: Any) -> IsoWeekRange | None:
+    """Normalize a range into an IsoWeekRange."""
+    return parse_iso_week_range(range_obj)
 
 
 @dataclass
@@ -42,7 +37,8 @@ class IndexExactQuery:
             range_obj = record.get("iso_week_range")
             if not range_obj:
                 continue
-            if _normalize_range_dict(range_obj).key == expected_range.key:
+            normalized = _normalize_range(range_obj)
+            if normalized and normalized.key == expected_range.key:
                 return True
         return False
 
@@ -64,7 +60,8 @@ class IndexExactQuery:
             range_obj = record.get("iso_week_range")
             if not range_obj:
                 continue
-            if _normalize_range_dict(range_obj).key == expected_range.key:
+            normalized = _normalize_range(range_obj)
+            if normalized and normalized.key == expected_range.key:
                 candidates.append((record.get("created_at", ""), version_key))
 
         if not candidates:

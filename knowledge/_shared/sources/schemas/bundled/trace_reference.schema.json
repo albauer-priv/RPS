@@ -5,7 +5,9 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "artifact"
+    "artifact",
+    "version",
+    "run_id"
   ],
   "properties": {
     "artifact": {

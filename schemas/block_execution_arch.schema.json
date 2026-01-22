@@ -16,11 +16,28 @@
         "Sun"
       ]
     },
+    "weekly_band_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week",
+        "band"
+      ],
+      "properties": {
+        "week": {
+          "$ref": "iso_week.schema.json"
+        },
+        "band": {
+          "$ref": "load_band.schema.json"
+        }
+      }
+    },
     "block_execution_arch_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "upstream_intent",
+        "load_ranges",
         "execution_principles",
         "structural_building_blocks",
         "week_skeleton_logic",
@@ -80,6 +97,37 @@
                 "type": "string",
                 "minLength": 1
               }
+            }
+          }
+        },
+        "load_ranges": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weekly_kj_bands",
+            "weekly_tss_bands",
+            "source"
+          ],
+          "properties": {
+            "weekly_kj_bands": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/weekly_band_entry"
+              }
+            },
+            "weekly_tss_bands": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/weekly_band_entry"
+              }
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
             }
           }
         },

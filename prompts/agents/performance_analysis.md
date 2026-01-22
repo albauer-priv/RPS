@@ -207,6 +207,10 @@ If an optional input is missing, proceed without it (do not retry indefinitely).
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
+## Template Usage (Conditional)
+- If a template exists for the requested output artefact, load it and fill every
+  `<!--- FILL --->` placeholder. Preserve structure exactly; no extra fields.
+
 ## Mandatory Knowledge Processing Rule (Hard Gate)
 Before performing any analysis or derivation:
 - All binding schemas, specifications, and contracts MUST be fully read, understood, and applied.

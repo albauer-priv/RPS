@@ -26,6 +26,10 @@ class AppSettings:
     openai_model_overrides: dict[str, str]
     openai_temperature: float | None
     openai_temperature_overrides: dict[str, float]
+    openai_reasoning_effort: str | None
+    openai_reasoning_summary: str | None
+    openai_reasoning_effort_overrides: dict[str, str]
+    openai_reasoning_summary_overrides: dict[str, str]
     workspace_root: Path
     schema_dir: Path
     prompts_dir: Path
@@ -41,6 +45,16 @@ class AppSettings:
         """Return the temperature override for an agent, or the default temperature."""
         key = normalize_agent_name(agent_name)
         return self.openai_temperature_overrides.get(key, self.openai_temperature)
+
+    def reasoning_effort_for_agent(self, agent_name: str) -> str | None:
+        """Return the reasoning effort override for an agent, or the default."""
+        key = normalize_agent_name(agent_name)
+        return self.openai_reasoning_effort_overrides.get(key, self.openai_reasoning_effort)
+
+    def reasoning_summary_for_agent(self, agent_name: str) -> str | None:
+        """Return the reasoning summary override for an agent, or the default."""
+        key = normalize_agent_name(agent_name)
+        return self.openai_reasoning_summary_overrides.get(key, self.openai_reasoning_summary)
 
 
 def normalize_agent_name(value: str) -> str:
@@ -118,11 +132,35 @@ def load_app_settings() -> AppSettings:
         if agent_key:
             temp_overrides[agent_key] = parsed
 
+    reasoning_effort_overrides: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("OPENAI_REASONING_EFFORT_") or key == "OPENAI_REASONING_EFFORT":
+            continue
+        if not value:
+            continue
+        agent_key = normalize_agent_name(key[len("OPENAI_REASONING_EFFORT_"):])
+        if agent_key:
+            reasoning_effort_overrides[agent_key] = value
+
+    reasoning_summary_overrides: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("OPENAI_REASONING_SUMMARY_") or key == "OPENAI_REASONING_SUMMARY":
+            continue
+        if not value:
+            continue
+        agent_key = normalize_agent_name(key[len("OPENAI_REASONING_SUMMARY_"):])
+        if agent_key:
+            reasoning_summary_overrides[agent_key] = value
+
     return AppSettings(
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4.1"),
         openai_model_overrides=overrides,
         openai_temperature=_parse_float(os.getenv("OPENAI_TEMPERATURE")),
         openai_temperature_overrides=temp_overrides,
+        openai_reasoning_effort=os.getenv("OPENAI_REASONING_EFFORT"),
+        openai_reasoning_summary=os.getenv("OPENAI_REASONING_SUMMARY"),
+        openai_reasoning_effort_overrides=reasoning_effort_overrides,
+        openai_reasoning_summary_overrides=reasoning_summary_overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),

@@ -4,6 +4,89 @@
   "title": "MacroOverview",
   "type": "object",
   "$defs": {
+    "weekday": {
+      "type": "string",
+      "enum": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ]
+    },
+    "justification_citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "source_id",
+        "section",
+        "rationale"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "principles",
+            "evidence",
+            "policy",
+            "spec",
+            "contract"
+          ]
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase_justification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase_id",
+        "intensity_distribution",
+        "overload_pattern",
+        "kJ_first_statement",
+        "citations"
+      ],
+      "properties": {
+        "phase_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intensity_distribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overload_pattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kJ_first_statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "citations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "macro_overview_data": {
       "type": "object",
       "additionalProperties": false,
@@ -15,6 +98,7 @@
         "season_load_envelope",
         "assumptions_unknowns",
         "phase_transitions_guardrails",
+        "justification",
         "principles_scientific_foundation",
         "explicit_forbidden_content",
         "self_check"
@@ -122,7 +206,8 @@
           "required": [
             "availability_assumptions",
             "risk_constraints",
-            "planned_event_windows"
+            "planned_event_windows",
+            "recovery_protection"
           ],
           "properties": {
             "availability_assumptions": {
@@ -146,6 +231,29 @@
               "items": {
                 "type": "string",
                 "minLength": 1
+              }
+            },
+            "recovery_protection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "fixed_rest_days",
+                "notes"
+              ],
+              "properties": {
+                "fixed_rest_days": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/weekday"
+                  }
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
               }
             }
           }
@@ -234,6 +342,35 @@
               "items": {
                 "type": "string",
                 "minLength": 1
+              }
+            }
+          }
+        },
+        "justification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "summary",
+            "citations",
+            "phase_justifications"
+          ],
+          "properties": {
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "citations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/justification_citation"
+              }
+            },
+            "phase_justifications": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/phase_justification"
               }
             }
           }

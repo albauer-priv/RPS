@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 from typing import Any, Callable
 
@@ -12,8 +13,10 @@ from app.workspace.block_resolution import add_weeks
 from app.workspace.index_exact import IndexExactQuery
 from app.workspace.macro_phase_service import resolve_block_range_from_macro
 from app.workspace.schema_map import ARTIFACT_SCHEMA_FILE
+from app.workspace.schema_registry import SchemaValidationError
 from app.workspace.types import ArtifactType
 
+logger = logging.getLogger(__name__)
 
 def _parse_artifact_type(value: str) -> ArtifactType:
     """Normalize a user-provided artifact type string."""
@@ -103,7 +106,7 @@ def get_tool_defs() -> list[dict[str, Any]]:
                     "run_id": {"type": "string"},
                     "update_latest": {"type": "boolean"},
                 },
-                "required": ["artifact_type", "version_key", "payload", "run_id"],
+                "required": ["artifact_type", "version_key", "payload"],
             },
         },
     ]
@@ -116,6 +119,7 @@ class ToolContext:
     agent_name: str
     workspace_root: Path
     schema_dir: Path
+    run_id: str = "run_unknown"
 
     def workspace(self) -> Workspace:
         """Construct a Workspace for this tool context."""
@@ -222,16 +226,55 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             if expected and expected != schema_file:
                 raise ValueError(f"schema_file mismatch for {artifact_type.value}: {schema_file} != {expected}")
 
-        path = workspace.put_validated(
-            artifact_type=artifact_type,
-            version_key=args["version_key"],
-            payload=args["payload"],
-            payload_meta=args.get("meta"),
-            producer_agent=ctx.agent_name,
-            run_id=args["run_id"],
-            update_latest=bool(args.get("update_latest", True)),
-            schema_dir=ctx.schema_dir,
-        )
+        payload = args["payload"]
+        payload_meta = args.get("meta")
+        meta_keys = {
+            "artifact_type",
+            "schema_id",
+            "schema_version",
+            "version",
+            "authority",
+            "owner_agent",
+            "run_id",
+            "created_at",
+            "trace_upstream",
+            "scope",
+            "iso_week",
+            "iso_week_range",
+            "temporal_scope",
+            "trace_data",
+            "trace_events",
+            "notes",
+        }
+
+        if payload_meta is None and isinstance(payload, dict):
+            if "meta" in payload and "data" in payload and isinstance(payload["meta"], dict):
+                payload_meta = payload["meta"]
+                payload = payload["data"]
+            elif "data" in payload and any(key in payload for key in meta_keys):
+                payload_meta = {key: payload[key] for key in meta_keys if key in payload}
+                payload = payload["data"]
+
+        run_id = args.get("run_id")
+        if isinstance(payload_meta, dict) and not run_id:
+            run_id = payload_meta.get("run_id")
+        if not run_id:
+            run_id = ctx.run_id
+
+        try:
+            path = workspace.put_validated(
+                artifact_type=artifact_type,
+                version_key=args["version_key"],
+                payload=payload,
+                payload_meta=payload_meta,
+                producer_agent=ctx.agent_name,
+                run_id=run_id,
+                update_latest=bool(args.get("update_latest", True)),
+                schema_dir=ctx.schema_dir,
+            )
+        except SchemaValidationError as exc:
+            logger.warning("Schema validation failed for %s: %s", artifact_type.value, exc.errors)
+            return {"ok": False, "error": str(exc), "details": exc.errors}
         return {"ok": True, "path": path}
 
     return {

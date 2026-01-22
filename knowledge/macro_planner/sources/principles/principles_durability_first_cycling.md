@@ -2,7 +2,7 @@
 Type: Specification
 Specification-For: PLANNING_PRINCIPLES
 Specification-ID: DurabilityFirstPrinciples
-Version: 1.0
+Version: 1.1
 
 Scope: Shared
 Authority: Binding
@@ -32,7 +32,7 @@ Notes: >
 # Principles Paper
 ## Durability-First Annual Training Planning for Ultra-Distance and Brevet Cycling
 
-**Version:** v1.0 · 2025
+**Version:** v1.1 - 2025
 
 ---
 
@@ -67,7 +67,7 @@ Durability is treated as an **independent performance dimension** on par with VO
 For ultra and brevet distances, **mechanical work (kilojoules, kJ)** is the **primary steering and comparison metric**.
 
 > **kJ connects training load, energetics, fueling, and long-term durability.**
-> **Terminology:** “Weekly kJ” means **mechanical** kJ (sum of session kJ),
+> **Terminology:** "Weekly kJ" means **mechanical** kJ (sum of session kJ),
 > not stress-weighted load.
 
 ### 2.2 Hierarchy of steering metrics
@@ -119,6 +119,42 @@ Load typically follows **3:1 cycles**:
 
 Masters athletes use more conservative progressions and larger deloads.
 
+### 3.4 3:1 default pattern and alternatives
+
+**Default: 3:1 (most athletes)**
+
+**Load weeks (2-3 weeks):**
+- Progress via **one axis** only (kJ/duration **or** frequency **or** density/complexity).
+- Intensity stays a later lever: prioritize "consistently long" over "too often hard".
+
+**Deload/consolidation week (1 week):**
+- Goal: **secure adaptation + reduce fatigue** without breaking rhythm.
+- Practical implementation:
+  - **Volume/kJ clearly down** (noticeably lower, not just marginal).
+  - **Frequency can stay**, but sessions are shorter and truly easy.
+  - **No durability density** (no back-to-back, no hard-late, no overload).
+  - **Optional: one very small quality touch**, only if intensity is required
+    (short, clean, non-fatiguing).
+
+**When 3:1 is not the best default**
+
+**2:1 (more conservative)** is often better when:
+- Masters/older athletes, high life stress, unstable sleep.
+- Volume/frequency is being ramped up from a lower base.
+- Week 3 regularly collapses (HR/RPE drift, heavy legs, motivation drop).
+
+**4:1 (more aggressive)** can work when:
+- Very high training stability, good sleep/stress buffer.
+- Base phase with high LIT and low complexity/intensity.
+- Athlete history shows 3:1 deloads are too early.
+
+**Decision rule (simple and reliable)**
+- If week 3 regularly tips: switch to **2:1** (or make week 3 half-load, then deload).
+- If week 3 is stable but deload feels under-dosed: keep **3:1**, but make deload a
+  **consolidation** (hold frequency, reduce volume/density).
+- If 3:1 is stable and base is very quiet: test **4:1** only with clear early-warning
+  signals and strict countermeasures.
+
 ---
 
 ## 4. Training Content Taxonomy (What trains what?)
@@ -155,17 +191,130 @@ These sessions are **not hard**, but **long and consistent**.
 
 ---
 
-## 5. Progressive Overload - Allowed Axes
+## 4.6 Intensity Distribution - polarized vs pyramidal (and what to follow)
 
-Progression is **prioritized by time and structure**, not intensity.
+**Goal of this section**
+Intensity distribution describes how weekly work is distributed across intensities. In a durability-first context it is a characterization and quality parameter, but not the primary steering lever (kJ stays primary).
 
-Order of overload axes:
-1. **Time / kJ**
-2. **Frequency**
-3. **Density / complexity**
-4. **Intensity**
+### 4.6.1 Terms (precise and practical)
 
-Intensity is the **last lever**.
+- **Polarized:** very high low intensity (Z1/Z2), little moderate work, and a small, targeted share of high intensity (VO2 and above threshold).
+- **Pyramidal:** high low intensity, a larger share of moderate work (Tempo/SST/Threshold), little high intensity.
+
+Both models rely on high LIT proportions; the difference is **how much middle** (Tempo/SST/Threshold) is used.
+
+### 4.6.2 Which is more appropriate - polarized or pyramidal?
+
+In an ultra/brevet durability-first system, the default answer is:
+
+- **Base/General build:** more **pyramidal-leaning** (high LIT, dosed Tempo/SST as an economical race-adjacent stimulus, little HI).
+- **Build/Performance sharpening:** more **polarized** (LIT stays high, moderate density is capped, 1-2 high-quality HI sessions when recovered).
+
+Rationale (system logic and evidence alignment):
+
+- Durability depends on **LIT dominance** and the ability to keep quality stable under preload; too much moderate work raises overall fatigue and blurs intensity separation.
+- HIIT is effective for ceiling/VO2, but in ultra contexts it is only a support capacity and must remain recovery-compatible.
+- Moderate contents (Tempo/SST) can improve economy near brevet pace, but must not compromise long, stable work.
+
+### 4.6.3 What must be followed - decision rules (policy)
+
+**Rule 1: Primacy of durability work**
+Regardless of polarized or pyramidal, the weekly architecture must ensure long, stable Z2 work (and/or B2B/hard-late stimuli) remains repeatable. If intensity distribution threatens that, it is wrong.
+
+**Rule 2: Choose the model based on the limiting factor**
+
+- If the limiting factor is **aerobic ceiling/VO2** and Z2 base is stable - **polarized**.
+- If the limiting factor is **economy/race pace comfort** (long steady efforts feel costly) - **pyramidal-leaning** with dosed Tempo/SST.
+- If the limiting factor is **recovery/stress/masters recovery** - **more polarized in the sense of more easy, less middle**, and HI rarely or in very small doses.
+
+**Rule 3: The middle is a budget, not a default**
+Moderate intensity (Tempo/SST/Threshold) is treated as a budget:
+
+- used when it has a clear purpose (economy, longer steady stability, event-specific pace)
+- reduced once it degrades HI quality or LIT consistency
+
+**Rule 4: HI only if it is truly HI (and recovered)**
+A HI stimulus is only useful if it:
+
+- is performed with adequate freshness
+- holds the target quality (clean repeats, stable power)
+- is not stacked on top of an already maximized kJ week
+
+**Rule 5: Specificity rises near the A event**
+Closer to the A event, the relevance of the following increases:
+
+- event-like duration, pace stability, fueling stability, B2B/hard-late
+
+This typically means **less random moderate work** and more targeted specificity.
+
+### 4.6.4 Practical default (no numbers)
+
+- **Default:** LIT-dominant, moderately dosed (pyramidal-leaning), HI rarely.
+- **Build/sharpen:** LIT stays dominant, moderate density decreases, HI quality rises (polarized).
+- **High fatigue:** LIT yes, but less density/complexity; pause HI; use deload actively.
+
+---
+
+## 5. Progressive Overload - Durability-First Logic
+
+**Goal of this section**
+Progressive overload in a durability-first system is not more intensity; it is **more robust, repeatable work** with stable execution. The purpose is to enable later fatigue and lower drift (HR/RPE/economy) under energetic preload.
+
+### 5.1 Definition (for this system)
+
+Progressive overload means a **planned, stepwise increase** in training stimulus over weeks/blocks **without** compromising consistency.
+
+In a brevet/ultra context:
+
+- Primary stimulus: mechanical work (kJ) plus duration
+- Secondary: frequency and repeatability
+- Tertiary: complexity/density
+- Intensity: last lever (sparingly, dosed, recovered)
+
+### 5.2 Allowed overload axes (hierarchy)
+
+1. **Time / kJ (primary)**
+   - longer Z2 sessions, longer steady segments, more total weekly kJ
+2. **Frequency (secondary)**
+   - additional short Z2 stack sessions, better distribution vs single monster days
+3. **Density / complexity (tertiary)**
+   - same weekly kJ, but harder: back-to-back, hard-late, pre-fatigue protocols
+4. **Intensity (quaternary)**
+   - VO2/high intensity only when quality is high and the LIT base is protected
+
+### 5.3 Concrete progression rules (guardrails, no numbers)
+
+These rules are principle-based by design (numbers belong in KPI/DES).
+
+**A. One variable per step**
+Per week/progression step, increase **at most one axis** (e.g., only kJ **or** only frequency). This reduces attribution noise and protects consistency.
+
+**B. Stability first - progress only with stable execution**
+Overload is only allowed when the prior week(s) were stable:
+
+- pacing/output in Z2/steady without disproportionate drift
+- RPE remains expected
+- no accumulation of red flags (sleep, mood, motivation, pain)
+
+Rationale: Durability is defined by **stability under load**, not fresh peak values.
+
+**C. Deload is part of the overload system (not optional)**
+Deload/consolidation is an active component to secure adaptation and enable the next progression. "More" without consolidation just moves fatigue forward.
+
+**D. Protect intensity by reducing other levers**
+If a week contains true quality (VO2/high intensity), overload is **not** maximized via kJ/density at the same time. Goal: hard stays hard, long stays long - without gray mixed fatigue.
+
+### 5.4 Durability-specific overload patterns (examples as patterns, not plans)
+
+- **Extensify pattern:** Z2 duration/kJ increases over 2-3 weeks, then deload
+- **Repeatability pattern:** same weekly kJ, but more sessions (better frequency)
+- **Complexify pattern:** same weekly kJ, but 1-2 targeted durability sessions (back-to-back or hard-late)
+
+### 5.5 Common errors (and why they are costly in ultra contexts)
+
+- **Intensity too early as overload lever:** raises fatigue density and reduces the ability to consistently reproduce Z2/kJ work.
+- **Missed sessions are made up:** violates failure-tolerance principles; leads to load spikes instead of robustness.
+- **Moderate gray work as default:** can make short-term fitness feel higher, but undermines long-term stability and freshness.
 
 ---
 
@@ -217,5 +366,3 @@ It explicitly references:
 A good ultra plan does not maximize short-term fitness, but:
 
 > **the ability to reproduce performance under fatigue.**
-
-This document ensures that all downstream decisions serve that goal.

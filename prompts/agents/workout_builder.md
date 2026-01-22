@@ -211,6 +211,10 @@ The Workout-Builder MUST NOT:
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
+## Template Usage (Conditional)
+- If a template exists for the requested output artefact, load it and fill every
+  `<!--- FILL --->` placeholder. Preserve structure exactly; no extra fields.
+
 ## Three-Pass Execution Protocol (MANDATORY)
 
 ### PASS 1 — Internal Validation (DO NOT OUTPUT)

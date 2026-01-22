@@ -8,7 +8,8 @@
     "min",
     "max",
     "kj_per_kg_min",
-    "kj_per_kg_max"
+    "kj_per_kg_max",
+    "notes"
   ],
   "properties": {
     "min": {

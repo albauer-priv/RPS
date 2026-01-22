@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from app.workspace.index_manager import WorkspaceIndexManager
-from app.workspace.iso_helpers import IsoWeek
+from app.workspace.iso_helpers import IsoWeek, parse_iso_week_range
 from app.workspace.types import ArtifactType
 
 
@@ -16,15 +16,12 @@ def _week_index(week: IsoWeek) -> int:
     return week.year * 60 + week.week
 
 
-def _range_contains(range_meta: dict[str, Any], target: IsoWeek) -> bool:
+def _range_contains(range_meta: Any, target: IsoWeek) -> bool:
     """Return True if range_meta covers the target week."""
-    start = range_meta.get("start")
-    end = range_meta.get("end")
-    if not start or not end:
+    normalized = parse_iso_week_range(range_meta)
+    if not normalized:
         return False
-    start_week = IsoWeek(int(start["year"]), int(start["week"]))
-    end_week = IsoWeek(int(end["year"]), int(end["week"]))
-    return _week_index(start_week) <= _week_index(target) <= _week_index(end_week)
+    return _week_index(normalized.start) <= _week_index(target) <= _week_index(normalized.end)
 
 
 @dataclass

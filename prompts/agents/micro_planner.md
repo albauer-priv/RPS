@@ -331,6 +331,10 @@ Output JSON that validates against `workouts_plan.schema.json`.
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
+## Template Usage (Conditional)
+- If a template exists for the requested output artefact, load it and fill every
+  `<!--- FILL --->` placeholder. Preserve structure exactly; no extra fields.
+
 ## Internal Execution Steps
 You MUST execute every task in exactly three passes.
 

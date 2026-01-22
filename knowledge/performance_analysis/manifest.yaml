@@ -6,3 +6,4 @@ sources:
 - path: sources/contracts/data_pipeline__analyst_contract.md
 - path: sources/policies/des_evaluation_policy.md
 - path: sources/specs/data_confidence_spec.md
+- path: sources/templates/des_analysis_report_template.md

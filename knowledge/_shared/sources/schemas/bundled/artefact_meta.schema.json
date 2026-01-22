@@ -13,7 +13,14 @@
     "owner_agent",
     "run_id",
     "created_at",
-    "trace_upstream"
+    "trace_upstream",
+    "scope",
+    "iso_week",
+    "iso_week_range",
+    "temporal_scope",
+    "trace_data",
+    "trace_events",
+    "notes"
   ],
   "properties": {
     "artifact_type": {
@@ -115,7 +122,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "artifact"
+          "artifact",
+          "version",
+          "run_id"
         ],
         "properties": {
           "artifact": {
@@ -142,7 +151,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "artifact"
+          "artifact",
+          "version",
+          "run_id"
         ],
         "properties": {
           "artifact": {
@@ -169,7 +180,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "artifact"
+          "artifact",
+          "version",
+          "run_id"
         ],
         "properties": {
           "artifact": {

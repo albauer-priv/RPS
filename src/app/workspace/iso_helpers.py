@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -41,13 +42,47 @@ def range_contains(range_spec: IsoWeekRange, week: IsoWeek) -> bool:
     return week_index(range_spec.start) <= week_index(week) <= week_index(range_spec.end)
 
 
+def parse_iso_week(value: Any) -> IsoWeek | None:
+    """Parse a string or mapping into an IsoWeek."""
+    if isinstance(value, dict) and "year" in value and "week" in value:
+        return IsoWeek(int(value["year"]), int(value["week"]))
+    if isinstance(value, str):
+        parts = value.strip().split("-")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            return IsoWeek(int(parts[0]), int(parts[1]))
+    return None
+
+
+def parse_iso_week_range(value: Any) -> IsoWeekRange | None:
+    """Parse a string or mapping into an IsoWeekRange."""
+    if isinstance(value, dict):
+        start = value.get("start") or value.get("from")
+        end = value.get("end") or value.get("to")
+        start_week = parse_iso_week(start)
+        end_week = parse_iso_week(end)
+        if start_week and end_week:
+            return IsoWeekRange(start=start_week, end=end_week)
+        return None
+
+    if isinstance(value, str):
+        parts = value.strip().split("--")
+        if len(parts) != 2:
+            return None
+        start = parse_iso_week(parts[0])
+        end_part = parts[1].split("+", 1)[0]
+        end = parse_iso_week(end_part)
+        if start and end:
+            return IsoWeekRange(start=start, end=end)
+    return None
+
+
 def envelope_week(envelope: dict) -> IsoWeek | None:
     """Extract iso_week from an artifact envelope."""
     meta = envelope.get("meta", {})
     iso_week = meta.get("iso_week")
     if not iso_week:
         return None
-    return IsoWeek(int(iso_week["year"]), int(iso_week["week"]))
+    return parse_iso_week(iso_week)
 
 
 def envelope_week_range(envelope: dict) -> IsoWeekRange | None:
@@ -56,9 +91,4 @@ def envelope_week_range(envelope: dict) -> IsoWeekRange | None:
     range_spec = meta.get("iso_week_range")
     if not range_spec:
         return None
-    start = range_spec["start"]
-    end = range_spec["end"]
-    return IsoWeekRange(
-        start=IsoWeek(int(start["year"]), int(start["week"])),
-        end=IsoWeek(int(end["year"]), int(end["week"])),
-    )
+    return parse_iso_week_range(range_spec)

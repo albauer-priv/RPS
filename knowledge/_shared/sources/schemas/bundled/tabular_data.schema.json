@@ -18,7 +18,8 @@
         "required": [
           "key",
           "label",
-          "type"
+          "type",
+          "unit"
         ],
         "properties": {
           "key": {
@@ -69,7 +70,8 @@
       "required": [
         "key",
         "label",
-        "type"
+        "type",
+        "unit"
       ],
       "properties": {
         "key": {

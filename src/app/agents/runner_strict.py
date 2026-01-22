@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,12 +11,17 @@ from typing import Any
 from openai import OpenAI
 
 from app.agents.tasks import AgentTask, OUTPUT_SPECS
+from app.openai.model_capabilities import supports_temperature
+from app.openai.reasoning import build_reasoning_payload
+from app.openai.response_utils import extract_reasoning_summaries
 from app.openai.vectorstore_state import VectorStoreResolver
 from app.prompts.loader import PromptLoader
 from app.schemas.bundler import SchemaBundler
 from app.tools.store_output_tools import build_strict_store_tool
+from app.workspace.schema_registry import SchemaValidationError
 from app.workspace.guarded_store import GuardedValidatedStore
 
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class AgentRuntime:
@@ -23,6 +29,8 @@ class AgentRuntime:
     client: OpenAI
     model: str
     temperature: float | None
+    reasoning_effort: str | None
+    reasoning_summary: str | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
     shared_vs_name: str
@@ -88,14 +96,27 @@ def run_agent_task_strict(
             "tools": tools,
             "input": input_list,
         }
+        reasoning = build_reasoning_payload(
+            model,
+            runtime.reasoning_effort,
+            runtime.reasoning_summary,
+        )
+        if reasoning:
+            payload["reasoning"] = reasoning
         if force_search_flag:
             payload["tool_choice"] = {"type": "file_search"}
-        if temperature is not None:
+        if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
         return runtime.client.responses.create(**payload)
 
     force_search = force_file_search
+    seen_summaries: set[str] = set()
     response = _create_response(force_search)
+    for summary in extract_reasoning_summaries(response):
+        if summary in seen_summaries:
+            continue
+        seen_summaries.add(summary)
+        logger.info("Reasoning summary: %s", summary)
     input_list += response.output
     force_search = False
 
@@ -118,6 +139,7 @@ def run_agent_task_strict(
 
             args = json.loads(call.arguments or "{}")
             document = args if output_spec.envelope else args.get("workouts")
+            logger.debug("Tool call %s args=%s", call.name, args)
 
             try:
                 result = guarded.guard_put_validated(
@@ -127,8 +149,12 @@ def run_agent_task_strict(
                     producer_agent=agent_name,
                     update_latest=True,
                 )
+            except SchemaValidationError as exc:
+                result = {"ok": False, "error": str(exc), "details": exc.errors}
+                logger.warning("Schema validation failed for %s: %s", output_spec.artifact_type.value, exc.errors)
             except Exception as exc:
                 result = {"ok": False, "error": str(exc)}
+                logger.warning("Store failed for %s: %s", output_spec.artifact_type.value, exc)
 
             input_list.append(
                 {
@@ -141,4 +167,9 @@ def run_agent_task_strict(
             return result
 
         response = _create_response(force_search)
+        for summary in extract_reasoning_summaries(response):
+            if summary in seen_summaries:
+                continue
+            seen_summaries.add(summary)
+            logger.info("Reasoning summary: %s", summary)
         input_list += response.output

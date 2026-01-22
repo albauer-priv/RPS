@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
@@ -28,6 +28,8 @@ def plan_week(
     run_id: str,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
+    reasoning_effort_resolver: Callable[[str], str | None] | None = None,
+    reasoning_summary_resolver: Callable[[str], str | None] | None = None,
     force_file_search: bool = True,
 ) -> PlanWeekResult:
     """Run the Macro -> Meso -> Micro -> Builder -> Analysis flow if needed."""
@@ -37,11 +39,20 @@ def plan_week(
 
     steps: list[dict] = []
 
+    def runtime_for(agent_name: str) -> AgentRuntime:
+        if not reasoning_effort_resolver and not reasoning_summary_resolver:
+            return runtime
+        return replace(
+            runtime,
+            reasoning_effort=reasoning_effort_resolver(agent_name) if reasoning_effort_resolver else runtime.reasoning_effort,
+            reasoning_summary=reasoning_summary_resolver(agent_name) if reasoning_summary_resolver else runtime.reasoning_summary,
+        )
+
     macro_tasks = router.route_macro(target)
     if macro_tasks:
         spec = AGENTS["macro_planner"]
         out = run_agent_multi_output(
-            runtime,
+            runtime_for(spec.name),
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
@@ -60,7 +71,7 @@ def plan_week(
     if meso_tasks:
         spec = AGENTS["meso_architect"]
         out = run_agent_multi_output(
-            runtime,
+            runtime_for(spec.name),
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
@@ -80,7 +91,7 @@ def plan_week(
     if micro_tasks:
         spec = AGENTS["micro_planner"]
         out = run_agent_multi_output(
-            runtime,
+            runtime_for(spec.name),
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
@@ -100,7 +111,7 @@ def plan_week(
     if builder_tasks:
         spec = AGENTS["workout_builder"]
         out = run_agent_multi_output(
-            runtime,
+            runtime_for(spec.name),
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
@@ -120,7 +131,7 @@ def plan_week(
     if analysis_tasks:
         spec = AGENTS["performance_analysis"]
         out = run_agent_multi_output(
-            runtime,
+            runtime_for(spec.name),
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,

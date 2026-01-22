@@ -6,7 +6,8 @@
   "additionalProperties": false,
   "required": [
     "min",
-    "max"
+    "max",
+    "notes"
   ],
   "properties": {
     "min": {

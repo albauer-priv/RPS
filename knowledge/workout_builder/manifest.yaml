@@ -7,3 +7,4 @@ sources:
 - path: sources/specs/workouts/intervals_workout_ebnf.md
 - path: sources/specs/workouts/workout_json_spec.md
 - path: sources/specs/workouts/workout_syntax_and_validation.md
+- path: sources/templates/intervals_workouts_template.md
