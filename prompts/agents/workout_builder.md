@@ -171,6 +171,11 @@ If missing → STOP.
 - Output MUST NOT include citations, links, Markdown, or any extra annotation
 - Each object MUST include:
   - start_date_local, category, type, name, description
+ - If a strict store tool is available, call `store_intervals_workouts_export` with:
+   - `{ "workouts": [ ... ] }`
+   - Do NOT output raw JSON outside the tool call.
+ - If one or more workouts are invalid: output a clear ERROR message in text form
+   and do NOT call any store tool.
 
 ## Primary Input Artefact (Binding)
 
@@ -183,6 +188,7 @@ The Workout-Builder MUST:
 - read the provided WORKOUTS_PLAN
 - extract Workout-IDs and their corresponding workout texts
 - generate outputs strictly based on the contained workout definitions
+- preserve the order of workouts according to the `data.agenda` sequence
 
 The Workout-Builder MUST NOT:
 - invent workouts

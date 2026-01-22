@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- KPI profiles now include moving-time pacing guidance (`kJ/kg/h` + `W/kg`) for brevet/ultra segments.
+- Macro overview body metadata now records `body_mass_kg` alongside the reference mass window.
+- Season brief template/spec now includes `Body-Mass-kg` for precise load scaling.
 - Season-Scenario-Agent with `SEASON_SCENARIOS` artefact + schema, plus strict store tool support.
 - Season scenarios contract + interface spec for scenario → macro handoff.
 - Season scenarios template and new `vs_season_scenario` vector store manifest.
@@ -53,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
 
 ### Changed
+- KPI profile schema removed per-kg preload windows and now requires moving-time rate guidance instead.
+- Macro overview schema/template replaces per-kg preload references with `moving_time_rate_guidance`.
+- Macro-Planner now derives weekly kJ corridors from body mass, kJ/kg/h guidance, and weekly hours.
+- Meso-Architect governance now targets upper-third load bands for build/peak weeks by default.
 - Macro Mode A scenarios now run Season-Scenario-Agent, store `season_scenarios`, and render the same cached scenario dialogue for selection.
 - Macro-Planner prompt can optionally load `SEASON_SCENARIOS` as advisory input.
 - System architecture, planner workflow, how-to-plan, and artefact flow docs updated to include Season-Scenario-Agent and `season_scenarios`.

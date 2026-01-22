@@ -59,10 +59,13 @@ Use this JSON envelope shape for `MACRO_OVERVIEW`. Fill all markers.
       "planning_horizon_weeks": 8,
       "season_brief_ref": "<!--- FILL --->",
       "kpi_profile_ref": "<!--- FILL --->",
+      "body_mass_kg": 0,
       "reference_mass_window_kg": { "min": 0, "max": 0 },
-      "energetic_preload_references_kj_per_kg": {
-        "single_day": { "min": 0, "max": 0 },
-        "back_to_back": { "min": 0, "max": 0 }
+      "moving_time_rate_guidance": {
+        "segment": "<!--- FILL --->",
+        "w_per_kg": { "min": 0, "max": 0 },
+        "kj_per_kg_per_hour": { "min": 0, "max": 0 },
+        "notes": "<!--- FILL --->"
       },
       "athlete_profile_ref": "<!--- FILL --->"
     },

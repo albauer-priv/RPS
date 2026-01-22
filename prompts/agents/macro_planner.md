@@ -488,6 +488,35 @@ binding schema-defined artefact for the active mode.
 - K3 meaning (AgendaEnumSpec): Kraftausdauer (high torque / low cadence)
 - kJ/kg guardrails: compute from weekly kJ corridor and reference mass window
   (min = kJ_min / mass_max, max = kJ_max / mass_min).
+- `Body-Mass-kg` from Season Brief is REQUIRED and MUST be copied to
+  `body_metadata.body_mass_kg`.
+  Set `reference_mass_window_kg` to the same value (min = max).
+  If body mass is missing, STOP and request it.
+
+## kJ/TSS Derivation (Binding)
+Use KPI Profile moving-time guidance (kJ/kg/h) as the primary anchor for absolute kJ corridors.
+1) Determine body mass:
+   - Season Brief MUST provide `Body-Mass-kg`. Use it (min = max).
+   - If missing, STOP and request body mass (do not invent, do not proceed).
+2) Select the KPI Profile `durability.moving_time_rate_guidance` band that matches the scenario intent
+   (typically `brevet_ultra_sustainable` unless explicitly marked competitive).
+3) Compute weekly kJ range from hours:
+   - `weekly_kj_range = body_mass × kJ_per_kg_per_hour_range × weekly_hours_range`
+   - Weekly hours come from Season Brief (min/typical/max).
+4) Set weekly kJ corridors per phase from the computed weekly_kj_range:
+   - Base: align to lower end of weekly_kj_range.
+   - Build: move toward upper end of weekly_kj_range.
+   - Peak: taper downward from Build while preserving specificity.
+   - Use KPI absolute preload anchors (`single_ride_kj`, `back_to_back_kj`) only as
+     sanity checks; if the computed range conflicts materially, document the conflict
+     and adjust conservatively within weekly_kj_range.
+5) Derive weekly TSS bands *after* kJ bands:
+   - Use LoadEstimationSpec formula: `TSS ≈ hours × IF² × 100`.
+   - Hours should come from Season Brief availability (min/typical/max).
+   - IF range should reflect phase intent (Base lower, Build moderate, Peak moderate with taper).
+   - If IF/FTP is unknown, use conservative IF bands and mark TSS confidence as LOW.
+6) Populate `body_metadata.moving_time_rate_guidance` with the selected KPI band
+   (`segment`, `w_per_kg`, `kj_per_kg_per_hour`, `notes`).
 
 ## File Lookup (avoid scanning unrelated sources)
 - `macro_overview.schema.json`: schema for Mode A/B output.

@@ -259,13 +259,20 @@ def build_macro_overview_context(doc):
             "season_brief_ref": body.get("season_brief_ref"),
             "kpi_profile_ref": body.get("kpi_profile_ref"),
             "athlete_profile_ref": body.get("athlete_profile_ref"),
+            "body_mass_kg": body.get("body_mass_kg"),
             "reference_mass_window": fmt_range(body.get("reference_mass_window_kg")),
-            "energetic_preload_single_day": fmt_range(
-                body.get("energetic_preload_references_kj_per_kg", {}).get("single_day")
-            ),
-            "energetic_preload_back_to_back": fmt_range(
-                body.get("energetic_preload_references_kj_per_kg", {}).get("back_to_back")
-            ),
+            "moving_time_rate_guidance": {
+                "segment": (body.get("moving_time_rate_guidance") or {}).get("segment"),
+                "w_per_kg": fmt_range(
+                    (body.get("moving_time_rate_guidance") or {}).get("w_per_kg")
+                ),
+                "kj_per_kg_per_hour": fmt_range(
+                    (body.get("moving_time_rate_guidance") or {}).get(
+                        "kj_per_kg_per_hour"
+                    )
+                ),
+                "notes": (body.get("moving_time_rate_guidance") or {}).get("notes"),
+            },
         },
         "macro_intent": {
             "season_objective": macro_intent.get("season_objective"),
@@ -1395,12 +1402,6 @@ def build_kpi_profile_context(doc):
         },
         "durability": {
             "energetic_preload": {
-                "single_ride_kj_per_kg": range_or_na(
-                    (durability.get("energetic_preload") or {}).get("single_ride_kj_per_kg")
-                ),
-                "back_to_back_kj_per_kg": range_or_na(
-                    (durability.get("energetic_preload") or {}).get("back_to_back_kj_per_kg")
-                ),
                 "single_ride_kj": number_or_na(
                     (durability.get("energetic_preload") or {}).get("single_ride_kj")
                 ),
@@ -1410,19 +1411,24 @@ def build_kpi_profile_context(doc):
                 "derived_from": (durability.get("energetic_preload") or {}).get(
                     "derived_from"
                 ),
-                "mass_window_kj_per_kg": [
+            },
+            "moving_time_rate_guidance": {
+                "derived_from": (durability.get("moving_time_rate_guidance") or {}).get(
+                    "derived_from"
+                ),
+                "notes": (durability.get("moving_time_rate_guidance") or {}).get("notes"),
+                "bands": [
                     {
-                        "mass_window_kg": f"{range_or_na(entry.get('mass_window_kg'))} kg",
-                        "single_ride_kj_per_kg": range_or_na(
-                            entry.get("single_ride_kj_per_kg")
+                        "segment": entry.get("segment"),
+                        "w_per_kg": range_or_na(entry.get("w_per_kg")),
+                        "kj_per_kg_per_hour": range_or_na(
+                            entry.get("kj_per_kg_per_hour")
                         ),
-                        "back_to_back_kj_per_kg": range_or_na(
-                            entry.get("back_to_back_kj_per_kg")
-                        ),
+                        "basis": entry.get("basis"),
                     }
                     for entry in (
-                        (durability.get("energetic_preload") or {}).get(
-                            "mass_window_kj_per_kg",
+                        (durability.get("moving_time_rate_guidance") or {}).get(
+                            "bands",
                             [],
                         )
                     )

@@ -112,7 +112,7 @@ Choose the dominant motivation so planning emphasizes the right trade-offs.
 ### 3.4 Baseline characteristics (optional, if known)
 Add physiological or equipment baselines if known; leave blank if unknown to avoid guesswork.
 - Height (typical range):
-- Weight (typical range):
+- Body-Mass-kg (current or typical range):
 - Resting HR / max HR:
 - FTP or threshold power:
 - Recent tests or notable PBs:

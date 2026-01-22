@@ -103,6 +103,7 @@ Recommended locations in the Season Brief template (headings may vary):
 ## 3) Optional Fields (Informational)
 A SEASON_BRIEF MAY include:
 - baseline characteristics (height/weight, HR, FTP, PBs, equipment constraints)
+- `Body-Mass-kg` (current or typical range)
 - historical performance baseline (measured and derived values, if available)
 - ambitions or long-term vision beyond this season
 - current zone model reference

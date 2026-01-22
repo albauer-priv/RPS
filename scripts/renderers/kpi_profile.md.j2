@@ -59,22 +59,19 @@ Trace-Upstream:
 
 ### 3.1 Energetic Pre-Load Requirement
 
-- Single-ride preload (kJ/kg): {{ durability.energetic_preload.single_ride_kj_per_kg }}
-- Back-to-back preload (kJ/kg): {{ durability.energetic_preload.back_to_back_kj_per_kg }}
 - Single-ride preload (kJ): {{ durability.energetic_preload.single_ride_kj }}
 - Back-to-back preload (kJ): {{ durability.energetic_preload.back_to_back_kj }}
 - Derived from: {{ durability.energetic_preload.derived_from or "N/A" }}
 
-### 3.2 Body Mass Window Sensitivity
+### 3.2 Moving-Time Rate Guidance (kJ/kg/h)
 
-{% if durability.energetic_preload.mass_window_kj_per_kg %}
-| Body mass window (kg) | Single-day kJ/kg | Back-to-back kJ/kg |
-|---|---:|---:|
-{% for row in durability.energetic_preload.mass_window_kj_per_kg %}| {{ row.mass_window_kg }} | {{ row.single_ride_kj_per_kg }} | {{ row.back_to_back_kj_per_kg }} |
+Derived from: {{ durability.moving_time_rate_guidance.derived_from or "N/A" }}
+Notes: {{ durability.moving_time_rate_guidance.notes or "N/A" }}
+
+| Segment | W/kg | kJ/kg/h | Basis |
+|---|---:|---:|---|
+{% for row in durability.moving_time_rate_guidance.bands %}| {{ row.segment }} | {{ row.w_per_kg }} | {{ row.kj_per_kg_per_hour }} | {{ row.basis }} |
 {% endfor %}
-{% else %}
-- N/A
-{% endif %}
 
 ### 3.3 Durability KPIs
 

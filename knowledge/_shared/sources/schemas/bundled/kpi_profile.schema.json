@@ -260,69 +260,19 @@
           "additionalProperties": false,
           "required": [
             "energetic_preload",
-            "kpis"
+            "kpis",
+            "moving_time_rate_guidance"
           ],
           "properties": {
             "energetic_preload": {
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "single_ride_kj_per_kg",
-                "back_to_back_kj_per_kg",
                 "single_ride_kj",
                 "back_to_back_kj",
-                "derived_from",
-                "mass_window_kj_per_kg"
+                "derived_from"
               ],
               "properties": {
-                "single_ride_kj_per_kg": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "min",
-                    "max"
-                  ],
-                  "properties": {
-                    "min": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    },
-                    "max": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    }
-                  }
-                },
-                "back_to_back_kj_per_kg": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "min",
-                    "max"
-                  ],
-                  "properties": {
-                    "min": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    },
-                    "max": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    }
-                  }
-                },
                 "single_ride_kj": {
                   "type": "number",
                   "minimum": 0
@@ -334,75 +284,6 @@
                 "derived_from": {
                   "type": "string",
                   "minLength": 1
-                },
-                "mass_window_kj_per_kg": {
-                  "type": "array",
-                  "minItems": 1,
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "mass_window_kg",
-                      "single_ride_kj_per_kg",
-                      "back_to_back_kj_per_kg"
-                    ],
-                    "properties": {
-                      "mass_window_kg": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "min",
-                          "max"
-                        ],
-                        "properties": {
-                          "min": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        }
-                      },
-                      "single_ride_kj_per_kg": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "min",
-                          "max"
-                        ],
-                        "properties": {
-                          "min": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        }
-                      },
-                      "back_to_back_kj_per_kg": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "min",
-                          "max"
-                        ],
-                        "properties": {
-                          "min": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        }
-                      }
-                    }
-                  }
                 }
               }
             },
@@ -537,6 +418,55 @@
                     },
                     "notes": {
                       "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "moving_time_rate_guidance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "derived_from",
+                "notes",
+                "bands"
+              ],
+              "properties": {
+                "derived_from": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bands": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "segment",
+                      "w_per_kg",
+                      "kj_per_kg_per_hour",
+                      "basis"
+                    ],
+                    "properties": {
+                      "segment": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "w_per_kg": {
+                        "$ref": "#/$defs/number_range"
+                      },
+                      "kj_per_kg_per_hour": {
+                        "$ref": "#/$defs/number_range"
+                      },
+                      "basis": {
+                        "type": "string",
+                        "minLength": 1
+                      }
                     }
                   }
                 }
@@ -1500,69 +1430,19 @@
           "additionalProperties": false,
           "required": [
             "energetic_preload",
-            "kpis"
+            "kpis",
+            "moving_time_rate_guidance"
           ],
           "properties": {
             "energetic_preload": {
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "single_ride_kj_per_kg",
-                "back_to_back_kj_per_kg",
                 "single_ride_kj",
                 "back_to_back_kj",
-                "derived_from",
-                "mass_window_kj_per_kg"
+                "derived_from"
               ],
               "properties": {
-                "single_ride_kj_per_kg": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "min",
-                    "max"
-                  ],
-                  "properties": {
-                    "min": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    },
-                    "max": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    }
-                  }
-                },
-                "back_to_back_kj_per_kg": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "min",
-                    "max"
-                  ],
-                  "properties": {
-                    "min": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    },
-                    "max": {
-                      "type": [
-                        "number",
-                        "null"
-                      ],
-                      "minimum": 0
-                    }
-                  }
-                },
                 "single_ride_kj": {
                   "type": "number",
                   "minimum": 0
@@ -1574,75 +1454,6 @@
                 "derived_from": {
                   "type": "string",
                   "minLength": 1
-                },
-                "mass_window_kj_per_kg": {
-                  "type": "array",
-                  "minItems": 1,
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "mass_window_kg",
-                      "single_ride_kj_per_kg",
-                      "back_to_back_kj_per_kg"
-                    ],
-                    "properties": {
-                      "mass_window_kg": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "min",
-                          "max"
-                        ],
-                        "properties": {
-                          "min": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        }
-                      },
-                      "single_ride_kj_per_kg": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "min",
-                          "max"
-                        ],
-                        "properties": {
-                          "min": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        }
-                      },
-                      "back_to_back_kj_per_kg": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "min",
-                          "max"
-                        ],
-                        "properties": {
-                          "min": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        }
-                      }
-                    }
-                  }
                 }
               }
             },
@@ -1777,6 +1588,55 @@
                     },
                     "notes": {
                       "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "moving_time_rate_guidance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "derived_from",
+                "notes",
+                "bands"
+              ],
+              "properties": {
+                "derived_from": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bands": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "segment",
+                      "w_per_kg",
+                      "kj_per_kg_per_hour",
+                      "basis"
+                    ],
+                    "properties": {
+                      "segment": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "w_per_kg": {
+                        "$ref": "#/$defs/number_range"
+                      },
+                      "kj_per_kg_per_hour": {
+                        "$ref": "#/$defs/number_range"
+                      },
+                      "basis": {
+                        "type": "string",
+                        "minLength": 1
+                      }
                     }
                   }
                 }

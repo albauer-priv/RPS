@@ -112,8 +112,9 @@
             "season_brief_ref",
             "kpi_profile_ref",
             "reference_mass_window_kg",
-            "energetic_preload_references_kj_per_kg",
-            "athlete_profile_ref"
+            "moving_time_rate_guidance",
+            "athlete_profile_ref",
+            "body_mass_kg"
           ],
           "properties": {
             "planning_horizon_weeks": {
@@ -135,21 +136,34 @@
             "reference_mass_window_kg": {
               "$ref": "number_range.schema.json"
             },
-            "energetic_preload_references_kj_per_kg": {
+            "moving_time_rate_guidance": {
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "single_day",
-                "back_to_back"
+                "segment",
+                "w_per_kg",
+                "kj_per_kg_per_hour",
+                "notes"
               ],
               "properties": {
-                "single_day": {
+                "segment": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "w_per_kg": {
                   "$ref": "number_range.schema.json"
                 },
-                "back_to_back": {
+                "kj_per_kg_per_hour": {
                   "$ref": "number_range.schema.json"
+                },
+                "notes": {
+                  "type": "string"
                 }
               }
+            },
+            "body_mass_kg": {
+              "type": "number",
+              "minimum": 0
             }
           }
         },

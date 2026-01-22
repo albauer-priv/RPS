@@ -284,6 +284,12 @@ def run_agent_multi_output(
                     if isinstance(phase, dict) and "allowed_forbidden_semantics" not in phase:
                         phase["allowed_forbidden_semantics"] = top_semantics
                 data.pop("allowed_forbidden_semantics", None)
+            for phase in phases:
+                if not isinstance(phase, dict):
+                    continue
+                overview = phase.get("overview")
+                if isinstance(overview, dict) and "non-negotiables" in overview:
+                    overview["non_negotiables"] = overview.pop("non-negotiables")
         document["data"] = data
         return document
 

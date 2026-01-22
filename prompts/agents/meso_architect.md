@@ -549,6 +549,9 @@ You MUST NOT:
 - Deload week must be materially lower than Week 3 (document the drop in notes).
 - All weekly bands must remain within the macro phase corridor.
 - Notes for each weekly band must describe the progression intent (e.g., “build”, “peak”, “deload”).
+- Target the **upper third** of the macro phase corridor for build/peak weeks unless
+  constraints (travel, recovery flags, or explicit macro notes) require a lower placement.
+- Deload weeks should sit in the **lower third** of the corridor.
 
 ## Principles Compliance (Binding Guardrails)
 - Apply Principles Paper sections 3.3, 3.4, 4, 5, and 6 in full (do not cherry-pick).
