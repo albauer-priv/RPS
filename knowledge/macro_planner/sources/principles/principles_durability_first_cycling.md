@@ -2,7 +2,7 @@
 Type: Specification
 Specification-For: PLANNING_PRINCIPLES
 Specification-ID: DurabilityFirstPrinciples
-Version: 1.1
+Version: 1.2
 
 Scope: Shared
 Authority: Binding
@@ -32,7 +32,7 @@ Notes: >
 # Principles Paper
 ## Durability-First Annual Training Planning for Ultra-Distance and Brevet Cycling
 
-**Version:** v1.1 - 2025
+**Version:** v1.2 - 2026
 
 ---
 
@@ -119,7 +119,57 @@ Load typically follows **3:1 cycles**:
 
 Masters athletes use more conservative progressions and larger deloads.
 
-### 3.4 3:1 default pattern and alternatives
+### 3.4 Permitted macro archetype: "Kinzlbauer macro template" (ultra / brevet)
+
+**Status:** permitted macro-level pattern.
+**Scope:** macro architecture only (phase sequencing, emphasis, and intent).
+**Non-scope:** no workout prescriptions, no session-level structure, no numeric progression rules. Concrete dosing and guardrails remain owned by KPI profiles and governance artefacts.
+
+This archetype is useful when the season objective prioritizes long-distance performance (marathon -> ultracycling) and the athlete's constraints require a time-efficient weekday structure with weekend volume expansion, while maintaining a coherent progression that first develops the aerobic ceiling (VO2max) and then improves long-duration economy (VLamax lowering + volume stabilization).
+
+#### 3.4.1 Intent and sequencing (macro-only)
+
+The template follows a two-step progression logic:
+
+1. **Aerobic ceiling first (VO2 foundation -> VO2 block):** establish or reinforce VO2max as a system-wide "ceiling" before large volume ramps.
+2. **Economy and durability next (VLamax lowering + volume raise):** shift emphasis toward metabolic efficiency and fatigue-resilience while stabilizing the aerobic ceiling.
+
+A typical high-level sequence (illustrative, scenario-level instantiation defines exact block lengths) is:
+
+- **Phase A - VO2 foundation (short build):** build tolerance and repeatability of high-intensity exposure without compromising low-intensity volume.
+- **Phase B - VO2-focused block:** concentrated VO2 emphasis with protected recovery; low-intensity remains the dominant volume.
+- **Phase C - Transition coupling:** maintain VO2 exposure while introducing VLamax-lowering emphasis (still macro-level: "domains allowed/forbidden", not sessions).
+- **Phase D - VLamax reduction + VO2 stabilization + volume raise:** longer consolidation period where volume becomes the primary overload axis and metabolic efficiency is the dominant focus.
+- **Repeatable cycle option:** the VLamax-focused cycle can be repeated once more to time a peak later in the season, if the planning horizon and recovery capacity support it.
+
+#### 3.4.2 Allowed macro characteristics (what makes it "Kinzlbauer-like")
+
+At macro level, the following characteristics define compliance with this archetype:
+
+- **Progression order:** intensification precedes major volume escalation (first "intensity tolerance", then "volume stability").
+- **Weekday time-crunch compatibility:** structure assumes most athletes have limited weekday time; weekend rides are the primary lever for long-duration exposure.
+- **Volume expansion is conditional:** athletes already adapted to higher volume may add additional low-intensity volume, but only when it does not violate KPI guardrails (fatigue stability, recovery protection, fueling stability).
+- **Durability is explicit:** long-duration exposure and late-ride quality are progressively emphasized as the plan moves from VO2 emphasis toward economy/durability.
+
+#### 3.4.3 How this maps into Macro Overview artefacts
+
+When this archetype is used, it must be expressed via macro artefacts only:
+
+- **Phase naming and cycle labels:** Base/Build/Peak/Transition remain valid; the archetype influences phase intent and allowed/forbidden domains.
+- **Weekly load corridors:** kJ-first corridors are derived from the athlete's historical activities_trend baselines and constrained by the chosen KPI profile; the archetype does not override governance guardrails.
+- **Intensity semantics:** define allowed/forbidden intensity domains per phase (e.g., VO2 exposure emphasized early; later phases emphasize VLamax-lowering domains and long-duration durability), without specifying workouts.
+
+#### 3.4.4 Traceability anchors (internal bibliography)
+
+Use the following items as traceability anchors in justification.citations when instantiating this archetype:
+
+- **Kinzlbauer (Science2Performance):** "Metabolic efficiency for brevets: FatMax and fueling" (Durability Bibliography #38).
+- **Sitzfleisch Podcast (Kinzlbauer):**
+  - Ep. 154 "Ultracycling-Training mit Coach Max Kinzlbauer" (Bibliography #61/#62).
+  - Ep. 218 "Richtig regenerieren und smart trainieren mit Max Kinzlbauer" (Bibliography #63).
+  - Optional supporting context: Ep. 39 (K3 practice) (Bibliography #60), Ep. 272 (training camps) (Bibliography #64).
+
+### 3.5 3:1 default pattern and alternatives
 
 **Default: 3:1 (most athletes)**
 

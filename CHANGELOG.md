@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Durability principles now include the permitted "Kinzlbauer macro template" archetype (macro-level sequencing and traceability anchors).
 - KPI profiles now include moving-time pacing guidance (`kJ/kg/h` + `W/kg`) for brevet/ultra segments.
 - Macro overview body metadata now records `body_mass_kg` alongside the reference mass window.
 - Season brief template/spec now includes `Body-Mass-kg` for precise load scaling.
