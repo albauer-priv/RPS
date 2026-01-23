@@ -111,8 +111,8 @@
             "planning_horizon_weeks",
             "season_brief_ref",
             "kpi_profile_ref",
-            "athlete_profile_ref",
             "moving_time_rate_guidance",
+            "athlete_profile_ref",
             "body_mass_kg"
           ],
           "properties": {
@@ -147,10 +147,46 @@
                   "minLength": 1
                 },
                 "w_per_kg": {
-                  "$ref": "number_range.schema.json"
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "number_range.schema.json",
+                  "title": "NumberRange",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "properties": {
+                    "min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
                 },
                 "kj_per_kg_per_hour": {
-                  "$ref": "number_range.schema.json"
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "number_range.schema.json",
+                  "title": "NumberRange",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "properties": {
+                    "min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
                 },
                 "notes": {
                   "type": "string"
@@ -1350,6 +1386,7 @@
           "type": "string",
           "enum": [
             "Data-Pipeline",
+            "Season-Scenario-Agent",
             "Macro-Planner",
             "Meso-Architect",
             "Micro-Planner",
@@ -1527,8 +1564,9 @@
             "planning_horizon_weeks",
             "season_brief_ref",
             "kpi_profile_ref",
+            "moving_time_rate_guidance",
             "athlete_profile_ref",
-            "moving_time_rate_guidance"
+            "body_mass_kg"
           ],
           "properties": {
             "planning_horizon_weeks": {
@@ -1562,15 +1600,55 @@
                   "minLength": 1
                 },
                 "w_per_kg": {
-                  "$ref": "number_range.schema.json"
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "number_range.schema.json",
+                  "title": "NumberRange",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "properties": {
+                    "min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
                 },
                 "kj_per_kg_per_hour": {
-                  "$ref": "number_range.schema.json"
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "number_range.schema.json",
+                  "title": "NumberRange",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "properties": {
+                    "min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
                 },
                 "notes": {
                   "type": "string"
                 }
               }
+            },
+            "body_mass_kg": {
+              "type": "number",
+              "minimum": 0
             }
           }
         },

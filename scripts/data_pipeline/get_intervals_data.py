@@ -239,6 +239,52 @@ FLAG_COLUMN_KEYS = {
     "Flag Brevet Long Candidate (bool)": "brevet_long_candidate",
 }
 
+# === Zone model defaults ===
+DEFAULT_POWER_ZONE_BOUNDS_PCT = [55, 75, 90, 105, 120, 150, 200]
+DEFAULT_SWEET_SPOT_RANGE_PCT = (84, 97)
+ZONE_MODEL_DEFAULTS = {
+    "Z1": {
+        "name": "Active Recovery",
+        "typical_if": 0.45,
+        "training_intent": "Recovery / circulation",
+    },
+    "Z2": {
+        "name": "Endurance",
+        "typical_if": 0.68,
+        "training_intent": "Aerobic base / fat oxidation",
+    },
+    "Z3": {
+        "name": "Tempo",
+        "typical_if": 0.83,
+        "training_intent": "Sustained tempo work",
+    },
+    "SS": {
+        "name": "Sweet Spot",
+        "typical_if": 0.92,
+        "training_intent": "Efficient threshold work",
+    },
+    "Z4": {
+        "name": "Threshold",
+        "typical_if": 0.98,
+        "training_intent": "Threshold durability",
+    },
+    "Z5": {
+        "name": "VO2 Max",
+        "typical_if": 1.1,
+        "training_intent": "VO2 capacity",
+    },
+    "Z6": {
+        "name": "Anaerobic",
+        "typical_if": 1.3,
+        "training_intent": "W-prime system / peaks",
+    },
+    "Z7": {
+        "name": "Neuromuscular",
+        "typical_if": None,
+        "training_intent": "Sprints / neuromuscular peaks",
+    },
+}
+
 
 def seconds_to_hms(seconds: float | int | None) -> str:
     """Format seconds as HH:MM:SS, returning empty for missing values."""
@@ -499,6 +545,294 @@ def get_power_curves_csv(athlete_id: str, base_url: str, start_date: date, end_d
     )
     return _get(url).text
 
+
+# === Athlete + zone model helpers ===
+
+def get_athlete(athlete_id: str, base_url: str) -> dict:
+    """Fetch athlete profile including sport settings when available."""
+    url = f"{base_url}/athlete/{athlete_id}"
+    return _get(url).json()
+
+
+def get_wellness(athlete_id: str, base_url: str, start_date: date, end_date: date) -> list[dict]:
+    """Fetch wellness entries for a date range."""
+    url = f"{base_url}/athlete/{athlete_id}/wellness?oldest={start_date}&newest={end_date}"
+    return _get(url).json()
+
+
+def _as_percent(value: float | int | None) -> float | None:
+    if value is None:
+        return None
+    if value <= 1.5:
+        return float(value) * 100.0
+    return float(value)
+
+
+def _round_pct(value: float) -> float | int:
+    if abs(value - round(value)) < 1e-6:
+        return int(round(value))
+    return round(value, 1)
+
+
+def _extract_weight_kg(athlete_data: dict) -> float | None:
+    for key in ("weight", "weight_kg", "body_weight", "bodyWeight", "weightKg"):
+        val = athlete_data.get(key)
+        if isinstance(val, (int, float)) and val > 0:
+            return float(val)
+    return None
+
+
+def _extract_latest_weight_from_wellness(entries: list[dict]) -> float | None:
+    latest_weight = None
+    latest_date = None
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        weight = entry.get("weight")
+        day = entry.get("id") or entry.get("date")
+        if isinstance(weight, (int, float)) and weight > 0 and isinstance(day, str):
+            if latest_date is None or day > latest_date:
+                latest_date = day
+                latest_weight = float(weight)
+    return latest_weight
+
+
+def _normalize_sport_settings(raw: object) -> list[dict]:
+    if isinstance(raw, list):
+        return [item for item in raw if isinstance(item, dict)]
+    if isinstance(raw, dict):
+        if "type" in raw:
+            return [raw]
+        settings = []
+        for key, val in raw.items():
+            if isinstance(val, dict):
+                setting = dict(val)
+                setting.setdefault("type", key)
+                settings.append(setting)
+        return settings
+    return []
+
+
+def _select_sport_setting(settings: list[dict], sport_types: Sequence[str]) -> dict | None:
+    for sport_type in sport_types:
+        for setting in settings:
+            if setting.get("type") == sport_type:
+                return setting
+    return settings[0] if settings else None
+
+
+def _extract_ftp_watts(setting: dict) -> float | None:
+    for key in ("ftp", "ftp_watts", "ftpWatts", "threshold", "threshold_watts", "power_ftp"):
+        val = setting.get(key)
+        if isinstance(val, (int, float)) and val > 0:
+            return float(val)
+    return None
+
+
+def _extract_sweet_spot_range(setting: dict) -> tuple[float, float] | None:
+    for min_key, max_key in (
+        ("sweet_spot_min", "sweet_spot_max"),
+        ("sweetSpotMin", "sweetSpotMax"),
+        ("sweet_spot_min_pct", "sweet_spot_max_pct"),
+    ):
+        min_val = _as_percent(setting.get(min_key))
+        max_val = _as_percent(setting.get(max_key))
+        if min_val and max_val and max_val > min_val:
+            return (min_val, max_val)
+    return None
+
+
+def _extract_power_zone_bounds(setting: dict) -> list[float] | None:
+    raw = None
+    for key in ("power_zones", "powerZones", "power_zone_limits", "powerZoneLimits"):
+        if key in setting:
+            raw = setting.get(key)
+            break
+    if not raw:
+        return None
+    if isinstance(raw, list) and raw and isinstance(raw[0], dict):
+        bounds = []
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            max_val = None
+            for max_key in ("max", "high", "upper"):
+                if max_key in entry:
+                    max_val = _as_percent(entry.get(max_key))
+                    break
+            if max_val is not None:
+                bounds.append(max_val)
+        return bounds or None
+    if isinstance(raw, list):
+        bounds = [_as_percent(val) for val in raw if isinstance(val, (int, float))]
+        return bounds or None
+    return None
+
+
+def _build_zone_ranges(bounds: list[float]) -> dict[str, tuple[float, float]]:
+    if len(bounds) < 7:
+        bounds = DEFAULT_POWER_ZONE_BOUNDS_PCT
+    bounds = [float(b) for b in bounds[:7]]
+    ranges: dict[str, tuple[float, float]] = {}
+    prev = 0.0
+    for zone_id, max_pct in zip(["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"], bounds):
+        ranges[zone_id] = (prev, max_pct)
+        prev = max_pct
+    return ranges
+
+
+def build_zone_model_payload(
+    *,
+    athlete_id: str,
+    athlete_data: dict,
+    run_ts: datetime,
+    source_label: str,
+) -> dict | None:
+    settings = _normalize_sport_settings(athlete_data.get("sportSettings"))
+    setting = _select_sport_setting(settings, ["Ride", "VirtualRide", "Gravel"])
+    if not setting:
+        return None
+
+    ftp_watts = _extract_ftp_watts(setting)
+    if not ftp_watts:
+        return None
+
+    bounds = _extract_power_zone_bounds(setting)
+    zone_ranges = _build_zone_ranges(bounds or [])
+    sweet_spot = _extract_sweet_spot_range(setting) or DEFAULT_SWEET_SPOT_RANGE_PCT
+
+    valid_from = run_ts.date().isoformat()
+    iso_year, iso_week = date_to_iso_week(run_ts)
+    version_key = f"{iso_year}-{iso_week:02d}"
+    filename = f"zone_model_power_{int(round(ftp_watts))}W_{valid_from}"
+
+    zones = []
+    for zone_id in ["Z1", "Z2", "Z3", "SS", "Z4", "Z5", "Z6", "Z7"]:
+        if zone_id == "SS":
+            min_pct, max_pct = sweet_spot
+        else:
+            min_pct, max_pct = zone_ranges[zone_id]
+        zone_def = ZONE_MODEL_DEFAULTS[zone_id]
+        zones.append(
+            {
+                "zone_id": zone_id,
+                "name": zone_def["name"],
+                "ftp_percent_range": {
+                    "min": _round_pct(min_pct),
+                    "max": _round_pct(max_pct),
+                },
+                "watt_range": {
+                    "min": int(round(ftp_watts * (min_pct / 100.0))),
+                    "max": int(round(ftp_watts * (max_pct / 100.0))),
+                },
+                "typical_if": zone_def["typical_if"],
+                "training_intent": zone_def["training_intent"],
+            }
+        )
+
+    payload = {
+        "meta": {
+            "artifact_type": "ZONE_MODEL",
+            "schema_id": "ZoneModelInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Data-Pipeline",
+            "run_id": f"{run_ts.strftime('%Y%m%d-%H%M%S')}-data-pipeline-zone-model",
+            "created_at": run_ts.isoformat(),
+            "scope": "Shared",
+            "iso_week": version_key,
+            "iso_week_range": f"{version_key}--{version_key}",
+            "temporal_scope": {
+                "from": valid_from,
+                "to": f"{iso_year}-12-31",
+            },
+            "trace_upstream": [
+                {
+                    "artifact": "intervals_icu_athlete",
+                    "version": "1.0",
+                    "run_id": source_label,
+                }
+            ],
+            "trace_data": [],
+            "trace_events": [],
+            "notes": "Generated from Intervals.icu athlete sportSettings (Ride).",
+        },
+        "data": {
+            "model_metadata": {
+                "valid_from": valid_from,
+                "ftp_watts": int(round(ftp_watts)),
+                "purpose": "Power zone model derived from Intervals.icu sport settings.",
+                "filename": filename,
+            },
+            "zones": zones,
+            "examples": [],
+            "versioning_usage": [
+                "Use this zone model for IF/TSS calculations and workout encoding.",
+                "Update when FTP changes materially or sportSettings are recalibrated.",
+            ],
+        },
+    }
+    return payload
+
+
+def write_zone_model(
+    *,
+    athlete_id: str,
+    base_url: str,
+    latest_dir: Path,
+    skip_validate: bool,
+) -> None:
+    run_ts = datetime.now(timezone.utc)
+    athlete = get_athlete(athlete_id, base_url)
+    weight_kg = _extract_weight_kg(athlete)
+    if not weight_kg:
+        try:
+            end_date = run_ts.date()
+            start_date = end_date - timedelta(days=14)
+            wellness_entries = get_wellness(athlete_id, base_url, start_date, end_date)
+            weight_kg = _extract_latest_weight_from_wellness(wellness_entries)
+        except requests.RequestException:
+            weight_kg = None
+    if weight_kg:
+        print(f"Intervals athlete weight: {weight_kg:.1f} kg")
+
+    payload = build_zone_model_payload(
+        athlete_id=athlete_id,
+        athlete_data=athlete,
+        run_ts=run_ts,
+        source_label=str(athlete_id),
+    )
+    if not payload:
+        print("Zone model skipped (missing sport settings or FTP).")
+        return
+
+    schema_dir = resolve_schema_dir()
+    validator = SchemaRegistry(schema_dir).validator_for("zone_model.schema.json")
+    if not skip_validate:
+        validate_or_raise(validator, payload)
+
+    ftp_watts = payload["data"]["model_metadata"]["ftp_watts"]
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    out_file = latest_dir / f"zone_model_power_{ftp_watts}W.json"
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    latest_alias = latest_dir / "zone_model.json"
+    latest_alias.write_bytes(out_file.read_bytes())
+
+    record_index_write(
+        athlete_id=athlete_id,
+        artifact_type="ZONE_MODEL",
+        version_key=payload["meta"]["iso_week"],
+        path=out_file,
+        run_id=payload["meta"]["run_id"],
+        producer_agent=payload["meta"]["owner_agent"],
+        created_at=payload["meta"]["created_at"],
+        iso_week=payload["meta"]["iso_week"],
+    )
+
+    print(f"Zone model written: {out_file}")
 
 # === Export helpers ===
 
@@ -1776,7 +2110,17 @@ def main() -> int:
     else:
         from_date, to_date = resolve_default_range(weeks=DEFAULT_WEEKS)
 
-    print("[1/3] Fetching activity data from Intervals.icu...")
+    latest_dir = athlete_latest_dir(athlete_id)
+
+    print("[1/4] Fetching athlete settings + zone model...")
+    write_zone_model(
+        athlete_id=athlete_id,
+        base_url=base_url,
+        latest_dir=latest_dir,
+        skip_validate=args.skip_validate,
+    )
+
+    print("[2/4] Fetching activity data from Intervals.icu...")
     export_csv = export_range(
         athlete_id=athlete_id,
         base_url=base_url,
@@ -1784,14 +2128,14 @@ def main() -> int:
         to_date=to_date,
     )
 
-    print("[2/3] Compiling activities_actual (latest week)...")
+    print("[3/4] Compiling activities_actual (latest week)...")
     compile_activities_actual(
         athlete_id=athlete_id,
         input_csv=export_csv,
         skip_validate=args.skip_validate,
     )
 
-    print("[3/3] Compiling activities_trend...")
+    print("[4/4] Compiling activities_trend...")
     compile_activities_trend(
         athlete_id=athlete_id,
         input_csv=export_csv,

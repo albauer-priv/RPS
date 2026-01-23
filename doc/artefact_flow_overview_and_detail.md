@@ -1,8 +1,8 @@
 # ARTEFACT_FLOW_OVERVIEW_AND_DETAIL.md
 
-Version: 2.0  
+Version: 2.1  
 Status: Updated  
-Last-Updated: 2026-01-20  
+Last-Updated: 2026-01-23  
 Format: GitHub-renderable Markdown + Mermaid
 
 ---
@@ -59,7 +59,8 @@ flowchart TD
   ME --> BEA --> MI
   ME -. explanatory .-> BEP
   ME -. optional .-> BFF --> MI
-  ME -. optional .-> ZM
+  ZM -. info .-> ME
+  ZM -. info .-> MI
 
   MI --> WP --> WB
   WB --> WJ --> POST
@@ -69,6 +70,7 @@ flowchart TD
   I --> EXP
   EXP --> AA
   EXP --> AT
+  EXP --> ZM
   AA --> VAL
   AT --> VAL
   VAL -. validates .-> AA
@@ -184,14 +186,14 @@ flowchart LR
 **Processing (Conceptual)**
 - Convert macro phase intent into a block (governance + execution architecture).
 - Block range is derived from macro phase boundaries (not calendar-aligned).
-- Optional preview, feed-forward, or zone model on explicit request.
+- Optional preview or feed-forward on explicit request.
+- Consumes the latest `ZONE_MODEL` (Data-Pipeline) when IF/TSS defaults are needed.
 
 **Outputs (Artefacts)**
 - `block_governance_yyyy-ww--yyyy-ww.json` (binding)
 - `block_execution_arch_yyyy-ww--yyyy-ww.json` (binding)
 - `block_execution_preview_yyyy-ww--yyyy-ww.json` (optional, informational)
 - `block_feed_forward_yyyy-ww.json` (optional)
-- `zone_model_power_<FTP>W.json` (optional)
 
 ```mermaid
 flowchart LR
@@ -200,12 +202,12 @@ flowchart LR
   EV[events.md]:::artefact -. info .-> ME
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> ME
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> ME
+  ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> ME
 
   ME --> BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact
   ME --> BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact
   ME -. explanatory .-> BEP[block_execution_preview_yyyy-ww--yyyy-ww.json]:::artefact
   ME -. optional .-> BFF[block_feed_forward_yyyy-ww.json]:::artefact
-  ME -. optional .-> ZM[zone_model_power_<FTP>W.json]:::artefact
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
@@ -219,6 +221,7 @@ flowchart LR
 - `block_governance_yyyy-ww--yyyy-ww.json`
 - `block_execution_arch_yyyy-ww--yyyy-ww.json`
 - `block_feed_forward_yyyy-ww.json` (optional)
+- `zone_model_power_<FTP>W.json` (informational, from Data-Pipeline)
 - `events.md` (informational)
 - Optional factual data for context
 
@@ -234,6 +237,7 @@ flowchart LR
   BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact --> MI[Micro-Planner]:::agent
   BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact --> MI
   BFF[block_feed_forward_yyyy-ww.json]:::artefact -. optional .-> MI
+  ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> MI
   EV[events.md]:::artefact -. info .-> MI
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MI
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MI
@@ -376,7 +380,6 @@ flowchart LR
 - `block_execution_arch_yyyy-ww--yyyy-ww.json`
 - `block_execution_preview_yyyy-ww--yyyy-ww.json` (optional)
 - `block_feed_forward_yyyy-ww.json` (optional)
-- `zone_model_power_<FTP>W.json` (optional)
 
 ### 3.5 Micro-Planner
 - `workouts_plan_yyyy-ww.json`
@@ -388,6 +391,7 @@ flowchart LR
 ### 3.7 Data Pipeline
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
+- `zone_model_power_<FTP>W.json`
 - Raw CSVs (implementation detail)
 
 ### 3.8 Performance-Analyst

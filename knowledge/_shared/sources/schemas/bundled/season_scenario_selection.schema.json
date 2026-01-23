@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "artefact_envelope.schema.json",
-  "title": "ArtefactEnvelope",
+  "$id": "season_scenario_selection.schema.json",
+  "title": "SeasonScenarioSelection",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -217,6 +217,47 @@
         }
       }
     },
-    "data": {}
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "season_scenarios_ref",
+        "selected_scenario_id",
+        "selection_source",
+        "selection_rationale",
+        "notes"
+      ],
+      "properties": {
+        "season_scenarios_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_scenario_id": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C"
+          ]
+        },
+        "selection_source": {
+          "type": "string",
+          "enum": [
+            "user",
+            "system"
+          ]
+        },
+        "selection_rationale": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
   }
 }

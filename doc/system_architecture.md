@@ -1,8 +1,8 @@
 # System Architecture
 
-Version: 2.1  
+Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-01-22
+Last-Updated: 2026-01-23
 
 ---
 
@@ -53,10 +53,13 @@ flowchart TD
 
   DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual]
   DP --> AT[activities_trend]
+  DP --> ZM[zone_model]
   VA[Validation\nvalidate_outputs.py] -. checks .-> AA
   VA -. checks .-> AT
   AA --> PA[Performance-Analyst]
   AT --> PA
+  ZM -. info .-> ME
+  ZM -. info .-> MI
   PA --> DR[des_analysis_report]
   DR -. advisory .-> MA
 ```
@@ -88,7 +91,7 @@ flowchart TD
 ### 3.1.1 Data Pipeline (Assumed)
 
 - Deterministic scripts ingest external activity data.
-- Writes `activities_actual` and `activities_trend` into the athlete workspace.
+- Writes `activities_actual`, `activities_trend`, and `zone_model` into the athlete workspace.
 - Updates `latest/` so planners always read the freshest factual data.
 - Pipeline entrypoint: `scripts/data_pipeline/get_intervals_data.py`.
 - Validation helper: `scripts/validate_outputs.py`.

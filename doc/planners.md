@@ -1,8 +1,8 @@
 # Planner Workflow
 
-Version: 2.1  
+Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-01-22
+Last-Updated: 2026-01-23
 
 ---
 
@@ -10,7 +10,7 @@ Last-Updated: 2026-01-22
 
 Typical weekly flow:
 
-1. Ensure inputs: season brief, KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events.
+1. Ensure inputs: season brief, KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events, and a fresh zone model (run data pipeline if needed).
 2. Run **Season-Scenario-Agent** when a new macro plan is needed.
 3. Store a scenario selection (A/B/C).
 4. Run **Macro** (scenario optional if selection exists).
@@ -47,10 +47,13 @@ flowchart TD
 
   DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual]
   DP --> AT[activities_trend]
+  DP --> ZM[zone_model]
   VA[Validation\nvalidate_outputs.py] -. checks .-> AA
   VA -. checks .-> AT
   AA --> PA[Performance-Analyst]
   AT --> PA
+  ZM -. info .-> ME
+  ZM -. info .-> MI
   PA --> DR[des_analysis_report]
   DR -. advisory .-> MA
 ```
@@ -91,7 +94,7 @@ var/athletes/<athlete_id>/
 `index.json` enables exact range lookups and routing decisions.
 
 The data pipeline is expected to write factual artifacts (e.g. `activities_actual`,
-`activities_trend`) into the athlete workspace and update `latest/` accordingly.
+`activities_trend`, `zone_model`) into the athlete workspace and update `latest/` accordingly.
 The pipeline entrypoint is `scripts/data_pipeline/get_intervals_data.py`, which
 writes CSV+JSON outputs to `var/athletes/<athlete_id>/data/` plus mirrored
 `latest/` copies. Use `scripts/validate_outputs.py` to validate JSON outputs
@@ -110,13 +113,13 @@ against the local schemas.
 - Inputs: season brief, KPI profile, season scenarios (advisory), events, analysis (advisory).
 
 ### Meso-Architect
-- Outputs: `block_governance`, `block_execution_arch` (+ optional preview/feed-forward/zone model).
-- Inputs: macro overview, optional macro feed-forward, events, factual data.
+- Outputs: `block_governance`, `block_execution_arch` (+ optional preview/feed-forward).
+- Inputs: macro overview, optional macro feed-forward, events, factual data, zone model (latest).
 - Block range **must** use macro-phase alignment.
 
 ### Micro-Planner
 - Outputs: `workouts_plan` (weekly).
-- Inputs: block governance + execution architecture (+ optional feed-forward).
+- Inputs: block governance + execution architecture (+ optional feed-forward, zone model).
 
 ### Workout-Builder
 - Outputs: `intervals_workouts` (raw Intervals JSON export).

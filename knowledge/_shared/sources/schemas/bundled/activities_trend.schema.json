@@ -1700,6 +1700,7 @@
           "type": "string",
           "enum": [
             "Data-Pipeline",
+            "Season-Scenario-Agent",
             "Macro-Planner",
             "Meso-Architect",
             "Micro-Planner",

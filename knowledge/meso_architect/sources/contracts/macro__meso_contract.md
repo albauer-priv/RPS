@@ -1,7 +1,7 @@
 ---
 Type: Contract
 Contract-Name: macro__meso
-Version: 1.1
+Version: 1.2
 Status: Active
 
 Scope: Shared
@@ -23,13 +23,15 @@ Dependencies:
     Version: 1.0
   - ID: BlockFeedForwardInterface
     Version: 1.0
+  - ID: ZoneModelInterface
+    Version: 1.0
   - ID: TraceabilitySpec
     Version: 1.0
   - ID: FileNamingSpec
     Version: 1.0
 ---
 
-# Contract: Macro-Planner -> Meso-Architect (v1.1)
+# Contract: Macro-Planner -> Meso-Architect (v1.2)
 
 ## 1) Purpose (Binding)
 Translate macro-level seasonal intent into block-level governance and block
@@ -65,13 +67,13 @@ structural architecture without introducing week- or workout-level planning.
 ### Informational JSON Inputs (schemas required)
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
+- `zone_model_power_<FTP>W.json` -> `zone_model.schema.json` (informational; from Data-Pipeline)
 
 ### Outputs (Meso-Architect produces)
 - `block_governance_yyyy-ww--yyyy-ww+3.json` -> `block_governance.schema.json` (required)
 - `block_feed_forward_yyyy-ww.json` -> `block_feed_forward.schema.json` (optional)
 - `block_execution_arch_yyyy-ww--yyyy-ww+3.json` -> `block_execution_arch.schema.json` (required)
 - `block_execution_preview_yyyy-ww--yyyy-ww+3.json` -> `block_execution_preview.schema.json` (optional)
-- `zone_model_power_<FTP>W.json` -> `zone_model.schema.json` (optional)
 
 ## 5) Constraints / Forbidden (Binding)
 - All KPI-driven block changes require explicit `macro_meso_feed_forward_yyyy-ww.json`.

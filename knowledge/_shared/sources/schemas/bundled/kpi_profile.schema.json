@@ -458,10 +458,40 @@
                         "minLength": 1
                       },
                       "w_per_kg": {
-                        "$ref": "#/$defs/number_range"
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "min",
+                          "max"
+                        ],
+                        "properties": {
+                          "min": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "max": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
                       },
                       "kj_per_kg_per_hour": {
-                        "$ref": "#/$defs/number_range"
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "min",
+                          "max"
+                        ],
+                        "properties": {
+                          "min": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "max": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
                       },
                       "basis": {
                         "type": "string",
@@ -1117,6 +1147,7 @@
           "type": "string",
           "enum": [
             "Data-Pipeline",
+            "Season-Scenario-Agent",
             "Macro-Planner",
             "Meso-Architect",
             "Micro-Planner",
@@ -1628,10 +1659,40 @@
                         "minLength": 1
                       },
                       "w_per_kg": {
-                        "$ref": "#/$defs/number_range"
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "min",
+                          "max"
+                        ],
+                        "properties": {
+                          "min": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "max": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
                       },
                       "kj_per_kg_per_hour": {
-                        "$ref": "#/$defs/number_range"
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "min",
+                          "max"
+                        ],
+                        "properties": {
+                          "min": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "max": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
                       },
                       "basis": {
                         "type": "string",

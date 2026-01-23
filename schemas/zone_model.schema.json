@@ -201,7 +201,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Meso-Architect",
+          "const": "Data-Pipeline",
           "type": "string"
         }
       },
