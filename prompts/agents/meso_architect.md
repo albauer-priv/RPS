@@ -390,21 +390,8 @@ Evidence may support rationale where the schema allows, but never overrides gove
   - Pass `payload` as the **data** object only (no meta fields inside payload).
   - Pass `meta` separately as a full `artefact_meta.schema.json` object.
   - Do NOT invent legacy fields (e.g., `block_range`, `semantic_permissions`, `weekly_load_corridor`).
-- Use the BLOCK_GOVERNANCE template when producing governance:
-  - `type=Template`, `template_for=BLOCK_GOVERNANCE`.
-  - Replace every `<!--- FILL --->` marker before output.
-  - Preserve the template structure exactly; do not add, remove, or rename fields.
-  - Only replace placeholder markers with concrete values.
-- Use the BLOCK_EXECUTION_ARCH template when producing execution architecture:
-  - `type=Template`, `template_for=BLOCK_EXECUTION_ARCH`.
-  - Replace every `<!--- FILL --->` marker before output.
-  - Preserve the template structure exactly; do not add, remove, or rename fields.
-  - Only replace placeholder markers with concrete values.
-- Use the BLOCK_EXECUTION_PREVIEW template when producing execution preview:
-  - `type=Template`, `template_for=BLOCK_EXECUTION_PREVIEW`.
-  - Replace every `<!--- FILL --->` marker before output.
-  - Preserve the template structure exactly; do not add, remove, or rename fields.
-  - Only replace placeholder markers with concrete values.
+Use the JSON schemas directly for governance and execution artefacts.
+Do NOT use templates; the schema is authoritative.
   - `data.traceability.derived_from` MUST include the `block_execution_arch_*.json` filename.
 - BLOCK_GOVERNANCE data must include:
   - `body_metadata`, `block_summary`, `load_guardrails`, `allowed_forbidden_semantics`,

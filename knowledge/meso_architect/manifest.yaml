@@ -14,6 +14,3 @@ sources:
 - path: ../_shared/sources/specs/availability_interface_spec.md
 - path: ../_shared/sources/specs/macro_load_corridor_policy.md
 - path: ../_shared/sources/specs/wellness_interface_spec.md
-- path: sources/templates/block_governance_template.md
-- path: sources/templates/block_execution_arch_template.md
-- path: sources/templates/block_execution_preview_template.md
