@@ -46,6 +46,7 @@ Define consistent filenames for all artefacts to support:
 ### Data Pipeline
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
+- `wellness_yyyy-ww.json`
 
 ### Macro-Planner
 - `macro_overview_yyyy-ww--yyyy-ww.json` (range may be 8–32 weeks)

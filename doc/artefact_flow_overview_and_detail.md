@@ -41,6 +41,7 @@ flowchart TD
   CAL[Planned Activities<br/>in Calendar]:::artefact
   AA[activities_actual_yyyy-ww.json]:::artefact
   AT[activities_trend_yyyy-ww.json]:::artefact
+  WL[wellness_yyyy-ww.json]:::artefact
   DR[des_analysis_report_yyyy-ww.json]:::artefact
 
   %% Planning chain
@@ -71,6 +72,7 @@ flowchart TD
   EXP --> AA
   EXP --> AT
   EXP --> ZM
+  EXP --> WL
   AA --> VAL
   AT --> VAL
   VAL -. validates .-> AA
@@ -80,6 +82,9 @@ flowchart TD
   MO --> PA
   AA --> PA
   AT --> PA
+  WL --> PA
+  WL -. info .-> MA
+  WL -. info .-> ME
   PA --> DR --> MA
 
   %% Events can be used by multiple agents (informational)
@@ -136,6 +141,7 @@ flowchart LR
 - `season_scenarios_yyyy-ww--yyyy-ww.json` (advisory, if available)
 - `des_analysis_report_yyyy-ww.json` (advisory)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational, if available)
+- `wellness_yyyy-ww.json` (informational, if available)
 
 **Processing (Conceptual)**
 - Determine season intent, priorities, and constraints (8-32 weeks horizon).
@@ -158,6 +164,7 @@ flowchart LR
   DR[des_analysis_report_yyyy-ww.json]:::artefact -. advisory .-> MA
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MA
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MA
+  WL[wellness_yyyy-ww.json]:::artefact -. info .-> MA
 
   S1[macro_mode_a.py scenarios]:::script --> MA
   MA --> SCN[scenario_dialogue<br/>.cache/macro_scenarios]:::component --> U
@@ -182,6 +189,7 @@ flowchart LR
 - `macro_meso_feed_forward_yyyy-ww.json` (optional, binding if present)
 - `events.md` (informational)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational)
+- `wellness_yyyy-ww.json` (informational)
 
 **Processing (Conceptual)**
 - Convert macro phase intent into a block (governance + execution architecture).
@@ -203,6 +211,7 @@ flowchart LR
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> ME
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> ME
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> ME
+  WL[wellness_yyyy-ww.json]:::artefact -. info .-> ME
 
   ME --> BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact
   ME --> BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact
@@ -222,6 +231,7 @@ flowchart LR
 - `block_execution_arch_yyyy-ww--yyyy-ww.json`
 - `block_feed_forward_yyyy-ww.json` (optional)
 - `zone_model_power_<FTP>W.json` (informational, from Data-Pipeline)
+- `wellness_yyyy-ww.json` (informational, from Data-Pipeline)
 - `events.md` (informational)
 - Optional factual data for context
 
@@ -238,6 +248,7 @@ flowchart LR
   BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact --> MI
   BFF[block_feed_forward_yyyy-ww.json]:::artefact -. optional .-> MI
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> MI
+  WL[wellness_yyyy-ww.json]:::artefact -. info .-> MI
   EV[events.md]:::artefact -. info .-> MI
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MI
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MI
@@ -392,6 +403,7 @@ flowchart LR
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
 - `zone_model_power_<FTP>W.json`
+- `wellness_yyyy-ww.json`
 - Raw CSVs (implementation detail)
 
 ### 3.8 Performance-Analyst
@@ -403,7 +415,7 @@ flowchart LR
 
 - **Binding:** `macro_overview`, `block_governance`, `block_execution_arch`, `workouts_plan`,
   `activities_actual`, `activities_trend`
-- **Informational:** `season_scenarios`, `block_execution_preview`, `zone_model` (when present)
+- **Informational:** `season_scenarios`, `block_execution_preview`, `zone_model`, `wellness` (when present)
 - **Scoped Override:** feed-forward artefacts (use only within their stated scope)
 - **Advisory:** `des_analysis_report`
 

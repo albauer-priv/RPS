@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wellness.schema.json",
+  "title": "Wellness",
+  "type": "object",
+  "$defs": {
+    "wellness_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "weight_kg",
+        "resting_hr_bpm",
+        "hrv_ms",
+        "sleep_seconds",
+        "sleep_quality",
+        "soreness",
+        "fatigue",
+        "stress",
+        "mood",
+        "motivation",
+        "spo2_percent",
+        "systolic_mm_hg",
+        "diastolic_mm_hg",
+        "kcal_consumed",
+        "menstrual_phase",
+        "updated_at",
+        "source"
+      ],
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "weight_kg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "resting_hr_bpm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "hrv_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sleep_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sleep_quality": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "soreness": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "fatigue": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "stress": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "mood": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "motivation": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "spo2_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "systolic_mm_hg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "diastolic_mm_hg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "kcal_consumed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "menstrual_phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updated_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "wellness_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entries",
+        "notes"
+      ],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wellness_entry"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "WELLNESS",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "WellnessInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Data-Pipeline",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/wellness_data"
+    }
+  }
+}

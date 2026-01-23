@@ -20,6 +20,7 @@ ARTIFACT_SCHEMA_FILE: dict[ArtifactType, str] = {
     ArtifactType.INTERVALS_WORKOUTS: "workouts.schema.json",
     ArtifactType.ACTIVITIES_ACTUAL: "activities_actual.schema.json",
     ArtifactType.ACTIVITIES_TREND: "activities_trend.schema.json",
+    ArtifactType.WELLNESS: "wellness.schema.json",
     ArtifactType.DES_ANALYSIS_REPORT: "des_analysis_report.schema.json",
     # Add when schema files are available:
     # ArtifactType.SEASON_BRIEF: "...",

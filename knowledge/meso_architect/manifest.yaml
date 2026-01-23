@@ -11,6 +11,7 @@ sources:
 - path: sources/principles/principles_durability_first_cycling.md
 - path: sources/specs/agenda_enum_spec.md
 - path: sources/specs/load_estimation_spec.md
+- path: ../_shared/sources/specs/wellness_interface_spec.md
 - path: sources/templates/block_governance_template.md
 - path: sources/templates/block_execution_arch_template.md
 - path: sources/templates/block_execution_preview_template.md

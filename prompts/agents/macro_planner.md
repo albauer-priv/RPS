@@ -383,6 +383,7 @@ Do not output scenario dialogue or request a selection.
   - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
   - Scenario selection (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
   - Events (optional; if present): `workspace_get_input("events")`
+  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode B (Season Brief + existing macro):
   - Season brief: `workspace_get_input("season_brief")`
   - Existing macro overview: `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })`
@@ -390,6 +391,7 @@ Do not output scenario dialogue or request a selection.
   - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
   - Scenario selection (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
   - Events (optional; if present): `workspace_get_input("events")`
+  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (DES analysis only):
   - DES report: `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
   - Events (optional; if present): `workspace_get_input("events")`

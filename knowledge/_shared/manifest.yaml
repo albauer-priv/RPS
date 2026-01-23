@@ -18,6 +18,7 @@ sources:
 - path: sources/principles/principles_durability_first_cycling.md
 - path: sources/schemas/bundled/activities_actual.schema.json
 - path: sources/schemas/bundled/activities_trend.schema.json
+- path: sources/schemas/bundled/wellness.schema.json
 - path: sources/schemas/bundled/agenda_enum.schema.json
 - path: sources/schemas/bundled/artefact_envelope.schema.json
 - path: sources/schemas/bundled/artefact_meta.schema.json
@@ -51,6 +52,7 @@ sources:
 - path: sources/specs/load_estimation_spec.md
 - path: sources/specs/macro_cycle_enum_spec.md
 - path: sources/specs/season_brief_interface_spec.md
+- path: sources/specs/wellness_interface_spec.md
 - path: sources/specs/traceability_spec.md
 - path: sources/templates/events_template.md
 - path: sources/templates/season_brief_yyyy_template.md

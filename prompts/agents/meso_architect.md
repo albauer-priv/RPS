@@ -337,6 +337,7 @@ In conflicts, higher wins:
 - `activities_trend_*`
 - `activities_actual_*`
 - `events.md` (context only)
+- `wellness_*`
 
 Evidence may support rationale where the schema allows, but never overrides governance.
 
@@ -440,11 +441,13 @@ Evidence may support rationale where the schema allows, but never overrides gove
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
+  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode B (running block update):
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
+  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (no-change):
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Events (optional; if present): `workspace_get_input("events")`

@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added templates for Performance-Analyst (DES_ANALYSIS_REPORT).
 - Principles validation checks added to macro overview, block governance, and block execution arch validation docs.
 - Macro overview justification section with structured citations and per-phase rationale.
+- Wellness artefact (`WELLNESS`) + schema/interface spec for daily biometric/self-report data.
+- Data pipeline now writes `wellness_yyyy-ww.json` and latest `wellness.json`.
 
 ### Fixed
 - Workspace tool writes now tolerate missing `run_id` by falling back to meta/context defaults.
@@ -88,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro-Planner validation now enforces narrative/domain consistency and deload flag alignment.
 - Macro overview template updated to v1.1 to include justification fields.
 - Macro Mode A overview now injects selected scenario details into the prompt when available.
+- Validation tooling and docs now include wellness outputs.
 
 ## [0.2.0] - 2026-01-22
 

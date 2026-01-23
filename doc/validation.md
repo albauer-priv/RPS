@@ -1,8 +1,8 @@
 # Validation
 
-Version: 1.0  
+Version: 1.1  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-01-23
 
 ---
 
@@ -16,8 +16,10 @@ against the local JSON schemas before they are consumed by planners.
 flowchart TD
   DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual.json]
   DP --> AT[activities_trend.json]
+  DP --> WL[wellness.json]
   AA --> VA[validate_outputs.py]
   AT --> VA
+  WL --> VA
   VA --> SC[schemas/*.schema.json]
   VA --> OK[Validation OK / Errors]
 ```
@@ -34,6 +36,7 @@ This validates:
 
 - `var/athletes/<athlete_id>/latest/activities_actual.json`
 - `var/athletes/<athlete_id>/latest/activities_trend.json`
+- `var/athletes/<athlete_id>/latest/wellness.json`
 
 The athlete ID is read from `.env` (`ATHLETE_ID`).
 
@@ -58,7 +61,8 @@ var/athletes/<athlete_id>/data/2026/06/
 ```bash
 python scripts/validate_outputs.py \
   --actual-path var/athletes/<athlete_id>/data/2026/06/activities_actual_2026-06.json \
-  --trend-path var/athletes/<athlete_id>/data/2026/06/activities_trend_2026-06.json
+  --trend-path var/athletes/<athlete_id>/data/2026/06/activities_trend_2026-06.json \
+  --wellness-path var/athletes/<athlete_id>/data/2026/06/wellness_2026-06.json
 ```
 
 ---
@@ -90,4 +94,5 @@ Manual validation checklists live under `doc/validation/`:
 - `doc/validation/intervals_workouts_validation.md`
 - `doc/validation/activities_actual_validation.md`
 - `doc/validation/activities_trend_validation.md`
+- `doc/validation/wellness_validation.md`
 - `doc/validation/des_analysis_report_validation.md`

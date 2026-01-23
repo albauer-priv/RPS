@@ -602,6 +602,25 @@ def _extract_latest_weight_from_wellness(entries: list[dict]) -> float | None:
     return latest_weight
 
 
+def _parse_date(value: str | None) -> date | None:
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _num_or_none(value):
+    value = normalize_scalar(value)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _normalize_sport_settings(raw: object) -> list[dict]:
     if isinstance(raw, list):
         return [item for item in raw if isinstance(item, dict)]
@@ -841,6 +860,133 @@ def write_zone_model(
 
     print(f"Zone model written: {out_file}")
 
+
+def write_wellness(
+    *,
+    athlete_id: str,
+    base_url: str,
+    from_date: date,
+    to_date: date,
+    skip_validate: bool,
+) -> None:
+    run_ts = datetime.now(timezone.utc)
+    entries = get_wellness(athlete_id, base_url, from_date, to_date)
+    if not entries:
+        print("Wellness skipped (no entries).")
+        return
+
+    normalized = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        entry_date = entry.get("id") or entry.get("date")
+        parsed_date = _parse_date(entry_date)
+        if not parsed_date:
+            continue
+        normalized.append(
+            {
+                "date": parsed_date.isoformat(),
+                "weight_kg": _num_or_none(entry.get("weight")),
+                "resting_hr_bpm": _num_or_none(entry.get("restingHR")),
+                "hrv_ms": _num_or_none(entry.get("hrv")),
+                "sleep_seconds": _num_or_none(entry.get("sleepSecs")),
+                "sleep_quality": _num_or_none(entry.get("sleepQuality")),
+                "soreness": _num_or_none(entry.get("soreness")),
+                "fatigue": _num_or_none(entry.get("fatigue")),
+                "stress": _num_or_none(entry.get("stress")),
+                "mood": _num_or_none(entry.get("mood")),
+                "motivation": _num_or_none(entry.get("motivation")),
+                "spo2_percent": _num_or_none(entry.get("spO2")),
+                "systolic_mm_hg": _num_or_none(entry.get("systolic")),
+                "diastolic_mm_hg": _num_or_none(entry.get("diastolic")),
+                "kcal_consumed": _num_or_none(entry.get("kcalConsumed")),
+                "menstrual_phase": normalize_scalar(entry.get("menstrualPhase")),
+                "updated_at": normalize_scalar(entry.get("updated")),
+                "source": "intervals_icu_wellness",
+            }
+        )
+
+    if not normalized:
+        print("Wellness skipped (no dated entries).")
+        return
+
+    normalized.sort(key=lambda item: item["date"])
+    start_day = _parse_date(normalized[0]["date"])
+    end_day = _parse_date(normalized[-1]["date"])
+    if not start_day or not end_day:
+        print("Wellness skipped (invalid date range).")
+        return
+
+    start_week = f"{date_to_iso_week(start_day)[0]}-{date_to_iso_week(start_day)[1]:02d}"
+    end_week = f"{date_to_iso_week(end_day)[0]}-{date_to_iso_week(end_day)[1]:02d}"
+    version_key = end_week
+
+    meta = {
+        "artifact_type": "WELLNESS",
+        "schema_id": "WellnessInterface",
+        "schema_version": "1.0",
+        "version": "1.0",
+        "authority": "Binding",
+        "owner_agent": "Data-Pipeline",
+        "run_id": f"{run_ts.strftime('%Y%m%d-%H%M%S')}-data-pipeline-wellness",
+        "created_at": run_ts.isoformat(),
+        "scope": "Shared",
+        "iso_week": version_key,
+        "iso_week_range": f"{start_week}--{end_week}",
+        "temporal_scope": {
+            "from": start_day.isoformat(),
+            "to": end_day.isoformat(),
+        },
+        "trace_upstream": [
+            {
+                "artifact": "intervals_icu_wellness",
+                "version": "1.0",
+                "run_id": str(athlete_id),
+            }
+        ],
+        "trace_data": [],
+        "trace_events": [],
+        "notes": "Derived from Intervals.icu wellness export.",
+    }
+    payload = {
+        "meta": meta,
+        "data": {
+            "entries": normalized,
+            "notes": "Intervals.icu wellness daily entries.",
+        },
+    }
+
+    schema_dir = resolve_schema_dir()
+    validator = SchemaRegistry(schema_dir).validator_for("wellness.schema.json")
+    if not skip_validate:
+        validate_or_raise(validator, payload)
+
+    data_dir = athlete_data_dir(athlete_id)
+    latest_dir = athlete_latest_dir(athlete_id)
+    out_dir = data_dir / end_week.split("-")[0] / end_week.split("-")[1]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"wellness_{end_week}.json"
+
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    latest_file = latest_dir / "wellness.json"
+    latest_file.write_bytes(out_file.read_bytes())
+
+    record_index_write(
+        athlete_id=athlete_id,
+        artifact_type="WELLNESS",
+        version_key=version_key,
+        path=out_file,
+        run_id=meta["run_id"],
+        producer_agent=meta["owner_agent"],
+        created_at=meta["created_at"],
+        iso_week=meta["iso_week"],
+        iso_week_range=meta["iso_week_range"],
+    )
+
+    print(f"Wellness written: {out_file}")
 # === Export helpers ===
 
 def to_num(s: pd.Series) -> pd.Series:
@@ -2165,7 +2311,7 @@ def main() -> int:
 
     latest_dir = athlete_latest_dir(athlete_id)
 
-    print("[1/4] Fetching athlete settings + zone model...")
+    print("[1/5] Fetching athlete settings + zone model...")
     write_zone_model(
         athlete_id=athlete_id,
         base_url=base_url,
@@ -2173,7 +2319,16 @@ def main() -> int:
         skip_validate=args.skip_validate,
     )
 
-    print("[2/4] Fetching activity data from Intervals.icu...")
+    print("[2/5] Fetching wellness data...")
+    write_wellness(
+        athlete_id=athlete_id,
+        base_url=base_url,
+        from_date=from_date,
+        to_date=to_date,
+        skip_validate=args.skip_validate,
+    )
+
+    print("[3/5] Fetching activity data from Intervals.icu...")
     export_csv = export_range(
         athlete_id=athlete_id,
         base_url=base_url,
@@ -2181,14 +2336,14 @@ def main() -> int:
         to_date=to_date,
     )
 
-    print("[3/4] Compiling activities_actual (latest week)...")
+    print("[4/5] Compiling activities_actual (latest week)...")
     compile_activities_actual(
         athlete_id=athlete_id,
         input_csv=export_csv,
         skip_validate=args.skip_validate,
     )
 
-    print("[4/4] Compiling activities_trend...")
+    print("[5/5] Compiling activities_trend...")
     compile_activities_trend(
         athlete_id=athlete_id,
         input_csv=export_csv,

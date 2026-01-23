@@ -68,6 +68,7 @@ Sidecars are informational only and MUST NOT be used as agent inputs.
 - `workouts.schema.json` (Workout-Builder output)
 - `activities_actual.schema.json`
 - `activities_trend.schema.json`
+- `wellness.schema.json`
 - `des_analysis_report.schema.json`
 - `kpi_profile.schema.json`
 
