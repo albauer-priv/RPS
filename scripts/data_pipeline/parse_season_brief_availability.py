@@ -175,14 +175,14 @@ def _parse_hours(raw: str) -> tuple[float, float, float, bool]:
     text = text.replace("/", " ")
     text = text.strip()
 
-    range_match = re.search(r"([0-9]+(?:\\.[0-9]+)?)\\s*[-–]\\s*([0-9]+(?:\\.[0-9]+)?)", text)
+    range_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*[-–]\s*([0-9]+(?:\.[0-9]+)?)", text)
     if range_match:
         hours_min = float(range_match.group(1))
         hours_max = float(range_match.group(2))
         hours_typical = round((hours_min + hours_max) / 2, 2)
         return hours_min, hours_typical, hours_max, locked
 
-    num_match = re.search(r"([0-9]+(?:\\.[0-9]+)?)", text)
+    num_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", text)
     if num_match:
         value = float(num_match.group(1))
         return value, value, value, locked
