@@ -40,7 +40,7 @@ from scripts.data_pipeline.common import (  # noqa: E402
     resolve_athlete_id,
     resolve_schema_dir,
 )
-from app.workspace.schema_registry import SchemaRegistry, validate_or_raise  # noqa: E402
+from app.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise  # noqa: E402
 
 # === Export configuration ===
 SEPARATOR = ";"  # Intervals.icu export
@@ -1520,19 +1520,39 @@ def compile_activities_actual(
             "run_id": f"{run_stamp}-data-pipeline-{int(yr)}{iso_week}",
             "created_at": run_ts.isoformat(),
             "iso_week": version_key,
+            "iso_week_range": f"{version_key}--{version_key}",
+            "temporal_scope": {
+                "from": format_date(g["Day"].min()),
+                "to": format_date(g["Day"].max()),
+            },
+            "scope": "Shared",
             "trace_upstream": [
-                {"artifact": input_csv.name}
+                {
+                    "artifact": input_csv.name,
+                    "version": "1.0",
+                    "run_id": run_stamp,
+                }
             ],
+            "trace_data": [],
+            "trace_events": [],
+            "notes": "Derived from Intervals.icu activity export.",
         }
         payload = {
             "meta": meta,
             "data": {
-                "activities": activities
+                "activities": activities,
+                "notes": "Derived from Intervals.icu activity export.",
             },
         }
 
         if not skip_validate:
-            validate_or_raise(validator, payload)
+            try:
+                validate_or_raise(validator, payload)
+            except SchemaValidationError as exc:
+                print("Schema validation failed for ACTIVITIES_ACTUAL:")
+                for err in exc.errors:
+                    print(f"- {err}")
+                raise
 
         with open(out_json_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -1575,6 +1595,12 @@ def compile_activities_trend(
     df["ISO_Year"] = iso.year.astype(int)
     df["ISO_Week"] = iso.week.astype(int)
     df["Day"] = df[dt_col].dt.floor("D")
+    range_start = df["Day"].min()
+    range_end = df["Day"].max()
+    if pd.isna(range_start) or pd.isna(range_end):
+        fallback_day = datetime.now(timezone.utc).date()
+        range_start = fallback_day
+        range_end = fallback_day
 
     col_move_s = getcol(cols, "Moving Time (s)")
     col_dist_m = getcol(cols, "Distance (m)")
@@ -2044,19 +2070,39 @@ def compile_activities_trend(
         "run_id": f"{run_stamp}-data-pipeline-{year}{iso_week}",
         "created_at": run_ts.isoformat(),
         "iso_week": version_key,
+        "iso_week_range": f"{version_key}--{version_key}",
+        "temporal_scope": {
+            "from": range_start.date().isoformat(),
+            "to": range_end.date().isoformat(),
+        },
+        "scope": "Shared",
         "trace_upstream": [
-            {"artifact": input_csv.name}
+            {
+                "artifact": input_csv.name,
+                "version": "1.0",
+                "run_id": run_stamp,
+            }
         ],
+        "trace_data": [],
+        "trace_events": [],
+        "notes": "Derived from Intervals.icu activity export.",
     }
     payload = {
         "meta": meta,
         "data": {
             "weekly_trends": weekly_trends_json,
+            "notes": "Derived from Intervals.icu activity export.",
         },
     }
 
     if not skip_validate:
-        validate_or_raise(validator, payload)
+        try:
+            validate_or_raise(validator, payload)
+        except SchemaValidationError as exc:
+            print("Schema validation failed for ACTIVITIES_TREND:")
+            for err in exc.errors:
+                print(f"- {err}")
+            raise
 
     with open(out_json_file, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
