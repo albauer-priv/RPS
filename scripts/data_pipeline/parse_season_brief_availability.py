@@ -69,19 +69,25 @@ def parse_args() -> argparse.Namespace:
         description="Parse Season Brief weekly availability table into AVAILABILITY artefact."
     )
     parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
-    parser.add_argument("--year", type=int, required=True, help="Season year (YYYY).")
+    parser.add_argument(
+        "--year",
+        type=int,
+        help="Season year (YYYY). Optional; derived from Season Brief if omitted.",
+    )
     parser.add_argument("--season-brief-path", type=Path, help="Explicit season brief path.")
     parser.add_argument("--skip-validate", action="store_true", help="Skip JSON schema validation.")
     return parser.parse_args()
 
 
-def _load_season_brief(athlete_root: Path, year: int, explicit: Path | None) -> tuple[Path, str]:
+def _load_season_brief(athlete_root: Path, year: int | None, explicit: Path | None) -> tuple[Path, str]:
     if explicit:
         if not explicit.exists():
             raise FileNotFoundError(f"Season brief not found: {explicit}")
         return explicit, explicit.read_text(encoding="utf-8")
 
-    patterns = [f"season_brief_{year}.md", "season_brief_*.md"]
+    patterns = ["season_brief_*.md"]
+    if year is not None:
+        patterns.insert(0, f"season_brief_{year}.md")
     candidates: list[Path] = []
     for folder in (athlete_root / "inputs", athlete_root / "latest"):
         if not folder.exists():
@@ -90,11 +96,13 @@ def _load_season_brief(athlete_root: Path, year: int, explicit: Path | None) -> 
             candidates.extend(folder.glob(pattern))
     if not candidates:
         raise FileNotFoundError(
-            f"No season brief found for {year}. Place season_brief_*.md in inputs/ or latest/."
+            "No season brief found. Place season_brief_*.md in inputs/ or latest/."
         )
 
     def sort_key(path: Path) -> tuple[int, float]:
-        match_year = 1 if path.name.startswith(f"season_brief_{year}.") else 0
+        match_year = 0
+        if year is not None and path.name.startswith(f"season_brief_{year}."):
+            match_year = 1
         return (match_year, path.stat().st_mtime)
 
     best = max(candidates, key=sort_key)
@@ -110,6 +118,16 @@ def _parse_date(label: str, text: str) -> date | None:
         return date.fromisoformat(match.group(1))
     except ValueError:
         return None
+
+
+def _extract_year(season_text: str, season_path: Path) -> int | None:
+    match = re.search(r"^\\s*Year\\s*:\\s*(\\d{4})\\s*$", season_text, flags=re.IGNORECASE | re.MULTILINE)
+    if match:
+        return int(match.group(1))
+    filename_match = re.search(r"season_brief_(\\d{4})\\.md", season_path.name)
+    if filename_match:
+        return int(filename_match.group(1))
+    return None
 
 
 def _iso_week_str(value: date) -> str:
@@ -322,11 +340,14 @@ def main() -> int:
     athlete_root = resolve_workspace_root() / athlete_id
     season_path, season_text = _load_season_brief(athlete_root, args.year, args.season_brief_path)
     season_ref = season_path.name
+    season_year = args.year or _extract_year(season_text, season_path)
+    if season_year is None:
+        raise ValueError("Season year not found. Provide --year or include 'Year: YYYY' in Season Brief.")
 
     payload = build_availability_payload(
         season_brief_ref=season_ref,
         season_text=season_text,
-        season_year=args.year,
+        season_year=season_year,
     )
 
     validator = SchemaRegistry(resolve_schema_dir()).validator_for("availability.schema.json")
