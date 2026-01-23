@@ -121,10 +121,14 @@ def _parse_date(label: str, text: str) -> date | None:
 
 
 def _extract_year(season_text: str, season_path: Path) -> int | None:
-    match = re.search(r"^\\s*Year\\s*:\\s*(\\d{4})\\s*$", season_text, flags=re.IGNORECASE | re.MULTILINE)
+    match = re.search(
+        r"^\s*[-*]?\s*Year\s*:\s*(\d{4})\s*$",
+        season_text,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
     if match:
         return int(match.group(1))
-    filename_match = re.search(r"season_brief_(\\d{4})\\.md", season_path.name)
+    filename_match = re.search(r"season_brief_(\d{4})\.md", season_path.name)
     if filename_match:
         return int(filename_match.group(1))
     return None
