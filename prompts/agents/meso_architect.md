@@ -59,6 +59,7 @@ governance hierarchy defined in the Authority & Hierarchy section.
   - `meso__micro_contract.md`
   - `agenda_enum_spec.md`
   - `load_estimation_spec.md`
+  - `macro_load_corridor_policy.md`
   - `macro_cycle_enum_spec.md`
   - `data_confidence_spec.md`
   - `traceability_spec.md`
@@ -110,6 +111,8 @@ thresholds, decisions, or constraints.
 
 Informational sources may be absent at runtime without affecting validity
 or execution.
+
+- `macro_load_corridor_policy.md` (informational; explains macro corridor derivation; do not override Macro Overview bands)
 
 ---
 

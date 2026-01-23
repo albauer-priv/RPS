@@ -113,6 +113,7 @@ All binding authority applies to the contents inside these sources.
   - `micro__builder_contract.md`
   - `agenda_enum_spec.md`
   - `load_estimation_spec.md`
+  - `macro_load_corridor_policy.md`
   - `macro_cycle_enum_spec.md`
   - `intervals_workout_ebnf.md`
   - `workout_syntax_and_validation.md`
@@ -163,6 +164,8 @@ The runtime MAY also provide additional informational sources.
 These sources may be referenced ONLY when explicitly permitted by binding rules.
 They MUST NOT create authority, define decisions, override governance, or introduce
 new constraints.
+
+- `macro_load_corridor_policy.md` (informational; explains macro corridor derivation; do not override Macro Overview or Block Governance bands)
 
 ## Forbidden Knowledge (if present)
 External references, documents, heuristics, or assumptions are forbidden.

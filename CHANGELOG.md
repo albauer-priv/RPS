@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro Mode A selection (`select`) is now deterministic (no LLM) and `overview` accepts optional `--scenario` if selection exists.
 - `run-agent` now defaults to strict tool mode for JSON-producing agents; use `--non-strict` to opt out.
 - Macro Mode A helper now passes reasoning settings into the strict runner.
+- Meso-Architect and Micro-Planner now have access to the macro load corridor policy (informational, non-binding).
 - Macro-Planner now writes structured fixed rest days when provided.
 - Meso-Architect now propagates macro-level availability/risk constraints into governance and execution architecture.
 - Meso-Architect now mirrors block governance load ranges into execution architecture.
