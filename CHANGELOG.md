@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Strict runner now forces tool calls for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `MACRO_OVERVIEW` when missing.
 - Runner normalizes season-scenario payloads (required arrays, disallowed keys) before validation.
 - Runner normalizes workouts plan meta fields to schema constants before validation.
+- Performance-Analyst prompt no longer stops early when binding sources are not returned by file_search.
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
 
 ### Changed

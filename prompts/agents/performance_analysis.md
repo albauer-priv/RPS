@@ -213,8 +213,9 @@ Emit schema-compliant JSON only.
 ## Mandatory Knowledge Processing Rule (Hard Gate)
 Before performing any analysis or derivation:
 - All binding schemas, specifications, and contracts MUST be fully read, understood, and applied.
-- If any binding knowledge is missing, unclear, or contradictory:
-  - STOP and request clarification. Do not proceed.
+- The runtime context already includes the binding sources listed above.
+- Do NOT STOP solely because `file_search` does not return a binding source; proceed assuming it is available in the runtime context.
+- STOP only if a required binding source is explicitly missing from the runtime context or is contradictory.
 
 This rule applies before Pass 1.
 
@@ -317,8 +318,9 @@ Pass 1 rules (interpretation-only constraints):
 # Instruction Extension — Stop & Validation
 
 ## Stop Conditions
-- If any binding knowledge is missing, unclear, or contradictory:
+- If any required data artefacts for the target ISO week are missing or invalid:
   - STOP and request clarification. Do not proceed.
+- If binding knowledge is explicitly missing from the runtime context (not merely absent from file_search), STOP and request clarification.
 
 ## Fail-Fast Rules
 - The mandatory knowledge processing rule is a hard gate and applies before Pass 1.
