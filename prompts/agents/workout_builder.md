@@ -213,13 +213,12 @@ The Workout-Builder MUST NOT:
 - Use attribute filters for knowledge sources (not workspace artefacts).
 - Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
 - Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
-- Templates: `type=Template` + `template_for=<...>`.
+- Templates are not used for Workout-Builder outputs.
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
-## Template Usage (Conditional)
-- If a template exists for the requested output artefact, load it and fill every
-  `<!--- FILL --->` placeholder. Preserve structure exactly; no extra fields.
+## Template Usage
+Do not use templates. Emit schema-compliant JSON only.
 
 ## Three-Pass Execution Protocol (MANDATORY)
 

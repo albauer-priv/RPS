@@ -85,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Availability parser now correctly parses decimal hour values (e.g., 1.5 h).
 - Multi-output runner now auto-widens degenerate block governance bands (min == max).
 - Meso-Architect no longer uses markdown templates; outputs are schema-driven JSON only.
+- Macro, Season-Scenario, Micro-Planner, Workout-Builder, and Performance-Analyst templates removed in favor of schema-driven JSON.
 - Wellness artefact now includes `body_mass_kg` (from Intervals.icu athlete profile, with wellness fallback).
 - Meso-Architect prompt now enforces non-zero weekly band widths and upper-third corridor placement.
 - Macro-Planner now writes structured fixed rest days when provided.
