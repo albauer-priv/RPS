@@ -1,7 +1,7 @@
 ---
 Type: Contract
 Contract-Name: meso__micro
-Version: 1.2
+Version: 1.3
 Status: Active
 
 Scope: Shared
@@ -27,7 +27,7 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Meso-Architect -> Micro-Planner (v1.2)
+# Contract: Meso-Architect -> Micro-Planner (v1.3)
 
 ## 1) Purpose (Binding)
 Define the strict execution relationship between Meso-Architect governance
@@ -45,6 +45,7 @@ and Micro-Planner weekly execution.
 - MUST validate all input JSON before use and STOP on invalid artefacts.
 - MUST execute strictly within governance.
 - MUST respect weekly kJ corridors.
+- MUST respect block-level non-negotiables, including fixed rest days derived from the Season Brief availability table.
 - MUST NOT compensate missed load.
 - MUST NOT introduce progression or deload logic.
 - MUST NOT reinterpret intent or objectives.

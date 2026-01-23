@@ -21,6 +21,7 @@ flowchart TD
   PA[Performance-Analyst]:::agent
   I[Intervals.icu]:::external
   EXP[get_intervals_data.py]:::script
+  AVP[parse_season_brief_availability.py]:::script
   VAL[validate_outputs.py]:::script
   POST[post_workout.py]:::script
 
@@ -28,6 +29,7 @@ flowchart TD
   SB[season_brief_yyyy.md]:::artefact
   KP[kpi_profile_des_*.json]:::artefact
   EV[events.md]:::artefact
+  AV[availability_yyyy-ww.json]:::artefact
   SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
   MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact
   MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact
@@ -45,13 +47,15 @@ flowchart TD
   DR[des_analysis_report_yyyy-ww.json]:::artefact
 
   %% Planning chain
-  U --> SB --> SS
+  U --> SB --> AVP --> AV
+  AV --> SS
   U --> KP --> SS
   SS --> SC --> MA
   KP --> MA
   KP --> PA
   U --> EV --> MA
   EV -. info .-> SS
+  AV --> MA
 
   MA --> MO --> ME
   MA -. optional .-> MMFF --> ME
@@ -62,6 +66,8 @@ flowchart TD
   ME -. optional .-> BFF --> MI
   ZM -. info .-> ME
   ZM -. info .-> MI
+  AV -. info .-> ME
+  AV -. info .-> MI
 
   MI --> WP --> WB
   WB --> WJ --> POST
@@ -109,7 +115,8 @@ flowchart TD
 ### 2.1 Season-Scenario Detail Flow
 
 **Inputs (Artefacts)**
-- `season_brief_yyyy.md` (user-authored)
+- `season_brief_yyyy.md` (user-authored; includes weekday availability table)
+- `availability_yyyy-ww.json` (derived from Season Brief)
 - `kpi_profile_des_*.json`
 - `events.md` (contextual)
 
@@ -123,29 +130,31 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> SS[Season-Scenario-Agent]:::agent
+  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> AVP[parse_season_brief_availability.py]:::script --> AV[availability_yyyy-ww.json]:::artefact --> SS[Season-Scenario-Agent]:::agent
   U --> KP[kpi_profile_des_*.json]:::artefact --> SS
   U --> EV[events.md]:::artefact --> SS
   SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+  classDef script fill:#f3f0ff,stroke:#5b4db8,stroke-width:1px,stroke-dasharray: 2 2;
 ```
 
 ### 2.2 Macro-Planner Detail Flow
 
 **Inputs (Artefacts)**
-- `season_brief_yyyy.md` (user-authored)
+- `season_brief_yyyy.md` (user-authored; includes weekday availability table)
+- `availability_yyyy-ww.json` (derived from Season Brief)
 - `kpi_profile_des_*.json`
 - `events.md` (contextual)
 - `season_scenarios_yyyy-ww--yyyy-ww.json` (advisory, if available)
 - `des_analysis_report_yyyy-ww.json` (advisory)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational, if available)
-- `wellness_yyyy-ww.json` (informational, if available)
+- `wellness_yyyy-ww.json` (informational; body_mass_kg used for kJ/kg/h corridor math)
 
 **Processing (Conceptual)**
 - Determine season intent, priorities, and constraints (8-32 weeks horizon).
-- Define phase structure and load corridors.
+- Define phase structure and load corridors (availability weekly hours + wellness body_mass_kg).
 - Emit optional feed-forward if the next block needs explicit guidance.
 - Mode A (CLI) is a two-step flow:
   1) `scripts/macro_mode_a.py scenarios` (stores `season_scenarios` and writes the scenario dialogue to `.cache/macro_scenarios/<run-id>.md`)
@@ -164,6 +173,7 @@ flowchart LR
   DR[des_analysis_report_yyyy-ww.json]:::artefact -. advisory .-> MA
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MA
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MA
+  AV[availability_yyyy-ww.json]:::artefact -. info .-> MA
   WL[wellness_yyyy-ww.json]:::artefact -. info .-> MA
 
   S1[macro_mode_a.py scenarios]:::script --> MA
@@ -189,6 +199,7 @@ flowchart LR
 - `macro_meso_feed_forward_yyyy-ww.json` (optional, binding if present)
 - `events.md` (informational)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational)
+- `availability_yyyy-ww.json` (informational)
 - `wellness_yyyy-ww.json` (informational)
 
 **Processing (Conceptual)**
@@ -211,6 +222,7 @@ flowchart LR
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> ME
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> ME
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> ME
+  AV[availability_yyyy-ww.json]:::artefact -. info .-> ME
   WL[wellness_yyyy-ww.json]:::artefact -. info .-> ME
 
   ME --> BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact
@@ -231,6 +243,7 @@ flowchart LR
 - `block_execution_arch_yyyy-ww--yyyy-ww.json`
 - `block_feed_forward_yyyy-ww.json` (optional)
 - `zone_model_power_<FTP>W.json` (informational, from Data-Pipeline)
+- `availability_yyyy-ww.json` (informational, from Data-Pipeline)
 - `wellness_yyyy-ww.json` (informational, from Data-Pipeline)
 - `events.md` (informational)
 - Optional factual data for context
@@ -248,6 +261,7 @@ flowchart LR
   BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact --> MI
   BFF[block_feed_forward_yyyy-ww.json]:::artefact -. optional .-> MI
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> MI
+  AV[availability_yyyy-ww.json]:::artefact -. info .-> MI
   WL[wellness_yyyy-ww.json]:::artefact -. info .-> MI
   EV[events.md]:::artefact -. info .-> MI
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MI
@@ -293,24 +307,30 @@ flowchart LR
 **Inputs**
 - Intervals.icu API data (executed activities and related metrics)
 - Intervals.icu calendar state (planned + executed)
+- `season_brief_yyyy.md` (weekday availability table)
 
 **Processing (Conceptual)**
 - `get_intervals_data.py`: fetch raw activity data, compile `activities_actual` and `activities_trend`
+- `parse_season_brief_availability.py`: normalize Season Brief availability table into `availability`
 - `validate_outputs.py`: validate JSON outputs against schemas
 
 **Outputs (Artefacts)**
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
+- `availability_yyyy-ww.json`
 
 ```mermaid
 flowchart LR
   I[Intervals.icu]:::external --> EXP[get_intervals_data.py]:::script
   EXP --> AA[activities_actual_yyyy-ww.json]:::artefact
   EXP --> AT[activities_trend_yyyy-ww.json]:::artefact
+  SB[season_brief_yyyy.md]:::artefact --> AVP[parse_season_brief_availability.py]:::script --> AV[availability_yyyy-ww.json]:::artefact
   AA --> VAL[validate_outputs.py]:::script
   AT --> VAL
+  AV --> VAL
   VAL -. checks .-> AA
   VAL -. checks .-> AT
+  VAL -. checks .-> AV
 
   classDef external fill:#fff3e6,stroke:#a35b00,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;

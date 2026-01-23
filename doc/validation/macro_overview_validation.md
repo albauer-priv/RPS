@@ -11,6 +11,7 @@
 - [ ] If fixed rest days are known, `global_constraints.recovery_protection.fixed_rest_days` is set.
 - [ ] If `global_constraints.recovery_protection` is present, `notes` is filled (can be empty if explicitly unknown).
 - [ ] Risk and availability statements reflect the season brief inputs.
+- [ ] Availability assumptions reflect the Season Brief weekday availability table.
 
 ## Content sanity
 - [ ] Phases cover the full horizon with no gaps.

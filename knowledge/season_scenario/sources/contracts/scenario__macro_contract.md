@@ -1,7 +1,7 @@
 ---
 Type: Contract
 Contract-Name: scenario__macro_contract
-Version: 1.0
+Version: 1.1
 Scope: Agent
 Authority: Informational
 Owner: Governance
@@ -25,6 +25,8 @@ Macro-Planner retains binding decision authority.
 - Produce exactly one `SEASON_SCENARIOS` artefact per run.
 - When a scenario label is provided, also produce one `SEASON_SCENARIO_SELECTION` artefact.
 - Use the Season Brief and KPI Profile as primary inputs.
+- Use the AVAILABILITY artefact (derived from the Season Brief) and fixed rest days
+  in scenario guidance (constraints summary and phase shaping).
 - Provide three scenarios (A/B/C) with clear trade-offs.
 - Do not create macro plans or governance decisions.
 

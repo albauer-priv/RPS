@@ -33,6 +33,7 @@ ARTIFACT_PATHS: dict[ArtifactType, ArtifactPathConfig] = {
     ArtifactType.INTERVALS_WORKOUTS: ArtifactPathConfig("exports", "intervals_workouts"),
     ArtifactType.ACTIVITIES_ACTUAL: ArtifactPathConfig("analysis", "activities_actual"),
     ArtifactType.ACTIVITIES_TREND: ArtifactPathConfig("analysis", "activities_trend"),
+    ArtifactType.AVAILABILITY: ArtifactPathConfig("analysis", "availability"),
     ArtifactType.WELLNESS: ArtifactPathConfig("analysis", "wellness"),
     ArtifactType.DES_ANALYSIS_REPORT: ArtifactPathConfig("analysis", "des_analysis_report"),
 }

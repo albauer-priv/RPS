@@ -380,18 +380,20 @@ Do not output scenario dialogue or request a selection.
 - Mode A (Season Brief only):
   - Season brief: `workspace_get_input("season_brief")`
   - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+  - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
   - Scenario selection (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
   - Events (optional; if present): `workspace_get_input("events")`
-  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+  - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode B (Season Brief + existing macro):
   - Season brief: `workspace_get_input("season_brief")`
   - Existing macro overview: `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })`
   - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+  - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
   - Scenario selection (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
   - Events (optional; if present): `workspace_get_input("events")`
-  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+  - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (DES analysis only):
   - DES report: `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
   - Events (optional; if present): `workspace_get_input("events")`
@@ -427,7 +429,8 @@ binding schema-defined artefact for the active mode.
    - Data & measurement assumptions: `### 3.5 Historical performance baseline`
      -> `Data sources and assumptions`.
    - Constraints & availability: `## 4. Risks` (injury, load/recovery,
-     availability confidence, external constraints, non-negotiables).
+     availability table, availability confidence, external constraints, non-negotiables).
+   - Availability artefact: use `AVAILABILITY` for weekday table + weekly hours.
    - If fixed rest days are specified, capture them as weekday enums
      in `global_constraints.recovery_protection.fixed_rest_days` and
      add an explanatory note to `global_constraints.recovery_protection.notes`.
@@ -486,23 +489,25 @@ binding schema-defined artefact for the active mode.
 - INTENSITY_DOMAIN_ENUM (AgendaEnumSpec): `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SST`, `VO2MAX`
 - LOAD_MODALITY_ENUM (AgendaEnumSpec): `NONE`, `K3`
 - MACRO_CYCLE_ENUM (MacroCycleEnumSpec): `Base`, `Build`, `Peak`, `Transition`
-- LoadEstimationSpec: use for kJ and kJ/kg guardrails; always include a reference mass window
+- LoadEstimationSpec: use for kJ and kJ/kg guardrails (body_mass_kg sourced from WELLNESS)
 - K3 meaning (AgendaEnumSpec): Kraftausdauer (high torque / low cadence)
-- kJ/kg guardrails: compute from weekly kJ corridor and reference mass window
-  (min = kJ_min / mass_max, max = kJ_max / mass_min).
-- `Body-Mass-kg` from Season Brief is REQUIRED and MUST be copied to
-  `body_metadata.body_mass_kg`. If body mass is missing, STOP and request it.
+- kJ/kg guardrails: compute from weekly kJ corridor and `body_metadata.body_mass_kg`
+  (min = kJ_min / body_mass_kg, max = kJ_max / body_mass_kg).
+- `Body-Mass-kg` MUST be sourced from WELLNESS (`body_mass_kg`) and copied to
+  `body_metadata.body_mass_kg`. If wellness body mass is missing, STOP and request it.
 
 ## kJ/TSS Derivation (Binding)
 Use KPI Profile moving-time guidance (kJ/kg/h) as the primary anchor for absolute kJ corridors.
 1) Determine body mass:
-   - Season Brief MUST provide `Body-Mass-kg`. Use it (min = max).
-   - If missing, STOP and request body mass (do not invent, do not proceed).
+   - Use WELLNESS `body_mass_kg` (required). Copy to `body_metadata.body_mass_kg`.
+   - If WELLNESS is missing or lacks `body_mass_kg`, STOP and request it.
 2) Select the KPI Profile `durability.moving_time_rate_guidance` band that matches the scenario intent
    (typically `brevet_ultra_sustainable` unless explicitly marked competitive).
 3) Compute weekly kJ range from hours:
    - `weekly_kj_range = body_mass × kJ_per_kg_per_hour_range × weekly_hours_range`
-   - Weekly hours come from Season Brief (min/typical/max).
+   - Weekly hours come from `AVAILABILITY.weekly_hours` (min/typical/max).
+   - If Season Brief summary hours conflict with AVAILABILITY, prefer AVAILABILITY
+     and note the discrepancy in `assumptions_unknowns`.
 4) Set weekly kJ corridors per phase from the computed weekly_kj_range:
    - Base: align to lower end of weekly_kj_range.
    - Build: move toward upper end of weekly_kj_range.
@@ -512,7 +517,8 @@ Use KPI Profile moving-time guidance (kJ/kg/h) as the primary anchor for absolut
      and adjust conservatively within weekly_kj_range.
 5) Derive weekly TSS bands *after* kJ bands:
    - Use LoadEstimationSpec formula: `TSS ≈ hours × IF² × 100`.
-   - Hours should come from Season Brief availability (min/typical/max).
+   - Hours should come from `AVAILABILITY.weekly_hours` (min/typical/max) and be
+     consistent with the weekday availability table.
    - IF range should reflect phase intent (Base lower, Build moderate, Peak moderate with taper).
    - If IF/FTP is unknown, use conservative IF bands and mark TSS confidence as LOW.
 6) Populate `body_metadata.moving_time_rate_guidance` with the selected KPI band
@@ -547,7 +553,7 @@ Maximize durable submaximal performance under prolonged fatigue.
   Allowed LOAD_MODALITY_ENUM values (AgendaEnumSpec, in `agenda_enum_spec.md`):
   `NONE`, `K3`.
 - Use LoadEstimationSpec (in `load_estimation_spec.md`) for kJ and kJ/kg guidance.
-  Always include a reference mass window when using kJ/kg guardrails.
+  Use wellness `body_mass_kg` when computing kJ/kg guardrails.
 
 ### Interpretation Rules
 - Weekly aggregation only (no daily breakdowns).
@@ -573,6 +579,8 @@ NOTE: JSON cut-over is active. Enforce JSON schema validation and the binding do
 ## Immediate Stop Conditions
 - Missing required inputs for the active mode.
 - Season Brief missing required fields (SeasonBriefInterface).
+- WELLNESS missing or lacking `body_mass_kg` (required for kJ corridor math).
+- AVAILABILITY missing or invalid (required for weekday constraints and weekly hours).
 - More than one KPI Profile detected (Mode A/B).
 - No scenario label provided or resolvable when required (Mode A/B).
 - Output is not valid JSON or fails schema validation for the target artefact.

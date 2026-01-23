@@ -8,7 +8,7 @@ Last-Updated: 2026-01-23
 
 ## Purpose
 
-The data pipeline writes factual artefacts (`activities_actual`, `activities_trend`)
+The data pipeline writes factual artefacts (`activities_actual`, `activities_trend`, `availability`)
 into the athlete workspace. This document explains how to validate those outputs
 against the local JSON schemas before they are consumed by planners.
 
@@ -16,9 +16,11 @@ against the local JSON schemas before they are consumed by planners.
 flowchart TD
   DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual.json]
   DP --> AT[activities_trend.json]
+  DP --> AV[availability.json]
   DP --> WL[wellness.json]
   AA --> VA[validate_outputs.py]
   AT --> VA
+  AV --> VA
   WL --> VA
   VA --> SC[schemas/*.schema.json]
   VA --> OK[Validation OK / Errors]
@@ -36,6 +38,7 @@ This validates:
 
 - `var/athletes/<athlete_id>/latest/activities_actual.json`
 - `var/athletes/<athlete_id>/latest/activities_trend.json`
+- `var/athletes/<athlete_id>/latest/availability.json`
 - `var/athletes/<athlete_id>/latest/wellness.json`
 
 The athlete ID is read from `.env` (`ATHLETE_ID`).
@@ -62,6 +65,7 @@ var/athletes/<athlete_id>/data/2026/06/
 python scripts/validate_outputs.py \
   --actual-path var/athletes/<athlete_id>/data/2026/06/activities_actual_2026-06.json \
   --trend-path var/athletes/<athlete_id>/data/2026/06/activities_trend_2026-06.json \
+  --availability-path var/athletes/<athlete_id>/data/2026/06/availability_2026-06.json \
   --wellness-path var/athletes/<athlete_id>/data/2026/06/wellness_2026-06.json
 ```
 
@@ -92,6 +96,7 @@ Manual validation checklists live under `doc/validation/`:
 - `doc/validation/zone_model_validation.md`
 - `doc/validation/workouts_plan_validation.md`
 - `doc/validation/intervals_workouts_validation.md`
+- `doc/validation/availability_validation.md`
 - `doc/validation/activities_actual_validation.md`
 - `doc/validation/activities_trend_validation.md`
 - `doc/validation/wellness_validation.md`

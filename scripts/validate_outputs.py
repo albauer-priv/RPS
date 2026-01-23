@@ -31,8 +31,8 @@ def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for schema validation."""
     parser = argparse.ArgumentParser(
         description=(
-            "Validate activities_actual / activities_trend / wellness JSON outputs against local schemas. "
-            "Defaults to the latest files for the configured athlete."
+            "Validate activities_actual / activities_trend / availability / wellness JSON outputs "
+            "against local schemas. Defaults to the latest files for the configured athlete."
         )
     )
     parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
@@ -40,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--week", type=int, help="ISO week for data directory lookup.")
     parser.add_argument("--actual-path", type=Path, help="Explicit activities_actual JSON path.")
     parser.add_argument("--trend-path", type=Path, help="Explicit activities_trend JSON path.")
+    parser.add_argument("--availability-path", type=Path, help="Explicit availability JSON path.")
     parser.add_argument("--wellness-path", type=Path, help="Explicit wellness JSON path.")
     return parser.parse_args()
 
@@ -51,6 +52,7 @@ def resolve_paths(
     week: int | None,
     actual_path: Path | None,
     trend_path: Path | None,
+    availability_path: Path | None,
     wellness_path: Path | None,
 ) -> list[tuple[str, Path]]:
     """Resolve schema files and JSON paths to validate."""
@@ -58,11 +60,13 @@ def resolve_paths(
         raise ValueError("Provide both --year and --week, or neither.")
 
     targets: list[tuple[str, Path]] = []
-    if actual_path or trend_path or wellness_path:
+    if actual_path or trend_path or availability_path or wellness_path:
         if actual_path:
             targets.append(("activities_actual.schema.json", actual_path))
         if trend_path:
             targets.append(("activities_trend.schema.json", trend_path))
+        if availability_path:
+            targets.append(("availability.schema.json", availability_path))
         if wellness_path:
             targets.append(("wellness.schema.json", wellness_path))
         return targets
@@ -77,6 +81,9 @@ def resolve_paths(
             ("activities_trend.schema.json", base / f"activities_trend_{year}-{week_str}.json")
         )
         targets.append(
+            ("availability.schema.json", base / f"availability_{year}-{week_str}.json")
+        )
+        targets.append(
             ("wellness.schema.json", base / f"wellness_{year}-{week_str}.json")
         )
         return targets
@@ -84,6 +91,7 @@ def resolve_paths(
     latest = athlete_latest_dir(athlete_id)
     targets.append(("activities_actual.schema.json", latest / "activities_actual.json"))
     targets.append(("activities_trend.schema.json", latest / "activities_trend.json"))
+    targets.append(("availability.schema.json", latest / "availability.json"))
     targets.append(("wellness.schema.json", latest / "wellness.json"))
     return targets
 
@@ -124,6 +132,7 @@ def main() -> int:
         week=args.week,
         actual_path=args.actual_path,
         trend_path=args.trend_path,
+        availability_path=args.availability_path,
         wellness_path=args.wellness_path,
     )
 

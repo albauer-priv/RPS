@@ -248,6 +248,10 @@ A valid `block_feed_forward_*` (when present and valid) is treated as a binding 
 - Authoritative governance inputs as applicable:
   - `block_governance_*`
   - `block_feed_forward_*` (if present)
+- Availability (required):
+  - `availability_yyyy-ww.json`
+- Wellness (required for body_mass_kg):
+  - `wellness_yyyy-ww.json`
 
 ## Optional / Informational Inputs
 - Context & data artefacts (informational only):
@@ -317,6 +321,8 @@ The intent is derived from the artefact type (no free choice).
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Block feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "BLOCK_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
+- Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+- Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 
 If an optional input is missing, proceed without it (do not retry indefinitely).
 
@@ -438,6 +444,7 @@ The chat summary is explanatory only and has no authority.
   - IntervalsWorkoutEBNF
   - LoadEstimationSpec
   - LoadEstimationSpec workflow (summary): derive segment IF from %FTP targets (or zone model defaults if only domain labels exist), compute planned_kJ per workout, then planned_Load_kJ = planned_kJ × IF^1.3; weekly kJ is the sum of agenda planned_Load_kJ. If FTP or zone model inputs are missing, STOP and request them.
+  - If any kJ/kg/h or W/kg scaling is required, use WELLNESS `body_mass_kg`; if missing, STOP and request a data-pipeline refresh.
   - Weekly load targeting: plan the weekly kJ total in the upper third of the governance corridor to reduce under-fulfillment risk; if constraints force a lower target, note the reason in Week Summary Notes.
   - WorkoutPolicy compliance is mandatory, including Chapter 4.4 QUALITY intent target-band lookup when intent is provided upstream
 - apply no optimization or justification
@@ -513,6 +520,7 @@ You MAY:
 - skip OPTIONAL or FLEX units
 - adapt execution to events or data-quality issues
 - report factual deviations upstream
+- enforce fixed rest days and daily availability constraints from block governance
 
 ---
 

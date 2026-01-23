@@ -173,7 +173,23 @@ Note past injuries and current issues so training avoids repeat flare-ups.
 - Past injuries or recurring issues:
 - Current limitations or pain:
 
-### 4.2 Load, recovery, and stress capacity
+### 4.2 Weekly availability table (required)
+Provide a realistic day-by-day availability snapshot that can be used for
+load plausibility checks (kJ/kg/h vs hours) without prescribing a schedule.
+Fixed rest days must be set to **0 h / locked**.
+This table is parsed into the `AVAILABILITY` artefact.
+
+| Day | Typical available hours | Indoor possible (Y/N) | Travel risk (low/med/high) |
+|-----|--------------------------|------------------------|-----------------------------|
+| Mon | 0 h / locked | Y | low |
+| Tue |  |  |  |
+| Wed |  |  |  |
+| Thu |  |  |  |
+| Fri | 0 h / locked | Y | low |
+| Sat |  |  |  |
+| Sun |  |  |  |
+
+### 4.3 Load, recovery, and stress capacity
 Describe current recovery resources and stress load to set realistic training ranges.
 - Typical weekly training hours (min / typical / max sustainable):
 - Sleep quality (average hours, consistency):
@@ -181,20 +197,20 @@ Describe current recovery resources and stress load to set realistic training ra
 - Fixed rest days:
 - Travel or high-stress periods:
 
-### 4.3 Availability confidence
+### 4.4 Availability confidence
 Indicate how reliable training time will be across the season.
 This helps with deload timing and risk management.
 - Weeks with high reliability:
 - Weeks with low reliability:
 - Absolute no-training periods (if any):
 
-### 4.4 External constraints
+### 4.5 External constraints
 List outside factors that can limit training choices or available environments.
 - Job / family constraints:
 - Environment (weather, indoor-only periods, travel):
 - Nutrition, fueling, or GI constraints:
 
-### 4.5 Non-negotiables for this season
+### 4.6 Non-negotiables for this season
 List hard boundaries that should not be violated even if goals are at risk.
 These guide trade-offs when conflicts arise.
 - Example: no training on weekdays X/Y
@@ -202,7 +218,7 @@ These guide trade-offs when conflicts arise.
 - 
 - 
 
-### 4.6 Red flags (if any)
+### 4.7 Red flags (if any)
 Check any standard risk flags that require conservative progression.
 - [ ] Masters athlete (50+)
 - [ ] History of overuse injuries

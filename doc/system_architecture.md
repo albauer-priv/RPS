@@ -94,20 +94,22 @@ flowchart TD
 ### 3.1.1 Data Pipeline (Assumed)
 
 - Deterministic scripts ingest external activity data.
-- Writes `activities_actual`, `activities_trend`, `zone_model`, and `wellness` into the athlete workspace.
+- Writes `activities_actual`, `activities_trend`, `zone_model`, `wellness`, and `availability` into the athlete workspace.
 - Updates `latest/` so planners always read the freshest factual data.
 - Pipeline entrypoint: `scripts/data_pipeline/get_intervals_data.py`.
+- Season Brief availability parser: `scripts/data_pipeline/parse_season_brief_availability.py`.
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
 
 ### 3.2 Season-Scenario-Agent
 - Produces `season_scenarios` (informational).
-- Uses Season Brief + KPI Profile to propose A/B/C options.
+- Uses Season Brief (incl. weekday availability table) + KPI Profile to propose A/B/C options.
 - No planning decisions; Macro-Planner remains binding authority.
 
 ### 3.3 Macro-Planner
 - Defines long-term intent (8–32 weeks).
 - Produces `macro_overview` and optional `macro_meso_feed_forward`.
+- Uses wellness `body_mass_kg` + Season Brief availability to anchor kJ corridor math.
 - **Important:** Macro phases define ISO week ranges, but MUST NOT define meso blocks.
 
 ### 3.4 Meso-Architect

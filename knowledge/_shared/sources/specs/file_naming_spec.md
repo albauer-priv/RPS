@@ -46,6 +46,7 @@ Define consistent filenames for all artefacts to support:
 ### Data Pipeline
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
+- `availability_yyyy-ww.json`
 - `wellness_yyyy-ww.json`
 
 ### Macro-Planner

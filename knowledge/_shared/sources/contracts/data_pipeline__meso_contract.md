@@ -1,7 +1,7 @@
 ---
 Type: Contract
 Contract-Name: data_pipeline__meso
-Version: 1.1
+Version: 1.3
 Status: Active
 
 Scope: Shared
@@ -15,6 +15,8 @@ Dependencies:
     Version: 1.0
   - ID: ActivitiesTrendInterface
     Version: 1.0
+  - ID: AvailabilityInterface
+    Version: 1.0
   - ID: WellnessInterface
     Version: 1.0
   - ID: ZoneModelInterface
@@ -27,7 +29,7 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Data-Pipeline -> Meso-Architect (v1.1)
+# Contract: Data-Pipeline -> Meso-Architect (v1.3)
 
 ## 1) Purpose (Binding)
 Provide validated factual artefacts (activities, wellness, zone model) to the Meso-Architect.
@@ -35,6 +37,7 @@ Provide validated factual artefacts (activities, wellness, zone model) to the Me
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `activities_actual_yyyy-ww.json` validated against `activities_actual.schema.json`.
 - MUST emit `activities_trend_yyyy-ww.json` validated against `activities_trend.schema.json`.
+- MUST emit `availability_yyyy-ww.json` validated against `availability.schema.json` when Season Brief availability exists.
 - MUST emit `wellness_yyyy-ww.json` validated against `wellness.schema.json` when data exists.
 - MUST emit `zone_model_power_<FTP>W.json` validated against `zone_model.schema.json` when sport settings allow.
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.
@@ -43,12 +46,14 @@ Provide validated factual artefacts (activities, wellness, zone model) to the Me
 ## 3) Consumer Responsibilities (Meso-Architect)
 - MUST validate input JSON before use and STOP on invalid artefacts.
 - MUST treat activities artefacts as informational only.
+- MUST use `wellness.body_mass_kg` for any body-mass scaling in load guardrails or plausibility checks.
 
 ## 4) Artefacts and Schemas (Binding)
 
 ### Inputs (Meso-Architect consumes)
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
+- `availability_yyyy-ww.json` -> `availability.schema.json`
 - `wellness_yyyy-ww.json` -> `wellness.schema.json`
 - `zone_model_power_<FTP>W.json` -> `zone_model.schema.json`
 

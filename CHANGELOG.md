@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - KPI profiles now include moving-time pacing guidance (`kJ/kg/h` + `W/kg`) for brevet/ultra segments.
 - Macro overview body metadata now records `body_mass_kg` alongside the reference mass window.
 - Season brief template/spec now includes `Body-Mass-kg` for precise load scaling.
+- Availability artefact (`AVAILABILITY`) + schema/interface spec, plus a Season Brief availability parser.
 - Data pipeline now derives a ZONE_MODEL from Intervals.icu athlete sport settings and writes it to `latest/`.
 - Season-Scenario-Agent with `SEASON_SCENARIOS` artefact + schema, plus strict store tool support.
 - Season scenarios contract + interface spec for scenario → macro handoff.
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro overview justification section with structured citations and per-phase rationale.
 - Wellness artefact (`WELLNESS`) + schema/interface spec for daily biometric/self-report data.
 - Data pipeline now writes `wellness_yyyy-ww.json` and latest `wellness.json`.
+- Availability validation checklist and `validate_outputs.py` support for availability artefacts.
 
 ### Fixed
 - Workspace tool writes now tolerate missing `run_id` by falling back to meta/context defaults.
@@ -62,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - KPI profile schema removed per-kg preload windows and now requires moving-time rate guidance instead.
 - Macro overview schema/template replaces per-kg preload references with `moving_time_rate_guidance`.
 - Macro-Planner now derives weekly kJ corridors from body mass, kJ/kg/h guidance, and weekly hours.
+- Macro/Meso/Micro/Scenario prompts now require AVAILABILITY for weekday constraints + weekly hours.
+- Availability artefacts now scope from generation date to season year end and are replaced by newer versions.
 - Meso-Architect governance now targets upper-third load bands for build/peak weeks by default.
 - ZONE_MODEL owner moved to Data-Pipeline; Meso-Architect now consumes the latest model instead of generating it.
 - Macro overview schema now requires `body_mass_kg` and removes `reference_mass_window_kg`.

@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "availability.schema.json",
+  "title": "Availability",
+  "type": "object",
+  "$defs": {
+    "weekday_enum": {
+      "type": "string",
+      "enum": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ]
+    },
+    "weekly_hours": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min",
+        "typical",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "typical": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "availability_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weekday",
+        "hours_min",
+        "hours_typical",
+        "hours_max",
+        "indoor_possible",
+        "travel_risk",
+        "locked",
+        "source_hours_text",
+        "source_indoor_text",
+        "source_travel_text"
+      ],
+      "properties": {
+        "weekday": {
+          "$ref": "#/$defs/weekday_enum"
+        },
+        "hours_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "hours_typical": {
+          "type": "number",
+          "minimum": 0
+        },
+        "hours_max": {
+          "type": "number",
+          "minimum": 0
+        },
+        "indoor_possible": {
+          "type": "boolean"
+        },
+        "travel_risk": {
+          "type": "string",
+          "enum": [
+            "low",
+            "med",
+            "high"
+          ]
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "source_hours_text": {
+          "type": "string"
+        },
+        "source_indoor_text": {
+          "type": "string"
+        },
+        "source_travel_text": {
+          "type": "string"
+        }
+      }
+    },
+    "availability_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "season_brief_ref",
+        "availability_table",
+        "weekly_hours",
+        "fixed_rest_days",
+        "notes"
+      ],
+      "properties": {
+        "season_brief_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "availability_table": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/availability_entry"
+          }
+        },
+        "weekly_hours": {
+          "$ref": "#/$defs/weekly_hours"
+        },
+        "fixed_rest_days": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/weekday_enum"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$ref": "artefact_meta.schema.json",
+      "properties": {
+        "artifact_type": {
+          "const": "AVAILABILITY",
+          "type": "string"
+        },
+        "schema_id": {
+          "const": "AvailabilityInterface",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "type": "string"
+        },
+        "authority": {
+          "const": "Binding",
+          "type": "string"
+        },
+        "owner_agent": {
+          "const": "Data-Pipeline",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "authority",
+        "owner_agent",
+        "iso_week"
+      ],
+      "type": "object"
+    },
+    "data": {
+      "$ref": "#/$defs/availability_data"
+    }
+  }
+}

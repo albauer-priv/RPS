@@ -10,37 +10,49 @@ Last-Updated: 2026-01-23
 
 Typical weekly flow:
 
-1. Ensure inputs: season brief, KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events, and fresh data pipeline outputs (zone model + wellness).
-2. Run **Season-Scenario-Agent** when a new macro plan is needed.
-3. Store a scenario selection (A/B/C).
-4. Run **Macro** (scenario optional if selection exists).
-5. Run **Meso** for the current block (phase-aligned).
-6. Run **Micro** for the target ISO week.
-7. Run **Workout-Builder** to export Intervals JSON.
-8. Run **Performance-Analyst** after factual data is available.
+1. Ensure inputs: season brief (including weekday availability table), KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events, and fresh data pipeline outputs (zone model + wellness with body mass).
+2. Run availability parser to generate `availability_yyyy-ww.json` from the Season Brief.
+3. Run **Season-Scenario-Agent** when a new macro plan is needed.
+4. Store a scenario selection (A/B/C).
+5. Run **Macro** (scenario optional if selection exists).
+6. Run **Meso** for the current block (phase-aligned).
+7. Run **Micro** for the target ISO week.
+8. Run **Workout-Builder** to export Intervals JSON.
+9. Run **Performance-Analyst** after factual data is available.
+
+### Availability Parser
+
+```bash
+python scripts/data_pipeline/parse_season_brief_availability.py --year 2026
+```
 
 ### 1.1 Flow Overview
 
 ```mermaid
 flowchart TD
-  SB[season_brief] --> SS[Season-Scenario-Agent]
+  SB[season_brief] --> AVP[parse_season_brief_availability.py]
+  AVP --> AV[availability]
+  AV --> SS[Season-Scenario-Agent]
   KP[kpi_profile] --> SS
   SS --> SC[season_scenarios]
   SC -. advisory .-> MA[Macro-Planner]
   EV[events] -. info .-> SS
   EV -. info .-> MA
+  AV -. info .-> MA
   KP --> MA
   MA --> MO[macro_overview]
   MA -. optional .-> MMFF[macro_meso_feed_forward]
 
   MO --> ME[Meso-Architect]
   MMFF -. optional .-> ME
+  AV -. info .-> ME
   ME --> BG[block_governance]
   ME --> BEA[block_execution_arch]
   ME -. optional .-> BEP[block_execution_preview]
 
   BG --> MI[Micro-Planner]
   BEA --> MI
+  AV -. info .-> MI
   MI --> WP[workouts_plan]
   WP --> WB[Workout-Builder]
   WB --> WJ[intervals_workouts]
@@ -49,7 +61,8 @@ flowchart TD
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
-  VA[Validation\nvalidate_outputs.py] -. checks .-> AA
+  VA[Validation\nvalidate_outputs.py] -. checks .-> AV
+  VA -. checks .-> AA
   VA -. checks .-> AT
   AA --> PA[Performance-Analyst]
   AT --> PA

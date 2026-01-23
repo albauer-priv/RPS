@@ -254,6 +254,7 @@ If contradictions arise:
 ## Required Inputs
 - Season Brief (SeasonBriefInterface compliant, required fields present).
 - KPI Profile: exactly one if KPI-governed planning is requested.
+- Availability: `AVAILABILITY` artefact derived from the Season Brief (required).
 - Events input optional.
 - The Season Brief content may be embedded directly in the user prompt. If present there,
   do NOT re-fetch it.
@@ -281,6 +282,8 @@ If contradictions arise:
 - Phase recommendations must include cycle, focus, and load_trend.
 - Include risk flags, fixed rest days, constraints summary, KPI guardrail notes,
   decision notes, and intensity guidance (allowed/avoid domains) as advisory.
+  `constraint_summary` MUST reflect the weekday availability table (hours, indoor possible,
+  travel risk) and fixed rest days from the Season Brief.
 - All required guidance fields MUST be present even if empty arrays:
   `event_alignment_notes`, `risk_flags`, `fixed_rest_days`, `constraint_summary`,
   `kpi_guardrail_notes`, `decision_notes`, `intensity_guidance`, `assumptions`, `unknowns`.
@@ -310,6 +313,7 @@ If contradictions arise:
 ## Access Hints (Tools)
 - Season brief (if not embedded): `workspace_get_input("season_brief")`
 - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+- Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 - Events (optional; if present): `workspace_get_input("events")`
 - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
 
@@ -334,7 +338,10 @@ only the binding schema-defined artefact for the active mode.
 1. Confirm Season Brief content is available (embedded in user prompt or via workspace tool).
 2. Load KPI Profile (if required by Season Brief).
 3. Load `season_scenarios.schema.json`.
-4. Extract season goals, constraints, events, and availability signals for scenario shaping.
+4. Load AVAILABILITY (required). If missing, STOP and request a data-pipeline refresh.
+5. Extract season goals, constraints, events, and availability signals for scenario shaping,
+   including the weekday availability table (Mon-Sun hours, indoor possible, travel risk)
+   and fixed rest days.
 
 ## PASS 2 — Review (Hidden)
 1. Confirm JSON schema validation for the target artefact.

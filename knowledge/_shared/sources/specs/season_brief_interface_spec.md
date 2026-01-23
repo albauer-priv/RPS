@@ -60,7 +60,10 @@ For each event:
 - `Goal` (finish, time, experience; descriptive)
 
 ### 2.4 Constraints & Availability
-- `Weekly-Availability` (hours or sessions; descriptive ranges allowed)
+- `Weekly-Availability-Table` (required; Mon-Sun rows with columns:
+  `Typical-Available-Hours`, `Indoor-Possible` (Y/N), `Travel-Risk` (low/med/high);
+  fixed rest days must be marked as `0 h / locked`)
+- `Weekly-Availability` (summary hours or sessions; descriptive ranges allowed)
 - `Availability-Confidence` (weeks with high/low reliability, no-training periods)
 - `Non-Negotiables` (hard boundaries that must not be violated)
 - `Fixed-Rest-Days` (if any)
@@ -93,8 +96,8 @@ Recommended locations in the Season Brief template (headings may vary):
   `### 3.2 Experience`, `### 3.3 Primary goal orientation`
 - Data & measurement assumptions: `### 3.5 Historical performance baseline`
   -> `Data sources and assumptions`
-- Constraints & availability: `## 4. Risks` (injury history, load/recovery,
-  availability confidence, external constraints, non-negotiables)
+- Constraints & availability: `## 4. Risks` (injury history, **weekday availability table**,
+  load/recovery, availability confidence, external constraints, non-negotiables)
 - Events & priorities: `## 5. Events` table (Priority, Event name, Event type, Date, Goal)
 - Goals and success criteria: `## 6. Goals` (primary goal, performance goals,
   success criteria, goal priority order)
@@ -125,7 +128,7 @@ A SEASON_BRIEF implementing this interface MUST NOT contain:
 - weekly kJ corridors, TSS targets, or progression ramps
 - block governance (BLOCK_GOVERNANCE / BLOCK_FEED_FORWARD semantics)
 - block structures (BLOCK_EXECUTION_ARCH / PREVIEW)
-- weekly schedules (Mon–Sun planning)
+- weekly schedules (Mon-Sun planning)
 - workout prescriptions or interval definitions
 - KPI thresholds / GREEN-YELLOW-RED gates
 - recommendations framed as decisions ("therefore do X", "must increase volume")

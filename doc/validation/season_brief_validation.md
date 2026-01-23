@@ -6,5 +6,6 @@
 
 ## Required content
 - [ ] Season identity, athlete profile, goals, events table, and constraints are present.
-- [ ] Constraints include availability, recovery considerations, and non-negotiables if known.
+- [ ] Constraints include the weekday availability table (Mon-Sun hours, indoor possible, travel risk),
+      recovery considerations, and non-negotiables if known.
 - [ ] Dates and priorities are consistent with `events.md`.

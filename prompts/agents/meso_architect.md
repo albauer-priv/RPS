@@ -415,6 +415,8 @@ Evidence may support rationale where the schema allows, but never overrides gove
 - Always import `macro_overview.data.global_constraints`:
   - `availability_assumptions`, `risk_constraints`, `planned_event_windows`,
     and `recovery_protection` (if present).
+- Treat availability assumptions as derived from the Season Brief weekday availability table;
+  do not set weekly kJ bands that exceed the implied weekly hours without an explicit note.
 - BLOCK_GOVERNANCE mapping (must include, do not omit):
   - Availability assumptions → `block_summary.non_negotiables` (verbatim).
   - Risk constraints → `block_summary.key_risks_warnings` (verbatim).
@@ -441,16 +443,19 @@ Evidence may support rationale where the schema allows, but never overrides gove
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
-  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+  - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+  - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode B (running block update):
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
-  - Wellness (optional; if present): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+  - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+  - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (no-change):
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Events (optional; if present): `workspace_get_input("events")`
+  - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 
 If an optional input is missing, proceed without it (do not retry indefinitely).
 
@@ -592,6 +597,8 @@ Evidence MUST NOT:
 - If validation fails, STOP; do NOT output partial artefacts.
 - If explicitly requested: "No governance change", then STOP and do not output.
 - If ZONE_MODEL is required for IF/TSS defaults and is missing, STOP and request a data-pipeline refresh.
+- If WELLNESS is missing or lacks `body_mass_kg` and load guardrails require body-mass scaling, STOP and request a data-pipeline refresh.
+- If AVAILABILITY is missing, STOP and request a data-pipeline refresh.
 
 ## Fail-fast rules
 - On any binding violation (e.g., producing forbidden outputs, violating one-artefact rule, violating hard boundaries), STOP.

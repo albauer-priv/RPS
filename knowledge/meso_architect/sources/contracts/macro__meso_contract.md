@@ -1,7 +1,7 @@
 ---
 Type: Contract
 Contract-Name: macro__meso
-Version: 1.2
+Version: 1.3
 Status: Active
 
 Scope: Shared
@@ -31,7 +31,7 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Macro-Planner -> Meso-Architect (v1.2)
+# Contract: Macro-Planner -> Meso-Architect (v1.3)
 
 ## 1) Purpose (Binding)
 Translate macro-level seasonal intent into block-level governance and block
@@ -41,6 +41,10 @@ structural architecture without introducing week- or workout-level planning.
 - OWNS phase intent and seasonal priorities.
 - OWNS macro weekly kJ corridors (kJ-first).
 - OWNS high-level allowed/forbidden intensity domains and non-negotiables.
+- MUST derive availability assumptions from the Season Brief weekday availability table
+  (Mon-Sun hours, indoor possible, travel risk) and fixed rest days, and include them in
+  `macro_overview.data.global_constraints.availability_assumptions` and
+  `macro_overview.data.global_constraints.recovery_protection`.
 - MUST validate macro outputs before release.
 - MAY issue `macro_meso_feed_forward_yyyy-ww.json` when macro changes are required.
 
@@ -54,6 +58,8 @@ structural architecture without introducing week- or workout-level planning.
 - MUST NOT reinterpret macro intent.
 - MUST NOT exceed macro kJ corridor without explicit upstream change.
 - MUST NOT derive block adjustments directly from `des_analysis_report_yyyy-ww.json`.
+- MUST preserve macro availability assumptions and fixed rest days in block governance
+  non-negotiables and recovery protection rules.
 
 ## 4) Artefacts and Schemas (Binding)
 

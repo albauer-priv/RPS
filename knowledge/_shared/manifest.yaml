@@ -7,6 +7,7 @@ sources:
 - path: sources/contracts/data_pipeline__macro_contract.md
 - path: sources/contracts/data_pipeline__meso_contract.md
 - path: sources/contracts/data_pipeline__micro_contract.md
+- path: sources/contracts/data_pipeline__scenario_contract.md
 - path: sources/contracts/macro__meso_contract.md
 - path: sources/contracts/meso__micro_contract.md
 - path: sources/contracts/micro__builder_contract.md
@@ -18,6 +19,7 @@ sources:
 - path: sources/principles/principles_durability_first_cycling.md
 - path: sources/schemas/bundled/activities_actual.schema.json
 - path: sources/schemas/bundled/activities_trend.schema.json
+- path: sources/schemas/bundled/availability.schema.json
 - path: sources/schemas/bundled/wellness.schema.json
 - path: sources/schemas/bundled/agenda_enum.schema.json
 - path: sources/schemas/bundled/artefact_envelope.schema.json
@@ -51,6 +53,7 @@ sources:
 - path: sources/specs/header_schema_spec.md
 - path: sources/specs/load_estimation_spec.md
 - path: sources/specs/macro_cycle_enum_spec.md
+- path: sources/specs/availability_interface_spec.md
 - path: sources/specs/season_brief_interface_spec.md
 - path: sources/specs/wellness_interface_spec.md
 - path: sources/specs/traceability_spec.md
