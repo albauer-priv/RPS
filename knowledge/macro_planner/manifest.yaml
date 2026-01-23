@@ -14,6 +14,7 @@ sources:
 - path: sources/principles/principles_durability_first_cycling.md
 - path: ../season_scenario/sources/specs/season_scenarios_interface_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md
+- path: ../_shared/sources/specs/macro_load_corridor_policy.md
 - path: ../_shared/sources/specs/wellness_interface_spec.md
 - path: sources/templates/macro_overview_template.md
 - path: sources/templates/macro_meso_feed_forward_template.md
