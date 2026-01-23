@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -82,6 +83,39 @@ def _log_file_search_results(response: Any) -> None:
             result.get("score"),
             result.get("attributes"),
         )
+
+def _extract_usage(response: Any) -> dict[str, Any]:
+    """Best-effort extraction of token usage from a response."""
+    usage = getattr(response, "usage", None)
+    if isinstance(usage, dict):
+        return usage
+    if usage is None:
+        return {}
+    return {
+        "input_tokens": getattr(usage, "input_tokens", None),
+        "output_tokens": getattr(usage, "output_tokens", None),
+        "total_tokens": getattr(usage, "total_tokens", None),
+    }
+
+
+def _log_response_diagnostics(response: Any, *, label: str, elapsed_s: float) -> None:
+    """Log timing + shape info for a response."""
+    try:
+        outputs = response.output or []
+    except Exception:
+        outputs = []
+    function_calls = [item for item in outputs if _item_type(item) == "function_call"]
+    usage = _extract_usage(response)
+    output_text = getattr(response, "output_text", None) or extract_text_output(response) or ""
+    logger.debug(
+        "responses.create[%s]: %.2fs outputs=%d function_calls=%d text_len=%d usage=%s",
+        label,
+        elapsed_s,
+        len(outputs),
+        len(function_calls),
+        len(output_text),
+        usage or {},
+    )
 
 def run_agent_multi_output(
     runtime: AgentRuntime,
@@ -266,6 +300,23 @@ def run_agent_multi_output(
         document["data"] = data
         return document
 
+    def _normalize_workouts_plan_meta(document: dict[str, Any]) -> dict[str, Any]:
+        """Coerce workouts_plan meta fields to match schema constants."""
+        if not isinstance(document, dict):
+            return document
+        meta = document.get("meta")
+        if not isinstance(meta, dict):
+            return document
+        meta["artifact_type"] = "WORKOUTS_PLAN"
+        meta["schema_id"] = "WorkoutsPlanInterface"
+        meta["schema_version"] = "1.2"
+        meta["authority"] = "Binding"
+        meta["owner_agent"] = "Micro-Planner"
+        if "notes" not in meta or meta.get("notes") is None:
+            meta["notes"] = ""
+        document["meta"] = meta
+        return document
+
     def _normalize_block_governance(document: dict[str, Any]) -> dict[str, Any]:
         """Ensure BLOCK_GOVERNANCE weekly bands are non-degenerate."""
         if not isinstance(document, dict):
@@ -366,7 +417,12 @@ def run_agent_multi_output(
             payload["tool_choice"] = {"type": "function", "name": forced_tool_name}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
-        return runtime.client.responses.create(**payload)
+        start = time.perf_counter()
+        response = runtime.client.responses.create(**payload)
+        elapsed = time.perf_counter() - start
+        label = forced_tool_name or ("file_search" if force_search_flag else "auto")
+        _log_response_diagnostics(response, label=label, elapsed_s=elapsed)
+        return response
 
     produced: dict[str, Any] = {}
     wanted_tool_names = {spec.tool_name for spec in output_specs}
@@ -449,6 +505,8 @@ def run_agent_multi_output(
                     parsed = _fill_season_scenarios(parsed)
                     parsed = _fill_macro_overview(parsed)
                     parsed = _normalize_block_governance(parsed)
+                    if spec.artifact_type == ArtifactType.WORKOUTS_PLAN:
+                        parsed = _normalize_workouts_plan_meta(parsed)
                     try:
                         saved = guarded.guard_put_validated(
                             output_spec=spec,
@@ -533,6 +591,8 @@ def run_agent_multi_output(
             document = _fill_season_scenarios(document)
             document = _fill_macro_overview(document)
             document = _normalize_block_governance(document)
+            if spec.artifact_type == ArtifactType.WORKOUTS_PLAN:
+                document = _normalize_workouts_plan_meta(document)
             if spec.envelope and not _is_envelope(document):
                 result = {"ok": False, "error": "Envelope artefact must be an object with meta and data"}
                 input_list.append(

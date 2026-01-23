@@ -60,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Strict multi-output runner now falls back to storing validated JSON when the model omits the store tool call.
 - Strict runner now forces tool calls for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `MACRO_OVERVIEW` when missing.
 - Runner normalizes season-scenario payloads (required arrays, disallowed keys) before validation.
+- Runner normalizes workouts plan meta fields to schema constants before validation.
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
 
 ### Changed
