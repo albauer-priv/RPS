@@ -501,6 +501,11 @@ def date_to_iso_week(target_date: date | datetime) -> tuple[int, int]:
     return int(iso_year), int(iso_week)
 
 
+def last_iso_week(iso_year: int) -> int:
+    """Return the last ISO week number for the given ISO year."""
+    return date(iso_year, 12, 28).isocalendar()[1]
+
+
 def last_complete_week_end(today: date) -> date:
     """Return the last completed ISO week end (Sunday) before the given date."""
     if today.isoweekday() == 7:
@@ -704,6 +709,8 @@ def build_zone_model_payload(
     valid_from = run_ts.date().isoformat()
     iso_year, iso_week = date_to_iso_week(run_ts)
     version_key = f"{iso_year}-{iso_week:02d}"
+    last_week = last_iso_week(iso_year)
+    iso_week_range = f"{version_key}--{iso_year}-{last_week:02d}"
     filename = f"zone_model_power_{int(round(ftp_watts))}W_{valid_from}"
 
     zones = []
@@ -742,7 +749,7 @@ def build_zone_model_payload(
             "created_at": run_ts.isoformat(),
             "scope": "Shared",
             "iso_week": version_key,
-            "iso_week_range": f"{version_key}--{version_key}",
+            "iso_week_range": iso_week_range,
             "temporal_scope": {
                 "from": valid_from,
                 "to": f"{iso_year}-12-31",
