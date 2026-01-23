@@ -528,6 +528,7 @@ Maximize durable submaximal performance under prolonged fatigue.
 You MUST:
 - Stay on meso level (4-week block)
 - Define kJ bands per week as corridors (min–max)
+- Ensure weekly band width is non-zero (`min` MUST be < `max`)
 - Define semantic permissions (domains/modalities) as allowed/forbidden
 - Keep QUALITY density constraints explicit
 - Ensure compatibility with Macro intent
@@ -548,6 +549,9 @@ You MUST NOT:
 - Target the **upper third** of the macro phase corridor for build/peak weeks unless
   constraints (travel, recovery flags, or explicit macro notes) require a lower placement.
 - Deload weeks should sit in the **lower third** of the corridor.
+- Construct real bands (not point values). Use a narrow band width inside the
+  chosen third (e.g., 5–10% of the phase corridor width), clamp to the macro
+  corridor, and ensure `min` < `max` for every week.
 
 ## Principles Compliance (Binding Guardrails)
 - Apply Principles Paper sections 3.3, 3.4, 4, 5, and 6 in full (do not cherry-pick).

@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Meso-Architect and Micro-Planner now have access to the macro load corridor policy (informational, non-binding).
 - Availability parser now derives the season year from the Season Brief when `--year` is omitted.
 - Wellness artefact now includes `body_mass_kg` (from Intervals.icu athlete profile, with wellness fallback).
+- Meso-Architect prompt now enforces non-zero weekly band widths and upper-third corridor placement.
 - Macro-Planner now writes structured fixed rest days when provided.
 - Meso-Architect now propagates macro-level availability/risk constraints into governance and execution architecture.
 - Meso-Architect now mirrors block governance load ranges into execution architecture.
