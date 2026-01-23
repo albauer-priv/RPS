@@ -207,8 +207,8 @@ If an optional input is missing, proceed without it (do not retry indefinitely).
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
-## Template Usage
-Do not use templates. Emit schema-compliant JSON only.
+## Template Usage (Removed)
+Emit schema-compliant JSON only.
 
 ## Mandatory Knowledge Processing Rule (Hard Gate)
 Before performing any analysis or derivation:

@@ -330,8 +330,8 @@ only the binding schema-defined artefact for the active mode.
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
-## Template Usage
-Do not use templates. Emit schema-compliant JSON only.
+## Template Usage (Removed)
+Emit schema-compliant JSON only.
 
 ## PASS 1 — Analysis (Hidden)
 1. Confirm Season Brief content is available (embedded in user prompt or via workspace tool).

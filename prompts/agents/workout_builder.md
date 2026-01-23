@@ -217,8 +217,8 @@ The Workout-Builder MUST NOT:
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
-## Template Usage
-Do not use templates. Emit schema-compliant JSON only.
+## Template Usage (Removed)
+Emit schema-compliant JSON only.
 
 ## Three-Pass Execution Protocol (MANDATORY)
 

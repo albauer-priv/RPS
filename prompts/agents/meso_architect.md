@@ -453,7 +453,7 @@ If an optional input is missing, proceed without it (do not retry indefinitely).
 - Use attribute filters for knowledge sources (not workspace artefacts).
 - Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
 - Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
-- Templates: `type=Template` + `template_for=<...>` (for BLOCK_GOVERNANCE, always query this filter first).
+- Templates are not used. Do not query template filters.
 - Contracts: `type=Contract` + `contract_name=<...>`.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
