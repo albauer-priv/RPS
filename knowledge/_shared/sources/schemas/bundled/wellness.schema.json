@@ -154,6 +154,7 @@
       "additionalProperties": false,
       "required": [
         "entries",
+        "body_mass_kg",
         "notes"
       ],
       "properties": {
@@ -304,6 +305,13 @@
               }
             }
           }
+        },
+        "body_mass_kg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
         },
         "notes": {
           "type": "string"
@@ -530,6 +538,7 @@
       "additionalProperties": false,
       "required": [
         "entries",
+        "body_mass_kg",
         "notes"
       ],
       "properties": {
@@ -680,6 +689,13 @@
               }
             }
           }
+        },
+        "body_mass_kg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
         },
         "notes": {
           "type": "string"

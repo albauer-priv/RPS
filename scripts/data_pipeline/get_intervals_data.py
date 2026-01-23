@@ -580,7 +580,7 @@ def _round_pct(value: float) -> float | int:
 
 
 def _extract_weight_kg(athlete_data: dict) -> float | None:
-    for key in ("weight", "weight_kg", "body_weight", "bodyWeight", "weightKg"):
+    for key in ("weight", "icu_weight", "weight_kg", "body_weight", "bodyWeight", "weightKg"):
         val = athlete_data.get(key)
         if isinstance(val, (int, float)) and val > 0:
             return float(val)
@@ -870,6 +870,8 @@ def write_wellness(
     skip_validate: bool,
 ) -> None:
     run_ts = datetime.now(timezone.utc)
+    athlete_data = get_athlete(athlete_id, base_url)
+    body_mass_kg = _extract_weight_kg(athlete_data)
     entries = get_wellness(athlete_id, base_url, from_date, to_date)
     if not entries:
         print("Wellness skipped (no entries).")
@@ -909,6 +911,9 @@ def write_wellness(
     if not normalized:
         print("Wellness skipped (no dated entries).")
         return
+
+    if body_mass_kg is None:
+        body_mass_kg = _extract_latest_weight_from_wellness(entries)
 
     normalized.sort(key=lambda item: item["date"])
     start_day = _parse_date(normalized[0]["date"])
@@ -952,6 +957,7 @@ def write_wellness(
         "meta": meta,
         "data": {
             "entries": normalized,
+            "body_mass_kg": body_mass_kg,
             "notes": "Intervals.icu wellness daily entries.",
         },
     }

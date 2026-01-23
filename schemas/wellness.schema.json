@@ -154,6 +154,7 @@
       "additionalProperties": false,
       "required": [
         "entries",
+        "body_mass_kg",
         "notes"
       ],
       "properties": {
@@ -162,6 +163,13 @@
           "items": {
             "$ref": "#/$defs/wellness_entry"
           }
+        },
+        "body_mass_kg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
         },
         "notes": {
           "type": "string"

@@ -69,6 +69,17 @@ Each entry MUST provide every field (values may be null):
 
 ---
 
+## Data-Level Fields (REQUIRED)
+
+In addition to entries, the artefact MUST include:
+
+- `body_mass_kg` (number or null)
+  - Derived from Intervals.icu athlete profile weight when available.
+  - If not available, use the latest non-null wellness weight.
+  - If neither is available, set to null and note the limitation.
+
+---
+
 ## Interpretation Rules
 
 ### Macro-Planner
