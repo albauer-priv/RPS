@@ -263,6 +263,13 @@ def run_overview(args: argparse.Namespace) -> int:
                 "Selected scenario details could not be loaded; proceed with Scenario label only.\n"
             )
 
+    band_line = ""
+    if args.moving_time_rate_band:
+        band_line = (
+            "Use KPI moving_time_rate_guidance band '"
+            f"{args.moving_time_rate_band}' when deriving weekly kJ corridors. "
+        )
+
     user_input = (
         f"Scenario {scenario}. Mode A. Output the MACRO_OVERVIEW JSON now. "
         "Set meta.schema_id exactly to MacroOverviewInterface, "
@@ -271,6 +278,7 @@ def run_overview(args: argparse.Namespace) -> int:
         "Use workspace_get_latest with artifact_type KPI_PROFILE (not a filename). "
         "Use workspace_get_latest with artifact_type SEASON_SCENARIO_SELECTION when available "
         "and align the plan to the selected scenario label. "
+        f"{band_line}"
         "Strict schema guards: each phase MUST include structural_emphasis and events_constraints "
         "(use [] when no events). Put typical_duration_intensity_pattern and non_negotiables "
         "only inside overview, never at phase top level. allowed_forbidden_semantics must "
@@ -401,6 +409,10 @@ def build_parser() -> argparse.ArgumentParser:
     overview.add_argument("--scenario", help="A, B, or C.")
     overview.add_argument("--scenario-run-id", help="Optional run id from scenarios step.")
     overview.add_argument("--allow-missing-events", action="store_true")
+    overview.add_argument(
+        "--moving-time-rate-band",
+        help="Override KPI moving_time_rate_guidance band (e.g., brevet_ultra_sustainable, fast_competitive, top_record_oriented).",
+    )
     overview.set_defaults(func=run_overview)
 
     select = subparsers.add_parser("select", parents=[base])
