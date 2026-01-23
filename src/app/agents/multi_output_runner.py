@@ -266,6 +266,55 @@ def run_agent_multi_output(
         document["data"] = data
         return document
 
+    def _normalize_block_governance(document: dict[str, Any]) -> dict[str, Any]:
+        """Ensure BLOCK_GOVERNANCE weekly bands are non-degenerate."""
+        if not isinstance(document, dict):
+            return document
+        meta = document.get("meta") or {}
+        if str(meta.get("artifact_type", "")).upper() != "BLOCK_GOVERNANCE":
+            return document
+        data = document.get("data")
+        if not isinstance(data, dict):
+            return document
+        load_guardrails = data.get("load_guardrails")
+        if not isinstance(load_guardrails, dict):
+            return document
+
+        def _widen_band(entry: dict[str, Any]) -> None:
+            band = entry.get("band")
+            if not isinstance(band, dict):
+                return
+            min_val = band.get("min")
+            max_val = band.get("max")
+            if isinstance(min_val, (int, float)) and isinstance(max_val, (int, float)):
+                if min_val > max_val:
+                    min_val, max_val = max_val, min_val
+                if min_val == max_val:
+                    base = float(min_val)
+                    width = max(1.0, base * 0.05)
+                    note = str(band.get("notes", "")).lower()
+                    if "deload" in note or "taper" in note:
+                        new_min = max(0.0, base - width)
+                        new_max = base
+                    else:
+                        new_min = max(0.0, base - width / 2)
+                        new_max = base + width / 2
+                    band["min"] = round(new_min, 2)
+                    band["max"] = round(new_max, 2)
+                else:
+                    band["min"] = float(min_val)
+                    band["max"] = float(max_val)
+
+        for key in ("weekly_kj_bands", "weekly_tss_bands"):
+            rows = load_guardrails.get(key)
+            if not isinstance(rows, list):
+                continue
+            for entry in rows:
+                if isinstance(entry, dict):
+                    _widen_band(entry)
+
+        return document
+
     def _fill_macro_overview(document: dict[str, Any]) -> dict[str, Any]:
         """Normalize common MACRO_OVERVIEW placement issues."""
         if not isinstance(document, dict):
@@ -399,6 +448,7 @@ def run_agent_multi_output(
                 else:
                     parsed = _fill_season_scenarios(parsed)
                     parsed = _fill_macro_overview(parsed)
+                    parsed = _normalize_block_governance(parsed)
                     try:
                         saved = guarded.guard_put_validated(
                             output_spec=spec,
@@ -482,6 +532,7 @@ def run_agent_multi_output(
             document = _coerce_envelope_args(args) if spec.envelope else args.get("workouts")
             document = _fill_season_scenarios(document)
             document = _fill_macro_overview(document)
+            document = _normalize_block_governance(document)
             if spec.envelope and not _is_envelope(document):
                 result = {"ok": False, "error": "Envelope artefact must be an object with meta and data"}
                 input_list.append(
