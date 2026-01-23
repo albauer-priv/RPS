@@ -60,6 +60,9 @@ structural architecture without introducing week- or workout-level planning.
 - MUST NOT derive block adjustments directly from `des_analysis_report_yyyy-ww.json`.
 - MUST preserve macro availability assumptions and fixed rest days in block governance
   non-negotiables and recovery protection rules.
+- If the user explicitly specifies an `iso_week_range` for block governance or execution,
+  it MUST be honored and may override phase-aligned block context resolution; document
+  the override in `meta.notes`.
 
 ## 4) Artefacts and Schemas (Binding)
 

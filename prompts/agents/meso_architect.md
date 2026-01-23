@@ -334,7 +334,7 @@ In conflicts, higher wins:
 # Instruction Extension — Input/Output Contract
 
 ## Required inputs (for any governance output)
-- `MACRO_OVERVIEW` (latest; resolve block range via workspace_get_block_context)
+- `MACRO_OVERVIEW` (latest; resolve block range via workspace_get_block_context **unless** the user provides an explicit `iso_week_range` in the request, which must take precedence)
 
 ## Optional inputs (informational, may inform adjustments)
 - `activities_trend_*`
@@ -379,8 +379,8 @@ Evidence may support rationale where the schema allows, but never overrides gove
 # Instruction Extension — Execution Protocol
 
 ## Current System Tooling
-- Resolve block ranges via workspace_get_block_context (phase-aligned, clamped).
-- Set meta.iso_week_range to the resolved block range for block artifacts.
+- Resolve block ranges via workspace_get_block_context (phase-aligned, clamped) **unless** the user explicitly provides an `iso_week_range` in the request. A user-provided `iso_week_range` overrides phase alignment and must be used.
+- Set meta.iso_week_range to the **user-provided** block range when present; otherwise use the resolved block range.
 - If strict tools allow multi-output, emit one artifact per strict tool call.
 - Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
   Do NOT use file_search for user inputs.
@@ -390,9 +390,18 @@ Evidence may support rationale where the schema allows, but never overrides gove
   - Pass `payload` as the **data** object only (no meta fields inside payload).
   - Pass `meta` separately as a full `artefact_meta.schema.json` object.
   - Do NOT invent legacy fields (e.g., `block_range`, `semantic_permissions`, `weekly_load_corridor`).
+  - Set `meta.schema_id` to the correct interface:
+    - BLOCK_GOVERNANCE → `BlockGovernanceInterface`
+    - BLOCK_EXECUTION_ARCH → `BlockExecutionArchInterface`
+    - BLOCK_EXECUTION_PREVIEW → `BlockExecutionPreviewInterface`
+    - BLOCK_FEED_FORWARD → `BlockFeedForwardInterface`
+  - Set `meta.authority` to `Binding` for:
+    - BLOCK_GOVERNANCE
+    - BLOCK_EXECUTION_ARCH
+    - BLOCK_EXECUTION_PREVIEW
+    - BLOCK_FEED_FORWARD
 Use the JSON schemas directly for governance and execution artefacts.
 Do NOT use templates; the schema is authoritative.
-  - `data.traceability.derived_from` MUST include the `block_execution_arch_*.json` filename.
 - BLOCK_GOVERNANCE data must include:
   - `body_metadata`, `block_summary`, `load_guardrails`, `allowed_forbidden_semantics`,
     `events_constraints`, `execution_non_negotiables`, `escalation_change_control`,
@@ -414,10 +423,25 @@ Do NOT use templates; the schema is authoritative.
     `events_constraints.events[].constraint` if you can derive an event entry).
   - Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).
 - BLOCK_EXECUTION_ARCH mapping (must include, do not omit):
-  - `upstream_intent.constraints` must include macro availability + risk constraints.
-  - `load_ranges` MUST mirror `block_governance.load_guardrails.weekly_kj_bands` and
-    `weekly_tss_bands` (same weeks, min/max, notes). Set `load_ranges.source`
-    to the block_governance filename.
+  - `upstream_intent.constraints` MUST include (verbatim) all of:
+    - `macro_overview.data.global_constraints.availability_assumptions`
+    - `macro_overview.data.global_constraints.risk_constraints`
+    - `macro_overview.data.global_constraints.planned_event_windows`
+    - `macro_overview.data.global_constraints.recovery_protection.notes`
+  - `upstream_intent.key_risks_warnings` MUST be copied from
+    `block_governance.block_summary.key_risks_warnings` (verbatim).
+  - `load_ranges.weekly_kj_bands` MUST be copied **exactly** from
+    `block_governance.load_guardrails.weekly_kj_bands` (same weeks, min/max, notes).
+  - `load_ranges.weekly_tss_bands` MUST be copied **exactly** from
+    `block_governance.load_guardrails.weekly_tss_bands` (same weeks, min/max, notes).
+  - `load_ranges.source` MUST be the stored block governance filename:
+    `block_governance_YYYY-WW.json` (use the artifact version key, not the iso_week_range).
+  - `load_ranges` MUST NOT include `confidence_assumptions` or any fields beyond
+    `weekly_kj_bands`, `weekly_tss_bands`, and `source`.
+  - For BLOCK_EXECUTION_PREVIEW `data.traceability` MUST include only:
+    - `derived_from`
+    - `conflict_resolution`
+    (no extra fields like `notes`; additional properties are forbidden).
   - `execution_principles.recovery_protection.fixed_non_training_days` MUST be sourced from:
     1) `macro_overview.data.global_constraints.recovery_protection.fixed_rest_days`, else
     2) parse weekday names from `availability_assumptions`.
@@ -428,7 +452,8 @@ Do NOT use templates; the schema is authoritative.
 
 ## Access Hints (Tools)
 - Mode A (new block governance):
-  - Block context (current block): `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - If the user provides `iso_week_range`, skip block context resolution and use the provided range.
+  - Otherwise block context (current block): `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Block context (next block): `workspace_get_block_context({ "year": YYYY, "week": WW, "offset_blocks": 1 })`
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
@@ -436,14 +461,16 @@ Do NOT use templates; the schema is authoritative.
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode B (running block update):
-  - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - If the user provides `iso_week_range`, use it and skip block context resolution.
+  - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
   - Events (optional; if present): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (no-change):
-  - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
+  - If the user provides `iso_week_range`, use it and skip block context resolution.
+  - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Events (optional; if present): `workspace_get_input("events")`
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 

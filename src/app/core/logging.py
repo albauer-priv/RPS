@@ -27,7 +27,15 @@ def _normalize_level(level: str | int | None) -> int:
     return _LEVELS.get(level.strip().upper(), logging.INFO)
 
 
-def setup_logging(level: str | int | None = None, log_file: str | Path | None = None) -> None:
+import os
+
+
+def setup_logging(
+    level: str | int | None = None,
+    log_file: str | Path | None = None,
+    *,
+    log_stdout: bool | None = None,
+) -> None:
     """Configure root logging with optional file output."""
     root = logging.getLogger()
     root.handlers.clear()
@@ -40,10 +48,16 @@ def setup_logging(level: str | int | None = None, log_file: str | Path | None = 
     formatter.converter = time.gmtime
 
     handlers: Iterable[logging.Handler] = []
-
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(formatter)
-    handlers = [stream_handler]
+    if log_stdout is None:
+        env = os.getenv("APP_LOG_STDOUT")
+        if env is None:
+            log_stdout = False
+        else:
+            log_stdout = env.strip().lower() not in {"0", "false", "no"}
+    if log_stdout:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+        handlers = [stream_handler]
 
     if log_file:
         path = Path(log_file)
@@ -51,6 +65,11 @@ def setup_logging(level: str | int | None = None, log_file: str | Path | None = 
         file_handler = logging.FileHandler(path, encoding="utf-8")
         file_handler.setFormatter(formatter)
         handlers = [*handlers, file_handler]
+
+    if not handlers:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+        handlers = [stream_handler]
 
     for handler in handlers:
         root.addHandler(handler)

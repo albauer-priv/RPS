@@ -25,7 +25,7 @@ def main() -> None:
     load_env_file(Path(".env"))
     settings = load_app_settings()
     default_athlete = os.getenv("ATHLETE_ID")
-    default_log_level = os.getenv("APP_LOG_LEVEL", "INFO")
+    default_log_level = os.getenv("APP_LOG_LEVEL", "DEBUG")
     default_log_file = os.getenv("APP_LOG_FILE")
 
     strict_only_agents = {
@@ -40,6 +40,11 @@ def main() -> None:
     def add_logging_args(parser: argparse.ArgumentParser) -> None:
         parser.add_argument("--log-level", default=default_log_level)
         parser.add_argument("--log-file", default=default_log_file)
+        parser.add_argument(
+            "--log-stdout",
+            action="store_true",
+            help="Mirror logs to stdout (in addition to log file).",
+        )
 
     base_runtime = AgentRuntime(
         client=get_client(),
@@ -119,10 +124,19 @@ def main() -> None:
         add_logging_args(task_parser)
 
         args = parser.parse_args()
-        setup_logging(args.log_level, args.log_file)
 
         if not args.athlete:
             raise SystemExit("Missing athlete id. Set ATHLETE_ID in .env or pass --athlete.")
+
+        if not args.log_file:
+            log_filename = {
+                "plan-week": "plan_week.log",
+                "run-agent": "agent_run.log",
+                "run-task": "task_run.log",
+            }.get(args.cmd, "app.log")
+            args.log_file = str(settings.workspace_root / args.athlete / "logs" / log_filename)
+
+        setup_logging(args.log_level, args.log_file, log_stdout=args.log_stdout)
 
         if args.cmd == "plan-week":
             result = plan_week(
@@ -223,7 +237,7 @@ def main() -> None:
     parser.add_argument("--non-strict", action="store_true")
     add_logging_args(parser)
     args = parser.parse_args()
-    setup_logging(args.log_level, args.log_file)
+    setup_logging(args.log_level, args.log_file, log_stdout=args.log_stdout)
 
     if not args.athlete:
         raise SystemExit("Missing athlete id. Set ATHLETE_ID in .env or pass --athlete.")
