@@ -19,18 +19,16 @@ Dependencies:
 
 Notes: >
   Defines binding rules and formulas for estimating training load.
-  kJ is the primary planning and governance metric; TSS is secondary
-  and used for explanatory cross-checking only.
+  kJ is the primary planning and governance metric.
 ---
 
 # load_estimation_spec (kJ-first)
 
 This specification defines **how to estimate training load** for planning and governance in RPS.
-Primary steering metric is **kJ**. **TSS is secondary** and used for cross-checking.
+Primary steering metric is **kJ**.
 
 **Key idea:**  
-- **kJ** approximates total mechanical work / fueling demand proxy (planning priority).  
-- **TSS** approximates intensity-weighted stress (supporting metric).
+- **kJ** approximates total mechanical work / fueling demand proxy (planning priority).
 > **Terminology note:** When templates or corridors say “Weekly kJ”, they mean
 > **mechanical** `planned_kJ_week` (sum of session kJ), not stress-weighted load.
 > Stress-weighted load is captured as `planned_Load_kJ_week` and used for
@@ -70,13 +68,11 @@ Mechanical `planned_kJ` remains the primary **planning corridor** metric.
 Per session:
 - `planned_kJ`
 - `planned_Load_kJ`   # stress-weighted kJ (stress metric)
-- `planned_TSS`
 - `planned_IF_adj`
 - `kJ_confidence` (HIGH/MED/LOW)
-- `TSS_confidence` (HIGH/MED/LOW)
 
 Per week / block:
-- sums and bands (`planned_kJ_week`, `planned_Load_kJ_week`, `planned_TSS_week`)
+- sums and bands (`planned_kJ_week`, `planned_Load_kJ_week`)
   and compliance flags vs guardrails.
 
 ---
@@ -84,18 +80,12 @@ Per week / block:
 ## 2) Priority Rule (kJ-first)
 
 1) All governance bands **must exist in kJ** (weekly and/or per key session).
-2) If TSS band conflicts with kJ band, **kJ wins**. TSS is used to explain *why* (e.g., “more quality at same kJ”).
-3) Agents MUST NOT “fix” kJ by inflating intensity; kJ is corrected primarily via **duration/volume** adjustments.
+2) Agents MUST NOT “fix” kJ by inflating intensity; kJ is corrected primarily via **duration/volume** adjustments.
 
 
 Primary planning target is `planned_kJ_week`.
 `planned_Load_kJ_week` is the governing stress metric.
 When a template or corridor says “Weekly kJ”, interpret it as `planned_kJ_week`.
-
-TSS MUST NOT be used to:
-- define weekly targets
-- drive progression
-- justify volume reduction
 
 ---
 
@@ -143,28 +133,7 @@ Where `r_i` is a variability/structure factor (Avg-to-NP ratio).
 
 ---
 
-## 4) TSS Estimation (secondary)
-
-
-TSS is a secondary explanatory metric.
-It MUST NOT be used as an optimization target.
-Its sole purpose is interpretability and cross-checking.
-
-
-### 4.1 Single-intensity approximation
-For steady sessions approximated by one IF:
-- `TSS ≈ hours × IF² × 100`
-
-### 4.2 Mixed-intensity / interval sessions (IF_adj)
-For sessions with multiple segments:
-- `IF_adj = sqrt( Σ(IF_i^4 × t_i) / Σ(t_i) )`
-- `TSS = total_hours × IF_adj² × 100`
-
-These formulas are aligned with the zone model dependency.
-
----
-
-## 5) kJ-based Load Estimation (primary)
+## 4) kJ-based Load Estimation (primary)
 
 planned_Load_kJ is computed as:
 
@@ -180,12 +149,12 @@ Where:
 
 Weekly progression, overload and deload decisions
 MUST be based on planned_Load_kJ_week,
-not on planned_TSS_week.
+not on any secondary stress metric.
 
 
 ---
 
-## 6) Default IF values (from zone model)
+## 5) Default IF values (from zone model)
 
 Agents should pull default typical IF values from the active zone model.
 If the zone model provides typical IFs such as:
@@ -200,11 +169,11 @@ Then for a segment with only a domain label:
 
 ---
 
-## 7) Default variability factors r_i (Avg-to-NP)
+## 6) Default variability factors r_i (Avg-to-NP)
 
 Because NP ≥ AvgPower when variability exists, we define conservative defaults:
 
-### 7.1 r_i table (defaults)
+### 6.1 r_i table (defaults)
 - RECOVERY / ENDURANCE steady: `r = 0.97`  
 - TEMPO steady-ish: `r = 0.95`  
 - SST / Threshold-like: `r = 0.92`  
@@ -216,7 +185,7 @@ Because NP ≥ AvgPower when variability exists, we define conservative defaults
 - If a workout contains hard/soft repeats, keep r conservative.
 - r is a *planning heuristic*; do not overfit.
 
-### 7.2 Confidence scoring for kJ
+### 6.2 Confidence scoring for kJ
 Set `kJ_confidence`:
 - HIGH: steady sessions, clear duration, domain stable, r well-matched
 - MED: mixed session but segment split is clear
@@ -229,7 +198,6 @@ Set `kJ_confidence`:
 ### 8.1 Macro-Planner (8–32 weeks)
 Macro does NOT estimate per-session. Macro produces:
 - `kJ_week_band` per phase (min–max)
-- optional `TSS_week_band` as explanatory cross-check
 - constraints: allowed domains, max QUALITY density, protected recovery
 
 Macro inputs:
@@ -240,7 +208,6 @@ Macro outputs:
 ### 8.2 Meso-Architect (4 weeks)
 Block sets 4-week guardrails:
 - `kJ_week_band` for each week (or for the block with week-level notes)
-- optional `TSS_week_band` as cross-check
 - max QUALITY days/week, allowed domains, modality rules (e.g., K3 allowed)
 
 Meso-Architect must ensure:
@@ -252,7 +219,6 @@ Meso-Architect must ensure:
 Micro estimates per workout:
 - planned_kJ (volume target)
 - planned_Load_kJ (stress)
-- planned_TSS (secondary)
 
 Micro adjusts volume to hit kJ targets
 and intensity distribution to keep Load within guardrails.
@@ -276,7 +242,6 @@ Compute:
 - NP = IF×FTP
 - Avg = NP×r
 - kJ = Avg×7200/1000
-- TSS = 2×IF²×100
 
 ### Example B: SST session with warm-up/cool-down
 Segments:
@@ -287,7 +252,6 @@ Segments:
 Compute:
 - IF_adj via IF^4 weighting
 - planned_kJ via segment kJ sum
-- planned_TSS via IF_adj
 
 ### Example C: VO2MAX intervals
 Segments:
@@ -296,7 +260,6 @@ Segments:
 - 20min ENDURANCE
 Use:
 - r=0.88 for VO2MAX segment
-- IF_adj for TSS
 
 (Use actual typical IFs from the zone model file.)
 
@@ -304,7 +267,7 @@ Use:
 
 ## 10) Compliance & traceability requirements
 
-Every artefact that reports kJ/TSS MUST include:
+Every artefact that reports kJ MUST include:
 - `FTP_W` used (or “unknown” + STOP if required)
 - `ZoneModelVersion`
 - `load_estimation_spec`

@@ -200,7 +200,6 @@ def build_macro_overview_context(doc):
     for phase in data.get("phases", []):
         overview = phase.get("overview", {})
         weekly_kj = phase.get("weekly_load_corridor", {}).get("weekly_kj")
-        weekly_tss = phase.get("weekly_load_corridor", {}).get("weekly_tss")
         semantics = phase.get("allowed_forbidden_semantics", {})
         phases.append(
             {
@@ -228,7 +227,6 @@ def build_macro_overview_context(doc):
                     "non_negotiables": overview.get("non_negotiables", []),
                 },
                 "weekly_kj": weekly_kj or {},
-                "weekly_tss": weekly_tss,
                 "allowed_intensity_domains": semantics.get("allowed_intensity_domains", []),
                 "allowed_load_modalities": semantics.get("allowed_load_modalities", []),
                 "forbidden_intensity_domains": semantics.get("forbidden_intensity_domains", []),
@@ -393,9 +391,6 @@ def build_block_governance_context(doc):
         "weekly_kj_bands": weekly_band_rows(
             load_guardrails.get("weekly_kj_bands", [])
         ),
-        "weekly_tss_bands": weekly_band_rows(
-            load_guardrails.get("weekly_tss_bands", [])
-        ),
         "confidence_assumptions": {
             "ftp_watts_used": confidence_assumptions.get("ftp_watts_used"),
             "zone_model_version": confidence_assumptions.get("zone_model_version"),
@@ -478,9 +473,6 @@ def build_workouts_plan_context(doc):
                 "day_role": row.get("day_role", ""),
                 "planned_duration": row.get("planned_duration", ""),
                 "planned_kj": fmt_number(row.get("planned_kj")),
-                "planned_tss": fmt_number(row.get("planned_tss"))
-                if row.get("planned_tss") is not None
-                else "",
                 "workout_id": row.get("workout_id") or "",
             }
         )
@@ -514,9 +506,6 @@ def build_workouts_plan_context(doc):
                 "notes": load_corridor.get("notes", ""),
             },
             "planned_weekly_load_kj": fmt_number(week_summary.get("planned_weekly_load_kj")),
-            "cross_check_tss": fmt_number(week_summary.get("cross_check_tss"))
-            if week_summary.get("cross_check_tss") is not None
-            else "",
             "notes": week_summary.get("notes", ""),
         },
         "agenda": agenda_rows,
@@ -770,9 +759,6 @@ def build_block_feed_forward_context(doc):
         "delta_load_guardrails": {
             "adjusted_weekly_kj_bands": delta_rows(
                 delta_load_guardrails.get("adjusted_weekly_kj_bands", [])
-            ),
-            "adjusted_weekly_tss_bands": delta_rows(
-                delta_load_guardrails.get("adjusted_weekly_tss_bands", [])
             ),
         },
         "temporary_semantic_overrides": {
@@ -1273,21 +1259,17 @@ def build_zone_model_context(doc):
                 "structure": example.get("structure", ""),
                 "duration": example.get("duration", ""),
                 "if_adj": "" if example.get("if_adj") is None else fmt_number(example.get("if_adj")),
-                "tss": "" if example.get("tss") is None else fmt_number(example.get("tss")),
             }
         )
 
     z2_np_example = ""
-    z2_tss_example = ""
     z2_zone = next((zone for zone in zones if zone.get("zone_id") == "Z2"), None)
     if z2_zone and ftp_watts is not None and z2_zone.get("typical_if"):
         try:
             z2_if = float(z2_zone["typical_if"])
             z2_np_example = fmt_number(z2_if * float(ftp_watts))
-            z2_tss_example = fmt_number(3 * (z2_if ** 2) * 100)
         except ValueError:
             z2_np_example = ""
-            z2_tss_example = ""
 
     context = {
         "meta": meta,
@@ -1304,7 +1286,6 @@ def build_zone_model_context(doc):
         "examples": examples,
         "versioning_usage": data.get("versioning_usage", []),
         "z2_np_example": z2_np_example,
-        "z2_tss_example": z2_tss_example,
     }
     return context
 

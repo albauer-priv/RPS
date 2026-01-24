@@ -481,7 +481,7 @@
               "day-by-day structure",
               "workouts or interval prescriptions",
               "numeric progression rules",
-              "daily or session-level kJ/TSS targets"
+              "daily or session-level kJ targets"
             ]
           }
         },
@@ -687,15 +687,11 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "weekly_kj",
-            "weekly_tss"
+            "weekly_kj"
           ],
           "properties": {
             "weekly_kj": {
               "$ref": "load_band_kj_per_kg.schema.json"
-            },
-            "weekly_tss": {
-              "$ref": "load_band.schema.json"
             }
           }
         },

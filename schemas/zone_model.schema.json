@@ -140,8 +140,7 @@
               "workout_name",
               "structure",
               "duration",
-              "if_adj",
-              "tss"
+              "if_adj"
             ],
             "properties": {
               "workout_name": {
@@ -157,9 +156,6 @@
                 "pattern": "^\\d{1,3}:\\d{2}(:\\d{2})?$"
               },
               "if_adj": {
-                "type": "number"
-              },
-              "tss": {
                 "type": "number"
               }
             }

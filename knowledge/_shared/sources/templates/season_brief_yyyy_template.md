@@ -124,16 +124,16 @@ Keep measured and derived values separate for transparency.
 
 **Measured values (directly recorded)**
 Enter raw totals from the source without additional calculations.
-| Year | Rides | Distance (km) | Time (h) | Work (kJ) | TSS/Load | Notes |
-|------|-------|----------------|---------|----------|------------|------|
+| Year | Rides | Distance (km) | Time (h) | Work (kJ) | Notes |
+|------|-------|----------------|---------|----------|------|
 | 2023 | | | | | | |
 | 2024 | | | | | | |
 | 2025 | | | | | | |
 
 **Derived values (calculated or estimated)**
 Enter calculated metrics and note any estimation method in Notes.
-| Year | TSS/Load per ride | kJ/ride | kJ/h | h/ride | kJ/day | Notes |
-|------|-------------------|---------|------|--------|--------|------|
+| Year | kJ/ride | kJ/h | h/ride | kJ/day | Notes |
+|------|---------|------|--------|--------|------|
 | 2023 | | | | | | |
 | 2024 | | | | | | |
 | 2025 | | | | | | |

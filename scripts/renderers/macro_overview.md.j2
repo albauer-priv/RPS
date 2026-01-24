@@ -85,8 +85,6 @@ Trace-Upstream:
 | Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
 |---|---:|---:|---:|---:|---|
 | Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes or '' }} |
-{% if phase.weekly_tss %}| Optional: Weekly TSS | {{ phase.weekly_tss.min }} | {{ phase.weekly_tss.max }} |  |  | {{ phase.weekly_tss.notes or '' }} |
-{% endif %}
 
 #### Allowed / Forbidden Semantics (REQUIRED)
 

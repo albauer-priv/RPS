@@ -77,7 +77,7 @@ Use this map to find binding enums/specs. Read the full artefact from its file.
 | AgendaEnumSpec (INTENSITY_DOMAIN_ENUM, LOAD_MODALITY_ENUM) | `agenda_enum_spec.md` | Use ONLY values listed there. |
 | MacroCycleEnumSpec (MACRO_CYCLE_ENUM) | `macro_cycle_enum_spec.md` | Cycle labels are case-sensitive. |
 | LoadEstimationSpec (kJ / kJ/kg guardrails) | `load_estimation_spec.md` | Required for kJ/kg guidance. |
-| MacroLoadCorridorPolicy | `macro_load_corridor_policy.md` | Required for weekly kJ/TSS corridor derivation. |
+| MacroLoadCorridorPolicy | `macro_load_corridor_policy.md` | Required for weekly kJ corridor derivation. |
 
 ### Binding Knowledge Sources
 - `principles_durability_first_cycling.md`
@@ -498,7 +498,7 @@ Emit schema-compliant JSON only.
 - `Body-Mass-kg` MUST be sourced from WELLNESS (`body_mass_kg`) and copied to
   `body_metadata.body_mass_kg`. If wellness body mass is missing, STOP and request it.
 
-## kJ/TSS Derivation (Binding)
+## kJ Derivation (Binding)
 Follow `macro_load_corridor_policy.md` for corridor derivation. The policy is binding and
 supersedes any informal heuristics. It requires:
 - kJ-first corridors derived from Activities Trend + Availability capacity.
@@ -513,7 +513,7 @@ supersedes any informal heuristics. It requires:
 - `agenda_enum_spec.md`: INTENSITY_DOMAIN_ENUM and LOAD_MODALITY_ENUM.
 - `macro_cycle_enum_spec.md`: MACRO_CYCLE_ENUM values.
 - `load_estimation_spec.md`: kJ and kJ/kg guidance.
-- `macro_load_corridor_policy.md`: weekly kJ/TSS corridor derivation policy.
+- `macro_load_corridor_policy.md`: weekly kJ corridor derivation policy.
 - `contract_precedence_spec.md`: governance precedence.
 - `file_naming_spec.md`: naming conventions.
 - `season_brief_interface_spec.md`: season brief required fields.
@@ -523,7 +523,7 @@ supersedes any informal heuristics. It requires:
 
 ### Primary Objective
 Maximize durable submaximal performance under prolonged fatigue.  
-**kJ** is the **primary steering metric**, **TSS** is secondary (cross-check).
+**kJ** is the **primary steering metric**.
 
 ### Planning Constraints
 - Macro scope: 8–32 weeks.

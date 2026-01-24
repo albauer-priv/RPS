@@ -73,7 +73,7 @@ For ultra and brevet distances, **mechanical work (kilojoules, kJ)** is the **pr
 ### 2.2 Hierarchy of steering metrics
 1. **Primary:** kJ (per session, week, block, year)
 2. **Secondary:** CTL, ATL, TSB (tolerance and trend)
-3. **Tertiary:** TSS, IF, intensity distribution (characterization)
+3. **Tertiary:** IF, intensity distribution (characterization)
 
 CTL/TSB are deliberately **not** used as leading metrics because they do not represent fatigue resistance.
 

@@ -34,8 +34,10 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (  # noqa: E402
     athlete_data_dir,
     athlete_latest_dir,
+    athlete_root,
     configure_logging,
     load_env,
+    parse_iso_week,
     record_index_write,
     require_env,
     resolve_athlete_id,
@@ -47,7 +49,6 @@ from app.workspace.schema_registry import SchemaRegistry, SchemaValidationError,
 SEPARATOR = ";"  # Intervals.icu export
 QUOTECHAR = '"'
 Z2_MIN_THRESHOLD_MIN = 90
-TSS_PLAN_BY_WEEK: dict[tuple[int, int], int] = {}
 DEFAULT_WEEKS = 24
 REQUIRED_COLUMNS = [
     "Year",
@@ -142,6 +143,39 @@ REQUIRED_COLUMNS = [
     "Any Flag DES Long Build Candidate (bool)",
     "Any Flag Brevet Long Candidate (bool)",
 ]
+
+
+def load_kj_plan_by_week(athlete_id: str) -> dict[tuple[int, int], float]:
+    """Load planned weekly kJ from workouts_plan artefacts when available."""
+    plan_map: dict[tuple[int, int], float] = {}
+    base = athlete_root(athlete_id)
+    candidate_dirs = [base / "data" / "plans" / "micro", base / "plans" / "micro"]
+    for plan_dir in candidate_dirs:
+        if not plan_dir.exists():
+            continue
+        for path in sorted(plan_dir.glob("workouts_plan_*.json")):
+            try:
+                doc = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            meta = doc.get("meta", {})
+            iso_week = meta.get("iso_week") or path.stem.replace("workouts_plan_", "")
+            parsed = parse_iso_week(iso_week)
+            if not parsed:
+                continue
+            data = doc.get("data", {})
+            week_summary = data.get("week_summary", {})
+            planned = week_summary.get("planned_weekly_load_kj")
+            if planned is None:
+                planned = sum(
+                    float(day.get("planned_kj") or 0)
+                    for day in data.get("agenda", [])
+                    if isinstance(day, dict)
+                )
+            if planned is None:
+                continue
+            plan_map[(parsed["year"], parsed["week"])] = float(planned)
+    return plan_map
 
 
 # HTTP session with retries and a fixed timeout
@@ -795,7 +829,7 @@ def build_zone_model_payload(
             "zones": zones,
             "examples": [],
             "versioning_usage": [
-                "Use this zone model for IF/TSS calculations and workout encoding.",
+                "Use this zone model for IF calculations and workout encoding.",
                 "Update when FTP changes materially or sportSettings are recalibrated.",
             ],
         },
@@ -1889,6 +1923,7 @@ def compile_activities_trend(
                 count += 1
         return int(count)
 
+    kj_plan_by_week = load_kj_plan_by_week(athlete_id)
     rows = []
     weekly_trends_json = []
     for (yr, wk), g in df.groupby(["ISO_Year", "ISO_Week"], sort=True):
@@ -1951,10 +1986,10 @@ def compile_activities_trend(
             vo2_ftp_ratio = mmp_out_raw[300] / ftp_est_mean_raw
 
         adher = None
-        if (yr, wk) in TSS_PLAN_BY_WEEK and not pd.isna(tss_sum_raw):
-            plan = TSS_PLAN_BY_WEEK[(yr, wk)]
+        if (yr, wk) in kj_plan_by_week and not pd.isna(kj_sum_raw):
+            plan = kj_plan_by_week[(yr, wk)]
             if plan:
-                adher = int(round(100.0 * tss_sum_raw / plan))
+                adher = int(round(100.0 * kj_sum_raw / plan))
 
         b2b = count_back_to_back_z2_days(g, pz_cols[2])
 

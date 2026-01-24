@@ -60,21 +60,13 @@ Trace-Upstream:
 {% endfor %}{% else %}| N/A | N/A | N/A | N/A |
 {% endif %}
 
-### 2.2 Optional: Weekly TSS Band (Cross-check)
-| Week | TSS min | TSS max | Notes |
-|---|---:|---:|---|
-{% if weekly_tss_bands %}{% for row in weekly_tss_bands %}| {{ row.week }} | {{ row.min }} | {{ row.max }} | {{ row.notes or "" }} |
-{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
-{% endif %}
-
-### 2.3 Confidence & Assumptions (REQUIRED)
+### 2.2 Confidence & Assumptions (REQUIRED)
 {% set conf = confidence_assumptions.confidence or {} %}
 - FTP_W used (if applicable): {{ confidence_assumptions.ftp_watts_used or "N/A" }}
 - ZoneModelVersion (if applicable): {{ confidence_assumptions.zone_model_version or "N/A" }}
 - kJ Estimation Method: {{ confidence_assumptions.kj_estimation_method or "N/A" }}
 - Confidence:
   - kJ: {{ conf.kj or "N/A" }}
-  - TSS: {{ conf.tss or "N/A" }}
 
 ## 3) Allowed / Forbidden Semantics (REQUIRED)
 

@@ -55,13 +55,6 @@ Trace-Upstream:
 {% endfor %}{% else %}| N/A | N/A | N/A | N/A |
 {% endif %}
 
-### 2.2 Optional: Adjusted TSS Bands (cross-check)
-| Week | TSS min | TSS max | Notes |
-|---|---:|---:|---|
-{% if delta_load_guardrails.adjusted_weekly_tss_bands %}{% for row in delta_load_guardrails.adjusted_weekly_tss_bands %}| {{ row.week }} | {{ row.min }} | {{ row.max }} | {{ row.notes or row.rationale }} |
-{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
-{% endif %}
-
 ## 3) Temporary Semantic Overrides (if any)
 
 ### 3.1 INTENSITY_DOMAIN_ENUM

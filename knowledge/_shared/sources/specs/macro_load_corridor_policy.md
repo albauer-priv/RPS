@@ -29,7 +29,7 @@ Dependencies:
     Version: 1.0
 
 Notes: >
-  Defines the binding procedure for deriving weekly kJ and TSS corridors
+  Defines the binding procedure for deriving weekly kJ corridors
   in Macro Overview artefacts using body mass, availability, KPI guidance,
   and recent activity trends. This policy is macro-only and forbids
   weekly scheduling or workout prescription.
@@ -37,13 +37,12 @@ Notes: >
 
 # macro_load_corridor_policy
 
-This policy defines how the Macro-Planner computes **weekly kJ and TSS corridors**
+This policy defines how the Macro-Planner computes **weekly kJ corridors**
 for each macro phase. It is **macro-only** and must never produce weekly schedules,
 workouts, or progression rules. All output must conform to
 `macro_overview.schema.json`.
 
-**Primary metric:** mechanical kJ (kJ-first).  
-**Secondary metric:** TSS (cross-check only).
+**Primary metric:** mechanical kJ (kJ-first).
 
 If any required input is missing, the Macro-Planner MUST stop and request it.
 
@@ -60,7 +59,7 @@ If any required input is missing, the Macro-Planner MUST stop and request it.
 4. **KPI Profile** (`kpi_profile_des_*.json`)
    - Guardrails, progression limits, moving-time rate guidance (kJ/kg/h).
 5. **Activities Trend** (`activities_trend_*.json`)
-   - Weekly aggregates for kJ, moving time, TSS, counts.
+   - Weekly aggregates for kJ, moving time, counts.
 6. **Availability** (`availability_*.json`)
    - Weekly hours capacity, weekday table, fixed rest days, travel risk.
 7. **Wellness** (`wellness_*.json`)
@@ -113,12 +112,12 @@ Use **AVAILABILITY** only to compute weekly moving-time capacity:
 ## 4) Baselines from Activities Trend
 
 1. **Build eligible weeks table**
-   - Use weekly aggregates: work_kj, moving_time, load_tss, activity_count.
+   - Use weekly aggregates: work_kj, moving_time, activity_count.
 2. **Exclude partial weeks**
    - Exclude weeks with too few days, very low moving_time, or anomalous activity_count.
    - Document exclusions in `assumptions_unknowns`.
 3. **Baseline**
-   - Use the last 8–12 eligible weeks to compute typical kJ and TSS ranges.
+   - Use the last 8–12 eligible weeks to compute typical kJ ranges.
 4. **Ceiling indicator**
    - Identify a high but stable week (not a one-off outlier) as a ceiling indicator.
 
@@ -136,11 +135,7 @@ For each phase in `macro_overview.phases`:
 - **Build:** shift upward toward the ceiling indicator, respecting KPI guardrails.
 - **Peak/Taper:** lower corridor for freshness and tapering intent.
 
-### 5.2 TSS band
-- Derive from activities_trend baseline distribution.
-- If uncertain, use conservative bands and flag uncertainty.
-
-### 5.3 Plausibility check (moving-time rate guidance)
+### 5.2 Plausibility check (moving-time rate guidance)
 Compute implied kJ/kg/h and compare to KPI guidance:
 
 `implied_kJ_kg_hr = weekly_kJ / (body_mass_kg * moving_time_capacity_hours)`
@@ -203,6 +198,6 @@ Macro Overview MUST NOT include:
 - day-by-day structure
 - workouts or intervals
 - numeric progression rules
-- daily/session kJ or TSS targets
+- daily/session kJ targets
 
 Any violation is a hard failure.

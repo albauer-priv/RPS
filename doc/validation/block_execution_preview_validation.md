@@ -6,4 +6,4 @@
 
 ## Content
 - [ ] Preview is agenda-style and derived only from execution architecture.
-- [ ] No workouts, intervals, zones, or kJ/TSS prescriptions.
+- [ ] No workouts, intervals, zones, or kJ prescriptions.

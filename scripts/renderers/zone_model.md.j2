@@ -27,22 +27,18 @@
 - NP ~= IF * FTP
   - Example Z2: {{ model_metadata.ftp_watts }} W * {{ zones | selectattr("zone_id", "equalto", "Z2") | map(attribute="typical_if") | first | default("N/A") }} = {{ z2_np_example or "N/A" }} W
 
-- TSS ~= Duration[h] * IF^2 * 100
-  - Example Z2, 3 h: {{ z2_tss_example or "N/A" }} TSS
-
 ### Weighted IF for intervals (optional)
 
 ```
 IF_adj = sqrt( SUM( IF_i^4 * time_i ) / SUM( time_i ) )
-TSS    = (total_time[h]) * IF_adj^2 * 100
 ```
 
 ## 3) Examples (Reference, optional)
 
-| Workout | Structure | Duration | IF_adj | TSS |
-|:---|:---|---:|---:|---:|
-{% if examples %}{% for example in examples %}| {{ example.workout_name }} | {{ example.structure }} | {{ example.duration }} | {{ example.if_adj }} | {{ example.tss }} |
-{% endfor %}{% else %}| N/A | N/A | N/A | N/A | N/A |
+| Workout | Structure | Duration | IF_adj |
+|:---|:---|---:|---:|
+{% if examples %}{% for example in examples %}| {{ example.workout_name }} | {{ example.structure }} | {{ example.duration }} | {{ example.if_adj }} |
+{% endfor %}{% else %}| N/A | N/A | N/A | N/A |
 {% endif %}
 
 ## 4) Versioning and Usage

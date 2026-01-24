@@ -113,19 +113,12 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "adjusted_weekly_kj_bands",
-            "adjusted_weekly_tss_bands"
+            "adjusted_weekly_kj_bands"
           ],
           "properties": {
             "adjusted_weekly_kj_bands": {
               "type": "array",
               "minItems": 1,
-              "items": {
-                "$ref": "#/$defs/delta_band_entry"
-              }
-            },
-            "adjusted_weekly_tss_bands": {
-              "type": "array",
               "items": {
                 "$ref": "#/$defs/delta_band_entry"
               }

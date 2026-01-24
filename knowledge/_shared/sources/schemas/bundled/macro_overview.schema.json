@@ -401,8 +401,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "required": [
-                  "weekly_kj",
-                  "weekly_tss"
+                  "weekly_kj"
                 ],
                 "properties": {
                   "weekly_kj": {
@@ -432,31 +431,6 @@
                         "minimum": 0
                       },
                       "kj_per_kg_max": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "notes": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "weekly_tss": {
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "$id": "load_band.schema.json",
-                    "title": "LoadBand",
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "min",
-                      "max",
-                      "notes"
-                    ],
-                    "properties": {
-                      "min": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "max": {
                         "type": "number",
                         "minimum": 0
                       },
@@ -931,7 +905,7 @@
               "day-by-day structure",
               "workouts or interval prescriptions",
               "numeric progression rules",
-              "daily or session-level kJ/TSS targets"
+              "daily or session-level kJ targets"
             ]
           }
         },
@@ -1159,8 +1133,7 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "weekly_kj",
-            "weekly_tss"
+            "weekly_kj"
           ],
           "properties": {
             "weekly_kj": {
@@ -1190,31 +1163,6 @@
                   "minimum": 0
                 },
                 "kj_per_kg_max": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "notes": {
-                  "type": "string"
-                }
-              }
-            },
-            "weekly_tss": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "$id": "load_band.schema.json",
-              "title": "LoadBand",
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "min",
-                "max",
-                "notes"
-              ],
-              "properties": {
-                "min": {
-                  "type": "number",
-                  "minimum": 0
-                },
-                "max": {
                   "type": "number",
                   "minimum": 0
                 },
@@ -1854,8 +1802,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "required": [
-                  "weekly_kj",
-                  "weekly_tss"
+                  "weekly_kj"
                 ],
                 "properties": {
                   "weekly_kj": {
@@ -1885,31 +1832,6 @@
                         "minimum": 0
                       },
                       "kj_per_kg_max": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "notes": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "weekly_tss": {
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "$id": "load_band.schema.json",
-                    "title": "LoadBand",
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "min",
-                      "max",
-                      "notes"
-                    ],
-                    "properties": {
-                      "min": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "max": {
                         "type": "number",
                         "minimum": 0
                       },
@@ -2384,7 +2306,7 @@
               "day-by-day structure",
               "workouts or interval prescriptions",
               "numeric progression rules",
-              "daily or session-level kJ/TSS targets"
+              "daily or session-level kJ targets"
             ]
           }
         },

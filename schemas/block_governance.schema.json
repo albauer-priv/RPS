@@ -111,19 +111,10 @@
           "additionalProperties": false,
           "required": [
             "weekly_kj_bands",
-            "confidence_assumptions",
-            "weekly_tss_bands"
+            "confidence_assumptions"
           ],
           "properties": {
             "weekly_kj_bands": {
-              "type": "array",
-              "minItems": 4,
-              "maxItems": 4,
-              "items": {
-                "$ref": "#/$defs/weekly_band_entry"
-              }
-            },
-            "weekly_tss_bands": {
               "type": "array",
               "minItems": 4,
               "maxItems": 4,
@@ -160,19 +151,10 @@
                   "type": "object",
                   "additionalProperties": false,
                   "required": [
-                    "kj",
-                    "tss"
+                    "kj"
                   ],
                   "properties": {
                     "kj": {
-                      "type": "string",
-                      "enum": [
-                        "HIGH",
-                        "MED",
-                        "LOW"
-                      ]
-                    },
-                    "tss": {
                       "type": "string",
                       "enum": [
                         "HIGH",
@@ -420,7 +402,7 @@
               "day-by-day plans",
               "workouts or interval prescriptions",
               "durations, zones (Z1-Z7), %FTP",
-              "daily kJ/TSS targets",
+              "daily kJ targets",
               "numeric progression rules",
               "recommendations that effectively plan the micro level"
             ]

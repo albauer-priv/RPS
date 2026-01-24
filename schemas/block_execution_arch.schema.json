@@ -105,19 +105,10 @@
           "additionalProperties": false,
           "required": [
             "weekly_kj_bands",
-            "weekly_tss_bands",
             "source"
           ],
           "properties": {
             "weekly_kj_bands": {
-              "type": "array",
-              "minItems": 4,
-              "maxItems": 4,
-              "items": {
-                "$ref": "#/$defs/weekly_band_entry"
-              }
-            },
-            "weekly_tss_bands": {
               "type": "array",
               "minItems": 4,
               "maxItems": 4,

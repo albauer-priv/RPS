@@ -90,7 +90,7 @@ structural architecture without introducing week- or workout-level planning.
   - workouts
   - intervals
   - zones/%FTP
-  - daily kJ/TSS
+  - daily kJ
 
 ## 6) Error Handling & STOP Rules
 - Missing macro weekly kJ corridor -> STOP (E_MACRO_INPUT_INCOMPLETE).

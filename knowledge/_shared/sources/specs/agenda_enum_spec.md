@@ -142,7 +142,7 @@ Agenda artefacts MUST NOT contain:
 - %FTP values
 - Durations or time targets
 - Interval structures
-- kJ / TSS / load numbers
+- kJ / load numbers
 - Progression or ramp language
 
 If such content appears, the artefact is INVALID.

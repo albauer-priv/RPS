@@ -206,7 +206,7 @@ flowchart LR
 - Convert macro phase intent into a block (governance + execution architecture).
 - Block range is derived from macro phase boundaries (not calendar-aligned).
 - Optional preview or feed-forward on explicit request.
-- Consumes the latest `ZONE_MODEL` (Data-Pipeline) when IF/TSS defaults are needed.
+- Consumes the latest `ZONE_MODEL` (Data-Pipeline) when IF defaults are needed.
 
 **Outputs (Artefacts)**
 - `block_governance_yyyy-ww--yyyy-ww.json` (binding)

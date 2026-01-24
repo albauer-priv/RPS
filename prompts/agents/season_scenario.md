@@ -392,7 +392,7 @@ Emit schema-compliant JSON only.
 
 ### Primary Objective
 Maximize durable submaximal performance under prolonged fatigue.  
-**kJ** is the **primary steering metric**, **TSS** is secondary (cross-check).
+**kJ** is the **primary steering metric**.
 
 ### Planning Constraints
 - Macro scope: 8–32 weeks.

@@ -125,7 +125,7 @@ A SEASON_BRIEF MAY include:
 
 ## 5) Forbidden Content (Binding)
 A SEASON_BRIEF implementing this interface MUST NOT contain:
-- weekly kJ corridors, TSS targets, or progression ramps
+- weekly kJ corridors or progression ramps
 - block governance (BLOCK_GOVERNANCE / BLOCK_FEED_FORWARD semantics)
 - block structures (BLOCK_EXECUTION_ARCH / PREVIEW)
 - weekly schedules (Mon-Sun planning)

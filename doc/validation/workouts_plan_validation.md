@@ -6,6 +6,6 @@
 - [ ] `meta.trace_upstream` references `block_governance` and `block_execution_arch`.
 
 ## Governance alignment
-- [ ] Weekly load stays inside kJ/TSS bands from block governance.
+- [ ] Weekly load stays inside kJ bands from block governance.
 - [ ] Allowed day roles and intensity domains match execution architecture.
 - [ ] Quality density limits are respected.

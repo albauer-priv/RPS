@@ -282,7 +282,7 @@ class GuardedValidatedStore:
             raise SchemaValidationError("Macro constraint propagation failed", [str(exc)]) from exc
 
         bg_guardrails = block_governance.get("data", {}).get("load_guardrails", {})
-        for label in ("weekly_kj_bands", "weekly_tss_bands"):
+        for label in ("weekly_kj_bands",):
             expected = bg_guardrails.get(label) or []
             actual = load_ranges.get(label) or []
             expected_map = {entry.get("week"): entry.get("band") for entry in expected}

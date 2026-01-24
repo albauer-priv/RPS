@@ -579,7 +579,7 @@ All impacts MUST be reported factually.
 
 ## Load Metrics & Data
 - kJ is the **only binding load metric**
-- All other metrics (TSS, zones, KPIs):
+- All other metrics (zones, KPIs):
   - informational only
   - NEVER decision drivers
 

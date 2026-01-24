@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Durability principles now include the permitted "Kinzlbauer macro template" archetype (macro-level sequencing and traceability anchors).
-- Macro load corridor policy spec for deriving weekly kJ/TSS bands from availability, wellness, KPI guidance, and activity trends.
+- Macro load corridor policy spec for deriving weekly kJ bands from availability, wellness, KPI guidance, and activity trends.
 - KPI profiles now include moving-time pacing guidance (`kJ/kg/h` + `W/kg`) for brevet/ultra segments.
 - Macro overview body metadata now records `body_mass_kg` alongside the reference mass window.
 - Season brief template/spec now includes `Body-Mass-kg` for precise load scaling.
@@ -109,7 +109,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Block governance template now embeds macro-constraint mapping placeholders.
 - Agent prompts now include conditional template usage guidance.
 - Guarded store now enforces execution preview traceability to execution architecture.
-- Meso-Architect prompt now requires weekly kJ/TSS progression patterns (default 3:1) unless macro specifies steady-state.
+- Meso-Architect prompt now requires weekly kJ progression patterns (default 3:1) unless macro specifies steady-state.
+
+### Changed
+- Planning artefacts are now kJ-first only: removed TSS fields from macro overview, block governance/execution, workouts plans, and zone model examples.
+- Renderer templates now omit TSS columns/sections for non-activities artefacts.
+- Activities trend adherence now computes against planned weekly kJ from workouts plans; TSS remains only in activities_* artefacts.
 - Durability-first principles updated to v1.1 with expanded progressive overload guidance, intensity distribution rules, and 3:1 alternatives.
 - Principles paper translated to English and synced for macro/meso knowledge sources.
 - Macro-Planner prompt now requires applying Principles sections 2-6.

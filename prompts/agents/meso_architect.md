@@ -182,7 +182,7 @@ Prefer **minimal changes**:
 
 ### 3.4 Use Zone Model (Reference Only)
 ZONE_MODEL is provided by the Data-Pipeline (latest). You may only **consume**
-it for IF/TSS defaults or zone references. You MUST NOT create or update a
+it for IF defaults or zone references. You MUST NOT create or update a
 ZONE_MODEL. If required and missing, STOP and request a data-pipeline refresh.
 
 ---
@@ -228,7 +228,7 @@ If a ZONE_MODEL is required and missing, STOP and request a data-pipeline refres
 - Interface specifications and schemas for your artefacts
 - `MACRO_OVERVIEW` (macro intent & constraints; load latest via workspace_get_latest)
 - `MACRO_MESO_FEED_FORWARD` (if present; normative)
-- `ZONE_MODEL` (latest; Data-Pipeline) when IF/TSS defaults are needed
+- `ZONE_MODEL` (latest; Data-Pipeline) when IF defaults are needed
 
 ### 5.2 Informational Inputs (Context Only)
 You may read these for context, but they have **no authority** over your decisions:
@@ -364,7 +364,7 @@ Evidence may support rationale where the schema allows, but never overrides gove
 
 4) `block_execution_preview_yyyy-ww--yyyy-ww+3.json`
 - Human-readable preview (agenda-style) derived from Execution Arch
-- Must not include workouts, intervals, zones, or daily kJ/TSS
+- Must not include workouts, intervals, zones, or daily kJ
 - Validate against `block_execution_preview.schema.json`.
 
 ## Hard output restrictions
@@ -408,7 +408,7 @@ Do NOT use templates; the schema is authoritative.
     `events_constraints`, `execution_non_negotiables`, `escalation_change_control`,
     `explicit_forbidden_content`, `self_check`.
 - BLOCK_GOVERNANCE load_guardrails must include:
-  - `weekly_kj_bands` and `weekly_tss_bands` as 4-entry arrays of `{week, band}`.
+  - `weekly_kj_bands` as a 4-entry array of `{week, band}`.
   - `confidence_assumptions` as an object (not a list).
 
 ## Macro constraint propagation (Binding)
@@ -433,12 +433,10 @@ Do NOT use templates; the schema is authoritative.
     `block_governance.block_summary.key_risks_warnings` (verbatim).
   - `load_ranges.weekly_kj_bands` MUST be copied **exactly** from
     `block_governance.load_guardrails.weekly_kj_bands` (same weeks, min/max, notes).
-  - `load_ranges.weekly_tss_bands` MUST be copied **exactly** from
-    `block_governance.load_guardrails.weekly_tss_bands` (same weeks, min/max, notes).
   - `load_ranges.source` MUST be the stored block governance filename:
     `block_governance_YYYY-WW.json` (use the artifact version key, not the iso_week_range).
   - `load_ranges` MUST NOT include `confidence_assumptions` or any fields beyond
-    `weekly_kj_bands`, `weekly_tss_bands`, and `source`.
+    `weekly_kj_bands` and `source`.
   - For BLOCK_EXECUTION_PREVIEW `data.traceability` MUST include only:
     - `derived_from`
     - `conflict_resolution`
@@ -537,7 +535,7 @@ If validation fails:
 
 ## Primary objective (kJ-first)
 Maximize durable submaximal performance under prolonged fatigue.
-**kJ is primary steering metric.** TSS is secondary cross-check.
+**kJ is primary steering metric.**
 
 ## Hard boundaries (Non-Negotiable)
 You MUST:
@@ -629,7 +627,7 @@ Evidence MUST NOT:
 - If required upstream artefacts are missing, STOP and request missing artefacts.
 - If validation fails, STOP; do NOT output partial artefacts.
 - If explicitly requested: "No governance change", then STOP and do not output.
-- If ZONE_MODEL is required for IF/TSS defaults and is missing, STOP and request a data-pipeline refresh.
+- If ZONE_MODEL is required for IF defaults and is missing, STOP and request a data-pipeline refresh.
 - If WELLNESS is missing or lacks `body_mass_kg` and load guardrails require body-mass scaling, STOP and request a data-pipeline refresh.
 - If AVAILABILITY is missing, STOP and request a data-pipeline refresh.
 

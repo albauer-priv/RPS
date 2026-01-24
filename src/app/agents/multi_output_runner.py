@@ -380,7 +380,7 @@ def run_agent_multi_output(
                     band["min"] = float(min_val)
                     band["max"] = float(max_val)
 
-        for key in ("weekly_kj_bands", "weekly_tss_bands"):
+        for key in ("weekly_kj_bands",):
             rows = load_guardrails.get(key)
             if not isinstance(rows, list):
                 continue

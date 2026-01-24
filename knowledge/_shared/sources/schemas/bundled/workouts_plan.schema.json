@@ -13,8 +13,7 @@
         "day_role",
         "planned_duration",
         "planned_kj",
-        "workout_id",
-        "planned_tss"
+        "workout_id"
       ],
       "properties": {
         "day": {
@@ -52,10 +51,6 @@
           "pattern": "^\\d{2}:\\d{2}$"
         },
         "planned_kj": {
-          "type": "number",
-          "minimum": 0
-        },
-        "planned_tss": {
           "type": "number",
           "minimum": 0
         },
@@ -340,7 +335,6 @@
             "week_objective",
             "weekly_load_corridor_kj",
             "planned_weekly_load_kj",
-            "cross_check_tss",
             "notes"
           ],
           "properties": {
@@ -377,10 +371,6 @@
               "type": "number",
               "minimum": 0
             },
-            "cross_check_tss": {
-              "type": "number",
-              "minimum": 0
-            },
             "notes": {
               "type": "string"
             }
@@ -399,8 +389,7 @@
               "day_role",
               "planned_duration",
               "planned_kj",
-              "workout_id",
-              "planned_tss"
+              "workout_id"
             ],
             "properties": {
               "day": {
@@ -438,10 +427,6 @@
                 "pattern": "^\\d{2}:\\d{2}$"
               },
               "planned_kj": {
-                "type": "number",
-                "minimum": 0
-              },
-              "planned_tss": {
                 "type": "number",
                 "minimum": 0
               },
