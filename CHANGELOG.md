@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Artifact saves now trigger automatic rendering to Markdown when a template exists.
 - Missing render templates now log an error and are skipped without failing the run.
 - Runner now forces tool calls for DES_ANALYSIS_REPORT to avoid fallback writes.
+- Performance-Analyst prompt now pins DES report schema constants and recommendation scope.
 
 ### Fixed
 - Workspace tool writes now tolerate missing `run_id` by falling back to meta/context defaults.

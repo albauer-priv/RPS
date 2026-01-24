@@ -162,6 +162,14 @@ You MUST:
   - `type: advisory`
   - `scope: Macro-Planner only`
 
+### Required Constants (Binding)
+- `meta.schema_id` MUST be `DESAnalysisInterface`
+- `meta.schema_version` MUST be `1.1`
+- `meta.authority` MUST be `Binding`
+- `meta.owner_agent` MUST be `Performance-Analyst`
+- `data.recommendation.type` MUST be `advisory`
+- `data.recommendation.scope` MUST be `Macro-Planner`
+
 ## Hard Output Restrictions
 You MUST NOT:
 - Propose or imply:
