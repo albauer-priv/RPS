@@ -317,6 +317,30 @@ def run_agent_multi_output(
         document["meta"] = meta
         return document
 
+    def _normalize_des_analysis_report(document: dict[str, Any]) -> dict[str, Any]:
+        """Coerce DES analysis report constants to match schema."""
+        if not isinstance(document, dict):
+            return document
+        meta = document.get("meta")
+        if isinstance(meta, dict):
+            meta["artifact_type"] = "DES_ANALYSIS_REPORT"
+            meta["schema_id"] = "DESAnalysisInterface"
+            meta["schema_version"] = "1.1"
+            meta["authority"] = "Binding"
+            meta["owner_agent"] = "Performance-Analyst"
+            if "notes" not in meta or meta.get("notes") is None:
+                meta["notes"] = ""
+            document["meta"] = meta
+        data = document.get("data")
+        if isinstance(data, dict):
+            rec = data.get("recommendation")
+            if isinstance(rec, dict):
+                rec["type"] = "advisory"
+                rec["scope"] = "Macro-Planner"
+                data["recommendation"] = rec
+            document["data"] = data
+        return document
+
     def _normalize_block_governance(document: dict[str, Any]) -> dict[str, Any]:
         """Ensure BLOCK_GOVERNANCE weekly bands are non-degenerate."""
         if not isinstance(document, dict):
@@ -463,6 +487,7 @@ def run_agent_multi_output(
                     ArtifactType.SEASON_SCENARIOS,
                     ArtifactType.SEASON_SCENARIO_SELECTION,
                     ArtifactType.MACRO_OVERVIEW,
+                    ArtifactType.DES_ANALYSIS_REPORT,
                 }:
                     attempted_forced_store = True
                     input_list.append(
@@ -507,6 +532,8 @@ def run_agent_multi_output(
                     parsed = _normalize_block_governance(parsed)
                     if spec.artifact_type == ArtifactType.WORKOUTS_PLAN:
                         parsed = _normalize_workouts_plan_meta(parsed)
+                    if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
+                        parsed = _normalize_des_analysis_report(parsed)
                     try:
                         saved = guarded.guard_put_validated(
                             output_spec=spec,
@@ -593,6 +620,8 @@ def run_agent_multi_output(
             document = _normalize_block_governance(document)
             if spec.artifact_type == ArtifactType.WORKOUTS_PLAN:
                 document = _normalize_workouts_plan_meta(document)
+            if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
+                document = _normalize_des_analysis_report(document)
             if spec.envelope and not _is_envelope(document):
                 result = {"ok": False, "error": "Envelope artefact must be an object with meta and data"}
                 input_list.append(

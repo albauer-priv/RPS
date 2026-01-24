@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standalone scripts now emit per-run logs with timestamped filenames under `var/athletes/<athlete_id>/logs`.
 - Logging policy document for levels, format, and per-run log file locations.
 - Artifact writes now emit INFO logs with type, version key, and path.
+- Runner now forces tool calls for DES_ANALYSIS_REPORT to avoid fallback writes.
 
 ### Fixed
 - Workspace tool writes now tolerate missing `run_id` by falling back to meta/context defaults.
