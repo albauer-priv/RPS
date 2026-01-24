@@ -64,7 +64,6 @@ Prerequisites:
 
 - Set `ATHLETE_ID`, `API_KEY`, and `BASE_URL` in `.env`.
 - All-in-one: `python scripts/data_pipeline/get_intervals_data.py --year 2026 --week 6`
-- Legacy (deprecated): `intervals_export.py`, `compile_activities_actual.py`, `compile_activities_trend.py`
 - Post workouts: `python scripts/data_pipeline/post_workout.py --json var/athletes/<athlete_id>/latest/intervals_workouts.json`
 - Validate outputs (latest): `python scripts/validate_outputs.py`
 - Validate outputs (week): `python scripts/validate_outputs.py --year 2026 --week 6`

@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """Fetch Intervals.icu data and compile activities_actual + activities_trend outputs.
 
-This script is intended to replace:
-- intervals_export.py
-- compile_activities_actual.py
-- compile_activities_trend.py
+This script is the single data-pipeline entrypoint for activities_* artefacts.
 """
 
 from __future__ import annotations
