@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standalone scripts now emit per-run logs with timestamped filenames under `var/athletes/<athlete_id>/logs`.
 - Logging policy document for levels, format, and per-run log file locations.
 - Artifact writes now emit INFO logs with type, version key, and path.
+- Artifact saves now trigger automatic rendering to Markdown when a template exists.
+- Missing render templates now log an error and are skipped without failing the run.
 - Runner now forces tool calls for DES_ANALYSIS_REPORT to avoid fallback writes.
 
 ### Fixed

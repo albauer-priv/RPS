@@ -375,7 +375,7 @@ The local store normalizes legacy labels (e.g., Structural → Derived).
 
 - Script: `scripts/artefact_renderer.py`
 - Templates: `scripts/renderers/*.md.j2`
-- Purpose: produce human-readable `.rendered.md` sidecars (informational only).
+- Purpose: produce human-readable `.md` sidecars (informational only).
 
 ---
 

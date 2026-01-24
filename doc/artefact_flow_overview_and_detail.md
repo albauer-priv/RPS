@@ -342,7 +342,7 @@ flowchart LR
 ### 2.7 Artefact Renderer (Sidecars)
 
 **Purpose**
-- Produce human-readable `.rendered.md` sidecars from JSON artefacts.
+- Produce human-readable `.md` sidecars from JSON artefacts.
 
 **Inputs**
 - Any JSON artefact (e.g., `block_governance_yyyy-ww--yyyy-ww.json`)
@@ -352,7 +352,7 @@ flowchart LR
 - Templates in `scripts/renderers/`
 
 **Outputs**
-- `<artefact>.rendered.md` (informational only)
+- `<artefact>.md` (informational only)
 
 ---
 

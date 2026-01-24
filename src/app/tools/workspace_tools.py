@@ -14,6 +14,7 @@ from app.workspace.index_exact import IndexExactQuery
 from app.workspace.macro_phase_service import resolve_block_range_from_macro
 from app.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from app.workspace.schema_registry import SchemaValidationError
+from app.rendering.auto_render import render_sidecar
 from app.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
@@ -282,6 +283,10 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             path,
             run_id,
         )
+        try:
+            render_sidecar(Path(path))
+        except Exception:
+            logger.exception("Auto-render failed for %s", path)
         return {"ok": True, "path": path}
 
     return {

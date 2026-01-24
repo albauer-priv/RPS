@@ -18,6 +18,7 @@ from app.workspace.paths import ARTIFACT_PATHS
 from app.workspace.types import ArtifactType
 from app.workspace.versioning import derive_version_key_from_envelope
 from app.workspace.local_store import LocalArtifactStore
+from app.rendering.auto_render import render_sidecar
 
 
 class MissingDependenciesError(RuntimeError):
@@ -376,6 +377,10 @@ class GuardedValidatedStore:
             path,
             run_id,
         )
+        try:
+            render_sidecar(Path(path))
+        except Exception:
+            self.logger.exception("Auto-render failed for %s", path)
 
         return {
             "ok": True,

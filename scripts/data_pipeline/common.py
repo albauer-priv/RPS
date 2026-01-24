@@ -18,6 +18,7 @@ if SYS_PATH not in sys.path:
 from app.core.config import load_env_file  # noqa: E402
 from app.core.logging import setup_logging, timestamped_log_path  # noqa: E402
 from app.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
+from app.rendering.auto_render import render_sidecar  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -155,3 +156,7 @@ def record_index_write(
         relative_path,
         run_id,
     )
+    try:
+        render_sidecar(path)
+    except Exception:
+        logger.exception("Auto-render failed for %s", path)

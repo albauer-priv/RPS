@@ -1738,7 +1738,9 @@ def main():
 
     logger.info("Render artifact_type=%s input=%s", artifact_type, input_path)
     if artifact_type not in RENDERERS:
-        raise ValueError(f"No renderer registered for {artifact_type}.")
+        logger.error("No renderer registered for %s", artifact_type)
+        print(f"No renderer registered for {artifact_type}. Skipping render.")
+        return 0
 
     schema_dir = Path(
         args.schema_dir
@@ -1780,15 +1782,16 @@ def main():
     else:
         athlete_id = os.getenv("ATHLETE_ID")
         if athlete_id:
-            out_dir = ROOT / "var" / "athletes" / athlete_id / "artefacts_readable"
+            out_dir = ROOT / "var" / "athletes" / athlete_id / "rendered"
             out_dir.mkdir(parents=True, exist_ok=True)
-            output_path = out_dir / f"{input_path.stem}.rendered.md"
+            output_path = out_dir / f"{input_path.stem}.md"
         else:
-            output_path = input_path.with_suffix(".rendered.md")
+            output_path = input_path.with_suffix(".md")
     output_path.write_text(rendered, encoding="utf-8")
     print(f"Rendered: {output_path}")
     logger.info("Rendered output=%s", output_path)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

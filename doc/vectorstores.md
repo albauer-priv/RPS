@@ -121,7 +121,7 @@ agent_id = resolver.id_for_store_name("vs_micro_planner")
 - Keep sources small and well scoped.
 - Use `tags` to support metadata filtering later.
 - Avoid committing private PDFs; store locally and update only manifests if needed.
-- Do not include rendered sidecars (`*.rendered.md`) in vector stores.
+- Do not include rendered sidecars (`*.md` under `var/athletes/*/rendered`) in vector stores.
 - `.cache/` is gitignored by default.
 
 For operational limits, data sensitivity, and incident response, see

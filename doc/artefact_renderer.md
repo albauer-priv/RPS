@@ -57,8 +57,9 @@ The renderer supports the following artifact types (meta.artifact_type):
 ## 5. Notes
 
 - Default output location (if `--out` is omitted):
-  - `var/athletes/<ATHLETE_ID>/artefacts_readable/<filename>.rendered.md`
+  - `var/athletes/<ATHLETE_ID>/rendered/<filename>.md`
   - `ATHLETE_ID` is loaded from `.env` (Intervals.icu athlete ID).
+- Artefacts saved via the runner are auto-rendered using this script.
 - If `meta.trace_upstream` is a list of strings, it is rendered directly.
 - If `--validate` is enabled, schema validation occurs before rendering.
 - Raw payload artifacts (e.g., `INTERVALS_WORKOUTS`) are not rendered.
