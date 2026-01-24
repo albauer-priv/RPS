@@ -56,7 +56,7 @@ If any required input is missing, the Macro-Planner MUST stop and request it.
    - Scenario guidance (A/B/C), cadence, phase recommendations, risk profile.
 3. **Season Scenario Selection** (`season_scenario_selection_*.json`)
    - The single selected scenario to instantiate.
-4. **KPI Profile** (`kpi_profile_des_*.json`)
+4. **KPI Profile** (`kpi_profile_*.json`)
    - Guardrails, progression limits, moving-time rate guidance (kJ/kg/h).
 5. **Activities Trend** (`activities_trend_*.json`)
    - Weekly aggregates for kJ, moving time, counts.
