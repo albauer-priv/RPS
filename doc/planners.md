@@ -96,13 +96,13 @@ Artifacts are stored under `var/athletes/<athlete_id>/` with an index:
 
 ```
 var/athletes/<athlete_id>/
-  plans/macro/
-  plans/meso/
-  plans/micro/
-  workouts/
-  analysis/
-  exports/
   data/
+    plans/macro/
+    plans/meso/
+    plans/micro/
+    analysis/
+    exports/
+    YYYY/WW/
   latest/
   index.json
 ```

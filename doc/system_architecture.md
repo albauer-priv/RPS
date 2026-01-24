@@ -308,15 +308,16 @@ It is the single source of truth for planning artefacts and factual data in dev.
 
 ```
 var/athletes/<athlete_id>/
-  plans/macro/
-  plans/meso/
-  plans/micro/
-  workouts/
-  analysis/
-  exports/
   data/
+    plans/macro/
+    plans/meso/
+    plans/micro/
+    analysis/
+    exports/
+    YYYY/WW/
   latest/
   index.json
+  logs/
 ```
 
 ```mermaid
@@ -351,10 +352,10 @@ Use `scripts/artefact_renderer.py` to generate human-readable sidecars from JSON
 
 ---
 
-Artifacts are stored under `var/athletes/<athlete_id>/`:
+Artifacts are stored under `var/athletes/<athlete_id>/data/`:
 
-- `plans/macro/`, `plans/meso/`, `plans/micro/`, `workouts/`, `analysis/`, `exports/`
-- `data/` holds pipeline outputs (CSV + JSON).
+- `data/plans/macro/`, `data/plans/meso/`, `data/plans/micro/`, `data/analysis/`, `data/exports/`
+- `data/YYYY/WW/` holds data pipeline snapshots (CSV + JSON)
 - `latest/` contains the most recent artifact per type.
 - `index.json` records per-version metadata for lookup and routing.
 

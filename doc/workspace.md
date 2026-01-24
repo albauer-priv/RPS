@@ -19,15 +19,16 @@ gitignored.
 ```
 var/athletes/<athlete_id>/
   inputs/
-  plans/macro/
-  plans/meso/
-  plans/micro/
-  workouts/
-  analysis/
-  exports/
   data/
+    plans/macro/
+    plans/meso/
+    plans/micro/
+    analysis/
+    exports/
+    YYYY/WW/        # data pipeline snapshots (CSV + JSON)
   latest/
   index.json
+  logs/
 ```
 
 ---
@@ -59,6 +60,23 @@ Templates are available under:
 
 ---
 
+## Directory Ownership & Artefacts
+
+| Directory | Owner | Typical artefacts |
+| --- | --- | --- |
+| `inputs/` | User / operator | `season_brief_*.md`, `events.md`, `kpi_profile_*.json` |
+| `data/plans/macro/` | Season-Scenario-Agent, Macro-Planner | `season_scenarios_*`, `season_scenario_selection_*`, `macro_overview_*`, `macro_meso_feed_forward_*` |
+| `data/plans/meso/` | Meso-Architect (plus Data-Pipeline for `zone_model_*`) | `block_governance_*`, `block_execution_arch_*`, `block_execution_preview_*`, `block_feed_forward_*`, `zone_model_*` |
+| `data/plans/micro/` | Micro-Planner | `workouts_plan_*` |
+| `data/analysis/` | Performance-Analyst | `des_analysis_report_*` |
+| `data/exports/` | Workout-Builder | `intervals_workouts_*` |
+| `data/YYYY/WW/` | Data Pipeline | `activities_actual_*`, `activities_trend_*`, `availability_*`, `wellness_*` (+ CSV mirrors) |
+| `latest/` | System | Latest copy of each artefact type (mirrors versioned writes) |
+| `logs/` | System | Per-run logs from scripts and agents |
+| `rendered/` | artefact_renderer | Markdown sidecars derived from JSON artefacts |
+
+---
+
 ## Rendering (Optional)
 
 Use `scripts/artefact_renderer.py` to generate human-readable sidecars from
@@ -70,7 +88,7 @@ JSON artefacts. These are informational and never authoritative.
 
 If workspace grows large:
 
-- archive old versions in `plans/`, `analysis/`, and `data/`
+- archive old versions in `data/plans/`, `data/analysis/`, and `data/exports/`
 - keep `latest/` intact
 - avoid deleting files referenced in `index.json`
 

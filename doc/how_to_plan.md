@@ -51,7 +51,7 @@ python3 scripts/macro_mode_a.py scenarios \
   --run-id macro_scenarios_2026_w06
 ```
 
-This stores `season_scenarios_yyyy-ww--yyyy-ww.json` under `plans/macro/` and
+This stores `season_scenarios_yyyy-ww--yyyy-ww.json` under `data/plans/macro/` and
 writes the human-readable scenario dialogue to `.cache/macro_scenarios/`.
 
 Select scenario (stores `season_scenario_selection`):
