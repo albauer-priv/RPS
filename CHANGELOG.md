@@ -119,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro overview template updated to v1.1 to include justification fields.
 - Macro Mode A overview now injects selected scenario details into the prompt when available.
 - Validation tooling and docs now include wellness outputs.
+- Scenario, macro, and meso prompts now encode Principles 3.4 sequencing guidance (VO2 ceiling first, then durability/efficiency focus).
 
 ## [0.2.0] - 2026-01-22
 

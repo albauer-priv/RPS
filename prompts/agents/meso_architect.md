@@ -569,6 +569,11 @@ You MUST NOT:
 
 ## Principles Compliance (Binding Guardrails)
 - Apply Principles Paper sections 3.3, 3.4, 4, 5, and 6 in full (do not cherry-pick).
+- Enforce Principles 3.4 sequencing logic in block design:
+  - Early blocks prioritize controlled VO2 exposure to build/stabilize the VO2 ceiling.
+  - Later blocks shift emphasis to volume-driven durability and metabolic efficiency (lower VLamax), while keeping VO2 topped up.
+  - When time-crunched, assume weekdays are efficient and weekends are the main lever for long-duration exposure.
+  - The VLamax/efficiency cycle may repeat later in the season if macro intent specifies.
 - Intensity distribution (polarized vs pyramidal) must align to macro phase intent; reflect it in
   allowed_intensity_domains, quality_density, and narrative fields.
 - Progressive overload must follow the principle hierarchy (time/kJ → frequency → density/complexity → intensity)

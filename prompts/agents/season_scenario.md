@@ -410,6 +410,12 @@ Maximize durable submaximal performance under prolonged fatigue.
 ### Interpretation Rules
 - Weekly aggregation only (no daily breakdowns).
 - Apply Principles Paper sections 2, 3, 4, 5, and 6 in full (do not cherry-pick) when setting phase intent, load corridors, and deload logic.
+- Apply Principles 3.4 sequencing logic (Kinzlbauer macro template) in scenario guidance:
+  - Build and stabilize the aerobic ceiling (VO2max) first.
+  - Then shift the main emphasis to metabolic efficiency and durability by lowering VLamax while keeping VO2 topped up.
+  - Progression axis: intensity-tolerance first (controlled VO2 exposure), then volume-driven (more low-intensity long work).
+  - Assume time-crunched structure: efficient weekdays, weekend rides as primary lever for long-duration exposure.
+  - Target goal state: high VO2 ceiling, lower glycolytic dominance (lower VLamax), stable performance under fatigue; the VLamax/efficiency cycle may be repeated later in the season.
 - Make the chosen intensity distribution and overload logic explicit in phase narratives or rationale fields where the schema allows.
 - Ensure narratives and rationales are consistent with allowed/forbidden intensity domains and deload flags.
 - Populate `data.justification` with a concise summary, citations (principles + evidence), and per-phase justifications.
