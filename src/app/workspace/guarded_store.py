@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 import json
 from pathlib import Path
 import re
@@ -65,6 +66,8 @@ class GuardedValidatedStore:
     athlete_id: str
     schema_dir: Path
     workspace_root: Path
+
+    logger = logging.getLogger(__name__)
 
     def __post_init__(self) -> None:
         """Initialize schema registry and local store."""
@@ -364,6 +367,14 @@ class GuardedValidatedStore:
             producer_agent=producer_agent,
             run_id=run_id,
             update_latest=update_latest,
+        )
+
+        self.logger.info(
+            "Stored artifact type=%s version_key=%s path=%s run_id=%s",
+            target.value,
+            version_key,
+            path,
+            run_id,
         )
 
         return {

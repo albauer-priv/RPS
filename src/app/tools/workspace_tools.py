@@ -275,6 +275,13 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         except SchemaValidationError as exc:
             logger.warning("Schema validation failed for %s: %s", artifact_type.value, exc.errors)
             return {"ok": False, "error": str(exc), "details": exc.errors}
+        logger.info(
+            "Stored artifact type=%s version_key=%s path=%s run_id=%s",
+            artifact_type.value,
+            args.get("version_key"),
+            path,
+            run_id,
+        )
         return {"ok": True, "path": path}
 
     return {

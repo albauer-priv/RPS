@@ -17,6 +17,7 @@ if str(ROOT / "src") not in sys.path:
 
 from scripts.data_pipeline.common import load_env  # noqa: E402
 from app.openai.vectorstore_state import load_vectorstore_id  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,10 +35,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """Run a simple retrieval request to verify vector stores."""
     load_env()
+    logger = configure_logging(ROOT, Path(__file__).stem)
     args = parse_args()
 
     shared_id = load_vectorstore_id(args.shared)
     agent_id = load_vectorstore_id(f"vs_{args.agent}")
+    logger.info("Smoke test agent=%s shared_id=%s agent_id=%s", args.agent, shared_id, agent_id)
 
     client = OpenAI()
     payload = {
@@ -62,6 +65,7 @@ def main() -> int:
             payload.pop("tool_choice", None)
             response = client.responses.create(**payload)
         else:
+            logger.error("Smoke test failed: %s", exc)
             raise exc
 
     found = False
@@ -73,9 +77,11 @@ def main() -> int:
                 name = getattr(result, "filename", None) or getattr(result, "file_id", "")
                 files.append(name)
             print("FILES:", files)
+            logger.info("Smoke test results files=%d", len(files))
 
     if not found:
         print("WARN: No file_search_call results. Try --force-tool or a more specific question.")
+        logger.warning("Smoke test returned no file_search_call results")
     print("TEXT:", response.output_text)
     return 0
 

@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (
     athlete_data_dir,
     athlete_latest_dir,
+    configure_logging,
     load_env,
     record_index_write,
     resolve_athlete_id,
@@ -228,13 +229,16 @@ def main() -> int:
     warnings.warn(warn_msg, DeprecationWarning, stacklevel=2)
 
     load_env()
+    logger = configure_logging(Path(__file__).stem)
     args = parse_args()
     athlete_id = args.athlete or resolve_athlete_id()
     schema_dir = resolve_schema_dir()
     validator = SchemaRegistry(schema_dir).validator_for("activities_actual.schema.json")
+    logger.info("Compile activities_actual athlete=%s input=%s", athlete_id, args.input_csv)
 
     # === Load data ===
     df = pd.read_csv(args.input_csv, sep=SEPARATOR, quotechar=QUOTECHAR)
+    logger.debug("Input rows=%d", len(df))
 
     # Helper: find columns robustly (case-insensitive)
     cols = {c.lower(): c for c in df.columns}
@@ -519,6 +523,7 @@ def main() -> int:
     groups = list(df.groupby(["ISO Year", "ISO Week"], sort=True))
     if args.latest and groups:
         groups = [groups[-1]]
+    logger.info("ISO week groups=%d latest_only=%s", len(groups), args.latest)
 
     run_ts = datetime.now(timezone.utc)
     run_stamp = run_ts.strftime("%Y%m%d-%H%M%S")
@@ -660,10 +665,10 @@ def main() -> int:
                 "activities": activities
             },
         }
-    if not args.skip_validate:
-        validate_or_raise(validator, payload)
-        with open(out_json_file, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
+        if not args.skip_validate:
+            validate_or_raise(validator, payload)
+            with open(out_json_file, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
 
         record_index_write(
             athlete_id=athlete_id,
@@ -675,6 +680,12 @@ def main() -> int:
             created_at=meta["created_at"],
             iso_week=meta["iso_week"],
         )
+        logger.info(
+            "Wrote activities_actual week=%s activities=%d json=%s",
+            version_key,
+            len(activities),
+            out_json_file,
+        )
 
     if last_out_file and last_json_file:
         latest_dir.mkdir(parents=True, exist_ok=True)
@@ -684,6 +695,7 @@ def main() -> int:
         latest_json.write_bytes(last_json_file.read_bytes())
 
         print(f"JSON exported: {last_json_file}")
+        logger.info("Updated latest activities_actual to %s", last_json_file)
 
     return 0
 

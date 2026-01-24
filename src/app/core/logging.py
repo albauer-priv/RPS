@@ -30,6 +30,13 @@ def _normalize_level(level: str | int | None) -> int:
 import os
 
 
+def timestamped_log_path(log_dir: Path, base_name: str) -> Path:
+    """Return a timestamped log path for a script or CLI run."""
+    timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    safe_name = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in base_name)
+    return log_dir / f"{safe_name}_{timestamp}.log"
+
+
 def setup_logging(
     level: str | int | None = None,
     log_file: str | Path | None = None,

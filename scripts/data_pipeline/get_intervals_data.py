@@ -34,6 +34,7 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (  # noqa: E402
     athlete_data_dir,
     athlete_latest_dir,
+    configure_logging,
     load_env,
     record_index_write,
     require_env,
@@ -2288,10 +2289,12 @@ def compile_activities_trend(
 def main() -> int:
     """Run the end-to-end Intervals.icu pipeline."""
     load_env()
+    logger = configure_logging(Path(__file__).stem)
     args = parse_args()
     athlete_id = args.athlete or resolve_athlete_id()
     api_key = require_env("API_KEY")
     base_url = require_env("BASE_URL")
+    logger.info("Intervals pipeline athlete=%s base_url=%s", athlete_id, base_url)
 
     session.auth = HTTPBasicAuth("API_KEY", api_key)
     has_week = args.year is not None and args.week is not None
@@ -2315,9 +2318,11 @@ def main() -> int:
     else:
         from_date, to_date = resolve_default_range(weeks=DEFAULT_WEEKS)
 
+    logger.info("Intervals pipeline range from=%s to=%s", from_date, to_date)
     latest_dir = athlete_latest_dir(athlete_id)
 
     print("[1/5] Fetching athlete settings + zone model...")
+    logger.info("Stage 1: zone model")
     write_zone_model(
         athlete_id=athlete_id,
         base_url=base_url,
@@ -2326,6 +2331,7 @@ def main() -> int:
     )
 
     print("[2/5] Fetching wellness data...")
+    logger.info("Stage 2: wellness data")
     write_wellness(
         athlete_id=athlete_id,
         base_url=base_url,
@@ -2335,6 +2341,7 @@ def main() -> int:
     )
 
     print("[3/5] Fetching activity data from Intervals.icu...")
+    logger.info("Stage 3: activity data")
     export_csv = export_range(
         athlete_id=athlete_id,
         base_url=base_url,
@@ -2343,6 +2350,7 @@ def main() -> int:
     )
 
     print("[4/5] Compiling activities_actual (latest week)...")
+    logger.info("Stage 4: activities_actual")
     compile_activities_actual(
         athlete_id=athlete_id,
         input_csv=export_csv,
@@ -2350,12 +2358,14 @@ def main() -> int:
     )
 
     print("[5/5] Compiling activities_trend...")
+    logger.info("Stage 5: activities_trend")
     compile_activities_trend(
         athlete_id=athlete_id,
         input_csv=export_csv,
         skip_validate=args.skip_validate,
     )
 
+    logger.info("Pipeline complete latest_dir=%s", latest_dir)
     return 0
 
 

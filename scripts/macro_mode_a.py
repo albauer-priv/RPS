@@ -18,6 +18,7 @@ from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output 
 from app.agents.registry import AGENTS  # noqa: E402
 from app.agents.tasks import AgentTask, OUTPUT_SPECS  # noqa: E402
 from app.core.config import AppSettings, load_app_settings, load_env_file  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
 from app.openai.client import get_client  # noqa: E402
 from app.openai.vectorstore_state import VectorStoreResolver  # noqa: E402
 from app.prompts.loader import PromptLoader  # noqa: E402
@@ -427,6 +428,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    load_env_file(ROOT / ".env")
+    logger = configure_logging(ROOT, Path(__file__).stem)
+    logger.info("Macro mode A command=%s athlete=%s", getattr(args, "command", None), args.athlete)
 
     if not args.athlete:
         raise SystemExit("Missing athlete id. Set ATHLETE_ID in .env or pass --athlete.")

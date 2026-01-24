@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (  # noqa: E402
     athlete_data_dir,
     athlete_latest_dir,
+    configure_logging,
     load_env,
     resolve_athlete_id,
     resolve_schema_dir,
@@ -123,6 +124,7 @@ def validate_file(registry: SchemaRegistry, schema_file: str, path: Path) -> boo
 def main() -> int:
     """Validate outputs and return a process exit code."""
     load_env()
+    logger = configure_logging(ROOT, Path(__file__).stem)
     args = parse_args()
     athlete_id = args.athlete or resolve_athlete_id()
 
@@ -136,9 +138,14 @@ def main() -> int:
         wellness_path=args.wellness_path,
     )
 
+    logger.info("Validating %d outputs for athlete=%s", len(targets), athlete_id)
     registry = SchemaRegistry(resolve_schema_dir())
     results = [validate_file(registry, schema_file, path) for schema_file, path in targets]
-    return 0 if all(results) else 1
+    if all(results):
+        logger.info("Validation succeeded for all outputs")
+        return 0
+    logger.error("Validation failed for one or more outputs")
+    return 1
 
 
 if __name__ == "__main__":

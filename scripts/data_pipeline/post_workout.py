@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
 
 from scripts.data_pipeline.common import (
     athlete_latest_dir,
+    configure_logging,
     load_env,
     require_env,
     resolve_athlete_id,
@@ -64,6 +65,7 @@ def load_events(json_path: Path) -> list[dict[str, Any]]:
 def main() -> int:
     """CLI entry point for posting workout events."""
     load_env()
+    logger = configure_logging(Path(__file__).stem)
 
     base_url = require_env("BASE_URL")
     args = parse_args(default_base_url=base_url)
@@ -77,13 +79,16 @@ def main() -> int:
     )
     if not json_path.exists():
         print(f"ERROR: JSON file not found: {json_path}", file=sys.stderr)
+        logger.error("JSON file not found path=%s", json_path)
         return 2
 
     try:
         events = load_events(json_path)
     except Exception as exc:
         print(f"ERROR: Failed to load/validate JSON: {exc}", file=sys.stderr)
+        logger.error("Failed to load/validate JSON: %s", exc)
         return 2
+    logger.info("Post workouts athlete=%s events=%d json=%s", athlete_id, len(events), json_path)
 
     url = f"{args.base_url.rstrip('/')}/athlete/{athlete_id}/events/bulk"
 
@@ -96,6 +101,7 @@ def main() -> int:
 
     if args.dry_run:
         print("Dry-run complete. No request sent.")
+        logger.info("Dry run; no request sent")
         return 0
 
     try:
@@ -108,9 +114,11 @@ def main() -> int:
         )
     except requests.RequestException as exc:
         print(f"ERROR: HTTP request failed: {exc}", file=sys.stderr)
+        logger.error("HTTP request failed: %s", exc)
         return 1
 
     print(f"Status: {resp.status_code}")
+    logger.info("Posted events status=%s", resp.status_code)
     ctype = resp.headers.get("Content-Type", "")
     if "application/json" in ctype:
         try:

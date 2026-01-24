@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (  # noqa: E402
     athlete_data_dir,
     athlete_latest_dir,
+    configure_logging,
     load_env,
     record_index_write,
     resolve_athlete_id,
@@ -338,12 +339,14 @@ def build_availability_payload(
 
 def main() -> int:
     load_env()
+    logger = configure_logging(Path(__file__).stem)
     args = parse_args()
     athlete_id = args.athlete or resolve_athlete_id()
 
     athlete_root = resolve_workspace_root() / athlete_id
     season_path, season_text = _load_season_brief(athlete_root, args.year, args.season_brief_path)
     season_ref = season_path.name
+    logger.info("Parse availability athlete=%s season_brief=%s", athlete_id, season_ref)
     season_year = args.year or _extract_year(season_text, season_path)
     if season_year is None:
         raise ValueError("Season year not found. Provide --year or include 'Year: YYYY' in Season Brief.")
@@ -375,6 +378,7 @@ def main() -> int:
     latest_dir.mkdir(parents=True, exist_ok=True)
     latest_file = latest_dir / "availability.json"
     latest_file.write_bytes(out_file.read_bytes())
+    logger.info("Wrote availability iso_week=%s path=%s", iso_week, out_file)
 
     record_index_write(
         athlete_id=athlete_id,

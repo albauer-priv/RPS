@@ -16,6 +16,7 @@ if SYS_PATH not in sys.path:
 from app.core.config import load_env_file  # noqa: E402
 from app.openai.client import get_client  # noqa: E402
 from app.openai.vectorstores import MANAGED_BY, list_files, list_vector_store_files, list_vector_stores  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
 
 
 def main() -> None:
@@ -25,6 +26,7 @@ def main() -> None:
     args = parser.parse_args()
 
     load_env_file(ROOT / ".env")
+    logger = configure_logging(ROOT, Path(__file__).stem)
     client = get_client()
 
     attached_file_ids: set[str] = set()
@@ -45,6 +47,7 @@ def main() -> None:
             client.files.delete(file_obj.id)
         removed += 1
 
+    logger.info("Removed orphaned files count=%d dry_run=%s", removed, args.dry_run)
     print(f"Removed {removed} orphaned files.")
 
 

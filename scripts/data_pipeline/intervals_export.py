@@ -7,6 +7,7 @@ import argparse
 import csv
 from datetime import datetime, timedelta
 from io import StringIO
+import logging
 from pathlib import Path
 import sys
 import warnings
@@ -25,6 +26,7 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (
     athlete_data_dir,
     athlete_latest_dir,
+    configure_logging,
     load_env,
     require_env,
     resolve_athlete_id,
@@ -623,6 +625,8 @@ def export_range(from_date: datetime.date, to_date: datetime.date) -> None:
     latest_file.write_bytes(out_file.read_bytes())
 
     print(f"CSV exported: {out_file}")
+    logger = logging.getLogger(Path(__file__).stem)
+    logger.info("CSV exported path=%s rows=%d", out_file, len(df))
 
 
 # ======================================================
@@ -645,6 +649,7 @@ def main() -> int:
 
     global week, year
     load_env()
+    logger = configure_logging(Path(__file__).stem)
     parser = argparse.ArgumentParser(
         description=(
             "Export Intervals.icu data (ISO week OR date range). "
@@ -663,6 +668,7 @@ def main() -> int:
     athlete_id = args.athlete or resolve_athlete_id()
     api_key = require_env("API_KEY")
     base_url = require_env("BASE_URL")
+    logger.info("Intervals export athlete=%s base_url=%s", athlete_id, base_url)
 
     global ATHLETE_ID, API_KEY, BASE_URL, AUTH, session
     ATHLETE_ID = athlete_id
@@ -692,6 +698,7 @@ def main() -> int:
     if has_week:
         week = args.week
         year = args.year
+        logger.info("Export week year=%s week=%s", args.year, args.week)
         export_week(args.year, args.week)
         return 0
 
@@ -708,6 +715,7 @@ def main() -> int:
         iso_year, iso_week = date_to_iso_week(datetime.combine(to_d, datetime.min.time()))
         week = iso_week
         year = iso_year
+        logger.info("Export range from=%s to=%s", from_d, to_d)
         export_range(from_d, to_d)
         return 0
 
@@ -716,6 +724,7 @@ def main() -> int:
     iso_year, iso_week = date_to_iso_week(to_d)
     week = iso_week
     year = iso_year
+    logger.info("Export default range from=%s to=%s", from_d, to_d)
     export_range(from_d, to_d)
     return 0
 

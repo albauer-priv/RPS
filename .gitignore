@@ -148,6 +148,7 @@ venv.bak/
 var/
 legacy/
 .DS_Store
+logs/
 
 # Spyder project settings
 .spyderproject

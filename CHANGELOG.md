@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wellness artefact (`WELLNESS`) + schema/interface spec for daily biometric/self-report data.
 - Data pipeline now writes `wellness_yyyy-ww.json` and latest `wellness.json`.
 - Availability validation checklist and `validate_outputs.py` support for availability artefacts.
+- Standalone scripts now emit per-run logs with timestamped filenames under `var/athletes/<athlete_id>/logs`.
+- Logging policy document for levels, format, and per-run log file locations.
+- Artifact writes now emit INFO logs with type, version key, and path.
 
 ### Fixed
 - Workspace tool writes now tolerate missing `run_id` by falling back to meta/context defaults.
@@ -62,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runner normalizes season-scenario payloads (required arrays, disallowed keys) before validation.
 - Runner normalizes workouts plan meta fields to schema constants before validation.
 - Performance-Analyst prompt no longer stops early when binding sources are not returned by file_search.
+- Default CLI log filenames now include a UTC timestamp to avoid overwriting logs per run.
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
 
 ### Changed

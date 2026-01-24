@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import os
 from pathlib import Path
 import sys
+import time
 
 from app.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
 from app.agents.runner import AgentRuntime, run_agent
@@ -25,7 +26,7 @@ def main() -> None:
     load_env_file(Path(".env"))
     settings = load_app_settings()
     default_athlete = os.getenv("ATHLETE_ID")
-    default_log_level = os.getenv("APP_LOG_LEVEL", "DEBUG")
+    default_log_level = os.getenv("APP_LOG_LEVEL", "INFO")
     default_log_file = os.getenv("APP_LOG_FILE")
 
     strict_only_agents = {
@@ -129,11 +130,12 @@ def main() -> None:
             raise SystemExit("Missing athlete id. Set ATHLETE_ID in .env or pass --athlete.")
 
         if not args.log_file:
+            timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
             log_filename = {
-                "plan-week": "plan_week.log",
-                "run-agent": "agent_run.log",
-                "run-task": "task_run.log",
-            }.get(args.cmd, "app.log")
+                "plan-week": f"plan_week_{timestamp}.log",
+                "run-agent": f"agent_run_{timestamp}.log",
+                "run-task": f"task_run_{timestamp}.log",
+            }.get(args.cmd, f"app_{timestamp}.log")
             args.log_file = str(settings.workspace_root / args.athlete / "logs" / log_filename)
 
         setup_logging(args.log_level, args.log_file, log_stdout=args.log_stdout)

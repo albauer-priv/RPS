@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import atexit
+import logging
 import os
 from pathlib import Path
 import sys
@@ -14,13 +16,49 @@ if SYS_PATH not in sys.path:
     sys.path.insert(0, SYS_PATH)
 
 from app.core.config import load_env_file  # noqa: E402
+from app.core.logging import setup_logging, timestamped_log_path  # noqa: E402
 from app.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 
+logger = logging.getLogger(__name__)
 
 def load_env(env_path: Optional[Path] = None) -> None:
     """Load environment variables from a .env file if it exists."""
     path = env_path or (ROOT / ".env")
     load_env_file(path)
+
+
+def _resolve_workspace_root() -> Path:
+    """Resolve ATHLETE_WORKSPACE_ROOT relative to repo root when needed."""
+    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(ROOT / "var/athletes"))
+    root_path = Path(raw_root)
+    if not root_path.is_absolute():
+        root_path = (ROOT / root_path).resolve()
+    return root_path
+
+
+def configure_logging(script_name: str) -> logging.Logger:
+    """Configure logging to a per-script timestamped log file."""
+    log_level = os.getenv("APP_LOG_LEVEL", "INFO")
+    athlete_id = os.getenv("ATHLETE_ID")
+    if athlete_id:
+        log_dir = _resolve_workspace_root() / athlete_id / "logs"
+    else:
+        log_dir = ROOT / "logs"
+    log_file = timestamped_log_path(log_dir, script_name)
+    setup_logging(log_level, log_file=log_file)
+    logger = logging.getLogger(script_name)
+    logger.info("Start %s argv=%s", script_name, " ".join(sys.argv[1:]))
+
+    def _log_exit() -> None:
+        logger.info("Finished %s", script_name)
+
+    def _excepthook(exc_type, exc, tb) -> None:
+        logger.critical("Unhandled exception in %s", script_name, exc_info=(exc_type, exc, tb))
+        sys.__excepthook__(exc_type, exc, tb)
+
+    atexit.register(_log_exit)
+    sys.excepthook = _excepthook
+    return logger
 
 
 def resolve_workspace_root() -> Path:
@@ -109,4 +147,11 @@ def record_index_write(
         created_at=created_at,
         iso_week=parse_iso_week(iso_week),
         iso_week_range=iso_week_range,
+    )
+    logger.info(
+        "Recorded artifact write type=%s version_key=%s path=%s run_id=%s",
+        artifact_type,
+        version_key,
+        relative_path,
+        run_id,
     )

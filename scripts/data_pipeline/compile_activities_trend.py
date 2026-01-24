@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
 from scripts.data_pipeline.common import (
     athlete_data_dir,
     athlete_latest_dir,
+    configure_logging,
     load_env,
     record_index_write,
     resolve_athlete_id,
@@ -413,13 +414,16 @@ def main() -> int:
     warnings.warn(warn_msg, DeprecationWarning, stacklevel=2)
 
     load_env()
+    logger = configure_logging(Path(__file__).stem)
     args = parse_args()
     athlete_id = args.athlete or resolve_athlete_id()
     schema_dir = resolve_schema_dir()
     validator = SchemaRegistry(schema_dir).validator_for("activities_trend.schema.json")
+    logger.info("Compile activities_trend athlete=%s input=%s", athlete_id, args.input_csv)
 
     # === Load data ===
     df = pd.read_csv(args.input_csv, sep=SEPARATOR, quotechar=QUOTECHAR)
+    logger.debug("Input rows=%d", len(df))
 
     # Helper: find columns robustly (case-insensitive)
     cols = {c.lower(): c for c in df.columns}
@@ -894,6 +898,12 @@ def main() -> int:
         created_at=meta["created_at"],
         iso_week=meta["iso_week"],
     )
+    logger.info(
+        "Wrote activities_trend week=%s entries=%d json=%s",
+        version_key,
+        len(weekly_trends_json),
+        out_json_file,
+    )
 
     latest_csv = latest_dir / "activities_trend.csv"
     latest_json = latest_dir / "activities_trend.json"
@@ -901,6 +911,7 @@ def main() -> int:
     latest_json.write_bytes(out_json_file.read_bytes())
 
     print(f"JSON exported: {out_json_file}")
+    logger.info("Updated latest activities_trend to %s", out_json_file)
 
     return 0
 

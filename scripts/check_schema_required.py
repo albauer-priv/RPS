@@ -5,7 +5,20 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+SYS_PATH = str(ROOT / "src")
+if SYS_PATH not in sys.path:
+    # Allow running the script directly without installing the package.
+    sys.path.insert(0, SYS_PATH)
+
+from app.core.config import load_env_file  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
+
+load_env_file(ROOT / ".env")
+logger = configure_logging(ROOT, Path(__file__).stem)
 
 
 def find_schema_files(root: Path) -> list[Path]:
@@ -54,16 +67,19 @@ def main() -> int:
         if directory.exists():
             files.extend(find_schema_files(directory))
 
+    logger.info("Checking required coverage for %d schema files", len(files))
     all_issues: list[str] = []
     for path in files:
         all_issues.extend(check_schema(path))
 
     if all_issues:
+        logger.error("Required coverage issues=%d", len(all_issues))
         print("Schema required coverage issues found:")
         for issue in all_issues:
             print(f"- {issue}")
         return 1
 
+    logger.info("No required coverage issues found")
     print(f"OK: {len(files)} schema files checked, no required coverage issues.")
     return 0
 

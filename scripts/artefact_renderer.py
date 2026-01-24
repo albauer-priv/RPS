@@ -17,6 +17,7 @@ if SYS_PATH not in sys.path:
 
 from app.core.config import load_env_file  # noqa: E402
 from app.workspace.schema_registry import SchemaRegistry, validate_or_raise  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
 
 RENDERERS = {
     "MACRO_OVERVIEW": "macro_overview.md.j2",
@@ -1728,12 +1729,14 @@ def main():
     doc = load_json(input_path)
 
     load_env_file(ROOT / ".env")
+    logger = configure_logging(ROOT, Path(__file__).stem)
 
     meta = doc.get("meta", {})
     artifact_type = meta.get("artifact_type")
     if not artifact_type:
         raise ValueError("Missing meta.artifact_type in JSON artefact.")
 
+    logger.info("Render artifact_type=%s input=%s", artifact_type, input_path)
     if artifact_type not in RENDERERS:
         raise ValueError(f"No renderer registered for {artifact_type}.")
 
@@ -1784,6 +1787,7 @@ def main():
             output_path = input_path.with_suffix(".rendered.md")
     output_path.write_text(rendered, encoding="utf-8")
     print(f"Rendered: {output_path}")
+    logger.info("Rendered output=%s", output_path)
 
 
 if __name__ == "__main__":

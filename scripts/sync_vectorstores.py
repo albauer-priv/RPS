@@ -16,6 +16,7 @@ if SYS_PATH not in sys.path:
 from app.core.config import load_env_file  # noqa: E402
 from app.openai.vectorstores import iter_manifest_paths, load_manifest, sync_manifest  # noqa: E402
 from app.openai.vectorstore_state import DEFAULT_STATE_PATH, load_state, write_state  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
 
 
 def select_manifests(args: argparse.Namespace) -> list[Path]:
@@ -54,16 +55,19 @@ def main() -> None:
     args = parser.parse_args()
 
     load_env_file(ROOT / ".env")
+    logger = configure_logging(ROOT, Path(__file__).stem)
 
     manifests = select_manifests(args)
     if not manifests:
         print("No manifests found.")
+        logger.warning("No manifests found for sync")
         return
 
     delete_removed = args.delete_removed or args.prune
     state = load_state(args.state)
 
     for manifest_path in manifests:
+        logger.info("Sync manifest %s", manifest_path)
         stats = sync_manifest(
             manifest_path=manifest_path,
             delete_removed=delete_removed,
@@ -76,6 +80,16 @@ def main() -> None:
             f"{manifest_path}: added={stats['added']} "
             f"updated={stats['updated']} removed={stats['removed']} "
             f"skipped={stats['skipped']}"
+        )
+        logger.info(
+            "Sync stats manifest=%s added=%s updated=%s removed=%s skipped=%s dry_run=%s reset=%s",
+            manifest_path,
+            stats["added"],
+            stats["updated"],
+            stats["removed"],
+            stats["skipped"],
+            args.dry_run,
+            args.reset,
         )
 
     if not args.dry_run:
