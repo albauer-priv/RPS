@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-01-24
+
 ### Added
 - Durability principles now include the permitted "Kinzlbauer macro template" archetype (macro-level sequencing and traceability anchors).
 - Macro load corridor policy spec for deriving weekly kJ bands from availability, wellness, KPI guidance, and activity trends.
@@ -111,7 +113,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Guarded store now enforces execution preview traceability to execution architecture.
 - Meso-Architect prompt now requires weekly kJ progression patterns (default 3:1) unless macro specifies steady-state.
 
-### Changed
 - Planning artefacts are now kJ-first only: removed TSS fields from macro overview, block governance/execution, workouts plans, and zone model examples.
 - Renderer templates now omit TSS columns/sections for non-activities artefacts.
 - Activities trend adherence now computes against planned weekly kJ from workouts plans; TSS remains only in activities_* artefacts.
