@@ -75,6 +75,21 @@ python3 scripts/macro_mode_a.py overview \
   --scenario-run-id macro_scenarios_2026_w06
 ```
 
+Optional KPI moving-time rate band override (affects kJ corridor derivation):
+
+```bash
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
+  --scenario-run-id macro_scenarios_2026_w06 \
+  --moving-time-rate-band fast_competitive
+```
+
+Available bands are read from the KPI profile (`data.durability.moving_time_rate_guidance.bands`):
+`brevet_ultra_sustainable`, `fast_competitive`, `top_record_oriented`.
+The override selects the W/kg and kJ/kg/h window used to derive weekly kJ corridors.
+
 ```bash
 python3 scripts/macro_mode_a.py overview \
   --year 2026 \
@@ -107,7 +122,7 @@ PYTHONPATH=src python3 -m app.main run-agent \
   --agent meso_architect \
   --athlete ath_001 \
   --task CREATE_BLOCK_GOVERNANCE CREATE_BLOCK_EXECUTION_ARCH \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create block_governance and block_execution_arch for the 4-week block covering ISO week 2026-06."
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create block_governance and block_execution_arch for the block covering ISO week 2026-06."
 ```
 
 ```bash

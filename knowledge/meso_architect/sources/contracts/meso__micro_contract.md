@@ -90,7 +90,7 @@ Conflicts are resolved in this order:
   - any macro or block artefacts
 
 ## 8) Error Handling & STOP Rules
-- No valid `block_governance_yyyy-ww--yyyy-ww+3.json` exists -> STOP.
+- No valid `block_governance_yyyy-ww--yyyy-ww.json` exists -> STOP.
 - Feed Forward is ambiguous or malformed -> STOP.
 - Execution would violate kJ corridors -> STOP.
 - Structural architecture is infeasible to execute -> STOP.

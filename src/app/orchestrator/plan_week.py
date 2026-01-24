@@ -77,7 +77,7 @@ def plan_week(
             athlete_id=athlete_id,
             tasks=meso_tasks,
             user_input=(
-                f"Create meso artefacts for the current 4-week block covering ISO week {year}-{week:02d}. "
+                f"Create meso artefacts for the current block covering ISO week {year}-{week:02d}. "
                 f"Read macro_overview and use workspace_get_latest to pull required inputs."
             ),
             run_id=f"{run_id}_meso",

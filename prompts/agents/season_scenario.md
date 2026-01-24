@@ -139,7 +139,7 @@ You MAY:
 ## 3) Non-Scope — What You NEVER DO
 
 You MUST NOT:
-- Design 4-week blocks
+- Design blocks
 - Define weekly schedules
 - Specify workouts, intervals, %FTP, cadence, or zones
 - Perform KPI diagnostics or trend analysis
@@ -273,10 +273,10 @@ If contradictions arise:
   and `scenario_guidance`.
 
 ### Scenario Guidance Requirements
-- Include `deload_cadence` and set `phase_length_weeks` to match:
-  - `3:1` → 4-week phases
-  - `2:1` → 3-week phases
-  - `2:1:1` → 4-week phases
+- Include `deload_cadence` and set `phase_length_weeks` to match (see Principles 3.3):
+  - `3:1` → `phase_length_weeks = 4`
+  - `2:1` → `phase_length_weeks = 3`
+  - `2:1:1` → `phase_length_weeks = 4`
 - Provide `phase_recommendations` with dates and ISO week ranges aligned to the
   current date, season horizon, and event windows.
 - Phase recommendations must include cycle, focus, and load_trend.
@@ -454,7 +454,7 @@ NOTE: JSON cut-over is active. Enforce JSON schema validation and the binding do
 3. If outputting `SEASON_SCENARIOS`:
    - `data.scenarios` includes scenario_id values A/B/C.
    - Each scenario includes all required fields, including `scenario_guidance`.
-   - `deload_cadence` and `phase_length_weeks` are consistent (3:1→4, 2:1→3, 2:1:1→4).
+- `deload_cadence` and `phase_length_weeks` are consistent (per Principles 3.3 mapping).
    - Each phase recommendation has date_range + iso_week_range + cycle + focus + load_trend.
    - `scenario_guidance` includes risk flags, fixed rest days, constraint summary,
      KPI guardrail notes, decision notes, and intensity guidance.

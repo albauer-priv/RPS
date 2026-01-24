@@ -80,10 +80,10 @@ Trace-Upstream:
 
 ### 4.0 Week Roles (Required)
 {% set week_roles = week_skeleton_logic.week_roles %}
-- Week 1 role: {{ week_roles.week_1_role }}
-- Week 2 role: {{ week_roles.week_2_role }}
-- Week 3 role: {{ week_roles.week_3_role }}
-- Week 4 role: {{ week_roles.week_4_role }}
+- Week roles:
+{% for entry in week_roles.week_roles %}
+  - {{ entry.week }}: {{ entry.role }}
+{% endfor %}
 - Allowed role set:
 {{ bullet_list(week_roles.allowed_role_set) }}
 
@@ -117,8 +117,8 @@ Trace-Upstream:
 ## 7) Consistency & Self-Check
 {% set check = self_check %}
 - [{{ "x" if check.block_status_respected else " " }}] Block-Status respected
-- [{{ "x" if check.four_week_range_covered else " " }}] 4-week range covered
-- [{{ "x" if check.week_roles_defined_for_all_weeks else " " }}] Week roles defined for all 4 weeks
+- [{{ "x" if check.block_range_covered else " " }}] Block range covered
+- [{{ "x" if check.week_roles_defined_for_block_range else " " }}] Week roles defined for all weeks in block
 - [{{ "x" if check.no_new_decision_introduced else " " }}] No new decision introduced
 - [{{ "x" if check.no_numeric_target_introduced else " " }}] No numeric target introduced
 - [{{ "x" if check.no_kpi_gate_inferred else " " }}] No KPI gate inferred

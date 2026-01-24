@@ -66,8 +66,8 @@ operational control or progression authority.
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
 - `kpi_profile_des_*.json` -> `kpi_profile.schema.json`
 - `macro_overview_yyyy-ww--yyyy-ww.json` -> `macro_overview.schema.json`
-- `block_governance_yyyy-ww--yyyy-ww+3.json` -> `block_governance.schema.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww+3.json` -> `block_execution_arch.schema.json`
+- `block_governance_yyyy-ww--yyyy-ww.json` -> `block_governance.schema.json`
+- `block_execution_arch_yyyy-ww--yyyy-ww.json` -> `block_execution_arch.schema.json`
 
 ### Outputs (Performance-Analyst produces)
 - `des_analysis_report_yyyy-ww.json` -> `des_analysis_report.schema.json`

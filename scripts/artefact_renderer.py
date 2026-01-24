@@ -586,10 +586,11 @@ def build_block_execution_arch_context(doc):
         },
         "week_skeleton_logic": {
             "week_roles": {
-                "week_1_role": week_roles.get("week_1_role", ""),
-                "week_2_role": week_roles.get("week_2_role", ""),
-                "week_3_role": week_roles.get("week_3_role", ""),
-                "week_4_role": week_roles.get("week_4_role", ""),
+                "week_roles": (
+                    week_roles.get("week_roles", [])
+                    if isinstance(week_roles.get("week_roles"), list)
+                    else []
+                ),
                 "allowed_role_set": week_roles.get("allowed_role_set", []),
             },
             "mandatory_elements": {
@@ -624,16 +625,12 @@ def build_block_execution_arch_context(doc):
         },
         "self_check": {
             "block_status_respected": bool(self_check.get("block_status_respected")),
-            "four_week_range_covered": bool(self_check.get("four_week_range_covered")),
-            "week_roles_defined_for_all_weeks": bool(
-                self_check.get("week_roles_defined_for_all_weeks")
+            "block_range_covered": bool(self_check.get("block_range_covered")),
+            "week_roles_defined_for_block_range": bool(
+                self_check.get("week_roles_defined_for_block_range")
             ),
-            "no_new_decision_introduced": bool(
-                self_check.get("no_new_decision_introduced")
-            ),
-            "no_numeric_target_introduced": bool(
-                self_check.get("no_numeric_target_introduced")
-            ),
+            "no_new_decision_introduced": bool(self_check.get("no_new_decision_introduced")),
+            "no_numeric_target_introduced": bool(self_check.get("no_numeric_target_introduced")),
             "no_kpi_gate_inferred": bool(self_check.get("no_kpi_gate_inferred")),
         },
     }

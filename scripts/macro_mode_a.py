@@ -160,6 +160,87 @@ def _render_scenarios(scenarios_doc: dict) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _render_selected_scenario(scenarios_doc: dict, scenario_id: str) -> str:
+    data = scenarios_doc.get("data", {}) if isinstance(scenarios_doc, dict) else {}
+    scenarios = data.get("scenarios") or []
+    selected = None
+    target = str(scenario_id).strip().upper()
+    for item in scenarios:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("scenario_id", "")).strip().upper() == target:
+            selected = item
+            break
+    if not selected:
+        return ""
+
+    lines = [f"Selected scenario details (Scenario {target})", ""]
+    labels = [
+        ("core_idea", "Core idea"),
+        ("load_philosophy", "Load philosophy"),
+        ("risk_profile", "Risk profile"),
+        ("key_differences", "Key differences"),
+        ("best_suited_if", "Best suited if"),
+    ]
+    phase_labels = [
+        ("cycle", "Cycle"),
+        ("iso_week_range", "ISO week range"),
+        ("focus", "Focus"),
+        ("load_trend", "Load trend"),
+    ]
+
+    name = selected.get("name") or "Unnamed"
+    lines.append(f"Scenario {target} — {name}")
+    for key, label in labels:
+        value = selected.get(key) or ""
+        lines.append(f"- {label}: {value}")
+    guidance = selected.get("scenario_guidance") or {}
+    if guidance:
+        cadence = guidance.get("deload_cadence") or ""
+        phase_len = guidance.get("phase_length_weeks")
+        lines.append(f"- Deload cadence: {cadence}")
+        if isinstance(phase_len, int) and phase_len > 0:
+            lines.append(f"- Phase length: {phase_len} weeks")
+        risk_flags = guidance.get("risk_flags") or []
+        if risk_flags:
+            lines.append(f"- Risk flags: {', '.join(str(item) for item in risk_flags)}")
+        fixed_days = guidance.get("fixed_rest_days") or []
+        if fixed_days:
+            lines.append(f"- Fixed rest days: {', '.join(str(item) for item in fixed_days)}")
+        constraints = guidance.get("constraint_summary") or []
+        for note in constraints:
+            lines.append(f"- Constraint: {note}")
+        kpi_notes = guidance.get("kpi_guardrail_notes") or []
+        for note in kpi_notes:
+            lines.append(f"- KPI guardrails: {note}")
+        decision_notes = guidance.get("decision_notes") or []
+        for note in decision_notes:
+            lines.append(f"- Decision note: {note}")
+        intensity = guidance.get("intensity_guidance") or {}
+        allowed = intensity.get("allowed_domains") or []
+        avoid = intensity.get("avoid_domains") or []
+        if allowed:
+            lines.append(f"- Intensity focus: {', '.join(str(item) for item in allowed)}")
+        if avoid:
+            lines.append(f"- Intensity avoid: {', '.join(str(item) for item in avoid)}")
+        phases = guidance.get("phase_recommendations") or []
+        if phases:
+            lines.append("- Phase outline:")
+            for phase in phases:
+                if not isinstance(phase, dict):
+                    continue
+                phase_name = phase.get("name") or phase.get("phase_id") or "Phase"
+                lines.append(f"  - {phase_name}")
+                for key, label in phase_labels:
+                    value = phase.get(key) or ""
+                    lines.append(f"    - {label}: {value}")
+        notes = guidance.get("event_alignment_notes") or []
+        for note in notes:
+            lines.append(f"- Event alignment: {note}")
+
+    return "\n".join(lines).strip() + "\n"
+
+
 def run_scenarios(args: argparse.Namespace) -> int:
     spec = AGENTS["season_scenario"]
     runtime, settings = _runtime(spec.name)
@@ -247,22 +328,54 @@ def run_overview(args: argparse.Namespace) -> int:
             f"Set meta.trace_upstream to include '{args.scenario_run_id}'. "
         )
 
-    events_line = ""
+    events_line = (
+        "Load events.md via workspace_get_input('events') (required), include it in "
+        "meta.trace_events, and reflect relevant events in phases[].events_constraints. "
+        "If no relevant events apply to a phase, use an empty array for events_constraints. "
+    )
     if args.allow_missing_events:
-        events_line = "If events input is missing, set events_constraints to an empty array and proceed. "
+        events_line = (
+            "Load events.md via workspace_get_input('events') when available. "
+            "If events input is missing, set events_constraints to an empty array and proceed. "
+        )
 
     scenario_block = ""
     if args.scenario_run_id:
         scenario_path = ROOT / ".cache" / "macro_scenarios" / f"{args.scenario_run_id}.md"
         if scenario_path.exists():
-            scenario_block = (
-                "Selected scenario details (use verbatim to shape the plan):\n"
-                f"\"\"\"\n{scenario_path.read_text(encoding='utf-8')}\n\"\"\"\n"
-            )
-        else:
-            scenario_block = (
-                "Selected scenario details could not be loaded; proceed with Scenario label only.\n"
-            )
+            # Extract only the selected scenario from the cached render.
+            lines = scenario_path.read_text(encoding="utf-8").splitlines()
+            start_token = f"Scenario {scenario} —"
+            capture = []
+            capturing = False
+            for line in lines:
+                if line.startswith("Scenario ") and line != start_token and capturing:
+                    break
+                if line.startswith(start_token):
+                    capturing = True
+                if capturing:
+                    capture.append(line)
+            if capture:
+                scenario_block = (
+                    "Selected scenario details (use verbatim to shape the plan):\n"
+                    f"\"\"\"\n{'\n'.join(capture).strip()}\n\"\"\"\n"
+                )
+
+    if not scenario_block:
+        store = LocalArtifactStore(root=settings.workspace_root)
+        try:
+            scenarios_doc = store.load_latest(args.athlete, ArtifactType.SEASON_SCENARIOS)
+            scenario_text = _render_selected_scenario(scenarios_doc, scenario)
+            if scenario_text:
+                scenario_block = (
+                    "Selected scenario details (use verbatim to shape the plan):\n"
+                    f"\"\"\"\n{scenario_text}\n\"\"\"\n"
+                )
+        except FileNotFoundError:
+            scenario_block = ""
+
+    if not scenario_block:
+        scenario_block = "Selected scenario details could not be loaded; proceed with Scenario label only.\n"
 
     band_line = ""
     if args.moving_time_rate_band:
@@ -279,22 +392,25 @@ def run_overview(args: argparse.Namespace) -> int:
         "Use workspace_get_latest with artifact_type KPI_PROFILE (not a filename). "
         "Use workspace_get_latest with artifact_type SEASON_SCENARIO_SELECTION when available "
         "and align the plan to the selected scenario label. "
+        "If scenario guidance provides phase_length_weeks and/or deload_cadence, treat them as "
+        "binding constraints for phase construction (exact phase length, cadence-aligned deloads). "
         f"{band_line}"
         "Strict schema guards: each phase MUST include structural_emphasis and events_constraints "
         "(use [] when no events). Put typical_duration_intensity_pattern and non_negotiables "
         "only inside overview, never at phase top level. allowed_forbidden_semantics must "
         "only include allowed_intensity_domains, allowed_load_modalities, forbidden_intensity_domains "
         "(do NOT add forbidden_load_modalities). "
+        "Return a single JSON envelope with top-level {\"meta\": ..., \"data\": ...} only. "
         "Meta must include iso_week (YYYY-WW) and iso_week_range as an object with from/to "
         "NO: iso_week_range must be a string pattern YYYY-WW--YYYY-WW (not an object). "
         "Phase iso_week_range must use the same string pattern. "
         "Do not add any extra keys at phase level (e.g., no 'notes'). "
         "Output MUST be a single JSON object and nothing else "
-        "(no prose, no markdown). If a store call fails, output only the JSON object."
+        "(no prose, no markdown). If a store call fails, output only the same JSON envelope."
         f"{events_line}"
         f"{trace_line}"
         f"{scenario_block}"
-        "Call store_macro_overview with schema-compliant JSON only."
+        "Call store_macro_overview with the JSON envelope (meta + data) only."
     )
 
     model_override = args.model or settings.model_for_agent(spec.name)

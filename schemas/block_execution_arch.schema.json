@@ -277,28 +277,30 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "week_1_role",
-                "week_2_role",
-                "week_3_role",
-                "week_4_role",
+                "week_roles",
                 "allowed_role_set"
               ],
               "properties": {
-                "week_1_role": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "week_2_role": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "week_3_role": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "week_4_role": {
-                  "type": "string",
-                  "minLength": 1
+                "week_roles": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "week",
+                      "role"
+                    ],
+                    "properties": {
+                      "week": {
+                        "$ref": "iso_week.schema.json"
+                      },
+                      "role": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
                 },
                 "allowed_role_set": {
                   "type": "array",
@@ -414,8 +416,8 @@
           "additionalProperties": false,
           "required": [
             "block_status_respected",
-            "four_week_range_covered",
-            "week_roles_defined_for_all_weeks",
+            "block_range_covered",
+            "week_roles_defined_for_block_range",
             "no_new_decision_introduced",
             "no_numeric_target_introduced",
             "no_kpi_gate_inferred"
@@ -425,11 +427,11 @@
               "const": true,
               "type": "boolean"
             },
-            "four_week_range_covered": {
+            "block_range_covered": {
               "const": true,
               "type": "boolean"
             },
-            "week_roles_defined_for_all_weeks": {
+            "week_roles_defined_for_block_range": {
               "const": true,
               "type": "boolean"
             },

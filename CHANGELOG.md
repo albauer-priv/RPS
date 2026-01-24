@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Macro/Meso/Micro/Performance-Analyst prompts now require `events.md` (no optional/if-present paths).
 - Season-Scenario prompt now requires `events.md` (no optional/if-present path).
+- Macro-Planner prompt now requires `events.md` to be reflected in `meta.trace_events` and phase event constraints.
+- Macro Mode A overview now explicitly requires loading `events.md` and reflecting it in trace/events constraints.
+- Block execution architecture now supports variable-length blocks via `week_roles[]` and removes 4-week-only schema fields.
+- File naming, contracts, and specs now reference generic block ranges (no `+3`).
+- Macro/Meso cadence guidance and constrained-time-window rules formalized in Principles 3.3 and referenced by prompts.
+- Saved artifacts now apply schema-aware rounding (integers stay integers; kg/hours/IF/etc. rounded consistently).
+
+### Fixed
+- Macro overview renderer no longer references deprecated mass/preload fields.
 
 ### Removed
 - Legacy data pipeline scripts removed (`intervals_export.py`, `compile_activities_actual.py`, `compile_activities_trend.py`).

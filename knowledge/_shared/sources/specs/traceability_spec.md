@@ -48,7 +48,7 @@ If an artefact has no upstream (e.g., Data-Pipeline raw outputs), it MUST includ
 - MUST reference exactly one `macro_overview_yyyy-ww--yyyy-ww.json` in `trace_upstream`.
 
 ### Micro outputs
-- MUST reference exactly one `block_governance_yyyy-ww--yyyy-ww+3.json` in `trace_upstream`.
+- MUST reference exactly one `block_governance_yyyy-ww--yyyy-ww.json` in `trace_upstream`.
 - If a `block_feed_forward_yyyy-ww.json` is applied, it MUST also be referenced.
 
 ### Workout-Builder outputs

@@ -24,7 +24,7 @@ Notes: >
 ## 1. Global Precedence Order (Highest → Lowest)
 
 1. Governance Artefacts
-   - `block_governance_yyyy-ww--yyyy-ww+3.json`
+   - `block_governance_yyyy-ww--yyyy-ww.json`
    - `block_feed_forward_yyyy-ww.json` (within validity window)
 2. Agent Contracts
 3. Specifications & Schemas

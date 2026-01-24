@@ -476,7 +476,7 @@
           "items": {
             "type": "string",
             "enum": [
-              "block definitions (4-week plans)",
+              "block definitions (block plans)",
               "weekly schedules",
               "day-by-day structure",
               "workouts or interval prescriptions",

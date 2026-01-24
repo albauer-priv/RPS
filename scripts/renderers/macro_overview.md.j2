@@ -37,10 +37,12 @@ Trace-Upstream:
 - Season-Brief-Ref: {{ body_metadata.season_brief_ref }}
 - KPI-Profile-Ref: {{ body_metadata.kpi_profile_ref }}
 - Athlete-Profile-Ref: {{ body_metadata.athlete_profile_ref or "N/A" }}
-- Reference mass window (kg): {{ body_metadata.reference_mass_window }}
-- Energetic pre-load references (kJ/kg):
-  - Single-day: {{ body_metadata.energetic_preload_single_day }}
-  - Back-to-back: {{ body_metadata.energetic_preload_back_to_back }}
+- Body mass (kg): {{ body_metadata.body_mass_kg or "N/A" }}
+- Moving-time rate guidance:
+  - Segment: {{ body_metadata.moving_time_rate_guidance.segment or "N/A" }}
+  - W/kg: {{ body_metadata.moving_time_rate_guidance.w_per_kg or "N/A" }}
+  - kJ/kg/h: {{ body_metadata.moving_time_rate_guidance.kj_per_kg_per_hour or "N/A" }}
+  - Notes: {{ body_metadata.moving_time_rate_guidance.notes or "N/A" }}
 
 ## 1) Macro Intent & Principles
 
@@ -62,7 +64,6 @@ Trace-Upstream:
 - ISO-Week range: {{ phase.iso_week_range }}
 - Cycle: {{ phase.cycle }}
 - Deload: {{ phase.deload }}{% if phase.deload_rationale %} ({{ phase.deload_rationale }}){% endif %}
-- Reference mass window (kg): {{ phase.reference_mass_window }}
 
 #### Phase narrative
 {{ phase.narrative }}

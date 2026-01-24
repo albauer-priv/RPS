@@ -169,6 +169,10 @@ def run_agent_multi_output(
         """Try to recover an envelope object from common tool-arg shapes."""
         if "meta" in args and "data" in args:
             return args
+        if "meta" in args and "payload" in args and isinstance(args.get("payload"), dict):
+            return {"meta": args.get("meta"), "data": args.get("payload")}
+        if "meta" in args and "document" in args and isinstance(args.get("document"), dict):
+            return {"meta": args.get("meta"), "data": args.get("document")}
 
         def _maybe_parse(value: Any) -> dict[str, Any] | None:
             if isinstance(value, dict) and "meta" in value and "data" in value:
@@ -400,6 +404,17 @@ def run_agent_multi_output(
         data = document.get("data") or {}
         if not isinstance(data, dict):
             return document
+        body = data.get("body_metadata") or {}
+        if isinstance(body, dict):
+            mt_guidance = body.get("moving_time_rate_guidance") or {}
+            if isinstance(mt_guidance, dict):
+                for key in ("w_per_kg", "kj_per_kg_per_hour"):
+                    band = mt_guidance.get(key)
+                    if isinstance(band, dict):
+                        for bound in ("min", "max"):
+                            val = band.get(bound)
+                            if isinstance(val, (int, float)):
+                                band[bound] = round(float(val), 1)
         phases = data.get("phases")
         if isinstance(phases, list):
             top_semantics = data.get("allowed_forbidden_semantics")
@@ -411,9 +426,31 @@ def run_agent_multi_output(
             for phase in phases:
                 if not isinstance(phase, dict):
                     continue
+                weekly_kj = (
+                    phase.get("weekly_load_corridor", {}).get("weekly_kj")
+                    if isinstance(phase.get("weekly_load_corridor"), dict)
+                    else None
+                )
+                if isinstance(weekly_kj, dict):
+                    for bound in ("min", "max"):
+                        val = weekly_kj.get(bound)
+                        if isinstance(val, (int, float)):
+                            weekly_kj[bound] = int(round(float(val)))
+                    for bound in ("kj_per_kg_min", "kj_per_kg_max"):
+                        val = weekly_kj.get(bound)
+                        if isinstance(val, (int, float)):
+                            weekly_kj[bound] = round(float(val), 2)
                 overview = phase.get("overview")
                 if isinstance(overview, dict) and "non-negotiables" in overview:
                     overview["non_negotiables"] = overview.pop("non-negotiables")
+        season_load = data.get("season_load_envelope") or {}
+        if isinstance(season_load, dict):
+            expected_range = season_load.get("expected_average_weekly_kj_range")
+            if isinstance(expected_range, dict):
+                for bound in ("min", "max"):
+                    val = expected_range.get(bound)
+                    if isinstance(val, (int, float)):
+                        expected_range[bound] = int(round(float(val)))
         document["data"] = data
         return document
 

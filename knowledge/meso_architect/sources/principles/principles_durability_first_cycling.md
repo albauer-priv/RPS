@@ -218,12 +218,73 @@ If any answer is "no", the plan is invalid.
 
 **Execution summary:** Agents must optimize for long-term performance integrity, not short-term event satisfaction.
 
-### 3.3 3:1 cycles
-Load typically follows **3:1 cycles**:
-- 2-3 progressive load weeks
-- 1 deliberate deload/consolidation week
+### 3.3 Mesocycle load-recovery cadence (3:1, 2:1, 2:1:1) and constrained time windows
 
-Masters athletes use more conservative progressions and larger deloads.
+This section defines **standard mesocycle cadence patterns** and **how agents must choose them**.
+These patterns define **load-recovery rhythm only** (not intensity distribution or taper logic).
+
+#### 3.3.1 Standard cadence patterns (accepted practice)
+
+| Pattern | Phase length | Structure | Typical use |
+|---|---|---|---|
+| 3:1 | 4 weeks | 3 load weeks + 1 deload | Default / robust |
+| 2:1 | 3 weeks | 2 load weeks + 1 deload | Time-crunched or high intensity |
+| 2:1:1 | 4 weeks | 2 load + 1 deload + 1 reload | Masters / lower recovery bandwidth |
+
+#### 3.3.2 What these cycles mean (and do NOT mean)
+- They define **load rhythm only** (progression + deload cadence).
+- They do **not** define taper logic, intensity distribution, or workout content.
+- They are **not interchangeable mid-phase** without an explicit change control.
+- They are **not event-driven** by default; they are structural recovery rhythms.
+
+#### 3.3.3 Mapping to agent fields (binding)
+Agents MUST encode cadence using:
+- `deload_cadence`
+- `phase_length_weeks`
+
+Mapping:
+```
+3:1   -> phase_length_weeks = 4
+2:1   -> phase_length_weeks = 3
+2:1:1 -> phase_length_weeks = 4
+```
+
+#### 3.3.4 Selection heuristics (agent-safe defaults)
+Agents SHOULD:
+- default to **3:1**
+- select **2:1** when:
+  - intensity density is high, or
+  - the calendar is constrained (see below), or
+  - recovery bandwidth is low
+- select **2:1:1** when:
+  - masters athletes (approx 50+), or
+  - durability-first focus, or
+  - chronic fatigue risk is elevated
+
+#### 3.3.5 Constrained time window (formal definition)
+A **constrained time window** exists when **at least one** is true:
+- time to the next **A event** is shorter than a full default mesocycle (usually < 4 weeks), or
+- a complete load -> deload -> adaptation sequence cannot fit before a required checkpoint, or
+- external constraints (travel, work, illness) compress or remove weeks.
+
+Agent rule:
+```
+IF weeks_to_next_A_event < default_phase_length_weeks
+OR full_load_deload_sequence cannot be completed
+THEN constrained_time_window = true
+```
+
+#### 3.3.6 Planning consequences when constrained_time_window = true (hard rules)
+Agents MUST:
+- shorten phase length
+- reduce weekly load accumulation
+- increase recovery frequency
+- prioritize stability over progression elegance
+
+Agents MUST NOT:
+- stack multiple load weeks without deload
+- borrow recovery from future phases
+- attempt repeated peak logic
 
 ### 3.4 Permitted macro archetype: "Kinzlbauer macro template" (ultra / brevet)
 
@@ -274,44 +335,6 @@ Use the following items as traceability anchors in justification.citations when 
   - Ep. 154 "Ultracycling-Training mit Coach Max Kinzlbauer" (Bibliography #61/#62).
   - Ep. 218 "Richtig regenerieren und smart trainieren mit Max Kinzlbauer" (Bibliography #63).
   - Optional supporting context: Ep. 39 (K3 practice) (Bibliography #60), Ep. 272 (training camps) (Bibliography #64).
-
-### 3.5 3:1 default pattern and alternatives
-
-**Default: 3:1 (most athletes)**
-
-**Load weeks (2-3 weeks):**
-- Progress via **one axis** only (kJ/duration **or** frequency **or** density/complexity).
-- Intensity stays a later lever: prioritize "consistently long" over "too often hard".
-
-**Deload/consolidation week (1 week):**
-- Goal: **secure adaptation + reduce fatigue** without breaking rhythm.
-- Practical implementation:
-  - **Volume/kJ clearly down** (noticeably lower, not just marginal).
-  - **Frequency can stay**, but sessions are shorter and truly easy.
-  - **No durability density** (no back-to-back, no hard-late, no overload).
-  - **Optional: one very small quality touch**, only if intensity is required
-    (short, clean, non-fatiguing).
-
-**When 3:1 is not the best default**
-
-**2:1 (more conservative)** is often better when:
-- Masters/older athletes, high life stress, unstable sleep.
-- Volume/frequency is being ramped up from a lower base.
-- Week 3 regularly collapses (HR/RPE drift, heavy legs, motivation drop).
-
-**4:1 (more aggressive)** can work when:
-- Very high training stability, good sleep/stress buffer.
-- Base phase with high LIT and low complexity/intensity.
-- Athlete history shows 3:1 deloads are too early.
-
-**Decision rule (simple and reliable)**
-- If week 3 regularly tips: switch to **2:1** (or make week 3 half-load, then deload).
-- If week 3 is stable but deload feels under-dosed: keep **3:1**, but make deload a
-  **consolidation** (hold frequency, reduce volume/density).
-- If 3:1 is stable and base is very quiet: test **4:1** only with clear early-warning
-  signals and strict countermeasures.
-
----
 
 ## 4. Training Content Taxonomy (What trains what?)
 

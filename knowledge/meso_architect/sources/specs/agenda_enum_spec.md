@@ -151,8 +151,8 @@ If such content appears, the artefact is INVALID.
 
 This specification is referenced by:
 
-- `block_execution_arch_yyyy-ww--yyyy-ww+3.json`
-- `block_execution_preview_yyyy-ww--yyyy-ww+3.json`
+- `block_execution_arch_yyyy-ww--yyyy-ww.json`
+- `block_execution_preview_yyyy-ww--yyyy-ww.json`
 - Micro-Planner validation logic
 
 Higher-level artefacts (Meso-Architect, DES)  

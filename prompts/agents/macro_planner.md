@@ -87,7 +87,7 @@ Use this map to find binding enums/specs. Read the full artefact from its file.
 - `season_scenarios_*.json` (informational scenarios; advisory only)
 - `macro_overview_*.json`
 - KPI & DES system documents
-  - `kpi_profile_des_*.json`
+  - `kpi_profile_*.json`
 - Exactly one KPI Profile (numeric gates)
 - Traceability layer (decision → principle mapping)
 
@@ -147,7 +147,7 @@ You MAY:
 ## 3) Non-Scope — What You NEVER DO
 
 You MUST NOT:
-- Design 4-week blocks
+- Design blocks
 - Define weekly schedules
 - Specify workouts, intervals, %FTP, cadence, or zones
 - Perform KPI diagnostics or trend analysis
@@ -334,8 +334,12 @@ If contradictions arise:
 - Season Scenarios (optional): latest `SEASON_SCENARIOS` if available; advisory only.
 - Scenario Selection (optional): latest `SEASON_SCENARIO_SELECTION` if available; use selected scenario label.
 - Events (required): `events.md` from `inputs/` (STOP if missing).
+- You MUST merge events from the Season Brief event table and `events.md`. If the same event
+  appears in both, de-duplicate by date + name/ID; do NOT drop B/C events.
 - User inputs (season brief, events) MUST be loaded via `workspace_get_input` from `inputs/`.
   Do NOT use file_search for user inputs.
+ - You MUST include `events.md` in `meta.trace_events` and incorporate relevant events into
+   `phases[].events_constraints` (or explicitly state “no relevant events” in each phase).
 
 ## Output Targets
 - Mode A/B: one JSON artefact named `macro_overview_yyyy-ww--yyyy-ww.json`
@@ -357,7 +361,10 @@ Do not output scenario dialogue or request a selection.
   - macro intent and principles
   - phases with load corridors
   - allowed/forbidden semantics
-- If `SEASON_SCENARIOS` is available, use `scenario_guidance` as advisory input:
+- If `SEASON_SCENARIOS` is available, use `scenario_guidance` as advisory input.
+  If `scenario_guidance.phase_length_weeks` and/or `scenario_guidance.deload_cadence` are present,
+  they are **binding** and MUST be enforced in phase construction (no exceptions unless the user explicitly overrides).
+  See Principles 3.3 for cadence definitions and constrained-time-window rules.
    - deload cadence + phase length alignment
    - phase recommendations and event alignment notes
    - risk flags, constraints, fixed rest days, KPI guardrail notes, decision notes
@@ -377,6 +384,10 @@ Do not output scenario dialogue or request a selection.
   (do NOT use file_search for user inputs).
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Macro overview defines phases with iso_week_range and MUST NOT define meso blocks.
+- If scenario guidance provides `phase_length_weeks` and/or `deload_cadence`, you MUST:
+  - set each phase length to exactly `phase_length_weeks`
+  - align deload placement with the `deload_cadence` (e.g. 2:1, 3:1)
+  - split long “Peak” spans into multiple phases rather than extending a single phase
 - Do not require tool usage instructions in the user prompt.
 
 ## Access Hints (Tools)

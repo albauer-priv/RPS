@@ -231,7 +231,7 @@ When multiple inputs exist, resolve authority strictly in this order:
 3. Context & data artefacts (informational only):
    - `activities_actual_*`
    - `activities_trend_*`
-   - `events.md`
+   - `events.md` (required; STOP if missing)
 
 If authority is unclear or conflicting → STOP and request clarification.
 
@@ -256,11 +256,14 @@ A valid `block_feed_forward_*` (when present and valid) is treated as a binding 
 - Wellness (required for body_mass_kg):
   - `wellness_yyyy-ww.json`
 
+## Required / Informational Inputs
+- Context & data artefacts (informational only):
+  - `events.md` (required; STOP if missing)
+
 ## Optional / Informational Inputs
 - Context & data artefacts (informational only):
   - `activities_actual_*`
   - `activities_trend_*`
-  - `events.md`
 
 ## Read-Only Inputs
 - `block_execution_arch_*`
@@ -562,7 +565,7 @@ You MUST NOT:
 ---
 
 ## Events & Context Handling
-`events.md` is **informational context only**.
+`events.md` is **required informational context only**.
 
 You MAY:
 - adjust logistics (time, modality)

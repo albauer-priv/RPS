@@ -32,7 +32,7 @@ Define consistent filenames for all artefacts to support:
 ## 2. Common Tokens
 - `ww` = ISO week number (01–53), always two digits.
 - `yyyy` = four-digit year.
-- `yyyy-ww--yyyy-ww+3` = block range token for 4-week blocks (inclusive).
+- `yyyy-ww--yyyy-ww` = block range token for blocks (inclusive).
 
 ## 3. Required Filename Patterns (Normative)
 
@@ -54,10 +54,10 @@ Define consistent filenames for all artefacts to support:
 - `macro_meso_feed_forward_yyyy-ww.json`
 
 ### Meso-Architect
-- `block_governance_yyyy-ww--yyyy-ww+3.json`
+- `block_governance_yyyy-ww--yyyy-ww.json`
 - `block_feed_forward_yyyy-ww.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww+3.json`
-- `block_execution_preview_yyyy-ww--yyyy-ww+3.json`
+- `block_execution_arch_yyyy-ww--yyyy-ww.json`
+- `block_execution_preview_yyyy-ww--yyyy-ww.json`
 - `zone_model_power_<FTP>W.json`
 
 ### Micro-Planner

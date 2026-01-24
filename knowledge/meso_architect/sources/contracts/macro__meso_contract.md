@@ -79,10 +79,10 @@ structural architecture without introducing week- or workout-level planning.
 - `zone_model_power_<FTP>W.json` -> `zone_model.schema.json` (informational; from Data-Pipeline)
 
 ### Outputs (Meso-Architect produces)
-- `block_governance_yyyy-ww--yyyy-ww+3.json` -> `block_governance.schema.json` (required)
+- `block_governance_yyyy-ww--yyyy-ww.json` -> `block_governance.schema.json` (required)
 - `block_feed_forward_yyyy-ww.json` -> `block_feed_forward.schema.json` (optional)
-- `block_execution_arch_yyyy-ww--yyyy-ww+3.json` -> `block_execution_arch.schema.json` (required)
-- `block_execution_preview_yyyy-ww--yyyy-ww+3.json` -> `block_execution_preview.schema.json` (optional)
+- `block_execution_arch_yyyy-ww--yyyy-ww.json` -> `block_execution_arch.schema.json` (required)
+- `block_execution_preview_yyyy-ww--yyyy-ww.json` -> `block_execution_preview.schema.json` (optional)
 
 ## 5) Constraints / Forbidden (Binding)
 - All KPI-driven block changes require explicit `macro_meso_feed_forward_yyyy-ww.json`.
@@ -100,7 +100,7 @@ structural architecture without introducing week- or workout-level planning.
 ## 7) Traceability
 - Every block artefact MUST reference upstream `macro_overview_yyyy-ww--yyyy-ww.json`
   filename + version.
-- Feed Forward MUST reference baseline `block_governance_yyyy-ww--yyyy-ww+3.json`
+- Feed Forward MUST reference baseline `block_governance_yyyy-ww--yyyy-ww.json`
   filename + version.
 
 ## 8) Precedence

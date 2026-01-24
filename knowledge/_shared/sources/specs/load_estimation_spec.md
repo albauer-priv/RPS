@@ -206,7 +206,7 @@ Macro outputs:
 - **bands**, never point targets.
 
 ### 8.2 Meso-Architect (4 weeks)
-Block sets 4-week guardrails:
+Block sets block-level guardrails:
 - `kJ_week_band` for each week (or for the block with week-level notes)
 - max QUALITY days/week, allowed domains, modality rules (e.g., K3 allowed)
 

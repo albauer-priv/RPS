@@ -146,8 +146,8 @@ Binding knowledge inputs (must be processed before any analysis):
 - `data_confidence_spec.md`
 - `traceability_spec.md`
 
-## Optional Inputs
-- `events.md` (informational context)
+## Required Inputs (Informational)
+- `events.md` (informational context; STOP if missing)
 
 ## Exact Outputs Allowed
 You MUST:
@@ -190,7 +190,7 @@ You MUST NOT:
 ## Current System Tooling
 - Use workspace_get_latest for factual inputs (activities_actual, activities_trend) and planning context.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
-- Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
+- Load `events.md` via workspace_get_input from the athlete `inputs/` folder (required).
   Do NOT use file_search for user inputs.
 - Require target ISO week (year + week) in the user input. If missing, STOP and request it.
 - Do not require tool usage instructions in the user prompt.
@@ -203,7 +203,7 @@ You MUST NOT:
 - Planning context (optional; if present):
   - Macro overview: `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })`
   - Block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
-  - Events: `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
 
 If an optional input is missing, proceed without it (do not retry indefinitely).
 
@@ -242,7 +242,7 @@ Tasks:
   - `macro_overview_*`
   - `block_governance_*`
   - `block_execution_arch_*`
-  - `events.md` (optional; informational only)
+  - `events.md` (required; informational only)
 
 STOP if required data artefacts are missing:
 - `activities_actual_*`

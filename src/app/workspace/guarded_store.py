@@ -326,6 +326,116 @@ class GuardedValidatedStore:
                 [f"data.traceability.derived_from must include '{expected_arch}'."],
             )
 
+    def _round_numeric_fields(
+        self,
+        value: Any,
+        schema_node: dict[str, Any] | None,
+        root_schema: dict[str, Any],
+        path: list[str] | None = None,
+    ) -> Any:
+        """Apply consistent rounding to numeric values using schema hints when possible."""
+        if path is None:
+            path = []
+
+        def _joined_path(keys: list[str]) -> str:
+            return "_".join(keys).lower()
+
+        def _resolve_schema(node: dict[str, Any] | None) -> dict[str, Any] | None:
+            if not isinstance(node, dict):
+                return None
+            ref = node.get("$ref")
+            if not ref or not isinstance(ref, str) or not ref.startswith("#/"):
+                return node
+            parts = ref.lstrip("#/").split("/")
+            cur: Any = root_schema
+            for part in parts:
+                if not isinstance(cur, dict):
+                    return node
+                cur = cur.get(part)
+                if cur is None:
+                    return node
+            if isinstance(cur, dict):
+                return cur
+            return node
+
+        schema_node = _resolve_schema(schema_node)
+        node_type = schema_node.get("type") if isinstance(schema_node, dict) else None
+        types: list[str] = []
+        if isinstance(node_type, list):
+            types = [str(t) for t in node_type]
+        elif isinstance(node_type, str):
+            types = [node_type]
+
+        if isinstance(value, dict):
+            props = schema_node.get("properties") if isinstance(schema_node, dict) else None
+            additional = schema_node.get("additionalProperties") if isinstance(schema_node, dict) else None
+            rounded: dict[str, Any] = {}
+            for k, v in value.items():
+                child_schema = None
+                if isinstance(props, dict) and k in props:
+                    child_schema = props[k]
+                elif isinstance(additional, dict):
+                    child_schema = additional
+                rounded[k] = self._round_numeric_fields(
+                    v,
+                    child_schema,
+                    root_schema,
+                    path + [str(k)],
+                )
+            return rounded
+
+        if isinstance(value, list):
+            items_schema = schema_node.get("items") if isinstance(schema_node, dict) else None
+            return [
+                self._round_numeric_fields(item, items_schema, root_schema, path)
+                for item in value
+            ]
+
+        if isinstance(value, (int, float)):
+            joined = _joined_path(path)
+            if "integer" in types and "number" not in types:
+                return int(round(float(value)))
+            if "integer" in types and "number" in types:
+                if abs(float(value) - round(float(value))) < 1e-9:
+                    return int(round(float(value)))
+            if "number" in types or not types:
+                decimals = 2
+                if "hours_typical" in joined or "hours_max" in joined or "weekly_hours" in joined:
+                    decimals = 1
+                elif "kg" in joined:
+                    decimals = 1
+                elif "seconds" in joined or joined.endswith("_seconds") or joined.endswith("_sec"):
+                    decimals = 0
+                elif "bpm" in joined:
+                    decimals = 0
+                elif "mm_hg" in joined or "mmhg" in joined:
+                    decimals = 0
+                elif "hrv_ms" in joined or joined.endswith("_ms"):
+                    decimals = 0
+                elif "if_adj" in joined:
+                    decimals = 2
+                if "kj_per_kg" in joined or "w_per_kg" in joined or "per_kg" in joined:
+                    decimals = 2
+                elif "percent" in joined or "pct" in joined:
+                    decimals = 1
+                elif "ratio" in joined or "index" in joined or "intensity_factor" in joined or joined.endswith("_if"):
+                    decimals = 2
+                elif "kj" in joined or joined.endswith("_kj") or joined.endswith("kj"):
+                    decimals = 0
+                elif "watts" in joined or joined.endswith("_w") or joined.endswith("w"):
+                    decimals = 0
+                elif joined.endswith("_min") or joined.endswith("_mins") or "minutes" in joined:
+                    decimals = 0
+
+                if decimals == 0:
+                    return int(round(float(value)))
+                return round(float(value), decimals)
+        return value
+
+    def _apply_rounding(self, document: Any, schema: dict[str, Any]) -> Any:
+        """Round numeric values on the document before validation/storage."""
+        return self._round_numeric_fields(document, schema, schema, [])
+
     def guard_put_validated(
         self,
         *,
@@ -345,9 +455,11 @@ class GuardedValidatedStore:
         if is_envelope_schema(schema):
             if not isinstance(document, dict) or "meta" not in document or "data" not in document:
                 raise ValueError("Envelope artefact must be an object with meta and data")
+            document = self._apply_rounding(document, schema)
             validate_or_raise(validator, document)
             version_key = derive_version_key_from_envelope(document)
         else:
+            document = self._apply_rounding(document, schema)
             validate_or_raise(validator, document)
             version_key = "raw"
 

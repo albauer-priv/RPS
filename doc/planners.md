@@ -203,6 +203,22 @@ python3 scripts/macro_mode_a.py overview \
   --scenario-run-id macro_scenarios_2026_w06
 ```
 
+Optional KPI moving-time rate band override (affects kJ corridor derivation):
+
+```bash
+python3 scripts/macro_mode_a.py overview \
+  --year 2026 \
+  --week 6 \
+  --run-id macro_overview_2026_w06 \
+  --scenario A \
+  --scenario-run-id macro_scenarios_2026_w06 \
+  --moving-time-rate-band fast_competitive
+```
+
+Available bands are read from the KPI profile (`data.durability.moving_time_rate_guidance.bands`):
+`brevet_ultra_sustainable`, `fast_competitive`, `top_record_oriented`.
+The override selects the W/kg and kJ/kg/h window used to derive weekly kJ corridors.
+
 By default, scenarios are written to `.cache/macro_scenarios/<run-id>.md`.
 
 ### CLI: Single agent
