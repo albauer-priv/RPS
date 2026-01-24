@@ -11,7 +11,7 @@
 - [ ] Planned event windows are reflected in `events_constraints` or `block_summary` notes.
 
 ## Guardrails
-- [ ] `weekly_kj_bands` has 4 entries.
+- [ ] `weekly_kj_bands` has one entry per week in `meta.iso_week_range`.
 - [ ] Weekly bands show a progression pattern (e.g., build→build→peak→deload) unless macro explicitly requires steady-state load.
 - [ ] Weekly band notes reflect the overload intent (build/peak/deload) consistent with Principles section 5.
 - [ ] Allowed/forbidden semantics match `agenda_enum_spec.md`.

@@ -136,8 +136,7 @@
           "properties": {
             "weekly_kj_bands": {
               "type": "array",
-              "minItems": 4,
-              "maxItems": 4,
+              "minItems": 1,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -865,8 +864,7 @@
           "properties": {
             "weekly_kj_bands": {
               "type": "array",
-              "minItems": 4,
-              "maxItems": 4,
+              "minItems": 1,
               "items": {
                 "type": "object",
                 "additionalProperties": false,

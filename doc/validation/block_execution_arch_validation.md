@@ -8,6 +8,7 @@
 ## Macro constraint propagation
 - [ ] `upstream_intent.constraints` includes macro availability and risk constraints.
 - [ ] `load_ranges.weekly_kj_bands` matches block_governance weekly bands (same weeks, min/max, notes).
+- [ ] `week_roles` length matches the block `iso_week_range` length.
 - [ ] `load_ranges.source` references the block governance filename.
 - [ ] `execution_principles.recovery_protection.fixed_non_training_days` derives from macro fixed rest days (or parsed from availability assumptions).
 - [ ] Recovery spacing rules reflect upstream recovery protection notes (no new rules).

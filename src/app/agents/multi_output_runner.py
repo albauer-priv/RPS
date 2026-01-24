@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import datetime
 import json
+import math
 import logging
 import time
 from dataclasses import dataclass
@@ -277,7 +279,10 @@ def run_agent_multi_output(
                 allowed_guidance_keys = {
                     "deload_cadence",
                     "phase_length_weeks",
-                    "phase_recommendations",
+                    "phase_count_expected",
+                    "max_shortened_phases",
+                    "shortening_budget_weeks",
+                    "phase_plan_summary",
                     "event_alignment_notes",
                     "risk_flags",
                     "fixed_rest_days",
@@ -289,6 +294,77 @@ def run_agent_multi_output(
                     "unknowns",
                 }
                 guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
+                def _as_positive_int(value: Any) -> int | None:
+                    if isinstance(value, bool):
+                        return None
+                    if isinstance(value, int) and value > 0:
+                        return value
+                    return None
+
+                def _as_non_negative_int(value: Any) -> int | None:
+                    if isinstance(value, bool):
+                        return None
+                    if isinstance(value, int) and value >= 0:
+                        return value
+                    return None
+
+                def _iso_week_range_weeks(range_str: Any) -> int | None:
+                    if not isinstance(range_str, str) or "--" not in range_str:
+                        return None
+                    start_str, end_str = range_str.split("--", 1)
+                    try:
+                        sy, sw = (int(part) for part in start_str.split("-", 1))
+                        ey, ew = (int(part) for part in end_str.split("-", 1))
+                    except ValueError:
+                        return None
+                    try:
+                        start_date = datetime.date.fromisocalendar(sy, sw, 1)
+                        end_date = datetime.date.fromisocalendar(ey, ew, 7)
+                    except ValueError:
+                        return None
+                    return ((end_date - start_date).days // 7) + 1
+
+                phase_len = _as_positive_int(guidance.get("phase_length_weeks"))
+                planning_weeks = _as_positive_int(data.get("planning_horizon_weeks"))
+                if planning_weeks is None:
+                    planning_weeks = _as_positive_int(_iso_week_range_weeks(meta.get("iso_week_range")))
+                if phase_len and planning_weeks:
+                    phase_count_default = math.ceil(planning_weeks / phase_len)
+                    shortening_budget_default = max(0, (phase_count_default * phase_len) - planning_weeks)
+                else:
+                    phase_count_default = 1
+                    shortening_budget_default = 0
+
+                guidance["phase_count_expected"] = _as_positive_int(
+                    guidance.get("phase_count_expected")
+                ) or phase_count_default
+                guidance["max_shortened_phases"] = _as_non_negative_int(
+                    guidance.get("max_shortened_phases")
+                ) or 2
+                guidance["shortening_budget_weeks"] = _as_non_negative_int(
+                    guidance.get("shortening_budget_weeks")
+                ) or shortening_budget_default
+                phase_summary = guidance.get("phase_plan_summary")
+                if not isinstance(phase_summary, dict):
+                    phase_summary = {}
+                full_phases = phase_summary.get("full_phases")
+                if not isinstance(full_phases, int) or full_phases < 0:
+                    full_phases = guidance["phase_count_expected"]
+                shortened = phase_summary.get("shortened_phases")
+                if not isinstance(shortened, list):
+                    shortened = []
+                cleaned_shortened = []
+                for item in shortened:
+                    if not isinstance(item, dict):
+                        continue
+                    length = item.get("len")
+                    count = item.get("count")
+                    if isinstance(length, int) and length > 0 and isinstance(count, int) and count > 0:
+                        cleaned_shortened.append({"len": length, "count": count})
+                guidance["phase_plan_summary"] = {
+                    "full_phases": full_phases,
+                    "shortened_phases": cleaned_shortened,
+                }
                 guidance.setdefault("event_alignment_notes", [])
                 guidance.setdefault("risk_flags", [])
                 guidance.setdefault("fixed_rest_days", [])

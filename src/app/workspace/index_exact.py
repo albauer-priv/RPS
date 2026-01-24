@@ -34,6 +34,12 @@ class IndexExactQuery:
 
         versions: dict[str, Any] = entry.get("versions", {})
         for record in versions.values():
+            path = record.get("path") or record.get("relative_path")
+            if not path:
+                continue
+            full_path = (self.root / self.athlete_id / path).resolve()
+            if not full_path.exists():
+                continue
             range_obj = record.get("iso_week_range")
             if not range_obj:
                 continue
@@ -57,6 +63,12 @@ class IndexExactQuery:
         candidates: list[tuple[str, str]] = []
 
         for version_key, record in versions.items():
+            path = record.get("path") or record.get("relative_path")
+            if not path:
+                continue
+            full_path = (self.root / self.athlete_id / path).resolve()
+            if not full_path.exists():
+                continue
             range_obj = record.get("iso_week_range")
             if not range_obj:
                 continue

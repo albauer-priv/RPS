@@ -80,3 +80,9 @@ def setup_logging(
 
     for handler in handlers:
         root.addHandler(handler)
+
+
+def log_and_print(logger: logging.Logger, message: str, level: int = logging.INFO) -> None:
+    """Log message and mirror to stdout."""
+    logger.log(_normalize_level(level), message)
+    print(message)

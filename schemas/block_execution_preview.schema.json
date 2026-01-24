@@ -138,8 +138,7 @@
         },
         "weekly_agenda_preview": {
           "type": "array",
-          "minItems": 4,
-          "maxItems": 4,
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/week_agenda"
           }

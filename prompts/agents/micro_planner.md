@@ -616,6 +616,8 @@ No additional structural rules are allowed here if they duplicate or constrain t
 ### B) Artefact (Binding)
 - Produce exactly ONE artefact of type `WORKOUTS_PLAN`.
 - Filename MUST match the requested ISO week (e.g. `workouts_plan_2026-01.json`) per FileNamingSpec.
+- You MUST save the artefact via the `store_workouts_plan` tool call.
+  Do NOT output raw JSON in the final response; only the tool call is allowed.
 
 ### C) Schema Lockdown (Binding)
 - Use exactly `workouts_plan.schema.json`.

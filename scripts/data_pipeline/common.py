@@ -16,7 +16,7 @@ if SYS_PATH not in sys.path:
     sys.path.insert(0, SYS_PATH)
 
 from app.core.config import load_env_file  # noqa: E402
-from app.core.logging import setup_logging, timestamped_log_path  # noqa: E402
+from app.core.logging import log_and_print, setup_logging, timestamped_log_path  # noqa: E402
 from app.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 from app.rendering.auto_render import render_sidecar  # noqa: E402
 
@@ -48,10 +48,10 @@ def configure_logging(script_name: str) -> logging.Logger:
     log_file = timestamped_log_path(log_dir, script_name)
     setup_logging(log_level, log_file=log_file)
     logger = logging.getLogger(script_name)
-    logger.info("Start %s argv=%s", script_name, " ".join(sys.argv[1:]))
+    log_and_print(logger, f"Start {script_name} argv={' '.join(sys.argv[1:])}")
 
     def _log_exit() -> None:
-        logger.info("Finished %s", script_name)
+        log_and_print(logger, f"Finished {script_name}")
 
     def _excepthook(exc_type, exc, tb) -> None:
         logger.critical("Unhandled exception in %s", script_name, exc_info=(exc_type, exc, tb))

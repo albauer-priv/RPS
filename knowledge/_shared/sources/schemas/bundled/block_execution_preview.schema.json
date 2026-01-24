@@ -231,8 +231,7 @@
         },
         "weekly_agenda_preview": {
           "type": "array",
-          "minItems": 4,
-          "maxItems": 4,
+          "minItems": 1,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -663,8 +662,7 @@
         },
         "weekly_agenda_preview": {
           "type": "array",
-          "minItems": 4,
-          "maxItems": 4,
+          "minItems": 1,
           "items": {
             "type": "object",
             "additionalProperties": false,

@@ -54,7 +54,10 @@
           "required": [
             "deload_cadence",
             "phase_length_weeks",
-            "phase_recommendations",
+            "phase_count_expected",
+            "max_shortened_phases",
+            "shortening_budget_weeks",
+            "phase_plan_summary",
             "event_alignment_notes",
             "risk_flags",
             "fixed_rest_days",
@@ -74,71 +77,48 @@
               "type": "integer",
               "minimum": 1
             },
-            "phase_recommendations": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "phase_id",
-                  "name",
-                  "cycle",
-                  "date_range",
-                  "iso_week_range",
-                  "focus",
-                  "load_trend",
-                  "key_constraints",
-                  "notes"
-                ],
-                "properties": {
-                  "phase_id": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "cycle": {
-                    "type": "string",
-                    "enum": [
-                      "Base",
-                      "Build",
-                      "Peak",
-                      "Transition"
-                    ]
-                  },
-                  "date_range": {
-                    "$ref": "date_range.schema.json"
-                  },
-                  "iso_week_range": {
-                    "$ref": "iso_week_range.schema.json"
-                  },
-                  "focus": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "load_trend": {
-                    "type": "string",
-                    "enum": [
-                      "build",
-                      "steady",
-                      "taper"
-                    ]
-                  },
-                  "key_constraints": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  },
-                  "notes": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1
+            "phase_count_expected": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_shortened_phases": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "shortening_budget_weeks": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "phase_plan_summary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "full_phases",
+                "shortened_phases"
+              ],
+              "properties": {
+                "full_phases": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "shortened_phases": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "len",
+                      "count"
+                    ],
+                    "properties": {
+                      "len": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
                     }
                   }
                 }

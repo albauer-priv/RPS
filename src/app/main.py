@@ -93,6 +93,7 @@ def main() -> None:
         plan_parser.add_argument("--year", type=int, required=True)
         plan_parser.add_argument("--week", type=int, required=True)
         plan_parser.add_argument("--run-id", default="run_plan_week")
+        plan_parser.add_argument("--no-file-search", action="store_true")
         add_logging_args(plan_parser)
 
         run_parser = subparsers.add_parser("run-agent")

@@ -336,10 +336,15 @@ If contradictions arise:
 - Events (required): `events.md` from `inputs/` (STOP if missing).
 - You MUST merge events from the Season Brief event table and `events.md`. If the same event
   appears in both, de-duplicate by date + name/ID; do NOT drop B/C events.
+- When placing events into `phases[].events_constraints`, preserve event identity from the
+  Season Brief (event name/ID and distance). Do NOT swap or re-label B events (e.g., 200 km
+  vs 300 km). If event details conflict between sources, STOP and report the conflict.
 - User inputs (season brief, events) MUST be loaded via `workspace_get_input` from `inputs/`.
   Do NOT use file_search for user inputs.
- - You MUST include `events.md` in `meta.trace_events` and incorporate relevant events into
-   `phases[].events_constraints` (or explicitly state “no relevant events” in each phase).
+- You MUST include `events.md` in `meta.trace_events` and incorporate **all** merged events into
+  `phases[].events_constraints`. Every event must be assigned to exactly one phase by date.
+  If any event cannot be placed into a phase window, STOP (fail-fast) and report the missing
+  event(s) with their dates.
 
 ## Output Targets
 - Mode A/B: one JSON artefact named `macro_overview_yyyy-ww--yyyy-ww.json`
@@ -352,6 +357,17 @@ Macro-Planner does **not** generate scenarios. It must consume the selected
 scenario from `SEASON_SCENARIOS` (when available) or the user-provided scenario
 label (A/B/C) passed in the prompt.
 Do not output scenario dialogue or request a selection.
+
+## Phase Count Formula (Mode A/B)
+The computed phase count is **binding**. You MUST produce exactly `n` phases.
+Use the calendar math below (weeks are ISO-week ranges):
+- `W = total weeks in meta.iso_week_range` (inclusive)
+- `L = scenario_guidance.phase_length_weeks`
+- `n = ceil(W / L)` → number of phases required
+- `delta = n * L - W` → total weeks to shorten across phases (if needed)
+You may distribute `delta` across **at most two** phases (see validation rules).
+If `scenario_guidance.phase_count_expected` is provided, it must match the computed `n`.
+If it does not match, STOP (fail-fast) and report the mismatch and both values.
 
 ## Output Invariants (Mode A/B)
 - JSON output only.
@@ -373,6 +389,29 @@ Do not output scenario dialogue or request a selection.
   `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SST`, `VO2MAX`.
 - Allowed/Forbidden LOAD_MODALITY_ENUM values MUST be from AgendaEnumSpec:
   `NONE`, `K3`.
+
+## Validation / Stop Rules (Mode A/B)
+- You MUST validate that every phase length matches `scenario_guidance.phase_length_weeks`
+  and that the overall sequence respects the cadence logic in Principles 3.3.
+- You MUST validate that the number of phases equals the computed `n = ceil(W / L)`
+  (Phase Count Formula). If the count does not match, STOP (fail-fast) and report
+  the computed `n`, the produced count, and the calendar range.
+- The A-event MUST occur within a `Peak` phase. If the A-event falls inside any other
+  phase type, STOP and report the mismatch (event date, phase_id, phase_type).
+- The plan MUST end with the phase that contains the **last (chronologically latest) event**
+  in the merged events list, regardless of priority. Do NOT append additional phases after
+  that phase. If the final-event phase would violate `phase_length_weeks`, STOP and report
+  the conflict. (Exception: only if the user explicitly requests a post-event transition phase.)
+- If the calendar cannot accommodate the required cadence/phase length (including event windows),
+  you MAY shorten phases to fit the calendar, subject to:
+  - `max_shortened_phases` (use scenario value if provided, otherwise 2),
+  - `shortening_budget_weeks` (use scenario value if provided, otherwise `delta`).
+  Any shortened phase must:
+  - be explicitly labeled as shortened in `phases[].overview` (why and by how many weeks),
+  - keep the cadence intent intact (do not stack extra load weeks to “make up”),
+  - preserve A‑event taper integrity.
+- If more than two phases would need shortening, STOP (fail-fast) and report the conflicting
+  weeks/events and the cadence requirement. Do **not** silently stretch or merge phases.
 
 ---
 

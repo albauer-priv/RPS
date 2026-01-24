@@ -98,12 +98,6 @@ def _render_scenarios(scenarios_doc: dict) -> str:
         ("key_differences", "Key differences"),
         ("best_suited_if", "Best suited if"),
     ]
-    phase_labels = [
-        ("cycle", "Cycle"),
-        ("iso_week_range", "ISO week range"),
-        ("focus", "Focus"),
-        ("load_trend", "Load trend"),
-    ]
     for scenario_id in ("A", "B", "C"):
         item = ordered.get(scenario_id) or {}
         name = item.get("name") or "Unnamed"
@@ -140,17 +134,23 @@ def _render_scenarios(scenarios_doc: dict) -> str:
                 lines.append(f"- Intensity focus: {', '.join(str(item) for item in allowed)}")
             if avoid:
                 lines.append(f"- Intensity avoid: {', '.join(str(item) for item in avoid)}")
-            phases = guidance.get("phase_recommendations") or []
-            if phases:
-                lines.append("- Phase outline:")
-                for phase in phases:
-                    if not isinstance(phase, dict):
-                        continue
-                    phase_name = phase.get("name") or phase.get("phase_id") or "Phase"
-                    lines.append(f"  - {phase_name}")
-                    for key, label in phase_labels:
-                        value = phase.get(key) or ""
-                        lines.append(f"    - {label}: {value}")
+            summary = guidance.get("phase_plan_summary") or {}
+            if isinstance(summary, dict):
+                full_phases = summary.get("full_phases")
+                shortened = summary.get("shortened_phases") or []
+                if isinstance(full_phases, int):
+                    lines.append(f"- Phase plan: {full_phases} full phases")
+                if shortened:
+                    parts = []
+                    for item in shortened:
+                        if not isinstance(item, dict):
+                            continue
+                        length = item.get("len")
+                        count = item.get("count")
+                        if isinstance(length, int) and isinstance(count, int):
+                            parts.append(f"{count}x{length}w")
+                    if parts:
+                        lines.append(f"- Shortened phases: {', '.join(parts)}")
             notes = guidance.get("event_alignment_notes") or []
             for note in notes:
                 lines.append(f"- Event alignment: {note}")
@@ -182,13 +182,6 @@ def _render_selected_scenario(scenarios_doc: dict, scenario_id: str) -> str:
         ("key_differences", "Key differences"),
         ("best_suited_if", "Best suited if"),
     ]
-    phase_labels = [
-        ("cycle", "Cycle"),
-        ("iso_week_range", "ISO week range"),
-        ("focus", "Focus"),
-        ("load_trend", "Load trend"),
-    ]
-
     name = selected.get("name") or "Unnamed"
     lines.append(f"Scenario {target} — {name}")
     for key, label in labels:
@@ -223,17 +216,23 @@ def _render_selected_scenario(scenarios_doc: dict, scenario_id: str) -> str:
             lines.append(f"- Intensity focus: {', '.join(str(item) for item in allowed)}")
         if avoid:
             lines.append(f"- Intensity avoid: {', '.join(str(item) for item in avoid)}")
-        phases = guidance.get("phase_recommendations") or []
-        if phases:
-            lines.append("- Phase outline:")
-            for phase in phases:
-                if not isinstance(phase, dict):
-                    continue
-                phase_name = phase.get("name") or phase.get("phase_id") or "Phase"
-                lines.append(f"  - {phase_name}")
-                for key, label in phase_labels:
-                    value = phase.get(key) or ""
-                    lines.append(f"    - {label}: {value}")
+        summary = guidance.get("phase_plan_summary") or {}
+        if isinstance(summary, dict):
+            full_phases = summary.get("full_phases")
+            shortened = summary.get("shortened_phases") or []
+            if isinstance(full_phases, int):
+                lines.append(f"- Phase plan: {full_phases} full phases")
+            if shortened:
+                parts = []
+                for item in shortened:
+                    if not isinstance(item, dict):
+                        continue
+                    length = item.get("len")
+                    count = item.get("count")
+                    if isinstance(length, int) and isinstance(count, int):
+                        parts.append(f"{count}x{length}w")
+                if parts:
+                    lines.append(f"- Shortened phases: {', '.join(parts)}")
         notes = guidance.get("event_alignment_notes") or []
         for note in notes:
             lines.append(f"- Event alignment: {note}")

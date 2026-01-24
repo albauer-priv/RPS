@@ -382,6 +382,8 @@ Evidence may support rationale where the schema allows, but never overrides gove
 
 ## Current System Tooling
 - Resolve block ranges via workspace_get_block_context (phase-aligned, clamped) **unless** the user explicitly provides an `iso_week_range` in the request. A user-provided `iso_week_range` overrides phase alignment and must be used.
+- Block length MUST be derived from the provided `iso_week_range` (preferred) or, if absent, from
+  the `macro_overview` phase range covering the target ISO week. Do NOT assume 4-week blocks.
 - Set meta.iso_week_range to the **user-provided** block range when present; otherwise use the resolved block range.
 - If strict tools allow multi-output, emit one artifact per strict tool call.
 - Load `events.md` via workspace_get_input from the athlete `inputs/` folder (required).
@@ -410,20 +412,28 @@ Do NOT use templates; the schema is authoritative.
     `events_constraints`, `execution_non_negotiables`, `escalation_change_control`,
     `explicit_forbidden_content`, `self_check`.
 - BLOCK_GOVERNANCE load_guardrails must include:
-  - `weekly_kj_bands` as a 4-entry array of `{week, band}`.
+  - `weekly_kj_bands` as an array of `{week, band}` covering **every week** in `meta.iso_week_range`.
+    Do NOT assume 4-week blocks; derive the count from the block range.
   - `confidence_assumptions` as an object (not a list).
 
 ## Macro constraint propagation (Binding)
 - Always import `macro_overview.data.global_constraints`:
   - `availability_assumptions`, `risk_constraints`, `planned_event_windows`,
-    and `recovery_protection` (if present).
+  and `recovery_protection` (if present).
 - Treat availability assumptions as derived from the Season Brief weekday availability table;
   do not set weekly kJ bands that exceed the implied weekly hours without an explicit note.
 - BLOCK_GOVERNANCE mapping (must include, do not omit):
   - Availability assumptions → `block_summary.non_negotiables` (verbatim).
+    Every entry from `macro_overview.data.global_constraints.availability_assumptions`
+    MUST appear verbatim in `block_summary.non_negotiables`.
   - Risk constraints → `block_summary.key_risks_warnings` (verbatim).
-  - Planned event windows → `block_summary.non_negotiables` (verbatim; or map to
-    `events_constraints.events[].constraint` if you can derive an event entry).
+    Every entry from `macro_overview.data.global_constraints.risk_constraints`
+    MUST appear verbatim in `block_summary.key_risks_warnings`.
+  - Planned event windows → MUST be represented in `events_constraints.events[]`
+    using the A/B/C types already defined in `macro_overview.data.phases[].events_constraints`.
+    Do NOT source A/B/C event types from `events.md` (events.md is non-training logistics only).
+    Also add a single summary line to `block_summary.non_negotiables`:
+    `"Planned A/B/C windows included in events_constraints (from macro_overview)."`
   - Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).
 - BLOCK_EXECUTION_ARCH mapping (must include, do not omit):
   - `upstream_intent.constraints` MUST include (verbatim) all of:
@@ -439,12 +449,19 @@ Do NOT use templates; the schema is authoritative.
     `block_governance_YYYY-WW.json` (use the artifact version key, not the iso_week_range).
   - `load_ranges` MUST NOT include `confidence_assumptions` or any fields beyond
     `weekly_kj_bands` and `source`.
-  - `week_skeleton_logic.week_roles` MUST be an array of `{ week, role }` entries that
-    covers **every week** in `meta.iso_week_range` (block length may vary).
+  - `week_skeleton_logic.week_roles.week_roles` MUST be an array of `{ week, role }` entries
+    that covers **every week** in `meta.iso_week_range` (block length may vary).
+  - `execution_principles.recovery_protection.forbidden_sequences` MUST be non-empty.
+    If no forbidden sequences are specified upstream, add a single entry like:
+    `"None specified upstream; do not introduce new forbidden sequences."`
+  - `data.self_check.no_kpi_gate_inferred` MUST be present (boolean). Set `true` unless
+    a KPI gate is explicitly present in inputs.
   - For BLOCK_EXECUTION_PREVIEW `data.traceability` MUST include only:
     - `derived_from`
     - `conflict_resolution`
     (no extra fields like `notes`; additional properties are forbidden).
+  - `data.traceability.derived_from` MUST include the stored block execution arch filename
+    `block_execution_arch_YYYY-WW.json` (use the artifact version key, not the iso_week_range).
   - `execution_principles.recovery_protection.fixed_non_training_days` MUST be sourced from:
     1) `macro_overview.data.global_constraints.recovery_protection.fixed_rest_days`, else
     2) parse weekday names from `availability_assumptions`.
@@ -452,6 +469,26 @@ Do NOT use templates; the schema is authoritative.
     and add a constraint note stating none were specified.
   - `mandatory_recovery_spacing_rules` and `forbidden_sequences` must reflect any
     recovery protection notes in macro constraints; do not invent new rules.
+
+## Hard stop validation (Binding)
+- STOP if any of the following is missing or altered:
+  - Any entry from `macro_overview.data.global_constraints.availability_assumptions`
+    is not present verbatim in `block_summary.non_negotiables`.
+  - Any entry from `macro_overview.data.global_constraints.risk_constraints`
+    is not present verbatim in `block_summary.key_risks_warnings`.
+  - Any date in `macro_overview.data.global_constraints.planned_event_windows`
+    is not represented in `events_constraints.events[]` with a matching date,
+    correct ISO week, and A/B/C type from
+    `macro_overview.data.phases[].events_constraints`.
+  - `macro_overview.data.global_constraints.recovery_protection.notes` is not
+    present verbatim in `execution_non_negotiables.recovery_protection_rules`.
+- STOP if `week_skeleton_logic.week_roles.week_roles` is missing, empty, or the count
+  of entries does not match the number of ISO weeks in `meta.iso_week_range`.
+- STOP if `data.self_check.no_numeric_target_introduced` is missing or false.
+- STOP if `load_ranges.source` is not exactly the stored block governance filename
+  `block_governance_YYYY-WW.json` (version key, not iso_week_range).
+- STOP if `events_constraints.events` includes any A/B/C event not present in
+  `macro_overview.data.phases[].events_constraints` (do not invent A/B/C events).
 
 ## Access Hints (Tools)
 - Mode A (new block governance):

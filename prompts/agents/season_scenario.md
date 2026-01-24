@@ -277,9 +277,15 @@ If contradictions arise:
   - `3:1` → `phase_length_weeks = 4`
   - `2:1` → `phase_length_weeks = 3`
   - `2:1:1` → `phase_length_weeks = 4`
-- Provide `phase_recommendations` with dates and ISO week ranges aligned to the
-  current date, season horizon, and event windows.
-- Phase recommendations must include cycle, focus, and load_trend.
+- Planning math (advisory only): always compute and include:
+  - `phase_count_expected = ceil(planning_horizon_weeks / phase_length_weeks)`
+  - `shortening_budget_weeks = (phase_count_expected * phase_length_weeks) - planning_horizon_weeks`
+  - `max_shortened_phases = 2` (unless user explicitly specifies otherwise)
+  If `planning_horizon_weeks` is unavailable, derive it from `meta.iso_week_range`.
+- Provide `phase_plan_summary` (full phases + shortened phases summary).
+- Do NOT output detailed `phase_recommendations` or per-phase date ranges.
+- Do NOT recommend phases after the phase containing the **last (chronologically latest)**
+  event in the merged events list (unless the user explicitly requests a post-event transition phase).
 - Include risk flags, fixed rest days, constraints summary, KPI guardrail notes,
   decision notes, and intensity guidance (allowed/avoid domains) as advisory.
   `constraint_summary` MUST reflect the weekday availability table (hours, indoor possible,
@@ -294,6 +300,8 @@ If contradictions arise:
 - Output MUST validate against `season_scenarios.schema.json`.
 - `meta` must include required fields (artifact_type, schema_id, schema_version, run_id,
   created_at, iso_week, iso_week_range, trace_upstream).
+- `data.planning_horizon_weeks` MUST equal the total weeks covered by `meta.iso_week_range`
+  (inclusive). Derive it from `iso_week_range` if needed.
 - Set `meta.owner_agent` to `Season-Scenario-Agent` and `meta.schema_id` to the
   appropriate interface (`SeasonScenariosInterface` or `SeasonScenarioSelectionInterface`).
 - `data.notes` MUST be present (use an array; can be empty).
@@ -442,6 +450,7 @@ NOTE: JSON cut-over is active. Enforce JSON schema validation and the binding do
 - Season Brief missing required fields (SeasonBriefInterface).
 - More than one KPI Profile detected.
 - Output is not valid JSON or fails schema validation for the target artefact.
+- `data.planning_horizon_weeks` does not match the weeks implied by `meta.iso_week_range`.
 - Required `meta` fields are missing: artifact_type, schema_id, schema_version, run_id,
   created_at, iso_week, iso_week_range, trace_upstream.
 - Output contains meta/status markers (e.g., "Done", "Thought for").
@@ -454,11 +463,12 @@ NOTE: JSON cut-over is active. Enforce JSON schema validation and the binding do
 3. If outputting `SEASON_SCENARIOS`:
    - `data.scenarios` includes scenario_id values A/B/C.
    - Each scenario includes all required fields, including `scenario_guidance`.
-- `deload_cadence` and `phase_length_weeks` are consistent (per Principles 3.3 mapping).
-   - Each phase recommendation has date_range + iso_week_range + cycle + focus + load_trend.
+   - `deload_cadence` and `phase_length_weeks` are consistent (per Principles 3.3 mapping).
+   - `phase_plan_summary` is present and well-formed.
    - `scenario_guidance` includes risk flags, fixed rest days, constraint summary,
      KPI guardrail notes, decision notes, and intensity guidance.
    - `data.season_brief_ref` and `data.kpi_profile_ref` are present and non-empty.
+   - `data.planning_horizon_weeks` matches weeks implied by `meta.iso_week_range`.
 4. If outputting `SEASON_SCENARIO_SELECTION`:
    - `data.selected_scenario_id` is A/B/C.
    - `data.season_scenarios_ref` is present.

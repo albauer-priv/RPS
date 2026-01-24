@@ -51,6 +51,9 @@ The `SEASON_SCENARIOS` artefact MUST include:
   - `scenario_id` in {A, B, C}
   - `name`, `core_idea`, `load_philosophy`, `risk_profile`,
     `key_differences`, `best_suited_if`, `scenario_guidance`
+  - Scenario guidance planning math (advisory only):
+    `phase_count_expected`, `max_shortened_phases`, `shortening_budget_weeks`
+- `data.planning_horizon_weeks` must match the weeks implied by `meta.iso_week_range`.
 
 The `SEASON_SCENARIO_SELECTION` artefact MUST include:
 - `meta` envelope (SeasonScenarioSelectionInterface)
@@ -65,6 +68,8 @@ The `SEASON_SCENARIO_SELECTION` artefact MUST include:
   scenario generation rules.
 - Scenario guidance (phase suggestions, deload cadence) is advisory and may be
   adjusted by Macro-Planner.
+- If scenario guidance includes planning math fields, Macro-Planner must
+  compute its own phase count from the selected calendar range and cross-check.
 - Risk flags, event alignment, and intensity guidance are advisory and may be
   overridden by Macro-Planner.
 

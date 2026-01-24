@@ -116,8 +116,7 @@
           "properties": {
             "weekly_kj_bands": {
               "type": "array",
-              "minItems": 4,
-              "maxItems": 4,
+              "minItems": 1,
               "items": {
                 "$ref": "#/$defs/weekly_band_entry"
               }

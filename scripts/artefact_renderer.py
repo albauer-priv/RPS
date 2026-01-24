@@ -1709,6 +1709,11 @@ def main():
     load_env_file(ROOT / ".env")
     logger = configure_logging(ROOT, Path(__file__).stem)
 
+    if isinstance(doc, list):
+        logger.error("Unsupported JSON list artefact (no meta). Skipping render for %s", input_path)
+        print("Unsupported JSON list artefact; skipping render.")
+        return 2
+
     meta = doc.get("meta", {})
     artifact_type = meta.get("artifact_type")
     if not artifact_type:

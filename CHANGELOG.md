@@ -12,6 +12,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Season-Scenario prompt now requires `events.md` (no optional/if-present path).
 - Macro-Planner prompt now requires `events.md` to be reflected in `meta.trace_events` and phase event constraints.
 - Macro Mode A overview now explicitly requires loading `events.md` and reflecting it in trace/events constraints.
+- Season scenarios now include advisory planning math (`phase_count_expected`, `max_shortened_phases`, `shortening_budget_weeks`) and Macro-Planner cross-checks these against computed phase counts.
+- Season scenarios no longer output detailed `phase_recommendations`; they now emit compact `phase_plan_summary` instead.
+- Season-Scenario validation now requires `planning_horizon_weeks` to match `meta.iso_week_range`.
+- Macro-Planner validation now requires the A-event to be placed in a Peak phase and preserves event identity when mapping Season Brief events.
+- plan-week orchestration now validates macro coverage by iso_week_range, logs matching phases, and checks block artefacts by range before running meso/micro steps.
+- plan-week now invokes Meso-Architect once per artefact (one task per run) to respect single-output contracts.
+- Script logging now mirrors start/finish messages to stdout via `log_and_print`.
+- plan-week now prints "Done." after successful artefact creation and skips the builder if the versioned workouts plan is missing.
+- Meso-Architect guidance and validations now require weekly_kj_bands and week_roles to match the block iso_week_range length (no fixed 4-week assumption).
+- Meso-Architect prompt now explicitly derives block length from the provided iso_week_range or macro phase range.
+- Meso-Architect prompt now enforces verbatim macro constraint propagation and required self_check/preview fields.
+- Meso-Architect now hard-stops if execution-arch self_check fields are missing or load_ranges.source is not the exact block_governance filename.
+- Meso-Architect now sources A/B/C event windows from macro_overview phase constraints (events.md remains logistics only).
+- Micro-Planner now must store WORKOUTS_PLAN via the store tool call (no raw JSON outputs).
+- Artefact renderer now skips JSON list artefacts (e.g., intervals_workouts) with a clear log message instead of crashing.
+- Index exact-range checks now verify artifact files exist (prevents stale index hits).
+- Index manager now normalizes legacy analysis paths to data/analysis when the new file exists.
+- Block governance schema now allows variable-length `weekly_kj_bands` (no fixed 4-week constraint).
+- Block execution arch/preview and block feed-forward schemas now allow variable-length arrays (no fixed 4-week constraint).
 - Block execution architecture now supports variable-length blocks via `week_roles[]` and removes 4-week-only schema fields.
 - File naming, contracts, and specs now reference generic block ranges (no `+3`).
 - Macro/Meso cadence guidance and constrained-time-window rules formalized in Principles 3.3 and referenced by prompts.
@@ -19,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Macro overview renderer no longer references deprecated mass/preload fields.
+- Season scenarios tool schema now includes required planning math fields and runner fills defaults to satisfy strict validation.
 
 ### Removed
 - Legacy data pipeline scripts removed (`intervals_export.py`, `compile_activities_actual.py`, `compile_activities_trend.py`).
