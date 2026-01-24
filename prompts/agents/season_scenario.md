@@ -314,10 +314,11 @@ If contradictions arise:
 - Season brief (if not embedded): `workspace_get_input("season_brief")`
 - KPI profile: `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
 - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
-- Events (optional; if present): `workspace_get_input("events")`
+- Events (required): `workspace_get_input("events")`
 - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
 
 If an optional input is missing, proceed without it (do not retry indefinitely).
+If `events.md` is missing, STOP and request it.
 
 The Season-Scenario-Agent operates strictly at scenario level and must output
 only the binding schema-defined artefact for the active mode.

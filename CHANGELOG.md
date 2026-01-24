@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Macro/Meso/Micro/Performance-Analyst prompts now require `events.md` (no optional/if-present paths).
+- Season-Scenario prompt now requires `events.md` (no optional/if-present path).
+
 ### Removed
 - Legacy data pipeline scripts removed (`intervals_export.py`, `compile_activities_actual.py`, `compile_activities_trend.py`).
 
