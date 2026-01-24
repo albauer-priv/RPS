@@ -540,12 +540,23 @@ Maximize durable submaximal performance under prolonged fatigue.
 ### Interpretation Rules
 - Weekly aggregation only (no daily breakdowns).
 - Apply Principles Paper sections 2, 3, 4, 5, and 6 in full (do not cherry-pick) when setting phase intent, load corridors, and deload logic.
-- Apply Principles 3.4 sequencing logic (Kinzlbauer macro template) in macro phase design:
+- Apply Principles 3.4 sequencing logic (Kinzlbauer macro template) in macro phase design ONLY when the
+  Season Brief or selected scenario explicitly targets the ultra/brevet durability-first archetype:
   - Build and stabilize the aerobic ceiling (VO2max) first.
   - Then shift the main emphasis to metabolic efficiency and durability by lowering VLamax while keeping VO2 topped up.
   - Progression axis: intensity-tolerance first (controlled VO2 exposure), then volume-driven (more low-intensity long work).
-  - Assume time-crunched structure: efficient weekdays, weekend rides as primary lever for long-duration exposure.
+  - Time-crunched structure (efficient weekdays, long weekend rides) ONLY if AVAILABILITY supports it.
   - Target goal state: high VO2 ceiling, lower glycolytic dominance (lower VLamax), stable performance under fatigue; the VLamax/efficiency cycle may be repeated later in the season.
+  If the archetype is not requested, do NOT force this sequencing.
+- Apply Principles 3.2 backplanning and event prioritization (Binding):
+  - Classify events as A/B/C and plan backwards from the highest-priority A event.
+  - Exactly one A event per macrocycle; macrocycle = Build -> Peak -> Taper -> Recovery.
+  - Taper exists only for A events; B events may receive minor load adjustment; C events receive none.
+  - If multiple A events exist, use only these allowed models:
+    - Separate macrocycles when events are >= 8-12 weeks apart with full recovery between cycles.
+    - A-event cluster (single build + single peak window) when events are ~2-6 weeks apart.
+    - Explicitly forbid overlapping macrocycles, repeated tapers in short intervals, or rebuilding fitness between clustered A events.
+  - Resolve conflicts in priority order: A event integrity -> macrocycle structure -> recovery/fatigue tolerance -> B events -> C events.
 - Make the chosen intensity distribution and overload logic explicit in phase narratives or rationale fields where the schema allows.
 - Ensure narratives and rationales are consistent with allowed/forbidden intensity domains and deload flags.
 - Populate `data.justification` with a concise summary, citations (principles + evidence), and per-phase justifications.

@@ -119,7 +119,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro overview template updated to v1.1 to include justification fields.
 - Macro Mode A overview now injects selected scenario details into the prompt when available.
 - Validation tooling and docs now include wellness outputs.
-- Scenario, macro, and meso prompts now encode Principles 3.4 sequencing guidance (VO2 ceiling first, then durability/efficiency focus).
+- Scenario, macro, and meso prompts now conditionally apply Principles 3.4 sequencing guidance only when the ultra/brevet archetype is explicitly requested, and only when availability supports the time-crunched weekend emphasis.
+- Principles 3.2 backplanning guidance rewritten as an agent-executable planning cookbook and synced to agent knowledge copies.
+- Principles 3.2 macrocycle wording now aligns with `MACRO_CYCLE_ENUM` (Base/Build/Peak/Transition).
 
 ## [0.2.0] - 2026-01-22
 

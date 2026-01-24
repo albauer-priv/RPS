@@ -103,14 +103,120 @@ The annual plan follows a classic, robust sequence:
 3. **Specificity:** event simulation, pacing, fueling
 4. **Taper:** fatigue reduction while maintaining sharpness
 
-### 3.2 Backplanning and event prioritization
+### 3.2 Backplanning and event prioritization (Agent-Executable Planning Cookbook)
 
-Events are classified as **A / B / C**:
-- **A event:** season performance goal
-- **B events:** specific preparation, limited taper
-- **C events:** training or benchmarking
+This cookbook defines how planning agents must reason (Macro / Meso / Micro). It governs
+annual structure, event prioritization, peak logic, and conflict resolution. It does not define
+workouts, numeric load targets, or intensity prescriptions.
 
-The plan is built **backwards from the A event**. B and C events must not compromise the macro logic.
+#### 3.2.1 Agent roles and responsibilities
+
+**Macro Planner (Season Architect)**
+- Authority: highest-level planner; owns annual structure and event logic.
+- Responsibilities: interpret Season Brief; classify events (A/B/C); define macrocycles; determine peak windows; enforce priority hierarchy.
+- Prohibitions: must not create workouts; must not optimize short-term performance at the expense of macro logic.
+
+**Meso Architect (Block Designer)**
+- Authority: subordinate to Macro Planner; owns block-level structure.
+- Responsibilities: translate macro phases into blocks; assign blocks to calendar ranges; respect taper and recovery constraints; integrate B/C events per macro rules.
+- Prohibitions: must not redefine event priority; must not introduce additional peaks.
+
+**Micro Planner (Execution Layer)**
+- Authority: lowest level; implements sessions.
+- Responsibilities: execute block intent; manage day-to-day load; respect fatigue and recovery signals.
+- Prohibitions: must not compensate missed sessions; must not override block intent.
+
+#### 3.2.2 Core planning principle (Hard rule)
+ALL plans MUST be built via backplanning from the highest-priority event (A event). Forward-only
+planning without reference to the A event is invalid.
+
+#### 3.2.3 Event classification logic
+
+**A event**
+- Definition: primary performance objective; receives a dedicated taper; defines macrocycle structure.
+- Rules: only one A event per macrocycle; a macrocycle = Base -> Build -> Peak -> Transition (recovery).
+
+**B event**
+- Definition: secondary event supporting the A event.
+- Allowed purposes: specificity rehearsal, durability testing, pacing/fueling validation.
+- Rules: no full taper; may receive short load reduction only; must not disrupt macro progression.
+
+**C event**
+- Definition: low-priority event treated as training.
+- Rules: no taper; no structural changes; no recovery debt carried forward.
+
+#### 3.2.4 Backplanning algorithm (Macro level)
+
+**Inputs**
+- Season Brief
+- Events calendar
+- Athlete constraints
+
+**Process**
+1. Identify candidate events.
+2. Select A event(s) based on objectives.
+3. Assign each A event to a macrocycle.
+4. Place taper directly before each A event.
+5. Build phases backward: Specificity -> Build -> Base.
+6. Assign B and C events into the existing structure.
+
+**Outputs**
+- Macrocycle map
+- Event priority table
+- Peak windows
+
+#### 3.2.5 Multiple A events (Allowed models only)
+
+**Model 1: Multiple macrocycles (A1/A2)**
+- Conditions: at least 8-12 weeks between A events; full recovery possible between cycles.
+- Rules: each A event gets its own macrocycle; no carry-over of peak fatigue; Transition (recovery) phase is mandatory.
+
+**Model 2: A-event cluster (Peak window)**
+- Conditions: events within ~2-6 weeks; similar performance demands; durability prioritized over sharpness.
+- Rules: single build; single peak window; no repeated tapers; recovery only after the cluster.
+
+**Explicitly forbidden**
+- Multiple independent tapers within short intervals
+- Rebuilding fitness between clustered events
+- Overlapping macrocycles
+
+#### 3.2.6 Priority hierarchy (Conflict resolution)
+When constraints collide, resolve conflicts in this order:
+1. A event integrity
+2. Macrocycle structure
+3. Recovery and fatigue tolerance
+4. B events
+5. C events
+
+Lower-priority items are modified or removed first.
+
+#### 3.2.7 Taper rules (Global)
+- Taper exists only for A events.
+- B events may receive minor load adjustment.
+- C events receive none.
+- Taper duration and depth scale with event duration, accumulated fatigue, and athlete age/resilience.
+
+#### 3.2.8 Load and consistency guardrails
+- Missed sessions are not made up.
+- Consistency outweighs intensity.
+- Fatigue management is a performance variable.
+- Deloads are planned, non-negotiable, and active components of adaptation.
+
+#### 3.2.9 Naming and state management
+Use unambiguous labels: `A1`, `A2`, `A_block`, `Peak_Window_1`, `B_support_event`, `C_training_event`.
+Avoid ambiguous terms like "important race" or "key event" without a priority class.
+
+#### 3.2.10 Validation checklist (Agent self-test)
+Before finalizing a plan, verify:
+- Exactly one A event per macrocycle.
+- Every taper serves an A event.
+- B and C events fit without breaking structure.
+- Recovery is explicitly planned.
+- Peak logic is consistent with event spacing.
+
+If any answer is "no", the plan is invalid.
+
+**Execution summary:** Agents must optimize for long-term performance integrity, not short-term event satisfaction.
 
 ### 3.3 3:1 cycles
 Load typically follows **3:1 cycles**:
