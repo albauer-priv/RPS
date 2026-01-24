@@ -122,6 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scenario, macro, and meso prompts now conditionally apply Principles 3.4 sequencing guidance only when the ultra/brevet archetype is explicitly requested, and only when availability supports the time-crunched weekend emphasis.
 - Principles 3.2 backplanning guidance rewritten as an agent-executable planning cookbook and synced to agent knowledge copies.
 - Principles 3.2 macrocycle wording now aligns with `MACRO_CYCLE_ENUM` (Base/Build/Peak/Transition).
+- Macro-Planner prompt now mirrors the `MACRO_CYCLE_ENUM` wording in backplanning guidance.
 
 ## [0.2.0] - 2026-01-22
 

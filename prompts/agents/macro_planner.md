@@ -550,7 +550,7 @@ Maximize durable submaximal performance under prolonged fatigue.
   If the archetype is not requested, do NOT force this sequencing.
 - Apply Principles 3.2 backplanning and event prioritization (Binding):
   - Classify events as A/B/C and plan backwards from the highest-priority A event.
-  - Exactly one A event per macrocycle; macrocycle = Build -> Peak -> Taper -> Recovery.
+  - Exactly one A event per macrocycle; macrocycle = Base -> Build -> Peak -> Transition (recovery).
   - Taper exists only for A events; B events may receive minor load adjustment; C events receive none.
   - If multiple A events exist, use only these allowed models:
     - Separate macrocycles when events are >= 8-12 weeks apart with full recovery between cycles.
