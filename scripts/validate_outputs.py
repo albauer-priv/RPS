@@ -124,7 +124,7 @@ def validate_file(registry: SchemaRegistry, schema_file: str, path: Path) -> boo
 def main() -> int:
     """Validate outputs and return a process exit code."""
     load_env()
-    logger = configure_logging(ROOT, Path(__file__).stem)
+    logger = configure_logging(Path(__file__).stem)
     args = parse_args()
     athlete_id = args.athlete or resolve_athlete_id()
 

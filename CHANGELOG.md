@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default CLI log filenames now include a UTC timestamp to avoid overwriting logs per run.
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
 - Activities trend metadata now derives `iso_week_range` from the underlying temporal scope.
+- `validate_outputs.py` now uses the updated logging helper signature.
 
 ### Changed
 - KPI profile schema removed per-kg preload windows and now requires moving-time rate guidance instead.
