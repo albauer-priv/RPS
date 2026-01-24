@@ -384,6 +384,7 @@ Evidence may support rationale where the schema allows, but never overrides gove
 - If strict tools allow multi-output, emit one artifact per strict tool call.
 - Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
   Do NOT use file_search for user inputs.
+  If `events.md` is missing, STOP and request it.
 - Require target ISO week (year + week) in the user input. If missing, STOP and request it.
 - Do not require tool usage instructions in the user prompt.
 - When calling workspace_put_validated:
@@ -456,7 +457,7 @@ Do NOT use templates; the schema is authoritative.
   - Otherwise block context (current block): `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Block context (next block): `workspace_get_block_context({ "year": YYYY, "week": WW, "offset_blocks": 1 })`
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
-  - Events (optional; if present): `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
@@ -464,17 +465,17 @@ Do NOT use templates; the schema is authoritative.
   - If the user provides `iso_week_range`, use it and skip block context resolution.
   - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Macro feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })`
-  - Events (optional; if present): `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
   - Factual data (optional; if present): `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (no-change):
   - If the user provides `iso_week_range`, use it and skip block context resolution.
   - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
-  - Events (optional; if present): `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 
-If an optional input is missing, proceed without it (do not retry indefinitely).
+If a required input is missing, STOP and request it. Optional inputs may be skipped.
 
 ## File Search Filters (Knowledge)
 - Use attribute filters for knowledge sources (not workspace artefacts).

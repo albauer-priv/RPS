@@ -333,6 +333,7 @@ If contradictions arise:
 - KPI Profile: exactly one if KPI-governed planning is requested (Mode A/B).
 - Season Scenarios (optional): latest `SEASON_SCENARIOS` if available; advisory only.
 - Scenario Selection (optional): latest `SEASON_SCENARIO_SELECTION` if available; use selected scenario label.
+- Events (required): `events.md` from `inputs/` (STOP if missing).
 - User inputs (season brief, events) MUST be loaded via `workspace_get_input` from `inputs/`.
   Do NOT use file_search for user inputs.
 
@@ -385,7 +386,7 @@ Do not output scenario dialogue or request a selection.
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
   - Scenario selection (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
-  - Events (optional; if present): `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
   - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode B (Season Brief + existing macro):
   - Season brief: `workspace_get_input("season_brief")`
@@ -394,13 +395,13 @@ Do not output scenario dialogue or request a selection.
   - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   - Season scenarios (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
   - Scenario selection (optional): `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
-  - Events (optional; if present): `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
   - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Mode C (DES analysis only):
   - DES report: `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
-  - Events (optional; if present): `workspace_get_input("events")`
+  - Events (required): `workspace_get_input("events")`
 
-If an optional input is missing, proceed without it (do not retry indefinitely).
+If a required input is missing, STOP and request it. Optional inputs may be skipped.
 
 The Macro-Planner operates strictly at macro level and must output only the
 binding schema-defined artefact for the active mode.

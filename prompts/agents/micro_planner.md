@@ -308,8 +308,8 @@ The intent is derived from the artefact type (no free choice).
 ## Current System Tooling
 - Use workspace_get_block_context for block governance + execution architecture resolution **unless** the user explicitly provides an `iso_week_range` in the request. A user-provided `iso_week_range` overrides phase alignment and must be used.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
-- Load `events.md` (if present) via workspace_get_input from the athlete `inputs/` folder.
-  Do NOT use file_search for user inputs.
+- Load `events.md` via workspace_get_input from the athlete `inputs/` folder (required).
+  If missing, STOP and request it. Do NOT use file_search for user inputs.
 - Require target ISO week (year + week) in the user input. If missing, STOP and request it.
 - Do not require tool usage instructions in the user prompt.
 
@@ -323,22 +323,22 @@ The intent is derived from the artefact type (no free choice).
   - Use workspace_get_version with artifact_type + version_key (not filename), e.g.:
     - `workspace_get_version({ "artifact_type": "BLOCK_GOVERNANCE", "version_key": "2026-04" })`
     - `workspace_get_version({ "artifact_type": "BLOCK_EXECUTION_ARCH", "version_key": "2026-04" })`
-- Events (optional; if present): `workspace_get_input("events")`
+- Events (required): `workspace_get_input("events")`
 - Mode B (apply governance):
   - If the user provides `iso_week_range`, use it and skip block context resolution.
   - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
-- Events (optional; if present): `workspace_get_input("events")`
+- Events (required): `workspace_get_input("events")`
 - Mode C (apply feed-forward):
   - If the user provides `iso_week_range`, use it and skip block context resolution.
   - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - Block feed-forward (optional; if present): `workspace_get_latest({ "artifact_type": "BLOCK_FEED_FORWARD" })`
-  - Events (optional; if present): `workspace_get_input("events")`
+- Events (required): `workspace_get_input("events")`
 - Availability (required): `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 - Wellness (required for body_mass_kg): `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Zone model (required for FTP-based intensity and IF): `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
   - If ATHLETE_PROFILE is available, it may be used for `ftp_watts`, but ZONE_MODEL is sufficient.
 
-If an optional input is missing, proceed without it (do not retry indefinitely).
+If a required input is missing, STOP and request it. Optional inputs may be skipped.
 
 NOTE: JSON cut-over is active. Ignore any legacy non-JSON instructions.
 Output JSON that validates against `workouts_plan.schema.json`.
