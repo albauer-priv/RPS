@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance-Analyst prompt no longer stops early when binding sources are not returned by file_search.
 - Default CLI log filenames now include a UTC timestamp to avoid overwriting logs per run.
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
+- Activities trend metadata now derives `iso_week_range` from the underlying temporal scope.
 
 ### Changed
 - KPI profile schema removed per-kg preload windows and now requires moving-time rate guidance instead.

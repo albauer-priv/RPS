@@ -1761,6 +1761,8 @@ def compile_activities_trend(
         fallback_day = datetime.now(timezone.utc).date()
         range_start = fallback_day
         range_end = fallback_day
+    start_day = range_start.date() if hasattr(range_start, "date") else range_start
+    end_day = range_end.date() if hasattr(range_end, "date") else range_end
 
     col_move_s = getcol(cols, "Moving Time (s)")
     col_dist_m = getcol(cols, "Distance (m)")
@@ -2087,19 +2089,19 @@ def compile_activities_trend(
             "weekly_aggregates": {
                 "activity_count": int(len(g)),
                 "moving_time": duration_hm_from_seconds(move_seconds),
-                "distance_km": num_or_none(dist_km_raw),
-                "load_tss": num_or_none(tss_sum_raw),
-                "work_kj": num_or_none(kj_sum_raw),
+                "distance_km": num_or_none(fmt_dec(dist_km_raw, 1)),
+                "load_tss": int_or_none(fmt_int(tss_sum_raw)),
+                "work_kj": int_or_none(fmt_int(kj_sum_raw)),
             },
             "intensity_load_metrics": {
-                "normalized_power_w": num_or_none(np_mean_raw),
-                "intensity_factor": num_or_none(if_mean_raw),
-                "decoupling_percent": num_or_none(dec_mean_raw),
-                "durability_index": num_or_none(di_val_raw),
-                "efficiency_factor": num_or_none(ef_mean_raw),
-                "functional_intensity_ratio": num_or_none(fir),
-                "ftp_estimated_w": num_or_none(ftp_est_mean_raw),
-                "vo2_ftp": num_or_none(vo2_ftp_ratio),
+                "normalized_power_w": int_or_none(fmt_int(np_mean_raw)),
+                "intensity_factor": num_or_none(fmt_dec(if_mean_raw, 2)),
+                "decoupling_percent": num_or_none(fmt_dec(dec_mean_raw, 1)),
+                "durability_index": num_or_none(fmt_dec(di_val_raw, 2)),
+                "efficiency_factor": num_or_none(fmt_dec(ef_mean_raw, 2)),
+                "functional_intensity_ratio": num_or_none(fmt_dec(fir, 2)),
+                "ftp_estimated_w": int_or_none(fmt_int(ftp_est_mean_raw)),
+                "vo2_ftp": num_or_none(fmt_dec(vo2_ftp_ratio, 2)),
             },
             "power_tiz": {
                 "z1": duration_hms_from_seconds(pz_sec_raw[1]),
@@ -2130,10 +2132,10 @@ def compile_activities_trend(
         trend_entry["optional_tiz"] = optional_tiz
 
         distribution_metrics = {
-            "adherence_percent": num_or_none(adher),
-            "z1_z2_time_percent": num_or_none(z1z2_pct_raw),
-            "z5_time_percent": num_or_none(z5_pct_raw),
-            "z2_share_power_percent": num_or_none(z2_pct_raw),
+            "adherence_percent": int_or_none(adher),
+            "z1_z2_time_percent": num_or_none(fmt_dec(z1z2_pct_raw, 1)),
+            "z5_time_percent": num_or_none(fmt_dec(z5_pct_raw, 1)),
+            "z2_share_power_percent": num_or_none(fmt_dec(z2_pct_raw, 1)),
             "back_to_back_z2_days_count": int_or_none(b2b),
         }
         trend_entry["distribution_metrics"] = distribution_metrics
@@ -2155,17 +2157,17 @@ def compile_activities_trend(
             (18000, "mmp_18000s"),
             (21600, "mmp_21600s"),
         ]:
-            peak_metrics[key] = num_or_none(mmp_out_raw[duration])
+            peak_metrics[key] = int_or_none(fmt_int(mmp_out_raw[duration]))
         trend_entry["peak_metrics"] = peak_metrics
 
         trend_entry["flag_counts"] = flag_counts_json
         trend_entry["flag_any"] = flag_any_json
 
         metrics = {
-            "tsb_today": num_or_none(tsb_last_raw),
+            "tsb_today": num_or_none(fmt_dec(tsb_last_raw, 1)),
             "weekly_moving_time_total_min": int_or_none(move_min_total),
             "weekly_z2_time_total_min": int_or_none(z2_min_total),
-            "weekly_z2_share": num_or_none(weekly_z2_share_pct),
+            "weekly_z2_share": num_or_none(fmt_dec(weekly_z2_share_pct, 1)),
             "weekly_moving_time_max_min": int_or_none(move_min_max),
             "weekly_z2_time_max_min": int_or_none(z2_min_max),
             "weekly_moving_time_150min_sum_min": int_or_none(move_min_150plus),
@@ -2220,6 +2222,8 @@ def compile_activities_trend(
     validator = SchemaRegistry(schema_dir).validator_for("activities_trend.schema.json")
 
     version_key = f"{year}-{iso_week}"
+    start_week = f"{date_to_iso_week(start_day)[0]}-{date_to_iso_week(start_day)[1]:02d}"
+    end_week = f"{date_to_iso_week(end_day)[0]}-{date_to_iso_week(end_day)[1]:02d}"
     meta = {
         "artifact_type": "ACTIVITIES_TREND",
         "schema_id": "ActivitiesTrendInterface",
@@ -2230,10 +2234,10 @@ def compile_activities_trend(
         "run_id": f"{run_stamp}-data-pipeline-{year}{iso_week}",
         "created_at": run_ts.isoformat(),
         "iso_week": version_key,
-        "iso_week_range": f"{version_key}--{version_key}",
+        "iso_week_range": f"{start_week}--{end_week}",
         "temporal_scope": {
-            "from": range_start.date().isoformat(),
-            "to": range_end.date().isoformat(),
+            "from": start_day.isoformat(),
+            "to": end_day.isoformat(),
         },
         "scope": "Shared",
         "trace_upstream": [
@@ -2281,6 +2285,7 @@ def compile_activities_trend(
         producer_agent=meta["owner_agent"],
         created_at=meta["created_at"],
         iso_week=meta["iso_week"],
+        iso_week_range=meta["iso_week_range"],
     )
 
     print(f"JSON exported: {out_json_file}")
