@@ -28,7 +28,7 @@ Assume the mandatory_load_order is satisfied for this single file.
 ## execution_rules
 - Multi-pass requirement: execute the mandatory three-pass model as defined in the Execution Protocol section.
 - One-artefact-set rule: produce exactly one allowed output artefact set per the Input/Output Contract section.
-- Schema lockdown: in the structured assembly pass, follow the binding JSON schema per the Execution Protocol and Input/Output Contract sections.
+- Schema conformance: in the structured assembly pass, follow the binding JSON schema per the Execution Protocol and Input/Output Contract sections.
 
 ---
 
@@ -216,7 +216,7 @@ If an optional input is missing, proceed without it (do not retry indefinitely).
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Template Usage (Removed)
-Emit schema-compliant JSON only.
+If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in the chat response.
 
 ## Mandatory Knowledge Processing Rule (Hard Gate)
 Before performing any analysis or derivation:
@@ -254,7 +254,6 @@ When evaluating KPI status and block health:
 - Do not translate policy rules into actions or mandates
 
 Rules:
-- JSON only
 - No final wording
 - No recommendations phrased as actions
 - Pure analysis and interpretation
@@ -277,7 +276,7 @@ Tasks:
   - JSON schema (`des_analysis_report.schema.json`)
 - Produce:
   - JSON `meta` + `data.sections` (structured doc)
-- Output only the JSON artefact; no preface, no summary, no extra text.
+- Call the strict store tool for the report. Do not output raw JSON or commentary in the chat response.
 
 ## One-Artefact Rule
 - Populate exactly one report artefact (`des_analysis_report_yyyy-ww.json`) in Pass 3.
@@ -314,7 +313,6 @@ Forbidden phrasing:
 
 ## Interpretation Rules
 Pass 1 rules (interpretation-only constraints):
-- JSON only
 - No final wording
 - No recommendations phrased as actions
 - Pure analysis and interpretation

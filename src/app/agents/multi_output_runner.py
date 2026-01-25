@@ -21,6 +21,7 @@ from app.openai.response_utils import (
     extract_reasoning_summaries,
     extract_text_output,
 )
+from app.openai.streaming import create_response
 from app.openai.vectorstore_state import VectorStoreResolver
 from app.prompts.loader import PromptLoader
 from app.schemas.bundler import SchemaBundler
@@ -555,7 +556,7 @@ def run_agent_multi_output(
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
         start = time.perf_counter()
-        response = runtime.client.responses.create(**payload)
+        response = create_response(runtime.client, payload, logger)
         elapsed = time.perf_counter() - start
         label = forced_tool_name or ("file_search" if force_search_flag else "auto")
         _log_response_diagnostics(response, label=label, elapsed_s=elapsed)

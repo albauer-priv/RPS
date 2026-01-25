@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+import logging
 import os
 import re
 
@@ -12,11 +13,13 @@ import yaml
 from app.openai.client import get_client
 from app.openai.model_capabilities import supports_temperature
 from app.openai.reasoning import build_reasoning_payload
+from app.openai.streaming import create_response
 from app.openai.vectorstore_state import DEFAULT_STATE_PATH, load_vectorstore_id
 from app.prompts.loader import agent_system_prompt
 
 
 DEFAULT_KNOWLEDGE_ROOT = Path("knowledge")
+logger = logging.getLogger(__name__)
 
 
 def _load_vectorstore_name(manifest_path: Path) -> str:
@@ -150,4 +153,4 @@ def run_agent(
     reasoning = build_reasoning_payload(model, reasoning_effort, reasoning_summary)
     if reasoning:
         payload["reasoning"] = reasoning
-    return client.responses.create(**payload)
+    return create_response(client, payload, logger)

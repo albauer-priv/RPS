@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, timedelta
 from typing import Any
 
 
@@ -40,6 +41,14 @@ def week_index(week: IsoWeek) -> int:
 def range_contains(range_spec: IsoWeekRange, week: IsoWeek) -> bool:
     """Return True if a week is within a range (inclusive)."""
     return week_index(range_spec.start) <= week_index(week) <= week_index(range_spec.end)
+
+
+def previous_iso_week(week: IsoWeek) -> IsoWeek:
+    """Return the ISO week immediately before the given one."""
+    monday = date.fromisocalendar(week.year, week.week, 1)
+    prev_monday = monday - timedelta(days=7)
+    iso_year, iso_week, _ = prev_monday.isocalendar()
+    return IsoWeek(year=iso_year, week=iso_week)
 
 
 def parse_iso_week(value: Any) -> IsoWeek | None:

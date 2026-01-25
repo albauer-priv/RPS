@@ -77,7 +77,7 @@ Use this map to find binding enums/specs. Read the full artefact from its file.
 | AgendaEnumSpec (INTENSITY_DOMAIN_ENUM, LOAD_MODALITY_ENUM) | `agenda_enum_spec.md` | Use ONLY values listed there. |
 | MacroCycleEnumSpec (MACRO_CYCLE_ENUM) | `macro_cycle_enum_spec.md` | Cycle labels are case-sensitive. |
 | LoadEstimationSpec (kJ / kJ/kg guardrails) | `load_estimation_spec.md` | Required for kJ/kg guidance. |
-| MacroLoadCorridorPolicy | `macro_load_corridor_policy.md` | Required for weekly kJ corridor derivation. |
+| MacroLoadCorridorPolicy | `macro_load_corridor_policy.md` | Required for weekly planned_Load_kJ corridor derivation. |
 
 ### Binding Knowledge Sources
 - `principles_durability_first_cycling.md`
@@ -370,7 +370,6 @@ If `scenario_guidance.phase_count_expected` is provided, it must match the compu
 If it does not match, STOP (fail-fast) and report the mismatch and both values.
 
 ## Output Invariants (Mode A/B)
-- JSON output only.
 - Output MUST validate against `macro_overview.schema.json`.
 - `meta` must include required fields (artifact_type, schema_id, schema_version, run_id, created_at, iso_week_range, trace_upstream).
 - `data` must be a structured doc (`structured_doc.schema.json`) and cover:
@@ -465,7 +464,7 @@ binding schema-defined artefact for the active mode.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Template Usage (Removed)
-Emit schema-compliant JSON only.
+If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in chat.
 
 ## PASS 1 — Analysis (Hidden)
 1. Determine mode:
@@ -517,9 +516,9 @@ Emit schema-compliant JSON only.
 7. If any check fails: STOP and request missing inputs (no partial output).
 
 ## PASS 3 — Output (Visible)
-1. Output exactly one JSON artefact that validates against the target schema.
+1. Call the strict store tool for exactly one allowed artefact (Mode A/B or Mode C).
 2. Fill all required fields; no blanks or placeholders.
-3. Do not add any text outside the JSON.
+3. Do not output raw JSON or commentary in the chat response.
 4. If fixed rest days are known, include them in both:
    - `global_constraints.recovery_protection.fixed_rest_days` (structured), and
    - `global_constraints.recovery_protection.notes` (explain rationale/assumptions), and
@@ -563,7 +562,7 @@ supersedes any informal heuristics. It requires:
 - `agenda_enum_spec.md`: INTENSITY_DOMAIN_ENUM and LOAD_MODALITY_ENUM.
 - `macro_cycle_enum_spec.md`: MACRO_CYCLE_ENUM values.
 - `load_estimation_spec.md`: kJ and kJ/kg guidance.
-- `macro_load_corridor_policy.md`: weekly kJ corridor derivation policy.
+- `macro_load_corridor_policy.md`: weekly planned_Load_kJ corridor derivation policy.
 - `contract_precedence_spec.md`: governance precedence.
 - `file_naming_spec.md`: naming conventions.
 - `season_brief_interface_spec.md`: season brief required fields.

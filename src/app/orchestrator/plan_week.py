@@ -10,7 +10,13 @@ from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from app.agents.registry import AGENTS
 from app.agents.tasks import AgentTask
 from app.workspace.index_exact import IndexExactQuery
-from app.workspace.iso_helpers import IsoWeek, envelope_week, envelope_week_range, range_contains
+from app.workspace.iso_helpers import (
+    IsoWeek,
+    envelope_week,
+    envelope_week_range,
+    previous_iso_week,
+    range_contains,
+)
 from app.workspace.macro_phase_service import resolve_macro_phase_info
 from app.workspace.api import Workspace
 from app.workspace.local_store import LocalArtifactStore
@@ -228,7 +234,8 @@ def plan_week(
             athlete_id=athlete_id,
             tasks=micro_tasks,
             user_input=(
-                f"Create workouts_plan for ISO week {target_label}. "
+                f"Create workouts_plan for ISO week {target_label} only (Mon–Sun of that week). "
+                "Do NOT output multiple weeks even if the block range spans multiple weeks. "
                 "Read block_governance and block_execution_arch from workspace."
             ),
             run_id=f"{run_id}_micro",
@@ -269,55 +276,65 @@ def plan_week(
         log_and_print(logger, message)
 
     analysis_tasks: list[AgentTask] = []
-    required = [
-        ArtifactType.ACTIVITIES_ACTUAL,
-        ArtifactType.ACTIVITIES_TREND,
-        ArtifactType.KPI_PROFILE,
-        ArtifactType.MACRO_OVERVIEW,
-        ArtifactType.BLOCK_GOVERNANCE,
-        ArtifactType.BLOCK_EXECUTION_ARCH,
-    ]
-    if all(workspace.latest_exists(item) for item in required):
-        if workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
-            report = workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
-            week = envelope_week(report)
-            if week and (week.year == target.year and week.week == target.week):
-                message = f"Found DES_ANALYSIS_REPORT for ISO week {target_label}."
-                log_and_print(logger, message)
+    report_week = previous_iso_week(target)
+    report_label = f"{report_week.year:04d}-{report_week.week:02d}"
+    if macro_range and not range_contains(macro_range, report_week):
+        message = (
+            "Performance analysis skipped: report week "
+            f"{report_label} is outside macro range {macro_range.range_key}."
+        )
+        log_and_print(logger, message)
+    else:
+        required = [
+            ArtifactType.ACTIVITIES_ACTUAL,
+            ArtifactType.ACTIVITIES_TREND,
+            ArtifactType.KPI_PROFILE,
+            ArtifactType.MACRO_OVERVIEW,
+            ArtifactType.BLOCK_GOVERNANCE,
+            ArtifactType.BLOCK_EXECUTION_ARCH,
+        ]
+        if all(workspace.latest_exists(item) for item in required):
+            if workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
+                report = workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
+                week = envelope_week(report)
+                if week and (week.year == report_week.year and week.week == report_week.week):
+                    message = f"Found DES_ANALYSIS_REPORT for ISO week {report_label}."
+                    log_and_print(logger, message)
+                else:
+                    message = f"DES_ANALYSIS_REPORT missing for ISO week {report_label}. Will create."
+                    log_and_print(logger, message)
+                    analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
             else:
-                message = f"DES_ANALYSIS_REPORT missing for ISO week {target_label}. Will create."
+                message = f"DES_ANALYSIS_REPORT NOT FOUND. Will create for ISO week {report_label}."
                 log_and_print(logger, message)
                 analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
         else:
-            message = f"DES_ANALYSIS_REPORT NOT FOUND. Will create for ISO week {target_label}."
+            message = "Performance analysis skipped: required inputs missing."
             log_and_print(logger, message)
-            analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
-    else:
-        message = "Performance analysis skipped: required inputs missing."
-        log_and_print(logger, message)
 
-    if analysis_tasks:
-        spec = AGENTS["performance_analysis"]
-        message = f"Running Performance-Analyst for ISO week {target_label}."
-        log_and_print(logger, message)
-        out = run_agent_multi_output(
-            runtime_for(spec.name),
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
-            athlete_id=athlete_id,
-            tasks=analysis_tasks,
-            user_input=(
-                f"Create des_analysis_report for ISO week {target_label}. "
-                "Read activities_actual, activities_trend, KPI profile, macro overview, meso artefacts from workspace."
-            ),
-            run_id=f"{run_id}_analysis",
-            model_override=model_resolver(spec.name) if model_resolver else None,
-            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            force_file_search=force_file_search,
-        )
-        steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})
-        if out.get("ok") and out.get("produced"):
-            log_and_print(logger, "Done.")
+        if analysis_tasks:
+            spec = AGENTS["performance_analysis"]
+            message = f"Running Performance-Analyst for ISO week {report_label}."
+            log_and_print(logger, message)
+            out = run_agent_multi_output(
+                runtime_for(spec.name),
+                agent_name=spec.name,
+                agent_vs_name=spec.vector_store_name,
+                athlete_id=athlete_id,
+                tasks=analysis_tasks,
+                user_input=(
+                    f"Create des_analysis_report for ISO week {report_label} "
+                    f"(planning week {target_label} minus one). "
+                    "Read activities_actual, activities_trend, KPI profile, macro overview, meso artefacts from workspace."
+                ),
+                run_id=f"{run_id}_analysis",
+                model_override=model_resolver(spec.name) if model_resolver else None,
+                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+                force_file_search=force_file_search,
+            )
+            steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})
+            if out.get("ok") and out.get("produced"):
+                log_and_print(logger, "Done.")
 
     ok = all(step["result"].get("ok") for step in steps) if steps else True
     message = f"Plan-week completed for ISO week {target_label} (ok={ok})."

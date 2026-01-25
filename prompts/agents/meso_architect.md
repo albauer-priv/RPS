@@ -25,7 +25,7 @@ File-based references:
 ## execution_rules
 - Multi-pass execution requirements (including three-pass rules) are defined in the Execution Protocol section and must be applied.
 - One-artefact-set rule: exactly one allowed output artefact per run, unless strict tools explicitly allow multi-output.
-- Schema lockdown: follow the corresponding schema definitions and emit no extra commentary outside the output.
+- Schema conformance: follow the corresponding schema definitions and emit no extra commentary outside the output.
 
 ---
 
@@ -371,7 +371,6 @@ Evidence may support rationale where the schema allows, but never overrides gove
 
 ## Hard output restrictions
 - Output multiple artefacts in one response is forbidden unless strict tools explicitly allow multi-output.
-- If output is JSON, do not include any text outside the JSON.
 - If a strict store tool is provided, you MUST call it (do not output raw JSON).
 
 ---
@@ -413,6 +412,7 @@ Do NOT use templates; the schema is authoritative.
     `explicit_forbidden_content`, `self_check`.
 - BLOCK_GOVERNANCE load_guardrails must include:
   - `weekly_kj_bands` as an array of `{week, band}` covering **every week** in `meta.iso_week_range`.
+    These bands represent **planned_Load_kJ** (stress‑weighted kJ).
     Do NOT assume 4-week blocks; derive the count from the block range.
   - `confidence_assumptions` as an object (not a list).
 
@@ -566,8 +566,8 @@ If validation fails:
 (If user requests multiple, produce them in separate runs unless tools explicitly allow multi-output.)
 
 - Follow the corresponding schema definitions.
-- No commentary outside the JSON output.
-- If the output is JSON, the response must contain only the JSON (no preface, no summary, no Markdown fences).
+- Call the strict store tool for the selected artefact.
+- Do not output raw JSON or commentary in the chat response.
 
 ---
 # SECTION: Domain Rules

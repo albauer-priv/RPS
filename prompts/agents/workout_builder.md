@@ -31,7 +31,7 @@ Assume the mandatory_load_order is satisfied for this single file.
 ## execution_rules
 - Three-pass execution is mandatory as defined in the Execution Protocol section.
 - One-artefact-set rule: produce exactly one output artefact.
-- Schema lockdown: required output must conform to the referenced binding specs; do not add prose outside the allowed output form.
+- Schema conformance: required output must conform to the referenced binding specs; do not add prose outside the allowed output form.
 
 ---
 
@@ -167,13 +167,13 @@ If missing → STOP.
 
 ## Output Contract (Binding)
 - Output is exactly ONE JSON list (JSON array) of workout objects as defined in `workout_json_spec.md`
-- If all workouts are valid: output ONLY the JSON list (no additional text)
 - Output MUST NOT include citations, links, Markdown, or any extra annotation
 - Each object MUST include:
   - start_date_local, category, type, name, description
  - If a strict store tool is available, call `store_intervals_workouts_export` with:
    - `{ "workouts": [ ... ] }`
    - Do NOT output raw JSON outside the tool call.
+ - If no strict store tool is available, output the JSON list only (no extra text).
  - If one or more workouts are invalid: output a clear ERROR message in text form
    and do NOT call any store tool.
 
@@ -200,7 +200,7 @@ The Workout-Builder MUST NOT:
 
 ## Current System Tooling
 - Use workspace_get_latest/workspace_get_version to load workouts_plan inputs.
-- Output raw Intervals workouts payload; use the strict store tool wrapper if provided.
+- If a strict store tool is provided, store via that tool and do not output raw JSON in chat.
 - Do not require tool usage instructions in the user prompt.
 
 ## Access Hints (Tools)
@@ -218,7 +218,7 @@ The Workout-Builder MUST NOT:
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Template Usage (Removed)
-Emit schema-compliant JSON only.
+If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in chat.
 
 ## Three-Pass Execution Protocol (MANDATORY)
 
@@ -246,7 +246,8 @@ Emit schema-compliant JSON only.
 - If any issue is found: STOP and ask.
 
 ### PASS 3 — Final Output
-- If all workouts are valid: output exactly ONE JSON list (and nothing else)
+- If all workouts are valid and a strict store tool is provided: call it and output no JSON in chat.
+- If all workouts are valid and no strict store tool is provided: output exactly ONE JSON list (and nothing else).
 - If one or more workouts are invalid: output a clear ERROR message in text form
 
 - Finale Ausgabe ist roh: kein Markdown, keine Codefences, kein Prä-/Post-Text.

@@ -14,6 +14,7 @@ from app.agents.tasks import AgentTask, OUTPUT_SPECS
 from app.openai.model_capabilities import supports_temperature
 from app.openai.reasoning import build_reasoning_payload
 from app.openai.response_utils import extract_reasoning_summaries
+from app.openai.streaming import create_response
 from app.openai.vectorstore_state import VectorStoreResolver
 from app.prompts.loader import PromptLoader
 from app.schemas.bundler import SchemaBundler
@@ -107,7 +108,7 @@ def run_agent_task_strict(
             payload["tool_choice"] = {"type": "file_search"}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
-        return runtime.client.responses.create(**payload)
+        return create_response(runtime.client, payload, logger)
 
     force_search = force_file_search
     seen_summaries: set[str] = set()

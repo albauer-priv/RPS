@@ -296,7 +296,6 @@ If contradictions arise:
 - Guidance is advisory only; do not include workouts or daily planning.
 
 ## Output Invariants
-- JSON output only.
 - Output MUST validate against `season_scenarios.schema.json`.
 - `meta` must include required fields (artifact_type, schema_id, schema_version, run_id,
   created_at, iso_week, iso_week_range, trace_upstream).
@@ -340,7 +339,7 @@ only the binding schema-defined artefact for the active mode.
 - Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Template Usage (Removed)
-Emit schema-compliant JSON only.
+If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in chat.
 
 ## PASS 1 — Analysis (Hidden)
 1. Confirm Season Brief content is available (embedded in user prompt or via workspace tool).
@@ -358,9 +357,9 @@ Emit schema-compliant JSON only.
 4. If any check fails: STOP and request missing inputs (no partial output).
 
 ## PASS 3 — Output (Visible)
-1. Output exactly one JSON artefact that validates against the target schema.
+1. Call the strict store tool for exactly one `SEASON_SCENARIOS` artefact.
 2. Fill all required fields; no blanks or placeholders.
-3. Do not add any text outside the JSON.
+3. Do not output raw JSON or commentary in the chat response.
 4. If fixed rest days are known, include them in both:
    - `global_constraints.recovery_protection.fixed_rest_days` (structured), and
    - `global_constraints.recovery_protection.notes` (explain rationale/assumptions), and
@@ -384,7 +383,7 @@ Emit schema-compliant JSON only.
 - MACRO_CYCLE_ENUM (MacroCycleEnumSpec): `Base`, `Build`, `Peak`, `Transition`
 - LoadEstimationSpec: use for kJ and kJ/kg guardrails; always include a reference mass window
 - K3 meaning (AgendaEnumSpec): Kraftausdauer (high torque / low cadence)
-- kJ/kg guardrails: compute from weekly kJ corridor and reference mass window
+- kJ/kg guardrails: compute from weekly planned_Load_kJ corridor and reference mass window
   (min = kJ_min / mass_max, max = kJ_max / mass_min).
 
 ## File Lookup (avoid scanning unrelated sources)

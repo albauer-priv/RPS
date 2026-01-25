@@ -12,6 +12,7 @@
 
 ## Guardrails
 - [ ] `weekly_kj_bands` has one entry per week in `meta.iso_week_range`.
+- [ ] `weekly_kj_bands` represent **planned_Load_kJ** (stress‑weighted kJ), not mechanical kJ.
 - [ ] Weekly bands show a progression pattern (e.g., build→build→peak→deload) unless macro explicitly requires steady-state load.
 - [ ] Weekly band notes reflect the overload intent (build/peak/deload) consistent with Principles section 5.
 - [ ] Allowed/forbidden semantics match `agenda_enum_spec.md`.

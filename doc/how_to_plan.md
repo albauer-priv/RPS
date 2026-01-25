@@ -88,7 +88,7 @@ python3 scripts/macro_mode_a.py overview \
 
 Available bands are read from the KPI profile (`data.durability.moving_time_rate_guidance.bands`):
 `brevet_ultra_sustainable`, `fast_competitive`, `top_record_oriented`.
-The override selects the W/kg and kJ/kg/h window used to derive weekly kJ corridors.
+The override selects the W/kg and kJ/kg/h window used to derive weekly planned_Load_kJ corridors.
 
 ```bash
 python3 scripts/macro_mode_a.py overview \

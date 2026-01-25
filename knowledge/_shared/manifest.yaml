@@ -14,6 +14,7 @@ sources:
 - path: sources/evidence/durability_bibliography.md
 - path: sources/evidence/evidence_manifest.md
 - path: sources/policies/des_evaluation_policy.md
+- path: sources/policies/load_distribution_policy.md
 - path: sources/policies/workout_policy.md
 - path: sources/principles/evidence_layer_durability.md
 - path: sources/principles/principles_durability_first_cycling.md

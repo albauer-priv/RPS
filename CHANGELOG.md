@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-01-25
+
+### Added
+- Streaming helper for Responses API with live reasoning/output/usage via `OPENAI_STREAM*`.
+- Reasoning log toggle (`OPENAI_STREAM_LOG_REASONING`) for log capture on completion.
+- Load distribution policy doc (`load_distribution_policy.md`) and manifest entry (advisory day-weighting).
+
 ### Changed
 - Macro/Meso/Micro/Performance-Analyst prompts now require `events.md` (no optional/if-present paths).
 - Season-Scenario prompt now requires `events.md` (no optional/if-present path).
@@ -26,7 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Meso-Architect now hard-stops if execution-arch self_check fields are missing or load_ranges.source is not the exact block_governance filename.
 - Meso-Architect now sources A/B/C event windows from macro_overview phase constraints (events.md remains logistics only).
 - Micro-Planner now must store WORKOUTS_PLAN via the store tool call (no raw JSON outputs).
+- Micro-Planner now validates AVAILABILITY/WELLNESS/ZONE_MODEL coverage using temporal_scope before declaring missing inputs.
+- Wellness artefact now extends temporal_scope (and iso_week_range) to calendar year end so body_mass_kg remains valid for forward planning.
+- LoadEstimationSpec updated to treat `weekly_kj_bands` as `planned_Load_kJ_week`, refine IF derivation, rounding order, fallback IF mapping, clamps, units, and parse edge cases.
+- Macro load corridor policy updated to use planned_Load_kJ conversions.
+- Agent prompts updated to prefer strict store tool calls and avoid JSON-in-chat output rules that conflict with tooling.
 - Artefact renderer now skips JSON list artefacts (e.g., intervals_workouts) with a clear log message instead of crashing.
+- Agent runners now support streaming Responses output with optional reasoning summary and token usage reporting (configurable via `OPENAI_STREAM*` env vars).
+- Reasoning payloads now treat `gpt-5*` models as reasoning-capable.
+- plan-week now runs Performance-Analyst for the previous ISO week (week-1), and skips analysis if that report week is outside the macro planning range.
+- Micro-Planner now explicitly limits WORKOUTS_PLAN output to the requested ISO week even when the block range spans multiple weeks.
+- Micro-Planner no longer biases weekly kJ placement to the upper-third of the governance corridor.
+- LoadEstimationSpec now defines planned_kJ (mechanical) vs planned_Load_kJ (stress‑weighted) and treats weekly_kj_bands as planned_Load_kJ.
+- Added optional LoadDistributionPolicy for day‑weighting and weekly load distribution (advisory only).
+- Macro load corridor policy now expresses corridors as planned_Load_kJ using a phase‑level default IF conversion.
+- LoadEstimationSpec now adds rounding order, midpoint handling for range targets, safety clamps, explicit fallback mode (IF‑direct), and α source‑of‑truth rules.
 - Index exact-range checks now verify artifact files exist (prevents stale index hits).
 - Index manager now normalizes legacy analysis paths to data/analysis when the new file exists.
 - Block governance schema now allows variable-length `weekly_kj_bands` (no fixed 4-week constraint).

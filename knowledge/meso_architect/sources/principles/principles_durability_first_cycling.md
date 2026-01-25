@@ -67,8 +67,8 @@ Durability is treated as an **independent performance dimension** on par with VO
 For ultra and brevet distances, **mechanical work (kilojoules, kJ)** is the **primary steering and comparison metric**.
 
 > **kJ connects training load, energetics, fueling, and long-term durability.**
-> **Terminology:** "Weekly kJ" means **mechanical** kJ (sum of session kJ),
-> not stress-weighted load.
+> **Terminology:** "Weekly kJ" means **planned_Load_kJ_week** (stress‑weighted
+> governance load). Mechanical `planned_kJ_week` remains the energy/fueling anchor.
 
 ### 2.2 Hierarchy of steering metrics
 1. **Primary:** kJ (per session, week, block, year)

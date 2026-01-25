@@ -42,7 +42,8 @@ for each macro phase. It is **macro-only** and must never produce weekly schedul
 workouts, or progression rules. All output must conform to
 `macro_overview.schema.json`.
 
-**Primary metric:** mechanical kJ (kJ-first).
+**Primary corridor metric:** planned_Load_kJ (stress‑weighted kJ).
+Mechanical `planned_kJ` remains the energy/fueling anchor.
 
 If any required input is missing, the Macro-Planner MUST stop and request it.
 
@@ -118,6 +119,14 @@ Use **AVAILABILITY** only to compute weekly moving-time capacity:
    - Document exclusions in `assumptions_unknowns`.
 3. **Baseline**
    - Use the last 8–12 eligible weeks to compute typical kJ ranges.
+
+## 4.1 Convert to planned_Load_kJ (governance corridors)
+Macro corridors MUST be expressed as **planned_Load_kJ**:
+- Derive a phase‑level default IF (from zone model typical IF for the dominant domain,
+  or from intensity distribution if specified).
+- Convert mechanical kJ baseline to planned_Load_kJ using:
+  `planned_Load_kJ = planned_kJ × IF^α` with α=1.3 (LoadEstimationSpec).
+- Document the chosen default IF in `assumptions_unknowns`.
 4. **Ceiling indicator**
    - Identify a high but stable week (not a one-off outlier) as a ceiling indicator.
 

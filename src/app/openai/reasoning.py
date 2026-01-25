@@ -8,7 +8,7 @@ from typing import Any
 def _is_reasoning_model(model: str) -> bool:
     """Return True if the model name is likely to support reasoning params."""
     cleaned = model.strip().lower()
-    return cleaned.startswith(("o1", "o3", "o4"))
+    return cleaned.startswith(("o1", "o3", "o4", "gpt-5"))
 
 
 def build_reasoning_payload(

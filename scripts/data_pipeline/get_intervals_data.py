@@ -956,6 +956,11 @@ def write_wellness(
 
     start_week = f"{date_to_iso_week(start_day)[0]}-{date_to_iso_week(start_day)[1]:02d}"
     end_week = f"{date_to_iso_week(end_day)[0]}-{date_to_iso_week(end_day)[1]:02d}"
+    # Extend validity to end of calendar year so future planning can reuse body_mass_kg.
+    # Use Dec 28 to anchor the final ISO week of the year.
+    year_end = date(end_day.year, 12, 31)
+    year_end_iso_anchor = date(end_day.year, 12, 28)
+    valid_end_week = f"{date_to_iso_week(year_end_iso_anchor)[0]}-{date_to_iso_week(year_end_iso_anchor)[1]:02d}"
     version_key = end_week
 
     meta = {
@@ -969,10 +974,10 @@ def write_wellness(
         "created_at": run_ts.isoformat(),
         "scope": "Shared",
         "iso_week": version_key,
-        "iso_week_range": f"{start_week}--{end_week}",
+        "iso_week_range": f"{start_week}--{valid_end_week}",
         "temporal_scope": {
             "from": start_day.isoformat(),
-            "to": end_day.isoformat(),
+            "to": year_end.isoformat(),
         },
         "trace_upstream": [
             {
@@ -983,7 +988,11 @@ def write_wellness(
         ],
         "trace_data": [],
         "trace_events": [],
-        "notes": "Derived from Intervals.icu wellness export.",
+        "notes": (
+            "Derived from Intervals.icu wellness export. "
+            "Temporal scope extends to calendar year end to allow planning with "
+            "the latest body_mass_kg even when no future wellness entries exist."
+        ),
     }
     payload = {
         "meta": meta,

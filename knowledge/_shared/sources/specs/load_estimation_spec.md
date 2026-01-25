@@ -28,11 +28,11 @@ This specification defines **how to estimate training load** for planning and go
 Primary steering metric is **kJ**.
 
 **Key idea:**  
-- **kJ** approximates total mechanical work / fueling demand proxy (planning priority).
+- **planned_kJ** captures mechanical work / fueling demand (energy anchor).
+- **planned_Load_kJ** is the stress‑weighted load used for governance.
 > **Terminology note:** When templates or corridors say “Weekly kJ”, they mean
-> **mechanical** `planned_kJ_week` (sum of session kJ), not stress-weighted load.
-> Stress-weighted load is captured as `planned_Load_kJ_week` and used for
-> governance checks.
+> **planned_Load_kJ_week** (stress‑weighted load used for governance).
+> Mechanical `planned_kJ_week` remains the energy/fueling anchor.
 
 This spec is **binding** for all planning agents.
 
@@ -55,37 +55,45 @@ structure mismatch, the schema prevails.
   - `segment_domain` (ENDURANCE / TEMPO / SST / VO2MAX / RECOVERY / etc.)
   - `segment_IF` (optional; if omitted, use defaults from zone model)
 
-### 1.2 planned_Load_kJ (Stress-Weighted Load Metric)
+### 1.2 planned_kJ (Mechanical Work)
 
-`planned_Load_kJ` is the stress-weighted load metric for
-- weekly governance
+`planned_kJ` is the planned **mechanical work** (unweighted):
+- energy / fueling anchor
+- volume reality check
+- not stress‑weighted
+
+### 1.3 planned_IF (Intensity Factor)
+
+`planned_IF` is the planned session intensity factor (dimensionless).
+It characterizes intensity and is used only once in the load formula.
+
+### 1.4 planned_Load_kJ (Stress-Weighted Load Metric)
+
+`planned_Load_kJ` is the stress‑weighted load metric for:
+- weekly governance bands
 - progression decisions
 - overload / deload gating
 
-Mechanical `planned_kJ` remains the primary **planning corridor** metric.
-
 ### 1.3 Outputs
 Per session:
-- `planned_kJ`
-- `planned_Load_kJ`   # stress-weighted kJ (stress metric)
-- `planned_IF_adj`
+- `planned_kJ` (mechanical)
+- `planned_Load_kJ`   # stress‑weighted kJ (governance metric)
+- `planned_IF_adj` (planned_IF, session‑level)
 - `kJ_confidence` (HIGH/MED/LOW)
 
 Per week / block:
 - sums and bands (`planned_kJ_week`, `planned_Load_kJ_week`)
-  and compliance flags vs guardrails.
+- compliance flags vs guardrails (bands refer to `planned_Load_kJ_week`).
 
 ---
 
 ## 2) Priority Rule (kJ-first)
 
-1) All governance bands **must exist in kJ** (weekly and/or per key session).
-2) Agents MUST NOT “fix” kJ by inflating intensity; kJ is corrected primarily via **duration/volume** adjustments.
+1) All governance bands **must exist in planned_Load_kJ** (weekly and/or per key session).
+2) Agents MUST NOT “fix” load by inflating intensity; load is corrected primarily via **duration/volume** adjustments.
 
-
-Primary planning target is `planned_kJ_week`.
-`planned_Load_kJ_week` is the governing stress metric.
-When a template or corridor says “Weekly kJ”, interpret it as `planned_kJ_week`.
+Mechanical `planned_kJ_week` remains the energy anchor.
+When a template or corridor says “Weekly kJ”, interpret it as `planned_Load_kJ_week`.
 
 ---
 
@@ -96,6 +104,13 @@ Primary planning input is target_kJ_per_session
 
 Intensity (IF) is used only to shape how kJ is accumulated,
 not to define kJ.
+
+**Mechanical work definition (session):**
+- Let each segment have duration `t_i` (seconds) and target factor `r_i` (relative to FTP).
+- Compute the time‑weighted mean factor:
+  - `r_mean = Σ(t_i × r_i) / Σ(t_i)`
+- Then:
+  - `planned_kJ = (FTP_W × r_mean × T_sec) / 1000`
 
 
 Estimate AvgPower from:
@@ -130,6 +145,60 @@ Where `r_i` is a variability/structure factor (Avg-to-NP ratio).
 
 4) Session kJ:
 - `planned_kJ = Σ kJ_i`
+
+### 3.3 planned_IF derivation (preferred)
+
+When workout segments are available, derive a **planned_IF** that reflects
+interval variability without double‑counting intensity:
+
+1) Compute a power‑mean factor (NP‑like):
+- `r_eq = ( Σ(t_i × r_i^p) / Σ(t_i) )^(1/p)`
+- Use `p = 4` (fixed constant) unless overridden by LoadEstimationSpec.
+
+2) Set:
+- `planned_IF = r_eq`
+
+This keeps `planned_kJ` linear in `r_mean` while `planned_IF` captures variability.
+
+### 3.4 Range targets (deterministic midpoint)
+If a segment specifies a **range** (e.g., 0.88–0.94), set:
+- `r_i = (low + high) / 2`
+
+Do not bias toward the top or bottom of the range unless an explicit
+target is provided.
+
+### 3.5 Safety clamps (normative)
+Before exponentiation or aggregation, clamp inputs to avoid pathological values:
+- `T_sec ≥ 0` (if `T_sec = 0`, then planned_kJ = planned_Load_kJ = 0)
+- `r_i` clamped to `[0.0, 1.5]` unless a sport‑specific override exists
+- `planned_IF` clamped to `[0.0, 1.3]` unless a sport‑specific override exists
+
+### 3.6 Segment parsing edge cases (normative)
+- If `workout_text` exists but **no valid segments** can be extracted
+  (parse error or empty list), use **Fallback mode** (Section 5) based on
+  the workout intent. If intent is missing, default to `ENDURANCE`.
+- If `Σ(t_i) = 0` (all segment durations are zero):
+  - set `planned_IF = 0`
+  - set `planned_kJ = 0`
+  - set `planned_Load_kJ = 0`
+- If segments are **mixed notation** (some %FTP, some zone/label):
+  - map zone/label segments to `r_i` using the default IF for that domain
+    (zone model typical IF or fallback table),
+  - include those segments in `Σ(t_i)` and in the power‑mean calculation,
+  - do NOT skip unlabeled segments.
+
+### 3.7 Unit conventions (normative)
+- Segment duration `t_i` and total duration `T_sec` are **seconds**.
+- FTP is **watts**.
+- `planned_kJ = (W × seconds) / 1000`.
+- `planned_minutes` in the plan is minutes, but conversions to seconds MUST
+  multiply by 60 before kJ calculation.
+
+### 3.8 Clamp order (normative)
+- Clamp `r_i` **before** applying `r_i^p` in the power‑mean.
+- Compute `planned_IF_raw`, then clamp `planned_IF_raw` **before** computing
+  `planned_Load_kJ`.
+- `planned_Load_kJ` MUST use the **clamped** `planned_IF_raw`.
 
 ---
 
@@ -167,6 +236,25 @@ If the zone model provides typical IFs such as:
 Then for a segment with only a domain label:
 - `IF_i = IF_typical(domain)`
 
+If the zone model does not provide typical IF defaults, use this deterministic fallback:
+
+| Domain / Intent | planned_IF default |
+| --- | ---: |
+| REST / OFF | 0.000 |
+| RECOVERY | 0.55 |
+| ENDURANCE | 0.65 |
+| ENDURANCE+ | 0.70 |
+| TEMPO | 0.80 |
+| SWEET SPOT | 0.90 |
+| THRESHOLD | 1.00 |
+| VO2MAX | 1.10 |
+| ANAEROBIC / SPRINT | 1.15 |
+
+**Fallback mode (normative):** The table above supplies **planned_IF directly**
+(not r_i). When using this fallback:
+- set `planned_IF = IF_default`
+- compute `planned_kJ = (FTP × planned_IF × T_sec) / 1000`
+
 ---
 
 ## 6) Default variability factors r_i (Avg-to-NP)
@@ -193,7 +281,37 @@ Set `kJ_confidence`:
 
 ---
 
-## 8) Practical workflow per agent
+## 7) Weekly band interpretation & rounding
+
+### 7.1 Governance interpretation
+`weekly_kj_bands` refer to **planned_Load_kJ_week** (stress‑weighted).
+Mechanical `planned_kJ_week` remains the energy anchor for fueling and volume reality checks.
+
+### 7.2 Rounding rules (output)
+Compute using **unrounded** floats and round only at output:
+- `planned_IF_out = round(planned_IF_raw, 3)`
+- `planned_kJ_out = int(round(planned_kJ_raw))`
+- `planned_Load_kJ_out = int(round(planned_kJ_raw * planned_IF_raw**α))`
+
+Do NOT round `planned_IF` before computing `planned_Load_kJ`.
+Store `planned_kJ_out` and `planned_Load_kJ_out` as 64‑bit integers
+or a safe integer type to avoid overflow in large weeks.
+
+### 7.3 Optional weekly distribution policy (non‑binding)
+If a **Load Distribution Policy** is provided (optional), it may define
+day‑weighting rules for distributing weekly planned_Load_kJ across the week.
+This policy is advisory only and MUST NOT override governance bands.
+
+---
+
+## 8) α source of truth (normative)
+`α` MUST come from LoadEstimationSpec (global default).
+It may only be overridden by an explicit governance artefact if such a field
+is introduced; otherwise treat it as constant for all weeks.
+
+---
+
+## 9) Practical workflow per agent
 
 ### 8.1 Macro-Planner (8–32 weeks)
 Macro does NOT estimate per-session. Macro produces:
@@ -235,8 +353,14 @@ Micro must not:
 Inputs:
 - FTP=300W
 - duration=120min
-- domain=ENDURANCE (IF from zone model)
-- r=0.97
+- domain=ENDURANCE (IF default 0.65)
+- r=0.97 (steady)
+
+Steps:
+1) r_mean = 0.65
+2) planned_kJ = (300 × 0.65 × 7200) / 1000 = 1404 kJ
+3) planned_IF = 0.65 (steady; r_eq = r_mean)
+4) planned_Load_kJ = 1404 × 0.65^1.3 ≈ 802 kJ
 
 Compute:
 - NP = IF×FTP

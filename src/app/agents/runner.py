@@ -18,6 +18,7 @@ from app.openai.response_utils import (
     extract_reasoning_summaries,
     extract_text_output,
 )
+from app.openai.streaming import create_response
 from app.openai.vectorstore_state import VectorStoreResolver
 from app.prompts.loader import PromptLoader
 from app.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
@@ -157,7 +158,7 @@ def run_agent(
             payload["tool_choice"] = {"type": "file_search"}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
-        return runtime.client.responses.create(**payload)
+        return create_response(runtime.client, payload, logger)
 
     seen_summaries: set[str] = set()
     response = _create_response(force_search)
