@@ -815,6 +815,7 @@ def build_zone_model_payload(
             "scope": "Shared",
             "iso_week": version_key,
             "iso_week_range": iso_week_range,
+            "data_confidence": "high",
             "temporal_scope": {
                 "from": valid_from,
                 "to": f"{iso_year}-12-31",
