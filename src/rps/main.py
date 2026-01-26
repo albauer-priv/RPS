@@ -195,39 +195,42 @@ def main() -> None:
             help="Mirror logs to stdout (in addition to log file).",
         )
 
-    base_runtime = AgentRuntime(
-        client=get_client(),
-        model=settings.openai_model,
-        temperature=settings.openai_temperature,
-        reasoning_effort=settings.openai_reasoning_effort,
-        reasoning_summary=settings.openai_reasoning_summary,
-        prompt_loader=PromptLoader(settings.prompts_dir),
-        vs_resolver=VectorStoreResolver(settings.vs_state_path),
-    )
-
-    def runtime_for_agent(agent_name: str) -> AgentRuntime:
-        return AgentRuntime(
-            client=base_runtime.client,
-            model=base_runtime.model,
-            temperature=base_runtime.temperature,
-            reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
-            reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
-            prompt_loader=base_runtime.prompt_loader,
-            vs_resolver=base_runtime.vs_resolver,
+    def _build_runtime() -> tuple[AgentRuntime, callable, callable]:
+        base_runtime = AgentRuntime(
+            client=get_client(),
+            model=settings.openai_model,
+            temperature=settings.openai_temperature,
+            reasoning_effort=settings.openai_reasoning_effort,
+            reasoning_summary=settings.openai_reasoning_summary,
+            prompt_loader=PromptLoader(settings.prompts_dir),
+            vs_resolver=VectorStoreResolver(settings.vs_state_path),
         )
 
-    def multi_runtime_for_agent(agent_name: str) -> MultiRuntime:
-        return MultiRuntime(
-            client=base_runtime.client,
-            model=base_runtime.model,
-            temperature=base_runtime.temperature,
-            reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
-            reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
-            prompt_loader=base_runtime.prompt_loader,
-            vs_resolver=base_runtime.vs_resolver,
-            schema_dir=settings.schema_dir,
-            workspace_root=settings.workspace_root,
-        )
+        def runtime_for_agent(agent_name: str) -> AgentRuntime:
+            return AgentRuntime(
+                client=base_runtime.client,
+                model=base_runtime.model,
+                temperature=base_runtime.temperature,
+                reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
+                reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
+                prompt_loader=base_runtime.prompt_loader,
+                vs_resolver=base_runtime.vs_resolver,
+            )
+
+        def multi_runtime_for_agent(agent_name: str) -> MultiRuntime:
+            return MultiRuntime(
+                client=base_runtime.client,
+                model=base_runtime.model,
+                temperature=base_runtime.temperature,
+                reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
+                reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
+                prompt_loader=base_runtime.prompt_loader,
+                vs_resolver=base_runtime.vs_resolver,
+                schema_dir=settings.schema_dir,
+                workspace_root=settings.workspace_root,
+            )
+
+        return base_runtime, runtime_for_agent, multi_runtime_for_agent
 
     if len(sys.argv) > 1 and sys.argv[1] in {
         "plan-week",
@@ -364,18 +367,20 @@ def main() -> None:
             print({"ok": True})
             return
 
+        _, runtime_for_agent, multi_runtime_for_agent = _build_runtime()
+
         if args.cmd == "plan-week":
             if not args.no_preflight:
                 _preflight(
                     athlete_id=args.athlete,
                     workspace_root=settings.workspace_root,
                     schema_dir=settings.schema_dir,
-                logger=logger,
-                year=args.year,
-                week=args.week,
-                kpi_profile=args.kpi_profile,
-                skip_intervals=args.skip_intervals,
-            )
+                    logger=logger,
+                    year=args.year,
+                    week=args.week,
+                    kpi_profile=args.kpi_profile,
+                    skip_intervals=args.skip_intervals,
+                )
             result = plan_week(
                 multi_runtime_for_agent("macro_planner"),
                 athlete_id=args.athlete,
@@ -509,6 +514,8 @@ def main() -> None:
 
     if not args.athlete:
         raise SystemExit("Missing athlete id. Set ATHLETE_ID in .env or pass --athlete.")
+
+    _, runtime_for_agent, multi_runtime_for_agent = _build_runtime()
 
     spec = AGENTS[args.agent]
 
