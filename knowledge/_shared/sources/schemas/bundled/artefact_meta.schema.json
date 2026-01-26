@@ -208,10 +208,10 @@
       "title": "DataConfidence",
       "type": "string",
       "enum": [
-        "high",
-        "medium",
-        "low",
-        "unknown"
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
       ]
     },
     "notes": {
