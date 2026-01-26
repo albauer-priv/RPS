@@ -297,8 +297,7 @@ def run_scenarios(args: argparse.Namespace) -> int:
         "Use the Season Brief content provided in this prompt. "
         f"{season_block}"
         f"{mandatory_block}"
-        "Call store_season_scenarios with the JSON envelope (meta + data) only. "
-        "Do NOT output raw JSON in chat."
+        "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
     )
 
     model_override = args.model or settings.model_for_agent(spec.name)
@@ -418,13 +417,12 @@ def run_overview(args: argparse.Namespace) -> int:
         spec_block = f"LoadEstimationSpec missing: {exc}\n"
 
     user_input = (
-        f"Scenario {scenario}. Mode A. Create and store the MACRO_OVERVIEW via the store tool. "
+        f"Scenario {scenario}. Mode A. Create the MACRO_OVERVIEW. "
         f"{band_line}"
         f"{mandatory_block}"
         f"{spec_block}"
         f"{scenario_block}"
-        "Call store_macro_overview with the JSON envelope (meta + data) only. "
-        "Do NOT output raw JSON in chat."
+        "Follow the Mandatory Output Chapter for MACRO_OVERVIEW."
     )
 
     model_override = args.model or settings.model_for_agent(spec.name)

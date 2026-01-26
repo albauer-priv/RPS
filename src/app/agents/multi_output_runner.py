@@ -136,6 +136,14 @@ def run_agent_multi_output(
     max_num_results: int = 20,
 ) -> dict[str, Any]:
     """Run an agent that can emit multiple strict tool outputs."""
+    output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
+
+    model = model_override or runtime.model
+    temperature = temperature_override if temperature_override is not None else runtime.temperature
+    shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
+    agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
+    system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
+
     def _load_load_estimation_spec_macro() -> str | None:
         root = Path(__file__).resolve().parents[3]
         path = root / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
@@ -151,39 +159,49 @@ def run_agent_multi_output(
         section = "\n".join(lines[:end]).strip() if end else content
         return section
 
-    def _load_mandatory_output_season_scenarios() -> str | None:
+    def _load_mandatory_doc(name: str) -> str | None:
         root = Path(__file__).resolve().parents[3]
-        path = root / "knowledge" / "_shared" / "sources" / "specs" / "mandatory_output_season_scenarios.md"
+        path = root / "knowledge" / "_shared" / "sources" / "specs" / name
         if not path.exists():
             return None
         return path.read_text(encoding="utf-8").strip()
 
+    mandatory_by_schema = {
+        "season_scenarios.schema.json": "mandatory_output_season_scenarios.md",
+        "macro_overview.schema.json": "mandatory_output_macro_overview.md",
+        "macro_meso_feed_forward.schema.json": "mandatory_output_macro_meso_feed_forward.md",
+        "block_governance.schema.json": "mandatory_output_block_governance.md",
+        "block_execution_arch.schema.json": "mandatory_output_block_execution_arch.md",
+        "block_execution_preview.schema.json": "mandatory_output_block_execution_preview.md",
+        "block_feed_forward.schema.json": "mandatory_output_block_feed_forward.md",
+        "workouts_plan.schema.json": "mandatory_output_workouts_plan.md",
+        "workouts.schema.json": "mandatory_output_intervals_workouts.md",
+        "des_analysis_report.schema.json": "mandatory_output_des_analysis_report.md",
+    }
+
+    for spec in output_specs:
+        doc_name = mandatory_by_schema.get(spec.schema_file)
+        if not doc_name:
+            continue
+        if doc_name in system_prompt or doc_name in user_input:
+            continue
+        mandatory = _load_mandatory_doc(doc_name)
+        if mandatory:
+            system_prompt = (
+                f"{system_prompt}\n"
+                f"Mandatory JSON Output ({spec.artifact_type.value}; injected from {doc_name}):\n"
+                f"\"\"\"\n{mandatory}\n\"\"\"\n"
+            )
+
     if agent_name == "macro_planner":
-        if "LoadEstimationSpec (Macro section" not in user_input and "load_estimation_spec.md" not in user_input:
+        if "LoadEstimationSpec (Macro section" not in system_prompt and "load_estimation_spec.md" not in system_prompt:
             spec_section = _load_load_estimation_spec_macro()
             if spec_section:
-                user_input = (
-                    f"{user_input}\n"
+                system_prompt = (
+                    f"{system_prompt}\n"
                     "LoadEstimationSpec (Macro section; injected):\n"
                     f"\"\"\"\n{spec_section}\n\"\"\"\n"
                 )
-    if agent_name == "season_scenario":
-        if "mandatory_output_season_scenarios.md" not in user_input:
-            mandatory = _load_mandatory_output_season_scenarios()
-            if mandatory:
-                user_input = (
-                    f"{user_input}\n"
-                    "Mandatory JSON Output (SEASON_SCENARIOS; injected):\n"
-                    f"\"\"\"\n{mandatory}\n\"\"\"\n"
-                )
-
-    output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
-
-    model = model_override or runtime.model
-    temperature = temperature_override if temperature_override is not None else runtime.temperature
-    shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
-    agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
-    system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
 
     bundler = SchemaBundler(runtime.schema_dir)
     store_tools = [build_strict_store_tool(bundler, spec) for spec in output_specs]

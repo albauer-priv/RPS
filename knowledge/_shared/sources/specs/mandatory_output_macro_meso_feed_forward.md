@@ -1,0 +1,119 @@
+# Mandatory Output Chapter
+
+Purpose
+This chapter defines how to produce **schema‑valid MACRO_MESO_FEED_FORWARD JSON**.
+
+---
+
+## ARTIFACT: MACRO_MESO_FEED_FORWARD
+
+### WHICH SCHEMA TO USE AND HOW TO FIND
+- Schema: `macro_meso_feed_forward.schema.json`
+- Retrieve with file_search:
+  - Filter: `{"type":"eq","key":"schema_id","value":"macro_meso_feed_forward.schema.json"}`
+- You MUST validate output against this schema before calling `store_macro_meso_feed_forward`.
+- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
+
+### HOW TO FILL (BINDING)
+
+#### 1) Envelope (top‑level)
+- Output MUST be a **top‑level object** with only:
+  - `meta`
+  - `data`
+
+#### 2) `meta` (required fields)
+- Must satisfy `artefact_meta.schema.json`.
+- Required constants:
+  - `artifact_type`: `"MACRO_MESO_FEED_FORWARD"`
+  - `schema_id`: `"MacroMesoFeedForwardInterface"`
+  - `schema_version`: `"1.0"`
+  - `authority`: `"Binding"`
+  - `owner_agent`: `"Macro-Planner"`
+- `iso_week` required.
+
+#### 3) `data.source_context`
+Required:
+- `macro_overview_ref` (string)
+- `des_analysis_report_ref` (string)
+- `affected_block_id` (string)
+
+#### 4) `data.decision_summary`
+Required:
+- `conclusion`: `no_change|adjust_block|reweight_macro`
+- `rationale` (array, min 1)
+
+#### 5) `data.explicit_non_actions`
+- Array of **exactly 3** items:
+  1) `No weekly workout changes`
+  2) `No micro-level intervention`
+  3) `No KPI threshold enforcement`
+
+#### 6) `data.block_adjustment`
+Required:
+- `applies_to_weeks` (array of ISO weeks)
+- `adjustments.kj_corridor`:
+  - `direction`: `increase|decrease`
+  - `percent` (number)
+- `adjustments.quality_density`:
+  - `action`: `allow|restrict`
+  - `details` (string)
+
+#### 7) Validation & Stop (Binding)
+- Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
+- Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
+- Validate against `macro_meso_feed_forward.schema.json` before calling the store tool.
+- If validation fails or any required field is missing/unknown: STOP.
+- Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
+- Validate against schema before calling `store_macro_meso_feed_forward`.
+- On any error: **STOP** and report schema errors.
+
+---
+
+### EXAMPLE: MACRO_MESO_FEED_FORWARD (minimal valid)
+
+```json
+{
+  "meta": {
+    "artifact_type": "MACRO_MESO_FEED_FORWARD",
+    "schema_id": "MacroMesoFeedForwardInterface",
+    "schema_version": "1.0",
+    "version": "1.0",
+    "authority": "Binding",
+    "owner_agent": "Macro-Planner",
+    "run_id": "example_macro_meso_ff_2026_w04",
+    "created_at": "2026-01-26T00:00:00Z",
+    "scope": "Macro",
+    "iso_week": "2026-04",
+    "iso_week_range": "2026-04--2026-04",
+    "temporal_scope": { "from": "2026-01-19", "to": "2026-01-25" },
+    "trace_upstream": [],
+    "trace_data": [],
+    "trace_events": [],
+    "notes": "Example only."
+  },
+  "data": {
+    "source_context": {
+      "macro_overview_ref": "macro_overview_2026_w04",
+      "des_analysis_report_ref": "des_analysis_report_2026-04",
+      "affected_block_id": "P01"
+    },
+    "decision_summary": {
+      "conclusion": "adjust_block",
+      "rationale": ["Load corridor infeasible under availability"]
+    },
+    "explicit_non_actions": [
+      "No weekly workout changes",
+      "No micro-level intervention",
+      "No KPI threshold enforcement"
+    ],
+    "block_adjustment": {
+      "applies_to_weeks": ["2026-04"],
+      "adjustments": {
+        "kj_corridor": { "direction": "decrease", "percent": 5 },
+        "quality_density": { "action": "restrict", "details": "Reduce quality days to 0" }
+      }
+    }
+  }
+}
+```

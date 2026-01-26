@@ -21,10 +21,11 @@ Knowledge Retrieval (binding)
 - Required for output:
   - `macro_overview.schema.json`
   - `mandatory_output_macro_overview.md`
+  - `macro_meso_feed_forward.schema.json` (Mode C)
+  - `mandatory_output_macro_meso_feed_forward.md` (Mode C)
   - `load_estimation_spec.md` (Macro section)
 
 Output (binding)
-- Return **schema-valid JSON** per `macro_overview.schema.json` (or feed-forward schema for Mode C).
-- Follow the **Mandatory Output Chapter** in `mandatory_output_macro_overview.md` (examples + field rules).
-- Use the strict store tool with a top-level `{"meta": ..., "data": ...}` envelope.
-- Do NOT output raw JSON in chat.
+- Follow the Mandatory Output Chapter for the requested artefact (MACRO_OVERVIEW or MACRO_MESO_FEED_FORWARD).
+- The Mandatory Output Chapter is injected; do NOT file_search it.
+- If any output-formatting guidance in this prompt conflicts, ignore it and follow the Mandatory Output Chapter.

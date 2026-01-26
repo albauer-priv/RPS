@@ -59,6 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Store tool failures now return clearer schema error summaries (with top validation errors) and envelope hints.
 - Runner strict path and workspace tools now emit the same concise schema error summaries and envelope hints.
 - Agents now hard-stop with `STOP_TOOL_CALL_REQUIRED` if a required store tool isn’t called (after one forced retry).
+- Added mandatory output guides for all agent-produced artefacts (block governance/arch/preview/feed-forward, workouts plan, intervals export, DES report, macro feed-forward).
+- Prompt cleanup: removed format-only output rules, normalized example filenames to patterns, and corrected contract filenames (`micro__builder`, `macro__meso`, `meso__micro`, `analyst__macro`).
+- Prompt redundancy cleanup: consolidated repeated required-input/stop text across agents and removed duplicate validation checklists.
 
 ## [0.4.2] - 2026-01-25
 

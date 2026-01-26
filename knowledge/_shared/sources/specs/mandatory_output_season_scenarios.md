@@ -213,3 +213,12 @@ Each scenario MUST include:
   }
 }
 ```
+
+#### Validation & Stop (Binding)
+- Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
+- Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
+- Validate against `season_scenarios.schema.json` before calling the store tool.
+- If validation fails or any required field is missing/unknown: STOP.
+- Validate against schema before calling store.
+- Do not use empty strings for required string fields (including citations). If required info is missing: STOP.

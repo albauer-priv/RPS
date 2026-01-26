@@ -18,7 +18,6 @@ Knowledge Retrieval (binding)
   - `mandatory_output_season_scenarios.md`
 
 Output (binding)
-- Return **schema-valid JSON** per `season_scenarios.schema.json`.
-- Follow the **Mandatory Output Chapter** in `mandatory_output_season_scenarios.md` (examples + field rules).
-- Use the strict store tool with a top-level `{"meta": ..., "data": ...}` envelope.
-- Do NOT output raw JSON in chat.
+- Follow the Mandatory Output Chapter for SEASON_SCENARIOS.
+- The Mandatory Output Chapter is injected; do NOT file_search it.
+- If any output-formatting guidance in this prompt conflicts, ignore it and follow the Mandatory Output Chapter.

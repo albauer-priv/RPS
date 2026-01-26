@@ -183,6 +183,12 @@ All required booleans must be present. Set to `true` only if valid:
 - `header_includes_implements_iso_week_range_trace`
 
 #### 14) Validation & Stop (Binding)
+- Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
+- Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
+- Validate against `macro_overview.schema.json` before calling the store tool.
+- If validation fails or any required field is missing/unknown: STOP.
+- Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
 - You MUST run schema validation locally (in reasoning) before calling `store_macro_overview`.
 - If any field fails type/enum/shape requirements, **STOP** and report the schema errors. Do not guess or retry with a different shape.
 - Only call `store_macro_overview` when all required fields match the schema.

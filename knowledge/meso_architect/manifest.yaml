@@ -14,3 +14,7 @@ sources:
 - path: sources/specs/load_estimation_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md
 - path: ../_shared/sources/specs/wellness_interface_spec.md
+- path: ../_shared/sources/specs/mandatory_output_block_governance.md
+- path: ../_shared/sources/specs/mandatory_output_block_execution_arch.md
+- path: ../_shared/sources/specs/mandatory_output_block_execution_preview.md
+- path: ../_shared/sources/specs/mandatory_output_block_feed_forward.md

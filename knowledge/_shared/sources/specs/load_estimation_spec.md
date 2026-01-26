@@ -219,7 +219,7 @@ If any required input is missing, STOP and request it (except body mass, see M2)
 - Do NOT build weekly schedules.
 
 Utilization authority (binding):
-- Use `KPI.utilization_macro_default` if present, else default to `0.85`.
+- Use `KPI.utilization_macro_default` if present, else default to `0.95`.
 
 ### M4) Baselines from Activities Trend (binding)
 - Build eligible weeks table (work_kj, moving_time, activity_count).
@@ -234,7 +234,7 @@ Macro corridors MUST be expressed as planned_Load_kJ:
 - choose a phase‑level `phase_reference_IF` deterministically:
   1) `Scenario.phase_reference_IF[phase]` if present
   2) else by phase intent and allowed domains:
-     - Base → ENDURANCE_LOW (0.65)
+     - Base → ENDURANCE_HIGH (0.70)
      - Build → TEMPO (0.80) or SWEET_SPOT (0.90) depending on scenario intensity allowance
      - Peak → THRESHOLD (1.00) if allowed, else SWEET_SPOT (0.90)
      - Taper → ENDURANCE_LOW (0.65) or RECOVERY (0.55)
