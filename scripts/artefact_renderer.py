@@ -1494,7 +1494,7 @@ def build_kpi_profile_context(doc):
                     (intensity.get("kpis") or {}).get("vo2_tiz_per_week"),
                 ),
                 threshold_row(
-                    "SST TiZ / week",
+                    "SWEET_SPOT TiZ / week",
                     (intensity.get("kpis") or {}).get("sst_tiz_per_week"),
                 ),
             ],

@@ -69,15 +69,20 @@ Every workout MUST map to exactly one agenda configuration.
 
 | Workout Intent | Day Role | Intensity Domain | Load Modality |
 |---------------|---------|------------------|---------------|
-| Endurance | ENDURANCE | ENDURANCE | NONE |
+| Endurance (Low) | ENDURANCE | ENDURANCE_LOW | NONE |
+| Endurance (High) | ENDURANCE | ENDURANCE_HIGH | NONE |
 | Recovery | RECOVERY | RECOVERY | NONE |
 | Tempo | QUALITY | TEMPO | NONE |
-| Sweet Spot | QUALITY | SST | NONE |
+| Sweet Spot | QUALITY | SWEET_SPOT | NONE |
 | Threshold | QUALITY | THRESHOLD | NONE |
 | VO2max | QUALITY | VO2MAX | NONE |
-| K3 (strength endurance) | QUALITY | ENDURANCE | K3 |
+| K3 (strength endurance) | QUALITY | ENDURANCE_HIGH | K3 |
+| K3 (strength endurance) | QUALITY | SWEET_SPOT | K3 |
 
 Violations are invalid.
+
+Note: Legacy `ENDURANCE` domain maps to `ENDURANCE_LOW` unless explicitly
+requested as `ENDURANCE_HIGH`.
 
 ---
 
@@ -127,7 +132,7 @@ Every workout MUST follow a clear, explicit structure. Sections are ordered and 
 
 ```
 
-Activation is **mandatory** for VO2max, Threshold and SST workouts, optional for Tempo.
+Activation is **mandatory** for VO2max, Threshold and SWEET_SPOT workouts, optional for Tempo.
 
 Clarifications:
 - Activation MUST NOT be used to compensate for illegal Warmup design.
@@ -175,7 +180,7 @@ Clarifications:
 
 - WarmupBlock REQUIRED (see WarmupBlock rules)
 - CooldownBlock REQUIRED (see CooldownBlock rules)
-- SST / Threshold / VO2max:
+- SWEET_SPOT / Threshold / VO2max:
   - Activation block REQUIRED unless explicitly forbidden
 
 
@@ -193,20 +198,20 @@ Structural rules:
 
 Allowed step types (WarmupBlock):
 1) Steady steps
-   - Intensity <= ENDURANCE domain
+   - Intensity <= ENDURANCE_LOW/ENDURANCE_HIGH domain
 2) Ramp steps
-   - Intensity <= ENDURANCE domain
+   - Intensity <= ENDURANCE_LOW/ENDURANCE_HIGH domain
 3) Short activation spikes
    - Duration <= 30 seconds per spike
    - Intensity <= TEMPO domain
-   - Recovery between spikes >= equal duration at <= ENDURANCE
+   - Recovery between spikes >= equal duration at <= ENDURANCE_LOW/ENDURANCE_HIGH
 
 Forbidden content (WarmupBlock):
-- Sustained work (> 60s) in SST, Threshold, or VO2max
+- Sustained work (> 60s) in SWEET_SPOT, Threshold, or VO2max
 - Loops or repeats that include sustained work
 - Load modalities (e.g., K3)
 - Freeride / unstructured steps
-- Hidden progression beyond ENDURANCE + short spikes
+- Hidden progression beyond ENDURANCE_LOW/ENDURANCE_HIGH + short spikes
 - Total WarmupBlock duration > 10 minutes
 
 Violation of any rule invalidates the workout.
@@ -228,7 +233,7 @@ Allowed step types (CooldownBlock):
 - Steady steps or ramp steps
 - For ramp steps, the range MUST be descending (e.g., 60%-45%)
 - Intensity MUST be monotonically descending
-- Maximum intensity <= ENDURANCE domain
+- Maximum intensity <= ENDURANCE_LOW/ENDURANCE_HIGH domain
 
 Forbidden content (CooldownBlock):
 - Intensity spikes
@@ -236,7 +241,7 @@ Forbidden content (CooldownBlock):
 - Loops or repeats
 - Load modalities
 - Freeride / unstructured steps
-- Any step > ENDURANCE
+- Any step > ENDURANCE_LOW/ENDURANCE_HIGH
 
 Violation of any rule invalidates the workout.
 
@@ -358,7 +363,7 @@ Maintain existing capacity with minimal metabolic escalation.
 | Intensity Domain | Preferred Target Band (% FTP) |
 | ---------------- | ------------------------------ |
 | TEMPO (Z3)       | 76-83 %                        |
-| SST (Sweet Spot) | 84-90 %                        |
+| SWEET_SPOT (Sweet Spot) | 84-90 %                        |
 | Threshold        | 91-96 % (only if explicitly allowed) |
 
 B) Build (Development)
@@ -370,7 +375,7 @@ Progression MAY occur, but is not required.
 | Intensity Domain | Preferred Target Band (% FTP) |
 | ---------------- | ------------------------------ |
 | TEMPO (Z3)       | 83-90 %                        |
-| SST (Sweet Spot) | 90-95 %                        |
+| SWEET_SPOT (Sweet Spot) | 90-95 %                        |
 | Threshold        | 96-102 %                       |
 
 C) Overload (Block-Specific, Explicit Only)
@@ -382,7 +387,7 @@ Requires explicit macro or block-level authorization.
 | Intensity Domain | Preferred Target Band (% FTP) |
 | ---------------- | ------------------------------ |
 | TEMPO (Z3)       | 88-90 %                        |
-| SST (Sweet Spot) | 93-97 %                        |
+| SWEET_SPOT (Sweet Spot) | 93-97 %                        |
 | Threshold        | 100-105 %                      |
 
 #### 4.4.4 Interpretation Rules (Critical)
@@ -506,7 +511,7 @@ Cooldown
 
 ---
 
-### 5.2 Sweet Spot (SST)
+### 5.2 Sweet Spot (SWEET_SPOT)
 
 **Intent**  
 Increase sustainable power and fatigue resistance.
@@ -755,7 +760,7 @@ VLamax reduction and threshold durability with low metabolic escalation.
 **Agenda Mapping (Binding)**
 - Workout Intent: Sweet Spot
 - Day Role: QUALITY
-- Intensity Domain: SST
+- Intensity Domain: SWEET_SPOT
 - Load Modality: NONE
 
 **Design Rules (Binding)**
@@ -820,12 +825,12 @@ Durability development: maintain power under prior fatigue.
 **Agenda Mapping (Binding)**
 - Workout Intent: Endurance
 - Day Role: ENDURANCE
-- Intensity Domain: ENDURANCE
+- Intensity Domain: ENDURANCE_LOW
 - Load Modality: NONE
 
 **Design Rules (Binding)**
 - Z2 preload **≥120 minutes** required
-- Subsequent finish block **tempo or SST**
+- Subsequent finish block **tempo or SWEET_SPOT**
 
 **Parameter Ranges**
 - Preload: 65–72 % FTP
@@ -853,7 +858,7 @@ Multi-day tolerance and energetic robustness (brevet-specific).
 **Agenda Mapping (Binding)**
 - Workout Intent: Endurance
 - Day Role: ENDURANCE
-- Intensity Domain: ENDURANCE
+- Intensity Domain: ENDURANCE_LOW
 - Load Modality: NONE
 
 **Design Rules (Binding)**
@@ -869,230 +874,10 @@ Multi-day tolerance and energetic robustness (brevet-specific).
 
 ---
 
-## 6. KPI Traceability Notes (Non-Decision, Informational)
+## 6. KPI Signal Effects by Workout Type (Non-Decision, Informational)
 
-> **Purpose**  
-> These traceability notes are solely for **transparency**:  
-> Which **workout type typically provides data/stimuli** that are relevant to **DES KPIs**.
->
-> ❗ **None of these mappings creates gate, progression, or deload decisions.**  
-> KPI evaluation and decisions remain **exclusively** in the KPI profile / macro-governance layer.
-
----
-
-### 6.1 VO₂max — Long Intervals (Seiler-Type)
-
-**Primary KPIs addressed**
-- VO₂ TiZ / week (supportive KPI)
-- FIR (5′/20′) *fresh*
-
-**Secondary effects**
-- Central VO₂ adaptation -> long-term FTP stability
-
-**Non-target metrics**
-- Durability Index (DI)
-- Pa:Hr under fatigue
-
-**Interpretation note**  
-FIR changes are **indicative**, not diagnostically dominant.
-
----
-
-### 6.2 VO₂max — Ramp Intervals (Slow-Burn)
-
-**Primary KPIs addressed**
-- VO₂ TiZ / week
-- FIR (5′/20′) *fresh to lightly fatigued*
-
-**Secondary effects**
-- Reduced neuromuscular fatigue -> higher block tolerance (masters)
-
-**Non-target metrics**
-- BBR
-- DI
-
----
-
-### 6.3 Sweet Spot — Extensive / Low-Stress
-
-**Primary KPIs addressed**
-- FTP durability (3 h @ 0.80–0.85 IF, indirect)
-- EF trend (flat / rising)
-
-**Secondary effects**
-- VLamax reduction (model-based, not directly measured)
-
-**Non-target metrics**
-- VO₂ TiZ
-
----
-
-### 6.4 Tempo — Steady State (Brevet-Pace)
-
-**Primary KPIs addressed**
-- Pa:Hr (Z2/GA2-adjacent load)
-- HR Drift @ Race Pace
-- FTP-Durability
-
-**Secondary effects**
-- EF stability over long duration
-
-**Non-target metrics**
-- FIR
-
----
-
-### 6.5 Endurance — Fatigue Finish
-
-**Primary KPIs addressed**
-- Durability Index (DI) **nach Preload**
-- Sustained Power Drop (3h vs 1h)
-- HR drift under fatigue
-
-**Secondary effects**
-- FTP durability under pre-fatigue
-
-**Non-target metrics**
-- VO₂ TiZ
-
-**Interpretation note**  
-DI is **diagnostically dominant**, but **decision-neutral**.
-
----
-
-### 6.6 Endurance — Back-to-Back Load
-
-**Primary KPIs addressed**
-- Back-to-Back Ratio (BBR)
-- FIR (5′/20′) *fatigued*
-
-**Secondary effects**
-- Tolerance for multi-day kJ load
-
-**Non-target metrics**
-- VO₂ TiZ
-
----
-
-### 6.7 VO₂max — Tabata / Rønnestad (2:1)
-
-**Primary KPIs addressed**
-- VO₂ TiZ / week (supportive KPI)
-- FIR (5′/20′) fresh
-
-**Secondary effects**
-- Improved VO₂ kinetics
-- Short-term peak power capacity
-
-**Non-target metrics**
-- Durability Index (DI)
-- Pa:Hr
-- BBR
-
----
-
-## 6.8 Sweet Spot — Standard (90–93 % FTP)
-
-**Primary KPIs addressed**
-- FTP durability (indirect)
-- EF-Trend
-
-**Secondary effects**
-- Lactate clearance capacity
-- Metabolic stabilization
-
-**Non-target metrics**
-- VO₂ TiZ
-- FIR
-
----
-
-### 6.9 Threshold
-
-**Primary KPIs addressed**
-- Sustained Power (20–40 min)
-- FIR (5′/20′) fresh
-
-**Secondary effects**
-- Threshold stability under moderate fatigue
-
-**Non-target metrics**
-- Durability Index (DI)
-- Back-to-Back Ratio (BBR)
-
----
-
-### 6.10 Tempo / Over-Under
-
-**Primary KPIs addressed**
-- HR-Drift (sub-threshold)
-- EF stability
-
-**Secondary effects**
-- Lactate shuttle efficiency
-- Transition stability under load changes
-
-**Non-target metrics**
-- VO₂ TiZ
-- FIR
-
----
-
-### 6.11 K3 / Strength Endurance
-
-**Primary KPIs addressed**
-- Economy-adjacent power stability
-- EF-Trend (kontextuell)
-
-**Secondary effects**
-- Neuromuscular fatigue resistance
-
-**Non-target metrics**
-- VO₂ TiZ
-- FIR
-- DI
-
----
-
-### 6.12 Endurance / Z2 (Standard)
-
-**Primary KPIs addressed**
-- Pa:Hr (≤5 % target range)
-- Durability Index (with sufficient duration)
-
-**Secondary effects**
-- EF trend
-- Fat metabolism efficiency
-
-**Non-target metrics**
-- VO₂ TiZ
-- FIR
-
----
-
-### 6.13 Recovery
-
-**Primary KPIs addressed**
-- None (recovery)
-
-**Secondary effects**
-- Improved recovery capacity
-- TSB stabilization (indirect)
-
-**Non-target metrics**
-- All performance KPIs
-
----
-
-### 6.14 Cross-cutting Note (Normative Clarification)
-
-- **Durability metrics are diagnostically dominant, but not decisive.**  
-- **Governance actions (Progress, Hold, Deload)** remain with:
-  - KPI-Profile
-  - Macro-/Meso-Gates
-- Workout types **provide data**; they **do not interpret them**.
-
----
+> This mapping is maintained in a separate policy document: `kpi_signal_effects_policy.md`.
+> It is informational only and never creates training decisions.
 
 ## 7. Validation Rules
 

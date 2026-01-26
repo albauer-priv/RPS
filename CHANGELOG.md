@@ -5,7 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 2026-01-26
+
+### Changed
+- plan-week now treats downstream artefacts as stale when upstream macro/meso/workouts updates are newer, and re-runs as needed (cascade rebuilds).
+- Vector store sync now retries transient API errors with backoff instead of failing immediately.
+- Streaming output supports optional italic rendering of reasoning via `OPENAI_STREAM_ITALICS`.
+- Consolidated macro/meso load policies into `load_estimation_spec.md` (General/Macro/Meso sections) and removed the standalone policy docs.
+- LoadEstimationSpec tightened: deterministic Macro utilization/body-mass fallback, KPI band selector, domain aliasing, and clarified Macro/Meso responsibilities.
+- Added ENDURANCE_LOW/ENDURANCE_HIGH intensity domains (with legacy aliasing), renamed `SST` → `SWEET_SPOT`, and reintroduced THRESHOLD in intensity-domain enums across schemas, specs, prompts, and workout policy.
+- Split KPI workout-to-signal mapping into `kpi_signal_effects_policy.md` (informational) and referenced it from WorkoutPolicy.
+- Principles 3.3 now explicitly scope cadence selection to Scenario/Macro (Meso must not apply a default cadence).
+- Scenario/Macro prompts now reiterate cadence ownership (Meso must not apply defaults).
+- Meso-Architect prompt now forbids manual temporal scope derivation, sets `meta.iso_week` to the first week of the provided range, and requires exact-range BLOCK_EXECUTION_ARCH for previews (no latest fallback).
+- Meso-Architect prompt now hard-stops if any month text conflicts with `meta.temporal_scope` or ISO-week range (no month inference from ISO weeks).
+- Micro-Planner prompt now restricts file_search to knowledge documents, requires exact-range governance lookup (no latest fallback), and blocks month inference from ISO-week labels.
+- Macro-Planner prompt now hard-stops on calendar-month inference from ISO-week labels and month/temporal_scope conflicts.
+- Meso-Architect prompt now explicitly warns that ISO-week labels are not calendar months.
+- Macro/Micro prompt headers now include an explicit ISO-week ≠ month reminder.
+- Macro/Meso/Micro prompts now require reading `load_estimation_spec.md` before any kJ/load derivation.
+- Macro/Meso/Micro prompts now explicitly require reading `load_estimation_spec.md` before load derivations (knowledge retrieval allowed if needed).
+- Meso/Micro prompts now include a binding Spec/Contract Load Map (Name / Content / How to load).
+- Macro prompt now includes binding load maps with tool methods for runtime artefacts.
+- Meso-Architect now hard-stops if weekly_kj_bands are not narrowed to the LoadEstimationSpec (Meso) intersection.
+- LoadDistributionPolicy upper‑third target is now explicitly advisory-only and only when requested.
+- Meso/Micro prompts now include informational policy load maps (KPI signal effects, workout policy).
+- Load distribution policy now explicitly disallows Macro/Meso usage.
+- All agent prompts now include consolidated knowledge retrieval guidance (metadata filters + file_search scope).
+- Added per-agent knowledge retrieval tables (required files + filters; tool instructions and fallback behavior).
+- Workout-Builder retrieval table now lists all required specs/policies/schemas (including file naming + traceability).
+- Knowledge retrieval tables now include informational evidence sources (evidence layer + bibliography) where applicable.
+- Consolidated file_search instructions into a single Knowledge Retrieval section per agent and removed vector‑store wording.
+- Season-Scenario prompt now ends planning horizon at the last A/B/C event in the Season Brief (no post‑event extension unless explicitly requested); events.md is logistics‑only.
+- Macro-Planner prompt now treats A/B/C events as Season Brief‑only and uses events.md for logistics constraints only; Meso prompt notes the same.
+- Macro-Planner prompt now allows non-URL publication links (internal references) for scientific foundation entries.
+- Macro-Planner prompt now forbids empty citation strings in `data.justification` and requires at least one non-empty citation per phase.
+- Macro-Planner prompt now treats scenario `phase_plan_summary` as binding for total weeks/phases and requires macro `iso_week_range` to match it when provided.
+- Macro-Planner prompt now instructs loading `load_estimation_spec.md` as the first action before any other derivations.
+- macro_mode_a overview now injects the LoadEstimationSpec (Macro section) into the agent prompt to ensure immediate availability.
+- macro_mode_a now injects LoadEstimationSpec from file start through the "## Meso" header (General + Macro sections).
+- Season-Scenario prompt trimmed to scenario-only guidance; removed load-corridor/kJ rules and clarified KPI Profile is loaded from workspace (no selection logic).
+- Added runtime artifact load maps (workspace tools) for all agents.
+- Season-Scenario prompt and macro_mode_a scenario run now explicitly require store tool calls with top-level `{meta, data}` envelopes (no JSON in chat).
+- Macro-Planner prompt and macro_mode_a overview run now enforce store tool calls with top-level `{meta, data}` envelopes (no JSON in chat).
+- Macro overview phase corridors now explicitly require `weekly_load_corridor.weekly_kj` (min/max/kj_per_kg/notes) in prompts and Mode A overview guidance.
+- Auto-render now handles KeyboardInterrupts gracefully (store succeeds even if sidecar rendering is interrupted).
+- Store tool failures now return clearer schema error summaries (with top validation errors) and envelope hints.
+- Runner strict path and workspace tools now emit the same concise schema error summaries and envelope hints.
+- Agents now hard-stop with `STOP_TOOL_CALL_REQUIRED` if a required store tool isn’t called (after one forced retry).
 
 ## [0.4.2] - 2026-01-25
 

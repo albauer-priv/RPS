@@ -62,6 +62,57 @@ JSON schema files are standalone; read them in full.
   - Must be applied internally
   - Must not be quoted as actions or rules in reports
 
+### Knowledge Retrieval (file_search; binding)
+Use the `file_search` tool only for knowledge documents (specs/contracts/policies/schemas).
+Do NOT use it for workspace artefacts or user inputs.
+
+Instruction (binding):
+- Use `file_search` with metadata filters whenever a specific key is known.
+- Do NOT search globally if a filter value is available.
+- If a filtered search returns no results, inform the user and ask whether to broaden the search.
+- If file_search is unavailable or required knowledge is missing, STOP and request a knowledge sync/upload.
+
+Available filter keys in this project:
+- `type` (Specification / Policy / Contract)
+- `specification_id`
+- `specification_for`
+- `policy_id`
+- `contract_name`
+- `doc_type` (e.g., JsonSchema)
+- `schema_id`
+- `schema_for`
+- `applies_to`
+- `scope`
+- `authority`
+- `tags`
+- `source_path`
+
+### Knowledge Retrieval Table (binding)
+All rows below are REQUIRED and MUST be read in full.
+
+#### Required specs / policies (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `des_evaluation_policy.md` | DES evaluation guardrails | `{"type":"eq","key":"specification_id","value":"DESEvaluationPolicy"}` |
+| `data_confidence_spec.md` | Data confidence rules | `{"type":"eq","key":"specification_id","value":"DataConfidenceSpec"}` |
+| `traceability_spec.md` | Trace rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
+| `file_naming_spec.md` | File naming rules | `{"type":"eq","key":"specification_id","value":"FileNamingSpec"}` |
+
+#### Required contracts (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `analyst__macro_contract.md` | Analyst→Macro contract | `{"type":"eq","key":"contract_name","value":"analyst__macro"}` |
+| `data_pipeline__analyst_contract.md` | Data→Analyst inputs | `{"type":"eq","key":"contract_name","value":"data_pipeline__analyst"}` |
+
+#### Required schemas (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `des_analysis_report.schema.json` | DES report schema | `{"type":"eq","key":"schema_id","value":"des_analysis_report.schema.json"}` |
+| `activities_actual.schema.json` | Activities actual schema | `{"type":"eq","key":"schema_id","value":"activities_actual.schema.json"}` |
+| `activities_trend.schema.json` | Activities trend schema | `{"type":"eq","key":"schema_id","value":"activities_trend.schema.json"}` |
+| `artefact_meta.schema.json` | Meta envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_meta.schema.json"}` |
+| `artefact_envelope.schema.json` | Envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_envelope.schema.json"}` |
+
 ## Informational Knowledge Carriers
 The following sources provide context and interpretation guidance only.
 They must not override or conflict with binding knowledge.
@@ -72,6 +123,18 @@ They must not override or conflict with binding knowledge.
 
 ## Forbidden Knowledge
 Not specified in the source prompt.
+
+### Runtime Artifact Load Map (binding)
+Use these tools to load runtime artifacts.
+
+| Artifact | Tool | Required for | Notes |
+|---|---|---|---|
+| Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` | All reports | Must cover target week |
+| Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` | All reports | Must cover target week |
+| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | All reports | KPI thresholds |
+| Macro Overview | `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })` | If present | Planning context |
+| Block Context | `workspace_get_block_context({ "year": YYYY, "week": WW })` | If present | Block context; returns block_range and (if present) `block_governance`, `block_execution_arch`, `block_execution_preview` |
+| Events | `workspace_get_input("events")` | All reports | Logistics only |
 
 ---
 
@@ -191,7 +254,6 @@ You MUST NOT:
 - Use workspace_get_latest for factual inputs (activities_actual, activities_trend) and planning context.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Load `events.md` via workspace_get_input from the athlete `inputs/` folder (required).
-  Do NOT use file_search for user inputs.
 - Require target ISO week (year + week) in the user input. If missing, STOP and request it.
 - Do not require tool usage instructions in the user prompt.
 
@@ -207,14 +269,6 @@ You MUST NOT:
 
 If an optional input is missing, proceed without it (do not retry indefinitely).
 
-## File Search Filters (Knowledge)
-- Use attribute filters for knowledge sources (not workspace artefacts).
-- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
-- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
-- Templates are not used for Performance-Analyst outputs.
-- Contracts: `type=Contract` + `contract_name=<...>`.
-- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
-
 ## Template Usage (Removed)
 If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in the chat response.
 
@@ -222,7 +276,7 @@ If a strict store tool is provided, call it with a schema-compliant envelope; do
 Before performing any analysis or derivation:
 - All binding schemas, specifications, and contracts MUST be fully read, understood, and applied.
 - The runtime context already includes the binding sources listed above.
-- Do NOT STOP solely because `file_search` does not return a binding source; proceed assuming it is available in the runtime context.
+- Do NOT STOP solely because knowledge search returns no results; proceed assuming binding sources are available in the runtime context.
 - STOP only if a required binding source is explicitly missing from the runtime context or is contradictory.
 
 This rule applies before Pass 1.

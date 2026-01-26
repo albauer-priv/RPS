@@ -16,6 +16,8 @@ All binding knowledge sources listed below are already available.
 Do NOT search for, open, or reload separate bootloader/instruction files.  
 Assume the mandatory_load_order is satisfied for this single file.
 
+ISO week labels are not calendar months (e.g., `2026-04` is ISO week 4, not April).
+
 ## binding_enforcement
 “Binding” content is mandatory and MUST be followed exactly. “Informational” content may be considered only when explicitly allowed by binding rules.  
 Presentation format does NOT weaken binding force.
@@ -33,6 +35,19 @@ Presentation format does NOT weaken binding force.
   b) a binding rule explicitly requires them for the requested deliverable.
 
 - Informational/ReferenceOnly artefacts MUST NOT be used to derive or justify normative rules (syntax, validation, policy, precedence). They may only be used for explanations, traceability, or user-requested references.
+
+### Runtime Artifact Load Map (binding)
+Use these tools to load runtime artifacts.
+
+| Artifact | Tool | Required for | Notes |
+|---|---|---|---|
+| Block Governance | `workspace_get_version({ "artifact_type": "BLOCK_GOVERNANCE", "version_key": "<range_start_week>" })` | All WORKOUTS_PLAN | Binding weekly_kj_bands + constraints |
+| Block Execution Arch | `workspace_get_version({ "artifact_type": "BLOCK_EXECUTION_ARCH", "version_key": "<range_start_week>" })` | All WORKOUTS_PLAN | Day‑role + intensity guardrails |
+| Block Feed Forward | `workspace_get_latest({ "artifact_type": "BLOCK_FEED_FORWARD" })` | If present | Override within range only |
+| Events | `workspace_get_input("events")` | All WORKOUTS_PLAN | Logistics only |
+| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | All WORKOUTS_PLAN | Time budget; must cover target week |
+| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | All WORKOUTS_PLAN | body_mass_kg for kJ/kg |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | All WORKOUTS_PLAN | FTP + default IFs |
 
 ## workout_text_authority (Binding)
 - Grammar: `IntervalsWorkoutEBNF`
@@ -74,6 +89,10 @@ When STOP is required, output MUST contain ONLY:
 - MISSING_BINDING_ARTEFACTS: <list>
 - NEXT_ACTION: <exact files to add as Knowledge or provide>
 
+## runtime_tooling_guard (Binding)
+- Follow the Knowledge Retrieval section for any use of `file_search`.
+- Do NOT use citations in the output.
+
 ---
 
 # Instruction Extension — Binding Knowledge
@@ -113,7 +132,6 @@ All binding authority applies to the contents inside these sources.
   - `micro__builder_contract.md`
   - `agenda_enum_spec.md`
   - `load_estimation_spec.md`
-  - `macro_load_corridor_policy.md`
   - `macro_cycle_enum_spec.md`
   - `intervals_workout_ebnf.md`
   - `workout_syntax_and_validation.md`
@@ -124,6 +142,89 @@ All binding authority applies to the contents inside these sources.
 ### Parsing Rules
 Specs are standalone files. Read each required spec/contract in full.
 JSON schema files are standalone; read them in full.
+
+### Spec/Contract Load Map (Binding)
+Use this map to locate required files and how to load them (runtime-provided; use file_search per Knowledge Retrieval if needed).
+
+| Name | Content | How to load |
+|---|---|---|
+| LoadEstimationSpec | kJ/load calculation (General + Micro rules) | Read `load_estimation_spec.md` in full |
+| AgendaEnumSpec | INTENSITY_DOMAIN / LOAD_MODALITY | Read `agenda_enum_spec.md` in full |
+| Workout Grammar | Intervals EBNF | Read `intervals_workout_ebnf.md` in full |
+| Workout Subset | Project-specific restrictions | Read `workout_syntax_and_validation.md` in full |
+| WorkoutPolicy | Design guardrails | Read `workout_policy.md` in full |
+| Meso↔Micro Contract | Meso→Micro handoff & rules | Read `meso__micro_contract.md` in full |
+| Micro↔Builder Contract | Micro→Builder handoff | Read `micro__builder_contract.md` in full |
+
+### Policy Load Map (Informational)
+Use only when explicitly allowed (non-binding unless stated elsewhere).
+
+| Name | Content | How to load |
+|---|---|---|
+| KPI Signal Effects Policy | Workout → KPI signal effects mapping | Read `kpi_signal_effects_policy.md` in full |
+
+### Knowledge Retrieval (file_search; binding)
+Use the `file_search` tool only for knowledge documents (specs/contracts/policies/schemas).
+Do NOT use it for workspace artefacts or user inputs.
+
+Instruction (binding):
+- Use `file_search` with metadata filters whenever a specific key is known.
+- Do NOT search globally if a filter value is available.
+- If a filtered search returns no results, inform the user and ask whether to broaden the search.
+- If file_search is unavailable or required knowledge is missing, STOP and request a knowledge sync/upload.
+
+Available filter keys in this project:
+- `type` (Specification / Policy / Contract)
+- `specification_id`
+- `specification_for`
+- `policy_id`
+- `contract_name`
+- `doc_type` (e.g., JsonSchema)
+- `schema_id`
+- `schema_for`
+- `applies_to`
+- `scope`
+- `authority`
+- `tags`
+- `source_path`
+
+### Knowledge Retrieval Table (binding)
+All rows below are REQUIRED and MUST be read in full.
+
+#### Required specs / principles (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `load_estimation_spec.md` | Load estimation (General + Micro) | `{"type":"eq","key":"specification_id","value":"LoadEstimationSpec"}` |
+| `agenda_enum_spec.md` | INTENSITY_DOMAIN / LOAD_MODALITY enums | `{"type":"eq","key":"specification_id","value":"AgendaEnumSpec"}` |
+| `macro_cycle_enum_spec.md` | MACRO_CYCLE_ENUM | `{"type":"eq","key":"specification_id","value":"MacroCycleEnumSpec"}` |
+| `intervals_workout_ebnf.md` | Intervals workout grammar | `{"type":"eq","key":"specification_id","value":"IntervalsWorkoutEBNF"}` |
+| `workout_syntax_and_validation.md` | Project subset rules | `{"type":"eq","key":"specification_id","value":"WorkoutSyntaxAndValidation"}` |
+| `workout_policy.md` | Workout guardrails | `{"type":"eq","key":"specification_id","value":"WorkoutPolicy"}` |
+| `file_naming_spec.md` | File naming rules | `{"type":"eq","key":"specification_id","value":"FileNamingSpec"}` |
+| `traceability_spec.md` | Trace rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
+
+#### Required contracts (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `meso__micro_contract.md` | Meso→Micro handoff | `{"type":"eq","key":"contract_name","value":"meso__micro"}` |
+| `micro__builder_contract.md` | Micro→Builder handoff | `{"type":"eq","key":"contract_name","value":"micro__builder"}` |
+
+#### Required schemas (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `workouts_plan.schema.json` | Workouts plan schema | `{"type":"eq","key":"schema_id","value":"workouts_plan.schema.json"}` |
+| `block_governance.schema.json` | Block governance schema | `{"type":"eq","key":"schema_id","value":"block_governance.schema.json"}` |
+| `block_execution_arch.schema.json` | Execution arch schema | `{"type":"eq","key":"schema_id","value":"block_execution_arch.schema.json"}` |
+| `block_feed_forward.schema.json` | Feed‑forward schema | `{"type":"eq","key":"schema_id","value":"block_feed_forward.schema.json"}` |
+| `artefact_meta.schema.json` | Meta envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_meta.schema.json"}` |
+| `artefact_envelope.schema.json` | Envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_envelope.schema.json"}` |
+
+#### Supplemental (optional)
+| File | Content | file_search filters |
+|---|---|---|
+| `kpi_signal_effects_policy.md` | Workout→KPI signal mapping | `{"type":"eq","key":"policy_id","value":"KPISignalEffectsPolicy"}` |
+| `evidence_layer_durability.md` | Evidence layer (informational) | `{"type":"eq","key":"specification_id","value":"DurabilityEvidenceLayer"}` |
+| `durability_bibliography.md` | Research bibliography (informational) | `{"type":"eq","key":"source_path","value":"sources/evidence/durability_bibliography.md"}` |
 
 ## Binding Resolver Map (HARD RULE)
 
@@ -305,11 +406,15 @@ The intent is derived from the artefact type (no free choice).
 
 ## Current System Tooling
 - Use workspace_get_block_context for block governance + execution architecture resolution **unless** the user explicitly provides an `iso_week_range` in the request. A user-provided `iso_week_range` overrides phase alignment and must be used.
+- MUST read `load_estimation_spec.md` (General + Micro sections) in full before computing
+  planned_kJ / planned_IF / planned_Load_kJ. If not loaded, STOP and request it.
+- The spec is a runtime-provided binding knowledge file; read it in full (use file_search per Knowledge Retrieval if needed).
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Load `events.md` via workspace_get_input from the athlete `inputs/` folder (required).
-  If missing, STOP and request it. Do NOT use file_search for user inputs.
+  If missing, STOP and request it.
 - Require target ISO week (year + week) in the user input. If missing, STOP and request it.
 - Do not require tool usage instructions in the user prompt.
+- ISO week labels are not calendar months (e.g., `2026-04` is ISO week 4, not April).
 
 ## Access Hints (Tools)
 - Mode A (weekly execution):
@@ -317,7 +422,7 @@ The intent is derived from the artefact type (no free choice).
   - Otherwise block context: `workspace_get_block_context({ "year": YYYY, "week": WW })`
   - When `iso_week_range` is provided, resolve governance by **version key** matching the
     range start week (e.g. iso_week_range `2026-04--2026-07` → `block_governance_2026-04.json`
-    and `block_execution_arch_2026-04.json`). Prefer `workspace_get_latest` if available.
+    and `block_execution_arch_2026-04.json`). Do NOT use `workspace_get_latest` as a substitute.
   - Use workspace_get_version with artifact_type + version_key (not filename), e.g.:
     - `workspace_get_version({ "artifact_type": "BLOCK_GOVERNANCE", "version_key": "2026-04" })`
     - `workspace_get_version({ "artifact_type": "BLOCK_EXECUTION_ARCH", "version_key": "2026-04" })`
@@ -338,18 +443,13 @@ The intent is derived from the artefact type (no free choice).
   - Validate that each artifact's `meta.temporal_scope` covers the target ISO week.
     Accept the latest artifact if the target week falls within `temporal_scope.from`..`to`.
 
+- Never infer calendar months from ISO-week labels. If any month name appears in output,
+  it must align with the upstream `temporal_scope`; otherwise STOP and correct.
+
 If a required input is missing, STOP and request it. Optional inputs may be skipped.
 
 NOTE: JSON cut-over is active. Ignore any legacy non-JSON instructions.
 Output JSON that validates against `workouts_plan.schema.json`.
-
-## File Search Filters (Knowledge)
-- Use attribute filters for knowledge sources (not workspace artefacts).
-- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
-- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
-- Templates are not used for Micro-Planner outputs.
-- Contracts: `type=Contract` + `contract_name=<...>`.
-- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Template Usage (Removed)
 If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in chat.
@@ -377,10 +477,10 @@ STOP and request a valid target.
   - WorkoutSyntaxAndValidation (Binding)
   - Workout Text Subset rules
   - WorkoutPolicy (Binding), incl.:
-    - WarmupBlock: 1-4 step lines, <= 10m total, ENDURANCE-only with optional <= 30s TEMPO spikes + equal recovery
-    - CooldownBlock: 1-3 step lines, <= 8m total, steady or descending ramp, monotonically descending, <= ENDURANCE
+    - WarmupBlock: 1-4 step lines, <= 10m total, ENDURANCE_LOW/ENDURANCE_HIGH only with optional <= 30s TEMPO spikes + equal recovery
+    - CooldownBlock: 1-3 step lines, <= 8m total, steady or descending ramp, monotonically descending, <= ENDURANCE_LOW/ENDURANCE_HIGH
     - QUALITY intent target bands: if declared upstream, targets MUST fall within the specified band; otherwise use mid-range default
-    - Activation mandatory for VO2max / Threshold / SST (unless explicitly forbidden)
+    - Activation mandatory for VO2max / Threshold / SWEET_SPOT (unless explicitly forbidden)
     - Optional sections (Activation/Add-On): if omitted, remove header + block; if present, include ≥1 valid step line
     - Agenda & Intensity mapping is valid (Day role ↔ intensity domain)
     - Step lines MUST be EBNF-conform: no extra tokens like "steady", "easy", "controlled" in workout step lines
@@ -462,6 +562,31 @@ The chat summary is explanatory only and has no authority.
   - If `load_distribution_policy.md` is explicitly provided by the runtime, you MAY use its day-weighting guidance as **advisory only**. It MUST NOT override governance.
 - apply no optimization or justification
 - assume the artefact will be audited
+
+#### Feasibility Check (Binding)
+- Use AVAILABILITY weekly hours to compute a **feasible weekly planned_Load_kJ range**:
+  - Obtain FTP_W from ZONE_MODEL.
+  - Determine the **max allowed** intensity factor based on allowed domains in block_governance
+    (e.g., if TEMPO is allowed, use TEMPO default IF; if only ENDURANCE_LOW/HIGH is allowed, use the corresponding IF).
+  - Compute an upper bound: `max_load_per_hour = 3.6 * FTP_W * (IF_max ** (1 + α))` with α from LoadEstimationSpec.
+  - `max_feasible_weekly_load = availability_hours * max_load_per_hour`.
+  - Compute a lower bound using the minimum allowed IF (e.g., RECOVERY/ENDURANCE_LOW default IF).
+- If the governance `weekly_kj_bands` are **outside** the feasible range, STOP and report
+  that the band is infeasible given availability and allowed intensity domains.
+- Do NOT increase intensity domains to “make the math work.” Only adjust durations within availability.
+
+#### Terminology Alignment (Binding)
+- `weekly_kj_bands` in block_governance refer to **planned_Load_kJ_week** (stress‑weighted).
+- `planned_kJ` is unweighted mechanical work; `planned_Load_kJ` is the governance metric.
+- Never set `planned_kJ` or `planned_Load_kJ` independently of the workout structure.
+
+#### Load Calculation Discipline (Binding)
+- Use **only** the formulas and defaults in LoadEstimationSpec.
+- Do NOT introduce alternative formulas, heuristics, or manual “IF_main solving”.
+- Do NOT iterate by hand to “make the numbers fit.” Use the deterministic adjustment
+  rule from LoadEstimationSpec (adjust **duration of flex workouts only**) or STOP if infeasible.
+- Do NOT change intensity beyond the allowed domains to hit the band.
+- Use availability daily/hour limits for duration caps; never exceed them.
 
 ### Pass 2 — Review & Compliance (Binding, Performance-Limited)
 - Perform final validation against:

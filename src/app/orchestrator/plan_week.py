@@ -14,6 +14,7 @@ from app.workspace.iso_helpers import (
     IsoWeek,
     envelope_week,
     envelope_week_range,
+    parse_iso_week_range,
     previous_iso_week,
     range_contains,
 )
@@ -131,28 +132,86 @@ def plan_week(
         athlete_id=athlete_id,
     )
 
+    def _mtime(path) -> float | None:
+        if not path or not path.exists():
+            return None
+        return path.stat().st_mtime
+
+    def _latest_range_record(artifact_type: ArtifactType):
+        index = index_query._index_manager.load()
+        entry = index.get("artefacts", {}).get(artifact_type.value)
+        if not entry:
+            return None, None, None
+        versions: dict = entry.get("versions", {})
+        candidates: list[tuple[str, dict]] = []
+        for record in versions.values():
+            if not isinstance(record, dict):
+                continue
+            path = record.get("path") or record.get("relative_path")
+            if not path:
+                continue
+            full_path = (workspace.store.root / athlete_id / path).resolve()
+            if not full_path.exists():
+                continue
+            range_obj = parse_iso_week_range(record.get("iso_week_range"))
+            if not range_obj or range_obj.key != block_range.key:
+                continue
+            candidates.append((record.get("created_at", ""), {"record": record, "path": full_path}))
+        if not candidates:
+            return None, None, None
+        candidates.sort()
+        chosen = candidates[-1][1]
+        return chosen["record"], chosen["path"], _mtime(chosen["path"])
+
+    macro_path = store.latest_path(athlete_id, ArtifactType.MACRO_OVERVIEW)
+    macro_mtime = _mtime(macro_path)
+
+    block_gov_record, block_gov_path, block_gov_mtime = _latest_range_record(ArtifactType.BLOCK_GOVERNANCE)
+    block_arch_record, block_arch_path, block_arch_mtime = _latest_range_record(ArtifactType.BLOCK_EXECUTION_ARCH)
+    block_preview_record, block_preview_path, block_preview_mtime = _latest_range_record(ArtifactType.BLOCK_EXECUTION_PREVIEW)
+
+    needs_block_gov = block_gov_path is None
+    if macro_mtime and block_gov_mtime and macro_mtime > block_gov_mtime:
+        needs_block_gov = True
+
+    needs_block_arch = block_arch_path is None
+    if macro_mtime and block_arch_mtime and macro_mtime > block_arch_mtime:
+        needs_block_arch = True
+    if block_gov_mtime and block_arch_mtime and block_gov_mtime > block_arch_mtime:
+        needs_block_arch = True
+
+    needs_block_preview = block_preview_path is None
+    if block_arch_mtime and block_preview_mtime and block_arch_mtime > block_preview_mtime:
+        needs_block_preview = True
+
+    if needs_block_gov:
+        needs_block_arch = True
+        needs_block_preview = True
+    if needs_block_arch:
+        needs_block_preview = True
+
     meso_tasks: list[AgentTask] = []
-    if index_query.has_exact_range(ArtifactType.BLOCK_GOVERNANCE.value, block_range):
+    if not needs_block_gov:
         message = f"Found BLOCK_GOVERNANCE for block range {block_range_label}."
         log_and_print(logger, message)
     else:
-        message = f"BLOCK_GOVERNANCE NOT FOUND for block range {block_range_label}. Will create."
+        message = f"BLOCK_GOVERNANCE missing/stale for block range {block_range_label}. Will create."
         log_and_print(logger, message)
         meso_tasks.append(AgentTask.CREATE_BLOCK_GOVERNANCE)
 
-    if index_query.has_exact_range(ArtifactType.BLOCK_EXECUTION_ARCH.value, block_range):
+    if not needs_block_arch:
         message = f"Found BLOCK_EXECUTION_ARCH for block range {block_range_label}."
         log_and_print(logger, message)
     else:
-        message = f"BLOCK_EXECUTION_ARCH NOT FOUND for block range {block_range_label}. Will create."
+        message = f"BLOCK_EXECUTION_ARCH missing/stale for block range {block_range_label}. Will create."
         log_and_print(logger, message)
         meso_tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_ARCH)
 
-    if index_query.has_exact_range(ArtifactType.BLOCK_EXECUTION_PREVIEW.value, block_range):
+    if not needs_block_preview:
         message = f"Found BLOCK_EXECUTION_PREVIEW for block range {block_range_label}."
         log_and_print(logger, message)
     else:
-        message = f"BLOCK_EXECUTION_PREVIEW NOT FOUND for block range {block_range_label}. Will create."
+        message = f"BLOCK_EXECUTION_PREVIEW missing/stale for block range {block_range_label}. Will create."
         log_and_print(logger, message)
         meso_tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW)
 
@@ -202,7 +261,19 @@ def plan_week(
     micro_tasks: list[AgentTask] = []
     version_key = target_label
     version_exists = store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key)
-    if version_exists:
+    plan_path = store.versioned_path(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key) if version_exists else None
+    plan_mtime = _mtime(plan_path)
+    needs_workouts_plan = not version_exists
+    if macro_mtime and plan_mtime and macro_mtime > plan_mtime:
+        needs_workouts_plan = True
+    if block_gov_mtime and plan_mtime and block_gov_mtime > plan_mtime:
+        needs_workouts_plan = True
+    if block_arch_mtime and plan_mtime and block_arch_mtime > plan_mtime:
+        needs_workouts_plan = True
+    if needs_block_gov or needs_block_arch:
+        needs_workouts_plan = True
+
+    if not needs_workouts_plan:
         message = f"Found WORKOUTS_PLAN for ISO week {target_label}."
         log_and_print(logger, message)
     else:
@@ -211,8 +282,7 @@ def plan_week(
             week = envelope_week(plan)
             if week and (week.year == target.year and week.week == target.week):
                 message = (
-                    f"WORKOUTS_PLAN latest matches ISO week {target_label} but "
-                    "versioned file is missing. Will create."
+                    f"WORKOUTS_PLAN matches ISO week {target_label} but is stale. Will create."
                 )
                 log_and_print(logger, message)
             else:
@@ -249,28 +319,44 @@ def plan_week(
 
     builder_tasks: list[AgentTask] = []
     if store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key):
-        builder_tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
-        message = f"Running Workout-Builder for ISO week {target_label}."
-        log_and_print(logger, message)
-        spec = AGENTS["workout_builder"]
-        out = run_agent_multi_output(
-            runtime_for(spec.name),
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
-            athlete_id=athlete_id,
-            tasks=builder_tasks,
-            user_input=(
-                f"Convert workouts_plan into Intervals.icu workouts JSON for ISO week {target_label}. "
-                "Read workouts_plan from workspace."
-            ),
-            run_id=f"{run_id}_builder",
-            model_override=model_resolver(spec.name) if model_resolver else None,
-            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            force_file_search=force_file_search,
+        intervals_version = "raw"
+        intervals_path = (
+            store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)
+            if store.exists(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)
+            else None
         )
-        steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
-        if out.get("ok") and out.get("produced"):
-            log_and_print(logger, "Done.")
+        intervals_mtime = _mtime(intervals_path)
+        needs_intervals = intervals_path is None
+        if plan_mtime and intervals_mtime and plan_mtime > intervals_mtime:
+            needs_intervals = True
+        if needs_workouts_plan:
+            needs_intervals = True
+        if not needs_intervals:
+            message = f"Found INTERVALS_WORKOUTS for ISO week {target_label}."
+            log_and_print(logger, message)
+        else:
+            builder_tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
+            message = f"Running Workout-Builder for ISO week {target_label}."
+            log_and_print(logger, message)
+            spec = AGENTS["workout_builder"]
+            out = run_agent_multi_output(
+                runtime_for(spec.name),
+                agent_name=spec.name,
+                agent_vs_name=spec.vector_store_name,
+                athlete_id=athlete_id,
+                tasks=builder_tasks,
+                user_input=(
+                    f"Convert workouts_plan into Intervals.icu workouts JSON for ISO week {target_label}. "
+                    "Read workouts_plan from workspace."
+                ),
+                run_id=f"{run_id}_builder",
+                model_override=model_resolver(spec.name) if model_resolver else None,
+                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+                force_file_search=force_file_search,
+            )
+            steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
+            if out.get("ok") and out.get("produced"):
+                log_and_print(logger, "Done.")
     else:
         message = f"Workout-Builder skipped: WORKOUTS_PLAN {target_label} not found."
         log_and_print(logger, message)

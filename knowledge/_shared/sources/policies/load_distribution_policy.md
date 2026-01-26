@@ -14,6 +14,7 @@ Applies-To:
 Notes: >
   Optional, non-binding guidance for distributing weekly planned_Load_kJ
   across days. This policy MUST NOT override governance bands or block intent.
+  This policy MUST NOT be used by Macro or Meso.
 ---
 
 # Load Distribution Policy (Optional)
@@ -33,8 +34,10 @@ by a prompt or operator. Governance bands always override.
 If a weekly target is needed for distribution, choose a value **within**
 the weekly_kj_bands (planned_Load_kJ).
 
-Default (optional):
+Default (optional, advisory only):
 - `weekly_target = min + 0.67 × (max - min)` (upper-third)
+  - Use only when explicitly requested.
+  - If this policy is not explicitly referenced, do not choose a default target.
 
 If availability constraints prevent hitting this target, the planner may
 shift downward within the band and record the reason.

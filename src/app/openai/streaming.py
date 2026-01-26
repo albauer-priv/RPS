@@ -42,6 +42,11 @@ def stream_log_reasoning() -> bool:
     return raw not in ("0", "false", "no", "off")
 
 
+def stream_reasoning_italics() -> bool:
+    raw = os.getenv("OPENAI_STREAM_ITALICS", "0").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
 def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
     """Create a response, optionally streaming deltas to stdout."""
     if not should_stream():
@@ -55,6 +60,7 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
     reasoning_mode = stream_reasoning_mode()
     show_usage = stream_show_usage()
     log_reasoning = stream_log_reasoning()
+    reasoning_italics = stream_reasoning_italics()
     wrote_any = False
     wrote_reasoning_prefix = False
     wrote_output_prefix = False
@@ -79,7 +85,10 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
                 if not wrote_reasoning_prefix:
                     sys.stdout.write("[reasoning] ")
                     wrote_reasoning_prefix = True
-                sys.stdout.write(delta)
+                if reasoning_italics:
+                    sys.stdout.write(f"\033[3m{delta}\033[0m")
+                else:
+                    sys.stdout.write(delta)
                 sys.stdout.flush()
                 wrote_any = True
                 saw_full_reasoning = True
@@ -90,7 +99,10 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
                 if not wrote_reasoning_prefix:
                     sys.stdout.write("[reasoning] ")
                     wrote_reasoning_prefix = True
-                sys.stdout.write(delta)
+                if reasoning_italics:
+                    sys.stdout.write(f"\033[3m{delta}\033[0m")
+                else:
+                    sys.stdout.write(delta)
                 sys.stdout.flush()
                 wrote_any = True
                 reasoning_chunks.append(delta)
@@ -112,7 +124,10 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
                     if not wrote_reasoning_prefix:
                         sys.stdout.write("[reasoning] ")
                         wrote_reasoning_prefix = True
-                    sys.stdout.write(delta_text)
+                    if reasoning_italics:
+                        sys.stdout.write(f"\033[3m{delta_text}\033[0m")
+                    else:
+                        sys.stdout.write(delta_text)
                     sys.stdout.flush()
                     wrote_any = True
                     reasoning_chunks.append(delta_text)

@@ -28,6 +28,9 @@ def render_sidecar(json_path: Path) -> None:
     cmd = [sys.executable, str(script_path), str(json_path)]
     try:
         result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    except KeyboardInterrupt:
+        logger.warning("Artefact render interrupted path=%s", json_path)
+        return
     except Exception as exc:
         logger.error("Artefact render failed path=%s error=%s", json_path, exc)
         return

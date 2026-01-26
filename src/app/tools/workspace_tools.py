@@ -274,8 +274,19 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
                 schema_dir=ctx.schema_dir,
             )
         except SchemaValidationError as exc:
-            logger.warning("Schema validation failed for %s: %s", artifact_type.value, exc.errors)
-            return {"ok": False, "error": str(exc), "details": exc.errors}
+            details = list(exc.errors or [])
+            max_items = 8
+            preview = details[:max_items]
+            suffix = ""
+            if len(details) > max_items:
+                suffix = f" (+{len(details) - max_items} more)"
+            summary = "; ".join(preview) + suffix if preview else "Unknown schema error."
+            logger.warning("Schema validation failed for %s: %s", artifact_type.value, details)
+            return {
+                "ok": False,
+                "error": f"Schema validation failed ({artifact_type.value}): {summary}",
+                "details": details,
+            }
         logger.info(
             "Stored artifact type=%s version_key=%s path=%s run_id=%s",
             artifact_type.value,

@@ -19,6 +19,14 @@ All binding knowledge sources listed below are already available.
 Do NOT search for, open, or reload separate bootloader/instruction files.  
 Assume the mandatory_load_order is satisfied for this single file.
 
+### Runtime Artifact Load Map (binding)
+Use these tools to load runtime artifacts.
+
+| Artifact | Tool | Required for | Notes |
+|---|---|---|---|
+| Workouts Plan | `workspace_get_version({ "artifact_type": "WORKOUTS_PLAN", "version_key": "<iso_week>" })` | All exports | Input artefact to convert |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | If needed | FTP/IF defaults (only if required by spec) |
+
 ## binding_enforcement
 - Content marked “Binding” (or listed as “Binding Specs” / “Binding Knowledge”) is binding and must be followed exactly.
 - Other content is non-binding guidance unless explicitly marked binding.
@@ -58,16 +66,57 @@ governance hierarchy defined in the Authority & Hierarchy section.
   - `micro__builder_contract.md`
   - `intervals_workout_ebnf.md`
   - `workout_syntax_and_validation.md`
-  - `workout_json_spec.md`
-  - `workout_policy.md`
-  - `file_naming_spec.md`
-  - `traceability_spec.md`
 
-- JSON Schemas 
-  - `workouts_plan.schema.json`
-  - `workouts.schema.json`
-  - `artefact_meta.schema.json`
-  - `artefact_envelope.schema.json`
+### Knowledge Retrieval (file_search; binding)
+Use the `file_search` tool only for knowledge documents (specs/contracts/policies/schemas).
+Do NOT use it for workspace artefacts or user inputs.
+
+Instruction (binding):
+- Use `file_search` with metadata filters whenever a specific key is known.
+- Do NOT search globally if a filter value is available.
+- If a filtered search returns no results, inform the user and ask whether to broaden the search.
+- If file_search is unavailable or required knowledge is missing, STOP and request a knowledge sync/upload.
+
+Available filter keys in this project:
+- `type` (Specification / Policy / Contract)
+- `specification_id`
+- `specification_for`
+- `policy_id`
+- `contract_name`
+- `doc_type` (e.g., JsonSchema)
+- `schema_id`
+- `schema_for`
+- `applies_to`
+- `scope`
+- `authority`
+- `tags`
+- `source_path`
+
+### Knowledge Retrieval Table (binding)
+All rows below are REQUIRED and MUST be read in full.
+
+#### Required specs / policies (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `intervals_workout_ebnf.md` | Intervals workout grammar | `{"type":"eq","key":"specification_id","value":"IntervalsWorkoutEBNF"}` |
+| `workout_syntax_and_validation.md` | Project subset rules | `{"type":"eq","key":"specification_id","value":"WorkoutSyntaxAndValidation"}` |
+| `workout_json_spec.md` | Workout JSON spec | `{"type":"eq","key":"specification_id","value":"WorkoutJSONSpec"}` |
+| `workout_policy.md` | Workout guardrails | `{"type":"eq","key":"specification_id","value":"WorkoutPolicy"}` |
+| `file_naming_spec.md` | File naming rules | `{"type":"eq","key":"specification_id","value":"FileNamingSpec"}` |
+| `traceability_spec.md` | Traceability rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
+
+#### Required contracts (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `micro__builder_contract.md` | Micro→Builder handoff | `{"type":"eq","key":"contract_name","value":"micro__builder"}` |
+
+#### Required schemas (must read fully)
+| File | Content | file_search filters |
+|---|---|---|
+| `workouts_plan.schema.json` | Workouts plan schema (input validation) | `{"type":"eq","key":"schema_id","value":"workouts_plan.schema.json"}` |
+| `workouts.schema.json` | Intervals workouts schema | `{"type":"eq","key":"schema_id","value":"workouts.schema.json"}` |
+| `artefact_meta.schema.json` | Meta envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_meta.schema.json"}` |
+| `artefact_envelope.schema.json` | Envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_envelope.schema.json"}` |
 
 ### Parsing Rules
 Specs are standalone files. Read each required spec/contract in full.
@@ -208,14 +257,6 @@ The Workout-Builder MUST NOT:
   - Workouts plan: `workspace_get_latest({ "artifact_type": "WORKOUTS_PLAN" })`
 - If a specific week is requested:
   - `workspace_get_version({ "artifact_type": "WORKOUTS_PLAN", "version_key": "yyyy-ww" })`
-
-## File Search Filters (Knowledge)
-- Use attribute filters for knowledge sources (not workspace artefacts).
-- Specs/policies/principles/evidence: `type=Specification` + `specification_for=<...>` or `specification_id=<...>`.
-- Interfaces: `type=InterfaceSpecification` + `interface_for=<...>`.
-- Templates are not used for Workout-Builder outputs.
-- Contracts: `type=Contract` + `contract_name=<...>`.
-- Schemas: `doc_type=JsonSchema` + `schema_id=<filename>`.
 
 ## Template Usage (Removed)
 If a strict store tool is provided, call it with a schema-compliant envelope; do not emit raw JSON in chat.

@@ -133,7 +133,7 @@ def run_agent_multi_output(
     temperature_override: float | None = None,
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
-    max_num_results: int = 6,
+    max_num_results: int = 20,
 ) -> dict[str, Any]:
     """Run an agent that can emit multiple strict tool outputs."""
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
@@ -594,6 +594,22 @@ def run_agent_multi_output(
                 not all_done
                 and len(output_specs) == 1
                 and output_specs[0].envelope
+                and attempted_forced_store
+            ):
+                return {
+                    "ok": False,
+                    "produced": produced,
+                    "final_text": final_text,
+                    "error": "STOP_TOOL_CALL_REQUIRED",
+                    "details": [
+                        "Model did not call the required store tool.",
+                        "Retry with an explicit tool call instruction or fix prompt/tool usage.",
+                    ],
+                }
+            if (
+                not all_done
+                and len(output_specs) == 1
+                and output_specs[0].envelope
                 and not attempted_forced_store
             ):
                 spec = output_specs[0]
@@ -737,7 +753,14 @@ def run_agent_multi_output(
             if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
                 document = _normalize_des_analysis_report(document)
             if spec.envelope and not _is_envelope(document):
-                result = {"ok": False, "error": "Envelope artefact must be an object with meta and data"}
+                result = {
+                    "ok": False,
+                    "error": "Envelope artefact must be an object with meta and data",
+                    "details": [
+                        "Expected top-level keys: meta, data",
+                        "Do not wrap the envelope inside payload/document/envelope keys",
+                    ],
+                }
                 input_list.append(
                     {
                         "type": "function_call_output",
@@ -757,8 +780,19 @@ def run_agent_multi_output(
                 produced[name] = saved
                 result = saved
             except SchemaValidationError as exc:
-                result = {"ok": False, "error": str(exc), "details": exc.errors}
-                logger.warning("Schema validation failed for %s: %s", spec.artifact_type.value, exc.errors)
+                details = list(exc.errors or [])
+                max_items = 8
+                preview = details[:max_items]
+                suffix = ""
+                if len(details) > max_items:
+                    suffix = f" (+{len(details) - max_items} more)"
+                summary = "; ".join(preview) + suffix if preview else "Unknown schema error."
+                result = {
+                    "ok": False,
+                    "error": f"Schema validation failed ({spec.artifact_type.value}): {summary}",
+                    "details": details,
+                }
+                logger.warning("Schema validation failed for %s: %s", spec.artifact_type.value, details)
             except Exception as exc:
                 result = {"ok": False, "error": str(exc)}
                 logger.warning("Store failed for %s: %s", spec.artifact_type.value, exc)

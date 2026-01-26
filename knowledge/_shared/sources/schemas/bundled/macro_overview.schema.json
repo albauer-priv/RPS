@@ -459,8 +459,11 @@
                         "NONE",
                         "RECOVERY",
                         "ENDURANCE",
+                        "ENDURANCE_LOW",
+                        "ENDURANCE_HIGH",
                         "TEMPO",
-                        "SST",
+                        "SWEET_SPOT",
+                        "THRESHOLD",
                         "VO2MAX"
                       ]
                     }
@@ -483,8 +486,11 @@
                         "NONE",
                         "RECOVERY",
                         "ENDURANCE",
+                        "ENDURANCE_LOW",
+                        "ENDURANCE_HIGH",
                         "TEMPO",
-                        "SST",
+                        "SWEET_SPOT",
+                        "THRESHOLD",
                         "VO2MAX"
                       ]
                     }
@@ -1191,8 +1197,11 @@
                   "NONE",
                   "RECOVERY",
                   "ENDURANCE",
+                  "ENDURANCE_LOW",
+                  "ENDURANCE_HIGH",
                   "TEMPO",
-                  "SST",
+                  "SWEET_SPOT",
+                  "THRESHOLD",
                   "VO2MAX"
                 ]
               }
@@ -1215,8 +1224,11 @@
                   "NONE",
                   "RECOVERY",
                   "ENDURANCE",
+                  "ENDURANCE_LOW",
+                  "ENDURANCE_HIGH",
                   "TEMPO",
-                  "SST",
+                  "SWEET_SPOT",
+                  "THRESHOLD",
                   "VO2MAX"
                 ]
               }
@@ -1860,8 +1872,11 @@
                         "NONE",
                         "RECOVERY",
                         "ENDURANCE",
+                        "ENDURANCE_LOW",
+                        "ENDURANCE_HIGH",
                         "TEMPO",
-                        "SST",
+                        "SWEET_SPOT",
+                        "THRESHOLD",
                         "VO2MAX"
                       ]
                     }
@@ -1884,8 +1899,11 @@
                         "NONE",
                         "RECOVERY",
                         "ENDURANCE",
+                        "ENDURANCE_LOW",
+                        "ENDURANCE_HIGH",
                         "TEMPO",
-                        "SST",
+                        "SWEET_SPOT",
+                        "THRESHOLD",
                         "VO2MAX"
                       ]
                     }

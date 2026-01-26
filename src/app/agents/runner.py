@@ -99,7 +99,7 @@ def run_agent(
     temperature_override: float | None = None,
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
-    max_num_results: int = 6,
+    max_num_results: int = 20,
     run_id: str | None = None,
 ) -> str:
     """Run an agent with workspace tools and file search attached."""

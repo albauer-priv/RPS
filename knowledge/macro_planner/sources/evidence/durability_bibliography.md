@@ -74,15 +74,15 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 ---
 
-## 3. SWEET SPOT TRAINING (SST), VLamax REDUCTION & LT1
+## 3. SWEET SPOT TRAINING (SWEET_SPOT), VLamax REDUCTION & LT1
 
-21. Coggan, A. R., & Allen, H. (2019). *Training and Racing with a Power Meter* (3rd ed.). VeloPress. (SST 88–94% FTP, lactate clearance).
+21. Coggan, A. R., & Allen, H. (2019). *Training and Racing with a Power Meter* (3rd ed.). VeloPress. (SWEET_SPOT 88–94% FTP, lactate clearance).
 
 22. Coggan, A. R. (2003). Road to gold: Sweet Spot training. *High Performance Coach*, 2(4), 3–20.
 
 23. Leo, P. (INSCYD). (2021). *VLamax – glycolytic power* (Whitepaper). INSCYD.
 
-24. INSCYD Team. (2024). 5 training tips to decrease VLamax. *inscyd.com/article*. (Z2/SST, low-carb).
+24. INSCYD Team. (2024). 5 training tips to decrease VLamax. *inscyd.com/article*. (Z2/SWEET_SPOT, low-carb).
 
 25. Olbrecht, J. (2000). *The Science of Winning: Lactate Dynamics*. Bagatel.
 
@@ -198,7 +198,7 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 69. Ask a Cycling Coach Ep. 356 – *Sleep & Training Timing*. (Sleep quality, performance).
 
-70. Ask a Cycling Coach – Multiple Masters episodes (Masters VO₂, SST, recovery).
+70. Ask a Cycling Coach – Multiple Masters episodes (Masters VO₂, SWEET_SPOT, recovery).
 
 71. Science of Getting Faster (TrainerRoad) Ep. 5 – *Can We Go Beyond 90g of Carbohydrates with Dr. Tim Podlogar* (high CHO intake 90–120 g/h; gut training; glucose/fructose blends). 
 
@@ -295,7 +295,7 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 103. Wattkg Blog (wattkg.com) – *The science of durability: Are you strong where it matters?* (kJ/kg interpretation, pro vs amateur).
 
-104. CyclingApps.net (FastFitness Group) – *Sweetspot or sourspot?* (SST context).
+104. CyclingApps.net (FastFitness Group) – *Sweetspot or sourspot?* (SWEET_SPOT context).
 
 105. Dutch Diesel Cycling Blog – *Unlocking endurance: LT1 training* (aerobic base).
 

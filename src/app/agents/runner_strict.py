@@ -143,6 +143,25 @@ def run_agent_task_strict(
             logger.debug("Tool call %s args=%s", call.name, args)
 
             try:
+                if output_spec.envelope and not (
+                    isinstance(document, dict) and "meta" in document and "data" in document
+                ):
+                    result = {
+                        "ok": False,
+                        "error": "Envelope artefact must be an object with meta and data",
+                        "details": [
+                            "Expected top-level keys: meta, data",
+                            "Do not wrap the envelope inside payload/document/envelope keys",
+                        ],
+                    }
+                    input_list.append(
+                        {
+                            "type": "function_call_output",
+                            "call_id": call.call_id,
+                            "output": json.dumps(result, ensure_ascii=False),
+                        }
+                    )
+                    return result
                 result = guarded.guard_put_validated(
                     output_spec=output_spec,
                     document=document,
@@ -151,8 +170,19 @@ def run_agent_task_strict(
                     update_latest=True,
                 )
             except SchemaValidationError as exc:
-                result = {"ok": False, "error": str(exc), "details": exc.errors}
-                logger.warning("Schema validation failed for %s: %s", output_spec.artifact_type.value, exc.errors)
+                details = list(exc.errors or [])
+                max_items = 8
+                preview = details[:max_items]
+                suffix = ""
+                if len(details) > max_items:
+                    suffix = f" (+{len(details) - max_items} more)"
+                summary = "; ".join(preview) + suffix if preview else "Unknown schema error."
+                result = {
+                    "ok": False,
+                    "error": f"Schema validation failed ({output_spec.artifact_type.value}): {summary}",
+                    "details": details,
+                }
+                logger.warning("Schema validation failed for %s: %s", output_spec.artifact_type.value, details)
             except Exception as exc:
                 result = {"ok": False, "error": str(exc)}
                 logger.warning("Store failed for %s: %s", output_spec.artifact_type.value, exc)

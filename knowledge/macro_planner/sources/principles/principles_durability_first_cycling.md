@@ -227,7 +227,7 @@ These patterns define **load-recovery rhythm only** (not intensity distribution 
 
 | Pattern | Phase length | Structure | Typical use |
 |---|---|---|---|
-| 3:1 | 4 weeks | 3 load weeks + 1 deload | Default / robust |
+| 3:1 | 4 weeks | 3 load weeks + 1 deload | Scenario/Macro default when no constraints |
 | 2:1 | 3 weeks | 2 load weeks + 1 deload | Time-crunched or high intensity |
 | 2:1:1 | 4 weeks | 2 load + 1 deload + 1 reload | Masters / lower recovery bandwidth |
 
@@ -250,8 +250,12 @@ Mapping:
 ```
 
 #### 3.3.4 Selection heuristics (agent-safe defaults)
-Agents SHOULD:
-- default to **3:1**
+**Scope note (binding):** Cadence selection belongs to **Scenario/Macro**.
+Meso MUST use `deload_cadence` and `phase_length_weeks` from Scenario/Macro
+and MUST NOT apply its own default cadence.
+
+Scenario/Macro agents SHOULD:
+- default to **3:1** (only at Scenario/Macro selection time, not at Meso)
 - select **2:1** when:
   - intensity density is high, or
   - the calendar is constrained (see below), or
@@ -378,22 +382,22 @@ Intensity distribution describes how weekly work is distributed across intensiti
 ### 4.6.1 Terms (precise and practical)
 
 - **Polarized:** very high low intensity (Z1/Z2), little moderate work, and a small, targeted share of high intensity (VO2 and above threshold).
-- **Pyramidal:** high low intensity, a larger share of moderate work (Tempo/SST/Threshold), little high intensity.
+- **Pyramidal:** high low intensity, a larger share of moderate work (Tempo/SWEET_SPOT/Threshold), little high intensity.
 
-Both models rely on high LIT proportions; the difference is **how much middle** (Tempo/SST/Threshold) is used.
+Both models rely on high LIT proportions; the difference is **how much middle** (Tempo/SWEET_SPOT/Threshold) is used.
 
 ### 4.6.2 Which is more appropriate - polarized or pyramidal?
 
 In an ultra/brevet durability-first system, the default answer is:
 
-- **Base/General build:** more **pyramidal-leaning** (high LIT, dosed Tempo/SST as an economical race-adjacent stimulus, little HI).
+- **Base/General build:** more **pyramidal-leaning** (high LIT, dosed Tempo/SWEET_SPOT as an economical race-adjacent stimulus, little HI).
 - **Build/Performance sharpening:** more **polarized** (LIT stays high, moderate density is capped, 1-2 high-quality HI sessions when recovered).
 
 Rationale (system logic and evidence alignment):
 
 - Durability depends on **LIT dominance** and the ability to keep quality stable under preload; too much moderate work raises overall fatigue and blurs intensity separation.
 - HIIT is effective for ceiling/VO2, but in ultra contexts it is only a support capacity and must remain recovery-compatible.
-- Moderate contents (Tempo/SST) can improve economy near brevet pace, but must not compromise long, stable work.
+- Moderate contents (Tempo/SWEET_SPOT) can improve economy near brevet pace, but must not compromise long, stable work.
 
 ### 4.6.3 What must be followed - decision rules (policy)
 
@@ -403,11 +407,11 @@ Regardless of polarized or pyramidal, the weekly architecture must ensure long, 
 **Rule 2: Choose the model based on the limiting factor**
 
 - If the limiting factor is **aerobic ceiling/VO2** and Z2 base is stable - **polarized**.
-- If the limiting factor is **economy/race pace comfort** (long steady efforts feel costly) - **pyramidal-leaning** with dosed Tempo/SST.
+- If the limiting factor is **economy/race pace comfort** (long steady efforts feel costly) - **pyramidal-leaning** with dosed Tempo/SWEET_SPOT.
 - If the limiting factor is **recovery/stress/masters recovery** - **more polarized in the sense of more easy, less middle**, and HI rarely or in very small doses.
 
 **Rule 3: The middle is a budget, not a default**
-Moderate intensity (Tempo/SST/Threshold) is treated as a budget:
+Moderate intensity (Tempo/SWEET_SPOT/Threshold) is treated as a budget:
 
 - used when it has a clear purpose (economy, longer steady stability, event-specific pace)
 - reduced once it degrades HI quality or LIT consistency

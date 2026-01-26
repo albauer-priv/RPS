@@ -48,6 +48,21 @@ def _load_season_brief(athlete_root: Path, year: int) -> tuple[str, str]:
     return str(best), best.read_text(encoding="utf-8")
 
 
+def _load_load_estimation_spec_macro() -> tuple[str, str]:
+    path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
+    if not path.exists():
+        raise FileNotFoundError(f"LoadEstimationSpec not found at {path}.")
+    content = path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+    end = None
+    for i, line in enumerate(lines):
+        if line.startswith("## Meso"):
+            end = i
+            break
+    section = "\n".join(lines[:end]).strip() if end else content
+    return str(path), section
+
+
 def _runtime(agent_name: str | None = None) -> tuple[AgentRuntime, AppSettings]:
     load_env_file(ROOT / ".env")
     settings = load_app_settings()
@@ -262,7 +277,8 @@ def run_scenarios(args: argparse.Namespace) -> int:
         "Set meta.owner_agent to Season-Scenario-Agent, meta.schema_id to SeasonScenariosInterface, "
         "and meta.authority to Informational. "
         "Include all required scenario_guidance fields (even if empty arrays) and data.notes array. "
-        "Output the SEASON_SCENARIOS JSON now and call store_season_scenarios."
+        "Call store_season_scenarios with a top-level {meta, data} envelope only. "
+        "Do NOT output raw JSON in chat."
     )
 
     model_override = args.model or settings.model_for_agent(spec.name)
@@ -383,8 +399,17 @@ def run_overview(args: argparse.Namespace) -> int:
             f"{args.moving_time_rate_band}' when deriving weekly kJ corridors. "
         )
 
+    try:
+        spec_path, spec_content = _load_load_estimation_spec_macro()
+        spec_block = (
+            "LoadEstimationSpec (Macro section; loaded from "
+            f"{spec_path}):\n\"\"\"\n{spec_content}\n\"\"\"\n"
+        )
+    except FileNotFoundError as exc:
+        spec_block = f"LoadEstimationSpec missing: {exc}\n"
+
     user_input = (
-        f"Scenario {scenario}. Mode A. Output the MACRO_OVERVIEW JSON now. "
+        f"Scenario {scenario}. Mode A. Create and store the MACRO_OVERVIEW via the store tool. "
         "Set meta.schema_id exactly to MacroOverviewInterface, "
         "meta.schema_version to 1.0, authority to Binding, owner_agent to Macro-Planner. "
         "Use workspace_get_input for season brief. "
@@ -399,15 +424,17 @@ def run_overview(args: argparse.Namespace) -> int:
         "only inside overview, never at phase top level. allowed_forbidden_semantics must "
         "only include allowed_intensity_domains, allowed_load_modalities, forbidden_intensity_domains "
         "(do NOT add forbidden_load_modalities). "
-        "Return a single JSON envelope with top-level {\"meta\": ..., \"data\": ...} only. "
+        "Phase weekly_load_corridor MUST be an object with a single key weekly_kj; "
+        "weekly_kj must include min, max, kj_per_kg_min, kj_per_kg_max, and notes. "
+        "Call store_macro_overview with a top-level {\"meta\": ..., \"data\": ...} envelope only. "
         "Meta must include iso_week (YYYY-WW) and iso_week_range as an object with from/to "
         "NO: iso_week_range must be a string pattern YYYY-WW--YYYY-WW (not an object). "
         "Phase iso_week_range must use the same string pattern. "
         "Do not add any extra keys at phase level (e.g., no 'notes'). "
-        "Output MUST be a single JSON object and nothing else "
-        "(no prose, no markdown). If a store call fails, output only the same JSON envelope."
+        "Do NOT output raw JSON in chat."
         f"{events_line}"
         f"{trace_line}"
+        f"{spec_block}"
         f"{scenario_block}"
         "Call store_macro_overview with the JSON envelope (meta + data) only."
     )
@@ -514,7 +541,7 @@ def build_parser() -> argparse.ArgumentParser:
     base.add_argument("--week", type=int, required=True)
     base.add_argument("--run-id", required=True)
     base.add_argument("--model")
-    base.add_argument("--max-num-results", type=int, default=1)
+    base.add_argument("--max-num-results", type=int, default=20)
     base.add_argument("--no-file-search", action="store_true")
 
     scen = subparsers.add_parser("scenarios", parents=[base])

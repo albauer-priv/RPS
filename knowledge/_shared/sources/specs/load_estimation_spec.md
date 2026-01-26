@@ -19,18 +19,18 @@ Dependencies:
 
 Notes: >
   Defines binding rules and formulas for estimating training load.
-  kJ is the primary planning and governance metric.
+  Energy anchor = planned_kJ; governance metric = planned_Load_kJ.
 ---
 
 # load_estimation_spec (kJ-first)
 
 This specification defines **how to estimate training load** for planning and governance in RPS.
-Primary steering metric is **kJ**.
 
-**Key idea:**  
-- **planned_kJ** captures mechanical work / fueling demand (energy anchor).
-- **planned_Load_kJ** is the stress‑weighted load used for governance.
-> **Terminology note:** When templates or corridors say “Weekly kJ”, they mean
+**Key idea (normative):**
+- **Energy anchor:** `planned_kJ` (mechanical work / fueling demand).
+- **Governance metric:** `planned_Load_kJ` (stress‑weighted load used for constraints).
+
+> **Terminology note (binding):** When templates or corridors say “Weekly kJ”, they mean
 > **planned_Load_kJ_week** (stress‑weighted load used for governance).
 > Mechanical `planned_kJ_week` remains the energy/fueling anchor.
 
@@ -45,416 +45,324 @@ schemas (e.g., `workouts_plan.schema.json`, `block_governance.schema.json`).
 This spec defines calculations and decision rules only. If there is any
 structure mismatch, the schema prevails.
 
-## 1) Definitions
-
-### 1.1 Inputs (minimum)
-- `FTP_W` : Functional Threshold Power in watts.
-- `ZoneModelVersion` : exact version string of the zone model used.
-- Planned session structure as a list of segments:
-  - `segment_minutes`
-  - `segment_domain` (ENDURANCE / TEMPO / SST / VO2MAX / RECOVERY / etc.)
-  - `segment_IF` (optional; if omitted, use defaults from zone model)
-
-### 1.2 planned_kJ (Mechanical Work)
-
-`planned_kJ` is the planned **mechanical work** (unweighted):
-- energy / fueling anchor
-- volume reality check
-- not stress‑weighted
-
-### 1.3 planned_IF (Intensity Factor)
-
-`planned_IF` is the planned session intensity factor (dimensionless).
-It characterizes intensity and is used only once in the load formula.
-
-### 1.4 planned_Load_kJ (Stress-Weighted Load Metric)
-
-`planned_Load_kJ` is the stress‑weighted load metric for:
-- weekly governance bands
-- progression decisions
-- overload / deload gating
-
-### 1.3 Outputs
-Per session:
-- `planned_kJ` (mechanical)
-- `planned_Load_kJ`   # stress‑weighted kJ (governance metric)
-- `planned_IF_adj` (planned_IF, session‑level)
-- `kJ_confidence` (HIGH/MED/LOW)
-
-Per week / block:
-- sums and bands (`planned_kJ_week`, `planned_Load_kJ_week`)
-- compliance flags vs guardrails (bands refer to `planned_Load_kJ_week`).
-
 ---
 
-## 2) Priority Rule (kJ-first)
+## General
 
-1) All governance bands **must exist in planned_Load_kJ** (weekly and/or per key session).
-2) Agents MUST NOT “fix” load by inflating intensity; load is corrected primarily via **duration/volume** adjustments.
+This section defines the **general, binding** load estimation rules shared by all layers.
 
-Mechanical `planned_kJ_week` remains the energy anchor.
-When a template or corridor says “Weekly kJ”, interpret it as `planned_Load_kJ_week`.
+### G1) Glossary and invariants (binding)
+- `planned_kJ`: mechanical work (unweighted). **Energy anchor.**
+- `planned_IF`: session intensity factor (dimensionless). Derived from segments.
+- `planned_Load_kJ`: stress‑weighted load metric for governance.
+- `weekly_kj_bands`: **always** a corridor in `planned_Load_kJ_week`.
 
----
+**Invariant:** IF is applied **exactly once** (only in `planned_Load_kJ`).
 
-## 3) kJ Estimation (primary)
+### G2) Minimum inputs (binding)
+- `FTP_W` (from Zone Model)
+- `ZoneModelVersion` (exact version string)
+- Planned session structure as segments:
+  - `t_i_sec` (seconds)
+  - `r_i` (target factor vs FTP)
+- optional domain/intent label (ENDURANCE_LOW / ENDURANCE_HIGH / TEMPO / SWEET_SPOT / VO2MAX / RECOVERY / etc.)
 
-Primary planning input is target_kJ_per_session
-(or derived from target_duration × domain power).
+### G3) Segment interpretation rules (binding)
+- **%FTP:** `r_i = pct/100`
+- **range target:** `r_i = (low + high) / 2`
+- **domain label only:** map to a default IF for that domain and treat as `r_i`
+  (zone model typical IF preferred; fallback table otherwise)
+  
+Determinism rule:
+- If the workout is **segment‑structured** and a segment lacks %FTP but has a
+  domain label → map **per‑segment** `r_i` using defaults.
+- If the workout has **no segment structure** and only an intent/domain →
+  use **Fallback mode** (G5), not per‑segment mapping.
 
-Intensity (IF) is used only to shape how kJ is accumulated,
-not to define kJ.
+### G4) Core formulas (binding)
+1) **Mechanical work**
+   - `r_mean = Σ(t_i × r_i) / Σ(t_i)`
+   - `planned_kJ = (FTP_W × r_mean × T_sec) / 1000`
 
-**Mechanical work definition (session):**
-- Let each segment have duration `t_i` (seconds) and target factor `r_i` (relative to FTP).
-- Compute the time‑weighted mean factor:
-  - `r_mean = Σ(t_i × r_i) / Σ(t_i)`
-- Then:
-  - `planned_kJ = (FTP_W × r_mean × T_sec) / 1000`
+2) **Session IF (NP‑like, p=4)**
+   - `r_eq = ( Σ(t_i × r_i^p) / Σ(t_i) )^(1/p)` with `p = 4`
+   - `planned_IF = clamp(r_eq, 0.0, 1.3)`
 
+3) **Stress‑weighted load**
+   - `planned_Load_kJ = planned_kJ × planned_IF^α`
+   - `α = 1.3` (global from this spec)
 
-Estimate AvgPower from:
-- target duration
-- typical power for the domain (from zone model)
+### G5) Fallback mode (IF‑direct) — binding
+Use only when segments are missing/unparseable or intent‑only.
+- `planned_IF = IF_default(intent/domain)`
+- `planned_kJ = (FTP_W × planned_IF × T_sec) / 1000`
+- `planned_Load_kJ = planned_kJ × planned_IF^α`
 
-IF is derived secondarily as:
-IF = AvgPower / FTP
+### G6) Parsing, clamps, and edge cases (binding)
+- `T_sec ≥ 0`. If `T_sec = 0`, then `planned_kJ = planned_Load_kJ = 0`.
+- Clamp `r_i` to `[0.0, 1.5]` before applying `r_i^p`.
+- Clamp `planned_IF_raw` to `[0.0, 1.3]` **before** computing `planned_Load_kJ`.
+- If `workout_text` exists but **no valid segments** can be extracted, use
+  **Fallback mode** based on workout intent; if intent missing, default to ENDURANCE_LOW.
+- If `Σ(t_i) = 0` (all segment durations zero): set `planned_IF = 0`, `planned_kJ = 0`,
+  `planned_Load_kJ = 0`.
+- Mixed notation segments (some %FTP, some zone/label): map all segments; do not skip.
 
-
-### 3.1 Ground truth (if AvgPower is known)
-If you already have/assume an average power:
-- `kJ = AvgPower_W × duration_seconds / 1000`
-
-### 3.2 Fallback estimation (IF-based, kJ-unknown)
-
-This method MUST ONLY be used if no target_kJ
-or target_duration is available.
-
-We estimate average power from planned intensity:
-
-1) Estimate segment normalized power proxy:
-- `NP_i ≈ IF_i × FTP_W`
-
-2) Convert to segment average power proxy:
-- `Avg_i ≈ NP_i × r_i`
-
-Where `r_i` is a variability/structure factor (Avg-to-NP ratio).
-
-3) Segment kJ:
-- `kJ_i = Avg_i × (segment_minutes × 60) / 1000`
-
-4) Session kJ:
-- `planned_kJ = Σ kJ_i`
-
-### 3.3 planned_IF derivation (preferred)
-
-When workout segments are available, derive a **planned_IF** that reflects
-interval variability without double‑counting intensity:
-
-1) Compute a power‑mean factor (NP‑like):
-- `r_eq = ( Σ(t_i × r_i^p) / Σ(t_i) )^(1/p)`
-- Use `p = 4` (fixed constant) unless overridden by LoadEstimationSpec.
-
-2) Set:
-- `planned_IF = r_eq`
-
-This keeps `planned_kJ` linear in `r_mean` while `planned_IF` captures variability.
-
-### 3.4 Range targets (deterministic midpoint)
-If a segment specifies a **range** (e.g., 0.88–0.94), set:
-- `r_i = (low + high) / 2`
-
-Do not bias toward the top or bottom of the range unless an explicit
-target is provided.
-
-### 3.5 Safety clamps (normative)
-Before exponentiation or aggregation, clamp inputs to avoid pathological values:
-- `T_sec ≥ 0` (if `T_sec = 0`, then planned_kJ = planned_Load_kJ = 0)
-- `r_i` clamped to `[0.0, 1.5]` unless a sport‑specific override exists
-- `planned_IF` clamped to `[0.0, 1.3]` unless a sport‑specific override exists
-
-### 3.6 Segment parsing edge cases (normative)
-- If `workout_text` exists but **no valid segments** can be extracted
-  (parse error or empty list), use **Fallback mode** (Section 5) based on
-  the workout intent. If intent is missing, default to `ENDURANCE`.
-- If `Σ(t_i) = 0` (all segment durations are zero):
-  - set `planned_IF = 0`
-  - set `planned_kJ = 0`
-  - set `planned_Load_kJ = 0`
-- If segments are **mixed notation** (some %FTP, some zone/label):
-  - map zone/label segments to `r_i` using the default IF for that domain
-    (zone model typical IF or fallback table),
-  - include those segments in `Σ(t_i)` and in the power‑mean calculation,
-  - do NOT skip unlabeled segments.
-
-### 3.7 Unit conventions (normative)
-- Segment duration `t_i` and total duration `T_sec` are **seconds**.
+### G7) Unit conventions (binding)
+- `t_i` and `T_sec` are **seconds**.
 - FTP is **watts**.
 - `planned_kJ = (W × seconds) / 1000`.
-- `planned_minutes` in the plan is minutes, but conversions to seconds MUST
-  multiply by 60 before kJ calculation.
+- `planned_minutes` is minutes; convert to seconds before load calculation.
 
-### 3.8 Clamp order (normative)
-- Clamp `r_i` **before** applying `r_i^p` in the power‑mean.
-- Compute `planned_IF_raw`, then clamp `planned_IF_raw` **before** computing
-  `planned_Load_kJ`.
-- `planned_Load_kJ` MUST use the **clamped** `planned_IF_raw`.
-
----
-
-## 4) kJ-based Load Estimation (primary)
-
-planned_Load_kJ is computed as:
-
-planned_Load_kJ = planned_kJ × IF^α
-IF = planned_IF_adj (session-level intensity factor)
-
-
-Where:
-- α defaults to 1.3
-- α may be adjusted per sport or athlete profile
-- α MUST be constant within a block
-
-
-Weekly progression, overload and deload decisions
-MUST be based on planned_Load_kJ_week,
-not on any secondary stress metric.
-
-
----
-
-## 5) Default IF values (from zone model)
-
-Agents should pull default typical IF values from the active zone model.
-If the zone model provides typical IFs such as:
-- ENDURANCE: 0.68
-- TEMPO: 0.83
-- SST: 0.92
-- VO2MAX: 1.12
-(illustrative; use the file as source of truth)
-
-Then for a segment with only a domain label:
-- `IF_i = IF_typical(domain)`
-
-If the zone model does not provide typical IF defaults, use this deterministic fallback:
+### G8) Default IF values (binding fallback table)
+Use Zone Model typical IF values when available. If absent, use:
 
 | Domain / Intent | planned_IF default |
 | --- | ---: |
 | REST / OFF | 0.000 |
 | RECOVERY | 0.55 |
-| ENDURANCE | 0.65 |
-| ENDURANCE+ | 0.70 |
+| ENDURANCE_LOW | 0.65 |
+| ENDURANCE_HIGH | 0.70 |
 | TEMPO | 0.80 |
-| SWEET SPOT | 0.90 |
+| SWEET_SPOT | 0.90 |
 | THRESHOLD | 1.00 |
 | VO2MAX | 1.10 |
 | ANAEROBIC / SPRINT | 1.15 |
 
-**Fallback mode (normative):** The table above supplies **planned_IF directly**
-(not r_i). When using this fallback:
-- set `planned_IF = IF_default`
-- compute `planned_kJ = (FTP × planned_IF × T_sec) / 1000`
+Canonical domain identifiers (binding):
+- `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`,
+  `VO2MAX`, `ANAEROBIC`, `REST`.
+- Aliases (normalize on read): `VO2` → `VO2MAX`, `SWEET SPOT` → `SWEET_SPOT`,
+  `OFF` → `REST`, `ENDURANCE+` → `ENDURANCE_HIGH`, `ENDURANCE` → `ENDURANCE_LOW`.
 
----
-
-## 6) Default variability factors r_i (Avg-to-NP)
-
-Because NP ≥ AvgPower when variability exists, we define conservative defaults:
-
-### 6.1 r_i table (defaults)
-- RECOVERY / ENDURANCE steady: `r = 0.97`  
-- TEMPO steady-ish: `r = 0.95`  
-- SST / Threshold-like: `r = 0.92`  
-- VO2MAX intervals: `r = 0.88`  
-- Highly stochastic (race/event): `r = 0.90` (override recommended)
-
-**Rules:**
-- If a workout is explicitly “steady” (continuous, low-variability), you MAY set `r` closer to 1.00.
-- If a workout contains hard/soft repeats, keep r conservative.
-- r is a *planning heuristic*; do not overfit.
-
-### 6.2 Confidence scoring for kJ
-Set `kJ_confidence`:
-- HIGH: steady sessions, clear duration, domain stable, r well-matched
-- MED: mixed session but segment split is clear
-- LOW: unclear structure, uncertain FTP, event-like variability, missing segment split
-
----
-
-## 7) Weekly band interpretation & rounding
-
-### 7.1 Governance interpretation
-`weekly_kj_bands` refer to **planned_Load_kJ_week** (stress‑weighted).
-Mechanical `planned_kJ_week` remains the energy anchor for fueling and volume reality checks.
-
-### 7.2 Rounding rules (output)
+### G9) Rounding rules (output only, binding)
 Compute using **unrounded** floats and round only at output:
 - `planned_IF_out = round(planned_IF_raw, 3)`
 - `planned_kJ_out = int(round(planned_kJ_raw))`
 - `planned_Load_kJ_out = int(round(planned_kJ_raw * planned_IF_raw**α))`
 
 Do NOT round `planned_IF` before computing `planned_Load_kJ`.
-Store `planned_kJ_out` and `planned_Load_kJ_out` as 64‑bit integers
-or a safe integer type to avoid overflow in large weeks.
+Store `planned_kJ_out` and `planned_Load_kJ_out` as 64‑bit integers (or safe int).
 
-### 7.3 Optional weekly distribution policy (non‑binding)
-If a **Load Distribution Policy** is provided (optional), it may define
-day‑weighting rules for distributing weekly planned_Load_kJ across the week.
-This policy is advisory only and MUST NOT override governance bands.
-
----
-
-## 8) α source of truth (normative)
-`α` MUST come from LoadEstimationSpec (global default).
-It may only be overridden by an explicit governance artefact if such a field
-is introduced; otherwise treat it as constant for all weeks.
-
----
-
-## 9) Practical workflow per agent
-
-### 8.1 Macro-Planner (8–32 weeks)
-Macro does NOT estimate per-session. Macro produces:
-- `kJ_week_band` per phase (min–max)
-- constraints: allowed domains, max QUALITY density, protected recovery
-
-Macro inputs:
-- past IST trends (kJ/week) + event calendar + phase objective
-Macro outputs:
-- **bands**, never point targets.
-
-### 8.2 Meso-Architect (4 weeks)
-Block sets block-level guardrails:
-- `kJ_week_band` for each week (or for the block with week-level notes)
-- max QUALITY days/week, allowed domains, modality rules (e.g., K3 allowed)
-
-Meso-Architect must ensure:
-- the Micro-Planner can satisfy the kJ bands using *volume* adjustments,
-  without forcing forbidden domains.
-
-### 8.3 Micro-Planner (weekly ops + workouts)
-
-Micro estimates per workout:
-- planned_kJ (volume target)
-- planned_Load_kJ (stress)
-
-Micro adjusts volume to hit kJ targets
-and intensity distribution to keep Load within guardrails.
-
-
-Micro must not:
-- invent new QUALITY to “hit kJ”.
-
----
-
-## 9) Worked examples (template)
-
-### Example A: 2h ENDURANCE (steady)
-Inputs:
-- FTP=300W
-- duration=120min
-- domain=ENDURANCE (IF default 0.65)
-- r=0.97 (steady)
-
-Steps:
-1) r_mean = 0.65
-2) planned_kJ = (300 × 0.65 × 7200) / 1000 = 1404 kJ
-3) planned_IF = 0.65 (steady; r_eq = r_mean)
-4) planned_Load_kJ = 1404 × 0.65^1.3 ≈ 802 kJ
-
-Compute:
-- NP = IF×FTP
-- Avg = NP×r
-- kJ = Avg×7200/1000
-
-### Example B: SST session with warm-up/cool-down
-Segments:
-- 20min ENDURANCE
-- 60min SST (steady)
-- 20min ENDURANCE
-
-Compute:
-- IF_adj via IF^4 weighting
-- planned_kJ via segment kJ sum
-
-### Example C: VO2MAX intervals
-Segments:
-- 20min ENDURANCE
-- 40min VO2MAX (interval block)
-- 20min ENDURANCE
-Use:
-- r=0.88 for VO2MAX segment
-
-(Use actual typical IFs from the zone model file.)
-
----
-
-## 10) Compliance & traceability requirements
-
-Every artefact that reports kJ MUST include:
-- `FTP_W` used (or “unknown” + STOP if required)
+### G10) Traceability flags (binding)
+When the target schema supports it, include:
+- `FTP_W`
 - `ZoneModelVersion`
-- `load_estimation_spec`
-- Whether kJ is estimated from AvgPower or from IF+r
+- `LoadEstimationSpecVersion`
+- `used_fallback_IF_direct` (bool)
+- `segment_parse_status` (`OK` / `FAIL`)
 
-Weekly reports MUST include both:
-- planned_kJ_week
-- planned_Load_kJ_week
+If the schema has no explicit fields, record them in `meta.notes` or another
+schema‑compliant trace field. Do not invent new fields.
 
-Reporting one without the other is non-compliant.
+### G11) α source of truth (binding)
+`α` MUST come from LoadEstimationSpec (global default).
+No overrides exist unless an explicit override artefact is introduced.
 
-If required inputs are missing:
-- Micro-Planner must STOP with `E_BLOCK_INPUT_EMPTY` (or a dedicated `E_LOAD_INPUT_MISSING` if you add it to ERROR_CODES).
+### G12) Micro‑Planner responsibilities (binding constraints)
+- Produce 7‑day `WORKOUTS_PLAN` such that:
+  - `sum(planned_Load_kJ_day)` is within `weekly_kj_bands[w]`.
+  - Allowed domains are respected.
+  - No new rules are invented; only allocate duration/intensity within constraints.
+- Adjust primarily via **duration** for ENDURANCE_LOW/ENDURANCE_HIGH/RECOVERY; do not invent intensity.
+- Restdays produce zero load fields.
+
+Micro STOP conditions:
+- Weekly band missing → STOP.
+- Weekly band infeasible under availability → STOP and report.
+- Attempt to schedule forbidden domains → STOP.
+
+### G13) Determinism & audit checklist (binding)
+- No stochastic choices; all defaults are deterministic.
+- Every fallback usage MUST set `used_fallback_IF_direct = true`.
+- Weekly band derivation SHOULD emit (or log) a debug bundle when schema allows:
+  `macro_band`, `feasible_band`, `kpi_load_band`, `progression_band`, `final_band`.
+
+### G14) Minimal test matrix (recommended)
+1) All ENDURANCE_LOW segments, 2h, FTP known → IF=0.65, kJ, Load check.
+2) Mixed intervals with ranges → midpoint rule.
+3) Unparseable workout_text with intent TEMPO → IF‑direct.
+4) Allowed domains exclude ENDURANCE_LOW/ENDURANCE_HIGH → IF_ref selection uses median/other rule.
+5) Availability too low vs macro_min → infeasible_corridor STOP.
+6) Progression guardrail conflict → progression_guardrail_conflict STOP.
 
 ---
 
-## 11) Estimation Confidence Classification (Binding)
+## Macro spezifisch
 
-**Purpose:**
-Classify the reliability of kJ load estimations per workout based on
-structural and intensity characteristics. Confidence is used for
-reporting, traceability, and downstream interpretation only.
-It MUST NOT be used for decision-making or governance overrides.
+This section defines how the Macro‑Planner derives **weekly planned_Load_kJ corridors**
+for each macro phase.
 
-### Confidence Levels
+### M1) Required inputs (binding)
+1) Season Brief (objectives, events, constraints)
+2) Season Scenarios + Scenario Selection
+3) KPI Profile (guardrails, moving‑time rate guidance kJ/kg/h)
+4) Activities Trend (weekly aggregates)
+5) Availability (weekly hours, rest days, travel risk)
+6) Wellness (body mass) **or** Season Brief body mass
+7) Macro Overview schema
 
-- HIGH
-  - steady-state workouts
-  - single dominant intensity domain
-  - no mixed or stochastic structure
-  - examples:
-    - ENDURANCE
-    - LONG
-    - RECOVERY
-    - OPTIONAL endurance
+If any required input is missing, STOP and request it (except body mass, see M2).
 
-- MED
-  - structured mixed-intensity workouts
-  - clearly bounded intensity blocks
-  - predictable distribution
-  - examples:
-    - SST
-    - TEMPO with recoveries
-    - VO2 with fixed work/rest
+### M2) Body mass (binding)
+- Primary source: Wellness `body_mass_kg`.
+- If missing, fall back to Season Brief body mass.
+- Only STOP if **both** sources are missing.
+- Use a robust reference (median of last 14–28 days) when available; document method.
+- If using Season Brief fallback, set `macro_assumption_body_mass_source = SEASON_BRIEF`
+  and emit a warning.
 
-- LOW
-  - stochastic or highly variable workouts
-  - race simulations
-  - variable pacing or intensity drift by design
-  - examples:
-    - RACE_PACE simulations
-    - free-ride equivalents
-    - highly variable group rides
+### M3) Availability → moving‑time capacity (macro‑only)
+- Use availability only to compute weekly moving‑time capacity:
+  - weekly hours total (exclude fixed rest days)
+  - apply a deterministic utilization factor
+- Do NOT build weekly schedules.
 
-### Binding Rules
+Utilization authority (binding):
+- Use `KPI.utilization_macro_default` if present, else default to `0.85`.
 
-- Confidence MUST be assigned per workout when kJ estimation is reported.
-- Confidence MUST NOT be aggregated or averaged.
-- Confidence MUST NOT influence planning decisions.
-- If classification is ambiguous:
-  → default to the LOWER confidence level.
+### M4) Baselines from Activities Trend (binding)
+- Build eligible weeks table (work_kj, moving_time, activity_count).
+- Exclude partial/anomalous weeks using explicit criteria; document exclusions.
+  Eligible week criteria (binding):
+  - `moving_time_hours >= 0.7 * median(moving_time_hours of last 12 candidate weeks)`
+  - `activity_count >= 2`
+- Use the most recent **8 eligible** weeks (from last 12) to compute baseline kJ range.
 
+### M5) Convert baseline to planned_Load_kJ (binding)
+Macro corridors MUST be expressed as planned_Load_kJ:
+- choose a phase‑level `phase_reference_IF` deterministically:
+  1) `Scenario.phase_reference_IF[phase]` if present
+  2) else by phase intent and allowed domains:
+     - Base → ENDURANCE_LOW (0.65)
+     - Build → TEMPO (0.80) or SWEET_SPOT (0.90) depending on scenario intensity allowance
+     - Peak → THRESHOLD (1.00) if allowed, else SWEET_SPOT (0.90)
+     - Taper → ENDURANCE_LOW (0.65) or RECOVERY (0.55)
+  3) clamp to `[0.0, 1.3]`
+- compute `planned_Load_kJ = planned_kJ × IF^α` (α from this spec),
+- document chosen IF in assumptions.
 
+If activities_trend is missing or unusable:
+- Use KPI guidance + availability only and flag uncertainty.
+
+Macro MUST NOT narrow weekly bands by feasibility/availability intersection.
+That narrowing is strictly Meso (see Meso section).
+
+### M6) Phase corridors (binding)
+- Base: center around baseline.
+- Build: shift toward ceiling indicator, respecting KPI guardrails.
+- Peak/Taper: lower corridor for freshness.
+
+### M7) Plausibility check (moving‑time rate guidance)
+Compute implied kJ/kg/h:
+`implied_kJ_kg_hr = weekly_kJ / (body_mass_kg * moving_time_capacity_hours)`
+
+If implied values consistently exceed KPI guidance:
+- emit a feasibility warning; Meso will narrow via intersection.
+
+Never turn this into weekly prescriptions.
+
+### M8) Scenario‑driven semantics (binding)
+Use selected scenario to set allowed/forbidden domains and modalities.
+Macro level only; no session detail.
+
+### M9) Global constraints & guardrails (binding)
+Populate:
+- `global_constraints.availability_assumptions` (weekly hours, travel risk)
+- `global_constraints.recovery_protection.fixed_rest_days`
+- `global_constraints.planned_event_windows` (Season Brief)
+- season load envelope and phase guardrails
+
+No numeric progression rules beyond KPI guardrails.
+
+---
+
+## Meso spezifisch
+
+This section defines how Meso derives **weekly_kj_bands** (planned_Load_kJ/week)
+by intersecting macro corridors with feasibility and KPI metabolic capacity.
+
+### S1) Inputs (per ISO week)
+1) Macro corridor (planned_Load_kJ/week)
+2) Availability hours
+3) FTP and IF defaults (Zone Model; fallback table from Section G8)
+4) Allowed domains (scenario/governance)
+5) KPI moving‑time rate band (kJ/kg/h)
+5a) `kpi_rate_band_selector` (LOW | MID | HIGH)
+6) α (this spec)
+7) Progression guardrails (optional)
+8) prev_planned_Load_kJ_week (optional)
+
+### S2) KPI band interpretation (binding)
+- KPI kJ/kg/h bands are **planned_kJ_per_kg_per_hour** (mechanical work rate).
+- They are **not** planned_Load_kJ/h.
+- Meso maps KPI mechanical kJ → Load via a single reference IF.
+
+### S3) Feasible load band (physics, binding)
+```
+T_cap_sec = availability_hours_w * 3600
+T_max = T_cap_sec * utilization_max (default 1.0)
+T_min = T_cap_sec * utilization_min (default 0.0)
+
+IF_max = min(max(IF(domain) for allowed_domains), 1.3)
+IF_min = max(min(IF(domain) for allowed_domains), 0.0)
+
+exponent = alpha + 1.0   # 2.3
+feasible_max = (ftp_w * T_max / 1000) * (IF_max ** exponent)
+feasible_min = (ftp_w * T_min / 1000) * (IF_min ** exponent)
+```
+Authority (binding): `utilization_min/max` MUST be read from KPI profile
+if present; otherwise defaults `(0.0, 1.0)` apply. No overrides exist unless
+KPI profile defines them.
+
+### S4) KPI band (mechanical → load, binding)
+```
+moving_time_capacity_hours = availability_hours_w * utilization_max
+kpi_kJ_min = band_min_kJkgph * body_mass_kg * moving_time_capacity_hours
+kpi_kJ_max = band_max_kJkgph * body_mass_kg * moving_time_capacity_hours
+```
+
+Band selection (binding):
+- `kpi_rate_band_selector` MUST come from Scenario or KPI profile if present.
+- If absent, default to `MID`.
+
+Reference IF for mapping (deterministic):
+1) `expected_weekly_avg_IF` if provided,
+2) else if ENDURANCE_LOW allowed → 0.65,
+3) else if ENDURANCE_HIGH allowed → 0.70,
+4) else median IF of allowed domains (excluding REST).
+
+Clamp `IF_ref` to `[IF_min, IF_max]` and `[0.0, 1.3]`.
+
+```
+kpi_load_min = kpi_kJ_min * (IF_ref ** alpha)
+kpi_load_max = kpi_kJ_max * (IF_ref ** alpha)
+```
+
+### S5) Final band (intersection, binding)
+```
+band_min = max(macro_min, feasible_min, kpi_load_min)
+band_max = min(macro_max, feasible_max, kpi_load_max)
+```
+
+Apply progression guardrails if present:
+```
+band_max = min(band_max, prev_load * (1 + max_weekly_increase_pct))
+band_min = max(band_min, prev_load * (1 - max_weekly_decrease_pct))
+```
+
+Round to integers at output.
+
+If `prev_planned_Load_kJ_week` is missing or ≤ 0, skip progression guardrails
+and emit a trace note (or debug bundle flag) indicating the skip.
+
+### S6) Stop conditions (binding)
+- missing_or_invalid_ftp
+- missing_body_mass_for_kpi_rate
+- no_allowed_domains
+- availability_negative
+- infeasible_corridor (band_min > band_max)
+- progression_guardrail_conflict
 
 ---
 

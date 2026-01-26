@@ -6,10 +6,10 @@ sources:
 - path: sources/contracts/meso__micro_contract.md
 - path: sources/contracts/micro__builder_contract.md
 - path: sources/policies/workout_policy.md
+- path: sources/policies/kpi_signal_effects_policy.md
 - path: sources/specs/agenda_enum_spec.md
 - path: sources/specs/load_estimation_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md
-- path: ../_shared/sources/specs/macro_load_corridor_policy.md
 - path: ../_shared/sources/specs/wellness_interface_spec.md
 - path: sources/specs/workouts/intervals_workout_ebnf.md
 - path: sources/specs/workouts/workout_json_spec.md

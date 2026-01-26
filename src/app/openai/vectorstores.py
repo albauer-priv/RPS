@@ -7,8 +7,11 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import random
 import re
-from typing import Any, Iterable
+import sys
+import time
+from typing import Any, Callable, Iterable
 
 import yaml
 
@@ -16,6 +19,40 @@ from app.openai.client import get_client
 from app.openai.vectorstore_state import update_state_for_store
 
 MANAGED_BY = "sync_vectorstores"
+_RETRY_ATTEMPTS = 5
+_RETRY_BASE_SECONDS = 0.5
+_RETRY_MAX_SECONDS = 6.0
+_TRANSIENT_STATUS = {429, 500, 502, 503, 504}
+
+
+def _is_transient_error(exc: Exception) -> bool:
+    status = getattr(exc, "status_code", None)
+    if status in _TRANSIENT_STATUS:
+        return True
+    code = getattr(exc, "code", None)
+    if code in {"server_error", "rate_limit_exceeded", "timeout"}:
+        return True
+    message = str(exc).lower()
+    if "server error" in message or "rate limit" in message or "timeout" in message:
+        return True
+    return False
+
+
+def _call_with_retry(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    for attempt in range(1, _RETRY_ATTEMPTS + 1):
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            if not _is_transient_error(exc) or attempt >= _RETRY_ATTEMPTS:
+                raise
+            delay = min(_RETRY_MAX_SECONDS, _RETRY_BASE_SECONDS * (2 ** (attempt - 1)))
+            delay += random.uniform(0, min(0.25, delay / 2))
+            print(
+                f"Vector store API error (attempt {attempt}/{_RETRY_ATTEMPTS}): {exc}. "
+                f"Retrying in {delay:.1f}s...",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
 
 
 @dataclass(frozen=True)
@@ -266,7 +303,7 @@ def list_vector_stores(client) -> Iterable:
     """Yield all vector stores via pagination."""
     after = None
     while True:
-        page = client.vector_stores.list(limit=100, after=after)
+        page = _call_with_retry(client.vector_stores.list, limit=100, after=after)
         for entry in page.data:
             yield entry
         if not getattr(page, "has_more", False):
@@ -278,7 +315,7 @@ def list_files(client) -> Iterable:
     """Yield all files via pagination."""
     after = None
     while True:
-        page = client.files.list(limit=100, after=after)
+        page = _call_with_retry(client.files.list, limit=100, after=after)
         for entry in page.data:
             yield entry
         if not getattr(page, "has_more", False):
@@ -291,7 +328,8 @@ def list_vector_store_files(client, vector_store_id: str) -> list:
     entries = []
     after = None
     while True:
-        page = client.vector_stores.files.list(
+        page = _call_with_retry(
+            client.vector_stores.files.list,
             vector_store_id=vector_store_id,
             limit=100,
             after=after,
@@ -329,7 +367,8 @@ def clear_vector_store_files(
         if not file_id:
             continue
         if not dry_run:
-            client.vector_stores.files.delete(
+            _call_with_retry(
+                client.vector_stores.files.delete,
                 vector_store_id=vector_store_id,
                 file_id=file_id,
             )
@@ -348,7 +387,8 @@ def ensure_vector_store_id(client, manifest: Manifest) -> str:
         if entry.name == manifest.vector_store_name:
             return entry.id
 
-    created = client.vector_stores.create(
+    created = _call_with_retry(
+        client.vector_stores.create,
         name=manifest.vector_store_name,
         metadata={"agent": manifest.agent},
     )
@@ -365,7 +405,7 @@ def build_remote_index(client, vector_store_id: str) -> dict[str, dict]:
         file_obj = None
         metadata: dict[str, Any] = {}
         if file_id:
-            file_obj = client.files.retrieve(file_id)
+            file_obj = _call_with_retry(client.files.retrieve, file_id)
             metadata = (getattr(file_obj, "metadata", {}) or {})
         source_path = (
             attributes.get("source_path")
@@ -405,7 +445,8 @@ def _attach_file(
     """Attach a file to a vector store, using file_batches when available."""
     if hasattr(client.vector_stores, "file_batches"):
         try:
-            client.vector_stores.file_batches.create_and_poll(
+            _call_with_retry(
+                client.vector_stores.file_batches.create_and_poll,
                 vector_store_id=vector_store_id,
                 files=[{"file_id": file_id, "attributes": attributes}],
             )
@@ -413,7 +454,8 @@ def _attach_file(
         except Exception:
             pass
 
-    client.vector_stores.files.create(
+    _call_with_retry(
+        client.vector_stores.files.create,
         vector_store_id=vector_store_id,
         file_id=file_id,
     )
@@ -427,11 +469,15 @@ def upload_source(
 ) -> tuple[str, str]:
     """Upload a source file and attach it to the vector store."""
     sha256 = compute_sha256(source_path)
-    with source_path.open("rb") as handle:
-        file_obj = client.files.create(
-            file=handle,
-            purpose="assistants",
-        )
+
+    def _create_file():
+        with source_path.open("rb") as handle:
+            return client.files.create(
+                file=handle,
+                purpose="assistants",
+            )
+
+    file_obj = _call_with_retry(_create_file)
 
     attributes = {
         "managed_by": MANAGED_BY,
@@ -513,7 +559,8 @@ def sync_manifest(
             if remote:
                 delete_id = remote.get("vs_file_id") or remote.get("file_id")
                 if delete_id:
-                    client.vector_stores.files.delete(
+                    _call_with_retry(
+                        client.vector_stores.files.delete,
                         vector_store_id=vector_store_id,
                         file_id=delete_id,
                     )
@@ -546,7 +593,8 @@ def sync_manifest(
             else:
                 delete_id = remote.get("vs_file_id") or remote.get("file_id")
                 if delete_id:
-                    client.vector_stores.files.delete(
+                    _call_with_retry(
+                        client.vector_stores.files.delete,
                         vector_store_id=vector_store_id,
                         file_id=delete_id,
                     )

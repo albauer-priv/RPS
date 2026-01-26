@@ -16,6 +16,7 @@ sources:
 - path: sources/policies/des_evaluation_policy.md
 - path: sources/policies/load_distribution_policy.md
 - path: sources/policies/workout_policy.md
+- path: sources/policies/kpi_signal_effects_policy.md
 - path: sources/principles/evidence_layer_durability.md
 - path: sources/principles/principles_durability_first_cycling.md
 - path: sources/schemas/bundled/activities_actual.schema.json
@@ -53,7 +54,6 @@ sources:
 - path: sources/specs/file_naming_spec.md
 - path: sources/specs/header_schema_spec.md
 - path: sources/specs/load_estimation_spec.md
-- path: sources/specs/macro_load_corridor_policy.md
 - path: sources/specs/macro_cycle_enum_spec.md
 - path: sources/specs/availability_interface_spec.md
 - path: sources/specs/season_brief_interface_spec.md
