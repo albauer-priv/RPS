@@ -645,6 +645,12 @@ def run_agent_multi_output(
     def _is_envelope(value: Any) -> bool:
         return isinstance(value, dict) and "meta" in value and "data" in value
 
+    def _format_heading_for_log(text: str) -> str:
+        stripped = text.lstrip()
+        if stripped.startswith(("**", "#")):
+            return f"\n{text}"
+        return text
+
     def _log_response_content(response_obj: Any, *, label: str) -> None:
         text_out = response_obj.output_text or extract_text_output(response_obj) or ""
         if not text_out:
@@ -653,7 +659,7 @@ def run_agent_multi_output(
         trimmed = text_out.strip()
         if len(trimmed) > max_chars:
             trimmed = trimmed[:max_chars] + "…"
-        logger.warning("Model response text (%s): %s", label, trimmed)
+        logger.warning("Model response text (%s): %s", label, _format_heading_for_log(trimmed))
 
     def _log_no_tool_call_summary(
         response_obj: Any,
@@ -722,7 +728,7 @@ def run_agent_multi_output(
         if summary in seen_summaries:
             continue
         seen_summaries.add(summary)
-        logger.info("Reasoning summary: %s", summary)
+        logger.info("Reasoning summary: %s", _format_heading_for_log(summary))
     input_list += response.output
     force_search = False
 
@@ -797,7 +803,7 @@ def run_agent_multi_output(
                         if summary in seen_summaries:
                             continue
                         seen_summaries.add(summary)
-                        logger.info("Reasoning summary: %s", summary)
+                        logger.info("Reasoning summary: %s", _format_heading_for_log(summary))
                     input_list += response.output
                     continue
             if (
@@ -977,7 +983,7 @@ def run_agent_multi_output(
             if summary in seen_summaries:
                 continue
             seen_summaries.add(summary)
-            logger.info("Reasoning summary: %s", summary)
+            logger.info("Reasoning summary: %s", _format_heading_for_log(summary))
         input_list += response.output
     if debug_file_search:
         _log_file_search_calls(response)
@@ -986,5 +992,5 @@ def run_agent_multi_output(
             if summary in seen_summaries:
                 continue
             seen_summaries.add(summary)
-            logger.info("Reasoning summary: %s", summary)
+            logger.info("Reasoning summary: %s", _format_heading_for_log(summary))
         input_list += response.output

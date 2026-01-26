@@ -108,6 +108,9 @@
     },
     "notes": {
       "type": "string"
+    },
+    "data_confidence": {
+      "$ref": "data_confidence.schema.json"
     }
   }
 }

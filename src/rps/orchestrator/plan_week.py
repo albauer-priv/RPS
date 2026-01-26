@@ -30,6 +30,22 @@ ROOT = Path(__file__).resolve().parents[3]
 INJECTION_CONFIG = ROOT / "config" / "agent_knowledge_injection.yaml"
 
 
+def _format_screen_text(text: str) -> str:
+    """Insert a blank line before markdown-style headings for readability."""
+    lines = text.splitlines()
+    formatted: list[str] = []
+    for line in lines:
+        is_heading = line.startswith("**") or line.startswith("#")
+        if is_heading and formatted and formatted[-1] != "":
+            formatted.append("")
+        formatted.append(line)
+    return "\n".join(formatted)
+
+
+def _log(message: str, level: int = logging.INFO) -> None:
+    log_and_print(logger, _format_screen_text(message), level)
+
+
 def _extract_general_and_meso(spec_text: str) -> str:
     """Return General + Meso sections, skipping Macro section when present."""
     lines = spec_text.splitlines()
@@ -152,7 +168,7 @@ def plan_week(
     target_label = f"{year:04d}-{week:02d}"
 
     message = f"Plan-week start for ISO week {target_label} (athlete={athlete_id})."
-    log_and_print(logger, message)
+    _log(message)
 
     def runtime_for(agent_name: str) -> AgentRuntime:
         if not reasoning_effort_resolver and not reasoning_summary_resolver:
@@ -165,7 +181,7 @@ def plan_week(
 
     if not workspace.latest_exists(ArtifactType.MACRO_OVERVIEW):
         message = "Macro Overview NOT FOUND. Run macro planning first."
-        log_and_print(logger, message, logging.ERROR)
+        _log(message, logging.ERROR)
         steps.append(
             {
                 "agent": "macro_planner",
@@ -183,7 +199,7 @@ def plan_week(
             "Macro Overview NOT FOUND for target week "
             f"{target_label} (macro iso_week_range={range_label})."
         )
-        log_and_print(logger, message, logging.ERROR)
+        _log(message, logging.ERROR)
         steps.append(
             {
                 "agent": "macro_planner",
@@ -200,7 +216,7 @@ def plan_week(
     phase_info = resolve_macro_phase_info(macro, target)
     if not phase_info:
         message = f"Matching Phase NOT FOUND in Macro Overview for {target_label}."
-        log_and_print(logger, message, logging.ERROR)
+        _log(message, logging.ERROR)
         steps.append(
             {
                 "agent": "macro_planner",
@@ -218,7 +234,7 @@ def plan_week(
         f"Phase {phase_info.phase_id} ({phase_name or phase_type or 'unknown'}) "
         f"iso_week_range: {phase_info.phase_range.range_key}"
     )
-    log_and_print(logger, message)
+    _log(message)
 
     block_range = phase_info.phase_range
     block_range_label = block_range.range_key
@@ -289,26 +305,26 @@ def plan_week(
     meso_tasks: list[AgentTask] = []
     if not needs_block_gov:
         message = f"Found BLOCK_GOVERNANCE for block range {block_range_label}."
-        log_and_print(logger, message)
+        _log(message)
     else:
         message = f"BLOCK_GOVERNANCE missing/stale for block range {block_range_label}. Will create."
-        log_and_print(logger, message)
+        _log(message)
         meso_tasks.append(AgentTask.CREATE_BLOCK_GOVERNANCE)
 
     if not needs_block_arch:
         message = f"Found BLOCK_EXECUTION_ARCH for block range {block_range_label}."
-        log_and_print(logger, message)
+        _log(message)
     else:
         message = f"BLOCK_EXECUTION_ARCH missing/stale for block range {block_range_label}. Will create."
-        log_and_print(logger, message)
+        _log(message)
         meso_tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_ARCH)
 
     if not needs_block_preview:
         message = f"Found BLOCK_EXECUTION_PREVIEW for block range {block_range_label}."
-        log_and_print(logger, message)
+        _log(message)
     else:
         message = f"BLOCK_EXECUTION_PREVIEW missing/stale for block range {block_range_label}. Will create."
-        log_and_print(logger, message)
+        _log(message)
         meso_tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW)
 
     if meso_tasks:
@@ -316,7 +332,7 @@ def plan_week(
         injected_block = _build_injection_block("meso_architect")
         for task in meso_tasks:
             message = f"Running Meso-Architect task {task.value} for block range {block_range_label}."
-            log_and_print(logger, message)
+            _log(message)
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,
@@ -338,7 +354,7 @@ def plan_week(
             )
             steps.append({"agent": "meso_architect", "tasks": [task.value], "result": out})
             if out.get("ok") and out.get("produced"):
-                log_and_print(logger, "Done.")
+                _log("Done.")
 
     if not index_query.has_exact_range(ArtifactType.BLOCK_GOVERNANCE.value, block_range) or not index_query.has_exact_range(
         ArtifactType.BLOCK_EXECUTION_ARCH.value, block_range
@@ -347,7 +363,7 @@ def plan_week(
             f"Required block artefacts missing for range {block_range_label}. "
             "Cannot proceed to Micro-Planner."
         )
-        log_and_print(logger, message, logging.ERROR)
+        _log(message, logging.ERROR)
         steps.append(
             {
                 "agent": "micro_planner",
@@ -374,7 +390,7 @@ def plan_week(
 
     if not needs_workouts_plan:
         message = f"Found WORKOUTS_PLAN for ISO week {target_label}."
-        log_and_print(logger, message)
+        _log(message)
     else:
         if workspace.latest_exists(ArtifactType.WORKOUTS_PLAN):
             plan = workspace.get_latest(ArtifactType.WORKOUTS_PLAN)
@@ -383,19 +399,19 @@ def plan_week(
                 message = (
                     f"WORKOUTS_PLAN matches ISO week {target_label} but is stale. Will create."
                 )
-                log_and_print(logger, message)
+                _log(message)
             else:
                 message = f"WORKOUTS_PLAN does not match ISO week {target_label}. Will create."
-                log_and_print(logger, message)
+                _log(message)
         else:
             message = f"WORKOUTS_PLAN NOT FOUND. Will create for ISO week {target_label}."
-            log_and_print(logger, message)
+            _log(message)
         micro_tasks.append(AgentTask.CREATE_WORKOUTS_PLAN)
 
     if micro_tasks:
         spec = AGENTS["micro_planner"]
         message = f"Running Micro-Planner for ISO week {target_label}."
-        log_and_print(logger, message)
+        _log(message)
         injected_block = _build_injection_block("micro_planner")
         out = run_agent_multi_output(
             runtime_for(spec.name),
@@ -417,7 +433,7 @@ def plan_week(
         )
         steps.append({"agent": "micro_planner", "tasks": [t.value for t in micro_tasks], "result": out})
         if out.get("ok") and out.get("produced"):
-            log_and_print(logger, "Done.")
+            _log("Done.")
 
     builder_tasks: list[AgentTask] = []
     if store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key):
@@ -435,11 +451,11 @@ def plan_week(
             needs_intervals = True
         if not needs_intervals:
             message = f"Found INTERVALS_WORKOUTS for ISO week {target_label}."
-            log_and_print(logger, message)
+            _log(message)
         else:
             builder_tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
             message = f"Running Workout-Builder for ISO week {target_label}."
-            log_and_print(logger, message)
+            _log(message)
             spec = AGENTS["workout_builder"]
             injected_block = _build_injection_block("workout_builder")
             out = run_agent_multi_output(
@@ -461,10 +477,10 @@ def plan_week(
             )
             steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
             if out.get("ok") and out.get("produced"):
-                log_and_print(logger, "Done.")
+                _log("Done.")
     else:
         message = f"Workout-Builder skipped: WORKOUTS_PLAN {target_label} not found."
-        log_and_print(logger, message)
+        _log(message)
 
     analysis_tasks: list[AgentTask] = []
     report_week = previous_iso_week(target)
@@ -474,7 +490,7 @@ def plan_week(
             "Performance analysis skipped: report week "
             f"{report_label} is outside macro range {macro_range.range_key}."
         )
-        log_and_print(logger, message)
+        _log(message)
     else:
         required = [
             ArtifactType.ACTIVITIES_ACTUAL,
@@ -490,23 +506,23 @@ def plan_week(
                 week = envelope_week(report)
                 if week and (week.year == report_week.year and week.week == report_week.week):
                     message = f"Found DES_ANALYSIS_REPORT for ISO week {report_label}."
-                    log_and_print(logger, message)
+                    _log(message)
                 else:
                     message = f"DES_ANALYSIS_REPORT missing for ISO week {report_label}. Will create."
-                    log_and_print(logger, message)
+                    _log(message)
                     analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
             else:
                 message = f"DES_ANALYSIS_REPORT NOT FOUND. Will create for ISO week {report_label}."
-                log_and_print(logger, message)
+                _log(message)
                 analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
         else:
             message = "Performance analysis skipped: required inputs missing."
-            log_and_print(logger, message)
+            _log(message)
 
         if analysis_tasks:
             spec = AGENTS["performance_analysis"]
             message = f"Running Performance-Analyst for ISO week {report_label}."
-            log_and_print(logger, message)
+            _log(message)
             injected_block = _build_injection_block("performance_analysis")
             out = run_agent_multi_output(
                 runtime_for(spec.name),
@@ -528,9 +544,9 @@ def plan_week(
             )
             steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})
             if out.get("ok") and out.get("produced"):
-                log_and_print(logger, "Done.")
+                _log("Done.")
 
     ok = all(step["result"].get("ok") for step in steps) if steps else True
     message = f"Plan-week completed for ISO week {target_label} (ok={ok})."
-    log_and_print(logger, message)
+    _log(message)
     return PlanWeekResult(ok=ok, steps=steps)

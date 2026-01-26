@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-01-26
+
+### Changed
+- Renamed the Python package from `app` to `rps` and updated CLI/docs to use `python -m rps.main`.
+- Added response-text logging when agents return no tool call, plus a no-tool-call summary for debugging.
+- Inserted a blank line before streamed reasoning headings (`**`/`#`) for readability.
+- Macro Mode A now injects the shared knowledge bundle for macro/season scenario runs.
+- Expanded the agent knowledge injection bundles (contracts, interfaces, mandatory output guides, evidence).
+- Added `data_confidence` schema and required it in activities_actual/trend outputs; pipeline now emits `meta.data_confidence`.
+
 ## [0.6.2] - 2026-01-26
 
 ### Changed

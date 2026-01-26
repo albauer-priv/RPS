@@ -275,6 +275,18 @@ def _render_scenarios(scenarios_doc: dict) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _format_screen_text(text: str) -> str:
+    """Insert a blank line before markdown-style headings for readability."""
+    lines = text.splitlines()
+    formatted: list[str] = []
+    for line in lines:
+        is_heading = line.startswith("**") or line.startswith("#") or line.startswith("Scenario ")
+        if is_heading and formatted and formatted[-1] != "":
+            formatted.append("")
+        formatted.append(line)
+    return "\n".join(formatted)
+
+
 def _render_selected_scenario(scenarios_doc: dict, scenario_id: str) -> str:
     data = scenarios_doc.get("data", {}) if isinstance(scenarios_doc, dict) else {}
     scenarios = data.get("scenarios") or []
@@ -412,6 +424,7 @@ def run_scenarios(args: argparse.Namespace) -> int:
         return 1
 
     text = _render_scenarios(scenarios_doc)
+    text = _format_screen_text(text)
     if args.out:
         out_path = Path(args.out)
     else:

@@ -155,7 +155,10 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
         elif event_type == "response.completed":
             final_response = _get_attr(event, "response")
             if logger is not None and log_reasoning and reasoning_chunks:
-                logger.info("Reasoning: %s", "".join(reasoning_chunks))
+                text = "".join(reasoning_chunks)
+                if text.lstrip().startswith(("**", "#")):
+                    text = f"\n{text}"
+                logger.info("Reasoning: %s", text)
             if show_usage and final_response is not None:
                 usage = _get_attr(final_response, "usage")
                 total_tokens = _get_attr(usage, "total_tokens") if usage is not None else None

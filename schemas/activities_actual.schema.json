@@ -536,6 +536,9 @@
         "owner_agent": {
           "const": "Data-Pipeline",
           "type": "string"
+        },
+        "data_confidence": {
+          "$ref": "data_confidence.schema.json"
         }
       },
       "required": [
@@ -544,7 +547,8 @@
         "schema_version",
         "authority",
         "owner_agent",
-        "iso_week"
+        "iso_week",
+        "data_confidence"
       ],
       "type": "object"
     },

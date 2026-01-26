@@ -1719,6 +1719,7 @@ def compile_activities_actual(
             "owner_agent": "Data-Pipeline",
             "run_id": f"{run_stamp}-data-pipeline-{int(yr)}{iso_week}",
             "created_at": run_ts.isoformat(),
+            "data_confidence": "UNKNOWN",
             "iso_week": version_key,
             "iso_week_range": f"{version_key}--{version_key}",
             "temporal_scope": {
@@ -2274,6 +2275,7 @@ def compile_activities_trend(
         "owner_agent": "Data-Pipeline",
         "run_id": f"{run_stamp}-data-pipeline-{year}{iso_week}",
         "created_at": run_ts.isoformat(),
+        "data_confidence": "UNKNOWN",
         "iso_week": version_key,
         "iso_week_range": f"{start_week}--{end_week}",
         "temporal_scope": {
