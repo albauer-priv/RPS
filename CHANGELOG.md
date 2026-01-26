@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.17] - 2026-01-26
+## [0.6.18] - 2026-01-26
 
 ### Changed
 - Integrated the Intervals.icu pipeline into `rps` with `python -m rps.main parse-intervals`.
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `data_confidence` is now required in artefact meta; stores inject `"UNKNOWN"` when missing to satisfy strict schema tooling.
 - Zone model outputs now include `meta.data_confidence` to satisfy strict validation.
 - Normalized data_confidence values to uppercase (`HIGH|MEDIUM|LOW|UNKNOWN`).
+- Wellness outputs now include `meta.data_confidence` to satisfy strict validation.
 
 ## [0.6.3] - 2026-01-26
 

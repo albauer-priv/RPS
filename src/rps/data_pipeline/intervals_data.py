@@ -990,6 +990,7 @@ def write_wellness(
         "scope": "Shared",
         "iso_week": version_key,
         "iso_week_range": f"{start_week}--{valid_end_week}",
+        "data_confidence": "HIGH",
         "temporal_scope": {
             "from": start_day.isoformat(),
             "to": year_end.isoformat(),
