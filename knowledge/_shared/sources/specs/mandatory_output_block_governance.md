@@ -155,9 +155,10 @@ Additional hard stops (binding):
   and A/B/C type from `macro_overview.data.phases[].events_constraints`.
 - STOP if `macro_overview.data.global_constraints.recovery_protection.notes` is not
   present verbatim in `execution_non_negotiables.recovery_protection_rules`.
-- STOP if any `weekly_kj_bands` entry is outside the intersection defined by
-  LoadEstimationSpec (Macro corridor ∩ Feasible band ∩ KPI band; and progression guardrails
-  when present). If a band cannot be narrowed to this intersection, STOP and report infeasibility.
+- STOP only after applying the full **LoadEstimationSpec S5** ladder:
+  - If any **S5.5** hard stop is triggered (e.g., `feasible_band` empty, `override_band` empty), STOP.
+  - Otherwise accept the S5 output band (including degenerate/override outputs) even if it
+    does not lie inside the raw Macro∩Feasible∩KPI intersection.
 
 ---
 
