@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from app.agents.tasks import OutputSpec
-from app.schemas.bundler import SchemaBundler
+from rps.agents.tasks import OutputSpec
+from rps.schemas.bundler import SchemaBundler
 
 
 def build_strict_store_tool(bundler: SchemaBundler, spec: OutputSpec) -> dict[str, Any]:

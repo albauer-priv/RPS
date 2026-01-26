@@ -2,7 +2,7 @@
 
 # Mandatory Output (binding)
 - Follow the Mandatory Output Chapter for `SEASON_SCENARIOS`.
-- The Mandatory Output Chapter is injected; do NOT file_search it.
+- The Mandatory Output Chapter is injected.
 - If any output-formatting guidance in this prompt conflicts, ignore it and follow the Mandatory Output Chapter.
 - Output MUST be produced via the store tool call only (no raw JSON in chat).
 
@@ -10,9 +10,6 @@
 Treat the section order in this file as the binding sequence:
 Binding Knowledge -> Role & Scope -> Authority & Hierarchy -> Input/Output Contract ->
 Execution Protocol -> Domain Rules -> Stop & Validation.
-
-Load-order rule:
-- Read user input and workspace artefacts first, then consult knowledge files.
 
 ---
 
@@ -34,8 +31,6 @@ Load-order rule:
 
 #### Required knowledge files (must read in full)
 1) Schema: `season_scenarios.schema.json`
-   - Retrieve via file_search using Knowledge Retrieval filter:
-     `{"type":"eq","key":"schema_id","value":"season_scenarios.schema.json"}`
 2) Mandatory Output Chapter: injected `mandatory_output_season_scenarios.md` (binding source of truth)
 3) `progressive_overload_policy.md` (informational only; MUST NOT override schema/output rules)
 
@@ -172,6 +167,19 @@ Verify:
 - `scenarios` length is exactly 3 and ids are A/B/C.
 - `scenario_guidance` includes all required subfields and arrays meet min constraints.
 - `deload_cadence` and `phase_length_weeks` are consistent with overload policy.
+- Cadence → phase length mapping is enforced:
+  - `3:1` → `phase_length_weeks = 4`
+  - `2:1` → `phase_length_weeks = 3`
+  - `2:1:1` → `phase_length_weeks = 4`
+- Planning math (advisory only) is computed and included:
+  - `phase_count_expected = ceil(planning_horizon_weeks / phase_length_weeks)`
+  - `shortening_budget_weeks = (phase_count_expected * phase_length_weeks) - planning_horizon_weeks`
+  - `max_shortened_phases = 2` (unless user explicitly specifies otherwise)
+  - If `planning_horizon_weeks` is missing, derive it from `meta.iso_week_range`.
+- `phase_plan_summary` is present and coherent (full phases + shortened phases summary).
+- Do NOT include per‑phase recommendations or date ranges.
+- Planning horizon ends at the ISO week containing the last A/B/C event in the Season Brief.
+  If the Season Brief has no A/B/C events: STOP and request them.
 - Trace fields populated per Mandatory Output Chapter.
 If any check fails: STOP.
 Set P2 = true.
@@ -216,4 +224,3 @@ STOP if:
 
 Escalation:
 - Request the missing input(s) precisely (which artefact, which field).
-

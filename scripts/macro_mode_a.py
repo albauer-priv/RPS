@@ -10,22 +10,23 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+INJECTION_CONFIG = ROOT / "config" / "agent_knowledge_injection.yaml"
 SYS_PATH = str(ROOT / "src")
 if SYS_PATH not in sys.path:
     # Allow running this script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output  # noqa: E402
-from app.agents.registry import AGENTS  # noqa: E402
-from app.agents.tasks import AgentTask, OUTPUT_SPECS  # noqa: E402
-from app.core.config import AppSettings, load_app_settings, load_env_file  # noqa: E402
+from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output  # noqa: E402
+from rps.agents.registry import AGENTS  # noqa: E402
+from rps.agents.tasks import AgentTask, OUTPUT_SPECS  # noqa: E402
+from rps.core.config import AppSettings, load_app_settings, load_env_file  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
-from app.openai.client import get_client  # noqa: E402
-from app.openai.vectorstore_state import VectorStoreResolver  # noqa: E402
-from app.prompts.loader import PromptLoader  # noqa: E402
-from app.workspace.local_store import LocalArtifactStore  # noqa: E402
-from app.workspace.types import ArtifactType  # noqa: E402
-from app.workspace.guarded_store import GuardedValidatedStore  # noqa: E402
+from rps.openai.client import get_client  # noqa: E402
+from rps.openai.vectorstore_state import VectorStoreResolver  # noqa: E402
+from rps.prompts.loader import PromptLoader  # noqa: E402
+from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
+from rps.workspace.types import ArtifactType  # noqa: E402
+from rps.workspace.guarded_store import GuardedValidatedStore  # noqa: E402
 
 
 def _load_season_brief(athlete_root: Path, year: int) -> tuple[str, str]:
@@ -76,6 +77,91 @@ def _load_mandatory_output_season_scenarios() -> tuple[str, str]:
     if not path.exists():
         raise FileNotFoundError(f"Mandatory output guide not found at {path}.")
     return str(path), path.read_text(encoding="utf-8").strip()
+
+
+def _extract_general_and_meso(spec_text: str) -> str:
+    """Return General + Meso sections, skipping Macro section when present."""
+    lines = spec_text.splitlines()
+    macro_idx = None
+    meso_idx = None
+    for idx, line in enumerate(lines):
+        if line.startswith("## "):
+            if macro_idx is None and line.startswith("## Macro"):
+                macro_idx = idx
+            if meso_idx is None and line.startswith("## Meso"):
+                meso_idx = idx
+        if macro_idx is not None and meso_idx is not None:
+            break
+
+    if meso_idx is None:
+        return spec_text
+    if macro_idx is None or meso_idx < macro_idx:
+        return spec_text
+    head = "\n".join(lines[:macro_idx]).rstrip()
+    tail = "\n".join(lines[meso_idx:]).lstrip()
+    return f"{head}\n\n{tail}".strip()
+
+
+def _extract_load_estimation_section(spec_text: str, section: str | None) -> str:
+    if not section:
+        return spec_text
+    section_key = section.strip().lower()
+    if section_key == "general":
+        lines = spec_text.splitlines()
+        macro_idx = None
+        for idx, line in enumerate(lines):
+            if line.startswith("## Macro"):
+                macro_idx = idx
+                break
+        if macro_idx is None:
+            return spec_text
+        return "\n".join(lines[:macro_idx]).rstrip()
+    if section_key == "general+meso":
+        return _extract_general_and_meso(spec_text)
+    return spec_text
+
+
+def _load_agent_injection_config() -> dict:
+    if not INJECTION_CONFIG.exists():
+        return {}
+    try:
+        import yaml
+    except ImportError:
+        return {}
+    return yaml.safe_load(INJECTION_CONFIG.read_text(encoding="utf-8")) or {}
+
+
+def _build_injection_block(agent_name: str) -> str:
+    config = _load_agent_injection_config()
+    agent_cfg = (config.get("agents") or {}).get(agent_name) or {}
+    items = agent_cfg.get("inject") or []
+    if not items:
+        return ""
+    chunks: list[str] = [
+        "Injected mandatory knowledge (read in full; do NOT file_search these files):"
+    ]
+    for item in items:
+        path_str = None
+        label = None
+        section = None
+        if isinstance(item, dict):
+            path_str = item.get("path")
+            label = item.get("label")
+            section = item.get("section")
+        elif isinstance(item, str):
+            path_str = item
+        if not path_str:
+            continue
+        path = (ROOT / path_str).resolve()
+        header = label or str(path)
+        try:
+            content = path.read_text(encoding="utf-8")
+            if path.name == "load_estimation_spec.md":
+                content = _extract_load_estimation_section(content, section)
+            chunks.append(f"{header}:\n\"\"\"\n{content}\n\"\"\"\n")
+        except FileNotFoundError:
+            chunks.append(f"{header}: MISSING\n")
+    return "\n".join(chunks)
 
 
 def _runtime(agent_name: str | None = None) -> tuple[AgentRuntime, AppSettings]:
@@ -291,12 +377,15 @@ def run_scenarios(args: argparse.Namespace) -> int:
     except FileNotFoundError as exc:
         mandatory_block = f"Mandatory output guide missing: {exc}\n"
 
+    injected_block = _build_injection_block("season_scenario")
+
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {args.year}-{args.week:02d}. "
         "Use the Season Brief content provided in this prompt. "
         f"{season_block}"
         f"{mandatory_block}"
+        f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
     )
 
@@ -416,12 +505,15 @@ def run_overview(args: argparse.Namespace) -> int:
     except FileNotFoundError as exc:
         spec_block = f"LoadEstimationSpec missing: {exc}\n"
 
+    injected_block = _build_injection_block("macro_planner")
+
     user_input = (
         f"Scenario {scenario}. Mode A. Create the MACRO_OVERVIEW. "
         f"{band_line}"
         f"{mandatory_block}"
         f"{spec_block}"
         f"{scenario_block}"
+        f"{injected_block}"
         "Follow the Mandatory Output Chapter for MACRO_OVERVIEW."
     )
 

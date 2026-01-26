@@ -13,9 +13,9 @@ if SYS_PATH not in sys.path:
     # Allow running this script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from app.core.config import load_env_file  # noqa: E402
-from app.openai.vectorstores import iter_manifest_paths, load_manifest, sync_manifest  # noqa: E402
-from app.openai.vectorstore_state import DEFAULT_STATE_PATH, load_state, write_state  # noqa: E402
+from rps.core.config import load_env_file  # noqa: E402
+from rps.openai.vectorstores import iter_manifest_paths, load_manifest, sync_manifest  # noqa: E402
+from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, load_state, write_state  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
 
 

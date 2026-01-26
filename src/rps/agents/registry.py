@@ -1,6 +1,6 @@
 """Agent registry."""
 
-from app.agents.spec import AgentSpec
+from rps.agents.spec import AgentSpec
 
 
 AGENTS: dict[str, AgentSpec] = {

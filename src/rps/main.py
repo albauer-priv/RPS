@@ -9,16 +9,16 @@ from pathlib import Path
 import sys
 import time
 
-from app.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
-from app.agents.runner import AgentRuntime, run_agent
-from app.agents.registry import AGENTS
-from app.agents.tasks import AgentTask
-from app.core.config import load_app_settings, load_env_file
-from app.core.logging import setup_logging
-from app.openai.client import get_client
-from app.openai.vectorstore_state import VectorStoreResolver
-from app.orchestrator.plan_week import plan_week
-from app.prompts.loader import PromptLoader
+from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
+from rps.agents.runner import AgentRuntime, run_agent
+from rps.agents.registry import AGENTS
+from rps.agents.tasks import AgentTask
+from rps.core.config import load_app_settings, load_env_file
+from rps.core.logging import setup_logging
+from rps.openai.client import get_client
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.orchestrator.plan_week import plan_week
+from rps.prompts.loader import PromptLoader
 
 
 def main() -> None:

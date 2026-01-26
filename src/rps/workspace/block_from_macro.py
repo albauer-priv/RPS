@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from app.workspace.block_resolution import add_weeks, iso_week_monday
-from app.workspace.iso_helpers import (
+from rps.workspace.block_resolution import add_weeks, iso_week_monday
+from rps.workspace.iso_helpers import (
     IsoWeek,
     IsoWeekRange,
     parse_iso_week_range as _parse_iso_week_range,

@@ -1,6 +1,6 @@
 """Compatibility wrapper for vectorstore state helpers."""
 
-from app.openai.vectorstore_state import (  # noqa: F401
+from rps.openai.vectorstore_state import (  # noqa: F401
     DEFAULT_STATE_PATH,
     VectorStoreResolver,
     load_state,

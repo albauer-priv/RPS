@@ -14,7 +14,7 @@ if SYS_PATH not in sys.path:
     # Allow running the script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from app.core.config import load_env_file  # noqa: E402
+from rps.core.config import load_env_file  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
 
 load_env_file(ROOT / ".env")

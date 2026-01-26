@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from app.workspace.index_manager import WorkspaceIndexManager
-from app.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range
+from rps.workspace.index_manager import WorkspaceIndexManager
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range
 
 
 def _normalize_range(range_obj: Any) -> IsoWeekRange | None:

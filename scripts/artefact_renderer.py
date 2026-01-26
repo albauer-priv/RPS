@@ -15,8 +15,8 @@ if SYS_PATH not in sys.path:
     # Allow running this script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from app.core.config import load_env_file  # noqa: E402
-from app.workspace.schema_registry import SchemaRegistry, validate_or_raise  # noqa: E402
+from rps.core.config import load_env_file  # noqa: E402
+from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
 
 RENDERERS = {

@@ -10,12 +10,12 @@ import re
 
 import yaml
 
-from app.openai.client import get_client
-from app.openai.model_capabilities import supports_temperature
-from app.openai.reasoning import build_reasoning_payload
-from app.openai.streaming import create_response
-from app.openai.vectorstore_state import DEFAULT_STATE_PATH, load_vectorstore_id
-from app.prompts.loader import agent_system_prompt
+from rps.openai.client import get_client
+from rps.openai.model_capabilities import supports_temperature
+from rps.openai.reasoning import build_reasoning_payload
+from rps.openai.streaming import create_response
+from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, load_vectorstore_id
+from rps.prompts.loader import agent_system_prompt
 
 
 DEFAULT_KNOWLEDGE_ROOT = Path("knowledge")

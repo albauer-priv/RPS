@@ -12,17 +12,17 @@ from typing import Any, Optional
 
 from openai import OpenAI
 
-from app.openai.reasoning import build_reasoning_payload
-from app.openai.model_capabilities import supports_temperature
-from app.openai.response_utils import (
+from rps.openai.reasoning import build_reasoning_payload
+from rps.openai.model_capabilities import supports_temperature
+from rps.openai.response_utils import (
     extract_file_search_results,
     extract_reasoning_summaries,
     extract_text_output,
 )
-from app.openai.streaming import create_response
-from app.openai.vectorstore_state import VectorStoreResolver
-from app.prompts.loader import PromptLoader
-from app.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
+from rps.openai.streaming import create_response
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.prompts.loader import PromptLoader
+from rps.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
 
 logger = logging.getLogger(__name__)
 

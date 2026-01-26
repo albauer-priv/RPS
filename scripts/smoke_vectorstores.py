@@ -17,7 +17,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from scripts.data_pipeline.common import load_env  # noqa: E402
-from app.openai.vectorstore_state import load_vectorstore_id  # noqa: E402
+from rps.openai.vectorstore_state import load_vectorstore_id  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
 
 

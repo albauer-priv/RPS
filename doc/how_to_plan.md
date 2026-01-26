@@ -118,7 +118,7 @@ python3 scripts/macro_mode_a.py overview \
 
 ```bash
 # Meso cycle (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main run-agent \
+PYTHONPATH=src python3 -m rps.main run-agent \
   --agent meso_architect \
   --athlete ath_001 \
   --task CREATE_BLOCK_GOVERNANCE CREATE_BLOCK_EXECUTION_ARCH \
@@ -127,7 +127,7 @@ PYTHONPATH=src python3 -m app.main run-agent \
 
 ```bash
 # Micro cycle (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main run-agent \
+PYTHONPATH=src python3 -m rps.main run-agent \
   --agent micro_planner \
   --athlete ath_001 \
   --task CREATE_WORKOUTS_PLAN \
@@ -136,7 +136,7 @@ PYTHONPATH=src python3 -m app.main run-agent \
 
 ```bash
 # Workout-Builder (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main run-agent \
+PYTHONPATH=src python3 -m rps.main run-agent \
   --agent workout_builder \
   --athlete ath_001 \
   --task CREATE_INTERVALS_WORKOUTS_EXPORT \
@@ -145,7 +145,7 @@ PYTHONPATH=src python3 -m app.main run-agent \
 
 ```bash
 # Performance-Analyst (target ISO week = 2026-06)
-PYTHONPATH=src python3 -m app.main run-agent \
+PYTHONPATH=src python3 -m rps.main run-agent \
   --agent performance_analysis \
   --athlete ath_001 \
   --task CREATE_DES_ANALYSIS_REPORT \

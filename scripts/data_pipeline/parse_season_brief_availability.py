@@ -25,7 +25,7 @@ from scripts.data_pipeline.common import (  # noqa: E402
     resolve_schema_dir,
     resolve_workspace_root,
 )
-from app.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise  # noqa: E402
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise  # noqa: E402
 
 
 DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]

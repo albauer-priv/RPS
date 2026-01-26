@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import sys
 
-from app.core.logging import log_and_print, setup_logging, timestamped_log_path
+from rps.core.logging import log_and_print, setup_logging, timestamped_log_path
 
 
 def _resolve_workspace_root(root: Path) -> Path:

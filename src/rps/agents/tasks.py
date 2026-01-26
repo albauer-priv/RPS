@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from app.workspace.types import ArtifactType
+from rps.workspace.types import ArtifactType
 
 
 class AgentTask(str, Enum):

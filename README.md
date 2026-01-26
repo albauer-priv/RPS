@@ -4,7 +4,7 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 
 ## Layout
 
-- `src/app/`: app code and OpenAI helpers.
+- `src/rps/`: app code and OpenAI helpers.
 - `doc/`: system documentation.
 - `prompts/`: shared + per-agent prompts.
 - `knowledge/`: versioned sources and manifests (no embeddings in repo).
@@ -85,7 +85,7 @@ Outputs land in `var/athletes/<athlete_id>/data/` and are mirrored to `var/athle
 ```python
 from datetime import date
 
-from app.workspace import ArtifactType, Workspace
+from rps.workspace import ArtifactType, Workspace
 
 ws = Workspace.for_athlete("ath_001")
 ws.ensure()
@@ -106,8 +106,8 @@ print(block.start_week, block.end_week)
 ```
 
 ```python
-from app.workspace import ArtifactType, Authority, Workspace
-from app.workspace.helpers import upstream_ref
+from rps.workspace import ArtifactType, Authority, Workspace
+from rps.workspace.helpers import upstream_ref
 
 ws = Workspace.for_athlete("ath_001")
 
@@ -137,7 +137,7 @@ ws.guard_put(
 ```python
 from pathlib import Path
 
-from app.workspace import ArtifactType, Authority, Workspace
+from rps.workspace import ArtifactType, Authority, Workspace
 
 ws = Workspace.for_athlete("ath_001")
 ws.put_validated(
@@ -170,19 +170,19 @@ python3 scripts/artefact_renderer.py kpi_profiles/kpi_profile_des_brevet_200_400
 ## Vector store runtime
 
 - `scripts/sync_vectorstores.py` writes `.cache/vectorstores_state.json` with store IDs.
-- Use `app.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
-- Load prompts from disk with `app.prompts.loader.agent_system_prompt(...)`.
+- Use `rps.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
+- Load prompts from disk with `rps.prompts.loader.agent_system_prompt(...)`.
 
 ## Agent runner
 
 ```bash
-PYTHONPATH=src python -m app.main \\
+PYTHONPATH=src python -m rps.main \\
   --agent micro_planner \\
   --text "Plane Woche 2026-06 basierend auf dem aktuellen Block und KPI Profil."
 ```
 
 ```bash
-PYTHONPATH=src python -m app.main plan-week \\
+PYTHONPATH=src python -m rps.main plan-week \\
   --year 2026 \\
   --week 6 \\
   --run-id run_2026_06
@@ -217,4 +217,4 @@ Scenarios are written to `.cache/macro_scenarios/<run-id>.md` by default.
 
 - Vector stores are remote state; this repo only keeps sources + manifests.
 - Shared knowledge should be referenced from each agent manifest via `../_shared/...` paths (single store per agent).
-- Local artifacts live under `var/athletes/<athlete_id>/` and are managed by `app.workspace`.
+- Local artifacts live under `var/athletes/<athlete_id>/` and are managed by `rps.workspace`.

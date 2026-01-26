@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from app.workspace.iso_helpers import IsoWeek, IsoWeekRange
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 
 
 def iso_week_monday(year: int, week: int) -> date:

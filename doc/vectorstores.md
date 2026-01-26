@@ -90,7 +90,7 @@ its ID to `.cache/vectorstores_state.json`.
 At runtime, the Responses API attaches the shared store via `file_search`:
 
 ```python
-from app.openai.runtime import build_file_search_tool
+from rps.openai.runtime import build_file_search_tool
 
 tool = build_file_search_tool("micro_planner")  # resolves vs_rps_all_agents
 ```
@@ -98,7 +98,7 @@ tool = build_file_search_tool("micro_planner")  # resolves vs_rps_all_agents
 Or directly via state resolver:
 
 ```python
-from app.openai.vectorstore_state import VectorStoreResolver
+from rps.openai.vectorstore_state import VectorStoreResolver
 
 resolver = VectorStoreResolver()
 agent_id = resolver.id_for_store_name("vs_rps_all_agents")

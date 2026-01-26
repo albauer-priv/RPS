@@ -7,11 +7,11 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 
-from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
-from app.agents.registry import AGENTS
-from app.agents.tasks import AgentTask
-from app.workspace.index_exact import IndexExactQuery
-from app.workspace.iso_helpers import (
+from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
+from rps.agents.registry import AGENTS
+from rps.agents.tasks import AgentTask
+from rps.workspace.index_exact import IndexExactQuery
+from rps.workspace.iso_helpers import (
     IsoWeek,
     envelope_week,
     envelope_week_range,
@@ -19,14 +19,15 @@ from app.workspace.iso_helpers import (
     previous_iso_week,
     range_contains,
 )
-from app.workspace.macro_phase_service import resolve_macro_phase_info
-from app.workspace.api import Workspace
-from app.workspace.local_store import LocalArtifactStore
-from app.core.logging import log_and_print
-from app.workspace.types import ArtifactType
+from rps.workspace.macro_phase_service import resolve_macro_phase_info
+from rps.workspace.api import Workspace
+from rps.workspace.local_store import LocalArtifactStore
+from rps.core.logging import log_and_print
+from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[3]
+INJECTION_CONFIG = ROOT / "config" / "agent_knowledge_injection.yaml"
 
 
 def _extract_general_and_meso(spec_text: str) -> str:
@@ -57,6 +58,68 @@ def _load_load_estimation_spec_meso() -> tuple[str, str]:
     path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
     content = path.read_text(encoding="utf-8")
     return str(path), _extract_general_and_meso(content)
+
+
+def _extract_load_estimation_section(spec_text: str, section: str | None) -> str:
+    if not section:
+        return spec_text
+    section_key = section.strip().lower()
+    if section_key == "general":
+        lines = spec_text.splitlines()
+        macro_idx = None
+        for idx, line in enumerate(lines):
+            if line.startswith("## Macro"):
+                macro_idx = idx
+                break
+        if macro_idx is None:
+            return spec_text
+        return "\n".join(lines[:macro_idx]).rstrip()
+    if section_key == "general+meso":
+        return _extract_general_and_meso(spec_text)
+    return spec_text
+
+
+def _load_agent_injection_config() -> dict:
+    if not INJECTION_CONFIG.exists():
+        return {}
+    try:
+        import yaml
+    except ImportError:
+        return {}
+    return yaml.safe_load(INJECTION_CONFIG.read_text(encoding="utf-8")) or {}
+
+
+def _build_injection_block(agent_name: str) -> str:
+    config = _load_agent_injection_config()
+    agent_cfg = (config.get("agents") or {}).get(agent_name) or {}
+    items = agent_cfg.get("inject") or []
+    if not items:
+        return ""
+    chunks: list[str] = [
+        "Injected mandatory knowledge (read in full; do NOT file_search these files):"
+    ]
+    for item in items:
+        path_str = None
+        label = None
+        section = None
+        if isinstance(item, dict):
+            path_str = item.get("path")
+            label = item.get("label")
+            section = item.get("section")
+        elif isinstance(item, str):
+            path_str = item
+        if not path_str:
+            continue
+        path = (ROOT / path_str).resolve()
+        header = label or str(path)
+        try:
+            content = path.read_text(encoding="utf-8")
+            if path.name == "load_estimation_spec.md":
+                content = _extract_load_estimation_section(content, section)
+            chunks.append(f"{header}:\n\"\"\"\n{content}\n\"\"\"\n")
+        except FileNotFoundError:
+            chunks.append(f"{header}: MISSING\n")
+    return "\n".join(chunks)
 
 
 @dataclass
@@ -250,14 +313,7 @@ def plan_week(
 
     if meso_tasks:
         spec = AGENTS["meso_architect"]
-        try:
-            spec_path, spec_content = _load_load_estimation_spec_meso()
-            spec_block = (
-                "LoadEstimationSpec (General + Meso sections; loaded from "
-                f"{spec_path}):\n\"\"\"\n{spec_content}\n\"\"\"\n"
-            )
-        except FileNotFoundError as exc:
-            spec_block = f"LoadEstimationSpec missing: {exc}\n"
+        injected_block = _build_injection_block("meso_architect")
         for task in meso_tasks:
             message = f"Running Meso-Architect task {task.value} for block range {block_range_label}."
             log_and_print(logger, message)
@@ -272,7 +328,7 @@ def plan_week(
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
                     "Use this block range as the iso_week_range for the artefact. "
                     "Read macro_overview and use workspace_get_latest to pull required inputs. "
-                    f"{spec_block}"
+                    f"{injected_block}"
                 ),
                 run_id=f"{run_id}_meso_{task.value.lower()}",
                 model_override=model_resolver(spec.name) if model_resolver else None,
@@ -340,6 +396,7 @@ def plan_week(
         spec = AGENTS["micro_planner"]
         message = f"Running Micro-Planner for ISO week {target_label}."
         log_and_print(logger, message)
+        injected_block = _build_injection_block("micro_planner")
         out = run_agent_multi_output(
             runtime_for(spec.name),
             agent_name=spec.name,
@@ -349,7 +406,8 @@ def plan_week(
             user_input=(
                 f"Create workouts_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the block range spans multiple weeks. "
-                "Read block_governance and block_execution_arch from workspace."
+                "Read block_governance and block_execution_arch from workspace. "
+                f"{injected_block}"
             ),
             run_id=f"{run_id}_micro",
             model_override=model_resolver(spec.name) if model_resolver else None,
@@ -383,6 +441,7 @@ def plan_week(
             message = f"Running Workout-Builder for ISO week {target_label}."
             log_and_print(logger, message)
             spec = AGENTS["workout_builder"]
+            injected_block = _build_injection_block("workout_builder")
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,
@@ -391,7 +450,8 @@ def plan_week(
                 tasks=builder_tasks,
                 user_input=(
                     f"Convert workouts_plan into Intervals.icu workouts JSON for ISO week {target_label}. "
-                    "Read workouts_plan from workspace."
+                    "Read workouts_plan from workspace. "
+                    f"{injected_block}"
                 ),
                 run_id=f"{run_id}_builder",
                 model_override=model_resolver(spec.name) if model_resolver else None,
@@ -447,6 +507,7 @@ def plan_week(
             spec = AGENTS["performance_analysis"]
             message = f"Running Performance-Analyst for ISO week {report_label}."
             log_and_print(logger, message)
+            injected_block = _build_injection_block("performance_analysis")
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,
@@ -456,7 +517,8 @@ def plan_week(
                 user_input=(
                     f"Create des_analysis_report for ISO week {report_label} "
                     f"(planning week {target_label} minus one). "
-                    "Read activities_actual, activities_trend, KPI profile, macro overview, meso artefacts from workspace."
+                    "Read activities_actual, activities_trend, KPI profile, macro overview, meso artefacts from workspace. "
+                    f"{injected_block}"
                 ),
                 run_id=f"{run_id}_analysis",
                 model_override=model_resolver(spec.name) if model_resolver else None,

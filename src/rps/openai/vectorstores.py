@@ -15,8 +15,8 @@ from typing import Any, Callable, Iterable
 
 import yaml
 
-from app.openai.client import get_client
-from app.openai.vectorstore_state import update_state_for_store
+from rps.openai.client import get_client
+from rps.openai.vectorstore_state import update_state_for_store
 
 MANAGED_BY = "sync_vectorstores"
 _RETRY_ATTEMPTS = 5

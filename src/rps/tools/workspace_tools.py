@@ -7,15 +7,15 @@ import logging
 from pathlib import Path
 from typing import Any, Callable
 
-from app.workspace.api import Workspace
-from app.workspace.block_from_macro import IsoWeek
-from app.workspace.block_resolution import add_weeks
-from app.workspace.index_exact import IndexExactQuery
-from app.workspace.macro_phase_service import resolve_block_range_from_macro
-from app.workspace.schema_map import ARTIFACT_SCHEMA_FILE
-from app.workspace.schema_registry import SchemaValidationError
-from app.rendering.auto_render import render_sidecar
-from app.workspace.types import ArtifactType
+from rps.workspace.api import Workspace
+from rps.workspace.block_from_macro import IsoWeek
+from rps.workspace.block_resolution import add_weeks
+from rps.workspace.index_exact import IndexExactQuery
+from rps.workspace.macro_phase_service import resolve_block_range_from_macro
+from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
+from rps.workspace.schema_registry import SchemaValidationError
+from rps.rendering.auto_render import render_sidecar
+from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 

@@ -5,12 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from app.workspace.block_from_macro import (
+from rps.workspace.block_from_macro import (
     parse_iso_week_range,
     resolve_current_block_from_macro,
     resolve_current_phase,
 )
-from app.workspace.iso_helpers import IsoWeek, IsoWeekRange
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 
 
 @dataclass(frozen=True)

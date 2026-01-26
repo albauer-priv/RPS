@@ -5,12 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
-from app.agents.tasks import AgentTask
-from app.workspace.api import Workspace
-from app.workspace.index_exact import IndexExactQuery
-from app.workspace.macro_phase_service import resolve_block_range_from_macro
-from app.workspace.iso_helpers import IsoWeek, envelope_week
-from app.workspace.types import ArtifactType
+from rps.agents.tasks import AgentTask
+from rps.workspace.api import Workspace
+from rps.workspace.index_exact import IndexExactQuery
+from rps.workspace.macro_phase_service import resolve_block_range_from_macro
+from rps.workspace.iso_helpers import IsoWeek, envelope_week
+from rps.workspace.types import ArtifactType
 
 
 @dataclass

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.agents.registry import AGENTS
+from rps.agents.registry import AGENTS
 
 
 def route_request(_text: str) -> str:

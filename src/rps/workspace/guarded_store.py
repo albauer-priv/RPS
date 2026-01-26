@@ -9,16 +9,16 @@ from pathlib import Path
 import re
 from typing import Any
 
-from app.agents.tasks import OutputSpec
-from app.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
-from app.workspace.schema_utils import is_envelope_schema
-from app.workspace.index_exact import IndexExactQuery
-from app.workspace.iso_helpers import envelope_week_range
-from app.workspace.paths import ARTIFACT_PATHS
-from app.workspace.types import ArtifactType
-from app.workspace.versioning import derive_version_key_from_envelope
-from app.workspace.local_store import LocalArtifactStore
-from app.rendering.auto_render import render_sidecar
+from rps.agents.tasks import OutputSpec
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
+from rps.workspace.schema_utils import is_envelope_schema
+from rps.workspace.index_exact import IndexExactQuery
+from rps.workspace.iso_helpers import envelope_week_range
+from rps.workspace.paths import ARTIFACT_PATHS
+from rps.workspace.types import ArtifactType
+from rps.workspace.versioning import derive_version_key_from_envelope
+from rps.workspace.local_store import LocalArtifactStore
+from rps.rendering.auto_render import render_sidecar
 
 
 class MissingDependenciesError(RuntimeError):

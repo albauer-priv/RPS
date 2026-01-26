@@ -67,7 +67,7 @@ Environment variables:
 - APP_LOG_STDOUT: if true, also logs to stdout
 - APP_LOG_FILE: overrides default log file location (CLI only)
 
-## CLI Runs (app.main)
+## CLI Runs (rps.main)
 
 Each CLI run creates a timestamped log file under:
 

@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from app.workspace.index_manager import WorkspaceIndexManager
-from app.workspace.iso_helpers import IsoWeek, parse_iso_week_range
-from app.workspace.types import ArtifactType
+from rps.workspace.index_manager import WorkspaceIndexManager
+from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range
+from rps.workspace.types import ArtifactType
 
 
 def _week_index(week: IsoWeek) -> int:

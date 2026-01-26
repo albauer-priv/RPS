@@ -177,7 +177,7 @@ This avoids manual version-key guessing and ensures macro-phase alignment.
 ### CLI: Orchestrated planning
 
 ```bash
-PYTHONPATH=src python3 -m app.main plan-week \
+PYTHONPATH=src python3 -m rps.main plan-week \
   --year 2026 \
   --week 6 \
   --run-id run_2026_06
@@ -224,7 +224,7 @@ By default, scenarios are written to `.cache/macro_scenarios/<run-id>.md`.
 ### CLI: Single agent
 
 ```bash
-PYTHONPATH=src python3 -m app.main run-agent \
+PYTHONPATH=src python3 -m rps.main run-agent \
   --agent micro_planner \
   --task CREATE_WORKOUTS_PLAN \
   --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create workouts_plan for ISO week 2026-06."

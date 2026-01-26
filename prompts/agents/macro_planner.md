@@ -158,6 +158,25 @@ Set G2 = true.
 Mode A/B:
 - If Scenario Selection is present: align to `selected_scenario_id`.
 - If Season Scenarios is present: apply scenario guidance where applicable.
+- The computed phase count is **binding**. You MUST produce exactly `n` phases.
+- Use the calendar math below (weeks are ISO-week ranges):
+  - Always use `SEASON_SCENARIOS.meta.iso_week_range` (if present) as the macro
+    `meta.iso_week_range`. Do **not** invent a new range when a scenario range exists.
+  - If `scenario_guidance.phase_plan_summary` is present, compute:
+    - `full = full_phases`
+    - `short = Σ(shortened_phases[i].count)`
+    - `W = full * L + Σ(shortened_phases[i].len * shortened_phases[i].count)`
+    - `n = full + short`
+    - `delta = full * L + Σ(shortened.len*count) - W` → MUST be 0 by definition
+    - If computed `W` does not match the weeks implied by `meta.iso_week_range`, STOP.
+  - Otherwise (no phase_plan_summary):
+    - `W = total weeks in meta.iso_week_range` (inclusive)
+    - `L = scenario_guidance.phase_length_weeks`
+    - `n = ceil(W / L)` → number of phases required
+    - `delta = n * L - W` → total weeks to shorten across phases (if needed)
+      You may distribute `delta` across **at most two** phases (see validation rules).
+      If `scenario_guidance.phase_count_expected` is provided, it must match the computed `n`.
+      If it does not match, STOP (fail-fast) and report the mismatch and both values.
 - Produce macro phases and their objectives.
 - Derive weekly load corridors (kJ) strictly per `load_estimation_spec.md` (Macro).
 - Shape progression/deload/re-entry per `progressive_overload_policy.md`.

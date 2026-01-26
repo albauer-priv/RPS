@@ -11,17 +11,17 @@ from typing import Any
 
 from openai import OpenAI
 
-from app.agents.tasks import AgentTask, OUTPUT_SPECS
-from app.openai.model_capabilities import supports_temperature
-from app.openai.reasoning import build_reasoning_payload
-from app.openai.response_utils import extract_reasoning_summaries, extract_file_search_results
-from app.openai.streaming import create_response
-from app.openai.vectorstore_state import VectorStoreResolver
-from app.prompts.loader import PromptLoader
-from app.schemas.bundler import SchemaBundler
-from app.tools.store_output_tools import build_strict_store_tool
-from app.workspace.schema_registry import SchemaValidationError
-from app.workspace.guarded_store import GuardedValidatedStore
+from rps.agents.tasks import AgentTask, OUTPUT_SPECS
+from rps.openai.model_capabilities import supports_temperature
+from rps.openai.reasoning import build_reasoning_payload
+from rps.openai.response_utils import extract_reasoning_summaries, extract_file_search_results
+from rps.openai.streaming import create_response
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.prompts.loader import PromptLoader
+from rps.schemas.bundler import SchemaBundler
+from rps.tools.store_output_tools import build_strict_store_tool
+from rps.workspace.schema_registry import SchemaValidationError
+from rps.workspace.guarded_store import GuardedValidatedStore
 
 logger = logging.getLogger(__name__)
 

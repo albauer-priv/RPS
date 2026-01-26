@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from openai import OpenAI
 
-from app.core.config import load_settings
+from rps.core.config import load_settings
 
 
 def get_client() -> OpenAI:

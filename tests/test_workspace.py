@@ -14,11 +14,11 @@ if str(SRC) not in sys.path:
     # Allow running tests without installing the package.
     sys.path.insert(0, str(SRC))
 
-from app.workspace.guards import MissingDependenciesError  # noqa: E402
-from app.workspace.helpers import resolve_current_block, resolve_current_week, upstream_ref  # noqa: E402
-from app.workspace.local_store import LocalArtifactStore  # noqa: E402
-from app.workspace.types import ArtifactType  # noqa: E402
-from app.workspace.api import Workspace  # noqa: E402
+from rps.workspace.guards import MissingDependenciesError  # noqa: E402
+from rps.workspace.helpers import resolve_current_block, resolve_current_week, upstream_ref  # noqa: E402
+from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
+from rps.workspace.types import ArtifactType  # noqa: E402
+from rps.workspace.api import Workspace  # noqa: E402
 
 
 class WorkspaceHelperTests(unittest.TestCase):
@@ -108,7 +108,7 @@ class SchemaRegistryTests(unittest.TestCase):
             self.skipTest("jsonschema or referencing not available")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            from app.workspace.schema_registry import SchemaRegistry, validate_or_raise
+            from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 
             schema_dir = Path(tmpdir)
             meta_schema = {

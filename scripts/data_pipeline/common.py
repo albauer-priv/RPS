@@ -15,10 +15,10 @@ if SYS_PATH not in sys.path:
     # Allow running scripts directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from app.core.config import load_env_file  # noqa: E402
-from app.core.logging import log_and_print, setup_logging, timestamped_log_path  # noqa: E402
-from app.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
-from app.rendering.auto_render import render_sidecar  # noqa: E402
+from rps.core.config import load_env_file  # noqa: E402
+from rps.core.logging import log_and_print, setup_logging, timestamped_log_path  # noqa: E402
+from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
+from rps.rendering.auto_render import render_sidecar  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

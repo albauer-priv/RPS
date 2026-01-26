@@ -14,23 +14,23 @@ from typing import Any
 
 from openai import OpenAI
 
-from app.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
-from app.openai.reasoning import build_reasoning_payload
-from app.openai.model_capabilities import supports_temperature
-from app.openai.response_utils import (
+from rps.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
+from rps.openai.reasoning import build_reasoning_payload
+from rps.openai.model_capabilities import supports_temperature
+from rps.openai.response_utils import (
     extract_file_search_results,
     extract_reasoning_summaries,
     extract_text_output,
 )
-from app.openai.streaming import create_response
-from app.openai.vectorstore_state import VectorStoreResolver
-from app.prompts.loader import PromptLoader
-from app.schemas.bundler import SchemaBundler
-from app.tools.store_output_tools import build_strict_store_tool
-from app.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
-from app.workspace.guarded_store import GuardedValidatedStore
-from app.workspace.schema_registry import SchemaValidationError
-from app.workspace.types import ArtifactType
+from rps.openai.streaming import create_response
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.prompts.loader import PromptLoader
+from rps.schemas.bundler import SchemaBundler
+from rps.tools.store_output_tools import build_strict_store_tool
+from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.schema_registry import SchemaValidationError
+from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 
@@ -645,6 +645,30 @@ def run_agent_multi_output(
     def _is_envelope(value: Any) -> bool:
         return isinstance(value, dict) and "meta" in value and "data" in value
 
+    def _log_response_content(response_obj: Any, *, label: str) -> None:
+        text_out = response_obj.output_text or extract_text_output(response_obj) or ""
+        if not text_out:
+            return
+        max_chars = 4000
+        trimmed = text_out.strip()
+        if len(trimmed) > max_chars:
+            trimmed = trimmed[:max_chars] + "…"
+        logger.warning("Model response text (%s): %s", label, trimmed)
+
+    def _log_no_tool_call_summary(
+        response_obj: Any,
+        *,
+        attempted_store: bool,
+        wanted_tools: set[str],
+    ) -> None:
+        text_out = response_obj.output_text or extract_text_output(response_obj) or ""
+        summary = {
+            "attempted_forced_store": attempted_store,
+            "wanted_tools": sorted(wanted_tools),
+            "final_text_preview": (text_out.strip()[:200] + "…") if text_out else "",
+        }
+        logger.warning("No-tool-call summary: %s", json.dumps(summary, ensure_ascii=False))
+
     def _create_response(force_search_flag: bool, forced_tool_name: str | None = None):
         payload: dict[str, Any] = {
             "model": model,
@@ -713,6 +737,13 @@ def run_agent_multi_output(
         if not function_calls:
             all_done = wanted_tool_names.issubset(set(produced.keys()))
             final_text = response.output_text or last_text
+            if final_text:
+                _log_response_content(response, label="no_tool_call")
+            _log_no_tool_call_summary(
+                response,
+                attempted_store=attempted_forced_store,
+                wanted_tools=wanted_tool_names,
+            )
             if (
                 not all_done
                 and len(output_specs) == 1

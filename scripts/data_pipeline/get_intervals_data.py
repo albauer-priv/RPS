@@ -40,7 +40,7 @@ from scripts.data_pipeline.common import (  # noqa: E402
     resolve_athlete_id,
     resolve_schema_dir,
 )
-from app.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise  # noqa: E402
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise  # noqa: E402
 
 # === Export configuration ===
 SEPARATOR = ";"  # Intervals.icu export
