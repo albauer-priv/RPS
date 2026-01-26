@@ -1,31 +1,17 @@
-#!/usr/bin/env python3
 """Parse Season Brief availability table into AVAILABILITY artefact."""
 
 from __future__ import annotations
 
-import argparse
-import json
-import re
-import sys
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
+import re
+from typing import Any
+import json
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    # Allow running the script directly without installing the package.
-    sys.path.insert(0, str(ROOT))
-
-from scripts.data_pipeline.common import (  # noqa: E402
-    athlete_data_dir,
-    athlete_latest_dir,
-    configure_logging,
-    load_env,
-    record_index_write,
-    resolve_athlete_id,
-    resolve_schema_dir,
-    resolve_workspace_root,
-)
-from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise  # noqa: E402
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
 
 
 DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -65,22 +51,33 @@ DAY_ALIASES = {
 }
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Parse Season Brief weekly availability table into AVAILABILITY artefact."
-    )
-    parser.add_argument("--athlete", help="Athlete ID (defaults to ATHLETE_ID from .env).")
-    parser.add_argument(
-        "--year",
-        type=int,
-        help="Season year (YYYY). Optional; derived from Season Brief if omitted.",
-    )
-    parser.add_argument("--season-brief-path", type=Path, help="Explicit season brief path.")
-    parser.add_argument("--skip-validate", action="store_true", help="Skip JSON schema validation.")
-    return parser.parse_args()
+@dataclass(frozen=True)
+class AvailabilityResult:
+    """Result for a parsed availability artefact."""
+    payload: dict[str, Any]
+    output_path: Path
 
 
-def _load_season_brief(athlete_root: Path, year: int | None, explicit: Path | None) -> tuple[Path, str]:
+def _iso_week_str(day: date) -> str:
+    year, week, _ = day.isocalendar()
+    return f"{year}-{week:02d}"
+
+
+def _extract_year(text: str, season_path: Path) -> int | None:
+    match = re.search(r"Year\\s*:\\s*(\\d{4})", text, flags=re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    match = re.search(r"(\\d{4})", season_path.name)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def _load_season_brief(
+    athlete_root: Path,
+    year: int | None,
+    explicit: Path | None,
+) -> tuple[Path, str]:
     if explicit:
         if not explicit.exists():
             raise FileNotFoundError(f"Season brief not found: {explicit}")
@@ -121,102 +118,58 @@ def _parse_date(label: str, text: str) -> date | None:
         return None
 
 
-def _extract_year(season_text: str, season_path: Path) -> int | None:
-    match = re.search(
-        r"^\s*[-*]?\s*Year\s*:\s*(\d{4})\s*$",
-        season_text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    )
-    if match:
-        return int(match.group(1))
-    filename_match = re.search(r"season_brief_(\d{4})\.md", season_path.name)
-    if filename_match:
-        return int(filename_match.group(1))
-    return None
-
-
-def _iso_week_str(value: date) -> str:
-    iso = value.isocalendar()
-    return f"{iso.year}-{iso.week:02d}"
-
-
-def _normalize_weekday(raw: str) -> str:
-    key = raw.strip().lower()
-    key = re.sub(r"[^a-zäöü]+", "", key)
+def _normalize_weekday(text: str) -> str:
+    key = text.strip().lower()
     if key in DAY_ALIASES:
         return DAY_ALIASES[key]
-    raise ValueError(f"Unrecognized weekday: '{raw}'")
+    raise ValueError(f"Unknown weekday label: {text}")
 
 
-def _parse_bool(raw: str) -> bool:
-    val = raw.strip().lower()
-    if val in {"y", "yes", "true", "1", "ja"}:
+def _parse_bool(text: str) -> bool:
+    value = text.strip().lower()
+    if value in {"yes", "y", "true", "ja", "j"}:
         return True
-    if val in {"n", "no", "false", "0", "nein"}:
+    if value in {"no", "n", "false", "nein"}:
         return False
-    raise ValueError(f"Unrecognized boolean value: '{raw}'")
+    raise ValueError(f"Invalid boolean value: {text}")
 
 
-def _parse_travel_risk(raw: str) -> str:
-    val = raw.strip().lower()
-    if val in {"low", "niedrig"}:
+def _parse_travel_risk(text: str) -> str:
+    value = text.strip().lower()
+    if value in {"low", "medium", "high"}:
+        return value
+    if value in {"n/a", "none"}:
         return "low"
-    if val in {"med", "medium", "mid", "mittel"}:
-        return "med"
-    if val in {"high", "hoch"}:
-        return "high"
-    raise ValueError(f"Unrecognized travel risk: '{raw}'")
+    raise ValueError(f"Invalid travel risk value: {text}")
 
 
-def _parse_hours(raw: str) -> tuple[float, float, float, bool]:
-    text = raw.strip().lower()
-    locked = "locked" in text
-    text = text.replace(",", ".")
-    text = re.sub(r"(hours?|hrs?|h)", "", text)
-    text = text.replace("/", " ")
-    text = text.strip()
-
-    range_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*[-–]\s*([0-9]+(?:\.[0-9]+)?)", text)
-    if range_match:
-        hours_min = float(range_match.group(1))
-        hours_max = float(range_match.group(2))
-        hours_typical = round((hours_min + hours_max) / 2, 2)
-        return hours_min, hours_typical, hours_max, locked
-
-    num_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", text)
-    if num_match:
-        value = float(num_match.group(1))
-        return value, value, value, locked
-
-    if locked:
-        return 0.0, 0.0, 0.0, True
-
-    raise ValueError(f"Unrecognized hours value: '{raw}'")
+def _parse_hours(text: str) -> tuple[float, float, float, bool]:
+    trimmed = text.strip().lower()
+    locked = "[locked]" in trimmed or "(locked)" in trimmed
+    trimmed = trimmed.replace("[locked]", "").replace("(locked)", "").strip()
+    if "-" not in trimmed:
+        hours = float(trimmed)
+        return hours, hours, hours, locked
+    parts = [p.strip() for p in trimmed.split("-")]
+    if len(parts) != 3:
+        raise ValueError(f"Invalid hours format: {text}")
+    return float(parts[0]), float(parts[1]), float(parts[2]), locked
 
 
 def _extract_availability_table(text: str) -> list[dict[str, str]]:
     lines = text.splitlines()
-    start_idx = None
-    for idx, line in enumerate(lines):
-        if "weekly availability table" in line.lower():
-            start_idx = idx
-            break
-    if start_idx is None:
-        raise ValueError("Season Brief missing 'Weekly availability table' section.")
-
-    header_idx = None
-    for idx in range(start_idx, len(lines)):
-        if lines[idx].strip().startswith("|") and "day" in lines[idx].lower():
-            header_idx = idx
-            break
-    if header_idx is None:
-        raise ValueError("Availability table header not found.")
-
     rows: list[dict[str, str]] = []
-    for idx in range(header_idx + 1, len(lines)):
-        line = lines[idx].strip()
-        if not line.startswith("|"):
+    in_table = False
+    for line in lines:
+        if "weekly availability table" in line.lower():
+            in_table = True
+            continue
+        if in_table and line.strip().startswith("##"):
             break
+        if not in_table:
+            continue
+        if "|" not in line:
+            continue
         cells = [c.strip() for c in line.strip("|").split("|")]
         if len(cells) < 4:
             continue
@@ -231,7 +184,7 @@ def _extract_availability_table(text: str) -> list[dict[str, str]]:
             }
         )
     if not rows:
-        raise ValueError("Availability table contains no rows.")
+        raise ValueError("Season Brief missing 'Weekly availability table' section.")
     return rows
 
 
@@ -240,7 +193,7 @@ def build_availability_payload(
     season_brief_ref: str,
     season_text: str,
     season_year: int,
-) -> dict:
+) -> dict[str, Any]:
     table_rows = _extract_availability_table(season_text)
 
     entries = []
@@ -337,17 +290,22 @@ def build_availability_payload(
     }
 
 
-def main() -> int:
-    load_env()
-    logger = configure_logging(Path(__file__).stem)
-    args = parse_args()
-    athlete_id = args.athlete or resolve_athlete_id()
+def parse_and_store_availability(
+    *,
+    athlete_id: str,
+    workspace_root: Path,
+    schema_dir: Path,
+    year: int | None = None,
+    season_brief_path: Path | None = None,
+    skip_validate: bool = False,
+) -> AvailabilityResult:
+    store = LocalArtifactStore(root=workspace_root)
+    store.ensure_workspace(athlete_id)
+    athlete_root = store.athlete_root(athlete_id)
 
-    athlete_root = resolve_workspace_root() / athlete_id
-    season_path, season_text = _load_season_brief(athlete_root, args.year, args.season_brief_path)
+    season_path, season_text = _load_season_brief(athlete_root, year, season_brief_path)
     season_ref = season_path.name
-    logger.info("Parse availability athlete=%s season_brief=%s", athlete_id, season_ref)
-    season_year = args.year or _extract_year(season_text, season_path)
+    season_year = year or _extract_year(season_text, season_path)
     if season_year is None:
         raise ValueError("Season year not found. Provide --year or include 'Year: YYYY' in Season Brief.")
 
@@ -357,44 +315,33 @@ def main() -> int:
         season_year=season_year,
     )
 
-    validator = SchemaRegistry(resolve_schema_dir()).validator_for("availability.schema.json")
-    if not args.skip_validate:
+    validator = SchemaRegistry(schema_dir).validator_for("availability.schema.json")
+    if not skip_validate:
         try:
             validate_or_raise(validator, payload)
         except SchemaValidationError as exc:
-            print("Availability validation failed:")
-            for err in exc.errors:
-                print(f"  - {err}")
-            return 1
+            details = "\n".join(f"  - {err}" for err in exc.errors)
+            raise ValueError(f"Availability validation failed:\n{details}") from exc
 
     iso_week = payload["meta"]["iso_week"]
-    year_str, week_str = iso_week.split("-", 1)
-    data_dir = athlete_data_dir(athlete_id) / year_str / week_str
-    data_dir.mkdir(parents=True, exist_ok=True)
-    out_file = data_dir / f"availability_{iso_week}.json"
-    out_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    latest_dir = athlete_latest_dir(athlete_id)
-    latest_dir.mkdir(parents=True, exist_ok=True)
-    latest_file = latest_dir / "availability.json"
-    latest_file.write_bytes(out_file.read_bytes())
-    logger.info("Wrote availability iso_week=%s path=%s", iso_week, out_file)
-
-    record_index_write(
-        athlete_id=athlete_id,
-        artifact_type="AVAILABILITY",
-        version_key=iso_week,
-        path=out_file,
-        run_id=payload["meta"]["run_id"],
-        producer_agent=payload["meta"]["owner_agent"],
-        created_at=payload["meta"]["created_at"],
-        iso_week=payload["meta"]["iso_week"],
-        iso_week_range=payload["meta"]["iso_week_range"],
+    out_file = store.versioned_path(athlete_id, ArtifactType.AVAILABILITY, iso_week)
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
     )
 
-    print(f"Availability written: {out_file}")
-    return 0
+    latest_file = store.latest_path(athlete_id, ArtifactType.AVAILABILITY)
+    latest_file.write_bytes(out_file.read_bytes())
 
+    store._record_index_write(  # noqa: SLF001
+        athlete_id=athlete_id,
+        artifact_type=ArtifactType.AVAILABILITY,
+        version_key=iso_week,
+        version_path=out_file,
+        run_id=payload["meta"]["run_id"],
+        producer_agent=payload["meta"]["owner_agent"],
+        meta=payload["meta"],
+    )
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return AvailabilityResult(payload=payload, output_path=out_file)

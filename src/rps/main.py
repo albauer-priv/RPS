@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import logging
 import os
 from pathlib import Path
+import shutil
 import sys
 import time
 
@@ -15,10 +17,94 @@ from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings, load_env_file
 from rps.core.logging import setup_logging
+from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.plan_week import plan_week
 from rps.prompts.loader import PromptLoader
+
+
+def _select_kpi_profile(
+    inputs_dir: Path,
+    selected_name: str | None,
+    logger: logging.Logger,
+) -> Path | None:
+    candidates = sorted(inputs_dir.glob("kpi_profile*.json"))
+    if selected_name:
+        selected_path = inputs_dir / selected_name
+        if selected_path.exists():
+            return selected_path
+        matches = [path for path in candidates if path.name == selected_name]
+        if matches:
+            return matches[0]
+        raise SystemExit(f"KPI profile not found in inputs: {selected_name}")
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) == 0:
+        return None
+    logger.error("Multiple KPI profiles in inputs; specify --kpi-profile or KPI_PROFILE_SELECTED.")
+    raise SystemExit("Multiple KPI profiles found in inputs; selection required.")
+
+
+def _find_first(paths: list[Path]) -> Path | None:
+    for path in paths:
+        if path.exists():
+            return path
+    return None
+
+
+def _preflight(
+    athlete_id: str,
+    workspace_root: Path,
+    schema_dir: Path,
+    logger: logging.Logger,
+    year: int | None = None,
+    kpi_profile: str | None = None,
+    skip_availability: bool = False,
+) -> None:
+    athlete_root = workspace_root / athlete_id
+    inputs_dir = athlete_root / "inputs"
+    latest_dir = athlete_root / "latest"
+
+    season_patterns = ["season_brief_*.md"]
+    if year is not None:
+        season_patterns.insert(0, f"season_brief_{year}.md")
+    season_candidates = []
+    for pattern in season_patterns:
+        season_candidates.extend(list(inputs_dir.glob(pattern)))
+        season_candidates.extend(list(latest_dir.glob(pattern)))
+    if not season_candidates:
+        raise SystemExit("Missing Season Brief. Place season_brief_*.md in inputs/ or latest/.")
+
+    events_path = _find_first([inputs_dir / "events.md", latest_dir / "events.md"])
+    if not events_path:
+        raise SystemExit("Missing events.md. Place events.md in inputs/ or latest/.")
+
+    selected_env = os.getenv("KPI_PROFILE_SELECTED")
+    selected_name = kpi_profile or selected_env
+    kpi_path = _select_kpi_profile(inputs_dir, selected_name, logger)
+    if not kpi_path:
+        raise SystemExit("Missing KPI profile in inputs/. Provide kpi_profile*.json.")
+
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    latest_kpi = latest_dir / "kpi_profile.json"
+    if not latest_kpi.exists() or latest_kpi.read_bytes() != kpi_path.read_bytes():
+        shutil.copy2(kpi_path, latest_kpi)
+        logger.info("Copied KPI profile to latest: %s -> %s", kpi_path.name, latest_kpi)
+    named_copy = latest_dir / kpi_path.name
+    if not named_copy.exists():
+        shutil.copy2(kpi_path, named_copy)
+
+    if not skip_availability:
+        logger.info("Parsing availability from Season Brief.")
+        parse_and_store_availability(
+            athlete_id=athlete_id,
+            workspace_root=workspace_root,
+            schema_dir=schema_dir,
+            year=year,
+            season_brief_path=None,
+            skip_validate=False,
+        )
 
 
 def main() -> None:
@@ -82,9 +168,29 @@ def main() -> None:
             workspace_root=settings.workspace_root,
         )
 
-    if len(sys.argv) > 1 and sys.argv[1] in {"plan-week", "run-agent", "run-task"}:
+    if len(sys.argv) > 1 and sys.argv[1] in {
+        "plan-week",
+        "run-agent",
+        "run-task",
+        "preflight",
+        "parse-availability",
+    }:
         parser = argparse.ArgumentParser()
         subparsers = parser.add_subparsers(dest="cmd", required=True)
+
+        preflight_parser = subparsers.add_parser("preflight")
+        preflight_parser.add_argument("--athlete", default=default_athlete)
+        preflight_parser.add_argument("--year", type=int)
+        preflight_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
+        preflight_parser.add_argument("--skip-availability", action="store_true")
+        add_logging_args(preflight_parser)
+
+        availability_parser = subparsers.add_parser("parse-availability")
+        availability_parser.add_argument("--athlete", default=default_athlete)
+        availability_parser.add_argument("--year", type=int)
+        availability_parser.add_argument("--season-brief-path", type=Path)
+        availability_parser.add_argument("--skip-validate", action="store_true")
+        add_logging_args(availability_parser)
 
         plan_parser = subparsers.add_parser("plan-week")
         plan_parser.add_argument("--athlete", default=default_athlete)
@@ -92,6 +198,8 @@ def main() -> None:
         plan_parser.add_argument("--week", type=int, required=True)
         plan_parser.add_argument("--run-id", default="run_plan_week")
         plan_parser.add_argument("--no-file-search", action="store_true")
+        plan_parser.add_argument("--no-preflight", action="store_true")
+        plan_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         add_logging_args(plan_parser)
 
         run_parser = subparsers.add_parser("run-agent")
@@ -105,6 +213,8 @@ def main() -> None:
         run_parser.add_argument("--max-results", type=int, default=default_max_results)
         run_parser.add_argument("--strict", action="store_true")
         run_parser.add_argument("--non-strict", action="store_true")
+        run_parser.add_argument("--no-preflight", action="store_true")
+        run_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         add_logging_args(run_parser)
 
         task_parser = subparsers.add_parser("run-task")
@@ -121,6 +231,8 @@ def main() -> None:
         task_parser.add_argument("--debug-file-search", action="store_true")
         task_parser.add_argument("--no-file-search", action="store_true")
         task_parser.add_argument("--max-results", type=int, default=default_max_results)
+        task_parser.add_argument("--no-preflight", action="store_true")
+        task_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         add_logging_args(task_parser)
 
         args = parser.parse_args()
@@ -138,8 +250,30 @@ def main() -> None:
             args.log_file = str(settings.workspace_root / args.athlete / "logs" / log_filename)
 
         setup_logging(args.log_level, args.log_file, log_stdout=args.log_stdout)
+        logger = logging.getLogger("rps.preflight")
+
+        if args.cmd == "parse-availability":
+            result = parse_and_store_availability(
+                athlete_id=args.athlete,
+                workspace_root=settings.workspace_root,
+                schema_dir=settings.schema_dir,
+                year=args.year,
+                season_brief_path=args.season_brief_path,
+                skip_validate=args.skip_validate,
+            )
+            print({"ok": True, "path": str(result.output_path)})
+            return
 
         if args.cmd == "plan-week":
+            if not args.no_preflight:
+                _preflight(
+                    athlete_id=args.athlete,
+                    workspace_root=settings.workspace_root,
+                    schema_dir=settings.schema_dir,
+                    logger=logger,
+                    year=args.year,
+                    kpi_profile=args.kpi_profile,
+                )
             result = plan_week(
                 multi_runtime_for_agent("macro_planner"),
                 athlete_id=args.athlete,
@@ -157,6 +291,15 @@ def main() -> None:
             return
 
         if args.cmd == "run-task":
+            if not args.no_preflight:
+                _preflight(
+                    athlete_id=args.athlete,
+                    workspace_root=settings.workspace_root,
+                    schema_dir=settings.schema_dir,
+                    logger=logger,
+                    year=getattr(args, "year", None),
+                    kpi_profile=args.kpi_profile,
+                )
             tasks = [AgentTask(value) for value in args.task]
             spec = AGENTS[args.agent]
             result = run_agent_multi_output(
@@ -176,6 +319,19 @@ def main() -> None:
             print(result)
             return
 
+        if args.cmd == "preflight":
+            _preflight(
+                athlete_id=args.athlete,
+                workspace_root=settings.workspace_root,
+                schema_dir=settings.schema_dir,
+                logger=logger,
+                year=args.year,
+                kpi_profile=args.kpi_profile,
+                skip_availability=args.skip_availability,
+            )
+            print({"ok": True})
+            return
+
         spec = AGENTS[args.agent]
         strict = args.strict or bool(args.task)
         if args.non_strict:
@@ -188,6 +344,15 @@ def main() -> None:
                 raise SystemExit(
                     "Strict mode requires --task. "
                     "Use run-task or pass --non-strict for non-JSON outputs."
+                )
+            if not args.no_preflight:
+                _preflight(
+                    athlete_id=args.athlete,
+                    workspace_root=settings.workspace_root,
+                    schema_dir=settings.schema_dir,
+                    logger=logger,
+                    year=getattr(args, "year", None),
+                    kpi_profile=args.kpi_profile,
                 )
             run_id = args.run_id or f"{args.agent}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
             tasks = [AgentTask(value) for value in args.task]
@@ -208,6 +373,15 @@ def main() -> None:
             print(result)
             return
 
+        if not args.no_preflight:
+            _preflight(
+                athlete_id=args.athlete,
+                workspace_root=settings.workspace_root,
+                schema_dir=settings.schema_dir,
+                logger=logger,
+                year=getattr(args, "year", None),
+                kpi_profile=args.kpi_profile,
+            )
         output = run_agent(
             runtime_for_agent(spec.name),
             agent_name=spec.name,

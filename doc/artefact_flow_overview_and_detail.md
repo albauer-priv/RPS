@@ -21,7 +21,7 @@ flowchart TD
   PA[Performance-Analyst]:::agent
   I[Intervals.icu]:::external
   EXP[get_intervals_data.py]:::script
-  AVP[parse_season_brief_availability.py]:::script
+  AVP[rps.main parse-availability]:::script
   VAL[validate_outputs.py]:::script
   POST[post_workout.py]:::script
 
@@ -130,7 +130,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> AVP[parse_season_brief_availability.py]:::script --> AV[availability_yyyy-ww.json]:::artefact --> SS[Season-Scenario-Agent]:::agent
+  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> AVP[rps.main parse-availability]:::script --> AV[availability_yyyy-ww.json]:::artefact --> SS[Season-Scenario-Agent]:::agent
   U --> KP[kpi_profile_des_*.json]:::artefact --> SS
   U --> EV[events.md]:::artefact --> SS
   SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
@@ -311,7 +311,7 @@ flowchart LR
 
 **Processing (Conceptual)**
 - `get_intervals_data.py`: fetch raw activity data, compile `activities_actual` and `activities_trend`
-- `parse_season_brief_availability.py`: normalize Season Brief availability table into `availability`
+- `rps.main parse-availability`: normalize Season Brief availability table into `availability`
 - `validate_outputs.py`: validate JSON outputs against schemas
 
 **Outputs (Artefacts)**
@@ -324,7 +324,7 @@ flowchart LR
   I[Intervals.icu]:::external --> EXP[get_intervals_data.py]:::script
   EXP --> AA[activities_actual_yyyy-ww.json]:::artefact
   EXP --> AT[activities_trend_yyyy-ww.json]:::artefact
-  SB[season_brief_yyyy.md]:::artefact --> AVP[parse_season_brief_availability.py]:::script --> AV[availability_yyyy-ww.json]:::artefact
+  SB[season_brief_yyyy.md]:::artefact --> AVP[rps.main parse-availability]:::script --> AV[availability_yyyy-ww.json]:::artefact
   AA --> VAL[validate_outputs.py]:::script
   AT --> VAL
   AV --> VAL

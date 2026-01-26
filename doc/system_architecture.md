@@ -97,7 +97,7 @@ flowchart TD
 - Writes `activities_actual`, `activities_trend`, `zone_model`, `wellness`, and `availability` into the athlete workspace.
 - Updates `latest/` so planners always read the freshest factual data.
 - Pipeline entrypoint: `scripts/data_pipeline/get_intervals_data.py`.
-- Season Brief availability parser: `scripts/data_pipeline/parse_season_brief_availability.py`.
+- Season Brief availability parser: `python -m rps.main parse-availability` (module: `rps.data_pipeline.season_brief_availability`).
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
 

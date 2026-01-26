@@ -23,14 +23,14 @@ Typical weekly flow:
 ### Availability Parser
 
 ```bash
-python scripts/data_pipeline/parse_season_brief_availability.py --year 2026
+python -m rps.main parse-availability --year 2026
 ```
 
 ### 1.1 Flow Overview
 
 ```mermaid
 flowchart TD
-  SB[season_brief] --> AVP[parse_season_brief_availability.py]
+  SB[season_brief] --> AVP[rps.main parse-availability]
   AVP --> AV[availability]
   AV --> SS[Season-Scenario-Agent]
   KP[kpi_profile] --> SS
