@@ -20,6 +20,7 @@
     "temporal_scope",
     "trace_data",
     "trace_events",
+    "data_confidence",
     "notes"
   ],
   "properties": {

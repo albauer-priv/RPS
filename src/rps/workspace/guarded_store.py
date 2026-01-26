@@ -463,6 +463,8 @@ class GuardedValidatedStore:
             if is_envelope_schema(schema):
                 if not isinstance(document, dict) or "meta" not in document or "data" not in document:
                     raise ValueError("Envelope artefact must be an object with meta and data")
+                if isinstance(document.get("meta"), dict) and "data_confidence" not in document["meta"]:
+                    document["meta"]["data_confidence"] = "unknown"
                 document = self._apply_rounding(document, schema)
                 validate_or_raise(validator, document)
                 version_key = derive_version_key_from_envelope(document)

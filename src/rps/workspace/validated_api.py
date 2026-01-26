@@ -60,6 +60,7 @@ class ValidatedWorkspace:
             meta.setdefault("run_id", run_id)
             meta.setdefault("artifact_type", artifact_type.value)
             meta.setdefault("trace_upstream", [])
+            meta.setdefault("data_confidence", "unknown")
 
             instance = {"meta": meta, "data": payload}
             validate_or_raise(validator, instance)
