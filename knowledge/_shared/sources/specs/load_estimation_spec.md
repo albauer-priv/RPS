@@ -339,22 +339,201 @@ kpi_load_min = kpi_kJ_min * (IF_ref ** alpha)
 kpi_load_max = kpi_kJ_max * (IF_ref ** alpha)
 ```
 
-### S5) Final band (intersection, binding)
+
+
+### S5) Final Weekly Band Derivation (Intersection + Fallbacks) — **Binding**
+
+This section defines how the Meso-Architect MUST derive the weekly governance corridor `weekly_kj_bands[w]` (in **planned_Load_kJ/week**) from Macro, feasibility, KPI capacity guidance, and progression guardrails.
+
+#### S5.1 Inputs (per ISO week `w`)
+
+Meso MUST have:
+
+* `macro_band = [macro_min, macro_max]` (planned_Load_kJ/week)
+* `feasible_band = [feasible_min, feasible_max]` (planned_Load_kJ/week), computed per S3
+* `kpi_load_band = [kpi_load_min, kpi_load_max]` (planned_Load_kJ/week), computed per S4
+* Optional `progression_band = [prog_min, prog_max]` (planned_Load_kJ/week), derived from KPI progression guardrails if `prev_planned_Load_kJ_week > 0`
+
+All bands are inclusive and expressed as floats internally, rounded only at output.
+
+#### S5.2 Normal case: intersection (Binding)
+
+Meso MUST first attempt the normal intersection:
+
+1. Base intersection:
+
 ```
-band_min = max(macro_min, feasible_min, kpi_load_min)
-band_max = min(macro_max, feasible_max, kpi_load_max)
+base_min = max(macro_min, feasible_min, kpi_load_min)
+base_max = min(macro_max, feasible_max, kpi_load_max)
 ```
 
-Apply progression guardrails if present:
+2. Progression overlay (only if eligible):
+   If `prev_planned_Load_kJ_week` exists and `prev_planned_Load_kJ_week > 0` and the relevant guardrails exist:
+
 ```
-band_max = min(band_max, prev_load * (1 + max_weekly_increase_pct))
-band_min = max(band_min, prev_load * (1 - max_weekly_decrease_pct))
+band_min = max(base_min, prog_min)
+band_max = min(base_max, prog_max)
 ```
 
-Round to integers at output.
+Else:
 
-If `prev_planned_Load_kJ_week` is missing or ≤ 0, skip progression guardrails
-and emit a trace note (or debug bundle flag) indicating the skip.
+```
+band_min = base_min
+band_max = base_max
+```
+
+If `band_min <= band_max`, Meso MUST output:
+
+* `weekly_kj_bands[w] = [round_int(band_min), round_int(band_max)]`
+* and return success with `fallback_level = 0`.
+
+#### S5.3 No-intersection resolution ladder (Binding)
+
+If at any step `band_min > band_max`, Meso MUST apply the following **deterministic** fallback ladder in order. Meso MUST stop at the first level that yields a non-empty corridor. Meso MUST emit trace flags indicating which level was used.
+
+###### Level 1 — Drop progression overlay (Binding)
+
+If the corridor becomes infeasible **only after applying progression**, Meso MUST retry without progression:
+
+```
+band_min = base_min
+band_max = base_max
+```
+
+If `band_min <= band_max`, output the band and set:
+
+* `fallback_level = 1`
+* `fallback_reason = "DROP_PROGRESSION"`
+
+###### Level 2 — KPI rate band escalation (Binding)
+
+If the corridor is infeasible before progression or remains infeasible after Level 1, Meso MUST attempt to relax the KPI capacity constraint by escalating `kpi_rate_band_selector` within the pre-defined KPI bands.
+
+Escalation order (Binding):
+
+* If selector is `LOW`: retry `MID`, then `HIGH`
+* If selector is `MID`: retry `HIGH`
+* If selector is `HIGH`: no further escalation is allowed
+
+For each escalated selector:
+
+1. Recompute `kpi_load_band` per S4 using the escalated KPI band.
+2. Recompute the base intersection:
+
+```
+base_min = max(macro_min, feasible_min, kpi_load_min_escalated)
+base_max = min(macro_max, feasible_max, kpi_load_max_escalated)
+```
+
+3. Apply progression overlay if eligible. If infeasible, retry once without progression (equivalent to Level 1 inside this attempt).
+
+If any attempt yields `band_min <= band_max`, output and set:
+
+* `fallback_level = 2`
+* `fallback_reason = "KPI_BAND_ESCALATION"`
+* Additionally, if progression was dropped during this level, append:
+
+  * `fallback_reason_detail = "DROP_PROGRESSION"`
+
+###### Level 3 — KPI mapping utilization override (Optional, Binding if enabled)
+
+This level is ONLY permitted if the KPI profile explicitly enables it:
+
+* `kpi_mapping_utilization_override_allowed = true`
+
+If enabled, Meso MAY retry KPI mapping with:
+
+* `moving_time_capacity_hours = availability_hours_w` (i.e., utilization override = `1.0`) **for KPI mapping only**.
+* Feasibility (`feasible_band`) MUST NOT change.
+
+Then:
+
+1. Recompute KPI mechanical kJ band using the overridden moving-time capacity hours.
+2. Map to `kpi_load_band` per S4.
+3. Recompute intersection (+ progression overlay if eligible, with one retry without progression).
+
+If feasible, output and set:
+
+* `fallback_level = 3`
+* `fallback_reason = "KPI_UTILIZATION_OVERRIDE_TO_1_0"`
+
+###### Level 4 — Degenerate corridor at hard maximum (Binding)
+
+If no feasible corridor exists after Levels 1–3, Meso MUST produce a valid corridor by collapsing the band to a single point within the **hard feasible envelope** that does not violate physical feasibility.
+
+Define the hard envelope (Binding):
+
+* Preferred: `hard_band = intersect(feasible_band, kpi_load_band_current)`
+* If KPI remains infeasible even after allowed escalation/override, Meso MAY set `hard_band = feasible_band` and MUST emit `fallback_reason_detail = "KPI_CONSTRAINT_UNACHIEVABLE"`.
+
+If `hard_band` is empty, Meso MUST STOP with `infeasible_feasibility_band` (see S5.5).
+
+Otherwise:
+
+* Set `x = hard_band.max`
+* Output `weekly_kj_bands[w] = [round_int(x), round_int(x)]`
+* Set:
+
+  * `fallback_level = 4`
+  * `fallback_reason = "DEGENERATE_BAND_AT_HARD_MAX"`
+
+#### S5.4 Macro infeasible override (Binding)
+
+If the Macro corridor is entirely outside feasibility, Meso MUST enter a dedicated override mode rather than repeatedly failing intersection.
+
+Trigger (Binding):
+
+* If `intersect([macro_min, macro_max], [feasible_min, feasible_max])` is empty, Macro is **physically infeasible** for week `w`.
+
+Behavior (Binding):
+
+1. Meso MUST compute an override band from hard constraints:
+
+   * Preferred: `override_band = intersect(feasible_band, kpi_load_band)` (after applying any allowed KPI escalations / mapping overrides)
+   * If that is empty and KPI escalation/override is exhausted, `override_band = feasible_band`
+
+2. If `override_band` is empty, Meso MUST STOP with `infeasible_macro_vs_availability_or_domains`.
+
+3. Otherwise Meso MUST output a degenerate band at the closest feasible point to Macro intent:
+
+   * If Macro is above feasible: `x = override_band.max`
+   * If Macro is below feasible: `x = override_band.min`
+   * Output `weekly_kj_bands[w] = [round_int(x), round_int(x)]`
+
+Meso MUST emit:
+
+* `override_mode = "MACRO_INFEASIBLE_OVERRIDE"`
+* `override_reason = "MACRO_ABOVE_FEASIBLE"` or `"MACRO_BELOW_FEASIBLE"`
+* and set `fallback_level = 5`
+* `fallback_reason = "MACRO_INFEASIBLE_OVERRIDE"`
+
+#### S5.5 STOP conditions (Binding)
+
+Meso MUST STOP (and not emit `weekly_kj_bands[w]`) if any of the following hold:
+
+* `missing_or_invalid_ftp`
+* `no_allowed_domains`
+* `availability_negative`
+* `missing_body_mass_for_kpi_rate` (when KPI rate guidance is enabled/required)
+* `feasible_band` is empty (`feasible_min > feasible_max`)
+* After applying S5.4, `override_band` is empty
+
+#### S5.6 Output rounding and trace (Binding)
+
+* Meso MUST compute using unrounded floats and round only on output:
+
+  * `min_out = int(round(band_min))`
+  * `max_out = int(round(band_max))`
+* If rounding inverts the band (`min_out > max_out`), Meso MUST set both to the nearest integer to the underlying float target and emit `fallback_reason_detail = "ROUNDING_COLLAPSE"`.
+
+Trace (Binding):
+Meso MUST emit schema-compliant trace notes/flags including at minimum:
+
+* `fallback_level`
+* `fallback_reason`
+* `kpi_rate_band_selector_used`
+* and a debug bundle when schema allows: `macro_band`, `feasible_band`, `kpi_load_band`, `progression_band`, `final_band`.
+
 
 ### S6) Stop conditions (binding)
 - missing_or_invalid_ftp

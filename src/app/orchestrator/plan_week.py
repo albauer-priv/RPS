@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Callable
 
 from app.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
@@ -25,6 +26,37 @@ from app.core.logging import log_and_print
 from app.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
+ROOT = Path(__file__).resolve().parents[3]
+
+
+def _extract_general_and_meso(spec_text: str) -> str:
+    """Return General + Meso sections, skipping Macro section when present."""
+    lines = spec_text.splitlines()
+    macro_idx = None
+    meso_idx = None
+    for idx, line in enumerate(lines):
+        if line.startswith("## "):
+            if macro_idx is None and line.startswith("## Macro"):
+                macro_idx = idx
+            if meso_idx is None and line.startswith("## Meso"):
+                meso_idx = idx
+        if macro_idx is not None and meso_idx is not None:
+            break
+
+    if meso_idx is None:
+        return spec_text
+    if macro_idx is None or meso_idx < macro_idx:
+        return spec_text
+    head = "\n".join(lines[:macro_idx]).rstrip()
+    tail = "\n".join(lines[meso_idx:]).lstrip()
+    return f"{head}\n\n{tail}".strip()
+
+
+def _load_load_estimation_spec_meso() -> tuple[str, str]:
+    """Load LoadEstimationSpec and keep General + Meso sections only."""
+    path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
+    content = path.read_text(encoding="utf-8")
+    return str(path), _extract_general_and_meso(content)
 
 
 @dataclass
@@ -218,6 +250,14 @@ def plan_week(
 
     if meso_tasks:
         spec = AGENTS["meso_architect"]
+        try:
+            spec_path, spec_content = _load_load_estimation_spec_meso()
+            spec_block = (
+                "LoadEstimationSpec (General + Meso sections; loaded from "
+                f"{spec_path}):\n\"\"\"\n{spec_content}\n\"\"\"\n"
+            )
+        except FileNotFoundError as exc:
+            spec_block = f"LoadEstimationSpec missing: {exc}\n"
         for task in meso_tasks:
             message = f"Running Meso-Architect task {task.value} for block range {block_range_label}."
             log_and_print(logger, message)
@@ -231,7 +271,8 @@ def plan_week(
                     f"Create meso artefact {task.value} for block range {block_range_label} "
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
                     "Use this block range as the iso_week_range for the artefact. "
-                    "Read macro_overview and use workspace_get_latest to pull required inputs."
+                    "Read macro_overview and use workspace_get_latest to pull required inputs. "
+                    f"{spec_block}"
                 ),
                 run_id=f"{run_id}_meso_{task.value.lower()}",
                 model_override=model_resolver(spec.name) if model_resolver else None,

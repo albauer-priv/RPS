@@ -9,10 +9,8 @@ This chapter defines how to produce **schema‑valid INTERVALS_WORKOUTS JSON**.
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
 - Schema: `workouts.schema.json`
-- Retrieve with file_search:
   - Filter: `{"type":"eq","key":"schema_id","value":"workouts.schema.json"}`
 - You MUST validate output against this schema before calling `store_intervals_workouts_export`.
-- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
 
 ### HOW TO FILL (BINDING)
 

@@ -9,10 +9,8 @@ This chapter defines how to produce **schema‑valid WORKOUTS_PLAN JSON**.
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
 - Schema: `workouts_plan.schema.json`
-- Retrieve with file_search:
   - Filter: `{"type":"eq","key":"schema_id","value":"workouts_plan.schema.json"}`
 - You MUST validate output against this schema before calling `store_workouts_plan`.
-- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
 
 ### HOW TO FILL (BINDING)
 

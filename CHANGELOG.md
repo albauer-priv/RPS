@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-01-26
+
+### Changed
+- Mandatory output specs no longer mention file_search retrieval (runtime injects them).
+- Added load-order rule across agent prompts: read user input + workspace artefacts before knowledge files.
+- Meso plan-week now injects LoadEstimationSpec (General + Meso sections) into the user prompt.
+- LoadEstimationSpec updated (values adjusted).
+
 ## [0.6.0] - 2026-01-26
 
 ### Changed

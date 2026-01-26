@@ -9,10 +9,8 @@ This chapter defines how to produce **schema‑valid MACRO_MESO_FEED_FORWARD JSO
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
 - Schema: `macro_meso_feed_forward.schema.json`
-- Retrieve with file_search:
   - Filter: `{"type":"eq","key":"schema_id","value":"macro_meso_feed_forward.schema.json"}`
 - You MUST validate output against this schema before calling `store_macro_meso_feed_forward`.
-- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
 
 ### HOW TO FILL (BINDING)
 

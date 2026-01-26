@@ -9,10 +9,8 @@ This chapter defines how to produce **schema‑valid BLOCK_EXECUTION_ARCH JSON**
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
 - Schema: `block_execution_arch.schema.json`
-- Retrieve with file_search (Knowledge Retrieval table):
   - Filter: `{"type":"eq","key":"schema_id","value":"block_execution_arch.schema.json"}`
 - You MUST validate output against this schema before calling `store_block_execution_arch`.
-- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
 
 ### HOW TO FILL (BINDING)
 

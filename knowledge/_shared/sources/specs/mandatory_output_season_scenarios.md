@@ -11,7 +11,6 @@ required schema, field sources, and a minimal valid example.
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
 - Schema: `season_scenarios.schema.json`
-- Retrieve with file_search (Knowledge Retrieval table):
   - Filter: `{"type":"eq","key":"schema_id","value":"season_scenarios.schema.json"}`
 - You MUST validate output against this schema before calling `store_season_scenarios`.
 

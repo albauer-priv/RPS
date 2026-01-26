@@ -11,10 +11,8 @@ required schema, field sources, and a minimal valid example.
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
 - Schema: `macro_overview.schema.json`
-- Retrieve with file_search (Knowledge Retrieval table):
   - Filter: `{"type":"eq","key":"schema_id","value":"macro_overview.schema.json"}`
 - You MUST validate output against this schema before calling `store_macro_overview`.
-- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
 
 ### HOW TO FILL (BINDING)
 
