@@ -1,6 +1,6 @@
 # my-openai-platform
 
-Scaffold for OpenAI hosted vector stores with versioned, per-agent knowledge.
+Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge base.
 
 ## Layout
 
@@ -33,7 +33,7 @@ Scaffold for OpenAI hosted vector stores with versioned, per-agent knowledge.
 ## Quick start
 
 1. Copy `.env.example` to `.env` and fill in `OPENAI_API_KEY` and `ATHLETE_ID` (Intervals.icu).
-2. Add documents under `knowledge/<agent>/sources/` and update `manifest.yaml`.
+2. Add documents under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
 3. Run `python scripts/bundle_schemas.py` (build bundled schemas for retrieval).
 4. Run `python scripts/sync_vectorstores.py`.
 
@@ -56,7 +56,7 @@ Prerequisites:
 2. Install dependencies (`pip install -r requirements.txt` or `pip install -e .`).
 3. Build bundled schemas: `python scripts/bundle_schemas.py`.
 4. Sync vector stores: `python scripts/sync_vectorstores.py`.
-5. Smoke test: `python scripts/smoke_vectorstores.py --agent micro_planner --force-tool`.
+5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
 6. Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.
 7. Validate outputs: `python scripts/validate_outputs.py`.
 
@@ -170,7 +170,7 @@ python3 scripts/artefact_renderer.py kpi_profiles/kpi_profile_des_brevet_200_400
 ## Vector store runtime
 
 - `scripts/sync_vectorstores.py` writes `.cache/vectorstores_state.json` with store IDs.
-- Use `app.openai.runtime.resolve_vectorstore_ids(...)` to attach shared + agent stores.
+- Use `app.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
 - Load prompts from disk with `app.prompts.loader.agent_system_prompt(...)`.
 
 ## Agent runner
@@ -216,5 +216,5 @@ Scenarios are written to `.cache/macro_scenarios/<run-id>.md` by default.
 ## Notes
 
 - Vector stores are remote state; this repo only keeps sources + manifests.
-- If you want a shared store, use `knowledge/_shared/`.
+- Shared knowledge should be referenced from each agent manifest via `../_shared/...` paths (single store per agent).
 - Local artifacts live under `var/athletes/<athlete_id>/` and are managed by `app.workspace`.

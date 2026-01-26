@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -20,14 +21,27 @@ from app.openai.vectorstore_state import load_vectorstore_id  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
 
 
+def _default_max_results() -> int:
+    raw = os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS", "").strip()
+    if not raw:
+        return 3
+    try:
+        return int(raw)
+    except ValueError:
+        return 3
+
+
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for the smoke test."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--agent", default="micro_planner", help="Agent name for the agent store.")
-    parser.add_argument("--shared", default="vs_shared_training", help="Shared store name.")
+    parser.add_argument(
+        "--store",
+        default="vs_rps_all_agents",
+        help="Vector store name to query (default: vs_rps_all_agents).",
+    )
     parser.add_argument("--question", default="List a document filename from the agent store.")
     parser.add_argument("--model", default="gpt-4.1")
-    parser.add_argument("--max-results", type=int, default=3)
+    parser.add_argument("--max-results", type=int, default=_default_max_results())
     parser.add_argument("--force-tool", action="store_true", help="Force file_search tool usage.")
     return parser.parse_args()
 
@@ -38,9 +52,8 @@ def main() -> int:
     logger = configure_logging(ROOT, Path(__file__).stem)
     args = parse_args()
 
-    shared_id = load_vectorstore_id(args.shared)
-    agent_id = load_vectorstore_id(f"vs_{args.agent}")
-    logger.info("Smoke test agent=%s shared_id=%s agent_id=%s", args.agent, shared_id, agent_id)
+    store_id = load_vectorstore_id(args.store)
+    logger.info("Smoke test store=%s store_id=%s", args.store, store_id)
 
     client = OpenAI()
     payload = {
@@ -49,7 +62,7 @@ def main() -> int:
         "tools": [
             {
                 "type": "file_search",
-                "vector_store_ids": [shared_id, agent_id],
+                "vector_store_ids": [store_id],
                 "max_num_results": args.max_results,
             }
         ],

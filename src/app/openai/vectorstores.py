@@ -23,6 +23,17 @@ _RETRY_ATTEMPTS = 5
 _RETRY_BASE_SECONDS = 0.5
 _RETRY_MAX_SECONDS = 6.0
 _TRANSIENT_STATUS = {429, 500, 502, 503, 504}
+_MAX_ATTRIBUTE_KEYS = 16
+_ATTRIBUTE_ALLOWLIST = [
+    "managed_by",
+    "id",
+    "doc_type",
+    "type",
+    "scope",
+    "authority",
+    "applies_to",
+    "tags",
+]
 
 
 def _is_transient_error(exc: Exception) -> bool:
@@ -74,6 +85,9 @@ class Manifest:
 
 def iter_manifest_paths(knowledge_root: Path) -> list[Path]:
     """Return all manifest.yaml paths under the knowledge root."""
+    unified = knowledge_root / "all_agents" / "manifest.yaml"
+    if unified.exists():
+        return [unified]
     return sorted(knowledge_root.glob("**/manifest.yaml"))
 
 
@@ -188,6 +202,7 @@ def _flatten_header_attributes(header: dict[str, Any]) -> dict[str, str]:
     add("type", header.get("Type"))
     add("specification_for", header.get("Specification-For"))
     add("specification_id", header.get("Specification-ID"))
+    add("policy_id", header.get("Policy-ID"))
     add("interface_for", header.get("Interface-For"))
     add("interface_id", header.get("Interface-ID"))
     add("template_for", header.get("Template-For"))
@@ -228,6 +243,15 @@ def _flatten_header_attributes(header: dict[str, Any]) -> dict[str, str]:
     if isinstance(temporal_scope, dict):
         add("temporal_scope_from", temporal_scope.get("From"))
         add("temporal_scope_to", temporal_scope.get("To"))
+
+    id_value = (
+        header.get("Specification-ID")
+        or header.get("Policy-ID")
+        or header.get("Contract-Name")
+        or header.get("Interface-ID")
+        or header.get("Template-ID")
+    )
+    add("id", id_value)
 
     return attrs
 
@@ -273,7 +297,7 @@ def _extract_json_attributes(source_path: Path) -> dict[str, str]:
 
     schema_id = data.get("$id")
     if schema_id:
-        attrs = {"doc_type": "JsonSchema", "schema_id": str(schema_id)}
+        attrs = {"doc_type": "JsonSchema", "schema_id": str(schema_id), "id": str(schema_id)}
         title = data.get("title")
         if title:
             attrs["schema_title"] = str(title)
@@ -290,6 +314,23 @@ def build_source_attributes(source_path: Path) -> dict[str, str]:
     if source_path.suffix.lower() == ".json":
         return _extract_json_attributes(source_path)
     return {}
+
+
+def _filter_attributes(attributes: dict[str, Any]) -> dict[str, Any]:
+    """Limit attributes to a stable allowlist to satisfy API key count caps."""
+    if not attributes:
+        return {}
+    filtered: dict[str, Any] = {}
+    for key in _ATTRIBUTE_ALLOWLIST:
+        value = attributes.get(key)
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        filtered[key] = value
+        if len(filtered) >= _MAX_ATTRIBUTE_KEYS:
+            break
+    return filtered
 
 
 def env_key_for_agent(agent: str) -> str:
@@ -458,6 +499,7 @@ def _attach_file(
         client.vector_stores.files.create,
         vector_store_id=vector_store_id,
         file_id=file_id,
+        attributes=attributes,
     )
 
 
@@ -481,12 +523,11 @@ def upload_source(
 
     attributes = {
         "managed_by": MANAGED_BY,
-        "source_path": source.path,
-        "path": source.path,
         "sha256": sha256,
         "tags": ",".join(source.tags) if source.tags else "",
     }
     attributes.update(build_source_attributes(source_path))
+    attributes = _filter_attributes(attributes)
     _attach_file(client, vector_store_id, file_obj.id, attributes)
     return file_obj.id, sha256
 

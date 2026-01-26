@@ -1,9 +1,0 @@
-agent: performance_analysis
-vector_store_name: vs_performance_analysis
-description: Performance metrics and analytics.
-sources:
-- path: sources/contracts/analyst__macro_contract.md
-- path: sources/contracts/data_pipeline__analyst_contract.md
-- path: sources/policies/des_evaluation_policy.md
-- path: sources/specs/data_confidence_spec.md
-- path: ../_shared/sources/specs/mandatory_output_des_analysis_report.md

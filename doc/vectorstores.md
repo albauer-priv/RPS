@@ -15,14 +15,12 @@ Only **sources + manifests** live in the repo; embeddings never do.
 knowledge/
   _shared/
     sources/
+  all_agents/
     manifest.yaml
-  macro_planner/
-    sources/
-    manifest.yaml
-  ...
 ```
 
-Each agent has its own vector store. Shared knowledge can be included via `_shared`.
+All agents use a single vector store. Shared knowledge is listed once in
+`knowledge/all_agents/manifest.yaml` (no per‑agent stores).
 
 Schemas are source-of-truth in `schemas/`. Bundled copies are generated for
 vector store retrieval and stored under:
@@ -37,15 +35,15 @@ Run `python scripts/bundle_schemas.py` before syncing vector stores.
 
 ## 2. Manifest Format
 
-Each `knowledge/<agent>/manifest.yaml` declares the vector store name and sources.
+The unified `knowledge/all_agents/manifest.yaml` declares the store name and sources.
 
 ```yaml
-agent: micro_planner
-vector_store_name: vs_micro_planner
-description: Micro planning rules
+agent: all_agents
+vector_store_name: vs_rps_all_agents
+description: Unified knowledge store for all agents
 
 sources:
-  - path: sources/micro_rules.md
+  - path: ../_shared/sources/specs/load_estimation_spec.md
     tags: [micro, rules]
   - path: sources/workouts_plan_contract.md
     tags: [schema]
@@ -65,7 +63,6 @@ python3 scripts/sync_vectorstores.py
 
 Useful flags:
 
-- `--agent <name>`: sync one agent only
 - `--manifest <path>`: sync one manifest
 - `--delete-removed` / `--prune`: remove remote files missing locally
 - `--reset`: delete all remote files before syncing (reinitialize)
@@ -80,12 +77,7 @@ The sync writes `.cache/vectorstores_state.json`, which maps store names to IDs.
 IDs are environment-specific. You can set them explicitly to override lookup:
 
 ```
-OPENAI_VECTORSTORE_SHARED_ID=vs_xxx
-OPENAI_VECTORSTORE_MACRO_ID=vs_xxx
-OPENAI_VECTORSTORE_MESO_ID=vs_xxx
-OPENAI_VECTORSTORE_MICRO_ID=vs_xxx
-OPENAI_VECTORSTORE_WORKOUT_ID=vs_xxx
-OPENAI_VECTORSTORE_PERFORMANCE_ID=vs_xxx
+OPENAI_VECTORSTORE_ALL_AGENTS_ID=vs_xxx
 ```
 
 If no env ID is set, the sync script creates or finds a store by name and writes
@@ -95,13 +87,12 @@ its ID to `.cache/vectorstores_state.json`.
 
 ## 5. Runtime Attachment
 
-At runtime, the Responses API attaches **shared + agent vector stores** via
-`file_search`:
+At runtime, the Responses API attaches the shared store via `file_search`:
 
 ```python
 from app.openai.runtime import build_file_search_tool
 
-tool = build_file_search_tool("micro_planner")
+tool = build_file_search_tool("micro_planner")  # resolves vs_rps_all_agents
 ```
 
 Or directly via state resolver:
@@ -110,8 +101,7 @@ Or directly via state resolver:
 from app.openai.vectorstore_state import VectorStoreResolver
 
 resolver = VectorStoreResolver()
-shared_id = resolver.id_for_store_name("vs_shared_training")
-agent_id = resolver.id_for_store_name("vs_micro_planner")
+agent_id = resolver.id_for_store_name("vs_rps_all_agents")
 ```
 
 ---

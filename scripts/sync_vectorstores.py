@@ -25,6 +25,9 @@ def select_manifests(args: argparse.Namespace) -> list[Path]:
         return [Path(args.manifest).resolve()]
 
     knowledge_root = (ROOT / args.knowledge_root).resolve()
+    unified = knowledge_root / "all_agents" / "manifest.yaml"
+    if unified.exists():
+        return [unified]
     manifests = iter_manifest_paths(knowledge_root)
     if not args.agent:
         return manifests

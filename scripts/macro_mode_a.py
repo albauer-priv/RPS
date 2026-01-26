@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 import sys
 
@@ -94,7 +95,6 @@ def _runtime(agent_name: str | None = None) -> tuple[AgentRuntime, AppSettings]:
         reasoning_summary=reasoning_summary,
         prompt_loader=PromptLoader(settings.prompts_dir),
         vs_resolver=VectorStoreResolver(settings.vs_state_path),
-        shared_vs_name=settings.shared_vs_name,
         schema_dir=settings.schema_dir,
         workspace_root=settings.workspace_root,
     )
@@ -517,6 +517,16 @@ def run_select(args: argparse.Namespace) -> int:
     return 0
 
 
+def _default_max_results() -> int:
+    raw = os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS", "").strip()
+    if not raw:
+        return 20
+    try:
+        return int(raw)
+    except ValueError:
+        return 20
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="cmd", required=True)
@@ -527,7 +537,7 @@ def build_parser() -> argparse.ArgumentParser:
     base.add_argument("--week", type=int, required=True)
     base.add_argument("--run-id", required=True)
     base.add_argument("--model")
-    base.add_argument("--max-num-results", type=int, default=20)
+    base.add_argument("--max-num-results", type=int, default=_default_max_results())
     base.add_argument("--no-file-search", action="store_true")
 
     scen = subparsers.add_parser("scenarios", parents=[base])
@@ -554,9 +564,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    load_env_file(ROOT / ".env")
     parser = build_parser()
     args = parser.parse_args()
-    load_env_file(ROOT / ".env")
     logger = configure_logging(ROOT, Path(__file__).stem)
     logger.info("Macro mode A command=%s athlete=%s", getattr(args, "command", None), args.athlete)
 

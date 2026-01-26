@@ -73,11 +73,24 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
         "yes",
         "on",
     )
+    debug_file_search = os.getenv("OPENAI_DEBUG_FILE_SEARCH", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    ) or os.getenv("OPENAI_FILE_SEARCH_DEBUG", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
 
     for event in stream:
         event_type = _get_attr(event, "type")
         if debug_events and logger is not None:
             logger.info("Stream event type=%s", event_type)
+        if debug_file_search and logger is not None and event_type and event_type.startswith("response.file_search_call"):
+            logger.info("file_search stream event=%s payload=%s", event_type, event)
 
         if event_type == "response.reasoning_text.delta" and reasoning_mode == "full":
             delta = _get_attr(event, "delta") or ""

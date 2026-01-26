@@ -30,6 +30,9 @@ This chapter defines how to produce **schema‑valid BLOCK_EXECUTION_PREVIEW JSO
   - `authority`: `"Binding"`
   - `owner_agent`: `"Meso-Architect"`
 - `iso_week_range` required.
+- `iso_week` MUST be the **first** ISO week in `iso_week_range`.
+- `temporal_scope` MUST be copied from an upstream artefact (prefer stored BLOCK_EXECUTION_ARCH
+  for the same range; otherwise use the Macro Overview phase `date_range`). **Do NOT compute dates.**
 
 #### 3) `data.block_intent_summary`
 Required:
@@ -67,16 +70,24 @@ Required strings:
 #### 8) `data.traceability`
 - `derived_from` (array, min 1)
 - `conflict_resolution` (array, min 1)
+- Only these two keys are allowed inside `data.traceability` (no extra fields).
+- `derived_from` MUST include the stored block execution arch filename
+  `block_execution_arch_YYYY-WW.json` (use the artifact version key, not `iso_week_range`).
 
 #### 9) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Do NOT include workouts, interval structures, %FTP targets, zones (Z1–Z7), or day‑by‑day kJ targets.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
 - Validate against `block_execution_preview.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
 - Validate against schema before calling `store_block_execution_preview`.
 - On any error: **STOP** and report schema errors.
+- STOP if no stored BLOCK_EXECUTION_ARCH exists for the **exact** `meta.iso_week_range`.
+- STOP if `data.traceability` includes any keys beyond `derived_from` and `conflict_resolution`.
+- STOP if `data.traceability.derived_from` does not include
+  `block_execution_arch_YYYY-WW.json` (version key, not iso_week_range).
 
 ---
 

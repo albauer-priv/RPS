@@ -37,19 +37,6 @@ Presentation format does NOT weaken binding force.
 
 - Informational/ReferenceOnly artefacts MUST NOT be used to derive or justify normative rules (syntax, validation, policy, precedence). They may only be used for explanations, traceability, or user-requested references.
 
-### Runtime Artifact Load Map (binding)
-Use these tools to load runtime artifacts.
-
-| Artifact | Tool | Required for | Notes |
-|---|---|---|---|
-| Block Governance | `workspace_get_version({ "artifact_type": "BLOCK_GOVERNANCE", "version_key": "<range_start_week>" })` | All WORKOUTS_PLAN | Binding weekly_kj_bands + constraints |
-| Block Execution Arch | `workspace_get_version({ "artifact_type": "BLOCK_EXECUTION_ARCH", "version_key": "<range_start_week>" })` | All WORKOUTS_PLAN | Day‑role + intensity guardrails |
-| Block Feed Forward | `workspace_get_latest({ "artifact_type": "BLOCK_FEED_FORWARD" })` | If present | Override within range only |
-| Events | `workspace_get_input("events")` | All WORKOUTS_PLAN | Logistics only |
-| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | All WORKOUTS_PLAN | Time budget; must cover target week |
-| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | All WORKOUTS_PLAN | body_mass_kg for kJ/kg |
-| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | All WORKOUTS_PLAN | FTP + default IFs |
-
 ## workout_text_authority (Binding)
 - Grammar: `IntervalsWorkoutEBNF`
 - Subset/Validation: `WorkoutSyntaxAndValidation` (may only restrict EBNF; if conflict, Subset wins)
@@ -85,7 +72,7 @@ When STOP is required, output MUST contain ONLY:
 - NEXT_ACTION: <exact files to add as Knowledge or provide>
 
 ## runtime_tooling_guard (Binding)
-- Follow the Knowledge Retrieval section for any use of `file_search`.
+- Follow the Knowledge & Artifact Load Map for any use of `file_search`.
 - Do NOT use citations in the output.
 
 ---
@@ -103,121 +90,61 @@ No external references, documents, heuristics, or assumptions apply.
 - Binding content is explicitly marked as HARD RULE / NON-NEGOTIABLE / MANDATORY within this instruction set.
 - Informational content is explicitly marked as informational only (e.g., context & data artefacts listed as informational).
 
-## Binding Knowledge Files
-Binding knowledge is contained only within:
-- this instruction set (this file)
+## Knowledge & Artifact Load Map (Binding)
 
-### Binding Knowledge Carriers (runtime-provided; source of truth)
-The following files are the only runtime-provided binding knowledge sources.
-All binding authority applies to the contents inside these sources.
+All binding knowledge files and runtime artefacts are consolidated here.  
+Anything not listed below is **non‑binding** and MUST NOT override governance.
 
-- JSON Schemas 
-  - `workouts_plan.schema.json`
-  - `block_governance.schema.json`
-  - `block_execution_arch.schema.json`
-  - `block_feed_forward.schema.json`
-  - `artefact_meta.schema.json`
-  - `artefact_envelope.schema.json`
-- Contracts and specs 
-  - `meso__micro_contract.md`
-  - `micro__builder_contract.md`
-  - `agenda_enum_spec.md`
-  - `load_estimation_spec.md`
-  - `macro_cycle_enum_spec.md`
-  - `intervals_workout_ebnf.md`
-  - `workout_syntax_and_validation.md`
-  - `workout_policy.md`
-  - `file_naming_spec.md`
-  - `traceability_spec.md`
+### Required knowledge files (must read in full)
 
-### Parsing Rules
-Specs are standalone files. Read each required spec/contract in full.
-JSON schema files are standalone; read them in full.
+#### Specs / policies / principles
+| File | Content |
+|---|---|
+| `load_estimation_spec.md` | Load estimation (General + Micro) |
+| `agenda_enum_spec.md` | INTENSITY_DOMAIN / LOAD_MODALITY enums |
+| `macro_cycle_enum_spec.md` | MACRO_CYCLE_ENUM |
+| `progressive_overload_policy.md` | kJ-based cadence, deload, re-entry |
+| `intervals_workout_ebnf.md` | Intervals workout grammar |
+| `workout_syntax_and_validation.md` | Project subset rules |
+| `workout_policy.md` | Workout guardrails |
+| `file_naming_spec.md` | File naming rules |
+| `traceability_spec.md` | Trace rules |
 
-### Spec/Contract Load Map (Binding)
-Use this map to locate required files and how to load them (runtime-provided; use file_search per Knowledge Retrieval if needed).
+#### Contracts
+| File | Content |
+|---|---|
+| `meso__micro_contract.md` | Meso→Micro handoff |
+| `micro__builder_contract.md` | Micro→Builder handoff |
 
-| Name | Content | How to load |
+#### Schemas
+| File | Content |
+|---|---|
+| `workouts_plan.schema.json` | Workouts plan schema |
+| `block_governance.schema.json` | Block governance schema |
+| `block_execution_arch.schema.json` | Execution arch schema |
+| `block_feed_forward.schema.json` | Feed‑forward schema |
+| `artefact_meta.schema.json` | Meta envelope schema |
+| `artefact_envelope.schema.json` | Envelope schema |
+
+#### Supplemental (informational only)
+| File | Content |
+|---|---|
+| `kpi_signal_effects_policy.md` | Workout→KPI signal mapping |
+| `evidence_layer_durability.md` | Evidence layer (informational) |
+| `durability_bibliography.md` | Research bibliography (informational) |
+
+### Runtime artefacts (workspace; load via tools)
+Use these tools to load runtime artefacts. These are binding unless stated otherwise.
+
+| Artifact | Tool | Notes |
 |---|---|---|
-| LoadEstimationSpec | kJ/load calculation (General + Micro rules) | Read `load_estimation_spec.md` in full |
-| AgendaEnumSpec | INTENSITY_DOMAIN / LOAD_MODALITY | Read `agenda_enum_spec.md` in full |
-| Workout Grammar | Intervals EBNF | Read `intervals_workout_ebnf.md` in full |
-| Workout Subset | Project-specific restrictions | Read `workout_syntax_and_validation.md` in full |
-| WorkoutPolicy | Design guardrails | Read `workout_policy.md` in full |
-| Meso↔Micro Contract | Meso→Micro handoff & rules | Read `meso__micro_contract.md` in full |
-| Micro↔Builder Contract | Micro→Builder handoff | Read `micro__builder_contract.md` in full |
-
-### Policy Load Map (Informational)
-Use only when explicitly allowed (non-binding unless stated elsewhere).
-
-| Name | Content | How to load |
-|---|---|---|
-| KPI Signal Effects Policy | Workout → KPI signal effects mapping | Read `kpi_signal_effects_policy.md` in full |
-
-### Knowledge Retrieval (file_search; binding)
-Use the `file_search` tool only for knowledge documents (specs/contracts/policies/schemas).
-Do NOT use it for workspace artefacts or user inputs.
-
-Instruction (binding):
-- Use `file_search` with metadata filters whenever a specific key is known.
-- Do NOT search globally if a filter value is available.
-- If a filtered search returns no results, inform the user and ask whether to broaden the search.
-- If file_search is unavailable or required knowledge is missing, STOP and request a knowledge sync/upload.
-
-Available filter keys in this project:
-- `type` (Specification / Policy / Contract)
-- `specification_id`
-- `specification_for`
-- `policy_id`
-- `contract_name`
-- `doc_type` (e.g., JsonSchema)
-- `schema_id`
-- `schema_for`
-- `applies_to`
-- `scope`
-- `authority`
-- `tags`
-- `source_path`
-
-### Knowledge Retrieval Table (binding)
-All rows below are REQUIRED and MUST be read in full.
-
-#### Required specs / policies / principles (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `load_estimation_spec.md` | Load estimation (General + Micro) | `{"type":"eq","key":"specification_id","value":"LoadEstimationSpec"}` |
-| `agenda_enum_spec.md` | INTENSITY_DOMAIN / LOAD_MODALITY enums | `{"type":"eq","key":"specification_id","value":"AgendaEnumSpec"}` |
-| `macro_cycle_enum_spec.md` | MACRO_CYCLE_ENUM | `{"type":"eq","key":"specification_id","value":"MacroCycleEnumSpec"}` |
-| `progressive_overload_policy.md` | kJ-based cadence, deload, re-entry | `{"type":"eq","key":"policy_id","value":"ProgressiveOverloadPolicy"}` |
-| `intervals_workout_ebnf.md` | Intervals workout grammar | `{"type":"eq","key":"specification_id","value":"IntervalsWorkoutEBNF"}` |
-| `workout_syntax_and_validation.md` | Project subset rules | `{"type":"eq","key":"specification_id","value":"WorkoutSyntaxAndValidation"}` |
-| `workout_policy.md` | Workout guardrails | `{"type":"eq","key":"specification_id","value":"WorkoutPolicy"}` |
-| `file_naming_spec.md` | File naming rules | `{"type":"eq","key":"specification_id","value":"FileNamingSpec"}` |
-| `traceability_spec.md` | Trace rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
-
-#### Required contracts (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `meso__micro_contract.md` | Meso→Micro handoff | `{"type":"eq","key":"contract_name","value":"mesomicro"}` |
-| `micro__builder_contract.md` | Micro→Builder handoff | `{"type":"eq","key":"contract_name","value":"microbuilder"}` |
-
-#### Required schemas (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `workouts_plan.schema.json` | Workouts plan schema | `{"type":"eq","key":"schema_id","value":"workouts_plan.schema.json"}` |
-| `block_governance.schema.json` | Block governance schema | `{"type":"eq","key":"schema_id","value":"block_governance.schema.json"}` |
-| `block_execution_arch.schema.json` | Execution arch schema | `{"type":"eq","key":"schema_id","value":"block_execution_arch.schema.json"}` |
-| `block_feed_forward.schema.json` | Feed‑forward schema | `{"type":"eq","key":"schema_id","value":"block_feed_forward.schema.json"}` |
-| `artefact_meta.schema.json` | Meta envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_meta.schema.json"}` |
-| `artefact_envelope.schema.json` | Envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_envelope.schema.json"}` |
-
-#### Supplemental (optional)
-| File | Content | file_search filters |
-|---|---|---|
-| `kpi_signal_effects_policy.md` | Workout→KPI signal mapping | `{"type":"eq","key":"policy_id","value":"KPISignalEffectsPolicy"}` |
-| `progressive_overload_policy.md` | Progression/deload guidance (informational only) | `{"type":"eq","key":"policy_id","value":"ProgressiveOverloadPolicy"}` |
-| `evidence_layer_durability.md` | Evidence layer (informational) | `{"type":"eq","key":"specification_id","value":"DurabilityEvidenceLayer"}` |
-| `durability_bibliography.md` | Research bibliography (informational) | `{"type":"eq","key":"source_path","value":"sources/evidence/durability_bibliography.md"}` |
+| Block Governance | `workspace_get_version({ "artifact_type": "BLOCK_GOVERNANCE", "version_key": "<range_start_week>" })` | Binding weekly_kj_bands + constraints |
+| Block Execution Arch | `workspace_get_version({ "artifact_type": "BLOCK_EXECUTION_ARCH", "version_key": "<range_start_week>" })` | Day‑role + intensity guardrails |
+| Block Feed Forward | `workspace_get_latest({ "artifact_type": "BLOCK_FEED_FORWARD" })` | If present; override within range only |
+| Events | `workspace_get_input("events")` | Logistics only |
+| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Time budget; must cover target week |
+| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | body_mass_kg for kJ/kg |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | FTP + default IFs |
 
 ## Binding Resolver Map (HARD RULE)
 
@@ -364,7 +291,7 @@ The intent is derived from the artefact type (no free choice).
 - Use workspace_get_block_context for block governance + execution architecture resolution unless the user explicitly provides an `iso_week_range` in the request. A user-provided `iso_week_range` overrides phase alignment and must be used.
 - MUST read `load_estimation_spec.md` (General + Micro sections) in full before computing
   planned_kJ / planned_IF / planned_Load_kJ. If not loaded, STOP and request it.
-- The spec is a runtime-provided binding knowledge file; read it in full (use file_search per Knowledge Retrieval if needed).
+- The spec is a runtime-provided binding knowledge file; read it in full (use file_search per Knowledge & Artifact Load Map if needed).
 - Require target ISO week (year + week) in the user input. If missing, STOP and request it.
 - Do not require tool usage instructions in the user prompt.
 - ISO week labels are not calendar months (e.g., `YYYY-WW` is ISO week number, not a month).

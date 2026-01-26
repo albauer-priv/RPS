@@ -6,6 +6,7 @@ import datetime
 import json
 import math
 import logging
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,16 +44,15 @@ class AgentRuntime:
     reasoning_summary: str | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
-    shared_vs_name: str
     schema_dir: Path
     workspace_root: Path
 
 
-def _file_search_tool(shared_vs_id: str, agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
+def _file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
     """Build a file_search tool payload for Responses API."""
     return {
         "type": "file_search",
-        "vector_store_ids": [shared_vs_id, agent_vs_id],
+        "vector_store_ids": [agent_vs_id],
         "max_num_results": max_num_results,
     }
 
@@ -86,6 +86,43 @@ def _log_file_search_results(response: Any) -> None:
             result.get("score"),
             result.get("attributes"),
         )
+
+def _log_file_search_calls(response: Any) -> None:
+    """Log file_search call details when available."""
+    items = getattr(response, "output", []) or []
+    calls = [item for item in items if _item_type(item) == "file_search_call"]
+    if not calls:
+        logger.info("file_search calls: none")
+        return
+    for idx, item in enumerate(calls, start=1):
+        payload = _item_field(item, "queries") or _item_field(item, "query") or None
+        filters = _item_field(item, "filters") or _item_field(item, "filter") or None
+        logger.info(
+            "file_search_call[%d] queries=%s filters=%s keys=%s",
+            idx,
+            payload,
+            filters,
+            list(item.keys()) if isinstance(item, dict) else None,
+        )
+
+def _parse_int(value: str | None) -> int | None:
+    """Parse an int from env, returning None on invalid input."""
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+def _env_flag(name: str) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return False
+    value = raw.strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 def _extract_usage(response: Any) -> dict[str, Any]:
     """Best-effort extraction of token usage from a response."""
@@ -133,14 +170,13 @@ def run_agent_multi_output(
     temperature_override: float | None = None,
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
-    max_num_results: int = 20,
+    max_num_results: int | None = None,
 ) -> dict[str, Any]:
     """Run an agent that can emit multiple strict tool outputs."""
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
 
     model = model_override or runtime.model
     temperature = temperature_override if temperature_override is not None else runtime.temperature
-    shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
 
@@ -216,11 +252,27 @@ def run_agent_multi_output(
         workspace_root=runtime.workspace_root,
     )
 
+    if max_num_results is None:
+        max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20
+    debug_file_search = (
+        include_debug_file_search
+        or _env_flag("OPENAI_DEBUG_FILE_SEARCH")
+        or _env_flag("OPENAI_FILE_SEARCH_DEBUG")
+        or logger.isEnabledFor(logging.DEBUG)
+    )
+
     tools = [
-        _file_search_tool(shared_vs_id, agent_vs_id, max_num_results),
+        _file_search_tool(agent_vs_id, max_num_results),
         *read_defs,
         *store_tools,
     ]
+    logger.info(
+        "file_search tool: agent=%s stores=%s max_results=%s include_results=%s",
+        agent_name,
+        [agent_vs_id],
+        max_num_results,
+        debug_file_search,
+    )
 
     input_list: list[dict[str, Any]] = [
         {"role": "system", "content": system_prompt},
@@ -599,7 +651,7 @@ def run_agent_multi_output(
             "tools": tools,
             "input": input_list,
         }
-        if include_debug_file_search:
+        if debug_file_search:
             payload["include"] = ["file_search_call.results"]
         reasoning = build_reasoning_payload(
             model,
@@ -612,6 +664,13 @@ def run_agent_multi_output(
             payload["tool_choice"] = {"type": "file_search"}
         elif forced_tool_name:
             payload["tool_choice"] = {"type": "function", "name": forced_tool_name}
+        if debug_file_search:
+            logger.info(
+                "responses.create payload: tool_choice=%s include=%s tools=%s",
+                payload.get("tool_choice"),
+                payload.get("include"),
+                [tool.get("type") for tool in tools],
+            )
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
         start = time.perf_counter()
@@ -628,8 +687,13 @@ def run_agent_multi_output(
     seen_summaries: set[str] = set()
     response = _create_response(force_search)
     last_text = response.output_text or extract_text_output(response) or ""
-    if include_debug_file_search:
+    if debug_file_search:
+        _log_file_search_calls(response)
         _log_file_search_results(response)
+        if force_search and not extract_file_search_results(response):
+            logger.warning(
+                "force_file_search=True but no file_search results or calls returned"
+            )
     for summary in extract_reasoning_summaries(response):
         if summary in seen_summaries:
             continue
@@ -695,7 +759,8 @@ def run_agent_multi_output(
                         text_out = extract_text_output(response)
                         if text_out:
                             last_text = text_out
-                    if include_debug_file_search:
+                    if debug_file_search:
+                        _log_file_search_calls(response)
                         _log_file_search_results(response)
                     for summary in extract_reasoning_summaries(response):
                         if summary in seen_summaries:
@@ -874,8 +939,18 @@ def run_agent_multi_output(
             text_out = extract_text_output(response)
             if text_out:
                 last_text = text_out
-        if include_debug_file_search:
+        if debug_file_search:
+            _log_file_search_calls(response)
             _log_file_search_results(response)
+        for summary in extract_reasoning_summaries(response):
+            if summary in seen_summaries:
+                continue
+            seen_summaries.add(summary)
+            logger.info("Reasoning summary: %s", summary)
+        input_list += response.output
+    if debug_file_search:
+        _log_file_search_calls(response)
+        _log_file_search_results(response)
         for summary in extract_reasoning_summaries(response):
             if summary in seen_summaries:
                 continue

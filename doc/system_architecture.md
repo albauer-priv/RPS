@@ -130,28 +130,23 @@ flowchart TD
 
 - **Prompts** live in `prompts/` and are loaded at runtime.
 - **Knowledge sources** live in `knowledge/` and are synced to OpenAI hosted vector stores.
-- At runtime, the Responses API attaches **shared + agent vector stores** via file_search.
+- At runtime, the Responses API attaches the **agent vector store** via file_search.
 
 ### 4.1 Vector Stores
 
 #### 4.1.1 Stores, Purpose, and Contents
 
-The system uses one shared store plus one store per agent:
+The system uses a single shared store for all agents:
 
-- `vs_shared_training`: shared policies, safety, terminology, KPI definitions, general planning principles.
-- `vs_season_scenario`: scenario generation rules, season-brief interpretation, trade-off framing.
-- `vs_macro_planner`: season strategy, long-horizon planning guidelines.
-- `vs_meso_architect`: block design, deload logic, block-level constraints.
-- `vs_micro_planner`: weekly scheduling rules, fatigue management, session distribution.
-- `vs_workout_builder`: workout construction rules, interval text grammar, exercise library.
-- `vs_performance_analysis`: metrics, trend interpretation, readiness logic.
+- `vs_rps_all_agents`: unified knowledge store containing all specs, contracts,
+  policies, schemas, and prompts used across agents.
 
-Knowledge sources live in `knowledge/<agent>/sources/` and are described in
-`knowledge/<agent>/manifest.yaml`. The vector store itself is remote state.
+Knowledge sources live under `knowledge/_shared/` and are listed in
+`knowledge/all_agents/manifest.yaml`. The vector store itself is remote state.
 
 ```mermaid
 flowchart LR
-  SRC[knowledge/*/sources] --> SYNC[sync_vectorstores.py]
+  SRC[knowledge/all_agents/manifest.yaml] --> SYNC[sync_vectorstores.py]
   SYNC --> VS[(OpenAI Vector Stores)]
   VS --> FS[file_search tool]
   FS --> AG[Agent Runtime]
@@ -179,10 +174,10 @@ from openai import OpenAI
 client = OpenAI()
 
 # 1) Ensure store
-store = client.vector_stores.create(name="vs_micro_planner")
+store = client.vector_stores.create(name="vs_rps_all_agents")
 
 # 2) Upload file and attach
-file_obj = client.files.create(file=open("knowledge/micro_planner/sources/rules.md", "rb"),
+file_obj = client.files.create(file=open("knowledge/_shared/sources/specs/load_estimation_spec.md", "rb"),
                                purpose="assistants")
 client.vector_stores.file_batches.create_and_poll(
     vector_store_id=store.id,
@@ -252,14 +247,13 @@ Workout-Builder
 
 #### 4.1.5 Per-Agent Mapping and Available Tools
 
-Each agent attaches two stores at runtime:
+Each agent attaches a single store at runtime:
 
-- Shared: `vs_shared_training`
-- Agent-specific: store that matches the agent name (e.g. `vs_micro_planner`)
+- Single shared store for all agents (`vs_rps_all_agents`)
 
 Tools available to agents:
 
-- `file_search` (with `vector_store_ids=[shared, agent]`)
+- `file_search` (with `vector_store_ids=[agent]`)
 - Workspace read tools:
   - `workspace_get_latest`
   - `workspace_get_version`
@@ -422,10 +416,10 @@ Use this checklist to initialize a fresh environment:
    `API_KEY`, and `BASE_URL`.
 2. Install dependencies: `pip install -r requirements.txt` or `pip install -e .`
    (depending on how you set up the repo).
-3. Add knowledge sources under `knowledge/<agent>/sources/` and update manifests.
+3. Add knowledge sources under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
 5. Sync vector stores: `python scripts/sync_vectorstores.py`.
-6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --agent micro_planner --force-tool`.
+6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
 7. Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.
 8. Validate outputs: `python scripts/validate_outputs.py`.
 

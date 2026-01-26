@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,7 @@ from openai import OpenAI
 from app.agents.tasks import AgentTask, OUTPUT_SPECS
 from app.openai.model_capabilities import supports_temperature
 from app.openai.reasoning import build_reasoning_payload
-from app.openai.response_utils import extract_reasoning_summaries
+from app.openai.response_utils import extract_reasoning_summaries, extract_file_search_results
 from app.openai.streaming import create_response
 from app.openai.vectorstore_state import VectorStoreResolver
 from app.prompts.loader import PromptLoader
@@ -34,19 +35,52 @@ class AgentRuntime:
     reasoning_summary: str | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
-    shared_vs_name: str
     schema_dir: Path
     workspace_root: Path
 
 
-def _file_search_tool(shared_vs_id: str, agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
+def _file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
     """Build a file_search tool payload for Responses API."""
     return {
         "type": "file_search",
-        "vector_store_ids": [shared_vs_id, agent_vs_id],
+        "vector_store_ids": [agent_vs_id],
         "max_num_results": max_num_results,
     }
 
+
+def _parse_int(value: str | None) -> int | None:
+    """Parse an int from env, returning None on invalid input."""
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+def _env_flag(name: str) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return False
+    value = raw.strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+def _log_file_search_results(response: Any) -> None:
+    results = extract_file_search_results(response)
+    if not results:
+        logger.info("file_search results: none")
+        return
+    logger.info("file_search results: %d", len(results))
+    for idx, result in enumerate(results, start=1):
+        logger.info(
+            "file_search[%d] file=%s score=%s attrs=%s",
+            idx,
+            result.get("filename"),
+            result.get("score"),
+            result.get("attributes"),
+        )
 
 def run_agent_task_strict(
     runtime: AgentRuntime,
@@ -60,14 +94,13 @@ def run_agent_task_strict(
     model_override: str | None = None,
     temperature_override: float | None = None,
     force_file_search: bool = True,
-    max_num_results: int = 6,
+    max_num_results: int | None = None,
 ) -> dict[str, Any]:
     """Run one strict task and persist the resulting artifact."""
     output_spec = OUTPUT_SPECS[task]
 
     model = model_override or runtime.model
     temperature = temperature_override if temperature_override is not None else runtime.temperature
-    shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
 
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
@@ -75,10 +108,25 @@ def run_agent_task_strict(
     bundler = SchemaBundler(runtime.schema_dir)
     store_tool = build_strict_store_tool(bundler, output_spec)
 
+    if max_num_results is None:
+        max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 6
+    debug_file_search = (
+        _env_flag("OPENAI_DEBUG_FILE_SEARCH")
+        or _env_flag("OPENAI_FILE_SEARCH_DEBUG")
+        or logger.isEnabledFor(logging.DEBUG)
+    )
+
     tools = [
-        _file_search_tool(shared_vs_id, agent_vs_id, max_num_results),
+        _file_search_tool(agent_vs_id, max_num_results),
         store_tool,
     ]
+    logger.info(
+        "file_search tool: agent=%s stores=%s max_results=%s include_results=%s",
+        agent_name,
+        [agent_vs_id],
+        max_num_results,
+        debug_file_search,
+    )
 
     guarded = GuardedValidatedStore(
         athlete_id=athlete_id,
@@ -104,6 +152,8 @@ def run_agent_task_strict(
         )
         if reasoning:
             payload["reasoning"] = reasoning
+        if debug_file_search:
+            payload["include"] = ["file_search_call.results"]
         if force_search_flag:
             payload["tool_choice"] = {"type": "file_search"}
         if temperature is not None and supports_temperature(model):
@@ -113,6 +163,8 @@ def run_agent_task_strict(
     force_search = force_file_search
     seen_summaries: set[str] = set()
     response = _create_response(force_search)
+    if debug_file_search:
+        _log_file_search_results(response)
     for summary in extract_reasoning_summaries(response):
         if summary in seen_summaries:
             continue

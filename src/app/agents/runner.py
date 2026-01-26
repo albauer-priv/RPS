@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,14 +37,13 @@ class AgentRuntime:
     reasoning_summary: str | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
-    shared_vs_name: str
 
 
-def _build_file_search_tool(shared_vs_id: str, agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
+def _build_file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
     """Build a file_search tool payload for Responses API."""
     return {
         "type": "file_search",
-        "vector_store_ids": [shared_vs_id, agent_vs_id],
+        "vector_store_ids": [agent_vs_id],
         "max_num_results": max_num_results,
     }
 
@@ -78,12 +78,50 @@ def _log_file_search_results(response: Any) -> None:
             result.get("attributes"),
         )
 
+def _log_file_search_calls(response: Any) -> None:
+    """Log file_search call details when available."""
+    items = getattr(response, "output", []) or []
+    calls = [item for item in items if _item_type(item) == "file_search_call"]
+    if not calls:
+        logger.info("file_search calls: none")
+        return
+    for idx, item in enumerate(calls, start=1):
+        payload = _item_field(item, "queries") or _item_field(item, "query") or None
+        filters = _item_field(item, "filters") or _item_field(item, "filter") or None
+        logger.info(
+            "file_search_call[%d] queries=%s filters=%s keys=%s",
+            idx,
+            payload,
+            filters,
+            list(item.keys()) if isinstance(item, dict) else None,
+        )
+
 
 def _make_run_id(agent_name: str) -> str:
     """Generate a stable run identifier for artifact metadata."""
     slug = "".join(ch.lower() if ch.isalnum() else "_" for ch in agent_name).strip("_")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return f"{slug or 'agent'}_{stamp}"
+
+
+def _parse_int(value: str | None) -> int | None:
+    """Parse an int from env, returning None on invalid input."""
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+def _env_flag(name: str) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return False
+    value = raw.strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 def run_agent(
@@ -99,13 +137,12 @@ def run_agent(
     temperature_override: float | None = None,
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
-    max_num_results: int = 20,
+    max_num_results: int | None = None,
     run_id: str | None = None,
 ) -> str:
     """Run an agent with workspace tools and file search attached."""
     model = model_override or runtime.model
     temperature = temperature_override if temperature_override is not None else runtime.temperature
-    shared_vs_id = runtime.vs_resolver.id_for_store_name(runtime.shared_vs_name)
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     effective_run_id = run_id or _make_run_id(agent_name)
 
@@ -129,9 +166,23 @@ def run_agent(
     tool_defs = get_tool_defs()
     tool_handlers = get_tool_handlers(tool_ctx)
 
-    tools = [_build_file_search_tool(shared_vs_id, agent_vs_id, max_num_results)] + tool_defs
-
-    include = ["file_search_call.results"] if include_debug_file_search else None
+    if max_num_results is None:
+        max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20
+    tools = [_build_file_search_tool(agent_vs_id, max_num_results)] + tool_defs
+    debug_file_search = (
+        include_debug_file_search
+        or _env_flag("OPENAI_DEBUG_FILE_SEARCH")
+        or _env_flag("OPENAI_FILE_SEARCH_DEBUG")
+        or logger.isEnabledFor(logging.DEBUG)
+    )
+    include = ["file_search_call.results"] if debug_file_search else None
+    logger.info(
+        "file_search tool: agent=%s stores=%s max_results=%s include_results=%s",
+        agent_name,
+        [agent_vs_id],
+        max_num_results,
+        debug_file_search,
+    )
 
     input_list: list[dict[str, Any]] = [
         {"role": "system", "content": system_prompt},
@@ -158,12 +209,20 @@ def run_agent(
             payload["tool_choice"] = {"type": "file_search"}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
+        if debug_file_search:
+            logger.info(
+                "responses.create: tool_choice=%s include=%s tools=%d",
+                payload.get("tool_choice"),
+                payload.get("include"),
+                len(payload.get("tools") or []),
+            )
         return create_response(runtime.client, payload, logger)
 
     seen_summaries: set[str] = set()
     response = _create_response(force_search)
     last_text = response.output_text or extract_text_output(response) or ""
-    if include_debug_file_search:
+    if debug_file_search:
+        _log_file_search_calls(response)
         _log_file_search_results(response)
     for summary in extract_reasoning_summaries(response):
         if summary in seen_summaries:
@@ -222,7 +281,8 @@ def run_agent(
             text_out = extract_text_output(response)
             if text_out:
                 last_text = text_out
-        if include_debug_file_search:
+        if debug_file_search:
+            _log_file_search_calls(response)
             _log_file_search_results(response)
         for summary in extract_reasoning_summaries(response):
             if summary in seen_summaries:

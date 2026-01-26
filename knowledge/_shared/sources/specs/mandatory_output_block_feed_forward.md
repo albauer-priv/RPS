@@ -30,6 +30,9 @@ This chapter defines how to produce **schema‑valid BLOCK_FEED_FORWARD JSON**.
   - `authority`: `"Binding"`
   - `owner_agent`: `"Meso-Architect"`
 - `iso_week_range` required.
+- `iso_week` MUST be the **first** ISO week in `iso_week_range`.
+- `temporal_scope` MUST be copied from an upstream artefact (prefer stored BLOCK_GOVERNANCE for
+  the same range). **Do NOT compute dates.**
 
 #### 3) `data.body_metadata`
 Required:

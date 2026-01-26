@@ -28,6 +28,7 @@ def main() -> None:
     default_athlete = os.getenv("ATHLETE_ID")
     default_log_level = os.getenv("APP_LOG_LEVEL", "INFO")
     default_log_file = os.getenv("APP_LOG_FILE")
+    default_max_results = settings.file_search_max_results
 
     strict_only_agents = {
         "season_scenario",
@@ -55,7 +56,6 @@ def main() -> None:
         reasoning_summary=settings.openai_reasoning_summary,
         prompt_loader=PromptLoader(settings.prompts_dir),
         vs_resolver=VectorStoreResolver(settings.vs_state_path),
-        shared_vs_name=settings.shared_vs_name,
     )
 
     def runtime_for_agent(agent_name: str) -> AgentRuntime:
@@ -67,7 +67,6 @@ def main() -> None:
             reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
             prompt_loader=base_runtime.prompt_loader,
             vs_resolver=base_runtime.vs_resolver,
-            shared_vs_name=base_runtime.shared_vs_name,
         )
 
     def multi_runtime_for_agent(agent_name: str) -> MultiRuntime:
@@ -79,7 +78,6 @@ def main() -> None:
             reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
             prompt_loader=base_runtime.prompt_loader,
             vs_resolver=base_runtime.vs_resolver,
-            shared_vs_name=base_runtime.shared_vs_name,
             schema_dir=settings.schema_dir,
             workspace_root=settings.workspace_root,
         )
@@ -104,7 +102,7 @@ def main() -> None:
         run_parser.add_argument("--no-file-search", action="store_true")
         run_parser.add_argument("--task", nargs="+", choices=[task.value for task in AgentTask])
         run_parser.add_argument("--run-id")
-        run_parser.add_argument("--max-results", type=int, default=6)
+        run_parser.add_argument("--max-results", type=int, default=default_max_results)
         run_parser.add_argument("--strict", action="store_true")
         run_parser.add_argument("--non-strict", action="store_true")
         add_logging_args(run_parser)
@@ -122,7 +120,7 @@ def main() -> None:
         task_parser.add_argument("--run-id", default="run_task")
         task_parser.add_argument("--debug-file-search", action="store_true")
         task_parser.add_argument("--no-file-search", action="store_true")
-        task_parser.add_argument("--max-results", type=int, default=6)
+        task_parser.add_argument("--max-results", type=int, default=default_max_results)
         add_logging_args(task_parser)
 
         args = parser.parse_args()
@@ -153,6 +151,7 @@ def main() -> None:
                 reasoning_effort_resolver=settings.reasoning_effort_for_agent,
                 reasoning_summary_resolver=settings.reasoning_summary_for_agent,
                 force_file_search=not args.no_file_search,
+                max_num_results=settings.file_search_max_results,
             )
             print({"ok": result.ok, "steps": result.steps})
             return
@@ -235,7 +234,7 @@ def main() -> None:
     parser.add_argument("--no-file-search", action="store_true")
     parser.add_argument("--task", nargs="+", choices=[task.value for task in AgentTask])
     parser.add_argument("--run-id")
-    parser.add_argument("--max-results", type=int, default=6)
+    parser.add_argument("--max-results", type=int, default=default_max_results)
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--non-strict", action="store_true")
     add_logging_args(parser)

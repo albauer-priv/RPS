@@ -32,6 +32,9 @@ required schema, field sources, and a minimal valid example.
   - `authority`: `"Binding"`
   - `owner_agent`: `"Meso-Architect"`
 - `iso_week_range` is required (string `YYYY-WW--YYYY-WW`).
+- `iso_week` MUST be the **first** ISO week in `iso_week_range`.
+- `temporal_scope` MUST be copied from an upstream artefact (e.g., Macro Overview phase
+  `date_range` for the same block). **Do NOT compute calendar dates.**
 
 #### 3) `data.body_metadata`
 Required:
@@ -58,6 +61,29 @@ Required:
   - `confidence.kj`: `HIGH|MED|LOW`
   - `ftp_watts_used` (number)
   - `zone_model_version` (string)
+
+#### 5.2) Progression & deload shaping (binding)
+- Use `progressive_overload_policy.md` to shape progression, deload, and re-entry rules.
+- If Scenario/Macro provides `deload_cadence` or `phase_length_weeks`, treat them as **binding**.
+- Do NOT invent a default cadence.
+
+#### 5.1) Macro constraint propagation (binding)
+Always import `macro_overview.data.global_constraints`:
+- `availability_assumptions`, `risk_constraints`, `planned_event_windows`, `recovery_protection` (if present).
+
+Mapping (must include, do not omit):
+- Availability assumptions → `block_summary.non_negotiables` (verbatim).
+  Every entry from `macro_overview.data.global_constraints.availability_assumptions`
+  MUST appear verbatim in `block_summary.non_negotiables`.
+- Risk constraints → `block_summary.key_risks_warnings` (verbatim).
+  Every entry from `macro_overview.data.global_constraints.risk_constraints`
+  MUST appear verbatim in `block_summary.key_risks_warnings`.
+- Planned event windows → MUST be represented in `events_constraints.events[]`
+  using the A/B/C types already defined in `macro_overview.data.phases[].events_constraints`.
+  Do NOT source A/B/C event types from `events.md` (events.md is non-training logistics only).
+  Also add a single summary line to `block_summary.non_negotiables`:
+  `"Planned A/B/C windows included in events_constraints (from macro_overview)."`
+- Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).
 
 #### 6) `data.allowed_forbidden_semantics`
 Required:
@@ -120,6 +146,20 @@ All required booleans must be present and set to `true`:
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
 - You MUST run schema validation locally (in reasoning) before calling `store_block_governance`.
 - If any field fails type/enum/shape requirements, **STOP** and report the schema errors.
+
+Additional hard stops (binding):
+- STOP if any entry from `macro_overview.data.global_constraints.availability_assumptions`
+  is not present verbatim in `block_summary.non_negotiables`.
+- STOP if any entry from `macro_overview.data.global_constraints.risk_constraints`
+  is not present verbatim in `block_summary.key_risks_warnings`.
+- STOP if any date in `macro_overview.data.global_constraints.planned_event_windows`
+  is not represented in `events_constraints.events[]` with matching date, correct ISO week,
+  and A/B/C type from `macro_overview.data.phases[].events_constraints`.
+- STOP if `macro_overview.data.global_constraints.recovery_protection.notes` is not
+  present verbatim in `execution_non_negotiables.recovery_protection_rules`.
+- STOP if any `weekly_kj_bands` entry is outside the intersection defined by
+  LoadEstimationSpec (Macro corridor ∩ Feasible band ∩ KPI band; and progression guardrails
+  when present). If a band cannot be narrowed to this intersection, STOP and report infeasibility.
 
 ---
 

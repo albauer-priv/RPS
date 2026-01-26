@@ -33,107 +33,49 @@ Assume the mandatory_load_order is satisfied for this single file.
 
 ---
 
-## Binding Knowledge Carriers (runtime-provided; source of truth)
-The following files are the only runtime-provided binding knowledge sources.
-All binding authority applies exclusively to the contents inside these sources.
+## Knowledge & Artifact Load Map (Binding)
 
-- JSON Schemas 
-  - `des_analysis_report.schema.json`
-  - `activities_actual.schema.json`
-  - `activities_trend.schema.json`
-  - `artefact_meta.schema.json`
-  - `artefact_envelope.schema.json`
-- Contracts and specs 
-  - `analyst__macro_contract.md`
-  - `data_pipeline__analyst_contract.md`
-  - `data_confidence_spec.md`
-  - `traceability_spec.md`
-  - `file_naming_spec.md`
+All binding knowledge files and runtime artefacts are consolidated here.  
+Anything not listed below is **non‑binding** and MUST NOT override governance.
 
-All binding schemas and contracts MUST be fully read and applied.
+### Required knowledge files (must read in full)
 
-### Parsing Rules
-Specs are standalone files. Read each required spec/contract in full.
-JSON schema files are standalone; read them in full.
+#### Specs / policies
+| File | Content |
+|---|---|
+| `des_evaluation_policy.md` | DES evaluation guardrails (binding diagnostic interpretation) |
+| `data_confidence_spec.md` | Data confidence rules |
+| `traceability_spec.md` | Trace rules |
+| `file_naming_spec.md` | File naming rules |
 
-- `des_evaluation_policy.md`
-  - Defines binding diagnostic interpretation logic
-  - Must be applied internally
-  - Must not be quoted as actions or rules in reports
+#### Contracts
+| File | Content |
+|---|---|
+| `analyst__macro_contract.md` | Analyst→Macro contract |
+| `data_pipeline__analyst_contract.md` | Data→Analyst inputs |
 
-### Knowledge Retrieval (file_search; binding)
-Use the `file_search` tool only for knowledge documents (specs/contracts/policies/schemas).
-Do NOT use it for workspace artefacts or user inputs.
+#### Schemas
+| File | Content |
+|---|---|
+| `des_analysis_report.schema.json` | DES report schema |
+| `activities_actual.schema.json` | Activities actual schema |
+| `activities_trend.schema.json` | Activities trend schema |
+| `artefact_meta.schema.json` | Meta envelope schema |
+| `artefact_envelope.schema.json` | Envelope schema |
 
-Instruction (binding):
-- Use `file_search` with metadata filters whenever a specific key is known.
-- Do NOT search globally if a filter value is available.
-- If a filtered search returns no results, inform the user and ask whether to broaden the search.
-- If file_search is unavailable or required knowledge is missing, STOP and request a knowledge sync/upload.
+### Runtime artefacts (workspace; load via tools)
+Use these tools to load runtime artefacts. These are binding unless stated otherwise.
 
-Available filter keys in this project:
-- `type` (Specification / Policy / Contract)
-- `specification_id`
-- `specification_for`
-- `policy_id`
-- `contract_name`
-- `doc_type` (e.g., JsonSchema)
-- `schema_id`
-- `schema_for`
-- `applies_to`
-- `scope`
-- `authority`
-- `tags`
-- `source_path`
-
-### Knowledge Retrieval Table (binding)
-All rows below are REQUIRED and MUST be read in full.
-
-#### Required specs / policies (must read fully)
-| File | Content | file_search filters |
+| Artifact | Tool | Notes |
 |---|---|---|
-| `des_evaluation_policy.md` | DES evaluation guardrails | `{"type":"eq","key":"specification_id","value":"DESEvaluationPolicy"}` |
-| `data_confidence_spec.md` | Data confidence rules | `{"type":"eq","key":"specification_id","value":"DataConfidenceSpec"}` |
-| `traceability_spec.md` | Trace rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
-| `file_naming_spec.md` | File naming rules | `{"type":"eq","key":"specification_id","value":"FileNamingSpec"}` |
+| Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` | Must cover target week |
+| Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` | Must cover target week |
+| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | KPI thresholds |
+| Macro Overview | `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })` | If present; planning context |
+| Block Context | `workspace_get_block_context({ "year": YYYY, "week": WW })` | If present; may include block artefacts |
+| Events | `workspace_get_input("events")` | Logistics only |
 
-#### Required contracts (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `analyst__macro_contract.md` | Analyst→Macro contract | `{"type":"eq","key":"contract_name","value":"analystmacro"}` |
-| `data_pipeline__analyst_contract.md` | Data→Analyst inputs | `{"type":"eq","key":"contract_name","value":"data_pipeline__analyst"}` |
-
-#### Required schemas (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `des_analysis_report.schema.json` | DES report schema | `{"type":"eq","key":"schema_id","value":"des_analysis_report.schema.json"}` |
-| `activities_actual.schema.json` | Activities actual schema | `{"type":"eq","key":"schema_id","value":"activities_actual.schema.json"}` |
-| `activities_trend.schema.json` | Activities trend schema | `{"type":"eq","key":"schema_id","value":"activities_trend.schema.json"}` |
-| `artefact_meta.schema.json` | Meta envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_meta.schema.json"}` |
-| `artefact_envelope.schema.json` | Envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_envelope.schema.json"}` |
-
-## Informational Knowledge Carriers
-The following sources provide context and interpretation guidance only.
-They must not override or conflict with binding knowledge.
-
-## Informational vs Binding Distinction
-- Binding: content inside the binding sources listed above (schemas, contracts, derivation rules, authority constraints).
-- Informational: context/interpretation guidance only.
-
-## Forbidden Knowledge
-Not specified in the source prompt.
-
-### Runtime Artifact Load Map (binding)
-Use these tools to load runtime artifacts.
-
-| Artifact | Tool | Required for | Notes |
-|---|---|---|---|
-| Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` | All reports | Must cover target week |
-| Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` | All reports | Must cover target week |
-| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | All reports | KPI thresholds |
-| Macro Overview | `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })` | If present | Planning context |
-| Block Context | `workspace_get_block_context({ "year": YYYY, "week": WW })` | If present | Block context; returns block_range and (if present) `block_governance`, `block_execution_arch`, `block_execution_preview` |
-| Events | `workspace_get_input("events")` | All reports | Logistics only |
+Anything not listed above is **forbidden** for binding decisions.
 
 ---
 

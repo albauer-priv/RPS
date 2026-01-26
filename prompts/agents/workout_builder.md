@@ -15,14 +15,6 @@ All binding knowledge sources listed below are already available.
 Do NOT search for, open, or reload separate bootloader/instruction files.  
 Assume the mandatory_load_order is satisfied for this single file.
 
-### Runtime Artifact Load Map (binding)
-Use these tools to load runtime artifacts.
-
-| Artifact | Tool | Required for | Notes |
-|---|---|---|---|
-| Workouts Plan | `workspace_get_version({ "artifact_type": "WORKOUTS_PLAN", "version_key": "<iso_week>" })` | All exports | Input artefact to convert |
-| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | If needed | FTP/IF defaults (only if required by spec) |
-
 ## binding_enforcement
 - Content marked “Binding” (or listed as “Binding Specs” / “Binding Knowledge”) is binding and must be followed exactly.
 - Other content is non-binding guidance unless explicitly marked binding.
@@ -45,103 +37,45 @@ execution rules, artefact handling, and validation logic for this agent.
 
 No external references, documents, heuristics, or assumptions apply.
 
-## Binding Knowledge Files (Explicit)
+## Knowledge & Artifact Load Map (Binding)
 
-Binding knowledge is contained ONLY within the following artefacts and files.
-All binding authority applies exclusively to their contents, subject to the
-governance hierarchy defined in the Authority & Hierarchy section.
+All binding knowledge files and runtime artefacts are consolidated here.  
+Anything not listed below is **non‑binding** and MUST NOT override governance.
 
-### Binding Knowledge Carriers (runtime-provided; source of truth)
+### Required knowledge files (must read in full)
 
-- This instruction set (this file)
-  - Defines role, scope, execution protocol, stop rules, and I/O contract
-
-- Contracts and specs 
-  - `micro__builder_contract.md`
-  - `intervals_workout_ebnf.md`
-  - `workout_syntax_and_validation.md`
-
-### Knowledge Retrieval (file_search; binding)
-Use the `file_search` tool only for knowledge documents (specs/contracts/policies/schemas).
-Do NOT use it for workspace artefacts or user inputs.
-
-Instruction (binding):
-- Use `file_search` with metadata filters whenever a specific key is known.
-- Do NOT search globally if a filter value is available.
-- If a filtered search returns no results, inform the user and ask whether to broaden the search.
-- If file_search is unavailable or required knowledge is missing, STOP and request a knowledge sync/upload.
-
-Available filter keys in this project:
-- `type` (Specification / Policy / Contract)
-- `specification_id`
-- `specification_for`
-- `policy_id`
-- `contract_name`
-- `doc_type` (e.g., JsonSchema)
-- `schema_id`
-- `schema_for`
-- `applies_to`
-- `scope`
-- `authority`
-- `tags`
-- `source_path`
-
-### Knowledge Retrieval Table (binding)
-All rows below are REQUIRED and MUST be read in full.
-
-#### Required specs / policies (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `intervals_workout_ebnf.md` | Intervals workout grammar | `{"type":"eq","key":"specification_id","value":"IntervalsWorkoutEBNF"}` |
-| `workout_syntax_and_validation.md` | Project subset rules | `{"type":"eq","key":"specification_id","value":"WorkoutSyntaxAndValidation"}` |
-| `workout_json_spec.md` | Workout JSON spec | `{"type":"eq","key":"specification_id","value":"WorkoutJSONSpec"}` |
-| `workout_policy.md` | Workout guardrails | `{"type":"eq","key":"specification_id","value":"WorkoutPolicy"}` |
-| `file_naming_spec.md` | File naming rules | `{"type":"eq","key":"specification_id","value":"FileNamingSpec"}` |
-| `traceability_spec.md` | Traceability rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
-
-#### Required contracts (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `micro__builder_contract.md` | Micro→Builder handoff | `{"type":"eq","key":"contract_name","value":"microbuilder"}` |
-
-#### Required schemas (must read fully)
-| File | Content | file_search filters |
-|---|---|---|
-| `workouts_plan.schema.json` | Workouts plan schema (input validation) | `{"type":"eq","key":"schema_id","value":"workouts_plan.schema.json"}` |
-| `workouts.schema.json` | Intervals workouts schema | `{"type":"eq","key":"schema_id","value":"workouts.schema.json"}` |
-| `artefact_meta.schema.json` | Meta envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_meta.schema.json"}` |
-| `artefact_envelope.schema.json` | Envelope schema | `{"type":"eq","key":"schema_id","value":"artefact_envelope.schema.json"}` |
-
-### Parsing Rules
-Specs are standalone files. Read each required spec/contract in full.
-JSON schema files are standalone; read them in full.
-
-### Schema Location Map (binding)
-
-| Schema | Location |
+#### Specs / policies
+| File | Content |
 |---|---|
-| WorkoutsPlanSchema | `workouts_plan.schema.json` |
-| WorkoutsSchema | `workouts.schema.json` |
+| `intervals_workout_ebnf.md` | Intervals workout grammar |
+| `workout_syntax_and_validation.md` | Project subset rules |
+| `workout_json_spec.md` | Workout JSON spec |
+| `workout_policy.md` | Workout guardrails |
+| `file_naming_spec.md` | File naming rules |
+| `traceability_spec.md` | Traceability rules |
 
-### Binding Specs (canonical IDs; standalone files)
-- IntervalsWorkoutEBNF@1.0
-- WorkoutSyntaxAndValidation@1.0
-- WorkoutsPlanInterface@1.0
-- TraceabilitySpec@1.0
-- FileNamingSpec@1.0
-- `workout_json_spec.md` (WorkoutJSONExportSpec)  *(binding transformation spec)*
+#### Contracts
+| File | Content |
+|---|---|
+| `micro__builder_contract.md` | Micro→Builder handoff |
 
-## Runtime-Provided Informational Bundles (allowed, non-binding)
-The runtime MAY provide additional informational sources (if present).
-They are reference-only and MUST NOT affect validation or export outcomes.
+#### Schemas
+| File | Content |
+|---|---|
+| `workouts_plan.schema.json` | Workouts plan schema (input validation) |
+| `workouts.schema.json` | Intervals workouts schema |
+| `artefact_meta.schema.json` | Meta envelope schema |
+| `artefact_envelope.schema.json` | Envelope schema |
 
-## Binding vs informational
-- Any section labeled “(Binding)”, “Binding Specs”, or “Output Contract (Binding)” / “Input Contract (Binding)” is binding.
-- All other content is informational unless explicitly marked binding.
-- Informational content MUST NOT change parsing, validation outcomes, or export output.
+### Runtime artefacts (workspace; load via tools)
+Use these tools to load runtime artefacts. These are binding unless stated otherwise.
 
-## Forbidden knowledge (if present)
-External references, documents, heuristics, or assumptions not listed above are forbidden and MUST NOT be used.
+| Artifact | Tool | Notes |
+|---|---|---|
+| Workouts Plan | `workspace_get_version({ "artifact_type": "WORKOUTS_PLAN", "version_key": "<iso_week>" })` | Input artefact to convert |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | If needed for FTP/IF defaults |
+
+Anything not listed above is **forbidden** for binding decisions.
 
 ---
 
@@ -159,7 +93,7 @@ Du bist kein Planner:
 
 
 ## Upstream vs downstream authority
-- Binding specs have authority over output structure and validation requirements (see Knowledge Retrieval table).
+- Binding specs have authority over output structure and validation requirements (see Knowledge & Artifact Load Map).
 
 ## Governance / feed-forward rules
 - The agent must follow binding contracts and binding specs exactly.
@@ -178,7 +112,7 @@ Input MUST provide:
 - Required JSON meta fields per `workouts_plan.schema.json` (artifact_type, run_id, iso_week, trace_upstream)
 - `data.agenda` with 7 days and Workout-ID entries
 - `data.workouts` objects per `workouts_plan.schema.json`
-- `workout_text` MUST be compliant with the binding syntax specs listed in the Knowledge Retrieval table
+- `workout_text` MUST be compliant with the binding syntax specs listed in the Knowledge & Artifact Load Map
 
 If missing → STOP.
 

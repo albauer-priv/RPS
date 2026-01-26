@@ -46,6 +46,7 @@ def plan_week(
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
     reasoning_summary_resolver: Callable[[str], str | None] | None = None,
     force_file_search: bool = True,
+    max_num_results: int = 20,
 ) -> PlanWeekResult:
     """Run the Macro -> Meso -> Micro -> Builder -> Analysis flow if needed."""
     workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
@@ -236,6 +237,7 @@ def plan_week(
                 model_override=model_resolver(spec.name) if model_resolver else None,
                 temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
                 force_file_search=force_file_search,
+                max_num_results=max_num_results,
             )
             steps.append({"agent": "meso_architect", "tasks": [task.value], "result": out})
             if out.get("ok") and out.get("produced"):
@@ -312,6 +314,7 @@ def plan_week(
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
+            max_num_results=max_num_results,
         )
         steps.append({"agent": "micro_planner", "tasks": [t.value for t in micro_tasks], "result": out})
         if out.get("ok") and out.get("produced"):
@@ -353,6 +356,7 @@ def plan_week(
                 model_override=model_resolver(spec.name) if model_resolver else None,
                 temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
                 force_file_search=force_file_search,
+                max_num_results=max_num_results,
             )
             steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
             if out.get("ok") and out.get("produced"):
@@ -417,6 +421,7 @@ def plan_week(
                 model_override=model_resolver(spec.name) if model_resolver else None,
                 temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
                 force_file_search=force_file_search,
+                max_num_results=max_num_results,
             )
             steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})
             if out.get("ok") and out.get("produced"):

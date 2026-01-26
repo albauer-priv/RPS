@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - 2026-01-26
+## [0.6.0] - 2026-01-26
 
 ### Changed
 - plan-week now treats downstream artefacts as stale when upstream macro/meso/workouts updates are newer, and re-runs as needed (cascade rebuilds).
 - Vector store sync now retries transient API errors with backoff instead of failing immediately.
 - Streaming output supports optional italic rendering of reasoning via `OPENAI_STREAM_ITALICS`.
+- Consolidated all agent knowledge into a single vector store (`vs_rps_all_agents`) with a unified `knowledge/all_agents/manifest.yaml`.
 - Consolidated macro/meso load policies into `load_estimation_spec.md` (General/Macro/Meso sections) and removed the standalone policy docs.
 - LoadEstimationSpec tightened: deterministic Macro utilization/body-mass fallback, KPI band selector, domain aliasing, and clarified Macro/Meso responsibilities.
 - Added ENDURANCE_LOW/ENDURANCE_HIGH intensity domains (with legacy aliasing), renamed `SST` → `SWEET_SPOT`, and reintroduced THRESHOLD in intensity-domain enums across schemas, specs, prompts, and workout policy.
@@ -62,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added mandatory output guides for all agent-produced artefacts (block governance/arch/preview/feed-forward, workouts plan, intervals export, DES report, macro feed-forward).
 - Prompt cleanup: removed format-only output rules, normalized example filenames to patterns, and corrected contract filenames (`micro__builder`, `macro__meso`, `meso__micro`, `analyst__macro`).
 - Prompt redundancy cleanup: consolidated repeated required-input/stop text across agents and removed duplicate validation checklists.
+- File search now attaches only **one vector store per agent** (shared store removed); runtime, docs, and smoke test updated accordingly.
+- Shared vector store manifest removed; shared knowledge is now referenced via `../_shared/...` paths inside each agent manifest.
 
 ## [0.4.2] - 2026-01-25
 

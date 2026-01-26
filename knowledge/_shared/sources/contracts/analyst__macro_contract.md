@@ -1,6 +1,6 @@
 ---
 Type: Contract
-Contract-Name: analyst____macro
+Contract-Name: analyst__macro
 Version: 1.0
 Status: Active
 

@@ -34,7 +34,7 @@ class AppSettings:
     schema_dir: Path
     prompts_dir: Path
     vs_state_path: Path
-    shared_vs_name: str
+    file_search_max_results: int
 
     def model_for_agent(self, agent_name: str) -> str:
         """Return the model override for an agent, or the default model."""
@@ -72,6 +72,19 @@ def _parse_float(value: str | None) -> float | None:
         return None
     try:
         return float(raw)
+    except ValueError:
+        return None
+
+
+def _parse_int(value: str | None) -> int | None:
+    """Parse an int from env, returning None on invalid input."""
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
     except ValueError:
         return None
 
@@ -165,5 +178,5 @@ def load_app_settings() -> AppSettings:
         schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),
         vs_state_path=Path(os.getenv("VECTORSTORE_STATE_PATH", ".cache/vectorstores_state.json")),
-        shared_vs_name=os.getenv("SHARED_VECTORSTORE_NAME", "vs_shared_training"),
+        file_search_max_results=_parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20,
     )
