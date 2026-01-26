@@ -61,6 +61,19 @@ def _find_first(paths: list[Path]) -> Path | None:
     return None
 
 
+def _parse_iso_datetime(value: str) -> datetime | None:
+    """Parse ISO datetime with optional Z suffix."""
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
 def _preflight(
     athlete_id: str,
     workspace_root: Path,
@@ -71,6 +84,7 @@ def _preflight(
     kpi_profile: str | None = None,
     skip_availability: bool = False,
     skip_intervals: bool = False,
+    force_intervals: bool = False,
 ) -> None:
     athlete_root = workspace_root / athlete_id
     inputs_dir = athlete_root / "inputs"
@@ -164,8 +178,35 @@ def _preflight(
             skip_validate=False,
         )
         run_intervals_pipeline(args, logger=logging.getLogger("rps.preflight.intervals"))
+        return
+
+    latest_trend = latest_dir / "activities_trend.json"
+    if latest_trend.exists() and not force_intervals:
+        try:
+            meta = json.loads(latest_trend.read_text(encoding="utf-8")).get("meta", {})
+            created_at = _parse_iso_datetime(meta.get("created_at"))
+        except json.JSONDecodeError:
+            created_at = None
+        if created_at:
+            age = datetime.now(timezone.utc) - created_at
+            if age.total_seconds() < 2 * 60 * 60:
+                logger.info("Intervals data is fresh (age=%s). Skipping fetch.", age)
+                return
+
+    if force_intervals:
+        logger.info("Forcing Intervals pipeline refresh.")
     else:
-        logger.info("Intervals artifacts already present (zone_model, wellness, activities_*).")
+        logger.info("Intervals data stale or missing freshness metadata. Refreshing.")
+
+    args = argparse.Namespace(
+        year=None,
+        week=None,
+        from_date=None,
+        to_date=None,
+        athlete=athlete_id,
+        skip_validate=False,
+    )
+    run_intervals_pipeline(args, logger=logging.getLogger("rps.preflight.intervals"))
 
 
 def main() -> None:
@@ -249,6 +290,7 @@ def main() -> None:
         preflight_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         preflight_parser.add_argument("--skip-availability", action="store_true")
         preflight_parser.add_argument("--skip-intervals", action="store_true")
+        preflight_parser.add_argument("--force-intervals", action="store_true")
         add_logging_args(preflight_parser)
 
         availability_parser = subparsers.add_parser("parse-availability")
@@ -280,6 +322,7 @@ def main() -> None:
         plan_parser.add_argument("--no-preflight", action="store_true")
         plan_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         plan_parser.add_argument("--skip-intervals", action="store_true")
+        plan_parser.add_argument("--force-intervals", action="store_true")
         add_logging_args(plan_parser)
 
         run_parser = subparsers.add_parser("run-agent")
@@ -296,6 +339,7 @@ def main() -> None:
         run_parser.add_argument("--no-preflight", action="store_true")
         run_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         run_parser.add_argument("--skip-intervals", action="store_true")
+        run_parser.add_argument("--force-intervals", action="store_true")
         add_logging_args(run_parser)
 
         task_parser = subparsers.add_parser("run-task")
@@ -315,6 +359,7 @@ def main() -> None:
         task_parser.add_argument("--no-preflight", action="store_true")
         task_parser.add_argument("--kpi-profile", help="KPI profile filename in inputs/.")
         task_parser.add_argument("--skip-intervals", action="store_true")
+        task_parser.add_argument("--force-intervals", action="store_true")
         add_logging_args(task_parser)
 
         args = parser.parse_args()
@@ -358,6 +403,7 @@ def main() -> None:
                 kpi_profile=args.kpi_profile,
                 skip_availability=args.skip_availability,
                 skip_intervals=args.skip_intervals,
+                force_intervals=args.force_intervals,
             )
             print({"ok": True})
             return
@@ -377,10 +423,11 @@ def main() -> None:
                     schema_dir=settings.schema_dir,
                     logger=logger,
                     year=args.year,
-                    week=args.week,
-                    kpi_profile=args.kpi_profile,
-                    skip_intervals=args.skip_intervals,
-                )
+                week=args.week,
+                kpi_profile=args.kpi_profile,
+                skip_intervals=args.skip_intervals,
+                force_intervals=args.force_intervals,
+            )
             result = plan_week(
                 multi_runtime_for_agent("macro_planner"),
                 athlete_id=args.athlete,
@@ -407,6 +454,7 @@ def main() -> None:
                     year=getattr(args, "year", None),
                     kpi_profile=args.kpi_profile,
                     skip_intervals=args.skip_intervals,
+                    force_intervals=args.force_intervals,
                 )
             tasks = [AgentTask(value) for value in args.task]
             spec = AGENTS[args.agent]
@@ -449,6 +497,7 @@ def main() -> None:
                     year=getattr(args, "year", None),
                     kpi_profile=args.kpi_profile,
                     skip_intervals=args.skip_intervals,
+                    force_intervals=args.force_intervals,
                 )
             run_id = args.run_id or f"{args.agent}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
             tasks = [AgentTask(value) for value in args.task]
@@ -478,6 +527,7 @@ def main() -> None:
                 year=getattr(args, "year", None),
                 kpi_profile=args.kpi_profile,
                 skip_intervals=args.skip_intervals,
+                force_intervals=args.force_intervals,
             )
         output = run_agent(
             runtime_for_agent(spec.name),
