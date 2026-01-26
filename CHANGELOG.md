@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `mandatory_output_season_scenarios.md` and load it for Season-Scenario output guidance; macro_mode_a injects it into the scenarios prompt.
 - Macro-Planner agent calls now inject LoadEstimationSpec (General+Macro section) automatically in the runner to avoid missing-file issues.
 - Season-Scenario agent calls now inject the mandatory SEASON_SCENARIOS output guide automatically in the runner.
+- Simplified macro_planner and season_scenario prompts to defer all field/validation guidance to mandatory output chapters.
 - Season-Scenario prompt trimmed to scenario-only guidance; removed load-corridor/kJ rules and clarified KPI Profile is loaded from workspace (no selection logic).
 - Added runtime artifact load maps (workspace tools) for all agents.
 - Season-Scenario prompt and macro_mode_a scenario run now explicitly require store tool calls with top-level `{meta, data}` envelopes (no JSON in chat).
