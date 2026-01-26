@@ -357,23 +357,6 @@ def run_overview(args: argparse.Namespace) -> int:
     if not scenario:
         raise SystemExit("Missing scenario. Provide --scenario or store SEASON_SCENARIO_SELECTION.")
 
-    trace_line = ""
-    if args.scenario_run_id:
-        trace_line = (
-            f"Set meta.trace_upstream to include '{args.scenario_run_id}'. "
-        )
-
-    events_line = (
-        "Load events.md via workspace_get_input('events') (required), include it in "
-        "meta.trace_events, and reflect relevant events in phases[].events_constraints. "
-        "If no relevant events apply to a phase, use an empty array for events_constraints. "
-    )
-    if args.allow_missing_events:
-        events_line = (
-            "Load events.md via workspace_get_input('events') when available. "
-            "If events input is missing, set events_constraints to an empty array and proceed. "
-        )
-
     scenario_block = ""
     if args.scenario_run_id:
         scenario_path = ROOT / ".cache" / "macro_scenarios" / f"{args.scenario_run_id}.md"
@@ -414,10 +397,7 @@ def run_overview(args: argparse.Namespace) -> int:
 
     band_line = ""
     if args.moving_time_rate_band:
-        band_line = (
-            "Use KPI moving_time_rate_guidance band '"
-            f"{args.moving_time_rate_band}' when deriving weekly kJ corridors. "
-        )
+        band_line = f"Moving time rate band: {args.moving_time_rate_band}. "
 
     try:
         spec_path, spec_content = _load_load_estimation_spec_macro()
@@ -427,15 +407,6 @@ def run_overview(args: argparse.Namespace) -> int:
         )
     except FileNotFoundError as exc:
         spec_block = f"LoadEstimationSpec missing: {exc}\n"
-
-    try:
-        mo_path, mo_content = _load_mandatory_output_macro_overview()
-        mandatory_block = (
-            "Mandatory JSON Output (MACRO_OVERVIEW; loaded from "
-            f"{mo_path}):\n\"\"\"\n{mo_content}\n\"\"\"\n"
-        )
-    except FileNotFoundError as exc:
-        mandatory_block = f"Mandatory output guide missing: {exc}\n"
 
     user_input = (
         f"Scenario {scenario}. Mode A. Create and store the MACRO_OVERVIEW via the store tool. "

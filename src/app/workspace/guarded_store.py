@@ -447,58 +447,125 @@ class GuardedValidatedStore:
     ) -> dict[str, Any]:
         """Validate, derive version key, and persist a document with guards."""
         target = output_spec.artifact_type
-        self._check_dependencies(target)
-
-        schema = self.schemas.get_schema(output_spec.schema_file)
-        validator = self.schemas.validator_for(output_spec.schema_file)
-
-        if is_envelope_schema(schema):
-            if not isinstance(document, dict) or "meta" not in document or "data" not in document:
-                raise ValueError("Envelope artefact must be an object with meta and data")
-            document = self._apply_rounding(document, schema)
-            validate_or_raise(validator, document)
-            version_key = derive_version_key_from_envelope(document)
-        else:
-            document = self._apply_rounding(document, schema)
-            validate_or_raise(validator, document)
-            version_key = "raw"
-
-        if target in (ArtifactType.BLOCK_GOVERNANCE, ArtifactType.BLOCK_EXECUTION_ARCH):
-            macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.MACRO_OVERVIEW)
-            if target == ArtifactType.BLOCK_GOVERNANCE:
-                self._enforce_block_governance_constraints(document, macro_doc)
-            else:
-                self._enforce_block_execution_arch_constraints(document, macro_doc)
-        elif target == ArtifactType.BLOCK_EXECUTION_PREVIEW:
-            self._enforce_block_execution_preview_traceability(document)
-
-        path = self.store.save_document(
-            athlete_id=self.athlete_id,
-            artifact_type=target,
-            version_key=version_key,
-            document=document,
-            producer_agent=producer_agent,
-            run_id=run_id,
-            update_latest=update_latest,
-        )
-
-        self.logger.info(
-            "Stored artifact type=%s version_key=%s path=%s run_id=%s",
-            target.value,
-            version_key,
-            path,
-            run_id,
-        )
+        raw_document = document
         try:
-            render_sidecar(Path(path))
-        except Exception:
-            self.logger.exception("Auto-render failed for %s", path)
+            self._log_store_attempt(
+                raw_document,
+                output_spec=output_spec,
+                run_id=run_id,
+                producer_agent=producer_agent,
+            )
+            self._check_dependencies(target)
 
-        return {
-            "ok": True,
-            "artifact_type": target.value,
-            "version_key": version_key,
-            "path": str(path),
-            "run_id": run_id,
-            "producer_agent": producer_agent,
-        }
+            schema = self.schemas.get_schema(output_spec.schema_file)
+            validator = self.schemas.validator_for(output_spec.schema_file)
+
+            if is_envelope_schema(schema):
+                if not isinstance(document, dict) or "meta" not in document or "data" not in document:
+                    raise ValueError("Envelope artefact must be an object with meta and data")
+                document = self._apply_rounding(document, schema)
+                validate_or_raise(validator, document)
+                version_key = derive_version_key_from_envelope(document)
+            else:
+                document = self._apply_rounding(document, schema)
+                validate_or_raise(validator, document)
+                version_key = "raw"
+
+            if target in (ArtifactType.BLOCK_GOVERNANCE, ArtifactType.BLOCK_EXECUTION_ARCH):
+                macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.MACRO_OVERVIEW)
+                if target == ArtifactType.BLOCK_GOVERNANCE:
+                    self._enforce_block_governance_constraints(document, macro_doc)
+                else:
+                    self._enforce_block_execution_arch_constraints(document, macro_doc)
+            elif target == ArtifactType.BLOCK_EXECUTION_PREVIEW:
+                self._enforce_block_execution_preview_traceability(document)
+
+            path = self.store.save_document(
+                athlete_id=self.athlete_id,
+                artifact_type=target,
+                version_key=version_key,
+                document=document,
+                producer_agent=producer_agent,
+                run_id=run_id,
+                update_latest=update_latest,
+            )
+
+            self.logger.info(
+                "Stored artifact type=%s version_key=%s path=%s run_id=%s",
+                target.value,
+                version_key,
+                path,
+                run_id,
+            )
+            try:
+                render_sidecar(Path(path))
+            except Exception:
+                self.logger.exception("Auto-render failed for %s", path)
+
+            return {
+                "ok": True,
+                "artifact_type": target.value,
+                "version_key": version_key,
+                "path": str(path),
+                "run_id": run_id,
+                "producer_agent": producer_agent,
+            }
+        except Exception:
+            self._log_failed_payload(
+                raw_document,
+                output_spec=output_spec,
+                run_id=run_id,
+                producer_agent=producer_agent,
+            )
+            raise
+
+    def _format_payload(self, document: Any) -> str:
+        """Return a formatted payload string for logging."""
+        try:
+            return json.dumps(document, ensure_ascii=False, indent=2)
+        except TypeError:
+            return repr(document)
+
+    def _log_store_attempt(
+        self,
+        document: Any,
+        *,
+        output_spec: OutputSpec,
+        run_id: str,
+        producer_agent: str,
+    ) -> None:
+        """Log store attempts (payload only at DEBUG)."""
+        if not self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.info(
+                "Store attempt artifact=%s run_id=%s producer=%s",
+                output_spec.artifact_type.value,
+                run_id,
+                producer_agent,
+            )
+            return
+        payload_text = self._format_payload(document)
+        self.logger.debug(
+            "Store attempt artifact=%s run_id=%s producer=%s. Payload:\n%s",
+            output_spec.artifact_type.value,
+            run_id,
+            producer_agent,
+            payload_text,
+        )
+
+    def _log_failed_payload(
+        self,
+        document: Any,
+        *,
+        output_spec: OutputSpec,
+        run_id: str,
+        producer_agent: str,
+    ) -> None:
+        """Log the raw payload for failed store attempts."""
+        payload_text = self._format_payload(document)
+        self.logger.error(
+            "Store failed for artifact=%s run_id=%s producer=%s. Payload:\n%s",
+            output_spec.artifact_type.value,
+            run_id,
+            producer_agent,
+            payload_text,
+        )

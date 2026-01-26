@@ -53,6 +53,8 @@ Required:
   - `notes` (string)
 - `athlete_profile_ref` (Season Brief ref or profile id)
 - `body_mass_kg` (number, from WELLNESS or Season Brief fallback)
+Notes:
+- If the caller specifies a moving_time_rate_band, `moving_time_rate_guidance.segment` MUST match it.
 
 #### 4) `data.macro_intent_principles`
 Required:
