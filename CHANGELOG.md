@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded the agent knowledge injection bundles (contracts, interfaces, mandatory output guides, evidence).
 - Added `data_confidence` schema and required it in activities_actual/trend outputs; pipeline now emits `meta.data_confidence`.
 
-## [0.6.9] - 2026-01-26
+## [0.6.10] - 2026-01-26
 
 ### Changed
 - LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE_LOW (IF_ref_load = 0.65) and updates feasibility + KPI mapping accordingly.
@@ -24,8 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Store tool schemas no longer require `data_confidence` in the global meta; activities schemas still require it.
 - Block governance hard-stop now defers to LoadEstimationSpec S5 ladder before stopping on empty intersections.
 - Season Brief availability parsing moved into `rps` module with `rps.main parse-availability`; old script removed and docs updated.
+- DES analysis report schema now allows `inconclusive` status; prompts/specs updated accordingly.
 
-## [0.6.8] - 2026-01-26
+## [0.6.9] - 2026-01-26
 
 ### Changed
 - LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE_LOW (IF_ref_load = 0.65) and updates feasibility + KPI mapping accordingly.

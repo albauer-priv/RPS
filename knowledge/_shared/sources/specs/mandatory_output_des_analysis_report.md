@@ -39,7 +39,7 @@ Required:
 Required objects:
 - `durability`, `fatigue_resistance`, `fueling_stability`
 Each must include:
-- `status` (`green|yellow|red`)
+- `status` (`green|yellow|red|inconclusive`)
 - `confidence` (`high|medium|low`)
 - `evidence_window` `{ "weeks": int >= 1 }`
 - `delta_vs_baseline` (string)

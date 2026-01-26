@@ -9,7 +9,8 @@
       "enum": [
         "green",
         "yellow",
-        "red"
+        "red",
+        "inconclusive"
       ]
     },
     "confidence": {
@@ -81,7 +82,8 @@
                   "enum": [
                     "green",
                     "yellow",
-                    "red"
+                    "red",
+                    "inconclusive"
                   ]
                 },
                 "confidence": {
@@ -126,7 +128,8 @@
                   "enum": [
                     "green",
                     "yellow",
-                    "red"
+                    "red",
+                    "inconclusive"
                   ]
                 },
                 "confidence": {
@@ -171,7 +174,8 @@
                   "enum": [
                     "green",
                     "yellow",
-                    "red"
+                    "red",
+                    "inconclusive"
                   ]
                 },
                 "confidence": {
@@ -430,7 +434,8 @@
           "enum": [
             "green",
             "yellow",
-            "red"
+            "red",
+            "inconclusive"
           ]
         },
         "confidence": {
@@ -736,7 +741,8 @@
                   "enum": [
                     "green",
                     "yellow",
-                    "red"
+                    "red",
+                    "inconclusive"
                   ]
                 },
                 "confidence": {
@@ -781,7 +787,8 @@
                   "enum": [
                     "green",
                     "yellow",
-                    "red"
+                    "red",
+                    "inconclusive"
                   ]
                 },
                 "confidence": {
@@ -826,7 +833,8 @@
                   "enum": [
                     "green",
                     "yellow",
-                    "red"
+                    "red",
+                    "inconclusive"
                   ]
                 },
                 "confidence": {

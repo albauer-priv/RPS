@@ -9,7 +9,8 @@
       "enum": [
         "green",
         "yellow",
-        "red"
+        "red",
+        "inconclusive"
       ]
     },
     "confidence": {

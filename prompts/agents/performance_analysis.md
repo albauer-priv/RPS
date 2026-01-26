@@ -44,6 +44,7 @@ Assume the mandatory_load_order is satisfied for this single file.
 - Mandatory three-pass model (Draft -> Review -> Output) is enforced in Execution Protocol.
 - One-artefact-set rule: exactly one `DES_ANALYSIS_REPORT` per run.
 - Schema conformance: validate against `des_analysis_report.schema.json` before store.
+- Status labels must follow the schema enum (green/yellow/red/inconclusive).
 
 ### Required knowledge files (must read in full) — Binding
 Specs / policies:
