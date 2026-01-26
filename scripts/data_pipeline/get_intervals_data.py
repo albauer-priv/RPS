@@ -142,6 +142,24 @@ REQUIRED_COLUMNS = [
 ]
 
 
+def _value_present(val) -> bool:
+    if val is None or pd.isna(val):
+        return False
+    if isinstance(val, str):
+        return val.strip() != ""
+    return True
+
+
+def _confidence_from_columns(df: pd.DataFrame, columns: Sequence[str]) -> str:
+    """Return HIGH if all core columns are present for all rows, else MEDIUM."""
+    for col in columns:
+        if col not in df.columns:
+            return "MEDIUM"
+        if not df[col].apply(_value_present).all():
+            return "MEDIUM"
+    return "HIGH"
+
+
 def load_kj_plan_by_week(athlete_id: str) -> dict[tuple[int, int], float]:
     """Load planned weekly kJ from workouts_plan artefacts when available."""
     plan_map: dict[tuple[int, int], float] = {}
@@ -1709,6 +1727,17 @@ def compile_activities_actual(
 
             activities.append(activity)
 
+        confidence_cols_actual = [
+            required_field_map["activity_id"],
+            required_field_map["moving_time"],
+            required_field_map["distance_km"],
+            required_field_map["work_kj"],
+            required_field_map["load_tss"],
+            required_field_map["normalized_power_w"],
+            required_field_map["intensity_factor"],
+        ]
+        data_confidence = _confidence_from_columns(out_df, confidence_cols_actual)
+
         version_key = f"{int(yr)}-{iso_week}"
         meta = {
             "artifact_type": "ACTIVITIES_ACTUAL",
@@ -1719,7 +1748,7 @@ def compile_activities_actual(
             "owner_agent": "Data-Pipeline",
             "run_id": f"{run_stamp}-data-pipeline-{int(yr)}{iso_week}",
             "created_at": run_ts.isoformat(),
-            "data_confidence": "UNKNOWN",
+            "data_confidence": data_confidence,
             "iso_week": version_key,
             "iso_week_range": f"{version_key}--{version_key}",
             "temporal_scope": {
@@ -2263,6 +2292,15 @@ def compile_activities_trend(
     schema_dir = resolve_schema_dir()
     validator = SchemaRegistry(schema_dir).validator_for("activities_trend.schema.json")
 
+    confidence_cols_trend = [
+        "# Activities",
+        "Moving Time (h:mm)",
+        "Work (kJ)",
+        "Load (TSS)",
+        "Intensity Factor (IF)",
+    ]
+    data_confidence = _confidence_from_columns(out, confidence_cols_trend)
+
     version_key = f"{year}-{iso_week}"
     start_week = f"{date_to_iso_week(start_day)[0]}-{date_to_iso_week(start_day)[1]:02d}"
     end_week = f"{date_to_iso_week(end_day)[0]}-{date_to_iso_week(end_day)[1]:02d}"
@@ -2275,7 +2313,7 @@ def compile_activities_trend(
         "owner_agent": "Data-Pipeline",
         "run_id": f"{run_stamp}-data-pipeline-{year}{iso_week}",
         "created_at": run_ts.isoformat(),
-        "data_confidence": "UNKNOWN",
+        "data_confidence": data_confidence,
         "iso_week": version_key,
         "iso_week_range": f"{start_week}--{end_week}",
         "temporal_scope": {

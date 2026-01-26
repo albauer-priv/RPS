@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded the agent knowledge injection bundles (contracts, interfaces, mandatory output guides, evidence).
 - Added `data_confidence` schema and required it in activities_actual/trend outputs; pipeline now emits `meta.data_confidence`.
 
+## [0.6.4] - 2026-01-26
+
+### Changed
+- Data pipeline now sets `meta.data_confidence` to MEDIUM by default and HIGH when core columns are complete for activities_actual/trend.
+
 ## [0.6.2] - 2026-01-26
 
 ### Changed
