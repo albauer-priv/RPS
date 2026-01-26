@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import json
 import logging
 import os
 from pathlib import Path
@@ -17,7 +18,13 @@ from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings, load_env_file
 from rps.core.logging import setup_logging
-from rps.data_pipeline.season_brief_availability import parse_and_store_availability
+from rps.data_pipeline.season_brief_availability import (
+    load_season_brief,
+    parse_and_store_availability,
+    validate_events_text,
+    validate_season_brief_text,
+)
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.plan_week import plan_week
@@ -66,19 +73,25 @@ def _preflight(
     inputs_dir = athlete_root / "inputs"
     latest_dir = athlete_root / "latest"
 
-    season_patterns = ["season_brief_*.md"]
-    if year is not None:
-        season_patterns.insert(0, f"season_brief_{year}.md")
-    season_candidates = []
-    for pattern in season_patterns:
-        season_candidates.extend(list(inputs_dir.glob(pattern)))
-        season_candidates.extend(list(latest_dir.glob(pattern)))
-    if not season_candidates:
-        raise SystemExit("Missing Season Brief. Place season_brief_*.md in inputs/ or latest/.")
+    try:
+        season_path, season_text = load_season_brief(athlete_root, year, None)
+    except FileNotFoundError as exc:
+        raise SystemExit("Missing Season Brief. Place season_brief_*.md in inputs/ or latest/.") from exc
 
     events_path = _find_first([inputs_dir / "events.md", latest_dir / "events.md"])
     if not events_path:
         raise SystemExit("Missing events.md. Place events.md in inputs/ or latest/.")
+    events_text = events_path.read_text(encoding="utf-8")
+
+    season_errors = validate_season_brief_text(season_text, source=season_path.name)
+    if season_errors:
+        details = "\n".join(f"- {err}" for err in season_errors)
+        raise SystemExit(f"Season Brief validation failed:\n{details}")
+
+    events_errors = validate_events_text(events_text, source=events_path.name)
+    if events_errors:
+        details = "\n".join(f"- {err}" for err in events_errors)
+        raise SystemExit(f"Events validation failed:\n{details}")
 
     selected_env = os.getenv("KPI_PROFILE_SELECTED")
     selected_name = kpi_profile or selected_env
@@ -95,6 +108,17 @@ def _preflight(
     if not named_copy.exists():
         shutil.copy2(kpi_path, named_copy)
 
+    try:
+        kpi_payload = json.loads(kpi_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"KPI profile JSON invalid: {kpi_path.name} ({exc})") from exc
+    validator = SchemaRegistry(schema_dir).validator_for("kpi_profile.schema.json")
+    try:
+        validate_or_raise(validator, kpi_payload)
+    except SchemaValidationError as exc:
+        details = "\n".join(f"- {err}" for err in exc.errors)
+        raise SystemExit(f"KPI profile schema validation failed:\n{details}") from exc
+
     if not skip_availability:
         logger.info("Parsing availability from Season Brief.")
         parse_and_store_availability(
@@ -102,7 +126,7 @@ def _preflight(
             workspace_root=workspace_root,
             schema_dir=schema_dir,
             year=year,
-            season_brief_path=None,
+            season_brief_path=season_path,
             skip_validate=False,
         )
 

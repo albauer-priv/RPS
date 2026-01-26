@@ -107,6 +107,15 @@ def _load_season_brief(
     return best, best.read_text(encoding="utf-8")
 
 
+def load_season_brief(
+    athlete_root: Path,
+    year: int | None = None,
+    explicit: Path | None = None,
+) -> tuple[Path, str]:
+    """Public Season Brief loader (inputs/ or latest/)."""
+    return _load_season_brief(athlete_root, year, explicit)
+
+
 def _parse_date(label: str, text: str) -> date | None:
     pattern = rf"{re.escape(label)}\\s*:\\s*(\\d{{4}}-\\d{{2}}-\\d{{2}})"
     match = re.search(pattern, text, flags=re.IGNORECASE)
@@ -186,6 +195,71 @@ def _extract_availability_table(text: str) -> list[dict[str, str]]:
     if not rows:
         raise ValueError("Season Brief missing 'Weekly availability table' section.")
     return rows
+
+
+def validate_season_brief_text(season_text: str, *, source: str) -> list[str]:
+    """Return a list of validation errors for Season Brief interface."""
+    errors: list[str] = []
+    required_labels = ["Season-ID", "Year", "Athlete-ID", "Valid-From", "Valid-To", "Primary-Objective"]
+    for label in required_labels:
+        if not re.search(rf"{re.escape(label)}\\s*:", season_text, flags=re.IGNORECASE):
+            errors.append(f"{source}: missing required field '{label}'.")
+    valid_from = _parse_date("Valid-From", season_text)
+    valid_to = _parse_date("Valid-To", season_text)
+    if valid_from and valid_to and valid_from >= valid_to:
+        errors.append(
+            f"{source}: Valid-From must be before Valid-To (got {valid_from} >= {valid_to})."
+        )
+    try:
+        _extract_availability_table(season_text)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"{source}: availability table invalid ({exc}).")
+    return errors
+
+
+def validate_events_text(events_text: str, *, source: str) -> list[str]:
+    """Return a list of validation errors for events.md interface."""
+    errors: list[str] = []
+    header_idx = None
+    lines = events_text.splitlines()
+    for idx, line in enumerate(lines):
+        if "|" in line and "date" in line.lower() and "event-id" in line.lower():
+            header_idx = idx
+            break
+    if header_idx is None:
+        return [f"{source}: missing Event List table header."]
+    rows: list[list[str]] = []
+    for line in lines[header_idx + 1 :]:
+        if line.strip().startswith("##"):
+            break
+        if "|" not in line:
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(re.match(r"^[-:\\s]+$", cell) for cell in cells):
+            continue
+        if len(cells) < 6:
+            continue
+        rows.append(cells)
+    if not rows:
+        errors.append(f"{source}: Event List table has no rows.")
+        return errors
+
+    allowed_event_types = {"TRAVEL", "WORK", "WEATHER", "HEALTH", "FAMILY", "EQUIPMENT", "OTHER"}
+    allowed_status = {"planned", "occurred", "cancelled"}
+    allowed_impact = {"availability", "missed_session", "modality", "recovery", "data_quality", "none", "other"}
+    for row in rows:
+        date_str, event_id, event_type, status, impact, _desc = row[:6]
+        if not re.match(r"^\\d{4}-\\d{2}-\\d{2}$", date_str):
+            errors.append(f"{source}: invalid event date '{date_str}'.")
+        if not event_id:
+            errors.append(f"{source}: event id missing for date {date_str}.")
+        if event_type.upper() not in allowed_event_types:
+            errors.append(f"{source}: invalid event type '{event_type}'.")
+        if status.lower() not in allowed_status:
+            errors.append(f"{source}: invalid event status '{status}'.")
+        if impact.lower() not in allowed_impact:
+            errors.append(f"{source}: invalid event impact '{impact}'.")
+    return errors
 
 
 def build_availability_payload(
