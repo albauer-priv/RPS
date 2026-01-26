@@ -80,6 +80,7 @@ Use this map to find binding enums/specs. Read the full artefact from its file.
 | MacroCycleEnumSpec (MACRO_CYCLE_ENUM) | `macro_cycle_enum_spec.md` | Runtime‑provided binding knowledge; read file in full (use file_search per Knowledge Retrieval if needed). | Cycle labels are case-sensitive. |
 | LoadEstimationSpec (kJ / kJ/kg guardrails) | `load_estimation_spec.md` | Runtime‑provided binding knowledge; read file in full (use file_search per Knowledge Retrieval if needed). | Required for kJ/kg guidance. |
 | LoadEstimationSpec (Macro) | `load_estimation_spec.md` | Runtime‑provided binding knowledge; read file in full (use file_search per Knowledge Retrieval if needed). | Required for weekly planned_Load_kJ corridor derivation (Macro section). |
+| Mandatory Output (Macro Overview) | `mandatory_output_macro_overview.md` | Runtime‑provided binding knowledge; read file in full (use file_search per Knowledge Retrieval if needed). | Required for schema‑valid MACRO_OVERVIEW output. |
 
 ### Runtime Artifact Load Map (binding)
 Use these tools to load runtime artifacts.
@@ -508,6 +509,8 @@ If it does not match, STOP (fail-fast) and report the mismatch and both values.
 ## Current System Tooling
 - Use workspace tools to load inputs; follow Access Hints for concrete calls.
 - **FIRST ACTION:** load `load_estimation_spec.md` (Macro section) in full (knowledge retrieval).
+- **SECOND ACTION:** load `mandatory_output_macro_overview.md` in full and follow it for all
+  output shape and field‑filling rules. Do not invent output rules outside that file.
 - MUST read `load_estimation_spec.md` (Macro section) in full before deriving any
   planned_Load_kJ corridor or kJ/kg guidance. If not loaded, STOP and request it.
 - The spec is a runtime-provided binding knowledge file; read it in full before derivation.

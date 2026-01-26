@@ -15,3 +15,4 @@ sources:
 - path: ../season_scenario/sources/specs/season_scenarios_interface_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md
 - path: ../_shared/sources/specs/wellness_interface_spec.md
+- path: ../_shared/sources/specs/mandatory_output_macro_overview.md

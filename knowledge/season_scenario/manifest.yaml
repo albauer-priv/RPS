@@ -12,3 +12,4 @@ sources:
 - path: sources/specs/season_scenarios_interface_spec.md
 - path: sources/specs/season_scenario_selection_interface_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md
+- path: ../_shared/sources/specs/mandatory_output_season_scenarios.md

@@ -75,6 +75,7 @@ Use this map to find binding enums/specs. Read the full artefact from its file.
 |---|---|---|
 | AgendaEnumSpec (INTENSITY_DOMAIN_ENUM, LOAD_MODALITY_ENUM) | `agenda_enum_spec.md` | Use ONLY values listed there. |
 | MacroCycleEnumSpec (MACRO_CYCLE_ENUM) | `macro_cycle_enum_spec.md` | Cycle labels are case-sensitive. |
+| Mandatory Output (Season Scenarios) | `mandatory_output_season_scenarios.md` | Required for schema‑valid SEASON_SCENARIOS output. |
 
 ### Runtime Artifact Load Map (binding)
 Use these tools to load runtime artifacts.
@@ -119,6 +120,7 @@ All rows below are REQUIRED and MUST be read in full.
 |---|---|---|
 | `agenda_enum_spec.md` | INTENSITY_DOMAIN / LOAD_MODALITY enums | `{"type":"eq","key":"specification_id","value":"AgendaEnumSpec"}` |
 | `macro_cycle_enum_spec.md` | MACRO_CYCLE_ENUM | `{"type":"eq","key":"specification_id","value":"MacroCycleEnumSpec"}` |
+| `mandatory_output_season_scenarios.md` | Mandatory output guide (SEASON_SCENARIOS) | `{"type":"eq","key":"specification_id","value":"MandatoryOutputSeasonScenarios"}` |
 | `principles_durability_first_cycling.md` | Planning principles | `{"type":"eq","key":"specification_id","value":"DurabilityFirstPrinciples"}` |
 
 #### Required contracts (must read fully)
@@ -380,6 +382,8 @@ If contradictions arise:
 
 ## Current System Tooling
 - Use workspace tools to load inputs; follow Access Hints for concrete calls.
+- **FIRST ACTION:** load `mandatory_output_season_scenarios.md` in full and follow it
+  for all output shape and field‑filling rules. Do not invent output rules outside that file.
 - If the Season Brief is embedded in the user prompt, do NOT call workspace_get_input for it.
 - If a strict store tool is provided, call it with a schema-compliant envelope and no extra text.
 - Do not require tool usage instructions in the user prompt.

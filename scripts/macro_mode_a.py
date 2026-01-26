@@ -63,6 +63,20 @@ def _load_load_estimation_spec_macro() -> tuple[str, str]:
     return str(path), section
 
 
+def _load_mandatory_output_macro_overview() -> tuple[str, str]:
+    path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "mandatory_output_macro_overview.md"
+    if not path.exists():
+        raise FileNotFoundError(f"Mandatory output guide not found at {path}.")
+    return str(path), path.read_text(encoding="utf-8").strip()
+
+
+def _load_mandatory_output_season_scenarios() -> tuple[str, str]:
+    path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "mandatory_output_season_scenarios.md"
+    if not path.exists():
+        raise FileNotFoundError(f"Mandatory output guide not found at {path}.")
+    return str(path), path.read_text(encoding="utf-8").strip()
+
+
 def _runtime(agent_name: str | None = None) -> tuple[AgentRuntime, AppSettings]:
     load_env_file(ROOT / ".env")
     settings = load_app_settings()
@@ -268,16 +282,22 @@ def run_scenarios(args: argparse.Namespace) -> int:
     except FileNotFoundError as exc:
         season_block = f"Season brief missing: {exc}\n"
 
+    try:
+        ms_path, ms_content = _load_mandatory_output_season_scenarios()
+        mandatory_block = (
+            "Mandatory JSON Output (SEASON_SCENARIOS; loaded from "
+            f"{ms_path}):\n\"\"\"\n{ms_content}\n\"\"\"\n"
+        )
+    except FileNotFoundError as exc:
+        mandatory_block = f"Mandatory output guide missing: {exc}\n"
+
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {args.year}-{args.week:02d}. "
         "Use the Season Brief content provided in this prompt. "
-        "Do not request additional tools unless the season brief is missing. "
         f"{season_block}"
-        "Set meta.owner_agent to Season-Scenario-Agent, meta.schema_id to SeasonScenariosInterface, "
-        "and meta.authority to Informational. "
-        "Include all required scenario_guidance fields (even if empty arrays) and data.notes array. "
-        "Call store_season_scenarios with a top-level {meta, data} envelope only. "
+        f"{mandatory_block}"
+        "Call store_season_scenarios with the JSON envelope (meta + data) only. "
         "Do NOT output raw JSON in chat."
     )
 
@@ -408,35 +428,23 @@ def run_overview(args: argparse.Namespace) -> int:
     except FileNotFoundError as exc:
         spec_block = f"LoadEstimationSpec missing: {exc}\n"
 
+    try:
+        mo_path, mo_content = _load_mandatory_output_macro_overview()
+        mandatory_block = (
+            "Mandatory JSON Output (MACRO_OVERVIEW; loaded from "
+            f"{mo_path}):\n\"\"\"\n{mo_content}\n\"\"\"\n"
+        )
+    except FileNotFoundError as exc:
+        mandatory_block = f"Mandatory output guide missing: {exc}\n"
+
     user_input = (
         f"Scenario {scenario}. Mode A. Create and store the MACRO_OVERVIEW via the store tool. "
-        "Set meta.schema_id exactly to MacroOverviewInterface, "
-        "meta.schema_version to 1.0, authority to Binding, owner_agent to Macro-Planner. "
-        "Use workspace_get_input for season brief. "
-        "Use workspace_get_latest with artifact_type KPI_PROFILE (not a filename). "
-        "Use workspace_get_latest with artifact_type SEASON_SCENARIO_SELECTION when available "
-        "and align the plan to the selected scenario label. "
-        "If scenario guidance provides phase_length_weeks and/or deload_cadence, treat them as "
-        "binding constraints for phase construction (exact phase length, cadence-aligned deloads). "
         f"{band_line}"
-        "Strict schema guards: each phase MUST include structural_emphasis and events_constraints "
-        "(use [] when no events). Put typical_duration_intensity_pattern and non_negotiables "
-        "only inside overview, never at phase top level. allowed_forbidden_semantics must "
-        "only include allowed_intensity_domains, allowed_load_modalities, forbidden_intensity_domains "
-        "(do NOT add forbidden_load_modalities). "
-        "Phase weekly_load_corridor MUST be an object with a single key weekly_kj; "
-        "weekly_kj must include min, max, kj_per_kg_min, kj_per_kg_max, and notes. "
-        "Call store_macro_overview with a top-level {\"meta\": ..., \"data\": ...} envelope only. "
-        "Meta must include iso_week (YYYY-WW) and iso_week_range as an object with from/to "
-        "NO: iso_week_range must be a string pattern YYYY-WW--YYYY-WW (not an object). "
-        "Phase iso_week_range must use the same string pattern. "
-        "Do not add any extra keys at phase level (e.g., no 'notes'). "
-        "Do NOT output raw JSON in chat."
-        f"{events_line}"
-        f"{trace_line}"
+        f"{mandatory_block}"
         f"{spec_block}"
         f"{scenario_block}"
-        "Call store_macro_overview with the JSON envelope (meta + data) only."
+        "Call store_macro_overview with the JSON envelope (meta + data) only. "
+        "Do NOT output raw JSON in chat."
     )
 
     model_override = args.model or settings.model_for_agent(spec.name)

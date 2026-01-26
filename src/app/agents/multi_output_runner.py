@@ -136,6 +136,47 @@ def run_agent_multi_output(
     max_num_results: int = 20,
 ) -> dict[str, Any]:
     """Run an agent that can emit multiple strict tool outputs."""
+    def _load_load_estimation_spec_macro() -> str | None:
+        root = Path(__file__).resolve().parents[3]
+        path = root / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
+        if not path.exists():
+            return None
+        content = path.read_text(encoding="utf-8")
+        lines = content.splitlines()
+        end = None
+        for i, line in enumerate(lines):
+            if line.startswith("## Meso"):
+                end = i
+                break
+        section = "\n".join(lines[:end]).strip() if end else content
+        return section
+
+    def _load_mandatory_output_season_scenarios() -> str | None:
+        root = Path(__file__).resolve().parents[3]
+        path = root / "knowledge" / "_shared" / "sources" / "specs" / "mandatory_output_season_scenarios.md"
+        if not path.exists():
+            return None
+        return path.read_text(encoding="utf-8").strip()
+
+    if agent_name == "macro_planner":
+        if "LoadEstimationSpec (Macro section" not in user_input and "load_estimation_spec.md" not in user_input:
+            spec_section = _load_load_estimation_spec_macro()
+            if spec_section:
+                user_input = (
+                    f"{user_input}\n"
+                    "LoadEstimationSpec (Macro section; injected):\n"
+                    f"\"\"\"\n{spec_section}\n\"\"\"\n"
+                )
+    if agent_name == "season_scenario":
+        if "mandatory_output_season_scenarios.md" not in user_input:
+            mandatory = _load_mandatory_output_season_scenarios()
+            if mandatory:
+                user_input = (
+                    f"{user_input}\n"
+                    "Mandatory JSON Output (SEASON_SCENARIOS; injected):\n"
+                    f"\"\"\"\n{mandatory}\n\"\"\"\n"
+                )
+
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
 
     model = model_override or runtime.model

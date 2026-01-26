@@ -54,6 +54,8 @@ sources:
 - path: sources/specs/file_naming_spec.md
 - path: sources/specs/header_schema_spec.md
 - path: sources/specs/load_estimation_spec.md
+- path: sources/specs/mandatory_output_macro_overview.md
+- path: sources/specs/mandatory_output_season_scenarios.md
 - path: sources/specs/macro_cycle_enum_spec.md
 - path: sources/specs/availability_interface_spec.md
 - path: sources/specs/season_brief_interface_spec.md
