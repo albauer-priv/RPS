@@ -113,6 +113,11 @@ Mode C:
 - JSON artefacts MUST be emitted via the strict store tool call only (no raw JSON in chat).
 - If output is literal `no_change`, output exactly `no_change` and nothing else.
 
+### Terminology & logging (Binding)
+- **Fueling/Energy** = `planned_kJ` (mechanical energy).
+- **Governance/Constraints** = `planned_Load_kJ` (normalized load).
+- When reporting numbers (notes, justifications, logs), label both explicitly and never swap units.
+
 ---
 
 ## SECTION: Execution Protocol (Binding)

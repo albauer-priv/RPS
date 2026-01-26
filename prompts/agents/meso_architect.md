@@ -12,6 +12,11 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 Load-order rule:
 - Read user input and workspace artefacts first, then consult knowledge files.
 
+## Terminology & logging (Binding)
+- **Fueling/Energy** = `planned_kJ` (mechanical energy).
+- **Governance/Constraints** = `planned_Load_kJ` (normalized load; weekly_kj_bands are in planned_Load_kJ/week).
+- When reporting numbers (notes, traces, logs), label both explicitly and never swap units.
+
 ---
 
 ## Binding Knowledge (Binding)

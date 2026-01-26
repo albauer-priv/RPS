@@ -15,6 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded the agent knowledge injection bundles (contracts, interfaces, mandatory output guides, evidence).
 - Added `data_confidence` schema and required it in activities_actual/trend outputs; pipeline now emits `meta.data_confidence`.
 
+## [0.6.6] - 2026-01-26
+
+### Changed
+- LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE_LOW (IF_ref_load = 0.65) and updates feasibility + KPI mapping accordingly.
+- Macro plausibility check now uses mechanical `planned_kJ_week`, and Meso STOPs defer to the S5 ladder; patch block removed.
+- All agent prompts now explicitly label Fueling/Energy as `planned_kJ` and Governance as `planned_Load_kJ` in logs/notes.
+
+## [0.6.5] - 2026-01-26
+
+### Changed
+- LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE_LOW (IF_ref_load = 0.65) and updates feasibility + KPI mapping accordingly.
+
 ## [0.6.4] - 2026-01-26
 
 ### Changed

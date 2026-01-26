@@ -16,6 +16,11 @@ Load-order rule:
 
 ISO week labels are not calendar months (e.g., `YYYY-WW` is ISO week number, not a month).
 
+## Terminology & logging (Binding)
+- **Fueling/Energy** = `planned_kJ` (mechanical energy).
+- **Governance/Constraints** = `planned_Load_kJ` (normalized load).
+- If these values appear in analysis or logs, label them explicitly and never swap units.
+
 ---
 
 ## Binding Knowledge (Binding)

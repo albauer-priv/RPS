@@ -11,6 +11,11 @@ Treat the section order in this file as the binding sequence:
 Binding Knowledge -> Role & Scope -> Authority & Hierarchy -> Input/Output Contract ->
 Execution Protocol -> Domain Rules -> Stop & Validation.
 
+## Terminology & logging (Binding)
+- **Fueling/Energy** = `planned_kJ` (mechanical energy).
+- **Governance/Constraints** = `planned_Load_kJ` (normalized load).
+- If these values appear in notes or logs, label them explicitly and never swap units.
+
 ---
 
 ## Binding Knowledge (Binding)

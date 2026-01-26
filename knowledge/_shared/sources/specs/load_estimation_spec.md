@@ -58,6 +58,7 @@ This section defines the **general, binding** load estimation rules shared by al
 - `weekly_kj_bands`: **always** a corridor in `planned_Load_kJ_week`.
 
 **Invariant:** IF is applied **exactly once** (only in `planned_Load_kJ`).
+`IF_ref_load` is a fixed normalization constant, not an additional intensity factor.
 
 ### G2) Minimum inputs (binding)
 - `FTP_W` (from Zone Model)
@@ -89,14 +90,16 @@ Determinism rule:
    - `planned_IF = clamp(r_eq, 0.0, 1.3)`
 
 3) **Stress‑weighted load**
-   - `planned_Load_kJ = planned_kJ × planned_IF^α`
+   - `planned_Load_kJ = planned_kJ × (planned_IF / IF_ref_load)^α`
    - `α = 1.3` (global from this spec)
+   - `IF_ref_load = 0.65` (global reference intensity; ENDURANCE_LOW)
+
 
 ### G5) Fallback mode (IF‑direct) — binding
 Use only when segments are missing/unparseable or intent‑only.
 - `planned_IF = IF_default(intent/domain)`
 - `planned_kJ = (FTP_W × planned_IF × T_sec) / 1000`
-- `planned_Load_kJ = planned_kJ × planned_IF^α`
+- `planned_Load_kJ = planned_kJ × (planned_IF / IF_ref_load)^α`
 
 ### G6) Parsing, clamps, and edge cases (binding)
 - `T_sec ≥ 0`. If `T_sec = 0`, then `planned_kJ = planned_Load_kJ = 0`.
@@ -139,7 +142,7 @@ Canonical domain identifiers (binding):
 Compute using **unrounded** floats and round only at output:
 - `planned_IF_out = round(planned_IF_raw, 3)`
 - `planned_kJ_out = int(round(planned_kJ_raw))`
-- `planned_Load_kJ_out = int(round(planned_kJ_raw * planned_IF_raw**α))`
+- `planned_Load_kJ_out = int(round(planned_kJ_raw * (planned_IF_raw / IF_ref_load)**α))`
 
 Do NOT round `planned_IF` before computing `planned_Load_kJ`.
 Store `planned_kJ_out` and `planned_Load_kJ_out` as 64‑bit integers (or safe int).
@@ -239,7 +242,7 @@ Macro corridors MUST be expressed as planned_Load_kJ:
      - Peak → THRESHOLD (1.00) if allowed, else SWEET_SPOT (0.90)
      - Taper → ENDURANCE_LOW (0.65) or RECOVERY (0.55)
   3) clamp to `[0.0, 1.3]`
-- compute `planned_Load_kJ = planned_kJ × IF^α` (α from this spec),
+- compute `planned_Load_kJ = planned_kJ × (IF / IF_ref_load)^α` (α and IF_ref_load from this spec),
 - document chosen IF in assumptions.
 
 If activities_trend is missing or unusable:
@@ -254,8 +257,8 @@ That narrowing is strictly Meso (see Meso section).
 - Peak/Taper: lower corridor for freshness.
 
 ### M7) Plausibility check (moving‑time rate guidance)
-Compute implied kJ/kg/h:
-`implied_kJ_kg_hr = weekly_kJ / (body_mass_kg * moving_time_capacity_hours)`
+Compute implied **mechanical** kJ/kg/h:
+`implied_kJ_kg_hr = planned_kJ_week / (body_mass_kg * moving_time_capacity_hours)`
 
 If implied values consistently exceed KPI guidance:
 - emit a feasibility warning; Meso will narrow via intersection.
@@ -298,24 +301,47 @@ by intersecting macro corridors with feasibility and KPI metabolic capacity.
 - They are **not** planned_Load_kJ/h.
 - Meso maps KPI mechanical kJ → Load via a single reference IF.
 
-### S3) Feasible load band (physics, binding)
+### S3) Feasible load band (UPDATED, Binding)
+
+With the updated definition, feasibility must include the normalization factor.
+
+Given:
+
+* `planned_kJ = (ftp_w * IF * T_sec) / 1000`
+* `planned_Load_kJ = planned_kJ * (IF / IF_ref_load)^α`
+
+Then:
+
+`planned_Load_kJ(IF, T) = (ftp_w * T / 1000) * IF^(α+1) / IF_ref_load^α`
+
+So the feasible band is:
+
 ```
 T_cap_sec = availability_hours_w * 3600
-T_max = T_cap_sec * utilization_max (default 1.0)
-T_min = T_cap_sec * utilization_min (default 0.0)
+T_max = T_cap_sec * utilization_max  # default 1.0
+T_min = T_cap_sec * utilization_min  # default 0.0
 
 IF_max = min(max(IF(domain) for allowed_domains), 1.3)
 IF_min = max(min(IF(domain) for allowed_domains), 0.0)
 
 exponent = alpha + 1.0   # 2.3
-feasible_max = (ftp_w * T_max / 1000) * (IF_max ** exponent)
-feasible_min = (ftp_w * T_min / 1000) * (IF_min ** exponent)
+norm = (IF_ref_load ** alpha)
+
+feasible_max = (ftp_w * T_max / 1000) * (IF_max ** exponent) / norm
+feasible_min = (ftp_w * T_min / 1000) * (IF_min ** exponent) / norm
 ```
-Authority (binding): `utilization_min/max` MUST be read from KPI profile
+Authority (unchanged, Binding): `utilization_min/max` MUST be read from KPI profile
 if present; otherwise defaults `(0.0, 1.0)` apply. No overrides exist unless
 KPI profile defines them.
 
-### S4) KPI band (mechanical → load, binding)
+### S4) KPI band mapping (UPDATED, Binding)
+
+KPI kJ/kg/h bands remain **mechanical** work‑rate guidance:
+
+* `kpi_kJ_min/max` is computed in mechanical kJ as before.
+
+#### Mechanical KPI band (unchanged)
+
 ```
 moving_time_capacity_hours = availability_hours_w * utilization_max
 kpi_kJ_min = band_min_kJkgph * body_mass_kg * moving_time_capacity_hours
@@ -326,18 +352,33 @@ Band selection (binding):
 - `kpi_rate_band_selector` MUST come from Scenario or KPI profile if present.
 - If absent, default to `MID`.
 
-Reference IF for mapping (deterministic):
-1) `expected_weekly_avg_IF` if provided,
-2) else if ENDURANCE_LOW allowed → 0.65,
-3) else if ENDURANCE_HIGH allowed → 0.70,
-4) else median IF of allowed domains (excluding REST).
+#### Updated mapping to governance load (Binding)
 
-Clamp `IF_ref` to `[IF_min, IF_max]` and `[0.0, 1.3]`.
+Select `IF_ref_week` deterministically (unchanged rule order):
+
+1. `expected_weekly_avg_IF` if provided,
+2. else if ENDURANCE_LOW allowed → 0.65,
+3. else if ENDURANCE_HIGH allowed → 0.70,
+4. else median IF of allowed domains (excluding REST).
+
+Clamp `IF_ref_week` to `[IF_min, IF_max]` and `[0.0, 1.3]`.
+
+Then map mechanical kJ to normalized Load:
+
+`kpi_load = kpi_kJ * (IF_ref_week / IF_ref_load)^α`
+
+Implementation:
 
 ```
-kpi_load_min = kpi_kJ_min * (IF_ref ** alpha)
-kpi_load_max = kpi_kJ_max * (IF_ref ** alpha)
+kpi_load_min = kpi_kJ_min * (IF_ref_week / IF_ref_load) ** alpha
+kpi_load_max = kpi_kJ_max * (IF_ref_week / IF_ref_load) ** alpha
 ```
+
+## Operational Note (Binding for agents)
+
+* For **fueling/energy distribution**, agents MUST use `planned_kJ`.
+* For **governance corridors and weekly constraints**, agents MUST use `planned_Load_kJ`.
+* Planning logs SHOULD report both values to avoid misinterpretation.
 
 
 
@@ -536,12 +577,9 @@ Meso MUST emit schema-compliant trace notes/flags including at minimum:
 
 
 ### S6) Stop conditions (binding)
-- missing_or_invalid_ftp
-- missing_body_mass_for_kpi_rate
-- no_allowed_domains
-- availability_negative
-- infeasible_corridor (band_min > band_max)
-- progression_guardrail_conflict
+
+All hard STOP conditions are enumerated in **S5.5**.  
+Do **not** STOP early for `band_min > band_max` before applying the S5 fallback ladder.
 
 ---
 
