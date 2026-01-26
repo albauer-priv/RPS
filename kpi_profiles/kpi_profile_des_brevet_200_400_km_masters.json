@@ -34,13 +34,13 @@
       },
       "progression_limits": {
         "weekly_kj_increase": {
-          "allowed": "<= 7 %",
-          "warning": "7-10 %",
-          "stop": "> 10 %"
+          "allowed": "<= 10 %",
+          "warning": "10-12 %",
+          "stop": "> 15 %"
         },
         "long_ride_kj_increase": {
-          "allowed": "<= 10 %",
-          "warning": "10-15 %",
+          "allowed": "<= 12 %",
+          "warning": "12-15 %",
           "stop": "> 15 %"
         }
       }
@@ -78,7 +78,7 @@
         }
       },
       "moving_time_rate_guidance": {
-        "derived_from": "kJ/kg/h = W/kg \u00d7 3.6 (moving time)",
+        "derived_from": "kJ/kg/h = W/kg × 3.6 (moving time)",
         "notes": "Moving-time guidance for brevet/ultra pacing; not elapsed time including controls.",
         "bands": [
           {
@@ -91,7 +91,7 @@
               "min": 5.0,
               "max": 7.9
             },
-            "basis": "Robust pacing for most brevet/ultra riders; conservative intensity over 20\u201330h+"
+            "basis": "Robust pacing for most brevet/ultra riders; conservative intensity over 20–30h+"
           },
           {
             "segment": "fast_competitive",

@@ -139,7 +139,7 @@ Notes:
           "risk_flags": ["Masters recovery sensitivity."],
           "fixed_rest_days": ["Mon", "Fri"],
           "constraint_summary": ["Typical weekly hours 8-10."],
-          "kpi_guardrail_notes": ["Weekly kJ increase <= 7%."],
+          "kpi_guardrail_notes": ["Weekly kJ increase <= 10%."],
           "decision_notes": ["Prioritise durability over speed."],
           "intensity_guidance": {
             "allowed_domains": ["ENDURANCE_LOW", "TEMPO"],
@@ -171,7 +171,7 @@ Notes:
           "risk_flags": ["Travel weeks may disrupt quality."],
           "fixed_rest_days": ["Mon", "Fri"],
           "constraint_summary": ["Indoor trainer available."],
-          "kpi_guardrail_notes": ["Progression capped at 7%."],
+          "kpi_guardrail_notes": ["Progression capped at 10%."],
           "decision_notes": ["Maintain recovery anchors."],
           "intensity_guidance": {
             "allowed_domains": ["ENDURANCE_LOW", "TEMPO", "SWEET_SPOT"],

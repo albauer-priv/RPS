@@ -34,13 +34,13 @@
       },
       "progression_limits": {
         "weekly_kj_increase": {
-          "allowed": "<= 6 %",
-          "warning": "6-10 %",
-          "stop": "> 10 %"
+          "allowed": "<= 10 %",
+          "warning": "10-12 %",
+          "stop": "> 15 %"
         },
         "long_ride_kj_increase": {
-          "allowed": "<= 10 %",
-          "warning": "10-15 %",
+          "allowed": "<= 12 %",
+          "warning": "12-15 %",
           "stop": "> 15 %"
         }
       }

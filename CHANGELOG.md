@@ -190,6 +190,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `validate_outputs.py` now uses the updated logging helper signature.
 - Added binding `progressive_overload_policy.md` (kJ-based cadence/deload/re-entry) for Macro/Meso/Micro.
 - Clarified cadence/deload ownership across principles/policies/mandatory outputs to defer numeric rules to ProgressiveOverloadPolicy.
+- Updated KPI profiles to align progression limits with ProgressiveOverloadPolicy (weekly <=10%, warning 10–12%, stop >15%; long-ride <=12%, warning 12–15%, stop >15%).
 
 ### Changed
 - KPI profile schema removed per-kg preload windows and now requires moving-time rate guidance instead.
