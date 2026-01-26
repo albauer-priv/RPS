@@ -400,6 +400,15 @@ def run_overview(args: argparse.Namespace) -> int:
         band_line = f"Moving time rate band: {args.moving_time_rate_band}. "
 
     try:
+        mo_path, mo_content = _load_mandatory_output_macro_overview()
+        mandatory_block = (
+            "Mandatory JSON Output (MACRO_OVERVIEW; loaded from "
+            f"{mo_path}):\n\"\"\"\n{mo_content}\n\"\"\"\n"
+        )
+    except FileNotFoundError as exc:
+        mandatory_block = f"Mandatory output guide missing: {exc}\n"
+
+    try:
         spec_path, spec_content = _load_load_estimation_spec_macro()
         spec_block = (
             "LoadEstimationSpec (Macro section; loaded from "
