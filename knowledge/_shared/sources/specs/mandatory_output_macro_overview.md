@@ -14,6 +14,7 @@ required schema, field sources, and a minimal valid example.
 - Retrieve with file_search (Knowledge Retrieval table):
   - Filter: `{"type":"eq","key":"schema_id","value":"macro_overview.schema.json"}`
 - You MUST validate output against this schema before calling `store_macro_overview`.
+- This Mandatory Output Chapter is already included in the prompt. **Do NOT file_search it.**
 
 ### HOW TO FILL (BINDING)
 
@@ -59,7 +60,7 @@ Notes:
 #### 4) `data.macro_intent_principles`
 Required:
 - `season_objective` (string)
-- `success_definition` (string)
+- `success_definition` (string enum: `event-focused` | `durability-focused` | `mixed`)
 - `non_negotiable_principles` (array, min 1)
 - `kJ_corridor_design_notes` (array, min 1)
 
@@ -74,8 +75,8 @@ Each phase MUST include:
 - `deload_rationale` (string; may be empty if deload=false)
 - `narrative` (string)
 - `overview` (object, required keys):
-  - `core_focus_and_characteristics` (string)
-  - `phase_goals` (array, min 1)
+  - `core_focus_and_characteristics` (array, min 1)
+  - `phase_goals` (object with `primary` (string, required) and `secondary` (string, optional))
   - `metabolic_focus` (string)
   - `expected_adaptations` (array, min 1)
   - `evaluation_focus` (array, min 1)
@@ -94,10 +95,10 @@ Each phase MUST include:
   - `allowed_load_modalities` (array; use `NONE` and optional `K3`)
   - `forbidden_intensity_domains` (array; may be empty)
 - `structural_emphasis`:
-  - `typical_focus` (array, min 1)
-  - `not_emphasized` (array, min 1)
+  - `typical_focus` (string)
+  - `not_emphasized` (string)
 - `events_constraints`:
-  - array of objects `{ "window": "YYYY-MM-DD", "type": "A|B|C|PLANNED|LOGISTICS", "constraint": "string" }`
+  - array of objects `{ "window": "YYYY-MM-DD", "type": "A|B|C", "constraint": "string" }`
   - Use `[]` if none apply.
 
 **Rules**
@@ -135,14 +136,15 @@ Required:
 #### 10) `data.justification`
 Required:
 - `summary` (string)
-- `citations` (array, min 1, **no empty strings**)
+- `citations` (array, min 1) — **each item must be an object**:
+  - `{ "source_type": "principles|evidence|policy|spec|contract", "source_id": "string", "section": "string", "rationale": "string" }`
 - `phase_justifications` (array, min 1)
   - Each item must include:
     - `phase_id`
     - `intensity_distribution`
     - `overload_pattern`
     - `kJ_first_statement`
-    - `citations` (array, min 1, **no empty strings**)
+    - `citations` (array, min 1, **strings only**)
 
 #### 11) `data.principles_scientific_foundation`
 Required:
@@ -179,6 +181,11 @@ All required booleans must be present. Set to `true` only if valid:
 - `allowed_forbidden_domains_listed`
 - `no_meso_or_micro_planning_content`
 - `header_includes_implements_iso_week_range_trace`
+
+#### 14) Validation & Stop (Binding)
+- You MUST run schema validation locally (in reasoning) before calling `store_macro_overview`.
+- If any field fails type/enum/shape requirements, **STOP** and report the schema errors. Do not guess or retry with a different shape.
+- Only call `store_macro_overview` when all required fields match the schema.
 
 ---
 
@@ -224,7 +231,7 @@ All required booleans must be present. Set to `true` only if valid:
     },
     "macro_intent_principles": {
       "season_objective": "Build durable endurance for A‑event.",
-      "success_definition": "Complete A‑event with stable pacing and minimal fatigue drift.",
+      "success_definition": "event-focused",
       "non_negotiable_principles": ["Protect recovery anchors."],
       "kJ_corridor_design_notes": ["Use moving_time_rate_guidance as corridor anchor."]
     },
@@ -239,8 +246,8 @@ All required booleans must be present. Set to `true` only if valid:
         "deload_rationale": "3:1 cadence within a 4-week base phase.",
         "narrative": "Foundational aerobic base with conservative overload.",
         "overview": {
-          "core_focus_and_characteristics": "Steady endurance volume and consistency.",
-          "phase_goals": ["Build weekly durability tolerance."],
+          "core_focus_and_characteristics": ["Steady endurance volume and consistency."],
+          "phase_goals": { "primary": "Build weekly durability tolerance.", "secondary": "" },
           "metabolic_focus": "Aerobic efficiency",
           "expected_adaptations": ["Improved steady-state endurance."],
           "evaluation_focus": ["Completion of long steady rides."],
@@ -263,8 +270,8 @@ All required booleans must be present. Set to `true` only if valid:
           "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"]
         },
         "structural_emphasis": {
-          "typical_focus": ["Endurance volume"],
-          "not_emphasized": ["High-intensity density"]
+          "typical_focus": "Endurance volume",
+          "not_emphasized": "High-intensity density"
         },
         "events_constraints": []
       },
@@ -278,8 +285,8 @@ All required booleans must be present. Set to `true` only if valid:
         "deload_rationale": "3:1 cadence within a 4-week build phase.",
         "narrative": "Continued endurance progression with conservative specificity.",
         "overview": {
-          "core_focus_and_characteristics": "Progressive endurance with controlled tempo.",
-          "phase_goals": ["Increase long-ride tolerance."],
+          "core_focus_and_characteristics": ["Progressive endurance with controlled tempo."],
+          "phase_goals": { "primary": "Increase long-ride tolerance.", "secondary": "" },
           "metabolic_focus": "Aerobic economy",
           "expected_adaptations": ["Improved fatigue resistance."],
           "evaluation_focus": ["Stable long-ride completion."],
@@ -302,8 +309,8 @@ All required booleans must be present. Set to `true` only if valid:
           "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"]
         },
         "structural_emphasis": {
-          "typical_focus": ["Endurance volume", "Tempo support"],
-          "not_emphasized": ["High-intensity density"]
+          "typical_focus": "Endurance volume, Tempo support",
+          "not_emphasized": "High-intensity density"
         },
         "events_constraints": []
       }
@@ -334,7 +341,14 @@ All required booleans must be present. Set to `true` only if valid:
     },
     "justification": {
       "summary": "Durability‑first macro structure aligned to constraints.",
-      "citations": ["principles_durability_first_cycling.md#3.2"],
+      "citations": [
+        {
+          "source_type": "principles",
+          "source_id": "principles_durability_first_cycling.md",
+          "section": "3.2",
+          "rationale": "Backplanning and cadence guidance for macro structure."
+        }
+      ],
       "phase_justifications": [
         {
           "phase_id": "P01",
