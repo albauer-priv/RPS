@@ -57,7 +57,7 @@ flowchart TD
   WP --> WB[Workout-Builder]
   WB --> WJ[intervals_workouts]
 
-  DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual]
+  DP[Data Pipeline\nparse-intervals] --> AA[activities_actual]
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
@@ -111,7 +111,7 @@ var/athletes/<athlete_id>/
 
 The data pipeline is expected to write factual artifacts (e.g. `activities_actual`,
 `activities_trend`, `zone_model`, `wellness`) into the athlete workspace and update `latest/` accordingly.
-The pipeline entrypoint is `scripts/data_pipeline/get_intervals_data.py`, which
+The pipeline entrypoint is `python -m rps.main parse-intervals`, which
 writes CSV+JSON outputs to `var/athletes/<athlete_id>/data/` plus mirrored
 `latest/` copies. Use `scripts/validate_outputs.py` to validate JSON outputs
 against the local schemas.

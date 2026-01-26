@@ -51,7 +51,7 @@ flowchart TD
   WP --> WB[Workout-Builder]
   WB --> WJ[intervals_workouts]
 
-  DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual]
+  DP[Data Pipeline\nparse-intervals] --> AA[activities_actual]
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
@@ -96,7 +96,7 @@ flowchart TD
 - Deterministic scripts ingest external activity data.
 - Writes `activities_actual`, `activities_trend`, `zone_model`, `wellness`, and `availability` into the athlete workspace.
 - Updates `latest/` so planners always read the freshest factual data.
-- Pipeline entrypoint: `scripts/data_pipeline/get_intervals_data.py`.
+- Pipeline entrypoint: `python -m rps.main parse-intervals`.
 - Season Brief availability parser: `python -m rps.main parse-availability` (module: `rps.data_pipeline.season_brief_availability`).
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
@@ -420,7 +420,7 @@ Use this checklist to initialize a fresh environment:
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
 5. Sync vector stores: `python scripts/sync_vectorstores.py`.
 6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
-7. Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.
+7. Run data pipeline: `python -m rps.main parse-intervals`.
 8. Validate outputs: `python scripts/validate_outputs.py`.
 
 ---

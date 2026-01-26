@@ -14,7 +14,7 @@ against the local JSON schemas before they are consumed by planners.
 
 ```mermaid
 flowchart TD
-  DP[Data Pipeline\nget_intervals_data.py] --> AA[activities_actual.json]
+  DP[Data Pipeline\nparse-intervals] --> AA[activities_actual.json]
   DP --> AT[activities_trend.json]
   DP --> AV[availability.json]
   DP --> WL[wellness.json]

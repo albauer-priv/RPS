@@ -20,7 +20,7 @@ flowchart TD
   WB[Workout-Builder]:::agent
   PA[Performance-Analyst]:::agent
   I[Intervals.icu]:::external
-  EXP[get_intervals_data.py]:::script
+  EXP[parse-intervals]:::script
   AVP[rps.main parse-availability]:::script
   VAL[validate_outputs.py]:::script
   POST[post_workout.py]:::script
@@ -310,7 +310,7 @@ flowchart LR
 - `season_brief_yyyy.md` (weekday availability table)
 
 **Processing (Conceptual)**
-- `get_intervals_data.py`: fetch raw activity data, compile `activities_actual` and `activities_trend`
+- `parse-intervals`: fetch raw activity data, compile `activities_actual` and `activities_trend`
 - `rps.main parse-availability`: normalize Season Brief availability table into `availability`
 - `validate_outputs.py`: validate JSON outputs against schemas
 
@@ -321,7 +321,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  I[Intervals.icu]:::external --> EXP[get_intervals_data.py]:::script
+  I[Intervals.icu]:::external --> EXP[parse-intervals]:::script
   EXP --> AA[activities_actual_yyyy-ww.json]:::artefact
   EXP --> AT[activities_trend_yyyy-ww.json]:::artefact
   SB[season_brief_yyyy.md]:::artefact --> AVP[rps.main parse-availability]:::script --> AV[availability_yyyy-ww.json]:::artefact

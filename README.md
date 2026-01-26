@@ -57,13 +57,13 @@ Prerequisites:
 3. Build bundled schemas: `python scripts/bundle_schemas.py`.
 4. Sync vector stores: `python scripts/sync_vectorstores.py`.
 5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
-6. Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.
+6. Run data pipeline: `python -m rps.main parse-intervals`.
 7. Validate outputs: `python scripts/validate_outputs.py`.
 
 ## Data pipeline (Intervals.icu)
 
 - Set `ATHLETE_ID`, `API_KEY`, and `BASE_URL` in `.env`.
-- All-in-one: `python scripts/data_pipeline/get_intervals_data.py --year 2026 --week 6`
+- All-in-one: `python -m rps.main parse-intervals --year 2026 --week 6`
 - Post workouts: `python scripts/data_pipeline/post_workout.py --json var/athletes/<athlete_id>/latest/intervals_workouts.json`
 - Validate outputs (latest): `python scripts/validate_outputs.py`
 - Validate outputs (week): `python scripts/validate_outputs.py --year 2026 --week 6`
@@ -72,7 +72,7 @@ Outputs land in `var/athletes/<athlete_id>/data/` and are mirrored to `var/athle
 
 ### Formatting & rounding policy
 
-`scripts/data_pipeline/get_intervals_data.py` applies a single rounding policy to all steps:
+`python -m rps.main parse-intervals` applies a single rounding policy to all steps:
 
 - Integer outputs: columns ending with `(W)`, `(bpm)`, `(rpm)`, `(J)`, `(kJ)` plus `Load (TSS)`, `Strain Score`,
   `Power Load`, `HR Load (HRSS)`, `Calories (kcal)`, `CTL (Fitness)`, `ATL (Fatigue)`, `Power/HR Z2 Time (min)`.

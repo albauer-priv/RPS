@@ -17,7 +17,7 @@ Last-Updated: 2026-01-22
 7) Run **Micro** -> `workouts_plan_yyyy-ww.json`.  
 8) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
 9) Post workouts: `python scripts/data_pipeline/post_workout.py`.  
-10) Run data pipeline: `python scripts/data_pipeline/get_intervals_data.py`.  
+10) Run data pipeline: `python -m rps.main parse-intervals`.  
 11) Validate outputs: `python scripts/validate_outputs.py`.  
 12) Run **Performance-Analyst** -> `des_analysis_report_yyyy-ww.json`.  
 
@@ -221,7 +221,7 @@ flowchart TD
   WB --> WJ[intervals_workouts_yyyy-ww.json]
   WJ --> POST[post_workout.py] --> IC[Intervals.icu]
 
-  IC --> EXP[get_intervals_data.py]
+  IC --> EXP[parse-intervals]
   EXP --> AA[activities_actual_yyyy-ww.json]
   EXP --> AT[activities_trend_yyyy-ww.json]
   AA --> VA[validate_outputs.py]

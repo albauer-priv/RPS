@@ -25,14 +25,14 @@ Outputs are stored under:
 ### Fetch + Compile + Validate
 
 ```bash
-python scripts/data_pipeline/get_intervals_data.py --year 2026 --week 6
+python -m rps.main parse-intervals --year 2026 --week 6
 python scripts/validate_outputs.py --year 2026 --week 6
 ```
 
 With an explicit athlete id:
 
 ```bash
-python scripts/data_pipeline/get_intervals_data.py --year 2026 --week 6 --athlete ath_001
+python -m rps.main parse-intervals --year 2026 --week 6 --athlete ath_001
 python scripts/validate_outputs.py --year 2026 --week 6 --athlete ath_001
 ```
 
