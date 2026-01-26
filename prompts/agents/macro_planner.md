@@ -24,8 +24,12 @@ Knowledge Retrieval (binding)
   - `macro_meso_feed_forward.schema.json` (Mode C)
   - `mandatory_output_macro_meso_feed_forward.md` (Mode C)
   - `load_estimation_spec.md` (Macro section)
+  - `progressive_overload_policy.md`
 
 Output (binding)
 - Follow the Mandatory Output Chapter for the requested artefact (MACRO_OVERVIEW or MACRO_MESO_FEED_FORWARD).
 - The Mandatory Output Chapter is injected; do NOT file_search it.
 - If any output-formatting guidance in this prompt conflicts, ignore it and follow the Mandatory Output Chapter.
+
+Progression & Deload (binding)
+- Use `progressive_overload_policy.md` to shape progression, deload, and re-entry rules.

@@ -182,12 +182,13 @@ Available filter keys in this project:
 ### Knowledge Retrieval Table (binding)
 All rows below are REQUIRED and MUST be read in full.
 
-#### Required specs / principles (must read fully)
+#### Required specs / policies / principles (must read fully)
 | File | Content | file_search filters |
 |---|---|---|
 | `load_estimation_spec.md` | Load estimation (General + Micro) | `{"type":"eq","key":"specification_id","value":"LoadEstimationSpec"}` |
 | `agenda_enum_spec.md` | INTENSITY_DOMAIN / LOAD_MODALITY enums | `{"type":"eq","key":"specification_id","value":"AgendaEnumSpec"}` |
 | `macro_cycle_enum_spec.md` | MACRO_CYCLE_ENUM | `{"type":"eq","key":"specification_id","value":"MacroCycleEnumSpec"}` |
+| `progressive_overload_policy.md` | kJ-based cadence, deload, re-entry | `{"type":"eq","key":"policy_id","value":"ProgressiveOverloadPolicy"}` |
 | `intervals_workout_ebnf.md` | Intervals workout grammar | `{"type":"eq","key":"specification_id","value":"IntervalsWorkoutEBNF"}` |
 | `workout_syntax_and_validation.md` | Project subset rules | `{"type":"eq","key":"specification_id","value":"WorkoutSyntaxAndValidation"}` |
 | `workout_policy.md` | Workout guardrails | `{"type":"eq","key":"specification_id","value":"WorkoutPolicy"}` |
@@ -214,6 +215,7 @@ All rows below are REQUIRED and MUST be read in full.
 | File | Content | file_search filters |
 |---|---|---|
 | `kpi_signal_effects_policy.md` | Workout→KPI signal mapping | `{"type":"eq","key":"policy_id","value":"KPISignalEffectsPolicy"}` |
+| `progressive_overload_policy.md` | Progression/deload guidance (informational only) | `{"type":"eq","key":"policy_id","value":"ProgressiveOverloadPolicy"}` |
 | `evidence_layer_durability.md` | Evidence layer (informational) | `{"type":"eq","key":"specification_id","value":"DurabilityEvidenceLayer"}` |
 | `durability_bibliography.md` | Research bibliography (informational) | `{"type":"eq","key":"source_path","value":"sources/evidence/durability_bibliography.md"}` |
 

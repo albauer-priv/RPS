@@ -16,6 +16,7 @@ Knowledge Retrieval (binding)
 - Required for output:
   - `season_scenarios.schema.json`
   - `mandatory_output_season_scenarios.md`
+  - `progressive_overload_policy.md` (informational only)
 
 Output (binding)
 - Follow the Mandatory Output Chapter for SEASON_SCENARIOS.

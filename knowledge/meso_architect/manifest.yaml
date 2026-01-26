@@ -10,6 +10,7 @@ sources:
 - path: sources/principles/evidence_layer_durability.md
 - path: sources/principles/principles_durability_first_cycling.md
 - path: sources/policies/kpi_signal_effects_policy.md
+- path: sources/policies/progressive_overload_policy.md
 - path: sources/specs/agenda_enum_spec.md
 - path: sources/specs/load_estimation_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md

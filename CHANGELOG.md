@@ -188,6 +188,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
 - Activities trend metadata now derives `iso_week_range` from the underlying temporal scope.
 - `validate_outputs.py` now uses the updated logging helper signature.
+- Added binding `progressive_overload_policy.md` (kJ-based cadence/deload/re-entry) for Macro/Meso/Micro.
+- Clarified cadence/deload ownership across principles/policies/mandatory outputs to defer numeric rules to ProgressiveOverloadPolicy.
 
 ### Changed
 - KPI profile schema removed per-kg preload windows and now requires moving-time rate guidance instead.

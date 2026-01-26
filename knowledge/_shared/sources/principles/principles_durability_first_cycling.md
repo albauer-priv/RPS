@@ -236,6 +236,9 @@ These patterns define **load-recovery rhythm only** (not intensity distribution 
 - They do **not** define taper logic, intensity distribution, or workout content.
 - They are **not interchangeable mid-phase** without an explicit change control.
 - They are **not event-driven** by default; they are structural recovery rhythms.
+- Numeric kJ progression, deload targets, and re-entry rules are defined in
+  `progressive_overload_policy.md`; this section only defines cadence ownership
+  and rhythm.
 
 #### 3.3.3 Mapping to agent fields (binding)
 Agents MUST encode cadence using:
@@ -439,6 +442,10 @@ This typically means **less random moderate work** and more targeted specificity
 ---
 
 ## 5. Progressive Overload - Durability-First Logic
+
+Concrete kJ targets and deload/re-entry ranges are defined in
+`progressive_overload_policy.md`. This section provides qualitative logic and
+ordering principles only.
 
 **Goal of this section**
 Progressive overload in a durability-first system is not more intensity; it is **more robust, repeatable work** with stable execution. The purpose is to enable later fatigue and lower drift (HR/RPE/economy) under energetic preload.

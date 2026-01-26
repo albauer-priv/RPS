@@ -7,6 +7,7 @@ sources:
 - path: ../macro_planner/sources/policies/des_evaluation_policy.md
 - path: ../macro_planner/sources/principles/evidence_layer_durability.md
 - path: ../macro_planner/sources/principles/principles_durability_first_cycling.md
+- path: ../_shared/sources/policies/progressive_overload_policy.md
 - path: sources/contracts/data_pipeline__scenario_contract.md
 - path: sources/contracts/scenario__macro_contract.md
 - path: sources/specs/season_scenarios_interface_spec.md

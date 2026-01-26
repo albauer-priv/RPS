@@ -78,6 +78,11 @@ Each scenario MUST include:
   - `assumptions` (array; may be empty)
   - `unknowns` (array; may be empty)
 
+Notes:
+- `deload_cadence` and `phase_length_weeks` must be consistent with
+  `progressive_overload_policy.md`. Scenarios must not define numeric weekly kJ
+  targets or cadence overrides outside that policy.
+
 ---
 
 ### EXAMPLE: SEASON_SCENARIOS (minimal valid)

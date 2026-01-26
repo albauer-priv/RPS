@@ -295,6 +295,9 @@ Each workout type follows a primary design principle. These principles are norma
 ### 4.3 Progressive Overload (Binding)
 
 All workout progressions follow the principle of **progressive overload**.
+This section governs **session-level** progression only. Block/weekly kJ
+progression, deload, and re-entry rules are governed by
+`progressive_overload_policy.md`.
 
 Rules:
 - Only **one progression dimension** may be increased per micro-cycle:

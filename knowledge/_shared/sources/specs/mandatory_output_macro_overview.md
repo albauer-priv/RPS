@@ -103,6 +103,9 @@ Each phase MUST include:
 
 **Rules**
 - `weekly_load_corridor.weekly_kj` is required and must be fully populated.
+- `deload` and `deload_rationale` MUST be derived from `progressive_overload_policy.md`
+  and the selected cadence (`deload_cadence` / `phase_length_weeks`); do not invent
+  alternate cadence logic.
 - No extra keys at phase level.
 - Events: every Season Brief A/B/C event must appear in exactly one phase’s `events_constraints`.
 

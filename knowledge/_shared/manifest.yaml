@@ -15,6 +15,7 @@ sources:
 - path: sources/evidence/evidence_manifest.md
 - path: sources/policies/des_evaluation_policy.md
 - path: sources/policies/load_distribution_policy.md
+- path: sources/policies/progressive_overload_policy.md
 - path: sources/policies/workout_policy.md
 - path: sources/policies/kpi_signal_effects_policy.md
 - path: sources/principles/evidence_layer_durability.md

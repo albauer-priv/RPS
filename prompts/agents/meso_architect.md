@@ -125,12 +125,13 @@ Available filter keys in this project:
 ### Knowledge Retrieval Table (binding)
 All rows below are REQUIRED and MUST be read in full.
 
-#### Required specs / principles (must read fully)
+#### Required specs / policies / principles (must read fully)
 | File | Content | file_search filters |
 |---|---|---|
 | `load_estimation_spec.md` | Load feasibility + band intersection (Meso section) | `{"type":"eq","key":"specification_id","value":"LoadEstimationSpec"}` |
 | `agenda_enum_spec.md` | INTENSITY_DOMAIN / LOAD_MODALITY enums | `{"type":"eq","key":"specification_id","value":"AgendaEnumSpec"}` |
 | `macro_cycle_enum_spec.md` | MACRO_CYCLE_ENUM | `{"type":"eq","key":"specification_id","value":"MacroCycleEnumSpec"}` |
+| `progressive_overload_policy.md` | kJ-based cadence, deload, re-entry | `{"type":"eq","key":"policy_id","value":"ProgressiveOverloadPolicy"}` |
 | `principles_durability_first_cycling.md` | Planning principles (binding guardrails) | `{"type":"eq","key":"specification_id","value":"DurabilityFirstPrinciples"}` |
 | `data_confidence_spec.md` | Data confidence rules | `{"type":"eq","key":"specification_id","value":"DataConfidenceSpec"}` |
 | `traceability_spec.md` | Trace rules | `{"type":"eq","key":"specification_id","value":"TraceabilitySpec"}` |
@@ -656,6 +657,7 @@ You MUST NOT:
 - Weekly kJ bands MUST be derived using LoadEstimationSpec (Meso section):
   intersection of Macro corridor, feasibility (FTP + availability + allowed domains),
   KPI kJ/kg/h band (mapped via IF_ref), and optional progression guardrails.
+- Use `progressive_overload_policy.md` to shape progression, deload, and re-entry rules.
 - No default cadence is allowed here. Use `deload_cadence` and `phase_length_weeks`
   from Scenario/Macro Overview as binding constraints; do not invent a 3:1 pattern.
 - Do NOT use “upper‑third” or “lower‑third” placement heuristics.

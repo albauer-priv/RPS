@@ -7,6 +7,7 @@ sources:
 - path: sources/contracts/micro__builder_contract.md
 - path: sources/policies/workout_policy.md
 - path: sources/policies/kpi_signal_effects_policy.md
+- path: sources/policies/progressive_overload_policy.md
 - path: sources/specs/agenda_enum_spec.md
 - path: sources/specs/load_estimation_spec.md
 - path: ../_shared/sources/specs/availability_interface_spec.md
