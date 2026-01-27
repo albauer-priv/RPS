@@ -105,14 +105,39 @@ def _load_agent_injection_config() -> dict:
     return yaml.safe_load(INJECTION_CONFIG.read_text(encoding="utf-8")) or {}
 
 
-def _build_injection_block(agent_name: str) -> str:
+def _mode_for_task(task: AgentTask) -> str | None:
+    """Return an injection mode label for a given task."""
+    mapping = {
+        AgentTask.CREATE_BLOCK_GOVERNANCE: "block_governance",
+        AgentTask.CREATE_BLOCK_EXECUTION_ARCH: "block_execution_arch",
+        AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW: "block_execution_preview",
+        AgentTask.CREATE_BLOCK_FEED_FORWARD: "block_feed_forward",
+        AgentTask.CREATE_WORKOUTS_PLAN: "workouts_plan",
+        AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: "intervals_workouts",
+        AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
+    }
+    return mapping.get(task)
+
+
+def _build_injection_block(agent_name: str, mode: str | None = None) -> str:
     config = _load_agent_injection_config()
     agent_cfg = (config.get("agents") or {}).get(agent_name) or {}
     items = agent_cfg.get("inject") or []
+    if mode:
+        modes = agent_cfg.get("modes") or {}
+        mode_cfg = modes.get(mode) or {}
+        mode_items = mode_cfg.get("inject") or []
+        if mode_items:
+            items = mode_items
     if not items:
         return ""
     chunks: list[str] = [
-        "Injected mandatory knowledge (read in full; do NOT file_search these files):"
+        (
+            "Injected mandatory knowledge "
+            f"(mode={mode}; read in full; do NOT file_search these files):"
+            if mode
+            else "Injected mandatory knowledge (read in full; do NOT file_search these files):"
+        )
     ]
     for item in items:
         path_str = None
@@ -329,8 +354,9 @@ def plan_week(
 
     if meso_tasks:
         spec = AGENTS["meso_architect"]
-        injected_block = _build_injection_block("meso_architect")
         for task in meso_tasks:
+            mode = _mode_for_task(task)
+            injected_block = _build_injection_block("meso_architect", mode=mode)
             message = f"Running Meso-Architect task {task.value} for block range {block_range_label}."
             _log(message)
             out = run_agent_multi_output(
@@ -412,7 +438,8 @@ def plan_week(
         spec = AGENTS["micro_planner"]
         message = f"Running Micro-Planner for ISO week {target_label}."
         _log(message)
-        injected_block = _build_injection_block("micro_planner")
+        mode = _mode_for_task(AgentTask.CREATE_WORKOUTS_PLAN)
+        injected_block = _build_injection_block("micro_planner", mode=mode)
         out = run_agent_multi_output(
             runtime_for(spec.name),
             agent_name=spec.name,
@@ -457,7 +484,8 @@ def plan_week(
             message = f"Running Workout-Builder for ISO week {target_label}."
             _log(message)
             spec = AGENTS["workout_builder"]
-            injected_block = _build_injection_block("workout_builder")
+            mode = _mode_for_task(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
+            injected_block = _build_injection_block("workout_builder", mode=mode)
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,
@@ -523,7 +551,8 @@ def plan_week(
             spec = AGENTS["performance_analysis"]
             message = f"Running Performance-Analyst for ISO week {report_label}."
             _log(message)
-            injected_block = _build_injection_block("performance_analysis")
+            mode = _mode_for_task(AgentTask.CREATE_DES_ANALYSIS_REPORT)
+            injected_block = _build_injection_block("performance_analysis", mode=mode)
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,
