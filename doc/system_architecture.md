@@ -265,6 +265,27 @@ Tools available to agents:
 These tool sets are wired by the runtime and are consistent across agents.
 File search is forced by default; use `--no-file-search` if you need to disable it.
 
+### 4.2 Runtime Knowledge Injection (Base + Mode Bundles)
+
+In addition to `file_search`, the runtime injects selected knowledge files
+directly into the system prompt.
+
+Configuration:
+- `config/agent_knowledge_injection.yaml`
+
+Model:
+- Base block (always injected): `agents.<agent>.inject`
+- Mode block (one bundle per run):
+  - `agents.<agent>.modes.<mode>.bundle_id`
+  - `agents.<agent>.bundles[].inject`
+
+Effective injection for a run:
+- base `inject` + selected bundle `inject`
+
+Modes are chosen by the orchestrator/runner based on the task
+(for example: `macro_overview` vs `feed_forward`, or
+`block_governance` vs `block_execution_arch`).
+
 #### 4.1.4 Operational Limits
 
 - Keep single files reasonably small (split large PDFs into chapters).

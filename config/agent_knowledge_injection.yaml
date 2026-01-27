@@ -1,3 +1,8 @@
+# Knowledge injection model:
+# - `inject`: always injected for the agent (base block).
+# - `modes.<mode>.bundle_id`: selects ONE bundle for the current run mode.
+# - `bundles[].inject`: injected IN ADDITION to the base block.
+#   Result = base `inject` + selected bundle `inject`.
 agents:
   macro_planner:
     inject:

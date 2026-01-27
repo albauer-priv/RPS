@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.22] - 2026-01-26
+## [0.6.23] - 2026-01-26
 
 ### Changed
+- Documented the base+mode knowledge injection model in `doc/system_architecture.md`.
+- Added a header comment to `config/agent_knowledge_injection.yaml` clarifying base vs mode bundles.
 - Integrated the Intervals.icu pipeline into `rps` with `python -m rps.main parse-intervals`.
 - Deprecated `scripts/data_pipeline/get_intervals_data.py` in favor of the new CLI entrypoint.
 - Updated documentation/diagrams to reference `parse-intervals`.
