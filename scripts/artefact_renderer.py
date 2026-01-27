@@ -32,6 +32,8 @@ RENDERERS = {
     "ZONE_MODEL": "zone_model.md.j2",
     "WORKOUTS_PLAN": "workouts_plan.md.j2",
     "KPI_PROFILE": "kpi_profile.md.j2",
+    "AVAILABILITY": "availability.md.j2",
+    "WELLNESS": "wellness.md.j2",
 }
 
 SCHEMA_FILES = {
@@ -47,6 +49,8 @@ SCHEMA_FILES = {
     "ZONE_MODEL": "zone_model.schema.json",
     "WORKOUTS_PLAN": "workouts_plan.schema.json",
     "KPI_PROFILE": "kpi_profile.schema.json",
+    "AVAILABILITY": "availability.schema.json",
+    "WELLNESS": "wellness.schema.json",
 }
 
 SELF_CHECK_LABELS = {
@@ -1523,6 +1527,69 @@ def build_kpi_profile_context(doc):
     return context
 
 
+def build_availability_context(doc):
+    """Build context for availability rendering."""
+    meta = doc.get("meta", {})
+    data = doc.get("data", {})
+
+    weekly_hours = data.get("weekly_hours") or {}
+    availability_table = []
+    for row in data.get("availability_table", []):
+        availability_table.append(
+            {
+                "weekday": row.get("weekday", ""),
+                "hours_min": fmt_number(row.get("hours_min")),
+                "hours_typical": fmt_number(row.get("hours_typical")),
+                "hours_max": fmt_number(row.get("hours_max")),
+                "indoor_possible": row.get("indoor_possible"),
+                "travel_risk": row.get("travel_risk"),
+                "locked": row.get("locked"),
+            }
+        )
+
+    context = {
+        "meta": meta,
+        "trace_upstream": format_trace_list(meta.get("trace_upstream")),
+        "trace_data": format_trace_list(meta.get("trace_data")),
+        "trace_events": format_trace_list(meta.get("trace_events")),
+        "data": {
+            "weekly_hours": {
+                "min": fmt_number(weekly_hours.get("min")),
+                "typical": fmt_number(weekly_hours.get("typical")),
+                "max": fmt_number(weekly_hours.get("max")),
+            }
+            if weekly_hours
+            else None,
+            "availability_table": availability_table,
+            "fixed_rest_days": data.get("fixed_rest_days", []),
+            "notes": data.get("notes", ""),
+        },
+    }
+    return context
+
+
+def build_wellness_context(doc):
+    """Build context for wellness rendering."""
+    meta = doc.get("meta", {})
+    data = doc.get("data", {})
+
+    entries = list(data.get("entries") or [])
+    entries.sort(key=lambda row: row.get("date") or "")
+
+    context = {
+        "meta": meta,
+        "trace_upstream": format_trace_list(meta.get("trace_upstream")),
+        "trace_data": format_trace_list(meta.get("trace_data")),
+        "trace_events": format_trace_list(meta.get("trace_events")),
+        "data": {
+            "body_mass_kg": data.get("body_mass_kg"),
+            "entries": entries,
+            "notes": data.get("notes", ""),
+        },
+    }
+    return context
+
+
 def render_macro_overview(doc, template_dir: Path):
     """Render macro overview using a Jinja template."""
     env = Environment(
@@ -1700,6 +1767,34 @@ def render_kpi_profile(doc, template_dir: Path):
     return template.render(**context)
 
 
+def render_availability(doc, template_dir: Path):
+    """Render availability using a Jinja template."""
+    env = Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        autoescape=False,
+        undefined=StrictUndefined,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    template = env.get_template(RENDERERS["AVAILABILITY"])
+    context = build_availability_context(doc)
+    return template.render(**context)
+
+
+def render_wellness(doc, template_dir: Path):
+    """Render wellness using a Jinja template."""
+    env = Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        autoescape=False,
+        undefined=StrictUndefined,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    template = env.get_template(RENDERERS["WELLNESS"])
+    context = build_wellness_context(doc)
+    return template.render(**context)
+
+
 def main():
     """CLI entry point."""
     args = parse_args()
@@ -1757,6 +1852,10 @@ def main():
         rendered = render_workouts_plan(doc, template_dir)
     elif artifact_type == "KPI_PROFILE":
         rendered = render_kpi_profile(doc, template_dir)
+    elif artifact_type == "AVAILABILITY":
+        rendered = render_availability(doc, template_dir)
+    elif artifact_type == "WELLNESS":
+        rendered = render_wellness(doc, template_dir)
     else:
         raise ValueError(f"Renderer not implemented for {artifact_type}.")
 

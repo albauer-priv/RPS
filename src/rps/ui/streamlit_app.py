@@ -25,6 +25,7 @@ from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.plan_week import _build_injection_block, plan_week
 from rps.prompts.loader import PromptLoader
+from rps.rendering.auto_render import render_sidecar
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -63,18 +64,40 @@ COMMAND_SYNONYMS: dict[str, list[str]] = {
 
 # Artefact aliases: canonical artifact key -> list of alias names
 ARTIFACT_ALIASES: dict[str, list[str]] = {
-    "macro_overview": ["macro_overview", "macro overview", "macro"],
+    "macro_overview": ["macro_overview", "macro overview", "macro", "overview", "atp"],
     "block_governance": ["block_governance", "block governance", "governance"],
-    "block_execution_arch": ["block_execution_arch", "block execution arch", "execution arch"],
+    "block_execution_arch": [
+        "block_execution_arch",
+        "block execution arch",
+        "block execution architecture",
+        "block_execution_architecture",
+        "execution arch",
+        "arch",
+        "architecture",
+        "bea",
+    ],
     "block_execution_preview": [
         "block_execution_preview",
         "block execution preview",
         "execution preview",
         "preview",
+        "week preview",
     ],
-    "workouts_plan": ["workouts_plan", "workouts plan", "micro plan"],
+    "workouts_plan": ["workouts_plan", "workouts plan", "micro plan", "week plan"],
     "intervals_workouts": ["intervals_workouts", "intervals workouts", "intervals export"],
-    "des_analysis_report": ["des_analysis_report", "des report", "analysis"],
+    "des_analysis_report": [
+        "des_analysis_report",
+        "des report",
+        "analysis",
+        "performance report",
+        "report",
+    ],
+    "availability": ["availability"],
+    "events": ["events"],
+    "zone_model": ["zone model", "zones", "zone"],
+    "kpi_profile": ["kpi profile", "profile"],
+    "season_brief": ["season brief", "brief"],
+    "wellness": ["wellness"],
 }
 
 ARTIFACT_TYPE_BY_KEY: dict[str, ArtifactType] = {
@@ -85,6 +108,29 @@ ARTIFACT_TYPE_BY_KEY: dict[str, ArtifactType] = {
     "workouts_plan": ArtifactType.WORKOUTS_PLAN,
     "intervals_workouts": ArtifactType.INTERVALS_WORKOUTS,
     "des_analysis_report": ArtifactType.DES_ANALYSIS_REPORT,
+    "availability": ArtifactType.AVAILABILITY,
+    "events": ArtifactType.EVENTS,
+    "zone_model": ArtifactType.ZONE_MODEL,
+    "kpi_profile": ArtifactType.KPI_PROFILE,
+    "season_brief": ArtifactType.SEASON_BRIEF,
+    "wellness": ArtifactType.WELLNESS,
+}
+
+RENDERABLE_ARTIFACT_KEYS: set[str] = {
+    "macro_overview",
+    "block_governance",
+    "block_execution_arch",
+    "block_execution_preview",
+    "block_feed_forward",
+    "macro_meso_feed_forward",
+    "des_analysis_report",
+    "activities_actual",
+    "activities_trend",
+    "zone_model",
+    "workouts_plan",
+    "kpi_profile",
+    "availability",
+    "wellness",
 }
 
 
@@ -127,16 +173,17 @@ def _make_ui_run_id(prefix: str) -> str:
 def _coach_state() -> dict:
     return st.session_state["rps_state"].setdefault(
         "coach",
-        {"active": False, "previous_response_id": None, "run_id": None},
+        {"previous_response_id": None, "run_id": None},
     )
 
 
 def _ensure_session_state() -> None:
     if "rps_state" not in st.session_state:
+        now = datetime.now(timezone.utc).isocalendar()
         st.session_state["rps_state"] = {
             "athlete_id": os.getenv("ATHLETE_ID") or "i150546",
-            "year": datetime.now().year,
-            "week": 1,
+            "year": now.year,
+            "week": now.week,
             "scenario": "B",
             "messages": [],
             "system_logs": [],
@@ -145,7 +192,6 @@ def _ensure_session_state() -> None:
             "preflight_ctx": None,
             "preflight_error": None,
             "coach": {
-                "active": False,
                 "previous_response_id": None,
                 "run_id": None,
             },
@@ -183,8 +229,11 @@ def _multi_runtime_for(agent_name: str) -> MultiRuntime:
     )
 
 
-def _append_message(role: str, content: str) -> None:
-    st.session_state["rps_state"]["messages"].append({"role": role, "content": content})
+def _append_message(role: str, content: str, fmt: str | None = None) -> None:
+    message = {"role": role, "content": content}
+    if fmt:
+        message["format"] = fmt
+    st.session_state["rps_state"]["messages"].append(message)
 
 
 def _append_system_log(source: str, content: str) -> None:
@@ -243,7 +292,9 @@ def _capture_output(
 
 
 def canonicalize_trigger(text: str) -> str | None:
-    tl = (text or "").lower()
+    tl = (text or "").strip().lower()
+    if tl.startswith("show "):
+        return "show"
     for canon, syns in COMMAND_SYNONYMS.items():
         for synonym in syns:
             if synonym in tl:
@@ -259,42 +310,137 @@ def find_artifact_key(token: str) -> str | None:
     return None
 
 
-def _latest_rendered_markdown(athlete_id: str, artifact_key: str) -> str | None:
+def _resolve_artifact_key(token: str) -> str | None:
+    t = (token or "").lower().strip()
+    if not t:
+        return None
+    for key, aliases in ARTIFACT_ALIASES.items():
+        for alias in aliases:
+            if t == alias or alias in t:
+                return key
+    return None
+
+
+def _parse_show_args(text: str) -> tuple[str | None, int | None, int | None]:
+    match = re.search(r"show\s+([^\n\r]+)", text, flags=re.IGNORECASE)
+    if not match:
+        return None, None, None
+    tail = match.group(1).strip()
+    if not tail:
+        return None, None, None
+    parts = tail.split()
+    year: int | None = None
+    week: int | None = None
+    token_parts = parts[:]
+    if len(parts) >= 2 and parts[-1].isdigit() and parts[-2].isdigit():
+        year = int(parts[-1])
+        week = int(parts[-2])
+        token_parts = parts[:-2]
+    elif len(parts) >= 1 and parts[-1].isdigit():
+        value = int(parts[-1])
+        token_parts = parts[:-1]
+        if value >= 1000:
+            year = value
+        else:
+            week = value
+    token = " ".join(token_parts).strip()
+    return token or tail, week, year
+
+
+def _rendered_markdown_for(athlete_id: str, artifact_key: str, version_key: str | None = None) -> str | None:
     rendered_dir = ROOT / "var" / "athletes" / athlete_id / "rendered"
     if not rendered_dir.exists():
         return None
-    candidates = sorted(
-        rendered_dir.glob(f"{artifact_key}_*.md"),
-        key=lambda p: p.stat().st_mtime,
-        reverse=True,
-    )
+    patterns = []
+    if version_key:
+        patterns.append(f"{artifact_key}_{version_key}*.md")
+    else:
+        patterns.append(f"{artifact_key}_*.md")
+        patterns.append(f"{artifact_key}.md")
+    candidates: list[Path] = []
+    for pattern in patterns:
+        candidates.extend(rendered_dir.glob(pattern))
+    candidates = sorted({p for p in candidates}, key=lambda p: p.stat().st_mtime, reverse=True)
     if not candidates:
         return None
     return candidates[0].read_text(encoding="utf-8")
 
 
-def _latest_json_preview(athlete_id: str, artifact_key: str) -> str | None:
+def _json_preview_for(
+    athlete_id: str,
+    artifact_key: str,
+    version_key: str | None = None,
+) -> str | None:
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     artifact_type = ARTIFACT_TYPE_BY_KEY.get(artifact_key)
     if not artifact_type:
         return None
     try:
-        doc = store.load_latest(athlete_id, artifact_type)
+        if version_key:
+            doc = store.load_version(athlete_id, artifact_type, version_key)
+        else:
+            doc = store.load_latest(athlete_id, artifact_type)
     except FileNotFoundError:
         return None
     return json.dumps(doc, ensure_ascii=False, indent=2)
 
 
-def display_artifact(athlete_id: str, artifact_key: str) -> None:
-    rendered_md = _latest_rendered_markdown(athlete_id, artifact_key)
+def _input_markdown_for(athlete_id: str, prefix: str, year: int | None = None) -> str | None:
+    input_dir = ROOT / "var" / "athletes" / athlete_id / "inputs"
+    if not input_dir.exists():
+        return None
+    base_path = input_dir / f"{prefix}.md"
+    if base_path.exists():
+        return base_path.read_text(encoding="utf-8")
+    if year:
+        path = input_dir / f"{prefix}_{year}.md"
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    candidates = sorted(input_dir.glob(f"{prefix}_*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not candidates:
+        return None
+    return candidates[0].read_text(encoding="utf-8")
+
+
+def _render_artifact_for_display(
+    athlete_id: str,
+    artifact_key: str,
+    week: int | None = None,
+    year: int | None = None,
+) -> tuple[str, str] | None:
+    version_key = None
+    if week is not None and year is not None:
+        version_key = f"{year:04d}-{week:02d}"
+    if artifact_key == "season_brief":
+        rendered_md = _input_markdown_for(athlete_id, "season_brief", year)
+        if rendered_md:
+            return "markdown", rendered_md
+    if artifact_key == "events":
+        rendered_md = _input_markdown_for(athlete_id, "events", year)
+        if rendered_md:
+            return "markdown", rendered_md
+
+    rendered_md = _rendered_markdown_for(athlete_id, artifact_key, version_key)
     if rendered_md:
-        st.markdown(rendered_md, unsafe_allow_html=True)
-        return
-    preview = _latest_json_preview(athlete_id, artifact_key)
+        return "markdown", rendered_md
+    if artifact_key in RENDERABLE_ARTIFACT_KEYS:
+        store = LocalArtifactStore(root=SETTINGS.workspace_root)
+        artifact_type = ARTIFACT_TYPE_BY_KEY.get(artifact_key)
+        if artifact_type:
+            json_path = (
+                store.versioned_path(athlete_id, artifact_type, version_key)
+                if version_key
+                else store.latest_path(athlete_id, artifact_type)
+            )
+            if json_path.exists():
+                render_sidecar(json_path)
+                rendered_md = _rendered_markdown_for(athlete_id, artifact_key, version_key)
+                if rendered_md:
+                    return "markdown", rendered_md
+    preview = _json_preview_for(athlete_id, artifact_key, version_key)
     if preview:
-        st.code(preview, language="json")
-        return
-    st.warning(f"No artifact found for: {artifact_key}")
+        return "code", preview
+    return "warning", f"No artifact found for: {artifact_key}"
 
 
 def _action_preflight(athlete_id: str, year: int, week: int) -> str:
@@ -335,9 +481,12 @@ def _auto_preflight() -> tuple[bool, str | None]:
     _append_system_log("preflight", f"Starting preflight for {athlete_id} {year}-{week:02d}.")
 
     try:
+        was_init = sm.state == "init"
         output = _action_preflight(athlete_id, year, week)
         rps_state["preflight_ok"] = True
-        sm.transition("core", "plan", action="preflight_ok")
+        sm.transition("core", None, action="preflight_ok")
+        if was_init:
+            rps_state["preflight_state_changed"] = True
         _append_system_log("preflight", output)
         return True, None
     except SystemExit as exc:
@@ -493,7 +642,7 @@ def _action_coach(athlete_id: str, text: str, coach: dict) -> str:
             user_input=text,
             workspace_root=SETTINGS.workspace_root,
             schema_dir=SETTINGS.schema_dir,
-            model_override="gpt-5-mini",
+            model_override=SETTINGS.model_for_agent("coach"),
             include_debug_file_search=False,
             force_file_search=True,
             max_num_results=SETTINGS.file_search_max_results,
@@ -527,18 +676,38 @@ ACTION_MAP: dict[str, Callable[..., str]] = {
 
 
 def _handle_show_command(text: str, athlete_id: str) -> bool:
-    match = re.search(r"show\s+([^\n\r]+)", text, flags=re.IGNORECASE)
-    if not match:
+    token, week, year = _parse_show_args(text)
+    if not token:
         return False
-    token = match.group(1).strip()
-    key = find_artifact_key(token)
+    if week is not None and year is None:
+        year = st.session_state["rps_state"].get("year")
+    if year is not None and week is None:
+        week = st.session_state["rps_state"].get("week")
+    key = _resolve_artifact_key(token)
     if not key:
         _append_message("assistant", f"Unknown artifact alias: {token}")
         return True
-    st.session_state["rps_state"]["state_machine"].parameters.update({"last_shown_artifact": key})
-    _append_message("assistant", f"Showing artifact: {key}")
-    _append_system_log("show", f"Rendered artifact: {key}")
-    display_artifact(athlete_id, key)
+    sm: StateMachine = st.session_state["rps_state"]["state_machine"]
+    st.session_state["rps_state"]["state_machine"].parameters.update(
+        {
+            "last_shown_artifact": key,
+            "last_shown_week": week,
+            "last_shown_year": year,
+            "show_artifact": key,
+            "show_week": week,
+            "show_year": year,
+            "show_label": None,
+            "show_format": None,
+            "show_content": None,
+        }
+    )
+    label = key
+    if week is not None and year is not None:
+        label = f"{key} {week:02d} {year:04d}"
+    sm.transition("core", "show", action="show")
+    sm.parameters["show_label"] = label
+    _append_message("assistant", f"Showing artifact: {label}")
+    _append_system_log("show", f"Rendered artifact: {label}")
     return True
 
 
@@ -558,9 +727,9 @@ def handle_input(text: str) -> None:
 
     lower = text.strip().lower()
     if lower in STOP_WORDS:
-        if coach.get("active"):
-            coach.update({"active": False, "previous_response_id": None, "run_id": None})
-            sm.transition("core", "plan", action="coach_stop")
+        if sm.state == "coach":
+            coach.update({"previous_response_id": None, "run_id": None})
+            sm.transition("core", None, action="coach_stop")
             msg = "Coach session ended. Back in core mode."
             _append_message("assistant", msg)
             _append_system_log("coach", msg)
@@ -569,7 +738,7 @@ def handle_input(text: str) -> None:
         _append_message("assistant", "Session stopped (:quit).")
         return
 
-    if coach.get("active"):
+    if sm.state == "coach":
         sm.transition("coach", action="coach_message")
         try:
             with st.spinner("Coach is thinking..."):
@@ -589,7 +758,8 @@ def handle_input(text: str) -> None:
             return
 
     if trigger == "coach":
-        coach.update({"active": True, "previous_response_id": None, "run_id": _make_ui_run_id("coach")})
+        coach.update({"previous_response_id": None, "run_id": _make_ui_run_id("coach")})
+        sm.parameters["coach_history_start"] = len(st.session_state["rps_state"]["messages"])
         sm.transition("coach", action="coach_start")
         msg = "Coach mode active. Ask anything. Use :quit to leave coach mode."
         _append_message("assistant", msg)
@@ -651,19 +821,21 @@ def _sidebar_controls() -> None:
     coach = _coach_state()
 
     st.sidebar.markdown("---")
+    sm: StateMachine = rps_state["state_machine"]
+    state_label = sm.state
+    if sm.substate:
+        state_label = f"{state_label} / {sm.substate}"
+    st.sidebar.caption(f"State: {state_label}")
+    st.sidebar.markdown("---")
     st.sidebar.caption("Actions")
-    if coach.get("active"):
-        st.sidebar.success("Coach: active (:quit to exit)")
-    else:
-        st.sidebar.caption("Coach: inactive")
     if st.sidebar.button("Coach"):
         handle_input("coach")
     if st.sidebar.button("Plan Week"):
         handle_input("plan week")
     st.sidebar.markdown("---")
-    if st.sidebar.button("Parse Availability"):
+    if st.sidebar.button("Fetch Availability"):
         handle_input("parse availability")
-    if st.sidebar.button("Parse Intervals"):
+    if st.sidebar.button("Fetch Intervals Data"):
         handle_input("parse intervals")
     st.sidebar.markdown("---")
     if st.sidebar.button("Create Scenarios"):
@@ -677,12 +849,90 @@ def _sidebar_controls() -> None:
 def _chat_window() -> None:
     for msg in st.session_state["rps_state"]["messages"]:
         with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+            fmt = msg.get("format")
+            if fmt == "markdown":
+                st.markdown(msg["content"], unsafe_allow_html=True)
+            elif fmt == "code":
+                st.code(msg["content"])
+            else:
+                st.write(msg["content"])
+
+
+def _active_chat_panel() -> None:
+    sm: StateMachine = st.session_state["rps_state"]["state_machine"]
+    if sm.state != "coach":
+        return
+    start_idx = sm.parameters.get("coach_history_start", 0)
+    messages = st.session_state["rps_state"]["messages"][start_idx:]
+    for msg in messages:
+        with st.chat_message(msg["role"]):
+            fmt = msg.get("format")
+            if fmt == "markdown":
+                st.markdown(msg["content"], unsafe_allow_html=True)
+            elif fmt == "code":
+                st.code(msg["content"])
+            else:
+                st.write(msg["content"])
+
+
+def _history_panel() -> None:
+    with st.expander("History", expanded=False):
+        if not st.session_state["rps_state"]["messages"]:
+            st.caption("No history yet.")
+            return
+        _chat_window()
+
+
+def _show_panel() -> None:
+    sm: StateMachine = st.session_state["rps_state"]["state_machine"]
+    if sm.substate != "show":
+        return
+    params = sm.parameters
+    key = params.get("show_artifact")
+    if not key:
+        return
+    week = params.get("show_week")
+    year = params.get("show_year")
+    label = params.get("show_label") or key
+    fmt = params.get("show_format")
+    content = params.get("show_content")
+    if not content:
+        rendered = _render_artifact_for_display(
+            st.session_state["rps_state"]["athlete_id"],
+            key,
+            week=week,
+            year=year,
+        )
+        if rendered:
+            fmt, content = rendered
+            params["show_format"] = fmt
+            params["show_content"] = content
+    if not content:
+        return
+    st.caption(f"Showing: {label}")
+    if fmt == "markdown":
+        st.markdown(content, unsafe_allow_html=True)
+    elif fmt == "code":
+        st.code(content)
+    elif fmt == "warning":
+        st.warning(content)
+    else:
+        st.write(content)
+    sm.substate = None
+    for key_name in (
+        "show_artifact",
+        "show_week",
+        "show_year",
+        "show_label",
+        "show_format",
+        "show_content",
+    ):
+        params.pop(key_name, None)
 
 
 def _system_panel() -> None:
     logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
-    with st.expander("System output / logs", expanded=True):
+    with st.expander("System output / logs", expanded=False):
         if not logs:
             st.caption("No system output yet.")
             return
@@ -697,11 +947,9 @@ def _system_panel() -> None:
 
 
 def _coach_status_panel() -> None:
-    coach = _coach_state()
-    if coach.get("active"):
+    sm: StateMachine = st.session_state["rps_state"]["state_machine"]
+    if sm.state == "coach":
         st.success("Coach: active. Use :quit to exit coach mode.")
-    else:
-        st.caption("Coach: inactive.")
 
 
 def main() -> None:
@@ -716,8 +964,10 @@ def main() -> None:
     _ensure_session_state()
     _sidebar_controls()
     preflight_ok, preflight_err = _auto_preflight()
-    _chat_window()
-    _system_panel()
+    if st.session_state["rps_state"].pop("preflight_state_changed", False):
+        st.rerun()
+    _show_panel()
+    _active_chat_panel()
 
     if not preflight_ok:
         st.error(preflight_err or "Preflight failed. See system output for details.")
@@ -729,6 +979,9 @@ def main() -> None:
     if submitted:
         handle_input(text)
         st.rerun()
+
+    _system_panel()
+    _history_panel()
 
 
 if __name__ == "__main__":

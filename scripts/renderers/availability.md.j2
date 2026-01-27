@@ -1,0 +1,59 @@
+{% macro yn(value) -%}
+{% if value is boolean -%}
+{{ "Yes" if value else "No" }}
+{%- else -%}
+{{ value if value is not none else "N/A" }}
+{%- endif %}
+{%- endmacro %}
+
+# AVAILABILITY ({{ meta.iso_week or "N/A" }})
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week: "{{ meta.iso_week }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Weekly Hours Summary
+
+| Metric | Value |
+|---|---:|
+| Typical | {{ data.weekly_hours.typical if data.weekly_hours else "N/A" }} |
+| Min | {{ data.weekly_hours.min if data.weekly_hours else "N/A" }} |
+| Max | {{ data.weekly_hours.max if data.weekly_hours else "N/A" }} |
+
+## 2) Availability Table
+
+| Weekday | Min (h) | Typical (h) | Max (h) | Indoor | Travel Risk | Locked |
+|---|---:|---:|---:|:---:|:---:|:---:|
+{% for row in data.availability_table or [] %}
+| {{ row.weekday }} | {{ row.hours_min }} | {{ row.hours_typical }} | {{ row.hours_max }} | {{ yn(row.indoor_possible) }} | {{ yn(row.travel_risk) }} | {{ yn(row.locked) }} |
+{% endfor %}
+
+## 3) Fixed Rest Days
+
+{% if data.fixed_rest_days %}
+{{ data.fixed_rest_days | join(", ") }}
+{% else %}
+N/A
+{% endif %}
+
+## 4) Notes
+
+{{ data.notes or "N/A" }}
+

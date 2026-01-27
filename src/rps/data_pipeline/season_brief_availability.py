@@ -147,7 +147,9 @@ def _parse_bool(text: str) -> bool:
 def _parse_travel_risk(text: str) -> str:
     value = text.strip().lower()
     if value in {"low", "medium", "high"}:
-        return value
+        return "med" if value == "medium" else value
+    if value in {"med", "mid"}:
+        return "med"
     if value in {"n/a", "none"}:
         return "low"
     raise ValueError(f"Invalid travel risk value: {text}")
@@ -157,10 +159,25 @@ def _parse_hours(text: str) -> tuple[float, float, float, bool]:
     trimmed = text.strip().lower()
     locked = "[locked]" in trimmed or "(locked)" in trimmed
     trimmed = trimmed.replace("[locked]", "").replace("(locked)", "").strip()
+    if "/ locked" in trimmed:
+        locked = True
+        trimmed = trimmed.replace("/ locked", "")
+    trimmed = trimmed.replace("locked", "").strip()
+    if "/" in trimmed:
+        trimmed = trimmed.split("/", 1)[0].strip()
+    for unit in (" hours", " hour", " hrs", " hr", " h"):
+        if trimmed.endswith(unit):
+            trimmed = trimmed[: -len(unit)].strip()
+    trimmed = trimmed.replace(",", ".").strip()
     if "-" not in trimmed:
         hours = float(trimmed)
         return hours, hours, hours, locked
     parts = [p.strip() for p in trimmed.split("-")]
+    if len(parts) == 2:
+        min_h = float(parts[0])
+        max_h = float(parts[1])
+        typical = (min_h + max_h) / 2
+        return min_h, typical, max_h, locked
     if len(parts) != 3:
         raise ValueError(f"Invalid hours format: {text}")
     return float(parts[0]), float(parts[1]), float(parts[2]), locked
@@ -182,6 +199,14 @@ def _extract_availability_table(text: str) -> list[dict[str, str]]:
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]
         if len(cells) < 4:
+            continue
+        header_cells = [c.strip().lower() for c in cells]
+        if (
+            header_cells[0] in {"day", "weekday"}
+            and "hours" in header_cells[1]
+            and "indoor" in header_cells[2]
+            and "travel" in header_cells[3]
+        ):
             continue
         if all(re.match(r"^[-:\\s]+$", cell) for cell in cells):
             continue
@@ -359,6 +384,7 @@ def build_availability_payload(
         "trace_data": [],
         "trace_events": [],
         "notes": "Derived from Season Brief availability table.",
+        "data_confidence": "medium",
     }
 
     return {

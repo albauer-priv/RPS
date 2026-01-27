@@ -1,0 +1,44 @@
+{% macro fmt(value) -%}
+{{ value if value is not none else "N/A" }}
+{%- endmacro %}
+
+# WELLNESS ({{ meta.iso_week or "N/A" }})
+
+## YAML Header
+```yaml
+---
+Artifact-Type: {{ meta.artifact_type }}
+Schema-ID: {{ meta.schema_id }}
+Schema-Version: {{ meta.schema_version }}
+Version: {{ meta.version }}
+Created-At: {{ meta.created_at }}
+Owner-Agent: {{ meta.owner_agent }}
+Authority: {{ meta.authority }}
+Run-ID: {{ meta.run_id }}
+ISO-Week: "{{ meta.iso_week }}"
+Trace-Upstream:
+{% for ref in trace_upstream %}  - {{ ref }}
+{% endfor %}Trace-Data:
+{% for ref in trace_data %}  - {{ ref }}
+{% endfor %}Trace-Events:
+{% for ref in trace_events %}  - {{ ref }}
+{% endfor %}---
+```
+
+## 1) Body Mass
+
+- Body mass (kg): {{ fmt(data.body_mass_kg) }}
+
+## 2) Last 3 Wellness Entries
+
+| Date | Weight | RHR | HRV | Sleep (h) | Sleep Quality | Soreness | Fatigue | Stress | Mood | Motivation |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+{% set rows = (data.entries or [])[-3:] %}
+{% for row in rows %}
+| {{ row.date }} | {{ fmt(row.weight_kg) }} | {{ fmt(row.resting_hr_bpm) }} | {{ fmt(row.hrv_ms) }} | {{ (row.sleep_seconds / 3600) | round(1) if row.sleep_seconds is not none else "N/A" }} | {{ fmt(row.sleep_quality) }} | {{ fmt(row.soreness) }} | {{ fmt(row.fatigue) }} | {{ fmt(row.stress) }} | {{ fmt(row.mood) }} | {{ fmt(row.motivation) }} |
+{% endfor %}
+
+## 3) Notes
+
+{{ data.notes or "N/A" }}
+

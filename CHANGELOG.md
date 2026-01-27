@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.26] - 2026-01-27
+
+### Changed
+- Streamlit show flow is state-machine backed, with an active coach window above the input and history collapsed below.
+- Sidebar now shows the active state, uses ISO-week defaults, and updated action labels.
+- Added robust Season Brief availability parsing (weekday header skip, hour formats, travel risk aliases, data_confidence).
+- Availability and wellness artefacts now render via new Markdown templates and renderer support.
+- Coach prompt now includes a strict G1 workspace load order (season brief/events + latest artefacts).
+- Coach runs without workspace_get (prevents invalid input lookups).
+
 ## [0.6.25] - 2026-01-27
 
 ### Changed
@@ -13,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach status is shown in the sidebar and a Coach action button is available.
 - Knowledge injection now truly applies `base + bundle (+ mode)` with de-duplication.
 - Added optional Responses `web_search` tool wiring, gated by `.env` (`OPENAI_ENABLE_WEB_SEARCH`, `OPENAI_WEB_SEARCH_AGENTS`).
+- Coach prompt now enforces workspace-first loading order and references the DES analysis report.
+- Coach knowledge injection now always includes durability bibliography, macro/block/workouts mandatory output specs.
+- Coach now uses per-agent model/reasoning overrides via `.env` (OPENAI_MODEL_COACH / OPENAI_REASONING_EFFORT_COACH).
+- Streamlit system log widget now defaults to collapsed.
 
 ## [0.6.24] - 2026-01-26
 

@@ -253,6 +253,8 @@ def run_agent_session(
     )
     tool_defs = get_tool_defs()
     tool_handlers = get_tool_handlers(tool_ctx)
+    if agent_name == "coach":
+        tool_defs = [tool for tool in tool_defs if tool.get("name") != "workspace_get"]
 
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20
