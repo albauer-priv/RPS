@@ -1,109 +1,97 @@
 agents:
   macro_planner:
     inject:
-    - &id001
-      path: knowledge/_shared/sources/specs/load_estimation_spec.md
+    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
       section: general
       label: LoadEstimationSpec (General section)
-    - &id002
-      path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - &id003
-      path: knowledge/_shared/sources/evidence/durability_bibliography.md
-    - &id004
-      path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - &id005
-      path: knowledge/_shared/sources/contracts/macro__meso_contract.md
-    - &id006
-      path: knowledge/_shared/sources/contracts/data_pipeline__macro_contract.md
-    - &id007
-      path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
-    - &id008
-      path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-    - &id009
-      path: knowledge/_shared/sources/specs/events_interface_spec.md
-    - &id010
-      path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - &id011
-      path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - &id012
-      path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
-    - &id013
-      path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
-    - &id014
-      path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
-    - &id015
-      path: knowledge/_shared/sources/specs/agenda_enum_spec.md
-    - &id016
-      path: knowledge/_shared/sources/specs/traceability_spec.md
-    - &id017
-      path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - &id018
-      path: knowledge/_shared/sources/specs/mandatory_output_macro_overview.md
-    - &id022
-      path: knowledge/_shared/sources/specs/mandatory_output_macro_meso_feed_forward.md
-    - &id019
-      path: knowledge/_shared/sources/schemas/bundled/macro_overview.schema.json
-    - &id023
-      path: knowledge/_shared/sources/schemas/bundled/macro_meso_feed_forward.schema.json
-    - &id020
-      path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - &id021
-      path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+    - path: knowledge/_shared/sources/contracts/data_pipeline__macro_contract.md
+    - path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
+    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+    - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+    - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+    - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+    - path: knowledge/_shared/sources/specs/traceability_spec.md
+    - path: knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_macro_overview.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_macro_meso_feed_forward.md
+    - path: knowledge/_shared/sources/schemas/bundled/macro_overview.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/macro_meso_feed_forward.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       macro_overview:
-        inject:
-        - *id001
-        - *id002
-        - *id003
-        - *id004
-        - *id005
-        - *id006
-        - *id007
-        - *id008
-        - *id009
-        - *id010
-        - *id011
-        - *id012
-        - *id013
-        - *id014
-        - *id015
-        - *id016
-        - *id017
-        - *id018
-        - *id019
-        - *id020
-        - *id021
+        bundle_id: macro_macro_overview
       feed_forward:
-        inject:
-        - *id001
-        - *id002
-        - *id004
-        - *id005
-        - *id006
-        - *id016
-        - *id017
-        - *id022
-        - *id023
-        - *id020
-        - *id021
+        bundle_id: macro_feed_forward
       scenario:
-        inject:
-        - *id002
-        - *id004
-        - *id007
-        - *id008
-        - *id009
-        - *id010
-        - *id012
-        - *id013
-        - *id014
-        - *id015
-        - *id016
-        - *id017
-        - *id020
-        - *id021
+        bundle_id: macro_scenario
+    bundles:
+    - id: macro_macro_overview
+      inject:
+      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+        section: general
+        label: LoadEstimationSpec (General section)
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__macro_contract.md
+      - path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+      - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/file_naming_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_macro_overview.md
+      - path: knowledge/_shared/sources/schemas/bundled/macro_overview.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - id: macro_feed_forward
+      inject:
+      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+        section: general
+        label: LoadEstimationSpec (General section)
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__macro_contract.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/file_naming_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_macro_meso_feed_forward.md
+      - path: knowledge/_shared/sources/schemas/bundled/macro_meso_feed_forward.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - id: macro_scenario
+      inject:
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+      - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/file_naming_spec.md
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
   season_scenario:
-    inject: &id024
+    inject:
     - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
     - path: knowledge/_shared/sources/contracts/data_pipeline__scenario_contract.md
     - path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
@@ -122,64 +110,57 @@ agents:
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       scenario:
-        inject: *id024
+        bundle_id: season_scenario
+    bundles:
+    - id: season_scenario
+      inject:
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__scenario_contract.md
+      - path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+      - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/file_naming_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md
+      - path: knowledge/_shared/sources/schemas/bundled/season_scenarios.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/season_scenario_selection.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
   meso_architect:
     inject:
-    - &id025
-      path: knowledge/_shared/sources/specs/load_estimation_spec.md
+    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
       section: general+meso
       label: LoadEstimationSpec (General + Meso sections)
-    - &id026
-      path: knowledge/_shared/sources/contracts/macro__meso_contract.md
-    - &id027
-      path: knowledge/_shared/sources/contracts/meso__micro_contract.md
-    - &id028
-      path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
-    - &id029
-      path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+    - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+    - path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
+    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
     - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
-    - &id030
-      path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - &id031
-      path: knowledge/_shared/sources/evidence/durability_bibliography.md
-    - &id032
-      path: knowledge/_shared/sources/principles/evidence_layer_durability.md
-    - &id033
-      path: knowledge/_shared/sources/specs/data_confidence_spec.md
-    - &id034
-      path: knowledge/_shared/sources/specs/traceability_spec.md
-    - &id035
-      path: knowledge/_shared/sources/specs/agenda_enum_spec.md
-    - &id036
-      path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
-    - &id037
-      path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-    - &id038
-      path: knowledge/_shared/sources/specs/events_interface_spec.md
-    - &id039
-      path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - &id040
-      path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - &id041
-      path: knowledge/_shared/sources/specs/mandatory_output_block_governance.md
-    - &id045
-      path: knowledge/_shared/sources/specs/mandatory_output_block_execution_arch.md
-    - &id047
-      path: knowledge/_shared/sources/specs/mandatory_output_block_execution_preview.md
-    - &id049
-      path: knowledge/_shared/sources/specs/mandatory_output_block_feed_forward.md
-    - &id042
-      path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
-    - &id046
-      path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
-    - &id048
-      path: knowledge/_shared/sources/schemas/bundled/block_execution_preview.schema.json
-    - &id050
-      path: knowledge/_shared/sources/schemas/bundled/block_feed_forward.schema.json
-    - &id043
-      path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - &id044
-      path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
+    - path: knowledge/_shared/sources/specs/data_confidence_spec.md
+    - path: knowledge/_shared/sources/specs/traceability_spec.md
+    - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+    - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_governance.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_arch.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_preview.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_feed_forward.md
+    - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/block_execution_preview.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/block_feed_forward.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       block_governance:
         bundle_id: meso_block_governance
@@ -192,96 +173,104 @@ agents:
     bundles:
     - id: meso_block_governance
       inject:
-      - *id025
-      - *id026
-      - *id027
-      - *id028
-      - *id029
-      - *id030
-      - *id031
-      - *id032
-      - *id033
-      - *id034
-      - *id035
-      - *id036
-      - *id037
-      - *id038
-      - *id039
-      - *id040
-      - *id041
-      - *id042
-      - *id043
-      - *id044
+      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+        section: general+meso
+        label: LoadEstimationSpec (General + Meso sections)
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+      - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
+      - path: knowledge/_shared/sources/specs/data_confidence_spec.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_block_governance.md
+      - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     - id: meso_block_execution_arch
       inject:
-      - *id025
-      - *id026
-      - *id027
-      - *id028
-      - *id029
-      - *id030
-      - *id031
-      - *id032
-      - *id033
-      - *id034
-      - *id035
-      - *id036
-      - *id037
-      - *id038
-      - *id039
-      - *id040
-      - *id045
-      - *id042
-      - *id046
-      - *id043
-      - *id044
+      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+        section: general+meso
+        label: LoadEstimationSpec (General + Meso sections)
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+      - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
+      - path: knowledge/_shared/sources/specs/data_confidence_spec.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_arch.md
+      - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     - id: meso_block_execution_preview
       inject:
-      - *id025
-      - *id026
-      - *id027
-      - *id028
-      - *id029
-      - *id030
-      - *id031
-      - *id032
-      - *id033
-      - *id034
-      - *id035
-      - *id036
-      - *id037
-      - *id038
-      - *id039
-      - *id040
-      - *id047
-      - *id046
-      - *id048
-      - *id043
-      - *id044
+      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+        section: general+meso
+        label: LoadEstimationSpec (General + Meso sections)
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+      - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
+      - path: knowledge/_shared/sources/specs/data_confidence_spec.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_preview.md
+      - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/block_execution_preview.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     - id: meso_block_feed_forward
       inject:
-      - *id025
-      - *id026
-      - *id027
-      - *id028
-      - *id029
-      - *id030
-      - *id031
-      - *id032
-      - *id033
-      - *id034
-      - *id035
-      - *id036
-      - *id037
-      - *id038
-      - *id039
-      - *id040
-      - *id049
-      - *id050
-      - *id043
-      - *id044
+      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+        section: general+meso
+        label: LoadEstimationSpec (General + Meso sections)
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
+      - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+      - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
+      - path: knowledge/_shared/sources/specs/data_confidence_spec.md
+      - path: knowledge/_shared/sources/specs/traceability_spec.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+      - path: knowledge/_shared/sources/specs/events_interface_spec.md
+      - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: knowledge/_shared/sources/specs/mandatory_output_block_feed_forward.md
+      - path: knowledge/_shared/sources/schemas/bundled/block_feed_forward.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+      - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
   micro_planner:
-    inject: &id051
+    inject:
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md
       section: general
       label: LoadEstimationSpec (General section)
@@ -306,9 +295,31 @@ agents:
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       workouts_plan:
-        inject: *id051
+        inject:
+        - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+          section: general
+          label: LoadEstimationSpec (General section)
+        - path: knowledge/_shared/sources/contracts/data_pipeline__micro_contract.md
+        - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+        - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+        - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+        - path: knowledge/_shared/sources/policies/workout_policy.md
+        - path: knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
+        - path: knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
+        - path: knowledge/_shared/sources/specs/workouts/workout_json_spec.md
+        - path: knowledge/_shared/sources/specs/file_naming_spec.md
+        - path: knowledge/_shared/sources/specs/traceability_spec.md
+        - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+        - path: knowledge/_shared/sources/contracts/micro__builder_contract.md
+        - path: knowledge/_shared/sources/specs/mandatory_output_workouts_plan.md
+        - path: knowledge/_shared/sources/schemas/bundled/workouts_plan.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/block_feed_forward.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
   workout_builder:
-    inject: &id052
+    inject:
     - path: knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
     - path: knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
     - path: knowledge/_shared/sources/specs/workouts/workout_json_spec.md
@@ -323,9 +334,21 @@ agents:
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       intervals_workouts:
-        inject: *id052
+        inject:
+        - path: knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
+        - path: knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
+        - path: knowledge/_shared/sources/specs/workouts/workout_json_spec.md
+        - path: knowledge/_shared/sources/policies/workout_policy.md
+        - path: knowledge/_shared/sources/specs/file_naming_spec.md
+        - path: knowledge/_shared/sources/specs/traceability_spec.md
+        - path: knowledge/_shared/sources/contracts/micro__builder_contract.md
+        - path: knowledge/_shared/sources/specs/mandatory_output_intervals_workouts.md
+        - path: knowledge/_shared/sources/schemas/bundled/workouts_plan.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/workouts.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
   performance_analysis:
-    inject: &id053
+    inject:
     - path: knowledge/_shared/sources/policies/des_evaluation_policy.md
     - path: knowledge/_shared/sources/specs/data_confidence_spec.md
     - path: knowledge/_shared/sources/specs/traceability_spec.md
@@ -340,4 +363,16 @@ agents:
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       des_analysis_report:
-        inject: *id053
+        inject:
+        - path: knowledge/_shared/sources/policies/des_evaluation_policy.md
+        - path: knowledge/_shared/sources/specs/data_confidence_spec.md
+        - path: knowledge/_shared/sources/specs/traceability_spec.md
+        - path: knowledge/_shared/sources/specs/file_naming_spec.md
+        - path: knowledge/_shared/sources/contracts/analyst__macro_contract.md
+        - path: knowledge/_shared/sources/contracts/data_pipeline__analyst_contract.md
+        - path: knowledge/_shared/sources/specs/mandatory_output_des_analysis_report.md
+        - path: knowledge/_shared/sources/schemas/bundled/des_analysis_report.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/activities_actual.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/activities_trend.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+        - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
