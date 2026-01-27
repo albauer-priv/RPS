@@ -182,95 +182,104 @@ agents:
       path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       block_governance:
-        inject:
-        - *id025
-        - *id026
-        - *id027
-        - *id028
-        - *id029
-        - *id030
-        - *id031
-        - *id032
-        - *id033
-        - *id034
-        - *id035
-        - *id036
-        - *id037
-        - *id038
-        - *id039
-        - *id040
-        - *id041
-        - *id042
-        - *id043
-        - *id044
+        bundle_id: meso_block_governance
       block_execution_arch:
-        inject:
-        - *id025
-        - *id026
-        - *id027
-        - *id028
-        - *id029
-        - *id030
-        - *id031
-        - *id032
-        - *id033
-        - *id034
-        - *id035
-        - *id036
-        - *id037
-        - *id038
-        - *id039
-        - *id040
-        - *id045
-        - *id042
-        - *id046
-        - *id043
-        - *id044
+        bundle_id: meso_block_execution_arch
       block_execution_preview:
-        inject:
-        - *id025
-        - *id026
-        - *id027
-        - *id028
-        - *id029
-        - *id030
-        - *id031
-        - *id032
-        - *id033
-        - *id034
-        - *id035
-        - *id036
-        - *id037
-        - *id038
-        - *id039
-        - *id040
-        - *id047
-        - *id046
-        - *id048
-        - *id043
-        - *id044
+        bundle_id: meso_block_execution_preview
       block_feed_forward:
-        inject:
-        - *id025
-        - *id026
-        - *id027
-        - *id028
-        - *id029
-        - *id030
-        - *id031
-        - *id032
-        - *id033
-        - *id034
-        - *id035
-        - *id036
-        - *id037
-        - *id038
-        - *id039
-        - *id040
-        - *id049
-        - *id050
-        - *id043
-        - *id044
+        bundle_id: meso_block_feed_forward
+    bundles:
+    - id: meso_block_governance
+      inject:
+      - *id025
+      - *id026
+      - *id027
+      - *id028
+      - *id029
+      - *id030
+      - *id031
+      - *id032
+      - *id033
+      - *id034
+      - *id035
+      - *id036
+      - *id037
+      - *id038
+      - *id039
+      - *id040
+      - *id041
+      - *id042
+      - *id043
+      - *id044
+    - id: meso_block_execution_arch
+      inject:
+      - *id025
+      - *id026
+      - *id027
+      - *id028
+      - *id029
+      - *id030
+      - *id031
+      - *id032
+      - *id033
+      - *id034
+      - *id035
+      - *id036
+      - *id037
+      - *id038
+      - *id039
+      - *id040
+      - *id045
+      - *id042
+      - *id046
+      - *id043
+      - *id044
+    - id: meso_block_execution_preview
+      inject:
+      - *id025
+      - *id026
+      - *id027
+      - *id028
+      - *id029
+      - *id030
+      - *id031
+      - *id032
+      - *id033
+      - *id034
+      - *id035
+      - *id036
+      - *id037
+      - *id038
+      - *id039
+      - *id040
+      - *id047
+      - *id046
+      - *id048
+      - *id043
+      - *id044
+    - id: meso_block_feed_forward
+      inject:
+      - *id025
+      - *id026
+      - *id027
+      - *id028
+      - *id029
+      - *id030
+      - *id031
+      - *id032
+      - *id033
+      - *id034
+      - *id035
+      - *id036
+      - *id037
+      - *id038
+      - *id039
+      - *id040
+      - *id049
+      - *id050
+      - *id043
+      - *id044
   micro_planner:
     inject: &id051
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md

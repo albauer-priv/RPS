@@ -126,6 +126,13 @@ def _build_injection_block(agent_name: str, mode: str | None = None) -> str:
     if mode:
         modes = agent_cfg.get("modes") or {}
         mode_cfg = modes.get(mode) or {}
+        bundle_id = mode_cfg.get("bundle_id")
+        if bundle_id:
+            bundles = agent_cfg.get("bundles") or []
+            bundle_cfg = next((b for b in bundles if b.get("id") == bundle_id), {})
+            bundle_items = bundle_cfg.get("inject") or []
+            if bundle_items:
+                items = bundle_items
         mode_items = mode_cfg.get("inject") or []
         if mode_items:
             items = mode_items
