@@ -81,6 +81,8 @@ flowchart TD
    - JSON schema validation for all artifacts (envelope or raw payload).
 6. **Orchestrator (optional)**
    - `plan-week` for Macro → Meso → Micro → Builder → Analysis sequencing.
+7. **Streamlit UI (optional)**
+   - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
 
 ---
 
@@ -280,11 +282,12 @@ Model:
   - `agents.<agent>.bundles[].inject`
 
 Effective injection for a run:
-- base `inject` + selected bundle `inject`
+- base `inject` + selected bundle `inject` (+ any mode-specific `inject`)
+- duplicates are removed while preserving order
 
 Modes are chosen by the orchestrator/runner based on the task
 (for example: `macro_overview` vs `feed_forward`, or
-`block_governance` vs `block_execution_arch`).
+`block_governance` vs `block_execution_arch`, or `coach`).
 
 #### 4.1.4 Operational Limits
 

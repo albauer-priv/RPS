@@ -5,9 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.23] - 2026-01-26
+## [0.6.25] - 2026-01-27
 
 ### Changed
+- Streamlit UI now runs preflight automatically on startup, transitions to `core/plan` on success, and stops with a clear error on failure.
+- Added a Coach agent (`prompts/agents/coach.md`) and wired coach mode into Streamlit with persistent Responses context via `previous_response_id`.
+- Coach status is shown in the sidebar and a Coach action button is available.
+- Knowledge injection now truly applies `base + bundle (+ mode)` with de-duplication.
+- Added optional Responses `web_search` tool wiring, gated by `.env` (`OPENAI_ENABLE_WEB_SEARCH`, `OPENAI_WEB_SEARCH_AGENTS`).
+
+## [0.6.24] - 2026-01-26
+
+### Changed
+- Added a minimal Streamlit UI at `src/rps/ui/streamlit_app.py` with a simple state machine and chat-style commands.
+- Documented Streamlit usage in `doc/streamlit_ui.md` and referenced it from `doc/system_architecture.md`.
+- Added `streamlit` to `pyproject.toml` dependencies.
 - Documented the base+mode knowledge injection model in `doc/system_architecture.md`.
 - Added a header comment to `config/agent_knowledge_injection.yaml` clarifying base vs mode bundles.
 - Integrated the Intervals.icu pipeline into `rps` with `python -m rps.main parse-intervals`.

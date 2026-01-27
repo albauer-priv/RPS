@@ -135,6 +135,42 @@ agents:
       - path: knowledge/_shared/sources/schemas/bundled/season_scenario_selection.schema.json
       - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
       - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+  coach:
+    inject:
+    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+      section: general
+      label: LoadEstimationSpec (General section)
+    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: knowledge/_shared/sources/specs/traceability_spec.md
+    - path: knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_macro_overview.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_governance.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_arch.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_preview.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_block_feed_forward.md
+    - path: knowledge/_shared/sources/specs/mandatory_output_workouts_plan.md
+    modes:
+      coach:
+        bundle_id: coach_coach
+    bundles:
+    - id: coach_coach
+      inject:
+      - path: knowledge/_shared/sources/contracts/scenario__macro_contract.md
+      - path: knowledge/_shared/sources/contracts/macro__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__scenario_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__macro_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__meso_contract.md
+      - path: knowledge/_shared/sources/contracts/data_pipeline__micro_contract.md
+      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: knowledge/_shared/sources/specs/macro_cycle_enum_spec.md
+      - path: knowledge/_shared/sources/specs/data_confidence_spec.md
   meso_architect:
     inject:
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md

@@ -48,6 +48,51 @@ def _build_file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str,
     }
 
 
+def _parse_csv_env(name: str) -> set[str]:
+    raw = os.getenv(name, "")
+    if not raw.strip():
+        return set()
+    return {part.strip().lower() for part in raw.split(",") if part.strip()}
+
+
+def _build_web_search_tool() -> dict[str, Any]:
+    tool: dict[str, Any] = {
+        "type": "web_search",
+        "user_location": {
+            "type": "approximate",
+            "country": "US",
+            "timezone": "America/New_York",
+            "region": "United States",
+        },
+    }
+    allowed_domains = [
+        dom for dom in os.getenv("OPENAI_WEB_SEARCH_ALLOWED_DOMAINS", "").split(",") if dom.strip()
+    ]
+    if allowed_domains:
+        tool["filters"] = {"allowed_domains": [dom.strip() for dom in allowed_domains]}
+    context_size = os.getenv("OPENAI_WEB_SEARCH_CONTEXT_SIZE", "").strip().lower()
+    if context_size in {"low", "medium", "high"}:
+        tool.setdefault("filters", {})["search_context_size"] = context_size
+    external_access_raw = os.getenv("OPENAI_WEB_SEARCH_EXTERNAL_ACCESS")
+    if external_access_raw is not None:
+        tool["external_web_access"] = external_access_raw.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    return tool
+
+
+def _web_search_enabled(agent_name: str) -> bool:
+    if not _env_flag("OPENAI_ENABLE_WEB_SEARCH"):
+        return False
+    agents = _parse_csv_env("OPENAI_WEB_SEARCH_AGENTS")
+    if agents and agent_name.lower() not in agents:
+        return False
+    return True
+
+
 def _item_type(item: Any) -> Optional[str]:
     """Return the type field for response output items."""
     if isinstance(item, dict):
@@ -141,6 +186,47 @@ def run_agent(
     run_id: str | None = None,
 ) -> str:
     """Run an agent with workspace tools and file search attached."""
+    result = run_agent_session(
+        runtime,
+        agent_name=agent_name,
+        agent_vs_name=agent_vs_name,
+        athlete_id=athlete_id,
+        user_input=user_input,
+        workspace_root=workspace_root,
+        schema_dir=schema_dir,
+        model_override=model_override,
+        temperature_override=temperature_override,
+        include_debug_file_search=include_debug_file_search,
+        force_file_search=force_file_search,
+        max_num_results=max_num_results,
+        run_id=run_id,
+    )
+    return result["text"]
+
+
+def run_agent_session(
+    runtime: AgentRuntime,
+    *,
+    agent_name: str,
+    agent_vs_name: str,
+    athlete_id: str,
+    user_input: str,
+    workspace_root: Path,
+    schema_dir: Path,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+    include_debug_file_search: bool = False,
+    force_file_search: bool = True,
+    max_num_results: int | None = None,
+    run_id: str | None = None,
+    previous_response_id: str | None = None,
+    injection_text: str | None = None,
+) -> dict[str, Any]:
+    """Run an agent and return both the text output and response id.
+
+    This variant supports session-style chaining via `previous_response_id`
+    and optional runtime knowledge injection into the system prompt.
+    """
     model = model_override or runtime.model
     temperature = temperature_override if temperature_override is not None else runtime.temperature
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
@@ -155,6 +241,8 @@ def run_agent(
     )
 
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
+    if injection_text:
+        system_prompt = f"{system_prompt}\n\n{injection_text}"
 
     tool_ctx = ToolContext(
         athlete_id=athlete_id,
@@ -168,7 +256,11 @@ def run_agent(
 
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20
-    tools = [_build_file_search_tool(agent_vs_id, max_num_results)] + tool_defs
+    tools: list[dict[str, Any]] = [_build_file_search_tool(agent_vs_id, max_num_results)]
+    web_search_enabled = _web_search_enabled(agent_name)
+    if web_search_enabled:
+        tools.append(_build_web_search_tool())
+    tools += tool_defs
     debug_file_search = (
         include_debug_file_search
         or _env_flag("OPENAI_DEBUG_FILE_SEARCH")
@@ -177,11 +269,12 @@ def run_agent(
     )
     include = ["file_search_call.results"] if debug_file_search else None
     logger.info(
-        "file_search tool: agent=%s stores=%s max_results=%s include_results=%s",
+        "tools: agent=%s stores=%s max_results=%s include_results=%s web_search=%s",
         agent_name,
         [agent_vs_id],
         max_num_results,
         debug_file_search,
+        web_search_enabled,
     )
 
     input_list: list[dict[str, Any]] = [
@@ -190,12 +283,16 @@ def run_agent(
     ]
 
     force_search = force_file_search
+    previous_id_for_request = previous_response_id
+
     def _create_response(force_search_flag: bool):
         payload: dict[str, Any] = {
             "model": model,
             "tools": tools,
             "input": input_list,
         }
+        if previous_id_for_request:
+            payload["previous_response_id"] = previous_id_for_request
         reasoning = build_reasoning_payload(
             model,
             runtime.reasoning_effort,
@@ -220,6 +317,7 @@ def run_agent(
 
     seen_summaries: set[str] = set()
     response = _create_response(force_search)
+    previous_id_for_request = None
     last_text = response.output_text or extract_text_output(response) or ""
     if debug_file_search:
         _log_file_search_calls(response)
@@ -292,4 +390,9 @@ def run_agent(
         input_list += response.output
 
     logger.debug("Agent output: %s", response.output_text)
-    return response.output_text or last_text
+    text = response.output_text or last_text or "[no text output]"
+    return {
+        "text": text,
+        "response_id": getattr(response, "id", None),
+        "response": response,
+    }

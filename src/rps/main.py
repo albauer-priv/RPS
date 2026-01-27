@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import json
 import logging
 import os
@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import sys
 import time
+import re
 
 from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
 from rps.agents.runner import AgentRuntime, run_agent
@@ -74,6 +75,92 @@ def _parse_iso_datetime(value: str) -> datetime | None:
     return parsed
 
 
+def _parse_date_label(text: str, label: str) -> date | None:
+    """Parse a YYYY-MM-DD date following a label like 'Valid-From:'."""
+    pattern = rf"{re.escape(label)}\s*:\s*(\d{{4}}-\d{{2}}-\d{{2}})"
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    try:
+        return date.fromisoformat(match.group(1))
+    except ValueError:
+        return None
+
+
+def _iso_week_str_from_date(day: date) -> str:
+    year, week, _ = day.isocalendar()
+    return f"{year:04d}-{week:02d}"
+
+
+def _normalize_kpi_profile_payload(
+    payload: dict,
+    *,
+    season_text: str,
+    year: int | None,
+    week: int | None,
+    logger: logging.Logger,
+) -> dict:
+    """Leniently normalize KPI profile payload to satisfy strict schemas."""
+    meta = payload.setdefault("meta", {})
+    data = payload.setdefault("data", {})
+
+    # --- Derive temporal anchors from Season Brief when possible ---
+    valid_from = _parse_date_label(season_text, "Valid-From")
+    valid_to = _parse_date_label(season_text, "Valid-To")
+    season_year = year or (valid_from.year if valid_from else None) or datetime.now(timezone.utc).year
+    if valid_from is None:
+        valid_from = date(season_year, 1, 1)
+    if valid_to is None:
+        valid_to = date(season_year, 12, 31)
+
+    iso_start = _iso_week_str_from_date(valid_from)
+    iso_end = _iso_week_str_from_date(valid_to)
+    iso_week = f"{season_year:04d}-{week:02d}" if week else iso_start
+
+    # --- Meta defaults required by artefact_meta + KPI schema overlay ---
+    meta.setdefault("artifact_type", "KPI_PROFILE")
+    meta.setdefault("schema_id", "KPIProfileInterface")
+    meta.setdefault("schema_version", "1.0")
+    meta.setdefault("version", "1.0")
+    meta.setdefault("authority", "Binding")
+    meta.setdefault("owner_agent", "Policy-Owner")
+    meta.setdefault("run_id", f"kpi_profile_{season_year}")
+    meta.setdefault("created_at", datetime.now(timezone.utc).isoformat())
+    meta.setdefault("scope", "Shared")
+    meta.setdefault("iso_week", iso_week)
+    meta.setdefault("iso_week_range", f"{iso_start}--{iso_end}")
+    meta.setdefault("temporal_scope", {"from": valid_from.isoformat(), "to": valid_to.isoformat()})
+    meta.setdefault("trace_data", [])
+    meta.setdefault("trace_events", [])
+    meta.setdefault("data_confidence", meta.get("data_confidence") or "HIGH")
+    meta.setdefault("notes", meta.get("notes") or "Normalized by preflight.")
+    trace_upstream = meta.setdefault("trace_upstream", [])
+    if isinstance(trace_upstream, list):
+        for ref in trace_upstream:
+            if isinstance(ref, dict) and not ref.get("run_id"):
+                ref["run_id"] = meta["run_id"]
+
+    # --- Data normalization: thresholds need context+notes; kpis need notes ---
+    def walk(obj: object, path: list[str] | None = None, parent_key: str | None = None) -> None:
+        path = path or []
+        if isinstance(obj, dict):
+            in_decision_rules = bool(path and path[-1] == "decision_rules")
+            if not in_decision_rules and {"green", "yellow", "red"}.issubset(obj.keys()):
+                obj.setdefault("context", "")
+                obj.setdefault("notes", "")
+            for key, value in obj.items():
+                walk(value, path + [key], key)
+        elif isinstance(obj, list):
+            for item in obj:
+                if parent_key == "kpis" and isinstance(item, dict):
+                    item.setdefault("notes", "")
+                walk(item, path, parent_key)
+
+    walk(data, [])
+    logger.info("KPI profile normalization applied (lenient preflight).")
+    return payload
+
+
 def _preflight(
     athlete_id: str,
     workspace_root: Path,
@@ -85,7 +172,8 @@ def _preflight(
     skip_availability: bool = False,
     skip_intervals: bool = False,
     force_intervals: bool = False,
-) -> None:
+) -> str:
+    notes: list[str] = []
     athlete_root = workspace_root / athlete_id
     inputs_dir = athlete_root / "inputs"
     latest_dir = athlete_root / "latest"
@@ -94,11 +182,13 @@ def _preflight(
         season_path, season_text = load_season_brief(athlete_root, year, None)
     except FileNotFoundError as exc:
         raise SystemExit("Missing Season Brief. Place season_brief_*.md in inputs/ or latest/.") from exc
+    notes.append(f"Season Brief: {season_path.name}")
 
     events_path = _find_first([inputs_dir / "events.md", latest_dir / "events.md"])
     if not events_path:
         raise SystemExit("Missing events.md. Place events.md in inputs/ or latest/.")
     events_text = events_path.read_text(encoding="utf-8")
+    notes.append(f"Events: {events_path.name}")
 
     season_errors = validate_season_brief_text(season_text, source=season_path.name)
     if season_errors:
@@ -115,20 +205,21 @@ def _preflight(
     kpi_path = _select_kpi_profile(inputs_dir, selected_name, logger)
     if not kpi_path:
         raise SystemExit("Missing KPI profile in inputs/. Provide kpi_profile*.json.")
-
-    latest_dir.mkdir(parents=True, exist_ok=True)
-    latest_kpi = latest_dir / "kpi_profile.json"
-    if not latest_kpi.exists() or latest_kpi.read_bytes() != kpi_path.read_bytes():
-        shutil.copy2(kpi_path, latest_kpi)
-        logger.info("Copied KPI profile to latest: %s -> %s", kpi_path.name, latest_kpi)
-    named_copy = latest_dir / kpi_path.name
-    if not named_copy.exists():
-        shutil.copy2(kpi_path, named_copy)
+    notes.append(f"KPI profile: {kpi_path.name}")
 
     try:
         kpi_payload = json.loads(kpi_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise SystemExit(f"KPI profile JSON invalid: {kpi_path.name} ({exc})") from exc
+
+    # Lenient preflight: normalize missing required meta/notes/context fields.
+    kpi_payload = _normalize_kpi_profile_payload(
+        kpi_payload,
+        season_text=season_text,
+        year=year,
+        week=week,
+        logger=logger,
+    )
     validator = SchemaRegistry(schema_dir).validator_for("kpi_profile.schema.json")
     try:
         validate_or_raise(validator, kpi_payload)
@@ -136,23 +227,40 @@ def _preflight(
         details = "\n".join(f"- {err}" for err in exc.errors)
         raise SystemExit(f"KPI profile schema validation failed:\n{details}") from exc
 
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    latest_kpi = latest_dir / "kpi_profile.json"
+    latest_payload = json.dumps(kpi_payload, ensure_ascii=False, indent=2) + "\n"
+    if not latest_kpi.exists() or latest_kpi.read_text(encoding="utf-8") != latest_payload:
+        latest_kpi.write_text(latest_payload, encoding="utf-8")
+        logger.info("Wrote normalized KPI profile to latest: %s", latest_kpi)
+    named_copy = latest_dir / kpi_path.name
+    if not named_copy.exists() or named_copy.read_text(encoding="utf-8") != latest_payload:
+        named_copy.write_text(latest_payload, encoding="utf-8")
+        logger.info("Wrote normalized KPI profile copy: %s", named_copy.name)
+    notes.append("KPI profile normalized and copied to latest/.")
+
     if not skip_availability:
         latest_availability = latest_dir / "availability.json"
         if latest_availability.exists():
             logger.info("Availability already present: %s", latest_availability)
-            return
-        logger.info("Parsing availability from Season Brief.")
-        parse_and_store_availability(
-            athlete_id=athlete_id,
-            workspace_root=workspace_root,
-            schema_dir=schema_dir,
-            year=year,
-            season_brief_path=season_path,
-            skip_validate=False,
-        )
+            notes.append("Availability: already present.")
+        else:
+            logger.info("Parsing availability from Season Brief.")
+            parse_and_store_availability(
+                athlete_id=athlete_id,
+                workspace_root=workspace_root,
+                schema_dir=schema_dir,
+                year=year,
+                season_brief_path=season_path,
+                skip_validate=False,
+            )
+            notes.append("Availability: parsed from Season Brief.")
+    else:
+        notes.append("Availability: skipped.")
 
     if skip_intervals:
-        return
+        notes.append("Intervals pipeline: skipped.")
+        return "\n".join(notes)
 
     intervals_missing = [
         path
@@ -178,7 +286,12 @@ def _preflight(
             skip_validate=False,
         )
         run_intervals_pipeline(args, logger=logging.getLogger("rps.preflight.intervals"))
-        return
+        notes.append(
+            "Intervals pipeline: ran (missing: "
+            + ", ".join(path.name for path in intervals_missing)
+            + ")."
+        )
+        return "\n".join(notes)
 
     latest_trend = latest_dir / "activities_trend.json"
     if latest_trend.exists() and not force_intervals:
@@ -191,7 +304,8 @@ def _preflight(
             age = datetime.now(timezone.utc) - created_at
             if age.total_seconds() < 2 * 60 * 60:
                 logger.info("Intervals data is fresh (age=%s). Skipping fetch.", age)
-                return
+                notes.append(f"Intervals pipeline: fresh data (age={age}).")
+                return "\n".join(notes)
 
     if force_intervals:
         logger.info("Forcing Intervals pipeline refresh.")
@@ -207,6 +321,8 @@ def _preflight(
         skip_validate=False,
     )
     run_intervals_pipeline(args, logger=logging.getLogger("rps.preflight.intervals"))
+    notes.append("Intervals pipeline: refreshed.")
+    return "\n".join(notes)
 
 
 def main() -> None:

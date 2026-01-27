@@ -57,6 +57,51 @@ def _file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
     }
 
 
+def _parse_csv_env(name: str) -> set[str]:
+    raw = os.getenv(name, "")
+    if not raw.strip():
+        return set()
+    return {part.strip().lower() for part in raw.split(",") if part.strip()}
+
+
+def _web_search_tool() -> dict[str, Any]:
+    tool: dict[str, Any] = {
+        "type": "web_search",
+        "user_location": {
+            "type": "approximate",
+            "country": "US",
+            "timezone": "America/New_York",
+            "region": "United States",
+        },
+    }
+    allowed_domains = [
+        dom for dom in os.getenv("OPENAI_WEB_SEARCH_ALLOWED_DOMAINS", "").split(",") if dom.strip()
+    ]
+    if allowed_domains:
+        tool["filters"] = {"allowed_domains": [dom.strip() for dom in allowed_domains]}
+    context_size = os.getenv("OPENAI_WEB_SEARCH_CONTEXT_SIZE", "").strip().lower()
+    if context_size in {"low", "medium", "high"}:
+        tool.setdefault("filters", {})["search_context_size"] = context_size
+    external_access_raw = os.getenv("OPENAI_WEB_SEARCH_EXTERNAL_ACCESS")
+    if external_access_raw is not None:
+        tool["external_web_access"] = external_access_raw.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    return tool
+
+
+def _web_search_enabled(agent_name: str) -> bool:
+    if not _env_flag("OPENAI_ENABLE_WEB_SEARCH"):
+        return False
+    agents = _parse_csv_env("OPENAI_WEB_SEARCH_AGENTS")
+    if agents and agent_name.lower() not in agents:
+        return False
+    return True
+
+
 def _item_type(item: Any) -> str | None:
     """Return the type field for response output items."""
     if isinstance(item, dict):
@@ -261,17 +306,18 @@ def run_agent_multi_output(
         or logger.isEnabledFor(logging.DEBUG)
     )
 
-    tools = [
-        _file_search_tool(agent_vs_id, max_num_results),
-        *read_defs,
-        *store_tools,
-    ]
+    tools: list[dict[str, Any]] = [_file_search_tool(agent_vs_id, max_num_results)]
+    web_search_enabled = _web_search_enabled(agent_name)
+    if web_search_enabled:
+        tools.append(_web_search_tool())
+    tools += [*read_defs, *store_tools]
     logger.info(
-        "file_search tool: agent=%s stores=%s max_results=%s include_results=%s",
+        "tools: agent=%s stores=%s max_results=%s include_results=%s web_search=%s",
         agent_name,
         [agent_vs_id],
         max_num_results,
         debug_file_search,
+        web_search_enabled,
     )
 
     input_list: list[dict[str, Any]] = [

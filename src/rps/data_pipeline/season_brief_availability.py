@@ -64,10 +64,11 @@ def _iso_week_str(day: date) -> str:
 
 
 def _extract_year(text: str, season_path: Path) -> int | None:
-    match = re.search(r"Year\\s*:\\s*(\\d{4})", text, flags=re.IGNORECASE)
+    # Use regex whitespace tokens (\s) rather than literal backslash-s.
+    match = re.search(r"Year\s*:\s*(\d{4})", text, flags=re.IGNORECASE)
     if match:
         return int(match.group(1))
-    match = re.search(r"(\\d{4})", season_path.name)
+    match = re.search(r"(\d{4})", season_path.name)
     if match:
         return int(match.group(1))
     return None
@@ -117,7 +118,7 @@ def load_season_brief(
 
 
 def _parse_date(label: str, text: str) -> date | None:
-    pattern = rf"{re.escape(label)}\\s*:\\s*(\\d{{4}}-\\d{{2}}-\\d{{2}})"
+    pattern = rf"{re.escape(label)}\s*:\s*(\d{{4}}-\d{{2}}-\d{{2}})"
     match = re.search(pattern, text, flags=re.IGNORECASE)
     if not match:
         return None
@@ -202,7 +203,15 @@ def validate_season_brief_text(season_text: str, *, source: str) -> list[str]:
     errors: list[str] = []
     required_labels = ["Season-ID", "Year", "Athlete-ID", "Valid-From", "Valid-To", "Primary-Objective"]
     for label in required_labels:
-        if not re.search(rf"{re.escape(label)}\\s*:", season_text, flags=re.IGNORECASE):
+        # Primary objective is often written as a heading without a colon.
+        if label == "Primary-Objective":
+            heading_ok = re.search(r"Primary\s+Objective", season_text, flags=re.IGNORECASE)
+            colon_ok = re.search(r"Primary-Objective\s*:", season_text, flags=re.IGNORECASE)
+            if not (heading_ok or colon_ok):
+                errors.append(f"{source}: missing required field '{label}'.")
+            continue
+        pattern = rf"{re.escape(label)}\s*:"
+        if not re.search(pattern, season_text, flags=re.IGNORECASE):
             errors.append(f"{source}: missing required field '{label}'.")
     valid_from = _parse_date("Valid-From", season_text)
     valid_to = _parse_date("Valid-To", season_text)
@@ -235,7 +244,7 @@ def validate_events_text(events_text: str, *, source: str) -> list[str]:
         if "|" not in line:
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]
-        if all(re.match(r"^[-:\\s]+$", cell) for cell in cells):
+        if all(re.match(r"^[-:\s]+$", cell) for cell in cells):
             continue
         if len(cells) < 6:
             continue
@@ -249,7 +258,7 @@ def validate_events_text(events_text: str, *, source: str) -> list[str]:
     allowed_impact = {"availability", "missed_session", "modality", "recovery", "data_quality", "none", "other"}
     for row in rows:
         date_str, event_id, event_type, status, impact, _desc = row[:6]
-        if not re.match(r"^\\d{4}-\\d{2}-\\d{2}$", date_str):
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
             errors.append(f"{source}: invalid event date '{date_str}'.")
         if not event_id:
             errors.append(f"{source}: event id missing for date {date_str}.")

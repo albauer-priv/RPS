@@ -40,6 +40,12 @@ AGENTS: dict[str, AgentSpec] = {
         vector_store_name="vs_rps_all_agents",
         prompt_file_stem="performance_analysis",
     ),
+    "coach": AgentSpec(
+        name="coach",
+        display_name="Coach",
+        vector_store_name="vs_rps_all_agents",
+        prompt_file_stem="coach",
+    ),
 }
 
 
