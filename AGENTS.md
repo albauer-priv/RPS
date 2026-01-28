@@ -66,6 +66,7 @@
 - Macro flow: Scenarios → Selection → Macro Overview.
 - Plan week: Macro → Meso → Micro → Workouts (artifacts + renderer).
 - UI: state machine drives actions; buttons only update state/params.
+- Block artefacts: `block_*` ISO-week ranges must align to the covering Macro phase range. Mismatches are auto-normalized with a warning log.
 
 ## 🏷 Versioning Flow (Git Release Flow)
 - Determine next SemVer (usually patch for UI/logging tweaks, minor for new flows).

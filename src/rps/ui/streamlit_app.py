@@ -49,7 +49,9 @@ LOGGER.setLevel(logging.WARNING)
 UI_LOG_LEVEL = _normalize_level(os.getenv("RPS_LOG_LEVEL_UI", "INFO"))
 
 # Keep system output focused on stdout from the pipeline/agents.
-CAPTURE_LOGGERS: list[logging.Logger] = []
+CAPTURE_LOGGERS: list[logging.Logger] = [
+    logging.getLogger("rps.workspace.guarded_store"),
+]
 
 
 STOP_WORDS = {":q", ":quit", "exit", "quit"}

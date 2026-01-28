@@ -14,6 +14,7 @@ from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError,
 from rps.workspace.schema_utils import is_envelope_schema
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import envelope_week_range
+from rps.workspace.macro_phase_service import resolve_macro_phase_info
 from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.types import ArtifactType
 from rps.workspace.versioning import derive_version_key_from_envelope
@@ -326,6 +327,31 @@ class GuardedValidatedStore:
                 [f"data.traceability.derived_from must include '{expected_arch}'."],
             )
 
+    def _ensure_block_range_matches_macro(
+        self,
+        document: dict[str, Any],
+        macro_doc: dict[str, Any],
+    ) -> None:
+        """Normalize block_* iso_week_range to the covering macro phase."""
+        range_spec = envelope_week_range(document)
+        if not range_spec:
+            return
+        phase_info = resolve_macro_phase_info(macro_doc, range_spec.start)
+        if not phase_info:
+            raise SchemaValidationError(
+                "Macro phase mismatch",
+                [f"No macro phase covers block range {range_spec.key}."],
+            )
+        if phase_info.phase_range.key != range_spec.key:
+            self.logger.warning(
+                "Normalized block iso_week_range from %s to macro phase %s (%s).",
+                range_spec.key,
+                phase_info.phase_range.key,
+                phase_info.phase_id or phase_info.phase_name or "unknown",
+            )
+            meta = document.setdefault("meta", {})
+            meta["iso_week_range"] = phase_info.phase_range.key
+
     def _round_numeric_fields(
         self,
         value: Any,
@@ -473,8 +499,18 @@ class GuardedValidatedStore:
                 validate_or_raise(validator, document)
                 version_key = "raw"
 
-            if target in (ArtifactType.BLOCK_GOVERNANCE, ArtifactType.BLOCK_EXECUTION_ARCH):
+            macro_doc: dict[str, Any] | None = None
+            if target in (
+                ArtifactType.BLOCK_GOVERNANCE,
+                ArtifactType.BLOCK_EXECUTION_ARCH,
+                ArtifactType.BLOCK_EXECUTION_PREVIEW,
+                ArtifactType.BLOCK_FEED_FORWARD,
+            ):
                 macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.MACRO_OVERVIEW)
+                self._ensure_block_range_matches_macro(document, macro_doc)
+            if target in (ArtifactType.BLOCK_GOVERNANCE, ArtifactType.BLOCK_EXECUTION_ARCH):
+                if macro_doc is None:
+                    macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.MACRO_OVERVIEW)
                 if target == ArtifactType.BLOCK_GOVERNANCE:
                     self._enforce_block_governance_constraints(document, macro_doc)
                 else:
