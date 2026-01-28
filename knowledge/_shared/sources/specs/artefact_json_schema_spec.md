@@ -47,7 +47,7 @@ Artefact payloads MUST validate against the artefact-specific schema in
 the schema store.
 
 Narrative artefacts use `structured_doc.schema.json` unless an artefact-specific
-schema defines a stricter payload (e.g., `macro_overview.schema.json`).
+schema defines a stricter payload (e.g., `season_plan.schema.json`).
 Tabular artefacts use `tabular_data.schema.json`.
 
 ## 5. Sidecar (Human-Readable)
@@ -57,14 +57,14 @@ Optional human-readable sidecars are allowed:
 Sidecars are informational only and MUST NOT be used as agent inputs.
 
 ## 6. Required JSON Schemas (V1)
-- `macro_overview.schema.json`
+- `season_plan.schema.json`
 - `macro_meso_feed_forward.schema.json`
-- `block_governance.schema.json`
-- `block_execution_arch.schema.json`
-- `block_execution_preview.schema.json`
+- `phase_guardrails.schema.json`
+- `phase_structure.schema.json`
+- `phase_preview.schema.json`
 - `block_feed_forward.schema.json`
 - `zone_model.schema.json`
-- `workouts_plan.schema.json`
+- `week_plan.schema.json`
 - `workouts.schema.json` (Workout-Builder output)
 - `activities_actual.schema.json`
 - `activities_trend.schema.json`

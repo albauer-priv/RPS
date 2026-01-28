@@ -1,18 +1,18 @@
 # Mandatory Output Chapter
 
 Purpose
-This chapter defines how to produce **schema‑valid BLOCK_GOVERNANCE JSON**. It is the
+This chapter defines how to produce **schema‑valid PHASE_GUARDRAILS JSON**. It is the
 single source of truth for filling the mandatory output fields, including the
 required schema, field sources, and a minimal valid example.
 
 ---
 
-## ARTIFACT: BLOCK_GOVERNANCE
+## ARTIFACT: PHASE_GUARDRAILS
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
-- Schema: `block_governance.schema.json`
-  - Filter: `{"type":"eq","key":"schema_id","value":"block_governance.schema.json"}`
-- You MUST validate output against this schema before calling `store_block_governance`.
+- Schema: `phase_guardrails.schema.json`
+  - Filter: `{"type":"eq","key":"schema_id","value":"phase_guardrails.schema.json"}`
+- You MUST validate output against this schema before calling `store_phase_guardrails`.
 
 ### HOW TO FILL (BINDING)
 
@@ -24,14 +24,14 @@ required schema, field sources, and a minimal valid example.
 #### 2) `meta` (required fields)
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
-  - `artifact_type`: `"BLOCK_GOVERNANCE"`
-  - `schema_id`: `"BlockGovernanceInterface"`
+  - `artifact_type`: `"PHASE_GUARDRAILS"`
+  - `schema_id`: `"PhaseGuardrailsInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
   - `owner_agent`: `"Meso-Architect"`
 - `iso_week_range` is required (string `YYYY-WW--YYYY-WW`).
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
-- `temporal_scope` MUST be copied from an upstream artefact (e.g., Macro Overview phase
+- `temporal_scope` MUST be copied from an upstream artefact (e.g., Season Plan phase
   `date_range` for the same block). **Do NOT compute calendar dates.**
 
 #### 3) `data.body_metadata`
@@ -66,21 +66,21 @@ Required:
 - Do NOT invent a default cadence.
 
 #### 5.1) Macro constraint propagation (binding)
-Always import `macro_overview.data.global_constraints`:
+Always import `season_plan.data.global_constraints`:
 - `availability_assumptions`, `risk_constraints`, `planned_event_windows`, `recovery_protection` (if present).
 
 Mapping (must include, do not omit):
 - Availability assumptions → `block_summary.non_negotiables` (verbatim).
-  Every entry from `macro_overview.data.global_constraints.availability_assumptions`
+  Every entry from `season_plan.data.global_constraints.availability_assumptions`
   MUST appear verbatim in `block_summary.non_negotiables`.
 - Risk constraints → `block_summary.key_risks_warnings` (verbatim).
-  Every entry from `macro_overview.data.global_constraints.risk_constraints`
+  Every entry from `season_plan.data.global_constraints.risk_constraints`
   MUST appear verbatim in `block_summary.key_risks_warnings`.
 - Planned event windows → MUST be represented in `events_constraints.events[]`
-  using the A/B/C types already defined in `macro_overview.data.phases[].events_constraints`.
+  using the A/B/C types already defined in `season_plan.data.phases[].events_constraints`.
   Do NOT source A/B/C event types from `events.md` (events.md is non-training logistics only).
   Also add a single summary line to `block_summary.non_negotiables`:
-  `"Planned A/B/C windows included in events_constraints (from macro_overview)."`
+  `"Planned A/B/C windows included in events_constraints (from season_plan)."`
 - Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).
 
 #### 6) `data.allowed_forbidden_semantics`
@@ -139,21 +139,21 @@ All required booleans must be present and set to `true`:
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
-- Validate against `block_governance.schema.json` before calling the store tool.
+- Validate against `phase_guardrails.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
-- You MUST run schema validation locally (in reasoning) before calling `store_block_governance`.
+- You MUST run schema validation locally (in reasoning) before calling `store_phase_guardrails`.
 - If any field fails type/enum/shape requirements, **STOP** and report the schema errors.
 
 Additional hard stops (binding):
-- STOP if any entry from `macro_overview.data.global_constraints.availability_assumptions`
+- STOP if any entry from `season_plan.data.global_constraints.availability_assumptions`
   is not present verbatim in `block_summary.non_negotiables`.
-- STOP if any entry from `macro_overview.data.global_constraints.risk_constraints`
+- STOP if any entry from `season_plan.data.global_constraints.risk_constraints`
   is not present verbatim in `block_summary.key_risks_warnings`.
-- STOP if any date in `macro_overview.data.global_constraints.planned_event_windows`
+- STOP if any date in `season_plan.data.global_constraints.planned_event_windows`
   is not represented in `events_constraints.events[]` with matching date, correct ISO week,
-  and A/B/C type from `macro_overview.data.phases[].events_constraints`.
-- STOP if `macro_overview.data.global_constraints.recovery_protection.notes` is not
+  and A/B/C type from `season_plan.data.phases[].events_constraints`.
+- STOP if `season_plan.data.global_constraints.recovery_protection.notes` is not
   present verbatim in `execution_non_negotiables.recovery_protection_rules`.
 - STOP only after applying the full **LoadEstimationSpec S5** ladder:
   - If any **S5.5** hard stop is triggered (e.g., `feasible_band` empty, `override_band` empty), STOP.
@@ -162,25 +162,25 @@ Additional hard stops (binding):
 
 ---
 
-### EXAMPLE: BLOCK_GOVERNANCE (minimal valid)
+### EXAMPLE: PHASE_GUARDRAILS (minimal valid)
 
 ```json
 {
   "meta": {
-    "artifact_type": "BLOCK_GOVERNANCE",
-    "schema_id": "BlockGovernanceInterface",
+    "artifact_type": "PHASE_GUARDRAILS",
+    "schema_id": "PhaseGuardrailsInterface",
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
     "owner_agent": "Meso-Architect",
-    "run_id": "example_block_governance_2026_w04",
+    "run_id": "example_phase_guardrails_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Meso",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-05",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-02-01" },
     "trace_upstream": [
-      { "artifact": "MACRO_OVERVIEW", "version": "1.0", "run_id": "macro_overview_2026_w04" }
+      { "artifact": "SEASON_PLAN", "version": "1.0", "run_id": "season_plan_2026_w04" }
     ],
     "trace_data": [],
     "trace_events": [],
@@ -192,8 +192,8 @@ Additional hard stops (binding):
       "block_type": "Base",
       "block_status": "Green",
       "change_type": "NEW",
-      "derived_from": "macro_overview_2026_w04",
-      "upstream_inputs": ["MACRO_OVERVIEW"]
+      "derived_from": "season_plan_2026_w04",
+      "upstream_inputs": ["SEASON_PLAN"]
     },
     "block_summary": {
       "primary_objective": "Establish base durability.",

@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rps.workspace.api import Workspace
-from rps.workspace.block_from_macro import IsoWeek
+from rps.workspace.block_from_season_plan import IsoWeek
 from rps.workspace.block_resolution import add_weeks
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.macro_phase_service import resolve_block_range_from_macro
+from rps.workspace.season_plan_service import resolve_block_range_from_season_plan
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.rendering.auto_render import render_sidecar
@@ -188,14 +188,14 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             target = add_weeks(target, offset_blocks * block_len)
 
         try:
-            macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
+            macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
         except FileNotFoundError:
             return {
                 "ok": False,
-                "error": "MACRO_OVERVIEW latest missing. Cannot resolve block range.",
+                "error": "SEASON_PLAN latest missing. Cannot resolve block range.",
             }
 
-        block_range = resolve_block_range_from_macro(macro, target, block_len=block_len)
+        block_range = resolve_block_range_from_season_plan(macro, target, block_len=block_len)
 
         return {
             "ok": True,
@@ -208,12 +208,12 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
                 "range_key": block_range.key,
             },
             "artifacts": {
-                "block_governance": _best_exact_range_doc(ArtifactType.BLOCK_GOVERNANCE, block_range),
-                "block_execution_arch": _best_exact_range_doc(
-                    ArtifactType.BLOCK_EXECUTION_ARCH, block_range
+                "phase_guardrails": _best_exact_range_doc(ArtifactType.PHASE_GUARDRAILS, block_range),
+                "phase_structure": _best_exact_range_doc(
+                    ArtifactType.PHASE_STRUCTURE, block_range
                 ),
-                "block_execution_preview": _best_exact_range_doc(
-                    ArtifactType.BLOCK_EXECUTION_PREVIEW, block_range
+                "phase_preview": _best_exact_range_doc(
+                    ArtifactType.PHASE_PREVIEW, block_range
                 ),
             },
         }

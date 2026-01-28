@@ -50,18 +50,18 @@ Define consistent filenames for all artefacts to support:
 - `wellness_yyyy-ww.json`
 
 ### Macro-Planner
-- `macro_overview_yyyy-ww--yyyy-ww.json` (range may be 8–32 weeks)
+- `season_plan_yyyy-ww--yyyy-ww.json` (range may be 8–32 weeks)
 - `macro_meso_feed_forward_yyyy-ww.json`
 
 ### Meso-Architect
-- `block_governance_yyyy-ww--yyyy-ww.json`
+- `phase_guardrails_yyyy-ww--yyyy-ww.json`
 - `block_feed_forward_yyyy-ww.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww.json`
-- `block_execution_preview_yyyy-ww--yyyy-ww.json`
+- `phase_structure_yyyy-ww--yyyy-ww.json`
+- `phase_preview_yyyy-ww--yyyy-ww.json`
 - `zone_model_power_<FTP>W.json`
 
 ### Micro-Planner
-- `workouts_plan_yyyy-ww.json`
+- `week_plan_yyyy-ww.json`
 
 ### Workout-Builder (post-workout export)
 - `workouts_yyyy-ww.json`
@@ -84,7 +84,7 @@ For any JSON artefact, an optional human-readable sidecar is allowed:
 - `<basename>.rendered.md`
 
 Examples:
-- `block_governance_2026-01--2026-04.rendered.md`
+- `phase_guardrails_2026-01--2026-04.rendered.md`
 - `activities_actual_2026-01.rendered.md`
 
 Sidecars are informational only and MUST NOT be used as agent inputs.

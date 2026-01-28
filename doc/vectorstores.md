@@ -45,7 +45,7 @@ description: Unified knowledge store for all agents
 sources:
   - path: ../_shared/sources/specs/load_estimation_spec.md
     tags: [micro, rules]
-  - path: sources/workouts_plan_contract.md
+  - path: sources/week_plan_contract.md
     tags: [schema]
 ```
 

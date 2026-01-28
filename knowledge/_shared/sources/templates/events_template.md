@@ -113,7 +113,7 @@ Notes: >
 ### Meso-Architect
 - MAY use occurred events as input for:
   - BLOCK_FEED_FORWARD
-  - new BLOCK_GOVERNANCE
+  - new PHASE_GUARDRAILS
 - MUST NOT treat events as automatic triggers
 
 ### Micro-Planner

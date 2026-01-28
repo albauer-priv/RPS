@@ -53,11 +53,11 @@ This document may only **restrict**, not extend.
 These rules apply to **all workouts** that:
 
 - are produced by the planner and
-- are exported as **Intervals.icu text** or embedded in `workouts_plan_yyyy-ww.json` (`workout_text`).
+- are exported as **Intervals.icu text** or embedded in `week_plan_yyyy-ww.json` (`workout_text`).
 
 In particular:
 
-- WeekOps artefact (`workouts_plan_yyyy-ww.json`)
+- WeekOps artefact (`week_plan_yyyy-ww.json`)
 - Isolated workout definitions in chat (code blocks)
 - Corrected workouts after builder error messages
 

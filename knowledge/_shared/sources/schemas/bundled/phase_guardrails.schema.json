@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "block_governance.schema.json",
-  "title": "BlockGovernance",
+  "$id": "phase_guardrails.schema.json",
+  "title": "PhaseGuardrails",
   "type": "object",
   "$defs": {
-    "block_governance_data": {
+    "phase_guardrails_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [

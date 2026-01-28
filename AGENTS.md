@@ -1,9 +1,9 @@
 # Project Context: RPS (Randonneur Performance System)
 
 ## 🎯 Core Goal & Status
-- **Purpose:** End-to-end planning system for endurance athletes (Macro/Meso/Micro/Workouts) with UI, agents, and artifact pipeline.
+- **Purpose:** End-to-end planning system for endurance athletes (Season/Meso/Micro/Workouts) with UI, agents, and artifact pipeline.
 - **Current focus:** Stabilize Streamlit UI (Coach/Plan-Week), logging presentation, knowledge injection, and preflight flows.
-- **Last milestone:** Coach streaming via Responses events, UI log levels, unified knowledge injection, Macro/Meso/Micro flows in the UI.
+- **Last milestone:** Coach streaming via Responses events, UI log levels, unified knowledge injection, Season/Meso/Micro flows in the UI.
 
 ## 🛠 Tech Stack & Conventions
 - **Languages/Frameworks:** Python 3.14, Streamlit, OpenAI Responses API.
@@ -44,10 +44,10 @@
 ## 📌 Key Docs & Config
 - `doc/system_architecture.md`: System overview + UI/agent flows.
 - `doc/artefact_flow_overview_and_detail.md`: Artifact flows & dependencies.
-- `doc/how_to_plan.md`: Plan-week / Macro / Meso / Micro process.
+- `doc/how_to_plan.md`: Plan-week / Season / Meso / Micro process.
 - `doc/planners.md`: Planner roles & responsibilities.
 - `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
-- `prompts/agents/*.md`: Agent prompts (Macro/Meso/Micro/Coach/etc.).
+- `prompts/agents/*.md`: Agent prompts (Season/Meso/Micro/Coach/etc.).
 - `knowledge/_shared/sources/specs/load_estimation_spec.md`: Load definitions + Meso intersection.
 - `knowledge/_shared/sources/policies/progressive_overload_policy.md`: Progression/Deload rules.
 - `knowledge/_shared/sources/principles/principles_durability_first_cycling.md`: Durability-first principles.
@@ -63,10 +63,10 @@
 
 ## 🧭 Working Order (Short)
 - Preflight: inputs (Season Brief, Events), KPI profile, Availability, Intervals pipeline.
-- Macro flow: Scenarios → Selection → Macro Overview.
-- Plan week: Macro → Meso → Micro → Workouts (artifacts + renderer).
+- Season flow: Scenarios → Selection → Season Plan.
+- Plan week: Season Plan → Meso → Micro → Workouts (artifacts + renderer).
 - UI: state machine drives actions; buttons only update state/params.
-- Block artefacts: `block_*` ISO-week ranges must align to the covering Macro phase range. Mismatches are auto-normalized with a warning log.
+- Phase artefacts: `phase_*` ISO-week ranges must align to the covering Season Plan phase range. Mismatches are auto-normalized with a warning log.
 
 ## 🏷 Versioning Flow (Git Release Flow)
 - Determine next SemVer (usually patch for UI/logging tweaks, minor for new flows).
@@ -91,7 +91,7 @@
   - Verify mandatory output docs and tool load orders still match.
   - Check for duplicate or conflicting rules.
 - **Agent/tool wiring changes:**
-  - Re-run a small end-to-end flow (e.g., preflight → macro → plan-week) to confirm.
+- Re-run a small end-to-end flow (e.g., preflight → season → plan-week) to confirm.
   - Validate outputs with `python scripts/validate_outputs.py` (optionally `--year/--week/--athlete`).
 
 ## ⚠️ Known Constraints / "Don'ts"

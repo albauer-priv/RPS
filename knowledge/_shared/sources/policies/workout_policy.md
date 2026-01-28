@@ -47,7 +47,7 @@ It consolidates:
 
 It is the **single source of truth** for how workouts are designed once they are permitted by:
 - Macro intent
-- Meso block governance
+- Meso phase guardrails
 - Weekly agenda permissions
 
 This document does **not** decide *when* or *how often* workouts are scheduled.
@@ -325,8 +325,8 @@ Validation note:
 
 This section provides a lookup heuristic for Micro-Planners to parameterize workouts
 within already permitted intensity domains, based on the QUALITY intent declared via:
-- `block_governance_*`
-- `block_execution_arch_*`
+- `phase_guardrails_*`
+- `phase_structure_*`
 
 This guidance:
 - does not redefine zones,
@@ -348,7 +348,7 @@ Where inside the allowed window should this workout sit?
 #### 4.4.2 Input Signals (Required)
 
 The Micro-Planner MUST apply this lookup if:
-- an explicit QUALITY intent is present in block governance or execution architecture
+- an explicit QUALITY intent is present in phase guardrails or execution architecture
 - the corresponding intensity domain is allowed for the day
 
 If no QUALITY intent is specified, the Micro-Planner MUST target the mid-range default of the domain
@@ -403,7 +403,7 @@ Requires explicit macro or block-level authorization.
 - Progression logic remains governed exclusively by Section 4.3 (Progressive Overload).
 
 If multiple signals conflict:
-- Block Governance > Execution Architecture > This lookup.
+- Phase Guardrails > Execution Architecture > This lookup.
 
 #### 4.4.5 Default Behavior (No Intent Provided)
 

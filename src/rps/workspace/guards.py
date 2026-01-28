@@ -26,15 +26,15 @@ class DependencyRule:
 
 DEFAULT_RULES: list[DependencyRule] = [
     DependencyRule(
-        target=ArtifactType.WORKOUTS_PLAN,
-        requires_latest=(ArtifactType.BLOCK_EXECUTION_ARCH,),
+        target=ArtifactType.WEEK_PLAN,
+        requires_latest=(ArtifactType.PHASE_STRUCTURE,),
     ),
     DependencyRule(
         target=ArtifactType.INTERVALS_WORKOUTS,
-        requires_latest=(ArtifactType.WORKOUTS_PLAN,),
+        requires_latest=(ArtifactType.WEEK_PLAN,),
     ),
     DependencyRule(
         target=ArtifactType.DES_ANALYSIS_REPORT,
-        requires_latest=(ArtifactType.ACTIVITIES_TREND, ArtifactType.WORKOUTS_PLAN),
+        requires_latest=(ArtifactType.ACTIVITIES_TREND, ArtifactType.WEEK_PLAN),
     ),
 ]

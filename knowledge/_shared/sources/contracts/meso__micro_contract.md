@@ -11,11 +11,11 @@ From-Agent: Meso-Architect
 To-Agent: Micro-Planner
 
 Dependencies:
-  - ID: BlockGovernanceInterface
+  - ID: PhaseGuardrailsInterface
     Version: 1.0
   - ID: BlockFeedForwardInterface
     Version: 1.0
-  - ID: BlockExecutionArchInterface
+  - ID: PhaseStructureInterface
     Version: 1.0
   - ID: AgendaEnumSpec
     Version: 1.2
@@ -50,26 +50,26 @@ and Micro-Planner weekly execution.
 - MUST NOT introduce progression or deload logic.
 - MUST NOT reinterpret intent or objectives.
 - MUST NOT create or modify macro/block artefacts.
-- MUST produce exactly one `workouts_plan_yyyy-ww.json` per run, validated.
+- MUST produce exactly one `week_plan_yyyy-ww.json` per run, validated.
 
 ## 4) Artefacts and Schemas (Binding)
 
 ### Inputs (Micro-Planner consumes)
-- `block_governance_*` -> `block_governance.schema.json` (required)
+- `phase_guardrails_*` -> `phase_guardrails.schema.json` (required)
 - `block_feed_forward_*` -> `block_feed_forward.schema.json` (binding if present)
-- `block_execution_arch_*` -> `block_execution_arch.schema.json` (read-only)
+- `phase_structure_*` -> `phase_structure.schema.json` (read-only)
 - `activities_actual_*` -> `activities_actual.schema.json` (informational)
 - `activities_trend_*` -> `activities_trend.schema.json` (informational)
 - `events.md` (informational, no schema)
 
 ### Outputs (Micro-Planner produces)
-- `workouts_plan_yyyy-ww.json` -> `workouts_plan.schema.json`
+- `week_plan_yyyy-ww.json` -> `week_plan.schema.json`
 
 ## 5) Governance Hierarchy (Binding)
 Conflicts are resolved in this order:
 1. Principles
-2. Macro-Planner artefacts (`macro_overview_*`)
-3. Meso-Architect baseline governance (`block_governance_*`)
+2. Macro-Planner artefacts (`season_plan_*`)
+3. Meso-Architect baseline governance (`phase_guardrails_*`)
 4. Meso-Architect delta overrides (`block_feed_forward_*`)
 5. Micro-Planner execution artefacts
 6. Data and context (informational only)
@@ -84,19 +84,19 @@ Conflicts are resolved in this order:
 - `events.md` MAY explain deviations but MUST NOT mandate load changes.
 - Informational inputs NEVER mandate action.
 - The Micro-Planner MUST NOT create, modify, or extend:
-  - `block_governance_*`
+  - `phase_guardrails_*`
   - `block_feed_forward_*`
-  - `block_execution_arch_*`
+  - `phase_structure_*`
   - any macro or block artefacts
 
 ## 8) Error Handling & STOP Rules
-- No valid `block_governance_yyyy-ww--yyyy-ww.json` exists -> STOP.
+- No valid `phase_guardrails_yyyy-ww--yyyy-ww.json` exists -> STOP.
 - Feed Forward is ambiguous or malformed -> STOP.
 - Execution would violate kJ corridors -> STOP.
 - Structural architecture is infeasible to execute -> STOP.
 
 ## 9) Traceability
-- Outputs MUST reference applied `block_governance` filename + version.
+- Outputs MUST reference applied `phase_guardrails` filename + version.
 - Outputs MUST reference applied `block_feed_forward` filename + version (if any).
 
 ## 10) Precedence

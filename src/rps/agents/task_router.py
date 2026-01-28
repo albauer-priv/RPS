@@ -8,7 +8,7 @@ from typing import List
 from rps.agents.tasks import AgentTask
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.macro_phase_service import resolve_block_range_from_macro
+from rps.workspace.season_plan_service import resolve_block_range_from_season_plan
 from rps.workspace.iso_helpers import IsoWeek, envelope_week
 from rps.workspace.types import ArtifactType
 
@@ -30,8 +30,8 @@ class AgentTaskRouter:
         """Return macro tasks required for the target week."""
         tasks: List[AgentTask] = []
 
-        if not self.ctx.workspace.latest_exists(ArtifactType.MACRO_OVERVIEW):
-            tasks.append(AgentTask.CREATE_MACRO_OVERVIEW)
+        if not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PLAN):
+            tasks.append(AgentTask.CREATE_SEASON_PLAN)
 
         if (
             self.ctx.workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT)
@@ -45,25 +45,25 @@ class AgentTaskRouter:
         """Return meso tasks required for the target week."""
         tasks: List[AgentTask] = []
 
-        if not self.ctx.workspace.latest_exists(ArtifactType.MACRO_OVERVIEW):
+        if not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PLAN):
             return tasks
 
-        macro = self.ctx.workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
-        block_range = resolve_block_range_from_macro(macro, target, block_len=4)
+        macro = self.ctx.workspace.get_latest(ArtifactType.SEASON_PLAN)
+        block_range = resolve_block_range_from_season_plan(macro, target, block_len=4)
 
         index_query = IndexExactQuery(
             root=self.ctx.workspace.store.root,
             athlete_id=self.ctx.workspace.athlete_id,
         )
 
-        if not index_query.has_exact_range(ArtifactType.BLOCK_GOVERNANCE.value, block_range):
-            tasks.append(AgentTask.CREATE_BLOCK_GOVERNANCE)
+        if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, block_range):
+            tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
 
-        if not index_query.has_exact_range(ArtifactType.BLOCK_EXECUTION_ARCH.value, block_range):
-            tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_ARCH)
+        if not index_query.has_exact_range(ArtifactType.PHASE_STRUCTURE.value, block_range):
+            tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
 
-        if not self.ctx.workspace.latest_exists(ArtifactType.BLOCK_EXECUTION_PREVIEW):
-            tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW)
+        if not self.ctx.workspace.latest_exists(ArtifactType.PHASE_PREVIEW):
+            tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
 
         if self.ctx.workspace.latest_exists(ArtifactType.MACRO_MESO_FEED_FORWARD):
             tasks.append(AgentTask.CREATE_BLOCK_FEED_FORWARD)
@@ -75,25 +75,25 @@ class AgentTaskRouter:
         tasks: List[AgentTask] = []
 
         if not (
-            self.ctx.workspace.latest_exists(ArtifactType.BLOCK_GOVERNANCE)
-            and self.ctx.workspace.latest_exists(ArtifactType.BLOCK_EXECUTION_ARCH)
+            self.ctx.workspace.latest_exists(ArtifactType.PHASE_GUARDRAILS)
+            and self.ctx.workspace.latest_exists(ArtifactType.PHASE_STRUCTURE)
         ):
             return tasks
 
-        if self.ctx.workspace.latest_exists(ArtifactType.WORKOUTS_PLAN):
-            plan = self.ctx.workspace.get_latest(ArtifactType.WORKOUTS_PLAN)
+        if self.ctx.workspace.latest_exists(ArtifactType.WEEK_PLAN):
+            plan = self.ctx.workspace.get_latest(ArtifactType.WEEK_PLAN)
             week = envelope_week(plan)
             if week and (week.year == target.year and week.week == target.week):
                 return tasks
 
-        tasks.append(AgentTask.CREATE_WORKOUTS_PLAN)
+        tasks.append(AgentTask.CREATE_WEEK_PLAN)
         return tasks
 
     def route_builder(self, _target: IsoWeek) -> List[AgentTask]:
         """Return builder tasks required for the target week."""
         tasks: List[AgentTask] = []
 
-        if not self.ctx.workspace.latest_exists(ArtifactType.WORKOUTS_PLAN):
+        if not self.ctx.workspace.latest_exists(ArtifactType.WEEK_PLAN):
             return tasks
 
         tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
@@ -107,9 +107,9 @@ class AgentTaskRouter:
             ArtifactType.ACTIVITIES_ACTUAL,
             ArtifactType.ACTIVITIES_TREND,
             ArtifactType.KPI_PROFILE,
-            ArtifactType.MACRO_OVERVIEW,
-            ArtifactType.BLOCK_GOVERNANCE,
-            ArtifactType.BLOCK_EXECUTION_ARCH,
+            ArtifactType.SEASON_PLAN,
+            ArtifactType.PHASE_GUARDRAILS,
+            ArtifactType.PHASE_STRUCTURE,
         ]
         if not all(self.ctx.workspace.latest_exists(item) for item in required):
             return tasks

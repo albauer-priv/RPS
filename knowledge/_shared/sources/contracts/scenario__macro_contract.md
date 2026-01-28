@@ -34,13 +34,13 @@ Macro-Planner retains binding decision authority.
 - Load the latest `SEASON_SCENARIOS` artefact when available.
 - Load the latest `SEASON_SCENARIO_SELECTION` when available and align planning to it.
 - Use scenario content as advisory input only.
-- Select one scenario (A/B/C) and proceed with `MACRO_OVERVIEW`.
+- Select one scenario (A/B/C) and proceed with `SEASON_PLAN`.
 - Do not treat scenario content as binding rules.
 
 ## 3) Output Authority
 - `SEASON_SCENARIOS` is **Informational** authority.
 - `SEASON_SCENARIO_SELECTION` is **Informational** authority.
-- `MACRO_OVERVIEW` is **Binding** authority.
+- `SEASON_PLAN` is **Binding** authority.
 
 ## 4) Required Fields
 The `SEASON_SCENARIOS` artefact MUST include:

@@ -40,20 +40,20 @@ flowchart TD
   EV -. info .-> MA
   AV -. info .-> MA
   KP --> MA
-  MA --> MO[macro_overview]
+  MA --> MO[season_plan]
   MA -. optional .-> MMFF[macro_meso_feed_forward]
 
   MO --> ME[Meso-Architect]
   MMFF -. optional .-> ME
   AV -. info .-> ME
-  ME --> BG[block_governance]
-  ME --> BEA[block_execution_arch]
-  ME -. optional .-> BEP[block_execution_preview]
+  ME --> BG[phase_guardrails]
+  ME --> BEA[phase_structure]
+  ME -. optional .-> BEP[phase_preview]
 
   BG --> MI[Micro-Planner]
   BEA --> MI
   AV -. info .-> MI
-  MI --> WP[workouts_plan]
+  MI --> WP[week_plan]
   WP --> WB[Workout-Builder]
   WB --> WJ[intervals_workouts]
 
@@ -80,7 +80,7 @@ flowchart TD
 
 ### 2.1 Macro Phases vs Meso Blocks
 
-- `macro_overview` defines **phases** with `iso_week_range`.
+- `season_plan` defines **phases** with `iso_week_range`.
 - Macro **must not** define meso blocks.
 - Meso blocks are derived **inside** the macro phase:
   - Phase start = anchor
@@ -125,21 +125,21 @@ against the local schemas.
 - Inputs: season brief, KPI profile, events (optional).
 
 ### Macro-Planner
-- Outputs: `macro_overview` (+ optional `macro_meso_feed_forward`).
+- Outputs: `season_plan` (+ optional `macro_meso_feed_forward`).
 - Inputs: season brief, KPI profile, season scenarios (advisory), events, analysis (advisory), wellness (informational).
 
 ### Meso-Architect
-- Outputs: `block_governance`, `block_execution_arch` (+ optional preview/feed-forward).
-- Inputs: macro overview, optional macro feed-forward, events, factual data, zone model (latest), wellness (informational).
+- Outputs: `phase_guardrails`, `phase_structure` (+ optional preview/feed-forward).
+- Inputs: season plan, optional macro feed-forward, events, factual data, zone model (latest), wellness (informational).
 - Block range **must** use macro-phase alignment.
 
 ### Micro-Planner
-- Outputs: `workouts_plan` (weekly).
-- Inputs: block governance + execution architecture (+ optional feed-forward, zone model).
+- Outputs: `week_plan` (weekly).
+- Inputs: phase guardrails + execution architecture (+ optional feed-forward, zone model).
 
 ### Workout-Builder
 - Outputs: `intervals_workouts` (raw Intervals JSON export).
-- Inputs: `workouts_plan`.
+- Inputs: `week_plan`.
 
 ### Performance-Analyst
 - Outputs: `des_analysis_report` (advisory).
@@ -149,10 +149,10 @@ against the local schemas.
 
 ## 4. Artifact Types (Selected)
 
-- `macro_overview` → `macro_overview.schema.json`
-- `block_governance` → `block_governance.schema.json`
-- `block_execution_arch` → `block_execution_arch.schema.json`
-- `workouts_plan` → `workouts_plan.schema.json`
+- `season_plan` → `season_plan.schema.json`
+- `phase_guardrails` → `phase_guardrails.schema.json`
+- `phase_structure` → `phase_structure.schema.json`
+- `week_plan` → `week_plan.schema.json`
 - `intervals_workouts` → `workouts.schema.json` (raw payload)
 - `activities_actual` → `activities_actual.schema.json`
 - `activities_trend` → `activities_trend.schema.json`
@@ -202,11 +202,11 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 ```
 
 ```bash
-# 3) Create macro overview (MACRO_OVERVIEW)
+# 3) Create season plan (SEASON_PLAN)
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent macro_planner \
-  --task CREATE_MACRO_OVERVIEW \
-  --text "Scenario A. Create MACRO_OVERVIEW for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
+  --task CREATE_SEASON_PLAN \
+  --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
 ```
 
 Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the macro-planner text:
@@ -217,8 +217,8 @@ Optional KPI moving-time rate band override (affects kJ corridor derivation): ad
 ```bash
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent micro_planner \
-  --task CREATE_WORKOUTS_PLAN \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create workouts_plan for ISO week 2026-06."
+  --task CREATE_WEEK_PLAN \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create week_plan for ISO week 2026-06."
 ```
 
 If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.

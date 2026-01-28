@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rps.workspace.api import Workspace
-from rps.workspace.block_from_macro import IsoWeek
+from rps.workspace.block_from_season_plan import IsoWeek
 from rps.workspace.block_resolution import add_weeks
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.macro_phase_service import resolve_block_range_from_macro, resolve_macro_phase_info
+from rps.workspace.season_plan_service import resolve_block_range_from_season_plan, resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
 
@@ -101,7 +101,7 @@ def read_tool_defs() -> list[dict[str, Any]]:
         {
             "type": "function",
             "name": "workspace_resolve_macro_phase",
-            "description": "Resolve the macro phase covering a target ISO week based on MACRO_OVERVIEW latest.",
+            "description": "Resolve the macro phase covering a target ISO week based on SEASON_PLAN latest.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -115,7 +115,7 @@ def read_tool_defs() -> list[dict[str, Any]]:
         {
             "type": "function",
             "name": "workspace_resolve_block_range",
-            "description": "Resolve the meso block ISO week range covering a target week using MACRO_OVERVIEW phase alignment.",
+            "description": "Resolve the meso block ISO week range covering a target week using SEASON_PLAN phase alignment.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -132,7 +132,7 @@ def read_tool_defs() -> list[dict[str, Any]]:
             "name": "workspace_find_best_block_artefact",
             "description": (
                 "Find and load the best exact-range block artefact for a target ISO week. "
-                "Resolves the phase-aligned block range from MACRO_OVERVIEW and "
+                "Resolves the phase-aligned block range from SEASON_PLAN and "
                 "uses index.json to pick the newest exact-range version."
             ),
             "parameters": {
@@ -264,8 +264,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         """Resolve the macro phase covering the target week."""
         year = int(args["year"])
         week = int(args["week"])
-        macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
-        info = resolve_macro_phase_info(macro, IsoWeek(year, week))
+        macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
+        info = resolve_season_plan_phase_info(macro, IsoWeek(year, week))
         if not info:
             return {"ok": False, "error": f"No macro phase covers {year:04d}-{week:02d}"}
 
@@ -288,8 +288,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         week = int(args["week"])
         block_len = int(args.get("block_len", 4))
 
-        macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
-        block_range = resolve_block_range_from_macro(macro, IsoWeek(year, week), block_len=block_len)
+        macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
+        block_range = resolve_block_range_from_season_plan(macro, IsoWeek(year, week), block_len=block_len)
 
         return {
             "ok": True,
@@ -309,14 +309,14 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         block_len = int(args.get("block_len", 4))
 
         try:
-            macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
+            macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
         except FileNotFoundError:
             return {
                 "ok": False,
-                "error": "MACRO_OVERVIEW latest missing. Cannot resolve block range.",
+                "error": "SEASON_PLAN latest missing. Cannot resolve block range.",
             }
 
-        block_range = resolve_block_range_from_macro(macro, IsoWeek(year, week), block_len=block_len)
+        block_range = resolve_block_range_from_season_plan(macro, IsoWeek(year, week), block_len=block_len)
         return _best_exact_range_doc(artifact_type, block_range)
 
     def workspace_get_block_context(args: dict[str, Any]) -> Any:
@@ -331,14 +331,14 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             target = add_weeks(target, offset_blocks * block_len)
 
         try:
-            macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
+            macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
         except FileNotFoundError:
             return {
                 "ok": False,
-                "error": "MACRO_OVERVIEW latest missing. Cannot resolve block range.",
+                "error": "SEASON_PLAN latest missing. Cannot resolve block range.",
             }
 
-        block_range = resolve_block_range_from_macro(macro, target, block_len=block_len)
+        block_range = resolve_block_range_from_season_plan(macro, target, block_len=block_len)
 
         return {
             "ok": True,
@@ -351,12 +351,12 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
                 "range_key": block_range.key,
             },
             "artifacts": {
-                "block_governance": _best_exact_range_doc(ArtifactType.BLOCK_GOVERNANCE, block_range),
-                "block_execution_arch": _best_exact_range_doc(
-                    ArtifactType.BLOCK_EXECUTION_ARCH, block_range
+                "phase_guardrails": _best_exact_range_doc(ArtifactType.PHASE_GUARDRAILS, block_range),
+                "phase_structure": _best_exact_range_doc(
+                    ArtifactType.PHASE_STRUCTURE, block_range
                 ),
-                "block_execution_preview": _best_exact_range_doc(
-                    ArtifactType.BLOCK_EXECUTION_PREVIEW, block_range
+                "phase_preview": _best_exact_range_doc(
+                    ArtifactType.PHASE_PREVIEW, block_range
                 ),
             },
         }

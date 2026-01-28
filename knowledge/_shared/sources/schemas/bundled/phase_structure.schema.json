@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "block_execution_arch.schema.json",
-  "title": "BlockExecutionArch",
+  "$id": "phase_structure.schema.json",
+  "title": "PhaseStructure",
   "type": "object",
   "$defs": {
     "weekday": {
@@ -58,7 +58,7 @@
         }
       }
     },
-    "block_execution_arch_data": {
+    "phase_structure_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [

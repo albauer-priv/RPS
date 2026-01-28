@@ -29,7 +29,7 @@ This chapter defines how to produce **schema‑valid BLOCK_FEED_FORWARD JSON**.
   - `owner_agent`: `"Meso-Architect"`
 - `iso_week_range` required.
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
-- `temporal_scope` MUST be copied from an upstream artefact (prefer stored BLOCK_GOVERNANCE for
+- `temporal_scope` MUST be copied from an upstream artefact (prefer stored PHASE_GUARDRAILS for
   the same range). **Do NOT compute dates.**
 
 #### 3) `data.body_metadata`
@@ -111,7 +111,7 @@ All required booleans must be present and set to `true`:
     "iso_week_range": "2026-04--2026-04",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-01-25" },
     "trace_upstream": [
-      { "artifact": "BLOCK_GOVERNANCE", "version": "1.0", "run_id": "block_governance_2026_w04" }
+      { "artifact": "PHASE_GUARDRAILS", "version": "1.0", "run_id": "phase_guardrails_2026_w04" }
     ],
     "trace_data": [],
     "trace_events": [],
@@ -122,7 +122,7 @@ All required booleans must be present and set to `true`:
       "applies_to_weeks": ["2026-04"],
       "valid_until": "2026-01-25",
       "change_type": "ADJUSTED",
-      "derived_from": "block_governance_2026_w04",
+      "derived_from": "phase_guardrails_2026_w04",
       "upstream_triggers": ["Travel week"]
     },
     "reason_context": {

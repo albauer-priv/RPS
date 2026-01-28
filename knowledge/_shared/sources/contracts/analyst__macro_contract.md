@@ -21,11 +21,11 @@ Dependencies:
     Version: 1.0
   - ID: DESAnalysisInterface
     Version: 1.1
-  - ID: MacroOverviewInterface
+  - ID: SeasonPlanInterface
     Version: 1.0
-  - ID: BlockGovernanceInterface
+  - ID: PhaseGuardrailsInterface
     Version: 1.0
-  - ID: BlockExecutionArchInterface
+  - ID: PhaseStructureInterface
     Version: 1.0
   - ID: LoadEstimationSpec
     Version: 1.0
@@ -48,7 +48,7 @@ operational control or progression authority.
 - MUST produce `des_analysis_report_yyyy-ww.json` validated against `des_analysis_report.schema.json`.
 - MAY analyze KPI profiles, actuals, trends, and events as context (informational only).
 - MAY formulate advisory recommendations.
-- MUST NOT modify block governance.
+- MUST NOT modify phase guardrails.
 - MUST NOT address Micro- or Meso-Architect directly.
 - MUST NOT approve or stop progression.
 - MUST NOT define operational actions.
@@ -65,9 +65,9 @@ operational control or progression authority.
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
 - `kpi_profile_des_*.json` -> `kpi_profile.schema.json`
-- `macro_overview_yyyy-ww--yyyy-ww.json` -> `macro_overview.schema.json`
-- `block_governance_yyyy-ww--yyyy-ww.json` -> `block_governance.schema.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww.json` -> `block_execution_arch.schema.json`
+- `season_plan_yyyy-ww--yyyy-ww.json` -> `season_plan.schema.json`
+- `phase_guardrails_yyyy-ww--yyyy-ww.json` -> `phase_guardrails.schema.json`
+- `phase_structure_yyyy-ww--yyyy-ww.json` -> `phase_structure.schema.json`
 
 ### Outputs (Performance-Analyst produces)
 - `des_analysis_report_yyyy-ww.json` -> `des_analysis_report.schema.json`

@@ -157,20 +157,20 @@ def _confidence_from_columns(df: pd.DataFrame, columns: Sequence[str]) -> str:
 
 
 def load_kj_plan_by_week(athlete_id: str) -> dict[tuple[int, int], float]:
-    """Load planned weekly kJ from workouts_plan artefacts when available."""
+    """Load planned weekly kJ from week_plan artefacts when available."""
     plan_map: dict[tuple[int, int], float] = {}
     base = athlete_root(athlete_id)
     candidate_dirs = [base / "data" / "plans" / "micro", base / "plans" / "micro"]
     for plan_dir in candidate_dirs:
         if not plan_dir.exists():
             continue
-        for path in sorted(plan_dir.glob("workouts_plan_*.json")):
+        for path in sorted(plan_dir.glob("week_plan_*.json")):
             try:
                 doc = json.loads(path.read_text(encoding="utf-8"))
             except Exception:
                 continue
             meta = doc.get("meta", {})
-            iso_week = meta.get("iso_week") or path.stem.replace("workouts_plan_", "")
+            iso_week = meta.get("iso_week") or path.stem.replace("week_plan_", "")
             parsed = parse_iso_week(iso_week)
             if not parsed:
                 continue

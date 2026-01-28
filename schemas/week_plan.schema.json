@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "workouts_plan.schema.json",
-  "title": "WorkoutsPlan",
+  "$id": "week_plan.schema.json",
+  "title": "WeekPlan",
   "type": "object",
   "$defs": {
     "agenda_day": {
@@ -104,11 +104,11 @@
       "$ref": "artefact_meta.schema.json",
       "properties": {
         "artifact_type": {
-          "const": "WORKOUTS_PLAN",
+          "const": "WEEK_PLAN",
           "type": "string"
         },
         "schema_id": {
-          "const": "WorkoutsPlanInterface",
+          "const": "WeekPlanInterface",
           "type": "string"
         },
         "schema_version": {

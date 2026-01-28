@@ -36,7 +36,7 @@ class WorkspaceHelperTests(unittest.TestCase):
 
     def test_upstream_ref(self) -> None:
         """Verify upstream reference formatting."""
-        self.assertEqual(upstream_ref("BLOCK_EXECUTION_ARCH", "2026-06--2026-09"), "BLOCK_EXECUTION_ARCH:2026-06--2026-09")
+        self.assertEqual(upstream_ref("PHASE_STRUCTURE", "2026-06--2026-09"), "PHASE_STRUCTURE:2026-06--2026-09")
 
 
 class LocalStoreTests(unittest.TestCase):
@@ -48,18 +48,18 @@ class LocalStoreTests(unittest.TestCase):
             athlete_id = "ath_001"
             store.save_version(
                 athlete_id=athlete_id,
-                artifact_type=ArtifactType.WORKOUTS_PLAN,
+                artifact_type=ArtifactType.WEEK_PLAN,
                 version_key="2026-06",
                 payload={"foo": "bar"},
             )
             store.save_version(
                 athlete_id=athlete_id,
-                artifact_type=ArtifactType.WORKOUTS_PLAN,
+                artifact_type=ArtifactType.WEEK_PLAN,
                 version_key="2026-04",
                 payload={"foo": "baz"},
             )
 
-            versions = store.list_versions(athlete_id, ArtifactType.WORKOUTS_PLAN)
+            versions = store.list_versions(athlete_id, ArtifactType.WEEK_PLAN)
             self.assertEqual(versions, ["2026-04", "2026-06"])
 
     def test_exists_and_latest_version_key(self) -> None:
@@ -67,18 +67,18 @@ class LocalStoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             store = LocalArtifactStore(root=Path(tmpdir))
             athlete_id = "ath_002"
-            self.assertFalse(store.latest_exists(athlete_id, ArtifactType.WORKOUTS_PLAN))
-            self.assertFalse(store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, "2026-06"))
+            self.assertFalse(store.latest_exists(athlete_id, ArtifactType.WEEK_PLAN))
+            self.assertFalse(store.exists(athlete_id, ArtifactType.WEEK_PLAN, "2026-06"))
 
             store.save_version(
                 athlete_id=athlete_id,
-                artifact_type=ArtifactType.WORKOUTS_PLAN,
+                artifact_type=ArtifactType.WEEK_PLAN,
                 version_key="2026-06",
                 payload={"foo": "bar"},
             )
-            self.assertTrue(store.latest_exists(athlete_id, ArtifactType.WORKOUTS_PLAN))
-            self.assertTrue(store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, "2026-06"))
-            self.assertEqual(store.get_latest_version_key(athlete_id, ArtifactType.WORKOUTS_PLAN), "2026-06")
+            self.assertTrue(store.latest_exists(athlete_id, ArtifactType.WEEK_PLAN))
+            self.assertTrue(store.exists(athlete_id, ArtifactType.WEEK_PLAN, "2026-06"))
+            self.assertEqual(store.get_latest_version_key(athlete_id, ArtifactType.WEEK_PLAN), "2026-06")
 
 
 class GuardTests(unittest.TestCase):
@@ -89,7 +89,7 @@ class GuardTests(unittest.TestCase):
             ws = Workspace.for_athlete("ath_003", root=Path(tmpdir))
             with self.assertRaises(MissingDependenciesError):
                 ws.guard_put(
-                    ArtifactType.WORKOUTS_PLAN,
+                    ArtifactType.WEEK_PLAN,
                     version_key="2026-06",
                     payload={"week": "2026-06"},
                     producer_agent="micro_planner",

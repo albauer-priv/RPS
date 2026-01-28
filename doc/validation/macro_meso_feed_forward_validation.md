@@ -2,7 +2,7 @@
 
 ## Schema & meta
 - [ ] Validates against `macro_meso_feed_forward.schema.json`.
-- [ ] `meta.trace_upstream` references the active `macro_overview` and `des_analysis_report`.
+- [ ] `meta.trace_upstream` references the active `season_plan` and `des_analysis_report`.
 
 ## Scope
 - [ ] Contains only block-level guidance (no micro scheduling).

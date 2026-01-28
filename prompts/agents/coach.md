@@ -36,11 +36,11 @@ Load in this exact order:
 2) `workspace_get_input({ "input_type": "events" })`
 3) `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
 4) `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
-5) `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })`
-6) `workspace_get_latest({ "artifact_type": "BLOCK_GOVERNANCE" })`
-7) `workspace_get_latest({ "artifact_type": "BLOCK_EXECUTION_ARCH" })`
-8) `workspace_get_latest({ "artifact_type": "BLOCK_EXECUTION_PREVIEW" })`
-9) `workspace_get_latest({ "artifact_type": "WORKOUTS_PLAN" })`
+5) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
+6) `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`
+7) `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`
+8) `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`
+9) `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`
 10) `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
 11) `workspace_get_latest({ "artifact_type": "MACRO_MESO_FEED_FORWARD" })` (optional attempt)
 12) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
@@ -65,13 +65,13 @@ to build situational context. Use the table below as your default checklist.
 | 3 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Load/guardrail thresholds and KPI bands. |
 | 4 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Weekly hour capacity and constraints derived from Season Brief. |
 | 5 | Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Body mass and readiness-related inputs. |
-| 6 | Macro Overview | `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })` | Current macro intent, phases, event alignment. |
-| 7 | Block Governance | `workspace_get_latest({ "artifact_type": "BLOCK_GOVERNANCE" })` | Current block load guardrails and constraints (meso). |
-| 8 | Block Execution Arch | `workspace_get_latest({ "artifact_type": "BLOCK_EXECUTION_ARCH" })` | Planned weekly structure and constraints. |
-| 9 | Block Execution Preview | `workspace_get_latest({ "artifact_type": "BLOCK_EXECUTION_PREVIEW" })` | Current execution snapshot for the block. |
+| 6 | Season Plan | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` | Current macro intent, phases, event alignment. |
+| 7 | Phase Guardrails | `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })` | Current block load guardrails and constraints (meso). |
+| 8 | Phase Structure | `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })` | Planned weekly structure and constraints. |
+| 9 | Phase Preview | `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })` | Current execution snapshot for the block. |
 | 10 | Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` | Recent workload trends and durability indicators. |
 | 11 | Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` | Most recent week’s actuals for context. |
-| 12 | Workouts Plan | `workspace_get_latest({ "artifact_type": "WORKOUTS_PLAN" })` | Micro plan for the week (if present). |
+| 12 | Week Plan | `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })` | Micro plan for the week (if present). |
 | 13 | DES Analysis Report | `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })` | Latest durability/efficiency analysis summary for context. |
 
 ## Output rules

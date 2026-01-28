@@ -23,7 +23,7 @@ Notes: >
 # AGENDA ENUM SPECIFICATION
 ​
 This document defines the **authoritative agenda semantics**
-used for block execution previews and block execution architectures.
+used for phase previews and phase structures.
 ​
 It provides:
 - standardized day roles
@@ -161,8 +161,8 @@ If such content appears, the artefact is INVALID.
 
 This specification is referenced by:
 
-- `block_execution_arch_yyyy-ww--yyyy-ww.json`
-- `block_execution_preview_yyyy-ww--yyyy-ww.json`
+- `phase_structure_yyyy-ww--yyyy-ww.json`
+- `phase_preview_yyyy-ww--yyyy-ww.json`
 - Micro-Planner validation logic
 
 Higher-level artefacts (Meso-Architect, DES)  

@@ -31,14 +31,14 @@ flowchart TD
   EV[events.md]:::artefact
   AV[availability_yyyy-ww.json]:::artefact
   SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
-  MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact
+  MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact
   MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact
-  BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact
-  BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact
-  BEP[block_execution_preview_yyyy-ww--yyyy-ww.json]:::artefact
+  BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact
+  BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact
+  BEP[phase_preview_yyyy-ww--yyyy-ww.json]:::artefact
   BFF[block_feed_forward_yyyy-ww.json]:::artefact
   ZM[zone_model_power_<FTP>W.json]:::artefact
-  WP[workouts_plan_yyyy-ww.json]:::artefact
+  WP[week_plan_yyyy-ww.json]:::artefact
   WJ[intervals_workouts_yyyy-ww.json]:::artefact
   CAL[Planned Activities<br/>in Calendar]:::artefact
   AA[activities_actual_yyyy-ww.json]:::artefact
@@ -159,10 +159,10 @@ flowchart LR
 - Macro flow (agent tasks / UI):
   1) **Season-Scenario-Agent** → `CREATE_SEASON_SCENARIOS` (stores `season_scenarios_yyyy-ww--yyyy-ww.json`)
   2) **Season-Scenario-Agent** → `CREATE_SEASON_SCENARIO_SELECTION` (stores `season_scenario_selection_yyyy-ww.json`)
-  3) **Macro-Planner** → `CREATE_MACRO_OVERVIEW` (writes `macro_overview_yyyy-ww--yyyy-ww.json`)
+  3) **Macro-Planner** → `CREATE_SEASON_PLAN` (writes `season_plan_yyyy-ww--yyyy-ww.json`)
 
 **Outputs (Artefacts)**
-- `macro_overview_yyyy-ww--yyyy-ww.json` (binding)
+- `season_plan_yyyy-ww--yyyy-ww.json` (binding)
 - `macro_meso_feed_forward_yyyy-ww.json` (optional)
 
 ```mermaid
@@ -180,7 +180,7 @@ flowchart LR
   SS[Season-Scenario-Agent]:::agent --> SC
   SS --> SEL[season_scenario_selection_yyyy-ww.json]:::artefact --> MA
 
-  MA --> MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact
+  MA --> MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact
   MA -. optional .-> MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact
 
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
@@ -194,7 +194,7 @@ flowchart LR
 ### 2.3 Meso-Architect Detail Flow
 
 **Inputs (Artefacts)**
-- `macro_overview_yyyy-ww--yyyy-ww.json` (binding)
+- `season_plan_yyyy-ww--yyyy-ww.json` (binding)
 - `macro_meso_feed_forward_yyyy-ww.json` (optional, binding if present)
 - `events.md` (informational)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational)
@@ -208,14 +208,14 @@ flowchart LR
 - Consumes the latest `ZONE_MODEL` (Data-Pipeline) when IF defaults are needed.
 
 **Outputs (Artefacts)**
-- `block_governance_yyyy-ww--yyyy-ww.json` (binding)
-- `block_execution_arch_yyyy-ww--yyyy-ww.json` (binding)
-- `block_execution_preview_yyyy-ww--yyyy-ww.json` (optional, informational)
+- `phase_guardrails_yyyy-ww--yyyy-ww.json` (binding)
+- `phase_structure_yyyy-ww--yyyy-ww.json` (binding)
+- `phase_preview_yyyy-ww--yyyy-ww.json` (optional, informational)
 - `block_feed_forward_yyyy-ww.json` (optional)
 
 ```mermaid
 flowchart LR
-  MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact --> ME[Meso-Architect]:::agent
+  MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact --> ME[Meso-Architect]:::agent
   MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact -. optional .-> ME
   EV[events.md]:::artefact -. info .-> ME
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> ME
@@ -224,9 +224,9 @@ flowchart LR
   AV[availability_yyyy-ww.json]:::artefact -. info .-> ME
   WL[wellness_yyyy-ww.json]:::artefact -. info .-> ME
 
-  ME --> BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact
-  ME --> BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact
-  ME -. explanatory .-> BEP[block_execution_preview_yyyy-ww--yyyy-ww.json]:::artefact
+  ME --> BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact
+  ME --> BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact
+  ME -. explanatory .-> BEP[phase_preview_yyyy-ww--yyyy-ww.json]:::artefact
   ME -. optional .-> BFF[block_feed_forward_yyyy-ww.json]:::artefact
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
@@ -238,8 +238,8 @@ flowchart LR
 ### 2.4 Micro-Planner Detail Flow
 
 **Inputs (Artefacts)**
-- `block_governance_yyyy-ww--yyyy-ww.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww.json`
+- `phase_guardrails_yyyy-ww--yyyy-ww.json`
+- `phase_structure_yyyy-ww--yyyy-ww.json`
 - `block_feed_forward_yyyy-ww.json` (optional)
 - `zone_model_power_<FTP>W.json` (informational, from Data-Pipeline)
 - `availability_yyyy-ww.json` (informational, from Data-Pipeline)
@@ -252,12 +252,12 @@ flowchart LR
 - Define sessions and constraints; avoid violating block rules.
 
 **Outputs (Artefacts)**
-- `workouts_plan_yyyy-ww.json`
+- `week_plan_yyyy-ww.json`
 
 ```mermaid
 flowchart LR
-  BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact --> MI[Micro-Planner]:::agent
-  BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact --> MI
+  BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact --> MI[Micro-Planner]:::agent
+  BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact --> MI
   BFF[block_feed_forward_yyyy-ww.json]:::artefact -. optional .-> MI
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> MI
   AV[availability_yyyy-ww.json]:::artefact -. info .-> MI
@@ -266,7 +266,7 @@ flowchart LR
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MI
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MI
 
-  MI --> WP[workouts_plan_yyyy-ww.json]:::artefact
+  MI --> WP[week_plan_yyyy-ww.json]:::artefact
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
@@ -277,7 +277,7 @@ flowchart LR
 ### 2.5 Workout-Builder + Posting Detail Flow
 
 **Inputs (Artefacts)**
-- `workouts_plan_yyyy-ww.json`
+- `week_plan_yyyy-ww.json`
 
 **Processing (Conceptual)**
 - Deterministic conversion into Intervals.icu JSON payload.
@@ -289,7 +289,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  WP[workouts_plan_yyyy-ww.json]:::artefact --> WB[Workout-Builder]:::agent
+  WP[week_plan_yyyy-ww.json]:::artefact --> WB[Workout-Builder]:::agent
   WB --> WJ[intervals_workouts_yyyy-ww.json]:::artefact --> POST[post_workout.py]:::script
   POST --> CAL[Planned Activities<br/>in Calendar]:::artefact --> I[Intervals.icu]:::external
 
@@ -344,7 +344,7 @@ flowchart LR
 - Produce human-readable `.md` sidecars from JSON artefacts.
 
 **Inputs**
-- Any JSON artefact (e.g., `block_governance_yyyy-ww--yyyy-ww.json`)
+- Any JSON artefact (e.g., `phase_guardrails_yyyy-ww--yyyy-ww.json`)
 
 **Processing**
 - `scripts/artefact_renderer.py`
@@ -362,9 +362,9 @@ flowchart LR
 - `activities_trend_yyyy-ww.json`
 - `kpi_profile_des_*.json`
 - `events.md` (informational)
-- `macro_overview_yyyy-ww--yyyy-ww.json`
-- `block_governance_yyyy-ww--yyyy-ww.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww.json`
+- `season_plan_yyyy-ww--yyyy-ww.json`
+- `phase_guardrails_yyyy-ww--yyyy-ww.json`
+- `phase_structure_yyyy-ww--yyyy-ww.json`
 
 **Processing (Conceptual)**
 - Extract diagnostic signals (DES/KPI).
@@ -378,9 +378,9 @@ flowchart LR
   AA[activities_actual_yyyy-ww.json]:::artefact --> PA[Performance-Analyst]:::agent
   AT[activities_trend_yyyy-ww.json]:::artefact --> PA
   KP[kpi_profile_des_*.json]:::artefact --> PA
-  BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]:::artefact --> PA
-  BG[block_governance_yyyy-ww--yyyy-ww.json]:::artefact --> PA
-  MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact --> PA
+  BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact --> PA
+  BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact --> PA
+  MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact --> PA
   EV[events.md]:::artefact -. info .-> PA
 
   PA --> DR[des_analysis_report_yyyy-ww.json]:::artefact
@@ -402,17 +402,17 @@ flowchart LR
 - `season_scenarios_yyyy-ww--yyyy-ww.json`
 
 ### 3.3 Macro-Planner
-- `macro_overview_yyyy-ww--yyyy-ww.json`
+- `season_plan_yyyy-ww--yyyy-ww.json`
 - `macro_meso_feed_forward_yyyy-ww.json` (optional)
 
 ### 3.4 Meso-Architect
-- `block_governance_yyyy-ww--yyyy-ww.json`
-- `block_execution_arch_yyyy-ww--yyyy-ww.json`
-- `block_execution_preview_yyyy-ww--yyyy-ww.json` (optional)
+- `phase_guardrails_yyyy-ww--yyyy-ww.json`
+- `phase_structure_yyyy-ww--yyyy-ww.json`
+- `phase_preview_yyyy-ww--yyyy-ww.json` (optional)
 - `block_feed_forward_yyyy-ww.json` (optional)
 
 ### 3.5 Micro-Planner
-- `workouts_plan_yyyy-ww.json`
+- `week_plan_yyyy-ww.json`
 
 ### 3.6 Workout-Builder / Posting
 - `intervals_workouts_yyyy-ww.json`
@@ -432,9 +432,9 @@ flowchart LR
 
 ## 4. Notes on Optionality and Authority
 
-- **Binding:** `macro_overview`, `block_governance`, `block_execution_arch`, `workouts_plan`,
+- **Binding:** `season_plan`, `phase_guardrails`, `phase_structure`, `week_plan`,
   `activities_actual`, `activities_trend`
-- **Informational:** `season_scenarios`, `block_execution_preview`, `zone_model`, `wellness` (when present)
+- **Informational:** `season_scenarios`, `phase_preview`, `zone_model`, `wellness` (when present)
 - **Scoped Override:** feed-forward artefacts (use only within their stated scope)
 - **Advisory:** `des_analysis_report`
 

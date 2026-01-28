@@ -16,7 +16,7 @@ Applies-To:
 
 Notes: >
   Defines a deterministic, technical transformation from a planner-produced
-  workouts_plan_yyyy-ww.json into an Intervals.icu-compatible JSON format.
+  week_plan_yyyy-ww.json into an Intervals.icu-compatible JSON format.
   This specification performs parsing, validation, and formatting only.
   It MUST NOT introduce, modify, interpret, or decide any training content.
 ---
@@ -26,11 +26,11 @@ Notes: >
 # ⚙️ Workout Guideline - Workout-Builder (JSON / intervals.icu)
 
 This guideline defines how the **Workout-Builder** turns the planner-produced  
-`workouts_plan_yyyy-ww.json` into an **Intervals.icu-compatible JSON file**.
+`week_plan_yyyy-ww.json` into an **Intervals.icu-compatible JSON file**.
 
 Goal:
 
-- Input: weekly plan as JSON (`workouts_plan_yyyy-ww.json`, schema: `workouts_plan.schema.json`)
+- Input: weekly plan as JSON (`week_plan_yyyy-ww.json`, schema: `week_plan.schema.json`)
 - Output: `workouts_yyyy-ww.json` with valid workout objects
 - No physiological planning, only **parsing, validation, and formatting**
 
@@ -40,7 +40,7 @@ Goal:
 
 The Workout-Builder:
 
-1. receives the planner-produced `workouts_plan_yyyy-ww.json` (JSON),
+1. receives the planner-produced `week_plan_yyyy-ww.json` (JSON),
 2. extracts **all workouts**,
 3. validates the **workout syntax**, and
 4. generates a **JSON list** of workouts that can be imported into Intervals.icu.
@@ -50,10 +50,10 @@ only ensuring **technically clean, compatible output**.
 
 ---
 
-## 1️⃣ Input Format: `workouts_plan_yyyy-ww.json`
+## 1️⃣ Input Format: `week_plan_yyyy-ww.json`
 
 The Workout-Builder expects JSON validated against:
-- `workouts_plan.schema.json` (input)
+- `week_plan.schema.json` (input)
 - `workouts.schema.json` (output)
 
 This spec does not redefine JSON fields; it defines transformation rules and
@@ -226,7 +226,7 @@ For `description`:
 
 ## 6️⃣ Error Handling
 
-If a workout in `workouts_plan_yyyy-ww.json` does not comply, the Workout-Builder must:
+If a workout in `week_plan_yyyy-ww.json` does not comply, the Workout-Builder must:
 
 1. **Not** include the affected workout in the JSON list.
 

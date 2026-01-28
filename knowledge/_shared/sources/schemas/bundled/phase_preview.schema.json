@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "block_execution_preview.schema.json",
-  "title": "BlockExecutionPreview",
+  "$id": "phase_preview.schema.json",
+  "title": "PhasePreview",
   "type": "object",
   "$defs": {
     "weekday": {
@@ -164,7 +164,7 @@
         }
       }
     },
-    "block_execution_preview_data": {
+    "phase_preview_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [

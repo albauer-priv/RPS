@@ -1,16 +1,16 @@
 # Mandatory Output Chapter
 
 Purpose
-This chapter defines how to produce **schema‑valid BLOCK_EXECUTION_PREVIEW JSON**.
+This chapter defines how to produce **schema‑valid PHASE_PREVIEW JSON**.
 
 ---
 
-## ARTIFACT: BLOCK_EXECUTION_PREVIEW
+## ARTIFACT: PHASE_PREVIEW
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
-- Schema: `block_execution_preview.schema.json`
-  - Filter: `{"type":"eq","key":"schema_id","value":"block_execution_preview.schema.json"}`
-- You MUST validate output against this schema before calling `store_block_execution_preview`.
+- Schema: `phase_preview.schema.json`
+  - Filter: `{"type":"eq","key":"schema_id","value":"phase_preview.schema.json"}`
+- You MUST validate output against this schema before calling `store_phase_preview`.
 
 ### HOW TO FILL (BINDING)
 
@@ -22,15 +22,15 @@ This chapter defines how to produce **schema‑valid BLOCK_EXECUTION_PREVIEW JSO
 #### 2) `meta` (required fields)
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
-  - `artifact_type`: `"BLOCK_EXECUTION_PREVIEW"`
-  - `schema_id`: `"BlockExecutionPreviewInterface"`
+  - `artifact_type`: `"PHASE_PREVIEW"`
+  - `schema_id`: `"PhasePreviewInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
   - `owner_agent`: `"Meso-Architect"`
 - `iso_week_range` required.
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
-- `temporal_scope` MUST be copied from an upstream artefact (prefer stored BLOCK_EXECUTION_ARCH
-  for the same range; otherwise use the Macro Overview phase `date_range`). **Do NOT compute dates.**
+- `temporal_scope` MUST be copied from an upstream artefact (prefer stored PHASE_STRUCTURE
+  for the same range; otherwise use the Season Plan phase `date_range`). **Do NOT compute dates.**
 
 #### 3) `data.block_intent_summary`
 Required:
@@ -69,45 +69,45 @@ Required strings:
 - `derived_from` (array, min 1)
 - `conflict_resolution` (array, min 1)
 - Only these two keys are allowed inside `data.traceability` (no extra fields).
-- `derived_from` MUST include the stored block execution arch filename
-  `block_execution_arch_YYYY-WW.json` (use the artifact version key, not `iso_week_range`).
+- `derived_from` MUST include the stored phase structure filename
+  `phase_structure_YYYY-WW.json` (use the artifact version key, not `iso_week_range`).
 
 #### 9) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
 - Do NOT include workouts, interval structures, %FTP targets, zones (Z1–Z7), or day‑by‑day kJ targets.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
-- Validate against `block_execution_preview.schema.json` before calling the store tool.
+- Validate against `phase_preview.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
-- Validate against schema before calling `store_block_execution_preview`.
+- Validate against schema before calling `store_phase_preview`.
 - On any error: **STOP** and report schema errors.
-- STOP if no stored BLOCK_EXECUTION_ARCH exists for the **exact** `meta.iso_week_range`.
+- STOP if no stored PHASE_STRUCTURE exists for the **exact** `meta.iso_week_range`.
 - STOP if `data.traceability` includes any keys beyond `derived_from` and `conflict_resolution`.
 - STOP if `data.traceability.derived_from` does not include
-  `block_execution_arch_YYYY-WW.json` (version key, not iso_week_range).
+  `phase_structure_YYYY-WW.json` (version key, not iso_week_range).
 
 ---
 
-### EXAMPLE: BLOCK_EXECUTION_PREVIEW (minimal valid)
+### EXAMPLE: PHASE_PREVIEW (minimal valid)
 
 ```json
 {
   "meta": {
-    "artifact_type": "BLOCK_EXECUTION_PREVIEW",
-    "schema_id": "BlockExecutionPreviewInterface",
+    "artifact_type": "PHASE_PREVIEW",
+    "schema_id": "PhasePreviewInterface",
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
     "owner_agent": "Meso-Architect",
-    "run_id": "example_block_execution_preview_2026_w04",
+    "run_id": "example_phase_preview_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Meso",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-05",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-02-01" },
     "trace_upstream": [
-      { "artifact": "BLOCK_EXECUTION_ARCH", "version": "1.0", "run_id": "block_execution_arch_2026_w04" }
+      { "artifact": "PHASE_STRUCTURE", "version": "1.0", "run_id": "phase_structure_2026_w04" }
     ],
     "trace_data": [],
     "trace_events": [],
@@ -146,7 +146,7 @@ Required strings:
     },
     "deviation_rules": ["If travel occurs, drop optional day without compensation"],
     "traceability": {
-      "derived_from": ["block_execution_arch_2026-04.json"],
+      "derived_from": ["phase_structure_2026-04.json"],
       "conflict_resolution": ["Escalate to Macro-Planner if conflicts arise"]
     }
   }

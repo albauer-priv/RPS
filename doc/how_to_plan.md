@@ -13,8 +13,8 @@ Last-Updated: 2026-01-22
 3) Update `events.md`.  
 4) Run **Season-Scenario-Agent** (generates `season_scenarios`).  
 5) Select scenario and run **Macro** (uses selected scenario).  
-6) Run **Meso** -> `block_governance_yyyy-ww--yyyy-ww.json` + `block_execution_arch_yyyy-ww--yyyy-ww.json`.  
-7) Run **Micro** -> `workouts_plan_yyyy-ww.json`.  
+6) Run **Meso** -> `phase_guardrails_yyyy-ww--yyyy-ww.json` + `phase_structure_yyyy-ww--yyyy-ww.json`.  
+7) Run **Micro** -> `week_plan_yyyy-ww.json`.  
 8) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
 9) Post workouts: `python scripts/data_pipeline/post_workout.py`.  
 10) Run data pipeline: `python -m rps.main parse-intervals`.  
@@ -42,7 +42,7 @@ var/athletes/<athlete_id>/latest/kpi_profile.json
 
 Predefined KPI profiles live under `kpi_profiles/` at repo root.
 
-Macro flow (agent tasks via CLI, or use the Streamlit UI "Create Macro Overview"):
+Macro flow (agent tasks via CLI, or use the Streamlit UI "Create Season Plan"):
 
 ```bash
 # 1) Create scenarios (SEASON_SCENARIOS)
@@ -61,11 +61,11 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 ```
 
 ```bash
-# 3) Create macro overview (MACRO_OVERVIEW)
+# 3) Create season plan (SEASON_PLAN)
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent macro_planner \
-  --task CREATE_MACRO_OVERVIEW \
-  --text "Scenario A. Create MACRO_OVERVIEW for ISO week 2026-06. Use the latest SEASON_SCENARIO_SELECTION."
+  --task CREATE_SEASON_PLAN \
+  --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06. Use the latest SEASON_SCENARIO_SELECTION."
 ```
 
 Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the macro-planner text:
@@ -90,8 +90,8 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent macro_planner \
   --athlete ath_001 \
-  --task CREATE_MACRO_OVERVIEW \
-  --text "Scenario A. Create MACRO_OVERVIEW for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
+  --task CREATE_SEASON_PLAN \
+  --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
 ```
 
 ```bash
@@ -99,8 +99,8 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent meso_architect \
   --athlete ath_001 \
-  --task CREATE_BLOCK_GOVERNANCE CREATE_BLOCK_EXECUTION_ARCH \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create block_governance and block_execution_arch for the block covering ISO week 2026-06."
+  --task CREATE_PHASE_GUARDRAILS CREATE_PHASE_STRUCTURE \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create phase_guardrails and phase_structure for the block covering ISO week 2026-06."
 ```
 
 ```bash
@@ -108,8 +108,8 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent micro_planner \
   --athlete ath_001 \
-  --task CREATE_WORKOUTS_PLAN \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create workouts_plan for ISO week 2026-06."
+  --task CREATE_WEEK_PLAN \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create week_plan for ISO week 2026-06."
 ```
 
 ```bash
@@ -118,7 +118,7 @@ PYTHONPATH=src python3 -m rps.main run-agent \
   --agent workout_builder \
   --athlete ath_001 \
   --task CREATE_INTERVALS_WORKOUTS_EXPORT \
-  --text "Convert workouts_plan into Intervals.icu workouts JSON for ISO week 2026-06."
+  --text "Convert week_plan into Intervals.icu workouts JSON for ISO week 2026-06."
 ```
 
 ```bash
@@ -148,7 +148,7 @@ This guide explains the planning sequence, artefacts, and cadence.
 - **Data Pipeline**: factual activity data (actual + trend).
 
 **Artefact types**
-- **Binding**: must be followed (macro, governance, execution arch, workouts plan).
+- **Binding**: must be followed (macro, governance, execution arch, week plan).
 - **Informational**: context only (season_scenarios, events, previews).
 - **Advisory**: analysis report (macro may use to adjust later).
 
@@ -180,21 +180,21 @@ flowchart TD
   EV[events.md] -. info .-> SS
   EV -. info .-> MA
 
-  MA --> MO[macro_overview_yyyy-ww--yyyy-ww.json]
+  MA --> MO[season_plan_yyyy-ww--yyyy-ww.json]
   MA -. optional .-> MMFF[macro_meso_feed_forward_yyyy-ww.json]
 
   MO --> ME[Meso cycle]
   MMFF -. optional .-> ME
 
-  ME --> BG[block_governance_yyyy-ww--yyyy-ww.json]
-  ME --> BEA[block_execution_arch_yyyy-ww--yyyy-ww.json]
+  ME --> BG[phase_guardrails_yyyy-ww--yyyy-ww.json]
+  ME --> BEA[phase_structure_yyyy-ww--yyyy-ww.json]
   ME -. optional .-> BFF[block_feed_forward_yyyy-ww.json]
 
   BG --> MI[Micro cycle]
   BEA --> MI
   BFF -. optional .-> MI
 
-  MI --> WP[workouts_plan_yyyy-ww.json]
+  MI --> WP[week_plan_yyyy-ww.json]
   WP --> WB[Workout-Builder]
   WB --> WJ[intervals_workouts_yyyy-ww.json]
   WJ --> POST[post_workout.py] --> IC[Intervals.icu]
@@ -215,7 +215,7 @@ flowchart TD
 
 ## 3. Macro vs Meso boundaries
 
-- `macro_overview` defines **phases** with `iso_week_range`.
+- `season_plan` defines **phases** with `iso_week_range`.
 - Macro must not define meso blocks.
 - Meso block ranges are derived **inside** a macro phase.
 
@@ -229,15 +229,15 @@ Agents resolve the phase and block range internally via workspace tools
 ## 4. Agent modes (summary)
 
 ### Macro-Planner
-- Create or update macro overview.
+- Create or update season plan.
 - Optional feed-forward when a block needs explicit guidance.
 
 ### Meso-Architect
-- Create block governance + execution architecture.
+- Create phase guardrails + execution architecture.
 - Optional preview and feed-forward when requested.
 
 ### Micro-Planner
-- Always outputs one `workouts_plan` per target week.
+- Always outputs one `week_plan` per target week.
 
 ### Workout-Builder
 - Deterministic conversion only.

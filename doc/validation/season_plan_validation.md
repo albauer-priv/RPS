@@ -1,8 +1,8 @@
-# MACRO_OVERVIEW Validation
+# SEASON_PLAN Validation
 
 ## Schema & meta
-- [ ] Validates against `macro_overview.schema.json`.
-- [ ] `meta.schema_id` = `MacroOverviewInterface` and `meta.schema_version` is current.
+- [ ] Validates against `season_plan.schema.json`.
+- [ ] `meta.schema_id` = `SeasonPlanInterface` and `meta.schema_version` is current.
 - [ ] `meta.iso_week_range` spans the intended planning horizon.
 
 ## Upstream coverage

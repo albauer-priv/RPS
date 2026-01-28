@@ -36,18 +36,18 @@ flowchart TD
   KP --> MA
   EV[events] -. info .-> SS
   EV -. info .-> MA
-  MA --> MO[macro_overview]
+  MA --> MO[season_plan]
   MA -. optional .-> MMFF[macro_meso_feed_forward]
 
   MO --> ME[Meso-Architect]
   MMFF -. optional .-> ME
-  ME --> BG[block_governance]
-  ME --> BEA[block_execution_arch]
-  ME -. optional .-> BEP[block_execution_preview]
+  ME --> BG[phase_guardrails]
+  ME --> BEA[phase_structure]
+  ME -. optional .-> BEP[phase_preview]
 
   BG --> MI[Micro-Planner]
   BEA --> MI
-  MI --> WP[workouts_plan]
+  MI --> WP[week_plan]
   WP --> WB[Workout-Builder]
   WB --> WJ[intervals_workouts]
 
@@ -110,16 +110,16 @@ flowchart TD
 
 ### 3.3 Macro-Planner
 - Defines long-term intent (8–32 weeks).
-- Produces `macro_overview` and optional `macro_meso_feed_forward`.
+- Produces `season_plan` and optional `macro_meso_feed_forward`.
 - Uses wellness `body_mass_kg` + Season Brief availability to anchor kJ corridor math.
 - **Important:** Macro phases define ISO week ranges, but MUST NOT define meso blocks.
 
 ### 3.4 Meso-Architect
-- Converts macro phase intent into block governance and execution architecture.
+- Converts macro phase intent into phase guardrails and execution architecture.
 - **Block ranges are derived from macro phases**, not calendar alignment.
 
 ### 3.5 Micro-Planner
-- Produces weekly execution plan (`workouts_plan`).
+- Produces weekly execution plan (`week_plan`).
 - Must comply with governance + execution architecture.
 
 ### 3.6 Workout-Builder
@@ -215,7 +215,7 @@ Example filters:
 - Specs/policies/principles: `type=Specification` + `specification_for=WORKOUT_POLICY`
 - Interfaces: `type=InterfaceSpecification` + `interface_for=SEASON_BRIEF`
 - Templates: `type=Template` + `template_for=SEASON_BRIEF`
-- Schemas: `doc_type=JsonSchema` + `schema_id=workouts_plan.schema.json`
+- Schemas: `doc_type=JsonSchema` + `schema_id=week_plan.schema.json`
 
 `file_search` is for static knowledge sources only. Runtime athlete artifacts
 are fetched via workspace tools.
@@ -228,7 +228,7 @@ workspace tools.
 
 Macro-Planner
 - Mode A: Season brief via `workspace_get_input("season_brief")`, KPI via `workspace_get_latest(KPI_PROFILE)`, optional events via `workspace_get_input("events")`.
-- Mode B: Season brief, KPI, existing macro overview via `workspace_get_latest(MACRO_OVERVIEW)`, optional events.
+- Mode B: Season brief, KPI, existing season plan via `workspace_get_latest(SEASON_PLAN)`, optional events.
 - Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)`, optional events.
 
 Meso-Architect
@@ -242,10 +242,10 @@ Micro-Planner
 
 Performance-Analyst
 - Required: `ACTIVITIES_ACTUAL`, `ACTIVITIES_TREND`, `KPI_PROFILE` via `workspace_get_latest`.
-- Optional: `MACRO_OVERVIEW`, `workspace_get_block_context`, `events`.
+- Optional: `SEASON_PLAN`, `workspace_get_block_context`, `events`.
 
 Workout-Builder
-- Required: `WORKOUTS_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
+- Required: `WEEK_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
 
 #### 4.1.5 Per-Agent Mapping and Available Tools
 
@@ -286,8 +286,8 @@ Effective injection for a run:
 - duplicates are removed while preserving order
 
 Modes are chosen by the orchestrator/runner based on the task
-(for example: `macro_overview` vs `feed_forward`, or
-`block_governance` vs `block_execution_arch`, or `coach`).
+(for example: `season_plan` vs `feed_forward`, or
+`phase_guardrails` vs `phase_structure`, or `coach`).
 
 #### 4.1.4 Operational Limits
 
@@ -350,7 +350,7 @@ flowchart LR
 
 **Key rules**
 
-- Every write creates a **versioned file** (e.g. `block_execution_arch_2026-05--2026-08.json`).
+- Every write creates a **versioned file** (e.g. `phase_structure_2026-05--2026-08.json`).
 - `latest/` holds the most recent version per artefact type.
 - `index.json` tracks per-version metadata for routing and exact range lookups.
 - The workspace is **gitignored** and should never be committed.
@@ -403,7 +403,7 @@ The local store normalizes legacy labels (e.g., Structural → Derived).
 The `plan-week` command runs a staged plan if required artifacts are missing:
 
 1. Macro
-2. Meso (block governance + execution arch)
+2. Meso (phase guardrails + execution arch)
 3. Micro (weekly plan)
 4. Builder (Intervals export)
 5. Analysis (DES report)

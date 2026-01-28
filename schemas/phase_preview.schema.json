@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "block_execution_preview.schema.json",
-  "title": "BlockExecutionPreview",
+  "$id": "phase_preview.schema.json",
+  "title": "PhasePreview",
   "type": "object",
   "$defs": {
     "weekday": {
@@ -65,7 +65,7 @@
         }
       }
     },
-    "block_execution_preview_data": {
+    "phase_preview_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -213,11 +213,11 @@
       "$ref": "artefact_meta.schema.json",
       "properties": {
         "artifact_type": {
-          "const": "BLOCK_EXECUTION_PREVIEW",
+          "const": "PHASE_PREVIEW",
           "type": "string"
         },
         "schema_id": {
-          "const": "BlockExecutionPreviewInterface",
+          "const": "PhasePreviewInterface",
           "type": "string"
         },
         "schema_version": {
@@ -244,7 +244,7 @@
       "type": "object"
     },
     "data": {
-      "$ref": "#/$defs/block_execution_preview_data"
+      "$ref": "#/$defs/phase_preview_data"
     }
   }
 }

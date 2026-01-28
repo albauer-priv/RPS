@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "macro_overview.schema.json",
-  "title": "MacroOverview",
+  "$id": "season_plan.schema.json",
+  "title": "SeasonPlan",
   "type": "object",
   "$defs": {
     "weekday": {
@@ -87,7 +87,7 @@
         }
       }
     },
-    "macro_overview_data": {
+    "season_plan_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -786,11 +786,11 @@
       "$ref": "artefact_meta.schema.json",
       "properties": {
         "artifact_type": {
-          "const": "MACRO_OVERVIEW",
+          "const": "SEASON_PLAN",
           "type": "string"
         },
         "schema_id": {
-          "const": "MacroOverviewInterface",
+          "const": "SeasonPlanInterface",
           "type": "string"
         },
         "schema_version": {
@@ -817,7 +817,7 @@
       "type": "object"
     },
     "data": {
-      "$ref": "#/$defs/macro_overview_data"
+      "$ref": "#/$defs/season_plan_data"
     }
   }
 }

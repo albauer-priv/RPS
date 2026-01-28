@@ -62,7 +62,7 @@ Your job is to produce the `SEASON_SCENARIOS` artefact (pre-decision scenarios A
 - Reflect Events for logistics/constraints only (no A/B/C event priority selection).
 
 ### Non-Scope (MUST NOT)
-- Do NOT produce `MACRO_OVERVIEW` or any macro/meso/micro artefacts.
+- Do NOT produce `SEASON_PLAN` or any macro/meso/micro artefacts.
 - Do NOT compute weekly_kJ corridors, bands, or block-level constraints.
 - Do NOT select the final scenario (selection is Macro-Planner / selection artefact).
 - Do NOT prescribe workouts, session details, intervals, or weekday allocation.

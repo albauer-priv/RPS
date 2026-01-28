@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "block_governance.schema.json",
-  "title": "BlockGovernance",
+  "$id": "phase_guardrails.schema.json",
+  "title": "PhaseGuardrails",
   "type": "object",
   "$defs": {
-    "block_governance_data": {
+    "phase_guardrails_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -469,11 +469,11 @@
       "$ref": "artefact_meta.schema.json",
       "properties": {
         "artifact_type": {
-          "const": "BLOCK_GOVERNANCE",
+          "const": "PHASE_GUARDRAILS",
           "type": "string"
         },
         "schema_id": {
-          "const": "BlockGovernanceInterface",
+          "const": "PhaseGuardrailsInterface",
           "type": "string"
         },
         "schema_version": {
@@ -500,7 +500,7 @@
       "type": "object"
     },
     "data": {
-      "$ref": "#/$defs/block_governance_data"
+      "$ref": "#/$defs/phase_guardrails_data"
     }
   }
 }

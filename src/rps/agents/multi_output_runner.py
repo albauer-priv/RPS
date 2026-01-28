@@ -249,13 +249,13 @@ def run_agent_multi_output(
 
     mandatory_by_schema = {
         "season_scenarios.schema.json": "mandatory_output_season_scenarios.md",
-        "macro_overview.schema.json": "mandatory_output_macro_overview.md",
+        "season_plan.schema.json": "mandatory_output_season_plan.md",
         "macro_meso_feed_forward.schema.json": "mandatory_output_macro_meso_feed_forward.md",
-        "block_governance.schema.json": "mandatory_output_block_governance.md",
-        "block_execution_arch.schema.json": "mandatory_output_block_execution_arch.md",
-        "block_execution_preview.schema.json": "mandatory_output_block_execution_preview.md",
+        "phase_guardrails.schema.json": "mandatory_output_phase_guardrails.md",
+        "phase_structure.schema.json": "mandatory_output_phase_structure.md",
+        "phase_preview.schema.json": "mandatory_output_phase_preview.md",
         "block_feed_forward.schema.json": "mandatory_output_block_feed_forward.md",
-        "workouts_plan.schema.json": "mandatory_output_workouts_plan.md",
+        "week_plan.schema.json": "mandatory_output_week_plan.md",
         "workouts.schema.json": "mandatory_output_intervals_workouts.md",
         "des_analysis_report.schema.json": "mandatory_output_des_analysis_report.md",
     }
@@ -538,15 +538,15 @@ def run_agent_multi_output(
         document["data"] = data
         return document
 
-    def _normalize_workouts_plan_meta(document: dict[str, Any]) -> dict[str, Any]:
-        """Coerce workouts_plan meta fields to match schema constants."""
+    def _normalize_week_plan_meta(document: dict[str, Any]) -> dict[str, Any]:
+        """Coerce week_plan meta fields to match schema constants."""
         if not isinstance(document, dict):
             return document
         meta = document.get("meta")
         if not isinstance(meta, dict):
             return document
-        meta["artifact_type"] = "WORKOUTS_PLAN"
-        meta["schema_id"] = "WorkoutsPlanInterface"
+        meta["artifact_type"] = "WEEK_PLAN"
+        meta["schema_id"] = "WeekPlanInterface"
         meta["schema_version"] = "1.2"
         meta["authority"] = "Binding"
         meta["owner_agent"] = "Micro-Planner"
@@ -579,12 +579,12 @@ def run_agent_multi_output(
             document["data"] = data
         return document
 
-    def _normalize_block_governance(document: dict[str, Any]) -> dict[str, Any]:
-        """Ensure BLOCK_GOVERNANCE weekly bands are non-degenerate."""
+    def _normalize_phase_guardrails(document: dict[str, Any]) -> dict[str, Any]:
+        """Ensure PHASE_GUARDRAILS weekly bands are non-degenerate."""
         if not isinstance(document, dict):
             return document
         meta = document.get("meta") or {}
-        if str(meta.get("artifact_type", "")).upper() != "BLOCK_GOVERNANCE":
+        if str(meta.get("artifact_type", "")).upper() != "PHASE_GUARDRAILS":
             return document
         data = document.get("data")
         if not isinstance(data, dict):
@@ -628,12 +628,12 @@ def run_agent_multi_output(
 
         return document
 
-    def _fill_macro_overview(document: dict[str, Any]) -> dict[str, Any]:
-        """Normalize common MACRO_OVERVIEW placement issues."""
+    def _fill_season_plan(document: dict[str, Any]) -> dict[str, Any]:
+        """Normalize common SEASON_PLAN placement issues."""
         if not isinstance(document, dict):
             return document
         meta = document.get("meta") or {}
-        if str(meta.get("artifact_type", "")).upper() != "MACRO_OVERVIEW":
+        if str(meta.get("artifact_type", "")).upper() != "SEASON_PLAN":
             return document
         data = document.get("data") or {}
         if not isinstance(data, dict):
@@ -822,7 +822,7 @@ def run_agent_multi_output(
                 if spec.artifact_type in {
                     ArtifactType.SEASON_SCENARIOS,
                     ArtifactType.SEASON_SCENARIO_SELECTION,
-                    ArtifactType.MACRO_OVERVIEW,
+                    ArtifactType.SEASON_PLAN,
                     ArtifactType.DES_ANALYSIS_REPORT,
                 }:
                     attempted_forced_store = True
@@ -865,10 +865,10 @@ def run_agent_multi_output(
                     logger.warning("Fallback store skipped: response text was not valid JSON.")
                 else:
                     parsed = _fill_season_scenarios(parsed)
-                    parsed = _fill_macro_overview(parsed)
-                    parsed = _normalize_block_governance(parsed)
-                    if spec.artifact_type == ArtifactType.WORKOUTS_PLAN:
-                        parsed = _normalize_workouts_plan_meta(parsed)
+                    parsed = _fill_season_plan(parsed)
+                    parsed = _normalize_phase_guardrails(parsed)
+                    if spec.artifact_type == ArtifactType.WEEK_PLAN:
+                        parsed = _normalize_week_plan_meta(parsed)
                     if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
                         parsed = _normalize_des_analysis_report(parsed)
                     try:
@@ -953,10 +953,10 @@ def run_agent_multi_output(
 
             document = _coerce_envelope_args(args) if spec.envelope else args.get("workouts")
             document = _fill_season_scenarios(document)
-            document = _fill_macro_overview(document)
-            document = _normalize_block_governance(document)
-            if spec.artifact_type == ArtifactType.WORKOUTS_PLAN:
-                document = _normalize_workouts_plan_meta(document)
+            document = _fill_season_plan(document)
+            document = _normalize_phase_guardrails(document)
+            if spec.artifact_type == ArtifactType.WEEK_PLAN:
+                document = _normalize_week_plan_meta(document)
             if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
                 document = _normalize_des_analysis_report(document)
             if spec.envelope and not _is_envelope(document):

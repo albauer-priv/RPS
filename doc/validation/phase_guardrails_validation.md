@@ -1,9 +1,9 @@
-# BLOCK_GOVERNANCE Validation
+# PHASE_GUARDRAILS Validation
 
 ## Schema & meta
-- [ ] Validates against `block_governance.schema.json`.
+- [ ] Validates against `phase_guardrails.schema.json`.
 - [ ] `meta.iso_week_range` matches the resolved block range.
-- [ ] `meta.trace_upstream` includes the latest `macro_overview` (and feed-forward if used).
+- [ ] `meta.trace_upstream` includes the latest `season_plan` (and feed-forward if used).
 
 ## Macro constraint propagation
 - [ ] Availability assumptions are reflected in `execution_non_negotiables` and `block_summary.non_negotiables`.

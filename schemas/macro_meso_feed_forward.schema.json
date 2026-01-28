@@ -18,12 +18,12 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "macro_overview_ref",
+            "season_plan_ref",
             "des_analysis_report_ref",
             "affected_block_id"
           ],
           "properties": {
-            "macro_overview_ref": {
+            "season_plan_ref": {
               "type": "string",
               "minLength": 1
             },

@@ -70,7 +70,7 @@ Schemas:
 | Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` | Must cover target week |
 | Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` | Must cover target week |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | KPI thresholds |
-| Macro Overview | `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })` | Optional; planning context |
+| Season Plan | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` | Optional; planning context |
 | Block Context | `workspace_get_block_context({ "year": YYYY, "week": WW })` | Optional; may include block context |
 | Events | `workspace_get_input("events")` | Required; logistics only |
 
@@ -110,7 +110,7 @@ KPIs are diagnostic instruments, not control levers.
 3) `des_analysis_report.schema.json` + envelope/meta schemas
 4) `des_evaluation_policy.md` (how to interpret diagnostically)
 5) Workspace artefacts (Actual/Trend/KPI Profile) as factual inputs
-6) Optional context (Macro Overview, Block Context, Events logistics)
+6) Optional context (Season Plan, Block Context, Events logistics)
 
 ### Conflict handling (Binding)
 - If required facts cannot be derived without guessing: STOP.
@@ -167,7 +167,7 @@ Load in this exact order:
 2) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
 3) `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
 4) `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
-5) `workspace_get_latest({ "artifact_type": "MACRO_OVERVIEW" })` (optional; load attempt)
+5) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` (optional; load attempt)
 6) `workspace_get_block_context({ "year": YYYY, "week": WW })` (optional; if available)
 
 If any required artefact is missing or does not cover the target week: STOP.
@@ -195,7 +195,7 @@ Goal: derive facts, signals, and diagnostic interpretations.
   - status assignment (green/yellow/red) and confidence (high/medium/low)
   - evidence windows
   - trend interpretation
-- Contextualize using Macro Overview / Block Context only as narrative context (non-normative).
+- Contextualize using Season Plan / Block Context only as narrative context (non-normative).
 - Do NOT draft recommendations as actions; only collect considerations.
 Set P1 = true.
 

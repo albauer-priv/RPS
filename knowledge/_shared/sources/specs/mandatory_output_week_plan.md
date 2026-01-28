@@ -1,16 +1,16 @@
 # Mandatory Output Chapter
 
 Purpose
-This chapter defines how to produce **schema‑valid WORKOUTS_PLAN JSON**.
+This chapter defines how to produce **schema‑valid WEEK_PLAN JSON**.
 
 ---
 
-## ARTIFACT: WORKOUTS_PLAN
+## ARTIFACT: WEEK_PLAN
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
-- Schema: `workouts_plan.schema.json`
-  - Filter: `{"type":"eq","key":"schema_id","value":"workouts_plan.schema.json"}`
-- You MUST validate output against this schema before calling `store_workouts_plan`.
+- Schema: `week_plan.schema.json`
+  - Filter: `{"type":"eq","key":"schema_id","value":"week_plan.schema.json"}`
+- You MUST validate output against this schema before calling `store_week_plan`.
 
 ### HOW TO FILL (BINDING)
 
@@ -22,8 +22,8 @@ This chapter defines how to produce **schema‑valid WORKOUTS_PLAN JSON**.
 #### 2) `meta` (required fields)
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
-  - `artifact_type`: `"WORKOUTS_PLAN"`
-  - `schema_id`: `"WorkoutsPlanInterface"`
+  - `artifact_type`: `"WEEK_PLAN"`
+  - `schema_id`: `"WeekPlanInterface"`
   - `schema_version`: `"1.2"`
   - `authority`: `"Binding"`
   - `owner_agent`: `"Micro-Planner"`
@@ -61,33 +61,33 @@ Required:
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
-- Validate against `workouts_plan.schema.json` before calling the store tool.
+- Validate against `week_plan.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
-- Validate against schema before calling `store_workouts_plan`.
+- Validate against schema before calling `store_week_plan`.
 - On any error: **STOP** and report schema errors.
 
 ---
 
-### EXAMPLE: WORKOUTS_PLAN (minimal valid)
+### EXAMPLE: WEEK_PLAN (minimal valid)
 
 ```json
 {
   "meta": {
-    "artifact_type": "WORKOUTS_PLAN",
-    "schema_id": "WorkoutsPlanInterface",
+    "artifact_type": "WEEK_PLAN",
+    "schema_id": "WeekPlanInterface",
     "schema_version": "1.2",
     "version": "1.0",
     "authority": "Binding",
     "owner_agent": "Micro-Planner",
-    "run_id": "example_workouts_plan_2026_w04",
+    "run_id": "example_week_plan_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Micro",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-04",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-01-25" },
     "trace_upstream": [
-      { "artifact": "BLOCK_EXECUTION_ARCH", "version": "1.0", "run_id": "block_execution_arch_2026_w04" }
+      { "artifact": "PHASE_STRUCTURE", "version": "1.0", "run_id": "phase_structure_2026_w04" }
     ],
     "trace_data": [],
     "trace_events": [],

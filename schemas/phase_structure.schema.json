@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "block_execution_arch.schema.json",
-  "title": "BlockExecutionArch",
+  "$id": "phase_structure.schema.json",
+  "title": "PhaseStructure",
   "type": "object",
   "$defs": {
     "weekday": {
@@ -32,7 +32,7 @@
         }
       }
     },
-    "block_execution_arch_data": {
+    "phase_structure_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -461,11 +461,11 @@
       "$ref": "artefact_meta.schema.json",
       "properties": {
         "artifact_type": {
-          "const": "BLOCK_EXECUTION_ARCH",
+          "const": "PHASE_STRUCTURE",
           "type": "string"
         },
         "schema_id": {
-          "const": "BlockExecutionArchInterface",
+          "const": "PhaseStructureInterface",
           "type": "string"
         },
         "schema_version": {
@@ -492,7 +492,7 @@
       "type": "object"
     },
     "data": {
-      "$ref": "#/$defs/block_execution_arch_data"
+      "$ref": "#/$defs/phase_structure_data"
     }
   }
 }

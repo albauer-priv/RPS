@@ -12,16 +12,16 @@ class AgentTask(str, Enum):
     """Named tasks that an agent can execute."""
     CREATE_SEASON_SCENARIOS = "CREATE_SEASON_SCENARIOS"
     CREATE_SEASON_SCENARIO_SELECTION = "CREATE_SEASON_SCENARIO_SELECTION"
-    CREATE_MACRO_OVERVIEW = "CREATE_MACRO_OVERVIEW"
+    CREATE_SEASON_PLAN = "CREATE_SEASON_PLAN"
     CREATE_MACRO_MESO_FEED_FORWARD = "CREATE_MACRO_MESO_FEED_FORWARD"
 
-    CREATE_BLOCK_GOVERNANCE = "CREATE_BLOCK_GOVERNANCE"
-    CREATE_BLOCK_EXECUTION_ARCH = "CREATE_BLOCK_EXECUTION_ARCH"
-    CREATE_BLOCK_EXECUTION_PREVIEW = "CREATE_BLOCK_EXECUTION_PREVIEW"
+    CREATE_PHASE_GUARDRAILS = "CREATE_PHASE_GUARDRAILS"
+    CREATE_PHASE_STRUCTURE = "CREATE_PHASE_STRUCTURE"
+    CREATE_PHASE_PREVIEW = "CREATE_PHASE_PREVIEW"
     CREATE_BLOCK_FEED_FORWARD = "CREATE_BLOCK_FEED_FORWARD"
     CREATE_ZONE_MODEL = "CREATE_ZONE_MODEL"
 
-    CREATE_WORKOUTS_PLAN = "CREATE_WORKOUTS_PLAN"
+    CREATE_WEEK_PLAN = "CREATE_WEEK_PLAN"
 
     CREATE_INTERVALS_WORKOUTS_EXPORT = "CREATE_INTERVALS_WORKOUTS_EXPORT"
 
@@ -54,11 +54,11 @@ OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
         tool_name="store_season_scenario_selection",
         envelope=True,
     ),
-    AgentTask.CREATE_MACRO_OVERVIEW: OutputSpec(
-        task=AgentTask.CREATE_MACRO_OVERVIEW,
-        artifact_type=ArtifactType.MACRO_OVERVIEW,
-        schema_file="macro_overview.schema.json",
-        tool_name="store_macro_overview",
+    AgentTask.CREATE_SEASON_PLAN: OutputSpec(
+        task=AgentTask.CREATE_SEASON_PLAN,
+        artifact_type=ArtifactType.SEASON_PLAN,
+        schema_file="season_plan.schema.json",
+        tool_name="store_season_plan",
         envelope=True,
     ),
     AgentTask.CREATE_MACRO_MESO_FEED_FORWARD: OutputSpec(
@@ -68,25 +68,25 @@ OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
         tool_name="store_macro_meso_feed_forward",
         envelope=True,
     ),
-    AgentTask.CREATE_BLOCK_GOVERNANCE: OutputSpec(
-        task=AgentTask.CREATE_BLOCK_GOVERNANCE,
-        artifact_type=ArtifactType.BLOCK_GOVERNANCE,
-        schema_file="block_governance.schema.json",
-        tool_name="store_block_governance",
+    AgentTask.CREATE_PHASE_GUARDRAILS: OutputSpec(
+        task=AgentTask.CREATE_PHASE_GUARDRAILS,
+        artifact_type=ArtifactType.PHASE_GUARDRAILS,
+        schema_file="phase_guardrails.schema.json",
+        tool_name="store_phase_guardrails",
         envelope=True,
     ),
-    AgentTask.CREATE_BLOCK_EXECUTION_ARCH: OutputSpec(
-        task=AgentTask.CREATE_BLOCK_EXECUTION_ARCH,
-        artifact_type=ArtifactType.BLOCK_EXECUTION_ARCH,
-        schema_file="block_execution_arch.schema.json",
-        tool_name="store_block_execution_arch",
+    AgentTask.CREATE_PHASE_STRUCTURE: OutputSpec(
+        task=AgentTask.CREATE_PHASE_STRUCTURE,
+        artifact_type=ArtifactType.PHASE_STRUCTURE,
+        schema_file="phase_structure.schema.json",
+        tool_name="store_phase_structure",
         envelope=True,
     ),
-    AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW: OutputSpec(
-        task=AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW,
-        artifact_type=ArtifactType.BLOCK_EXECUTION_PREVIEW,
-        schema_file="block_execution_preview.schema.json",
-        tool_name="store_block_execution_preview",
+    AgentTask.CREATE_PHASE_PREVIEW: OutputSpec(
+        task=AgentTask.CREATE_PHASE_PREVIEW,
+        artifact_type=ArtifactType.PHASE_PREVIEW,
+        schema_file="phase_preview.schema.json",
+        tool_name="store_phase_preview",
         envelope=True,
     ),
     AgentTask.CREATE_BLOCK_FEED_FORWARD: OutputSpec(
@@ -103,11 +103,11 @@ OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
         tool_name="store_zone_model",
         envelope=True,
     ),
-    AgentTask.CREATE_WORKOUTS_PLAN: OutputSpec(
-        task=AgentTask.CREATE_WORKOUTS_PLAN,
-        artifact_type=ArtifactType.WORKOUTS_PLAN,
-        schema_file="workouts_plan.schema.json",
-        tool_name="store_workouts_plan",
+    AgentTask.CREATE_WEEK_PLAN: OutputSpec(
+        task=AgentTask.CREATE_WEEK_PLAN,
+        artifact_type=ArtifactType.WEEK_PLAN,
+        schema_file="week_plan.schema.json",
+        tool_name="store_week_plan",
         envelope=True,
     ),
     AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: OutputSpec(

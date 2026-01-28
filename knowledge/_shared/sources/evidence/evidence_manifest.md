@@ -120,7 +120,7 @@ MAY:
 
 MUST NOT:
 - use evidence to justify load or intensity decisions
-- use evidence to override Block Governance
+- use evidence to override Phase Guardrails
 
 ## 5. Evidence in Outputs (Formatting Rules)
 

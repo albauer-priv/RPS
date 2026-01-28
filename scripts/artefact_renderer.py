@@ -20,34 +20,34 @@ from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise  # n
 from script_logging import configure_logging  # noqa: E402
 
 RENDERERS = {
-    "MACRO_OVERVIEW": "macro_overview.md.j2",
-    "BLOCK_GOVERNANCE": "block_governance.md.j2",
-    "BLOCK_EXECUTION_ARCH": "block_execution_arch.md.j2",
-    "BLOCK_EXECUTION_PREVIEW": "block_execution_preview.md.j2",
+    "SEASON_PLAN": "season_plan.md.j2",
+    "PHASE_GUARDRAILS": "phase_guardrails.md.j2",
+    "PHASE_STRUCTURE": "phase_structure.md.j2",
+    "PHASE_PREVIEW": "phase_preview.md.j2",
     "BLOCK_FEED_FORWARD": "block_feed_forward.md.j2",
     "MACRO_MESO_FEED_FORWARD": "macro_meso_feed_forward.md.j2",
     "DES_ANALYSIS_REPORT": "des_analysis_report.md.j2",
     "ACTIVITIES_ACTUAL": "activities_actual.md.j2",
     "ACTIVITIES_TREND": "activities_trend.md.j2",
     "ZONE_MODEL": "zone_model.md.j2",
-    "WORKOUTS_PLAN": "workouts_plan.md.j2",
+    "WEEK_PLAN": "week_plan.md.j2",
     "KPI_PROFILE": "kpi_profile.md.j2",
     "AVAILABILITY": "availability.md.j2",
     "WELLNESS": "wellness.md.j2",
 }
 
 SCHEMA_FILES = {
-    "MACRO_OVERVIEW": "macro_overview.schema.json",
-    "BLOCK_GOVERNANCE": "block_governance.schema.json",
-    "BLOCK_EXECUTION_ARCH": "block_execution_arch.schema.json",
-    "BLOCK_EXECUTION_PREVIEW": "block_execution_preview.schema.json",
+    "SEASON_PLAN": "season_plan.schema.json",
+    "PHASE_GUARDRAILS": "phase_guardrails.schema.json",
+    "PHASE_STRUCTURE": "phase_structure.schema.json",
+    "PHASE_PREVIEW": "phase_preview.schema.json",
     "BLOCK_FEED_FORWARD": "block_feed_forward.schema.json",
     "MACRO_MESO_FEED_FORWARD": "macro_meso_feed_forward.schema.json",
     "DES_ANALYSIS_REPORT": "des_analysis_report.schema.json",
     "ACTIVITIES_ACTUAL": "activities_actual.schema.json",
     "ACTIVITIES_TREND": "activities_trend.schema.json",
     "ZONE_MODEL": "zone_model.schema.json",
-    "WORKOUTS_PLAN": "workouts_plan.schema.json",
+    "WEEK_PLAN": "week_plan.schema.json",
     "KPI_PROFILE": "kpi_profile.schema.json",
     "AVAILABILITY": "availability.schema.json",
     "WELLNESS": "wellness.schema.json",
@@ -192,8 +192,8 @@ def validate_document(doc, artifact_type, schema_dir):
     validate_or_raise(validator, doc)
 
 
-def build_macro_overview_context(doc):
-    """Build context for macro overview rendering."""
+def build_season_plan_context(doc):
+    """Build context for season plan rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
@@ -332,8 +332,8 @@ def build_macro_overview_context(doc):
     return context
 
 
-def build_block_governance_context(doc):
-    """Build context for block governance rendering."""
+def build_phase_guardrails_context(doc):
+    """Build context for phase guardrails rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
     body_metadata = data.get("body_metadata", {})
@@ -460,8 +460,8 @@ def build_block_governance_context(doc):
     return context
 
 
-def build_workouts_plan_context(doc):
-    """Build context for workouts plan rendering."""
+def build_week_plan_context(doc):
+    """Build context for week plan rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
@@ -518,8 +518,8 @@ def build_workouts_plan_context(doc):
     return context
 
 
-def build_block_execution_arch_context(doc):
-    """Build context for block execution arch rendering."""
+def build_phase_structure_context(doc):
+    """Build context for phase structure rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
@@ -641,8 +641,8 @@ def build_block_execution_arch_context(doc):
     return context
 
 
-def build_block_execution_preview_context(doc):
-    """Build context for block execution preview rendering."""
+def build_phase_preview_context(doc):
+    """Build context for phase preview rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
@@ -820,7 +820,7 @@ def build_macro_meso_feed_forward_context(doc):
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
         "source_context": {
-            "macro_overview_ref": source_context.get("macro_overview_ref", ""),
+            "season_plan_ref": source_context.get("season_plan_ref", ""),
             "des_analysis_report_ref": source_context.get("des_analysis_report_ref", ""),
             "affected_block_id": source_context.get("affected_block_id", ""),
         },
@@ -1590,8 +1590,8 @@ def build_wellness_context(doc):
     return context
 
 
-def render_macro_overview(doc, template_dir: Path):
-    """Render macro overview using a Jinja template."""
+def render_season_plan(doc, template_dir: Path):
+    """Render season plan using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1600,13 +1600,13 @@ def render_macro_overview(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["MACRO_OVERVIEW"])
-    context = build_macro_overview_context(doc)
+    template = env.get_template(RENDERERS["SEASON_PLAN"])
+    context = build_season_plan_context(doc)
     return template.render(**context)
 
 
-def render_block_governance(doc, template_dir: Path):
-    """Render block governance using a Jinja template."""
+def render_phase_guardrails(doc, template_dir: Path):
+    """Render phase guardrails using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1615,13 +1615,13 @@ def render_block_governance(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["BLOCK_GOVERNANCE"])
-    context = build_block_governance_context(doc)
+    template = env.get_template(RENDERERS["PHASE_GUARDRAILS"])
+    context = build_phase_guardrails_context(doc)
     return template.render(**context)
 
 
-def render_workouts_plan(doc, template_dir: Path):
-    """Render workouts plan using a Jinja template."""
+def render_week_plan(doc, template_dir: Path):
+    """Render week plan using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1630,13 +1630,13 @@ def render_workouts_plan(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["WORKOUTS_PLAN"])
-    context = build_workouts_plan_context(doc)
+    template = env.get_template(RENDERERS["WEEK_PLAN"])
+    context = build_week_plan_context(doc)
     return template.render(**context)
 
 
-def render_block_execution_arch(doc, template_dir: Path):
-    """Render block execution arch using a Jinja template."""
+def render_phase_structure(doc, template_dir: Path):
+    """Render phase structure using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1645,13 +1645,13 @@ def render_block_execution_arch(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["BLOCK_EXECUTION_ARCH"])
-    context = build_block_execution_arch_context(doc)
+    template = env.get_template(RENDERERS["PHASE_STRUCTURE"])
+    context = build_phase_structure_context(doc)
     return template.render(**context)
 
 
-def render_block_execution_preview(doc, template_dir: Path):
-    """Render block execution preview using a Jinja template."""
+def render_phase_preview(doc, template_dir: Path):
+    """Render phase preview using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1660,8 +1660,8 @@ def render_block_execution_preview(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["BLOCK_EXECUTION_PREVIEW"])
-    context = build_block_execution_preview_context(doc)
+    template = env.get_template(RENDERERS["PHASE_PREVIEW"])
+    context = build_phase_preview_context(doc)
     return template.render(**context)
 
 
@@ -1828,14 +1828,14 @@ def main():
         validate_document(doc, artifact_type, schema_dir)
 
     template_dir = Path(__file__).parent / "renderers"
-    if artifact_type == "MACRO_OVERVIEW":
-        rendered = render_macro_overview(doc, template_dir)
-    elif artifact_type == "BLOCK_GOVERNANCE":
-        rendered = render_block_governance(doc, template_dir)
-    elif artifact_type == "BLOCK_EXECUTION_ARCH":
-        rendered = render_block_execution_arch(doc, template_dir)
-    elif artifact_type == "BLOCK_EXECUTION_PREVIEW":
-        rendered = render_block_execution_preview(doc, template_dir)
+    if artifact_type == "SEASON_PLAN":
+        rendered = render_season_plan(doc, template_dir)
+    elif artifact_type == "PHASE_GUARDRAILS":
+        rendered = render_phase_guardrails(doc, template_dir)
+    elif artifact_type == "PHASE_STRUCTURE":
+        rendered = render_phase_structure(doc, template_dir)
+    elif artifact_type == "PHASE_PREVIEW":
+        rendered = render_phase_preview(doc, template_dir)
     elif artifact_type == "BLOCK_FEED_FORWARD":
         rendered = render_block_feed_forward(doc, template_dir)
     elif artifact_type == "MACRO_MESO_FEED_FORWARD":
@@ -1848,8 +1848,8 @@ def main():
         rendered = render_activities_trend(doc, template_dir)
     elif artifact_type == "ZONE_MODEL":
         rendered = render_zone_model(doc, template_dir)
-    elif artifact_type == "WORKOUTS_PLAN":
-        rendered = render_workouts_plan(doc, template_dir)
+    elif artifact_type == "WEEK_PLAN":
+        rendered = render_week_plan(doc, template_dir)
     elif artifact_type == "KPI_PROFILE":
         rendered = render_kpi_profile(doc, template_dir)
     elif artifact_type == "AVAILABILITY":

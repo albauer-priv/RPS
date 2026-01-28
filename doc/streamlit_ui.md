@@ -22,6 +22,6 @@ PYTHONPATH=src python3.14 -m streamlit run src/rps/ui/streamlit_app.py
   - `parse intervals`
   - `scenarios`
   - `select scenario`
-  - `macro overview`
+  - `season plan`
   - `plan week`
   - `show macro`

@@ -1,18 +1,18 @@
 # Mandatory Output Chapter
 
 Purpose
-This chapter defines how to produce **schema‑valid MACRO_OVERVIEW JSON**. It is the
+This chapter defines how to produce **schema‑valid SEASON_PLAN JSON**. It is the
 single source of truth for filling the mandatory output fields, including the
 required schema, field sources, and a minimal valid example.
 
 ---
 
-## ARTIFACT: MACRO_OVERVIEW
+## ARTIFACT: SEASON_PLAN
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
-- Schema: `macro_overview.schema.json`
-  - Filter: `{"type":"eq","key":"schema_id","value":"macro_overview.schema.json"}`
-- You MUST validate output against this schema before calling `store_macro_overview`.
+- Schema: `season_plan.schema.json`
+  - Filter: `{"type":"eq","key":"schema_id","value":"season_plan.schema.json"}`
+- You MUST validate output against this schema before calling `store_season_plan`.
 
 ### HOW TO FILL (BINDING)
 
@@ -20,11 +20,11 @@ required schema, field sources, and a minimal valid example.
 - Output MUST be a **top‑level object** with only:
   - `meta`
   - `data`
-- Call `store_macro_overview` with this envelope only. No wrappers, no extra keys.
+- Call `store_season_plan` with this envelope only. No wrappers, no extra keys.
 
 #### 2) `meta` (required fields)
-- `artifact_type`: `"MACRO_OVERVIEW"`
-- `schema_id`: `"MacroOverviewInterface"`
+- `artifact_type`: `"SEASON_PLAN"`
+- `schema_id`: `"SeasonPlanInterface"`
 - `schema_version`: `"1.0"`
 - `version`: `"1.0"`
 - `authority`: `"Binding"`
@@ -187,27 +187,27 @@ All required booleans must be present. Set to `true` only if valid:
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
-- Validate against `macro_overview.schema.json` before calling the store tool.
+- Validate against `season_plan.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
-- You MUST run schema validation locally (in reasoning) before calling `store_macro_overview`.
+- You MUST run schema validation locally (in reasoning) before calling `store_season_plan`.
 - If any field fails type/enum/shape requirements, **STOP** and report the schema errors. Do not guess or retry with a different shape.
-- Only call `store_macro_overview` when all required fields match the schema.
+- Only call `store_season_plan` when all required fields match the schema.
 
 ---
 
-### EXAMPLE: MACRO_OVERVIEW (minimal valid)
+### EXAMPLE: SEASON_PLAN (minimal valid)
 
 ```json
 {
   "meta": {
-    "artifact_type": "MACRO_OVERVIEW",
-    "schema_id": "MacroOverviewInterface",
+    "artifact_type": "SEASON_PLAN",
+    "schema_id": "SeasonPlanInterface",
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
     "owner_agent": "Macro-Planner",
-    "run_id": "example_macro_overview_2026_w04",
+    "run_id": "example_season_plan_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Macro",
     "iso_week": "2026-04",

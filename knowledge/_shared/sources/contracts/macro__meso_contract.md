@@ -11,15 +11,15 @@ From-Agent: Macro-Planner
 To-Agent: Meso-Architect
 
 Dependencies:
-  - ID: MacroOverviewInterface
+  - ID: SeasonPlanInterface
     Version: 1.0
   - ID: LoadEstimationSpec
     Version: 1.0
-  - ID: BlockGovernanceInterface
+  - ID: PhaseGuardrailsInterface
     Version: 1.0
-  - ID: BlockExecutionArchInterface
+  - ID: PhaseStructureInterface
     Version: 1.0
-  - ID: BlockExecutionPreviewInterface
+  - ID: PhasePreviewInterface
     Version: 1.0
   - ID: BlockFeedForwardInterface
     Version: 1.0
@@ -43,8 +43,8 @@ structural architecture without introducing week- or workout-level planning.
 - OWNS high-level allowed/forbidden intensity domains and non-negotiables.
 - MUST derive availability assumptions from the Season Brief weekday availability table
   (Mon-Sun hours, indoor possible, travel risk) and fixed rest days, and include them in
-  `macro_overview.data.global_constraints.availability_assumptions` and
-  `macro_overview.data.global_constraints.recovery_protection`.
+  `season_plan.data.global_constraints.availability_assumptions` and
+  `season_plan.data.global_constraints.recovery_protection`.
 - MUST validate macro outputs before release.
 - MAY issue `macro_meso_feed_forward_yyyy-ww.json` when macro changes are required.
 
@@ -58,16 +58,16 @@ structural architecture without introducing week- or workout-level planning.
 - MUST NOT reinterpret macro intent.
 - MUST NOT exceed macro kJ corridor without explicit upstream change.
 - MUST NOT derive block adjustments directly from `des_analysis_report_yyyy-ww.json`.
-- MUST preserve macro availability assumptions and fixed rest days in block governance
+- MUST preserve macro availability assumptions and fixed rest days in phase guardrails
   non-negotiables and recovery protection rules.
-- If the user explicitly specifies an `iso_week_range` for block governance or execution,
+- If the user explicitly specifies an `iso_week_range` for phase guardrails or execution,
   it MUST be honored and may override phase-aligned block context resolution; document
   the override in `meta.notes`.
 
 ## 4) Artefacts and Schemas (Binding)
 
 ### Inputs (Meso-Architect consumes)
-- `macro_overview_yyyy-ww--yyyy-ww.json` -> `macro_overview.schema.json` (required)
+- `season_plan_yyyy-ww--yyyy-ww.json` -> `season_plan.schema.json` (required)
 - `macro_meso_feed_forward_yyyy-ww.json` -> `macro_meso_feed_forward.schema.json` (binding if present)
 
 ### Informational Inputs (no schema)
@@ -79,14 +79,14 @@ structural architecture without introducing week- or workout-level planning.
 - `zone_model_power_<FTP>W.json` -> `zone_model.schema.json` (informational; from Data-Pipeline)
 
 ### Outputs (Meso-Architect produces)
-- `block_governance_yyyy-ww--yyyy-ww.json` -> `block_governance.schema.json` (required)
+- `phase_guardrails_yyyy-ww--yyyy-ww.json` -> `phase_guardrails.schema.json` (required)
 - `block_feed_forward_yyyy-ww.json` -> `block_feed_forward.schema.json` (optional)
-- `block_execution_arch_yyyy-ww--yyyy-ww.json` -> `block_execution_arch.schema.json` (required)
-- `block_execution_preview_yyyy-ww--yyyy-ww.json` -> `block_execution_preview.schema.json` (optional)
+- `phase_structure_yyyy-ww--yyyy-ww.json` -> `phase_structure.schema.json` (required)
+- `phase_preview_yyyy-ww--yyyy-ww.json` -> `phase_preview.schema.json` (optional)
 
 ## 5) Constraints / Forbidden (Binding)
 - All KPI-driven block changes require explicit `macro_meso_feed_forward_yyyy-ww.json`.
-- `block_execution_arch_*` and `block_execution_preview_*` MUST NOT include:
+- `phase_structure_*` and `phase_preview_*` MUST NOT include:
   - workouts
   - intervals
   - zones/%FTP
@@ -98,9 +98,9 @@ structural architecture without introducing week- or workout-level planning.
 - Block output exceeds macro corridor -> STOP + escalate.
 
 ## 7) Traceability
-- Every block artefact MUST reference upstream `macro_overview_yyyy-ww--yyyy-ww.json`
+- Every block artefact MUST reference upstream `season_plan_yyyy-ww--yyyy-ww.json`
   filename + version.
-- Feed Forward MUST reference baseline `block_governance_yyyy-ww--yyyy-ww.json`
+- Feed Forward MUST reference baseline `phase_guardrails_yyyy-ww--yyyy-ww.json`
   filename + version.
 
 ## 8) Precedence

@@ -31,7 +31,7 @@ This chapter defines how to produce **schema‑valid MACRO_MESO_FEED_FORWARD JSO
 
 #### 3) `data.source_context`
 Required:
-- `macro_overview_ref` (string)
+- `season_plan_ref` (string)
 - `des_analysis_report_ref` (string)
 - `affected_block_id` (string)
 
@@ -92,7 +92,7 @@ Required:
   },
   "data": {
     "source_context": {
-      "macro_overview_ref": "macro_overview_2026_w04",
+      "season_plan_ref": "season_plan_2026_w04",
       "des_analysis_report_ref": "des_analysis_report_2026-04",
       "affected_block_id": "P01"
     },

@@ -14,7 +14,7 @@ from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError,
 from rps.workspace.schema_utils import is_envelope_schema
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import envelope_week_range
-from rps.workspace.macro_phase_service import resolve_macro_phase_info
+from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.types import ArtifactType
 from rps.workspace.versioning import derive_version_key_from_envelope
@@ -36,28 +36,28 @@ class DependencyRule:
 
 DEFAULT_RULES = [
     DependencyRule(
-        target=ArtifactType.BLOCK_GOVERNANCE,
-        requires_latest=(ArtifactType.MACRO_OVERVIEW,),
+        target=ArtifactType.PHASE_GUARDRAILS,
+        requires_latest=(ArtifactType.SEASON_PLAN,),
     ),
     DependencyRule(
-        target=ArtifactType.BLOCK_EXECUTION_ARCH,
-        requires_latest=(ArtifactType.MACRO_OVERVIEW, ArtifactType.BLOCK_GOVERNANCE),
+        target=ArtifactType.PHASE_STRUCTURE,
+        requires_latest=(ArtifactType.SEASON_PLAN, ArtifactType.PHASE_GUARDRAILS),
     ),
     DependencyRule(
-        target=ArtifactType.BLOCK_EXECUTION_PREVIEW,
-        requires_latest=(ArtifactType.BLOCK_EXECUTION_ARCH,),
+        target=ArtifactType.PHASE_PREVIEW,
+        requires_latest=(ArtifactType.PHASE_STRUCTURE,),
     ),
     DependencyRule(
-        target=ArtifactType.WORKOUTS_PLAN,
-        requires_latest=(ArtifactType.BLOCK_EXECUTION_ARCH,),
+        target=ArtifactType.WEEK_PLAN,
+        requires_latest=(ArtifactType.PHASE_STRUCTURE,),
     ),
     DependencyRule(
         target=ArtifactType.INTERVALS_WORKOUTS,
-        requires_latest=(ArtifactType.WORKOUTS_PLAN,),
+        requires_latest=(ArtifactType.WEEK_PLAN,),
     ),
     DependencyRule(
         target=ArtifactType.DES_ANALYSIS_REPORT,
-        requires_latest=(ArtifactType.ACTIVITIES_TREND, ArtifactType.WORKOUTS_PLAN),
+        requires_latest=(ArtifactType.ACTIVITIES_TREND, ArtifactType.WEEK_PLAN),
     ),
 ]
 
@@ -141,70 +141,70 @@ class GuardedValidatedStore:
             "recovery_notes": notes,
         }
 
-    def _load_block_governance_for_range(
+    def _load_phase_guardrails_for_range(
         self,
         expected_range: Any,
     ) -> tuple[dict[str, Any], str]:
-        """Load the block governance matching the expected range."""
+        """Load the phase guardrails matching the expected range."""
         range_spec = envelope_week_range({"meta": {"iso_week_range": expected_range}})
         if range_spec:
             query = IndexExactQuery(root=self.store.root, athlete_id=self.athlete_id)
             version_key = query.best_exact_range_version(
-                ArtifactType.BLOCK_GOVERNANCE.value,
+                ArtifactType.PHASE_GUARDRAILS.value,
                 range_spec,
             )
             if version_key:
                 return self.store.load_version(
                     self.athlete_id,
-                    ArtifactType.BLOCK_GOVERNANCE,
+                    ArtifactType.PHASE_GUARDRAILS,
                     version_key,
                 ), version_key
 
-        latest = self.store.load_latest(self.athlete_id, ArtifactType.BLOCK_GOVERNANCE)
+        latest = self.store.load_latest(self.athlete_id, ArtifactType.PHASE_GUARDRAILS)
         latest_key = latest.get("meta", {}).get("version_key", "latest")
         if range_spec:
             latest_range = envelope_week_range(latest)
             if latest_range and latest_range.key != range_spec.key:
                 raise MissingDependenciesError(
-                    f"Latest BLOCK_GOVERNANCE does not match range {range_spec.key}"
+                    f"Latest PHASE_GUARDRAILS does not match range {range_spec.key}"
                 )
         return latest, str(latest_key)
 
-    def _load_block_execution_arch_for_range(
+    def _load_phase_structure_for_range(
         self,
         expected_range: Any,
     ) -> tuple[dict[str, Any], str]:
-        """Load the block execution architecture matching the expected range."""
+        """Load the phase structure matching the expected range."""
         range_spec = envelope_week_range({"meta": {"iso_week_range": expected_range}})
         if range_spec:
             query = IndexExactQuery(root=self.store.root, athlete_id=self.athlete_id)
             version_key = query.best_exact_range_version(
-                ArtifactType.BLOCK_EXECUTION_ARCH.value,
+                ArtifactType.PHASE_STRUCTURE.value,
                 range_spec,
             )
             if version_key:
                 return self.store.load_version(
                     self.athlete_id,
-                    ArtifactType.BLOCK_EXECUTION_ARCH,
+                    ArtifactType.PHASE_STRUCTURE,
                     version_key,
                 ), version_key
 
-        latest = self.store.load_latest(self.athlete_id, ArtifactType.BLOCK_EXECUTION_ARCH)
+        latest = self.store.load_latest(self.athlete_id, ArtifactType.PHASE_STRUCTURE)
         latest_key = latest.get("meta", {}).get("version_key", "latest")
         if range_spec:
             latest_range = envelope_week_range(latest)
             if latest_range and latest_range.key != range_spec.key:
                 raise MissingDependenciesError(
-                    f"Latest BLOCK_EXECUTION_ARCH does not match range {range_spec.key}"
+                    f"Latest PHASE_STRUCTURE does not match range {range_spec.key}"
                 )
         return latest, str(latest_key)
 
-    def _enforce_block_governance_constraints(
+    def _enforce_phase_guardrails_constraints(
         self,
         document: dict[str, Any],
         macro_doc: dict[str, Any],
     ) -> None:
-        """Ensure macro constraints are propagated into block governance."""
+        """Ensure macro constraints are propagated into phase guardrails."""
         constraints = self._macro_constraints(macro_doc)
         data = document.get("data", {})
         blob = self._normalize_payload(data)
@@ -219,7 +219,7 @@ class GuardedValidatedStore:
             for item in items:
                 normalized = self._normalize_text(item)
                 if normalized and normalized not in blob:
-                    errors.append(f"Macro {label} missing in block_governance: {item}")
+                    errors.append(f"Macro {label} missing in phase_guardrails: {item}")
 
         if constraints["fixed_days"]:
             day_aliases = {
@@ -235,12 +235,12 @@ class GuardedValidatedStore:
             for day in constraints["fixed_days"]:
                 aliases = day_aliases.get(day, [day.lower()])
                 if not any(alias in words for alias in aliases):
-                    errors.append(f"Fixed rest day missing in block_governance: {day}")
+                    errors.append(f"Fixed rest day missing in phase_guardrails: {day}")
 
         if errors:
             raise SchemaValidationError("Macro constraint propagation failed", errors)
 
-    def _enforce_block_execution_arch_constraints(
+    def _enforce_phase_structure_constraints(
         self,
         document: dict[str, Any],
         macro_doc: dict[str, Any],
@@ -278,21 +278,21 @@ class GuardedValidatedStore:
         load_ranges = data.get("load_ranges", {})
         expected_range = document.get("meta", {}).get("iso_week_range")
         try:
-            block_governance, bg_version_key = self._load_block_governance_for_range(expected_range)
+            phase_guardrails, bg_version_key = self._load_phase_guardrails_for_range(expected_range)
         except MissingDependenciesError as exc:
             raise SchemaValidationError("Macro constraint propagation failed", [str(exc)]) from exc
 
-        bg_guardrails = block_governance.get("data", {}).get("load_guardrails", {})
+        bg_guardrails = phase_guardrails.get("data", {}).get("load_guardrails", {})
         for label in ("weekly_kj_bands",):
             expected = bg_guardrails.get(label) or []
             actual = load_ranges.get(label) or []
             expected_map = {entry.get("week"): entry.get("band") for entry in expected}
             actual_map = {entry.get("week"): entry.get("band") for entry in actual}
             if expected_map != actual_map:
-                errors.append(f"load_ranges.{label} must match block_governance.{label}.")
+                errors.append(f"load_ranges.{label} must match phase_guardrails.{label}.")
 
         expected_source = (
-            f"{ARTIFACT_PATHS[ArtifactType.BLOCK_GOVERNANCE].filename_prefix}_{bg_version_key}.json"
+            f"{ARTIFACT_PATHS[ArtifactType.PHASE_GUARDRAILS].filename_prefix}_{bg_version_key}.json"
         )
         source = load_ranges.get("source")
         if source != expected_source:
@@ -301,19 +301,19 @@ class GuardedValidatedStore:
         if errors:
             raise SchemaValidationError("Macro constraint propagation failed", errors)
 
-    def _enforce_block_execution_preview_traceability(
+    def _enforce_phase_preview_traceability(
         self,
         document: dict[str, Any],
     ) -> None:
         """Ensure execution preview references execution architecture."""
         expected_range = document.get("meta", {}).get("iso_week_range")
         try:
-            _, arch_version_key = self._load_block_execution_arch_for_range(expected_range)
+            _, arch_version_key = self._load_phase_structure_for_range(expected_range)
         except MissingDependenciesError as exc:
             raise SchemaValidationError("Preview traceability failed", [str(exc)]) from exc
 
         expected_arch = (
-            f"{ARTIFACT_PATHS[ArtifactType.BLOCK_EXECUTION_ARCH].filename_prefix}_"
+            f"{ARTIFACT_PATHS[ArtifactType.PHASE_STRUCTURE].filename_prefix}_"
             f"{arch_version_key}.json"
         )
         derived_from = (
@@ -336,7 +336,7 @@ class GuardedValidatedStore:
         range_spec = envelope_week_range(document)
         if not range_spec:
             return
-        phase_info = resolve_macro_phase_info(macro_doc, range_spec.start)
+        phase_info = resolve_season_plan_phase_info(macro_doc, range_spec.start)
         if not phase_info:
             raise SchemaValidationError(
                 "Macro phase mismatch",
@@ -344,7 +344,7 @@ class GuardedValidatedStore:
             )
         if phase_info.phase_range.key != range_spec.key:
             self.logger.warning(
-                "Normalized block iso_week_range from %s to macro phase %s (%s).",
+                "Normalized block iso_week_range from %s to season plan phase %s (%s).",
                 range_spec.key,
                 phase_info.phase_range.key,
                 phase_info.phase_id or phase_info.phase_name or "unknown",
@@ -501,22 +501,22 @@ class GuardedValidatedStore:
 
             macro_doc: dict[str, Any] | None = None
             if target in (
-                ArtifactType.BLOCK_GOVERNANCE,
-                ArtifactType.BLOCK_EXECUTION_ARCH,
-                ArtifactType.BLOCK_EXECUTION_PREVIEW,
+                ArtifactType.PHASE_GUARDRAILS,
+                ArtifactType.PHASE_STRUCTURE,
+                ArtifactType.PHASE_PREVIEW,
                 ArtifactType.BLOCK_FEED_FORWARD,
             ):
-                macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.MACRO_OVERVIEW)
+                macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
                 self._ensure_block_range_matches_macro(document, macro_doc)
-            if target in (ArtifactType.BLOCK_GOVERNANCE, ArtifactType.BLOCK_EXECUTION_ARCH):
+            if target in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE):
                 if macro_doc is None:
-                    macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.MACRO_OVERVIEW)
-                if target == ArtifactType.BLOCK_GOVERNANCE:
-                    self._enforce_block_governance_constraints(document, macro_doc)
+                    macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+                if target == ArtifactType.PHASE_GUARDRAILS:
+                    self._enforce_phase_guardrails_constraints(document, macro_doc)
                 else:
-                    self._enforce_block_execution_arch_constraints(document, macro_doc)
-            elif target == ArtifactType.BLOCK_EXECUTION_PREVIEW:
-                self._enforce_block_execution_preview_traceability(document)
+                    self._enforce_phase_structure_constraints(document, macro_doc)
+            elif target == ArtifactType.PHASE_PREVIEW:
+                self._enforce_phase_preview_traceability(document)
 
             path = self.store.save_document(
                 athlete_id=self.athlete_id,

@@ -75,4 +75,4 @@ Each scenario MUST include `scenario_guidance` with:
 
 ## Authority Notes
 `SEASON_SCENARIOS` is **informational**; Macro-Planner must treat it as advisory
-input only. Binding decisions are made in `MACRO_OVERVIEW`.
+input only. Binding decisions are made in `SEASON_PLAN`.

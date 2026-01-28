@@ -65,9 +65,9 @@ Templates are available under:
 | Directory | Owner | Typical artefacts |
 | --- | --- | --- |
 | `inputs/` | User / operator | `season_brief_*.md`, `events.md`, `kpi_profile_*.json` |
-| `data/plans/macro/` | Season-Scenario-Agent, Macro-Planner | `season_scenarios_*`, `season_scenario_selection_*`, `macro_overview_*`, `macro_meso_feed_forward_*` |
-| `data/plans/meso/` | Meso-Architect (plus Data-Pipeline for `zone_model_*`) | `block_governance_*`, `block_execution_arch_*`, `block_execution_preview_*`, `block_feed_forward_*`, `zone_model_*` |
-| `data/plans/micro/` | Micro-Planner | `workouts_plan_*` |
+| `data/plans/macro/` | Season-Scenario-Agent, Macro-Planner | `season_scenarios_*`, `season_scenario_selection_*`, `season_plan_*`, `macro_meso_feed_forward_*` |
+| `data/plans/meso/` | Meso-Architect (plus Data-Pipeline for `zone_model_*`) | `phase_guardrails_*`, `phase_structure_*`, `phase_preview_*`, `block_feed_forward_*`, `zone_model_*` |
+| `data/plans/micro/` | Micro-Planner | `week_plan_*` |
 | `data/analysis/` | Performance-Analyst | `des_analysis_report_*` |
 | `data/exports/` | Workout-Builder | `intervals_workouts_*` |
 | `data/YYYY/WW/` | Data Pipeline | `activities_actual_*`, `activities_trend_*`, `availability_*`, `wellness_*` (+ CSV mirrors) |

@@ -93,14 +93,14 @@ ws.ensure()
 week_key = ws.current_week_key(date.today())
 block = ws.current_block(week_key, block_length_weeks=4)
 ws.put(
-    ArtifactType.WORKOUTS_PLAN,
+    ArtifactType.WEEK_PLAN,
     version_key=week_key,
     payload={"week": week_key, "sessions": []},
     producer_agent="micro_planner",
     run_id="run_2026-06_micro_001",
 )
 
-print(ws.list_versions(ArtifactType.WORKOUTS_PLAN))
+print(ws.list_versions(ArtifactType.WEEK_PLAN))
 print(block.range_key)
 print(block.start_week, block.end_week)
 ```
@@ -112,7 +112,7 @@ from rps.workspace.helpers import upstream_ref
 ws = Workspace.for_athlete("ath_001")
 
 ws.guard_put(
-    ArtifactType.WORKOUTS_PLAN,
+    ArtifactType.WEEK_PLAN,
     version_key="2026-06",
     payload={"week": "2026-06", "sessions": []},
     producer_agent="micro_planner",
@@ -120,8 +120,8 @@ ws.guard_put(
     authority=Authority.STRUCTURAL,
     trace_upstream=[
         upstream_ref(
-            ArtifactType.BLOCK_EXECUTION_ARCH.value,
-            ws.latest_version_key(ArtifactType.BLOCK_EXECUTION_ARCH),
+            ArtifactType.PHASE_STRUCTURE.value,
+            ws.latest_version_key(ArtifactType.PHASE_STRUCTURE),
         )
     ],
 )
@@ -141,11 +141,11 @@ from rps.workspace import ArtifactType, Authority, Workspace
 
 ws = Workspace.for_athlete("ath_001")
 ws.put_validated(
-    ArtifactType.BLOCK_EXECUTION_ARCH,
+    ArtifactType.PHASE_STRUCTURE,
     version_key="2026-06--2026-09",
     payload={"example": True},
     payload_meta={
-        "schema_id": "BlockExecutionArchInterface",
+        "schema_id": "PhaseStructureInterface",
         "schema_version": "1.0",
         "version": "1.0",
         "authority": "Binding",
@@ -193,7 +193,7 @@ Use `--no-file-search` to disable forced vector store retrieval.
 
 ## Macro Mode A (two-step)
 
-Generate scenarios first, then pick A/B/C for the macro overview:
+Generate scenarios first, then pick A/B/C for the season plan:
 
 ```bash
 python3 scripts/macro_mode_a.py scenarios \
@@ -206,7 +206,7 @@ python3 scripts/macro_mode_a.py scenarios \
 python3 scripts/macro_mode_a.py overview \
   --year 2026 \
   --week 6 \
-  --run-id macro_overview_2026_w06 \
+  --run-id season_plan_2026_w06 \
   --scenario A \
   --scenario-run-id macro_scenarios_2026_w06
 ```

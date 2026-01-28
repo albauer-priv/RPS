@@ -41,7 +41,7 @@ This spec is **binding** for all planning agents.
 ## Schema Reference (Normative)
 
 Field locations and structural definitions are defined in the relevant JSON
-schemas (e.g., `workouts_plan.schema.json`, `block_governance.schema.json`).
+schemas (e.g., `week_plan.schema.json`, `phase_guardrails.schema.json`).
 This spec defines calculations and decision rules only. If there is any
 structure mismatch, the schema prevails.
 
@@ -163,7 +163,7 @@ schema‑compliant trace field. Do not invent new fields.
 No overrides exist unless an explicit override artefact is introduced.
 
 ### G12) Micro‑Planner responsibilities (binding constraints)
-- Produce 7‑day `WORKOUTS_PLAN` such that:
+- Produce 7‑day `WEEK_PLAN` such that:
   - `sum(planned_Load_kJ_day)` is within `weekly_kj_bands[w]`.
   - Allowed domains are respected.
   - No new rules are invented; only allocate duration/intensity within constraints.
@@ -203,7 +203,7 @@ for each macro phase.
 4) Activities Trend (weekly aggregates)
 5) Availability (weekly hours, rest days, travel risk)
 6) Wellness (body mass) **or** Season Brief body mass
-7) Macro Overview schema
+7) Season Plan schema
 
 If any required input is missing, STOP and request it (except body mass, see M2).
 

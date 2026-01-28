@@ -325,7 +325,7 @@ At macro level, the following characteristics define compliance with this archet
 - **Volume expansion is conditional:** athletes already adapted to higher volume may add additional low-intensity volume, but only when it does not violate KPI guardrails (fatigue stability, recovery protection, fueling stability).
 - **Durability is explicit:** long-duration exposure and late-ride quality are progressively emphasized as the plan moves from VO2 emphasis toward economy/durability.
 
-#### 3.4.3 How this maps into Macro Overview artefacts
+#### 3.4.3 How this maps into Season Plan artefacts
 
 When this archetype is used, it must be expressed via macro artefacts only:
 

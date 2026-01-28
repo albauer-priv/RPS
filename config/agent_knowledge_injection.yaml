@@ -28,17 +28,17 @@ agents:
     - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
-      macro_overview:
-        bundle_id: macro_macro_overview
+      season_plan:
+        bundle_id: macro_season_plan
       feed_forward:
         bundle_id: macro_feed_forward
       scenario:
         bundle_id: macro_scenario
     bundles:
-    - id: macro_macro_overview
+    - id: macro_season_plan
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_macro_overview.md
-      - path: knowledge/_shared/sources/schemas/bundled/macro_overview.schema.json
+      - path: knowledge/_shared/sources/specs/mandatory_output_season_plan.md
+      - path: knowledge/_shared/sources/schemas/bundled/season_plan.schema.json
     - id: macro_feed_forward
       inject:
       - path: knowledge/_shared/sources/specs/load_estimation_spec.md
@@ -87,10 +87,10 @@ agents:
     - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
     - path: knowledge/_shared/sources/specs/traceability_spec.md
     - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/schemas/bundled/macro_overview.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_execution_preview.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/season_plan.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
     modes:
       coach:
         bundle_id: coach_coach
@@ -121,34 +121,34 @@ agents:
     - path: knowledge/_shared/sources/specs/events_interface_spec.md
     - path: knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_execution_preview.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/block_feed_forward.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
-      block_governance:
-        bundle_id: meso_block_governance
-      block_execution_arch:
-        bundle_id: meso_block_execution_arch
-      block_execution_preview:
-        bundle_id: meso_block_execution_preview
+      phase_guardrails:
+        bundle_id: meso_phase_guardrails
+      phase_structure:
+        bundle_id: meso_phase_structure
+      phase_preview:
+        bundle_id: meso_phase_preview
       block_feed_forward:
         bundle_id: meso_block_feed_forward
     bundles:
-    - id: meso_block_governance
+    - id: meso_phase_guardrails
       inject:
-      - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
-      - path: knowledge/_shared/sources/specs/mandatory_output_block_governance.md
-    - id: meso_block_execution_arch
+      - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+      - path: knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md
+    - id: meso_phase_structure
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_arch.md
-      - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
-    - id: meso_block_execution_preview
+      - path: knowledge/_shared/sources/specs/mandatory_output_phase_structure.md
+      - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
+    - id: meso_phase_preview
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_block_execution_preview.md
-      - path: knowledge/_shared/sources/schemas/bundled/block_execution_preview.schema.json
+      - path: knowledge/_shared/sources/specs/mandatory_output_phase_preview.md
+      - path: knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
     - id: meso_block_feed_forward
       inject:
       - path: knowledge/_shared/sources/specs/mandatory_output_block_feed_forward.md
@@ -170,15 +170,15 @@ agents:
     - path: knowledge/_shared/sources/specs/traceability_spec.md
     - path: knowledge/_shared/sources/contracts/meso__micro_contract.md
     - path: knowledge/_shared/sources/contracts/micro__builder_contract.md
-    - path: knowledge/_shared/sources/specs/mandatory_output_workouts_plan.md
-    - path: knowledge/_shared/sources/schemas/bundled/workouts_plan.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_governance.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/block_execution_arch.schema.json
+    - path: knowledge/_shared/sources/specs/mandatory_output_week_plan.md
+    - path: knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/block_feed_forward.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
-      workouts_plan:
+      week_plan:
         inject:
   workout_builder:
     inject:
@@ -190,7 +190,7 @@ agents:
     - path: knowledge/_shared/sources/specs/traceability_spec.md
     - path: knowledge/_shared/sources/contracts/micro__builder_contract.md
     - path: knowledge/_shared/sources/specs/mandatory_output_intervals_workouts.md
-    - path: knowledge/_shared/sources/schemas/bundled/workouts_plan.schema.json
+    - path: knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/workouts.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json

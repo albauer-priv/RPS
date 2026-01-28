@@ -20,7 +20,7 @@ from rps.workspace.iso_helpers import (
     previous_iso_week,
     range_contains,
 )
-from rps.workspace.macro_phase_service import resolve_macro_phase_info
+from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.api import Workspace
 from rps.workspace.local_store import LocalArtifactStore
 from rps.core.logging import log_and_print
@@ -109,11 +109,11 @@ def _load_agent_injection_config() -> dict:
 def _mode_for_task(task: AgentTask) -> str | None:
     """Return an injection mode label for a given task."""
     mapping = {
-        AgentTask.CREATE_BLOCK_GOVERNANCE: "block_governance",
-        AgentTask.CREATE_BLOCK_EXECUTION_ARCH: "block_execution_arch",
-        AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW: "block_execution_preview",
+        AgentTask.CREATE_PHASE_GUARDRAILS: "phase_guardrails",
+        AgentTask.CREATE_PHASE_STRUCTURE: "phase_structure",
+        AgentTask.CREATE_PHASE_PREVIEW: "phase_preview",
         AgentTask.CREATE_BLOCK_FEED_FORWARD: "block_feed_forward",
-        AgentTask.CREATE_WORKOUTS_PLAN: "workouts_plan",
+        AgentTask.CREATE_WEEK_PLAN: "week_plan",
         AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: "intervals_workouts",
         AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
     }
@@ -228,24 +228,24 @@ def plan_week(
             reasoning_summary=reasoning_summary_resolver(agent_name) if reasoning_summary_resolver else runtime.reasoning_summary,
         )
 
-    if not workspace.latest_exists(ArtifactType.MACRO_OVERVIEW):
-        message = "Macro Overview NOT FOUND. Run macro planning first."
+    if not workspace.latest_exists(ArtifactType.SEASON_PLAN):
+        message = "Season Plan NOT FOUND. Run macro planning first."
         _log(message, logging.ERROR)
         steps.append(
             {
                 "agent": "macro_planner",
                 "tasks": [],
-                "result": {"ok": False, "error": "MACRO_OVERVIEW not found"},
+                "result": {"ok": False, "error": "SEASON_PLAN not found"},
             }
         )
         return PlanWeekResult(ok=False, steps=steps)
 
-    macro = workspace.get_latest(ArtifactType.MACRO_OVERVIEW)
+    macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
     macro_range = envelope_week_range(macro)
     if not macro_range or not range_contains(macro_range, target):
         range_label = macro_range.range_key if macro_range else "missing"
         message = (
-            "Macro Overview NOT FOUND for target week "
+            "Season Plan NOT FOUND for target week "
             f"{target_label} (macro iso_week_range={range_label})."
         )
         _log(message, logging.ERROR)
@@ -255,16 +255,16 @@ def plan_week(
                 "tasks": [],
                 "result": {
                     "ok": False,
-                    "error": "MACRO_OVERVIEW does not cover target week",
+                    "error": "SEASON_PLAN does not cover target week",
                     "macro_range": range_label,
                 },
             }
         )
         return PlanWeekResult(ok=False, steps=steps)
 
-    phase_info = resolve_macro_phase_info(macro, target)
+    phase_info = resolve_season_plan_phase_info(macro, target)
     if not phase_info:
-        message = f"Matching Phase NOT FOUND in Macro Overview for {target_label}."
+        message = f"Matching Phase NOT FOUND in Season Plan for {target_label}."
         _log(message, logging.ERROR)
         steps.append(
             {
@@ -279,7 +279,7 @@ def plan_week(
     phase_name = phase_raw.get("name") or phase_info.phase_name or phase_info.phase_id
     phase_type = phase_raw.get("cycle") or phase_info.phase_type
     message = (
-        "Matching Phase found in Macro Overview: "
+        "Matching Phase found in Season Plan: "
         f"Phase {phase_info.phase_id} ({phase_name or phase_type or 'unknown'}) "
         f"iso_week_range: {phase_info.phase_range.range_key}"
     )
@@ -324,12 +324,12 @@ def plan_week(
         chosen = candidates[-1][1]
         return chosen["record"], chosen["path"], _mtime(chosen["path"])
 
-    macro_path = store.latest_path(athlete_id, ArtifactType.MACRO_OVERVIEW)
+    macro_path = store.latest_path(athlete_id, ArtifactType.SEASON_PLAN)
     macro_mtime = _mtime(macro_path)
 
-    block_gov_record, block_gov_path, block_gov_mtime = _latest_range_record(ArtifactType.BLOCK_GOVERNANCE)
-    block_arch_record, block_arch_path, block_arch_mtime = _latest_range_record(ArtifactType.BLOCK_EXECUTION_ARCH)
-    block_preview_record, block_preview_path, block_preview_mtime = _latest_range_record(ArtifactType.BLOCK_EXECUTION_PREVIEW)
+    block_gov_record, block_gov_path, block_gov_mtime = _latest_range_record(ArtifactType.PHASE_GUARDRAILS)
+    block_arch_record, block_arch_path, block_arch_mtime = _latest_range_record(ArtifactType.PHASE_STRUCTURE)
+    block_preview_record, block_preview_path, block_preview_mtime = _latest_range_record(ArtifactType.PHASE_PREVIEW)
 
     needs_block_gov = block_gov_path is None
     if macro_mtime and block_gov_mtime and macro_mtime > block_gov_mtime:
@@ -353,28 +353,28 @@ def plan_week(
 
     meso_tasks: list[AgentTask] = []
     if not needs_block_gov:
-        message = f"Found BLOCK_GOVERNANCE for block range {block_range_label}."
+        message = f"Found PHASE_GUARDRAILS for block range {block_range_label}."
         _log(message)
     else:
-        message = f"BLOCK_GOVERNANCE missing/stale for block range {block_range_label}. Will create."
+        message = f"PHASE_GUARDRAILS missing/stale for block range {block_range_label}. Will create."
         _log(message)
-        meso_tasks.append(AgentTask.CREATE_BLOCK_GOVERNANCE)
+        meso_tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
 
     if not needs_block_arch:
-        message = f"Found BLOCK_EXECUTION_ARCH for block range {block_range_label}."
+        message = f"Found PHASE_STRUCTURE for block range {block_range_label}."
         _log(message)
     else:
-        message = f"BLOCK_EXECUTION_ARCH missing/stale for block range {block_range_label}. Will create."
+        message = f"PHASE_STRUCTURE missing/stale for block range {block_range_label}. Will create."
         _log(message)
-        meso_tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_ARCH)
+        meso_tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
 
     if not needs_block_preview:
-        message = f"Found BLOCK_EXECUTION_PREVIEW for block range {block_range_label}."
+        message = f"Found PHASE_PREVIEW for block range {block_range_label}."
         _log(message)
     else:
-        message = f"BLOCK_EXECUTION_PREVIEW missing/stale for block range {block_range_label}. Will create."
+        message = f"PHASE_PREVIEW missing/stale for block range {block_range_label}. Will create."
         _log(message)
-        meso_tasks.append(AgentTask.CREATE_BLOCK_EXECUTION_PREVIEW)
+        meso_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
 
     if meso_tasks:
         spec = AGENTS["meso_architect"]
@@ -393,7 +393,7 @@ def plan_week(
                     f"Create meso artefact {task.value} for block range {block_range_label} "
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
                     "Use this block range as the iso_week_range for the artefact. "
-                    "Read macro_overview and use workspace_get_latest to pull required inputs. "
+                    "Read season_plan and use workspace_get_latest to pull required inputs. "
                     f"{injected_block}"
                 ),
                 run_id=f"{run_id}_meso_{task.value.lower()}",
@@ -406,8 +406,8 @@ def plan_week(
             if out.get("ok") and out.get("produced"):
                 _log("Done.")
 
-    if not index_query.has_exact_range(ArtifactType.BLOCK_GOVERNANCE.value, block_range) or not index_query.has_exact_range(
-        ArtifactType.BLOCK_EXECUTION_ARCH.value, block_range
+    if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, block_range) or not index_query.has_exact_range(
+        ArtifactType.PHASE_STRUCTURE.value, block_range
     ):
         message = (
             f"Required block artefacts missing for range {block_range_label}. "
@@ -425,44 +425,44 @@ def plan_week(
 
     micro_tasks: list[AgentTask] = []
     version_key = target_label
-    version_exists = store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key)
-    plan_path = store.versioned_path(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key) if version_exists else None
+    version_exists = store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+    plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, version_key) if version_exists else None
     plan_mtime = _mtime(plan_path)
-    needs_workouts_plan = not version_exists
+    needs_week_plan = not version_exists
     if macro_mtime and plan_mtime and macro_mtime > plan_mtime:
-        needs_workouts_plan = True
+        needs_week_plan = True
     if block_gov_mtime and plan_mtime and block_gov_mtime > plan_mtime:
-        needs_workouts_plan = True
+        needs_week_plan = True
     if block_arch_mtime and plan_mtime and block_arch_mtime > plan_mtime:
-        needs_workouts_plan = True
+        needs_week_plan = True
     if needs_block_gov or needs_block_arch:
-        needs_workouts_plan = True
+        needs_week_plan = True
 
-    if not needs_workouts_plan:
-        message = f"Found WORKOUTS_PLAN for ISO week {target_label}."
+    if not needs_week_plan:
+        message = f"Found WEEK_PLAN for ISO week {target_label}."
         _log(message)
     else:
-        if workspace.latest_exists(ArtifactType.WORKOUTS_PLAN):
-            plan = workspace.get_latest(ArtifactType.WORKOUTS_PLAN)
+        if workspace.latest_exists(ArtifactType.WEEK_PLAN):
+            plan = workspace.get_latest(ArtifactType.WEEK_PLAN)
             week = envelope_week(plan)
             if week and (week.year == target.year and week.week == target.week):
                 message = (
-                    f"WORKOUTS_PLAN matches ISO week {target_label} but is stale. Will create."
+                    f"WEEK_PLAN matches ISO week {target_label} but is stale. Will create."
                 )
                 _log(message)
             else:
-                message = f"WORKOUTS_PLAN does not match ISO week {target_label}. Will create."
+                message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
                 _log(message)
         else:
-            message = f"WORKOUTS_PLAN NOT FOUND. Will create for ISO week {target_label}."
+            message = f"WEEK_PLAN NOT FOUND. Will create for ISO week {target_label}."
             _log(message)
-        micro_tasks.append(AgentTask.CREATE_WORKOUTS_PLAN)
+        micro_tasks.append(AgentTask.CREATE_WEEK_PLAN)
 
     if micro_tasks:
         spec = AGENTS["micro_planner"]
         message = f"Running Micro-Planner for ISO week {target_label}."
         _log(message)
-        mode = _mode_for_task(AgentTask.CREATE_WORKOUTS_PLAN)
+        mode = _mode_for_task(AgentTask.CREATE_WEEK_PLAN)
         injected_block = _build_injection_block("micro_planner", mode=mode)
         out = run_agent_multi_output(
             runtime_for(spec.name),
@@ -471,9 +471,9 @@ def plan_week(
             athlete_id=athlete_id,
             tasks=micro_tasks,
             user_input=(
-                f"Create workouts_plan for ISO week {target_label} only (Mon–Sun of that week). "
+                f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the block range spans multiple weeks. "
-                "Read block_governance and block_execution_arch from workspace. "
+                "Read phase_guardrails and phase_structure from workspace. "
                 f"{injected_block}"
             ),
             run_id=f"{run_id}_micro",
@@ -487,7 +487,7 @@ def plan_week(
             _log("Done.")
 
     builder_tasks: list[AgentTask] = []
-    if store.exists(athlete_id, ArtifactType.WORKOUTS_PLAN, version_key):
+    if store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key):
         intervals_version = "raw"
         intervals_path = (
             store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)
@@ -498,7 +498,7 @@ def plan_week(
         needs_intervals = intervals_path is None
         if plan_mtime and intervals_mtime and plan_mtime > intervals_mtime:
             needs_intervals = True
-        if needs_workouts_plan:
+        if needs_week_plan:
             needs_intervals = True
         if not needs_intervals:
             message = f"Found INTERVALS_WORKOUTS for ISO week {target_label}."
@@ -517,8 +517,8 @@ def plan_week(
                 athlete_id=athlete_id,
                 tasks=builder_tasks,
                 user_input=(
-                    f"Convert workouts_plan into Intervals.icu workouts JSON for ISO week {target_label}. "
-                    "Read workouts_plan from workspace. "
+                    f"Convert week_plan into Intervals.icu workouts JSON for ISO week {target_label}. "
+                    "Read week_plan from workspace. "
                     f"{injected_block}"
                 ),
                 run_id=f"{run_id}_builder",
@@ -531,7 +531,7 @@ def plan_week(
             if out.get("ok") and out.get("produced"):
                 _log("Done.")
     else:
-        message = f"Workout-Builder skipped: WORKOUTS_PLAN {target_label} not found."
+        message = f"Workout-Builder skipped: WEEK_PLAN {target_label} not found."
         _log(message)
 
     analysis_tasks: list[AgentTask] = []
@@ -548,9 +548,9 @@ def plan_week(
             ArtifactType.ACTIVITIES_ACTUAL,
             ArtifactType.ACTIVITIES_TREND,
             ArtifactType.KPI_PROFILE,
-            ArtifactType.MACRO_OVERVIEW,
-            ArtifactType.BLOCK_GOVERNANCE,
-            ArtifactType.BLOCK_EXECUTION_ARCH,
+            ArtifactType.SEASON_PLAN,
+            ArtifactType.PHASE_GUARDRAILS,
+            ArtifactType.PHASE_STRUCTURE,
         ]
         if all(workspace.latest_exists(item) for item in required):
             if workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
@@ -586,7 +586,7 @@ def plan_week(
                 user_input=(
                     f"Create des_analysis_report for ISO week {report_label} "
                     f"(planning week {target_label} minus one). "
-                    "Read activities_actual, activities_trend, KPI profile, macro overview, meso artefacts from workspace. "
+                    "Read activities_actual, activities_trend, KPI profile, season plan, meso artefacts from workspace. "
                     f"{injected_block}"
                 ),
                 run_id=f"{run_id}_analysis",

@@ -62,7 +62,7 @@ COMMAND_SYNONYMS: dict[str, list[str]] = {
     "parse_availability": ["parse availability", "availability"],
     "scenarios": ["scenarios", "create scenarios", "season scenarios"],
     "select_scenario": ["select scenario", "choose scenario", "scenario selection"],
-    "macro_overview": ["macro overview", "create macro", "overview"],
+    "season_plan": ["season plan", "create season plan", "season roadmap"],
     "plan_week": ["plan week", "plan-week", "plan"],
     "show": ["show"],
     "coach": ["coach"],
@@ -71,26 +71,46 @@ COMMAND_SYNONYMS: dict[str, list[str]] = {
 
 # Artefact aliases: canonical artifact key -> list of alias names
 ARTIFACT_ALIASES: dict[str, list[str]] = {
-    "macro_overview": ["macro_overview", "macro overview", "macro", "overview", "atp"],
-    "block_governance": ["block_governance", "block governance", "governance"],
-    "block_execution_arch": [
-        "block_execution_arch",
-        "block execution arch",
-        "block execution architecture",
-        "block_execution_architecture",
-        "execution arch",
-        "arch",
-        "architecture",
-        "bea",
+    "season_plan": [
+        "season_plan",
+        "season plan",
+        "season roadmap",
+        "season overview",
+        "annual training plan",
+        "season timeline",
     ],
-    "block_execution_preview": [
-        "block_execution_preview",
-        "block execution preview",
-        "execution preview",
-        "preview",
-        "week preview",
+    "phase_guardrails": [
+        "phase_guardrails",
+        "phase guardrails",
+        "phase rules",
+        "phase constraints",
+        "phase boundaries",
+        "phase safety rails",
     ],
-    "workouts_plan": ["workouts_plan", "workouts plan", "micro plan", "week plan"],
+    "phase_structure": [
+        "phase_structure",
+        "phase structure",
+        "phase blueprint",
+        "phase framework",
+        "phase weekly pattern",
+        "phase build template",
+    ],
+    "phase_preview": [
+        "phase_preview",
+        "phase preview",
+        "phase snapshot",
+        "phase example",
+        "typical week preview",
+        "phase walkthrough",
+    ],
+    "week_plan": [
+        "week_plan",
+        "week plan",
+        "weekly schedule",
+        "training week agenda",
+        "weekly workout plan",
+        "week calendar",
+    ],
     "intervals_workouts": ["intervals_workouts", "intervals workouts", "intervals export"],
     "des_analysis_report": [
         "des_analysis_report",
@@ -108,11 +128,11 @@ ARTIFACT_ALIASES: dict[str, list[str]] = {
 }
 
 ARTIFACT_TYPE_BY_KEY: dict[str, ArtifactType] = {
-    "macro_overview": ArtifactType.MACRO_OVERVIEW,
-    "block_governance": ArtifactType.BLOCK_GOVERNANCE,
-    "block_execution_arch": ArtifactType.BLOCK_EXECUTION_ARCH,
-    "block_execution_preview": ArtifactType.BLOCK_EXECUTION_PREVIEW,
-    "workouts_plan": ArtifactType.WORKOUTS_PLAN,
+    "season_plan": ArtifactType.SEASON_PLAN,
+    "phase_guardrails": ArtifactType.PHASE_GUARDRAILS,
+    "phase_structure": ArtifactType.PHASE_STRUCTURE,
+    "phase_preview": ArtifactType.PHASE_PREVIEW,
+    "week_plan": ArtifactType.WEEK_PLAN,
     "intervals_workouts": ArtifactType.INTERVALS_WORKOUTS,
     "des_analysis_report": ArtifactType.DES_ANALYSIS_REPORT,
     "availability": ArtifactType.AVAILABILITY,
@@ -123,18 +143,26 @@ ARTIFACT_TYPE_BY_KEY: dict[str, ArtifactType] = {
     "wellness": ArtifactType.WELLNESS,
 }
 
+ARTIFACT_DISPLAY_NAMES: dict[str, str] = {
+    "season_plan": "Season Plan",
+    "phase_guardrails": "Phase Guardrails",
+    "phase_structure": "Phase Structure",
+    "phase_preview": "Phase Preview",
+    "week_plan": "Week Plan",
+}
+
 RENDERABLE_ARTIFACT_KEYS: set[str] = {
-    "macro_overview",
-    "block_governance",
-    "block_execution_arch",
-    "block_execution_preview",
+    "season_plan",
+    "phase_guardrails",
+    "phase_structure",
+    "phase_preview",
     "block_feed_forward",
     "macro_meso_feed_forward",
     "des_analysis_report",
     "activities_actual",
     "activities_trend",
     "zone_model",
-    "workouts_plan",
+    "week_plan",
     "kpi_profile",
     "availability",
     "wellness",
@@ -144,7 +172,7 @@ STATE_LABELS: dict[str, str] = {
     "init": "Init",
     "core": "Core",
     "coach": "Coach",
-    "macro_overview": "Macro Flow",
+    "season_plan": "Macro Flow",
     "exit": "Exit",
 }
 
@@ -154,8 +182,8 @@ SUBSTATE_LABELS: dict[str, str] = {
     "parse_availability": "Fetch Availability",
     "create_scenarios": "Create Scenarios",
     "select_scenario": "Select Scenario",
-    "create_macro_overview": "Create Macro Overview",
-    "macro_overview": "Create Macro Overview",
+    "create_season_plan": "Create Season Plan",
+    "season_plan": "Create Season Plan",
     "message": "Coach Message",
     "show": "Show",
 }
@@ -166,12 +194,12 @@ ACTION_LABELS: dict[str, str] = {
     "parse_availability": "Fetch Availability",
     "scenarios": "Create Scenarios",
     "select_scenario": "Select Scenario",
-    "macro_overview": "Create Macro Overview",
+    "season_plan": "Create Season Plan",
     "coach_message": "Coach",
     "coach_start": "Coach Start",
     "coach_stop": "Coach Stop",
     "stopword": "Stop",
-    "macro_overview_done": "Macro Overview Done",
+    "season_plan_done": "Season Plan Done",
     "scenarios_done": "Scenarios Done",
 }
 
@@ -907,7 +935,7 @@ def _action_select_scenario(
     return output or _format_agent_result(result, f"Scenario {scenario.upper()} selected.")
 
 
-def _action_macro_overview(
+def _action_season_plan(
     athlete_id: str,
     year: int,
     week: int,
@@ -917,22 +945,22 @@ def _action_macro_overview(
 ) -> str:
     runtime = _multi_runtime_for("macro_planner")
     spec = AGENTS["macro_planner"]
-    injected_block = _build_injection_block("macro_planner", mode="macro_overview")
+    injected_block = _build_injection_block("macro_planner", mode="season_plan")
     user_input = (
-        f"Scenario {scenario.upper()}. Mode A. Create the MACRO_OVERVIEW. "
+        f"Scenario {scenario.upper()}. Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
         f"{injected_block}"
-        "Follow the Mandatory Output Chapter for MACRO_OVERVIEW."
+        "Follow the Mandatory Output Chapter for SEASON_PLAN."
     )
-    run_id = _make_ui_run_id(f"macro_overview_{year}_{week:02d}")
+    run_id = _make_ui_run_id(f"season_plan_{year}_{week:02d}")
     result, output = _capture_output(
         lambda: run_agent_multi_output(
             runtime,
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
-            tasks=[AgentTask.CREATE_MACRO_OVERVIEW],
+            tasks=[AgentTask.CREATE_SEASON_PLAN],
             user_input=user_input,
             run_id=run_id,
             model_override=SETTINGS.model_for_agent(spec.name),
@@ -1065,7 +1093,7 @@ ACTION_MAP: dict[str, Callable[..., str]] = {
     "parse_availability": _action_parse_availability,
     "scenarios": _action_scenarios,
     "select_scenario": _action_select_scenario,
-    "macro_overview": _action_macro_overview,
+    "season_plan": _action_season_plan,
     "plan_week": _action_plan_week,
 }
 
@@ -1096,9 +1124,10 @@ def _handle_show_command(text: str, athlete_id: str) -> bool:
             "show_content": None,
         }
     )
-    label = key
+    display = ARTIFACT_DISPLAY_NAMES.get(key, key)
+    label = display
     if week is not None and year is not None:
-        label = f"{key} {week:02d} {year:04d}"
+        label = f"{display} {week:02d} {year:04d}"
     sm.transition("core", "show", action="show")
     sm.parameters["show_label"] = label
     _append_message("assistant", f"Showing artifact: {label}")
@@ -1153,9 +1182,9 @@ def handle_input(text: str) -> None:
         _enter_coach_mode("coach_start")
         return
 
-    if trigger in {"scenarios", "macro_overview"}:
+    if trigger in {"scenarios", "season_plan"}:
         _queue_action(
-            state="macro_overview",
+            state="season_plan",
             substate="create_scenarios",
             params={"year": year, "week": week},
             action="scenarios",
@@ -1163,7 +1192,7 @@ def handle_input(text: str) -> None:
         return
 
     if trigger == "select_scenario":
-        sm.transition("macro_overview", "select_scenario", action="select_scenario")
+        sm.transition("season_plan", "select_scenario", action="select_scenario")
         _append_system_log("state", _state_log_line(sm, "select_scenario"))
         _append_message("assistant", "Select a scenario from the picker to continue.")
         return
@@ -1175,7 +1204,7 @@ def handle_input(text: str) -> None:
 
     action = ACTION_MAP.get(trigger or "")
     if not action:
-        _append_message("assistant", "No command matched. Try: coach, macro overview, plan week, or show macro.")
+        _append_message("assistant", "No command matched. Try: coach, season plan, plan week, or show macro.")
         return
 
     params: dict = {}
@@ -1225,9 +1254,9 @@ def _sidebar_controls() -> None:
             action="parse_availability",
         )
     st.sidebar.markdown("---")
-    if st.sidebar.button("Create Macro Overview"):
+    if st.sidebar.button("Create Season Plan"):
         _queue_action(
-            state="macro_overview",
+            state="season_plan",
             substate="create_scenarios",
             params={"year": int(year), "week": int(week)},
             action="scenarios",
@@ -1293,7 +1322,7 @@ def _athlete_phase_card() -> None:
     week = int(rps_state["week"])
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     try:
-        macro = store.load_latest(athlete_id, ArtifactType.MACRO_OVERVIEW)
+        macro = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
     except FileNotFoundError:
         return
     phases = macro.get("data", {}).get("phases", []) if isinstance(macro, dict) else []
@@ -1535,10 +1564,10 @@ def _process_pending_action() -> None:
                 )
                 _append_message("assistant", output)
                 _append_system_log("select_scenario", output)
-                chain_action = "macro_overview"
-                chain_substate = "create_macro_overview"
-            elif pending == "macro_overview":
-                output = _action_macro_overview(
+                chain_action = "season_plan"
+                chain_substate = "create_season_plan"
+            elif pending == "season_plan":
+                output = _action_season_plan(
                     athlete_id,
                     year,
                     week,
@@ -1546,15 +1575,15 @@ def _process_pending_action() -> None:
                     on_log_line=on_log_line,
                 )
                 _append_message("assistant", output)
-                _append_system_log("macro_overview", output)
+                _append_system_log("season_plan", output)
                 sm.state = "core"
                 sm.substate = None
-                _append_system_log("state", _state_log_line(sm, "macro_overview_done"))
+                _append_system_log("state", _state_log_line(sm, "season_plan_done"))
             elif pending == "scenarios":
                 output = _action_scenarios(athlete_id, year, week, on_log_line=on_log_line)
                 _append_message("assistant", output)
                 _append_system_log("scenarios", output)
-                sm.state = "macro_overview"
+                sm.state = "season_plan"
                 sm.substate = "select_scenario"
                 _append_message("assistant", "Scenarios created. Select a scenario to continue.")
                 _append_system_log("state", _state_log_line(sm, "scenarios_done"))
@@ -1645,7 +1674,7 @@ def _process_pending_action() -> None:
         elif sm.substate == pending:
             sm.substate = None
         if chain_action:
-            sm.state = "macro_overview"
+            sm.state = "season_plan"
             sm.substate = chain_substate
             sm.parameters["pending_action"] = chain_action
             _append_system_log("state", _state_log_line(sm, chain_action))
@@ -1655,7 +1684,7 @@ def _process_pending_action() -> None:
 def _macro_flow_panel() -> None:
     rps_state = st.session_state["rps_state"]
     sm: StateMachine = rps_state["state_machine"]
-    if sm.state != "macro_overview" or sm.substate != "select_scenario":
+    if sm.state != "season_plan" or sm.substate != "select_scenario":
         return
     if sm.parameters.get("pending_action"):
         return
@@ -1672,7 +1701,7 @@ def _macro_flow_panel() -> None:
         rps_state["scenario"] = choice
         sm.parameters["scenario_rationale"] = rationale.strip() or None
         _queue_action(
-            state="macro_overview",
+            state="season_plan",
             substate="select_scenario",
             params={"scenario": choice},
             action="select_scenario",
@@ -1746,7 +1775,7 @@ def main() -> None:
         st.stop()
 
     with st.form("chat_input", clear_on_submit=True):
-        text = st.text_input("Command", placeholder="e.g., macro overview, plan week, show macro")
+        text = st.text_input("Command", placeholder="e.g., season plan, plan week, show macro")
         submitted = st.form_submit_button("Send")
     if submitted:
         handle_input(text)

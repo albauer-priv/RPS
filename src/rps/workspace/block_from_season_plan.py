@@ -1,4 +1,4 @@
-"""Resolve meso block ranges from macro phase definitions."""
+"""Resolve meso block ranges from season plan phase definitions."""
 
 from __future__ import annotations
 
@@ -23,11 +23,11 @@ def parse_iso_week_range(obj: Any) -> IsoWeekRange:
 
 
 def resolve_current_phase(
-    macro_overview_envelope: dict[str, Any],
+    season_plan_envelope: dict[str, Any],
     target: IsoWeek,
 ) -> Optional[dict[str, Any]]:
     """Return the phase entry that covers the target week, if any."""
-    phases = macro_overview_envelope.get("data", {}).get("phases", [])
+    phases = season_plan_envelope.get("data", {}).get("phases", [])
     for phase in phases:
         range_obj = phase.get("iso_week_range")
         if not range_obj:
@@ -63,16 +63,16 @@ def resolve_block_from_phase(
     return IsoWeekRange(start=start, end=end)
 
 
-def resolve_current_block_from_macro(
-    macro_overview_envelope: dict[str, Any],
+def resolve_current_block_from_season_plan(
+    season_plan_envelope: dict[str, Any],
     target: IsoWeek,
     block_len: int = 4,
 ) -> IsoWeekRange:
-    """Resolve a phase-aligned block for a target week using macro overview data."""
-    phase = resolve_current_phase(macro_overview_envelope, target)
+    """Resolve a phase-aligned block for a target week using season plan data."""
+    phase = resolve_current_phase(season_plan_envelope, target)
     if not phase:
         raise ValueError(
-            f"No macro phase covers target week {target.year:04d}-{target.week:02d}"
+            f"No season plan phase covers target week {target.year:04d}-{target.week:02d}"
         )
     phase_range = parse_iso_week_range(phase["iso_week_range"])
     return resolve_block_from_phase(phase_range, target, block_len=block_len)

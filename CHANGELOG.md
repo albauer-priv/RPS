@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-28
+
+### Changed
+- Hard-renamed core artefacts to athlete-facing names: Season Plan, Phase Guardrails, Phase Structure, Phase Preview, and Week Plan.
+- Updated schema files, templates, contracts, prompts, UI labels/synonyms, knowledge injection, and docs to the new artefact names.
+- Renamed workspace services/helpers to align with season plan terminology.
+
 ## [0.6.29] - 2026-01-28
 
 ### Changed
@@ -67,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Normalized data_confidence values to uppercase (`HIGH|MEDIUM|LOW|UNKNOWN`).
 - Wellness outputs now include `meta.data_confidence` to satisfy strict validation.
 - Preflight skips Intervals fetches if activities_trend is younger than 2 hours, unless `--force-intervals` is set.
-- Agent knowledge injection now supports per-mode blocks; plan-week selects mode by task (e.g., block_governance vs block_execution_arch).
+- Agent knowledge injection now supports per-mode blocks; plan-week selects mode by task (e.g., phase_guardrails vs phase_structure).
 - Meso-Architect knowledge injection now uses per-mode bundle IDs, similar to micro_planner.
 - Macro-Planner and Season-Scenario now use per-mode bundles, and the injection config is de-aliased for readability.
 
@@ -127,7 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Split KPI workout-to-signal mapping into `kpi_signal_effects_policy.md` (informational) and referenced it from WorkoutPolicy.
 - Principles 3.3 now explicitly scope cadence selection to Scenario/Macro (Meso must not apply a default cadence).
 - Scenario/Macro prompts now reiterate cadence ownership (Meso must not apply defaults).
-- Meso-Architect prompt now forbids manual temporal scope derivation, sets `meta.iso_week` to the first week of the provided range, and requires exact-range BLOCK_EXECUTION_ARCH for previews (no latest fallback).
+- Meso-Architect prompt now forbids manual temporal scope derivation, sets `meta.iso_week` to the first week of the provided range, and requires exact-range PHASE_STRUCTURE for previews (no latest fallback).
 - Meso-Architect prompt now hard-stops if any month text conflicts with `meta.temporal_scope` or ISO-week range (no month inference from ISO weeks).
 - Micro-Planner prompt now restricts file_search to knowledge documents, requires exact-range governance lookup (no latest fallback), and blocks month inference from ISO-week labels.
 - Macro-Planner prompt now hard-stops on calendar-month inference from ISO-week labels and month/temporal_scope conflicts.
@@ -154,7 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro-Planner prompt now instructs loading `load_estimation_spec.md` as the first action before any other derivations.
 - macro_mode_a overview now injects the LoadEstimationSpec (Macro section) into the agent prompt to ensure immediate availability.
 - macro_mode_a now injects LoadEstimationSpec from file start through the "## Meso" header (General + Macro sections).
-- Added `mandatory_output_macro_overview.md` and load it for Macro-Planner output guidance; macro_mode_a injects it into the overview prompt.
+- Added `mandatory_output_season_plan.md` and load it for Macro-Planner output guidance; macro_mode_a injects it into the overview prompt.
 - macro_mode_a overview prompt now delegates all output/tool guidance to the mandatory output/spec blocks, keeping the inline prompt minimal.
 - Added `mandatory_output_season_scenarios.md` and load it for Season-Scenario output guidance; macro_mode_a injects it into the scenarios prompt.
 - Macro-Planner agent calls now inject LoadEstimationSpec (General+Macro section) automatically in the runner to avoid missing-file issues.
@@ -169,7 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Store tool failures now return clearer schema error summaries (with top validation errors) and envelope hints.
 - Runner strict path and workspace tools now emit the same concise schema error summaries and envelope hints.
 - Agents now hard-stop with `STOP_TOOL_CALL_REQUIRED` if a required store tool isn’t called (after one forced retry).
-- Added mandatory output guides for all agent-produced artefacts (block governance/arch/preview/feed-forward, workouts plan, intervals export, DES report, macro feed-forward).
+- Added mandatory output guides for all agent-produced artefacts (phase guardrails/arch/preview/feed-forward, week plan, intervals export, DES report, macro feed-forward).
 - Prompt cleanup: removed format-only output rules, normalized example filenames to patterns, and corrected contract filenames (`micro__builder`, `macro__meso`, `meso__micro`, `analyst__macro`).
 - Prompt redundancy cleanup: consolidated repeated required-input/stop text across agents and removed duplicate validation checklists.
 - File search now attaches only **one vector store per agent** (shared store removed); runtime, docs, and smoke test updated accordingly.
@@ -194,13 +201,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plan-week orchestration now validates macro coverage by iso_week_range, logs matching phases, and checks block artefacts by range before running meso/micro steps.
 - plan-week now invokes Meso-Architect once per artefact (one task per run) to respect single-output contracts.
 - Script logging now mirrors start/finish messages to stdout via `log_and_print`.
-- plan-week now prints "Done." after successful artefact creation and skips the builder if the versioned workouts plan is missing.
+- plan-week now prints "Done." after successful artefact creation and skips the builder if the versioned week plan is missing.
 - Meso-Architect guidance and validations now require weekly_kj_bands and week_roles to match the block iso_week_range length (no fixed 4-week assumption).
 - Meso-Architect prompt now explicitly derives block length from the provided iso_week_range or macro phase range.
 - Meso-Architect prompt now enforces verbatim macro constraint propagation and required self_check/preview fields.
-- Meso-Architect now hard-stops if execution-arch self_check fields are missing or load_ranges.source is not the exact block_governance filename.
-- Meso-Architect now sources A/B/C event windows from macro_overview phase constraints (events.md remains logistics only).
-- Micro-Planner now must store WORKOUTS_PLAN via the store tool call (no raw JSON outputs).
+- Meso-Architect now hard-stops if execution-arch self_check fields are missing or load_ranges.source is not the exact phase_guardrails filename.
+- Meso-Architect now sources A/B/C event windows from season_plan phase constraints (events.md remains logistics only).
+- Micro-Planner now must store WEEK_PLAN via the store tool call (no raw JSON outputs).
 - Micro-Planner now validates AVAILABILITY/WELLNESS/ZONE_MODEL coverage using temporal_scope before declaring missing inputs.
 - Wellness artefact now extends temporal_scope (and iso_week_range) to calendar year end so body_mass_kg remains valid for forward planning.
 - LoadEstimationSpec updated to treat `weekly_kj_bands` as `planned_Load_kJ_week`, refine IF derivation, rounding order, fallback IF mapping, clamps, units, and parse edge cases.
@@ -210,7 +217,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent runners now support streaming Responses output with optional reasoning summary and token usage reporting (configurable via `OPENAI_STREAM*` env vars).
 - Reasoning payloads now treat `gpt-5*` models as reasoning-capable.
 - plan-week now runs Performance-Analyst for the previous ISO week (week-1), and skips analysis if that report week is outside the macro planning range.
-- Micro-Planner now explicitly limits WORKOUTS_PLAN output to the requested ISO week even when the block range spans multiple weeks.
+- Micro-Planner now explicitly limits WEEK_PLAN output to the requested ISO week even when the block range spans multiple weeks.
 - Micro-Planner no longer biases weekly kJ placement to the upper-third of the governance corridor.
 - LoadEstimationSpec now defines planned_kJ (mechanical) vs planned_Load_kJ (stress‑weighted) and treats weekly_kj_bands as planned_Load_kJ.
 - Added optional LoadDistributionPolicy for day‑weighting and weekly load distribution (advisory only).
@@ -253,25 +260,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool-call debug logging for agent runners.
 - Responses API reasoning settings via `OPENAI_REASONING_EFFORT` / `OPENAI_REASONING_SUMMARY`.
 - Reasoning summaries (when returned) are logged to CLI and log files.
-- Meso-Architect prompt now specifies workspace_put_validated usage and block governance schema requirements.
-- Added a BLOCK_GOVERNANCE template for Meso-Architect with fill markers.
+- Meso-Architect prompt now specifies workspace_put_validated usage and phase guardrails schema requirements.
+- Added a PHASE_GUARDRAILS template for Meso-Architect with fill markers.
 - `--debug-file-search` now logs file_search results to CLI/logs.
 - `run-task` CLI for strict schema-validated agent outputs (uses read tools + strict store tools).
 - Meso-Architect prompt now enforces exact template structure when a template is found.
 - Debug file_search logging now captures `file_search_call` results in strict runs.
 - `run-task` now supports `--max-results` for file_search.
-- Meso-Architect file_search guidance prioritizes the BLOCK_GOVERNANCE template filter.
+- Meso-Architect file_search guidance prioritizes the PHASE_GUARDRAILS template filter.
 - Meso-Architect prompt now requires strict store tool calls instead of raw JSON when available.
 - `run-agent` now accepts `--task`, `--run-id`, `--max-results`, and strict mode toggles.
 - Macro overview schema now supports structured recovery protection (`fixed_rest_days` + `notes`) and requires it under global constraints.
 - Block execution architecture schema now includes structured weekly load ranges with a required `source` field.
-- Added a BLOCK_EXECUTION_ARCH template for Meso-Architect with fill markers.
-- Added a BLOCK_EXECUTION_PREVIEW template for Meso-Architect with fill markers.
-- Added templates for Macro-Planner (MACRO_OVERVIEW, MACRO_MESO_FEED_FORWARD).
-- Added templates for Micro-Planner (WORKOUTS_PLAN).
+- Added a PHASE_STRUCTURE template for Meso-Architect with fill markers.
+- Added a PHASE_PREVIEW template for Meso-Architect with fill markers.
+- Added templates for Macro-Planner (SEASON_PLAN, MACRO_MESO_FEED_FORWARD).
+- Added templates for Micro-Planner (WEEK_PLAN).
 - Added templates for Workout-Builder (INTERVALS_WORKOUTS).
 - Added templates for Performance-Analyst (DES_ANALYSIS_REPORT).
-- Principles validation checks added to macro overview, block governance, and block execution arch validation docs.
+- Principles validation checks added to season plan, phase guardrails, and phase structure validation docs.
 - Macro overview justification section with structured citations and per-phase rationale.
 - Wellness artefact (`WELLNESS`) + schema/interface spec for daily biometric/self-report data.
 - Data pipeline now writes `wellness_yyyy-ww.json` and latest `wellness.json`.
@@ -292,9 +299,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent runners now recover text from message output items when output_text is empty.
 - Mode A scenarios now inline the season brief to avoid tool-call loops that suppressed scenario output.
 - Strict multi-output runner now falls back to storing validated JSON when the model omits the store tool call.
-- Strict runner now forces tool calls for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `MACRO_OVERVIEW` when missing.
+- Strict runner now forces tool calls for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `SEASON_PLAN` when missing.
 - Runner normalizes season-scenario payloads (required arrays, disallowed keys) before validation.
-- Runner normalizes workouts plan meta fields to schema constants before validation.
+- Runner normalizes week plan meta fields to schema constants before validation.
 - Performance-Analyst prompt no longer stops early when binding sources are not returned by file_search.
 - Default CLI log filenames now include a UTC timestamp to avoid overwriting logs per run.
 - Responses payloads now omit `temperature` for models that do not support it (e.g., gpt-5).
@@ -325,7 +332,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Meso-Architect and Micro-Planner now have access to the macro load corridor policy (informational, non-binding).
 - Availability parser now derives the season year from the Season Brief when `--year` is omitted.
 - Availability parser now correctly parses decimal hour values (e.g., 1.5 h).
-- Multi-output runner now auto-widens degenerate block governance bands (min == max).
+- Multi-output runner now auto-widens degenerate phase guardrails bands (min == max).
 - Meso-Architect no longer uses markdown templates; outputs are schema-driven JSON only.
 - Macro, Season-Scenario, Micro-Planner, Workout-Builder, and Performance-Analyst templates removed in favor of schema-driven JSON.
 - Agent prompts now fully remove template lookup rules; all outputs are schema-driven JSON only.
@@ -334,16 +341,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Meso-Architect prompt now enforces non-zero weekly band widths and upper-third corridor placement.
 - Macro-Planner now writes structured fixed rest days when provided.
 - Meso-Architect now propagates macro-level availability/risk constraints into governance and execution architecture.
-- Meso-Architect now mirrors block governance load ranges into execution architecture.
+- Meso-Architect now mirrors phase guardrails load ranges into execution architecture.
 - Guarded store now rejects Meso outputs that fail macro-constraint propagation checks.
 - Block governance template now embeds macro-constraint mapping placeholders.
 - Agent prompts now include conditional template usage guidance.
 - Guarded store now enforces execution preview traceability to execution architecture.
 - Meso-Architect prompt now requires weekly kJ progression patterns (default 3:1) unless macro specifies steady-state.
 
-- Planning artefacts are now kJ-first only: removed TSS fields from macro overview, block governance/execution, workouts plans, and zone model examples.
+- Planning artefacts are now kJ-first only: removed TSS fields from season plan, phase guardrails/execution, week plans, and zone model examples.
 - Renderer templates now omit TSS columns/sections for non-activities artefacts.
-- Activities trend adherence now computes against planned weekly kJ from workouts plans; TSS remains only in activities_* artefacts.
+- Activities trend adherence now computes against planned weekly kJ from week plans; TSS remains only in activities_* artefacts.
 - Durability-first principles updated to v1.1 with expanded progressive overload guidance, intensity distribution rules, and 3:1 alternatives.
 - Principles paper translated to English and synced for macro/meso knowledge sources.
 - Macro-Planner prompt now requires applying Principles sections 2-6.
@@ -371,7 +378,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `knowledge/_shared/sources/schemas/bundled/`.
 - Vector store smoke test script: `scripts/smoke_vectorstores.py`.
 - Build checklist and recommended model guidance docs.
-- Mode A macro helper script for scenarios + macro overview (`scripts/macro_mode_a.py`).
+- Mode A macro helper script for scenarios + season plan (`scripts/macro_mode_a.py`).
 
 ### Changed
 - Force `file_search` by default in agent runs; add `--no-file-search` to disable.

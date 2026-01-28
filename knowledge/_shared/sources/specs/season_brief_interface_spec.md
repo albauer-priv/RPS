@@ -126,11 +126,11 @@ A SEASON_BRIEF MAY include:
 ## 5) Forbidden Content (Binding)
 A SEASON_BRIEF implementing this interface MUST NOT contain:
 - weekly kJ corridors or progression ramps
-- block governance (BLOCK_GOVERNANCE / BLOCK_FEED_FORWARD semantics)
-- block structures (BLOCK_EXECUTION_ARCH / PREVIEW)
+- phase guardrails (PHASE_GUARDRAILS / BLOCK_FEED_FORWARD semantics)
+- block structures (PHASE_STRUCTURE / PREVIEW)
 - weekly schedules (Mon-Sun planning)
 - workout prescriptions or interval definitions
 - KPI thresholds / GREEN-YELLOW-RED gates
 - recommendations framed as decisions ("therefore do X", "must increase volume")
 
-If such content is required, it MUST live in the appropriate downstream artefact type (MACRO_OVERVIEW, KPI_PROFILE, BLOCK_GOVERNANCE, WORKOUTS_PLAN).
+If such content is required, it MUST live in the appropriate downstream artefact type (SEASON_PLAN, KPI_PROFILE, PHASE_GUARDRAILS, WEEK_PLAN).
