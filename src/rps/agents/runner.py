@@ -222,6 +222,7 @@ def run_agent_session(
     run_id: str | None = None,
     previous_response_id: str | None = None,
     injection_text: str | None = None,
+    stream_handlers: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run an agent and return both the text output and response id.
 
@@ -324,7 +325,7 @@ def run_agent_session(
                 payload.get("include"),
                 len(payload.get("tools") or []),
             )
-        return create_response(runtime.client, payload, logger)
+        return create_response(runtime.client, payload, logger, stream_handlers=stream_handlers)
 
     seen_summaries: set[str] = set()
     response = _create_response(force_search)

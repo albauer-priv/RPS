@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workspace lookup now falls back to input files for Season Brief and Events when no latest artefact exists.
 - Streamlit UI tweaks: collapsible phase card, relocated coach output below input, and history/log layout adjustments.
 - Removed legacy macro_mode_a script and updated planning docs to reflect the new macro flow.
+- Coach output now streams into a chat bubble above the input, while the reasoning box shows summary only.
+- System output/logs panel now expands by default.
 
 ## [0.6.26] - 2026-01-27
 

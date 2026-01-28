@@ -224,6 +224,13 @@ def _set_coach_output(text: str, status: str = "done", summary: str | None = Non
     }
 
 
+def _clear_coach_output() -> None:
+    st.session_state["rps_state"].setdefault("coach_output", {})
+    st.session_state["rps_state"]["coach_output"].update(
+        {"status": "idle", "text": "", "summary": None}
+    )
+
+
 def _ensure_session_state() -> None:
     if "rps_state" not in st.session_state:
         now = datetime.now(timezone.utc).isocalendar()
@@ -447,9 +454,16 @@ def _clean_reasoning_summary(text: str | None) -> str | None:
     if not text:
         return None
     cleaned = text.strip()
-    match = re.search(r"Summary\(text=['\"](.+?)['\"],", cleaned, flags=re.DOTALL)
-    if match:
-        return match.group(1).strip()
+    if cleaned.startswith("Summary("):
+        marker = "Summary(text="
+        if marker in cleaned:
+            start = cleaned.find(marker) + len(marker)
+            end = cleaned.rfind(")")
+            snippet = cleaned[start:end].strip()
+            if snippet and snippet[0] in ("'", '"'):
+                quote = snippet[0]
+                snippet = snippet.strip(quote)
+            return snippet.strip()
     return cleaned
 
 
@@ -1104,6 +1118,7 @@ def handle_input(text: str) -> None:
     if lower in STOP_WORDS:
         if sm.state == "coach":
             coach.update({"previous_response_id": None, "run_id": None})
+            _clear_coach_output()
             sm.transition("core", None, action="coach_stop")
             msg = "Coach session ended. Back in core mode."
             _append_message("assistant", msg)
@@ -1251,7 +1266,7 @@ def _coach_output_panel() -> None:
     status = output.get("status")
     if not summary and status != "thinking":
         return
-    with st.expander("Coach Output", expanded=True):
+    with st.expander("Coach Reasoning", expanded=True):
         if status == "thinking" and not text:
             st.write("Thinking…")
         if summary:
@@ -1415,12 +1430,23 @@ def _process_pending_action() -> None:
         with st.spinner(f"Running: {action_label}"):
             if pending == "coach_message":
                 text = sm.parameters.pop("coach_input", "")
-                stream_buf = io.StringIO()
+                sentinel = object()
+                stream_queue: "queue.Queue[object]" = queue.Queue()
+                output_parts: list[str] = []
+                summary_parts: list[str] = []
+                result_holder: dict[str, object] = {}
                 runtime = _multi_runtime_for("coach")
                 spec = AGENTS["coach"]
                 injection_text = _build_injection_block("coach", mode="coach")
                 run_id = coach.get("run_id") or _make_ui_run_id("coach")
                 coach["run_id"] = run_id
+
+                def _on_output(delta: str) -> None:
+                    output_parts.append(delta)
+                    stream_queue.put(delta)
+
+                def _on_summary(delta: str) -> None:
+                    summary_parts.append(delta)
 
                 def _run(prev_id: str | None):
                     return run_agent_session(
@@ -1438,62 +1464,55 @@ def _process_pending_action() -> None:
                         run_id=run_id,
                         previous_response_id=prev_id,
                         injection_text=injection_text,
+                        stream_handlers={"on_output": _on_output, "on_summary": _on_summary},
                     )
 
                 _set_coach_output("Thinking…", status="thinking")
-                try:
-                    with _TempEnv(
-                        {
-                            "OPENAI_STREAM": "0",
-                            "OPENAI_STREAM_REASONING": "none",
-                            "OPENAI_STREAM_TEXT": "0",
-                            "OPENAI_STREAM_USAGE": "0",
-                        }
-                    ):
-                        with redirect_stdout(stream_buf):
-                            result = _run(coach.get("previous_response_id"))
-                except Exception as exc:
-                    if _is_no_session_context(exc):
-                        coach["previous_response_id"] = None
-                        with _TempEnv(
-                            {
-                                "OPENAI_STREAM": "0",
-                                "OPENAI_STREAM_REASONING": "none",
-                                "OPENAI_STREAM_TEXT": "0",
-                                "OPENAI_STREAM_USAGE": "0",
-                            }
-                        ):
-                            with redirect_stdout(stream_buf):
-                                result = _run(None)
-                    else:
-                        raise
+                def _worker() -> None:
+                    try:
+                        result_holder["result"] = _run(coach.get("previous_response_id"))
+                    except Exception as exc:
+                        if _is_no_session_context(exc):
+                            coach["previous_response_id"] = None
+                            result_holder["result"] = _run(None)
+                        else:
+                            result_holder["error"] = exc
+                    finally:
+                        stream_queue.put(sentinel)
+
+                thread = threading.Thread(target=_worker, daemon=True)
+                thread.start()
+                with st.chat_message("assistant"):
+                    def _stream():
+                        while True:
+                            chunk = stream_queue.get()
+                            if chunk is sentinel:
+                                break
+                            yield str(chunk)
+
+                    st.write_stream(_stream())
+                thread.join()
+
+                if "error" in result_holder:
+                    raise result_holder["error"]
+
+                result = result_holder.get("result")
                 if isinstance(result, dict) and _looks_like_no_session(
                     str(result.get("text") or "")
                 ):
                     coach["previous_response_id"] = None
-                    with _TempEnv(
-                        {
-                            "OPENAI_STREAM": "0",
-                            "OPENAI_STREAM_REASONING": "none",
-                            "OPENAI_STREAM_TEXT": "0",
-                            "OPENAI_STREAM_USAGE": "0",
-                        }
-                    ):
-                        with redirect_stdout(stream_buf):
-                            result = _run(None)
 
-                summary_text = None
-                if isinstance(result, dict) and result.get("response"):
+                summary_text = "".join(summary_parts).strip() or None
+                if not summary_text and isinstance(result, dict) and result.get("response"):
                     summaries = extract_reasoning_summaries(result.get("response"))
                     if summaries:
-                        summary_text = summaries[0]
+                        summary_text = str(summaries[0])
                 if isinstance(result, dict) and result.get("response_id"):
                     coach["previous_response_id"] = result["response_id"]
-                output = ""
-                if isinstance(result, dict):
+
+                output = "".join(output_parts).strip()
+                if not output and isinstance(result, dict):
                     output = str(result.get("text") or "")
-                if not output:
-                    output = stream_buf.getvalue().strip()
                 if not output:
                     output = "Coach did not return text."
                 normalized = _normalize_streamed_text(output)
@@ -1656,7 +1675,7 @@ def _macro_flow_panel() -> None:
 
 def _system_panel() -> None:
     logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
-    with st.expander("System output / logs", expanded=False):
+    with st.expander("System output / logs", expanded=True):
         if not logs:
             st.caption("No system output yet.")
             return
@@ -1704,10 +1723,10 @@ def main() -> None:
     preflight_ok, preflight_err = _auto_preflight()
     if st.session_state["rps_state"].pop("preflight_state_changed", False):
         st.rerun()
-    _process_pending_action()
     _show_panel()
     _macro_flow_panel()
     _active_chat_panel()
+    _process_pending_action()
 
     if not preflight_ok:
         st.error(preflight_err or "Preflight failed. See system output for details.")
@@ -1719,7 +1738,6 @@ def main() -> None:
     if submitted:
         handle_input(text)
         st.rerun()
-
     _coach_output_panel()
     _athlete_phase_card()
     _system_panel()

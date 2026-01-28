@@ -47,14 +47,27 @@ def stream_reasoning_italics() -> bool:
     return raw not in ("0", "false", "no", "off")
 
 
-def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
-    """Create a response, optionally streaming deltas to stdout."""
-    if not should_stream():
+def create_response(
+    client: Any,
+    payload: dict[str, Any],
+    logger: Any | None,
+    stream_handlers: dict[str, Any] | None = None,
+):
+    """Create a response, optionally streaming deltas.
+
+    When stream_handlers is provided, deltas are sent to callbacks instead of stdout.
+    """
+    if stream_handlers is None and not should_stream():
         return client.responses.create(**payload)
 
     payload = dict(payload)
     payload["stream"] = True
     stream = client.responses.create(**payload)
+
+    handlers = stream_handlers or {}
+    on_output = handlers.get("on_output")
+    on_reasoning = handlers.get("on_reasoning")
+    on_summary = handlers.get("on_summary")
 
     show_output = stream_show_output()
     reasoning_mode = stream_reasoning_mode()
@@ -85,6 +98,11 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
         "on",
     )
 
+    if stream_handlers is not None:
+        show_output = True
+        if on_summary and reasoning_mode == "none":
+            reasoning_mode = "summary"
+
     for event in stream:
         event_type = _get_attr(event, "type")
         if debug_events and logger is not None:
@@ -95,38 +113,47 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
         if event_type == "response.reasoning_text.delta" and reasoning_mode == "full":
             delta = _get_attr(event, "delta") or ""
             if delta:
-                if not wrote_reasoning_prefix:
-                    sys.stdout.write("[reasoning] ")
-                    wrote_reasoning_prefix = True
-                if reasoning_italics:
-                    sys.stdout.write(f"\033[3m{delta}\033[0m")
-                else:
-                    sys.stdout.write(delta)
-                sys.stdout.flush()
+                if on_reasoning:
+                    on_reasoning(delta)
+                elif stream_handlers is None:
+                    if not wrote_reasoning_prefix:
+                        sys.stdout.write("[reasoning] ")
+                        wrote_reasoning_prefix = True
+                    if reasoning_italics:
+                        sys.stdout.write(f"\033[3m{delta}\033[0m")
+                    else:
+                        sys.stdout.write(delta)
+                    sys.stdout.flush()
                 wrote_any = True
                 saw_full_reasoning = True
                 reasoning_chunks.append(delta)
         elif event_type == "response.reasoning_summary_text.delta":
             delta = _get_attr(event, "delta") or ""
             if delta and (reasoning_mode == "summary" or (reasoning_mode == "full" and not saw_full_reasoning)):
-                if not wrote_reasoning_prefix:
-                    sys.stdout.write("[reasoning] ")
-                    wrote_reasoning_prefix = True
-                if reasoning_italics:
-                    sys.stdout.write(f"\033[3m{delta}\033[0m")
-                else:
-                    sys.stdout.write(delta)
-                sys.stdout.flush()
+                if on_summary:
+                    on_summary(delta)
+                elif stream_handlers is None:
+                    if not wrote_reasoning_prefix:
+                        sys.stdout.write("[reasoning] ")
+                        wrote_reasoning_prefix = True
+                    if reasoning_italics:
+                        sys.stdout.write(f"\033[3m{delta}\033[0m")
+                    else:
+                        sys.stdout.write(delta)
+                    sys.stdout.flush()
                 wrote_any = True
                 reasoning_chunks.append(delta)
         elif event_type == "response.output_text.delta" and show_output:
             delta = _get_attr(event, "delta") or ""
             if delta:
-                if not wrote_output_prefix:
-                    sys.stdout.write("[output] ")
-                    wrote_output_prefix = True
-                sys.stdout.write(delta)
-                sys.stdout.flush()
+                if on_output:
+                    on_output(delta)
+                elif stream_handlers is None:
+                    if not wrote_output_prefix:
+                        sys.stdout.write("[output] ")
+                        wrote_output_prefix = True
+                    sys.stdout.write(delta)
+                    sys.stdout.flush()
                 wrote_any = True
         elif event_type == "response.output_item.delta":
             delta_obj = _get_attr(event, "delta")
@@ -134,32 +161,38 @@ def create_response(client: Any, payload: dict[str, Any], logger: Any | None):
             delta_text = _get_attr(delta_obj, "text") or ""
             if delta_type == "reasoning" and reasoning_mode != "none":
                 if delta_text:
-                    if not wrote_reasoning_prefix:
-                        sys.stdout.write("[reasoning] ")
-                        wrote_reasoning_prefix = True
-                    if reasoning_italics:
-                        sys.stdout.write(f"\033[3m{delta_text}\033[0m")
-                    else:
-                        sys.stdout.write(delta_text)
-                    sys.stdout.flush()
+                    if on_reasoning:
+                        on_reasoning(delta_text)
+                    elif stream_handlers is None:
+                        if not wrote_reasoning_prefix:
+                            sys.stdout.write("[reasoning] ")
+                            wrote_reasoning_prefix = True
+                        if reasoning_italics:
+                            sys.stdout.write(f"\033[3m{delta_text}\033[0m")
+                        else:
+                            sys.stdout.write(delta_text)
+                        sys.stdout.flush()
                     wrote_any = True
                     reasoning_chunks.append(delta_text)
             elif delta_type == "text" and show_output:
                 if delta_text:
-                    if not wrote_output_prefix:
-                        sys.stdout.write("[output] ")
-                        wrote_output_prefix = True
-                    sys.stdout.write(delta_text)
-                    sys.stdout.flush()
+                    if on_output:
+                        on_output(delta_text)
+                    elif stream_handlers is None:
+                        if not wrote_output_prefix:
+                            sys.stdout.write("[output] ")
+                            wrote_output_prefix = True
+                        sys.stdout.write(delta_text)
+                        sys.stdout.flush()
                     wrote_any = True
         elif event_type == "response.completed":
             final_response = _get_attr(event, "response")
-            if logger is not None and log_reasoning and reasoning_chunks:
+            if logger is not None and log_reasoning and reasoning_chunks and stream_handlers is None:
                 text = "".join(reasoning_chunks)
                 if text.lstrip().startswith(("**", "#")):
                     text = f"\n{text}"
                 logger.info("Reasoning: %s", text)
-            if show_usage and final_response is not None:
+            if show_usage and final_response is not None and stream_handlers is None:
                 usage = _get_attr(final_response, "usage")
                 total_tokens = _get_attr(usage, "total_tokens") if usage is not None else None
                 if wrote_any:
