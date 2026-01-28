@@ -23,6 +23,7 @@ from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
+from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 
 logger = logging.getLogger(__name__)
 
@@ -244,21 +245,29 @@ def run_agent_session(
     if injection_text:
         system_prompt = f"{system_prompt}\n\n{injection_text}"
 
-    tool_ctx = ToolContext(
-        athlete_id=athlete_id,
-        agent_name=agent_name,
-        workspace_root=workspace_root,
-        schema_dir=schema_dir,
-        run_id=effective_run_id,
-    )
-    tool_defs = get_tool_defs()
-    tool_handlers = get_tool_handlers(tool_ctx)
     if agent_name == "coach":
-        tool_defs = [tool for tool in tool_defs if tool.get("name") != "workspace_get"]
+        read_ctx = ReadToolContext(
+            athlete_id=athlete_id,
+            workspace_root=workspace_root,
+        )
+        tool_defs = read_tool_defs()
+        tool_handlers = read_tool_handlers(read_ctx)
+    else:
+        tool_ctx = ToolContext(
+            athlete_id=athlete_id,
+            agent_name=agent_name,
+            workspace_root=workspace_root,
+            schema_dir=schema_dir,
+            run_id=effective_run_id,
+        )
+        tool_defs = get_tool_defs()
+        tool_handlers = get_tool_handlers(tool_ctx)
 
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20
-    tools: list[dict[str, Any]] = [_build_file_search_tool(agent_vs_id, max_num_results)]
+    tools: list[dict[str, Any]] = []
+    if agent_name != "coach":
+        tools.append(_build_file_search_tool(agent_vs_id, max_num_results))
     web_search_enabled = _web_search_enabled(agent_name)
     if web_search_enabled:
         tools.append(_build_web_search_tool())
@@ -269,7 +278,7 @@ def run_agent_session(
         or _env_flag("OPENAI_FILE_SEARCH_DEBUG")
         or logger.isEnabledFor(logging.DEBUG)
     )
-    include = ["file_search_call.results"] if debug_file_search else None
+    include = ["file_search_call.results"] if debug_file_search and agent_name != "coach" else None
     logger.info(
         "tools: agent=%s stores=%s max_results=%s include_results=%s web_search=%s",
         agent_name,

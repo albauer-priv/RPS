@@ -9,30 +9,33 @@ import json
 import logging
 import os
 from pathlib import Path
+import queue
 import re
+import shutil
+import sys
+import threading
 from typing import Callable
 
 import streamlit as st
 
 from rps.agents.registry import AGENTS
 from rps.agents.runner import run_agent_session
-from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime
+from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
+from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings, load_env_file
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.main import _preflight
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.openai.response_utils import extract_reasoning_summaries
 from rps.orchestrator.plan_week import _build_injection_block, plan_week
 from rps.prompts.loader import PromptLoader
 from rps.rendering.auto_render import render_sidecar
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range, range_contains
 from rps.workspace.types import ArtifactType
 
-try:
-    from scripts import macro_mode_a
-except Exception:  # pragma: no cover - UI fallback only
-    macro_mode_a = None
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -133,6 +136,41 @@ RENDERABLE_ARTIFACT_KEYS: set[str] = {
     "wellness",
 }
 
+STATE_LABELS: dict[str, str] = {
+    "init": "Init",
+    "core": "Core",
+    "coach": "Coach",
+    "macro_overview": "Macro Flow",
+    "exit": "Exit",
+}
+
+SUBSTATE_LABELS: dict[str, str] = {
+    "plan_week": "Plan Week",
+    "parse_intervals": "Fetch Intervals Data",
+    "parse_availability": "Fetch Availability",
+    "create_scenarios": "Create Scenarios",
+    "select_scenario": "Select Scenario",
+    "create_macro_overview": "Create Macro Overview",
+    "macro_overview": "Create Macro Overview",
+    "message": "Coach Message",
+    "show": "Show",
+}
+
+ACTION_LABELS: dict[str, str] = {
+    "plan_week": "Plan Week",
+    "parse_intervals": "Fetch Intervals Data",
+    "parse_availability": "Fetch Availability",
+    "scenarios": "Create Scenarios",
+    "select_scenario": "Select Scenario",
+    "macro_overview": "Create Macro Overview",
+    "coach_message": "Coach",
+    "coach_start": "Coach Start",
+    "coach_stop": "Coach Stop",
+    "stopword": "Stop",
+    "macro_overview_done": "Macro Overview Done",
+    "scenarios_done": "Scenarios Done",
+}
+
 
 @dataclass
 class StateMachine:
@@ -177,6 +215,15 @@ def _coach_state() -> dict:
     )
 
 
+def _set_coach_output(text: str, status: str = "done", summary: str | None = None) -> None:
+    st.session_state["rps_state"].setdefault("coach_output", {})
+    st.session_state["rps_state"]["coach_output"] = {
+        "status": status,
+        "text": text,
+        "summary": summary,
+    }
+
+
 def _ensure_session_state() -> None:
     if "rps_state" not in st.session_state:
         now = datetime.now(timezone.utc).isocalendar()
@@ -195,8 +242,51 @@ def _ensure_session_state() -> None:
                 "previous_response_id": None,
                 "run_id": None,
             },
+            "coach_output": {
+                "status": "idle",
+                "text": "",
+            },
             "state_machine": StateMachine(),
         }
+
+
+def _parse_cli_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--athlete-id")
+    parser.add_argument("--init", action="store_true")
+    args, _ = parser.parse_known_args(sys.argv[1:])
+    return args
+
+
+def _reset_cached_artifacts(athlete_id: str) -> str:
+    root = SETTINGS.workspace_root
+    athlete_dir = Path(root) / "var" / "athletes" / athlete_id
+    if not athlete_dir.exists():
+        return f"No athlete workspace found at {athlete_dir}."
+    targets = [
+        athlete_dir / "latest",
+        athlete_dir / "rendered",
+        athlete_dir / "logs",
+        athlete_dir / "data",
+    ]
+    cache_targets = [ROOT / ".cache" / "macro_scenarios"]
+    removed: list[str] = []
+    skipped: list[str] = []
+    for path in targets + cache_targets:
+        if not path.exists():
+            skipped.append(str(path))
+            continue
+        shutil.rmtree(path, ignore_errors=True)
+        removed.append(str(path))
+    inputs_dir = athlete_dir / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+    parts = []
+    if removed:
+        parts.append("Removed: " + ", ".join(removed))
+    if skipped:
+        parts.append("Not found: " + ", ".join(skipped))
+    parts.append(f"Preserved inputs at {inputs_dir}.")
+    return "Init reset: " + " ".join(parts)
 
 
 def _base_runtime() -> dict:
@@ -247,25 +337,42 @@ def _append_system_log(source: str, content: str) -> None:
     )
 
 
+def _queue_action(
+    *,
+    state: str,
+    substate: str | None,
+    params: dict | None,
+    action: str,
+) -> None:
+    sm: StateMachine = st.session_state["rps_state"]["state_machine"]
+    sm.transition(state, substate, params=params, action=action)
+    sm.parameters["pending_action"] = action
+    _append_system_log("state", _state_log_line(sm, action))
+
+
 class _BufferHandler(logging.Handler):
-    def __init__(self, sink: list[str]) -> None:
+    def __init__(self, sink: list[str], on_emit: Callable[[str], None] | None = None) -> None:
         super().__init__()
         self.sink = sink
+        self.on_emit = on_emit
 
     def emit(self, record: logging.LogRecord) -> None:  # pragma: no cover - simple glue
         msg = self.format(record)
         if msg:
             self.sink.append(msg)
+            if self.on_emit:
+                self.on_emit(msg)
 
 
 def _capture_output(
     fn: Callable[[], object],
     *,
     loggers: list[logging.Logger] | None = None,
+    on_log_line: Callable[[str], None] | None = None,
 ) -> tuple[object | None, str]:
     buf = io.StringIO()
     log_lines: list[str] = []
-    handler = _BufferHandler(log_lines)
+    handler = _BufferHandler(log_lines, on_emit=on_log_line)
     handler.setLevel(logging.INFO)
     handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
     targets = list(dict.fromkeys(loggers or []))
@@ -300,6 +407,154 @@ def canonicalize_trigger(text: str) -> str | None:
             if synonym in tl:
                 return canon
     return None
+
+
+def _format_state_label(sm: StateMachine) -> str:
+    state = STATE_LABELS.get(sm.state, sm.state)
+    if sm.substate:
+        sub = SUBSTATE_LABELS.get(sm.substate, sm.substate)
+        return f"{state} / {sub}"
+    return state
+
+
+def _state_log_line(sm: StateMachine, action: str | None) -> str:
+    state = STATE_LABELS.get(sm.state, sm.state)
+    sub = SUBSTATE_LABELS.get(sm.substate, sm.substate) if sm.substate else "none"
+    act = ACTION_LABELS.get(action or "", action or "none")
+    return f"state={state} substate={sub} action={act}"
+
+
+def _format_exception(exc: BaseException) -> str:
+    text = str(exc).strip()
+    if text:
+        return f"{exc.__class__.__name__}: {text}"
+    return exc.__class__.__name__
+
+
+def _is_no_session_context(exc: BaseException) -> bool:
+    name = exc.__class__.__name__.lower()
+    msg = str(exc).lower()
+    return "nosessioncontext" in name or "nosessioncontext" in msg
+
+
+def _looks_like_no_session(text: str | None) -> bool:
+    if not text:
+        return False
+    return "nosessioncontext" in text.lower()
+
+
+def _clean_reasoning_summary(text: str | None) -> str | None:
+    if not text:
+        return None
+    cleaned = text.strip()
+    match = re.search(r"Summary\(text=['\"](.+?)['\"],", cleaned, flags=re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return cleaned
+
+
+def _normalize_streamed_text(text: str) -> str:
+    if not text:
+        return text
+    lines = [line for line in text.splitlines() if line.strip() != ""]
+    if not lines:
+        return text
+    avg_len = sum(len(line.strip()) for line in lines) / max(len(lines), 1)
+    short_lines = sum(1 for line in lines if len(line.strip()) <= 12)
+    if avg_len > 20 and short_lines / max(len(lines), 1) < 0.6:
+        return text
+    parts = re.split(r"\n\s*\n", text.strip())
+    cleaned: list[str] = []
+    for part in parts:
+        collapsed = re.sub(r"\s+", " ", part.replace("\n", " ")).strip()
+        collapsed = re.sub(r"\s+([,.;:!?])", r"\1", collapsed)
+        collapsed = re.sub(r"\(\s+", "(", collapsed)
+        collapsed = re.sub(r"\s+\)", ")", collapsed)
+        cleaned.append(collapsed)
+    return "\n\n".join([c for c in cleaned if c])
+
+
+class _TempEnv:
+    def __init__(self, updates: dict[str, str]) -> None:
+        self._updates = updates
+        self._prior: dict[str, str | None] = {}
+
+    def __enter__(self) -> None:
+        for key, value in self._updates.items():
+            self._prior[key] = os.getenv(key)
+            os.environ[key] = value
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        for key, prior in self._prior.items():
+            if prior is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = prior
+
+
+def _start_live_trace(action_label: str) -> tuple[Callable[[str], None], Callable[[bool], None]]:
+    lines: list[str] = []
+    if hasattr(st, "status"):
+        box = st.status(f"Running: {action_label}", expanded=True)
+    else:
+        box = st.expander(f"Running: {action_label}", expanded=True)
+    placeholder = box.empty()
+
+    def _render() -> None:
+        text = "\n".join(lines[-200:])
+        placeholder.code(text or "…")
+
+    def on_line(line: str) -> None:
+        lines.append(line)
+        _render()
+
+    def finish(ok: bool) -> None:
+        if hasattr(box, "update"):
+            state = "complete" if ok else "error"
+            label = f"{action_label} finished" if ok else f"{action_label} failed"
+            box.update(label=label, state=state, expanded=False)
+        else:
+            _render()
+
+    return on_line, finish
+
+
+class _StreamingBuffer:
+    def __init__(
+        self,
+        sink: "queue.Queue[object]",
+        on_emit: Callable[[str], None] | None = None,
+    ) -> None:
+        self.sink = sink
+        self.on_emit = on_emit
+        self._chunks: list[str] = []
+
+    def write(self, data: str) -> None:
+        if data:
+            self._chunks.append(data)
+            self.sink.put(data)
+            if self.on_emit:
+                self.on_emit(data)
+
+    def flush(self) -> None:  # pragma: no cover - no-op
+        return None
+
+    def getvalue(self) -> str:
+        return "".join(self._chunks)
+
+
+def _enter_coach_mode(source: str) -> None:
+    rps_state = st.session_state["rps_state"]
+    sm: StateMachine = rps_state["state_machine"]
+    coach = _coach_state()
+    coach.update({"previous_response_id": None, "run_id": _make_ui_run_id("coach")})
+    sm.parameters["coach_history_start"] = len(rps_state["messages"])
+    sm.transition("coach", None, action=source)
+    msg = "Coach started. Ask anything. Use :quit to exit coach mode."
+    _append_message("assistant", msg)
+    _append_system_log("coach", msg)
+    _set_coach_output(msg, status="done")
+    _append_system_log("state", _state_log_line(sm, "coach_start"))
 
 
 def find_artifact_key(token: str) -> str | None:
@@ -503,7 +758,12 @@ def _auto_preflight() -> tuple[bool, str | None]:
         return False, msg
 
 
-def _action_parse_availability(athlete_id: str, year: int) -> str:
+def _action_parse_availability(
+    athlete_id: str,
+    year: int,
+    *,
+    on_log_line: Callable[[str], None] | None = None,
+) -> str:
     result, output = _capture_output(
         lambda: parse_and_store_availability(
             athlete_id=athlete_id,
@@ -513,6 +773,7 @@ def _action_parse_availability(athlete_id: str, year: int) -> str:
             skip_validate=False,
         ),
         loggers=CAPTURE_LOGGERS,
+        on_log_line=on_log_line,
     )
     if output:
         return output
@@ -521,7 +782,11 @@ def _action_parse_availability(athlete_id: str, year: int) -> str:
     return "Availability parsed."
 
 
-def _action_parse_intervals(athlete_id: str) -> str:
+def _action_parse_intervals(
+    athlete_id: str,
+    *,
+    on_log_line: Callable[[str], None] | None = None,
+) -> str:
     args = argparse.Namespace(
         year=None,
         week=None,
@@ -533,77 +798,142 @@ def _action_parse_intervals(athlete_id: str) -> str:
     _, output = _capture_output(
         lambda: run_intervals_pipeline(args, logger=LOGGER),
         loggers=CAPTURE_LOGGERS,
+        on_log_line=on_log_line,
     )
     return output or "Intervals pipeline completed."
 
 
-def _action_scenarios(athlete_id: str, year: int, week: int) -> str:
-    if macro_mode_a is None:
-        raise RuntimeError("scripts/macro_mode_a.py not importable.")
-    run_id = f"macro_scenarios_{year}_w{week:02d}"
-    args = argparse.Namespace(
-        athlete=athlete_id,
-        year=year,
-        week=week,
-        run_id=run_id,
-        scenario_run_id=None,
-        out=None,
-        model=None,
-        max_num_results=SETTINGS.file_search_max_results,
-        no_file_search=False,
+def _format_agent_result(result: object | None, fallback: str) -> str:
+    if isinstance(result, dict):
+        return json.dumps(result, indent=2)
+    return fallback
+
+
+def _action_scenarios(
+    athlete_id: str,
+    year: int,
+    week: int,
+    *,
+    on_log_line: Callable[[str], None] | None = None,
+) -> str:
+    runtime = _multi_runtime_for("season_scenario")
+    spec = AGENTS["season_scenario"]
+    injected_block = _build_injection_block("season_scenario", mode="scenario")
+    user_input = (
+        "Mode A. Generate the pre-decision scenarios. "
+        f"Target ISO week: {year}-{week:02d}. "
+        "Use workspace_get_input for Season Brief and Events. "
+        f"{injected_block}"
+        "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
     )
-    code, output = _capture_output(lambda: macro_mode_a.run_scenarios(args), loggers=CAPTURE_LOGGERS)
-    if code not in (0, None):
-        raise RuntimeError(output or f"Scenario run failed with code {code}.")
-    return output or f"Scenarios created: {run_id}"
-
-
-def _action_select_scenario(athlete_id: str, year: int, week: int, scenario: str) -> str:
-    if macro_mode_a is None:
-        raise RuntimeError("scripts/macro_mode_a.py not importable.")
-    run_id = f"macro_scenario_selection_{year}_w{week:02d}"
-    scen_run_id = f"macro_scenarios_{year}_w{week:02d}"
-    args = argparse.Namespace(
-        athlete=athlete_id,
-        year=year,
-        week=week,
-        run_id=run_id,
-        scenario=scenario.upper(),
-        scenario_run_id=scen_run_id,
-        rationale=None,
-        model=None,
-        max_num_results=SETTINGS.file_search_max_results,
-        no_file_search=False,
+    run_id = _make_ui_run_id(f"season_scenarios_{year}_{week:02d}")
+    result, output = _capture_output(
+        lambda: run_agent_multi_output(
+            runtime,
+            agent_name=spec.name,
+            agent_vs_name=spec.vector_store_name,
+            athlete_id=athlete_id,
+            tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
+            user_input=user_input,
+            run_id=run_id,
+            model_override=SETTINGS.model_for_agent(spec.name),
+            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            force_file_search=True,
+            max_num_results=SETTINGS.file_search_max_results,
+        ),
+        loggers=CAPTURE_LOGGERS,
+        on_log_line=on_log_line,
     )
-    _, output = _capture_output(lambda: macro_mode_a.run_select(args), loggers=CAPTURE_LOGGERS)
-    return output or f"Scenario {scenario.upper()} selected."
+    return output or _format_agent_result(result, f"Scenarios created: {run_id}")
 
 
-def _action_macro_overview(athlete_id: str, year: int, week: int, scenario: str) -> str:
-    if macro_mode_a is None:
-        raise RuntimeError("scripts/macro_mode_a.py not importable.")
-    run_id = f"macro_overview_{year}_w{week:02d}"
-    scen_run_id = f"macro_scenarios_{year}_w{week:02d}"
-    args = argparse.Namespace(
-        athlete=athlete_id,
-        year=year,
-        week=week,
-        run_id=run_id,
-        scenario=scenario.upper(),
-        scenario_run_id=scen_run_id,
-        allow_missing_events=False,
-        moving_time_rate_band=None,
-        model=None,
-        max_num_results=SETTINGS.file_search_max_results,
-        no_file_search=False,
+def _action_select_scenario(
+    athlete_id: str,
+    year: int,
+    week: int,
+    scenario: str,
+    rationale: str | None = None,
+    *,
+    on_log_line: Callable[[str], None] | None = None,
+) -> str:
+    runtime = _multi_runtime_for("season_scenario")
+    spec = AGENTS["season_scenario"]
+    injected_block = _build_injection_block("season_scenario", mode="scenario")
+    rationale_line = f"Rationale: {rationale.strip()}. " if rationale else ""
+    user_input = (
+        f"Select Scenario {scenario.upper()} for ISO week {year}-{week:02d}. "
+        "Use the latest SEASON_SCENARIOS as context. "
+        f"{rationale_line}"
+        f"{injected_block}"
+        "Follow the Mandatory Output Chapter for SEASON_SCENARIO_SELECTION."
     )
-    code, output = _capture_output(lambda: macro_mode_a.run_overview(args), loggers=CAPTURE_LOGGERS)
-    if code not in (0, None):
-        raise RuntimeError(output or f"Macro overview failed with code {code}.")
-    return output or f"Macro overview created: {run_id}"
+    run_id = _make_ui_run_id(f"season_scenario_selection_{year}_{week:02d}")
+    result, output = _capture_output(
+        lambda: run_agent_multi_output(
+            runtime,
+            agent_name=spec.name,
+            agent_vs_name=spec.vector_store_name,
+            athlete_id=athlete_id,
+            tasks=[AgentTask.CREATE_SEASON_SCENARIO_SELECTION],
+            user_input=user_input,
+            run_id=run_id,
+            model_override=SETTINGS.model_for_agent(spec.name),
+            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            force_file_search=True,
+            max_num_results=SETTINGS.file_search_max_results,
+        ),
+        loggers=CAPTURE_LOGGERS,
+        on_log_line=on_log_line,
+    )
+    return output or _format_agent_result(result, f"Scenario {scenario.upper()} selected.")
 
 
-def _action_plan_week(athlete_id: str, year: int, week: int) -> str:
+def _action_macro_overview(
+    athlete_id: str,
+    year: int,
+    week: int,
+    scenario: str,
+    *,
+    on_log_line: Callable[[str], None] | None = None,
+) -> str:
+    runtime = _multi_runtime_for("macro_planner")
+    spec = AGENTS["macro_planner"]
+    injected_block = _build_injection_block("macro_planner", mode="macro_overview")
+    user_input = (
+        f"Scenario {scenario.upper()}. Mode A. Create the MACRO_OVERVIEW. "
+        f"Target ISO week: {year}-{week:02d}. "
+        "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
+        f"{injected_block}"
+        "Follow the Mandatory Output Chapter for MACRO_OVERVIEW."
+    )
+    run_id = _make_ui_run_id(f"macro_overview_{year}_{week:02d}")
+    result, output = _capture_output(
+        lambda: run_agent_multi_output(
+            runtime,
+            agent_name=spec.name,
+            agent_vs_name=spec.vector_store_name,
+            athlete_id=athlete_id,
+            tasks=[AgentTask.CREATE_MACRO_OVERVIEW],
+            user_input=user_input,
+            run_id=run_id,
+            model_override=SETTINGS.model_for_agent(spec.name),
+            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            force_file_search=True,
+            max_num_results=SETTINGS.file_search_max_results,
+        ),
+        loggers=CAPTURE_LOGGERS,
+        on_log_line=on_log_line,
+    )
+    return output or _format_agent_result(result, f"Macro overview created: {run_id}")
+
+
+def _action_plan_week(
+    athlete_id: str,
+    year: int,
+    week: int,
+    *,
+    on_log_line: Callable[[str], None] | None = None,
+) -> str:
     runtime = _multi_runtime_for("macro_planner")
     run_id = f"ui_plan_week_{year}_{week:02d}"
     result, output = _capture_output(
@@ -621,6 +951,7 @@ def _action_plan_week(athlete_id: str, year: int, week: int) -> str:
             max_num_results=SETTINGS.file_search_max_results,
         ),
         loggers=CAPTURE_LOGGERS,
+        on_log_line=on_log_line,
     )
     status = "ok" if getattr(result, "ok", False) else "error"
     return (output + "\n\n" if output else "") + f"plan-week finished: {status}"
@@ -634,33 +965,78 @@ def _action_coach(athlete_id: str, text: str, coach: dict) -> str:
     coach["run_id"] = run_id
 
     def _call():
-        return run_agent_session(
-            runtime,
-            agent_name="coach",
-            agent_vs_name=spec.vector_store_name,
-            athlete_id=athlete_id,
-            user_input=text,
-            workspace_root=SETTINGS.workspace_root,
-            schema_dir=SETTINGS.schema_dir,
-            model_override=SETTINGS.model_for_agent("coach"),
-            include_debug_file_search=False,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
-            run_id=run_id,
-            previous_response_id=coach.get("previous_response_id"),
-            injection_text=injection_text,
-        )
+        try:
+            with _TempEnv(
+                {
+                    "OPENAI_STREAM": "0",
+                    "OPENAI_STREAM_REASONING": "none",
+                    "OPENAI_STREAM_TEXT": "0",
+                    "OPENAI_STREAM_USAGE": "0",
+                }
+            ):
+                return run_agent_session(
+                    runtime,
+                    agent_name="coach",
+                    agent_vs_name=spec.vector_store_name,
+                    athlete_id=athlete_id,
+                    user_input=text,
+                    workspace_root=SETTINGS.workspace_root,
+                    schema_dir=SETTINGS.schema_dir,
+                    model_override=SETTINGS.model_for_agent("coach"),
+                    include_debug_file_search=False,
+                    force_file_search=False,
+                    max_num_results=SETTINGS.file_search_max_results,
+                    run_id=run_id,
+                    previous_response_id=coach.get("previous_response_id"),
+                    injection_text=injection_text,
+                )
+        except Exception as exc:
+            if _is_no_session_context(exc):
+                coach["previous_response_id"] = None
+                with _TempEnv(
+                    {
+                        "OPENAI_STREAM": "0",
+                        "OPENAI_STREAM_REASONING": "none",
+                        "OPENAI_STREAM_TEXT": "0",
+                        "OPENAI_STREAM_USAGE": "0",
+                    }
+                ):
+                    return run_agent_session(
+                        runtime,
+                        agent_name="coach",
+                        agent_vs_name=spec.vector_store_name,
+                        athlete_id=athlete_id,
+                        user_input=text,
+                        workspace_root=SETTINGS.workspace_root,
+                        schema_dir=SETTINGS.schema_dir,
+                        model_override=SETTINGS.model_for_agent("coach"),
+                        include_debug_file_search=False,
+                        force_file_search=False,
+                        max_num_results=SETTINGS.file_search_max_results,
+                        run_id=run_id,
+                        previous_response_id=None,
+                        injection_text=injection_text,
+                    )
+            raise
 
     result, output = _capture_output(_call, loggers=CAPTURE_LOGGERS)
+    if isinstance(result, dict) and _looks_like_no_session(str(result.get("text") or "")):
+        coach["previous_response_id"] = None
+        result, output = _capture_output(_call, loggers=CAPTURE_LOGGERS)
+    summary_text = None
+    if isinstance(result, dict) and result.get("response"):
+        summaries = extract_reasoning_summaries(result.get("response"))
+        if summaries:
+            summary_text = _clean_reasoning_summary(summaries[0])
     if isinstance(result, dict) and result.get("response_id"):
         coach["previous_response_id"] = result["response_id"]
 
     log_text = output or (result.get("text") if isinstance(result, dict) else "")
     if log_text:
-        _append_system_log("coach", log_text)
+        pass
 
     if isinstance(result, dict) and result.get("text"):
-        return str(result["text"])
+        return _normalize_streamed_text(str(result["text"]))
     return "Coach did not return text."
 
 
@@ -717,7 +1093,6 @@ def handle_input(text: str) -> None:
     athlete_id: str = rps_state["athlete_id"]
     year: int = rps_state["year"]
     week: int = rps_state["week"]
-    scenario: str = rps_state["scenario"]
     coach = _coach_state()
 
     if not text:
@@ -733,22 +1108,20 @@ def handle_input(text: str) -> None:
             msg = "Coach session ended. Back in core mode."
             _append_message("assistant", msg)
             _append_system_log("coach", msg)
+            _append_system_log("state", _state_log_line(sm, "coach_stop"))
             return
         sm.transition("exit", action="stopword")
         _append_message("assistant", "Session stopped (:quit).")
+        _append_system_log("state", _state_log_line(sm, "stopword"))
         return
 
     if sm.state == "coach":
-        sm.transition("coach", action="coach_message")
-        try:
-            with st.spinner("Coach is thinking..."):
-                output = _action_coach(athlete_id, text, coach)
-        except Exception as exc:  # pragma: no cover - UI safety net
-            sm.parameters["last_error"] = str(exc)
-            _append_message("assistant", f"Coach error: {exc}")
-            _append_system_log("coach", f"Error: {exc}")
-            return
-        _append_message("assistant", output)
+        _queue_action(
+            state="coach",
+            substate="message",
+            params={"coach_input": text},
+            action="coach_message",
+        )
         return
 
     trigger = canonicalize_trigger(text)
@@ -758,12 +1131,22 @@ def handle_input(text: str) -> None:
             return
 
     if trigger == "coach":
-        coach.update({"previous_response_id": None, "run_id": _make_ui_run_id("coach")})
-        sm.parameters["coach_history_start"] = len(st.session_state["rps_state"]["messages"])
-        sm.transition("coach", action="coach_start")
-        msg = "Coach mode active. Ask anything. Use :quit to leave coach mode."
-        _append_message("assistant", msg)
-        _append_system_log("coach", msg)
+        _enter_coach_mode("coach_start")
+        return
+
+    if trigger in {"scenarios", "macro_overview"}:
+        _queue_action(
+            state="macro_overview",
+            substate="create_scenarios",
+            params={"year": year, "week": week},
+            action="scenarios",
+        )
+        return
+
+    if trigger == "select_scenario":
+        sm.transition("macro_overview", "select_scenario", action="select_scenario")
+        _append_system_log("state", _state_log_line(sm, "select_scenario"))
+        _append_message("assistant", "Select a scenario from the picker to continue.")
         return
 
     if trigger == "stop":
@@ -773,41 +1156,16 @@ def handle_input(text: str) -> None:
 
     action = ACTION_MAP.get(trigger or "")
     if not action:
-        _append_message("assistant", "No command matched. Try: coach, scenarios, plan week, or show macro.")
+        _append_message("assistant", "No command matched. Try: coach, macro overview, plan week, or show macro.")
         return
 
-    sm.transition("core", trigger, action=trigger)
-    try:
-        with st.spinner(f"Running: {trigger}"):
-            if trigger == "select_scenario":
-                output = action(athlete_id, year, week, scenario)
-            elif trigger == "macro_overview":
-                output = action(athlete_id, year, week, scenario)
-            elif trigger == "scenarios":
-                output = action(athlete_id, year, week)
-            elif trigger == "preflight":
-                output = action(athlete_id, year, week)
-            elif trigger == "parse_availability":
-                output = action(athlete_id, year)
-            elif trigger == "parse_intervals":
-                output = action(athlete_id)
-            else:
-                output = action(athlete_id, year, week)
-    except SystemExit as exc:
-        msg = str(exc) or f"{trigger} exited."
-        sm.parameters["last_error"] = msg
-        _append_message("assistant", msg)
-        _append_system_log(trigger or "system", msg)
-        return
-    except Exception as exc:
-        sm.parameters["last_error"] = str(exc)
-        _append_message("assistant", f"Error: {exc}")
-        _append_system_log(trigger or "error", f"Error: {exc}")
-        return
-
-    if output:
-        _append_message("assistant", output)
-        _append_system_log(trigger or "system", output)
+    params: dict = {}
+    if trigger == "plan_week":
+        params = {"year": year, "week": week, "iso_week": f"{year}-{week:02d}"}
+    elif trigger == "parse_availability":
+        params = {"year": year}
+    _queue_action(state="core", substate=trigger, params=params, action=trigger)
+    return
 
 
 def _sidebar_controls() -> None:
@@ -815,35 +1173,46 @@ def _sidebar_controls() -> None:
     athlete_id = st.sidebar.text_input("Athlete ID", value=rps_state["athlete_id"])
     year = st.sidebar.number_input("ISO Year", min_value=2020, max_value=2100, value=rps_state["year"], step=1)
     week = st.sidebar.number_input("ISO Week", min_value=1, max_value=53, value=rps_state["week"], step=1)
-    scenario = st.sidebar.selectbox("Scenario", options=["A", "B", "C"], index=["A", "B", "C"].index(rps_state["scenario"]))
 
-    rps_state.update({"athlete_id": athlete_id, "year": int(year), "week": int(week), "scenario": scenario})
-    coach = _coach_state()
-
+    rps_state.update({"athlete_id": athlete_id, "year": int(year), "week": int(week)})
     st.sidebar.markdown("---")
     sm: StateMachine = rps_state["state_machine"]
-    state_label = sm.state
-    if sm.substate:
-        state_label = f"{state_label} / {sm.substate}"
-    st.sidebar.caption(f"State: {state_label}")
+    st.sidebar.caption(f"State: {_format_state_label(sm)}")
+    st.sidebar.caption(f"Scenario: {rps_state.get('scenario', 'B')}")
     st.sidebar.markdown("---")
     st.sidebar.caption("Actions")
     if st.sidebar.button("Coach"):
-        handle_input("coach")
+        _enter_coach_mode("coach_start")
     if st.sidebar.button("Plan Week"):
-        handle_input("plan week")
+        _queue_action(
+            state="core",
+            substate="plan_week",
+            params={"year": int(year), "week": int(week), "iso_week": f"{int(year)}-{int(week):02d}"},
+            action="plan_week",
+        )
+    if st.sidebar.button("Fetch Intervals Data"):
+        _queue_action(
+            state="core",
+            substate="parse_intervals",
+            params={},
+            action="parse_intervals",
+        )
     st.sidebar.markdown("---")
     if st.sidebar.button("Fetch Availability"):
-        handle_input("parse availability")
-    if st.sidebar.button("Fetch Intervals Data"):
-        handle_input("parse intervals")
+        _queue_action(
+            state="core",
+            substate="parse_availability",
+            params={"year": int(year)},
+            action="parse_availability",
+        )
     st.sidebar.markdown("---")
-    if st.sidebar.button("Create Scenarios"):
-        handle_input("scenarios")
-    if st.sidebar.button("Select Scenario"):
-        handle_input("select scenario")
     if st.sidebar.button("Create Macro Overview"):
-        handle_input("macro overview")
+        _queue_action(
+            state="macro_overview",
+            substate="create_scenarios",
+            params={"year": int(year), "week": int(week)},
+            action="scenarios",
+        )
 
 
 def _chat_window() -> None:
@@ -875,12 +1244,102 @@ def _active_chat_panel() -> None:
                 st.write(msg["content"])
 
 
+def _coach_output_panel() -> None:
+    output = st.session_state["rps_state"].get("coach_output", {})
+    text = output.get("text") or ""
+    summary = _clean_reasoning_summary(output.get("summary"))
+    status = output.get("status")
+    if not summary and status != "thinking":
+        return
+    with st.expander("Coach Output", expanded=True):
+        if status == "thinking" and not text:
+            st.write("Thinking…")
+        if summary:
+            st.caption("Reasoning summary")
+            st.write(summary)
+
+
 def _history_panel() -> None:
     with st.expander("History", expanded=False):
         if not st.session_state["rps_state"]["messages"]:
             st.caption("No history yet.")
             return
         _chat_window()
+
+
+def _athlete_phase_card() -> None:
+    rps_state = st.session_state["rps_state"]
+    athlete_id = rps_state["athlete_id"]
+    year = int(rps_state["year"])
+    week = int(rps_state["week"])
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    try:
+        macro = store.load_latest(athlete_id, ArtifactType.MACRO_OVERVIEW)
+    except FileNotFoundError:
+        return
+    phases = macro.get("data", {}).get("phases", []) if isinstance(macro, dict) else []
+    target = IsoWeek(year=year, week=week)
+    active = None
+    for phase in phases:
+        rng = phase.get("iso_week_range")
+        if not rng:
+            continue
+        parsed = parse_iso_week_range(rng)
+        if parsed and range_contains(parsed, target):
+            active = phase
+            break
+    if not active:
+        return
+
+    overview = active.get("overview", {}) if isinstance(active, dict) else {}
+    phase_name = active.get("name", "Phase")
+    with st.expander(f"{phase_name}", expanded=False):
+        st.caption(f"{active.get('cycle', '')} · {active.get('iso_week_range', '')}")
+        date_range = active.get("date_range") or {}
+        if date_range:
+            st.caption(f"Dates: {date_range.get('from', '?')} → {date_range.get('to', '?')}")
+
+        primary = overview.get("phase_goals", {}).get("primary")
+        secondary = overview.get("phase_goals", {}).get("secondary")
+        if primary:
+            st.markdown(f"**Primary goal:** {primary}")
+
+        focus = overview.get("core_focus_and_characteristics") or []
+        if focus:
+            st.markdown("**What to focus on:**")
+            st.markdown("\n".join(f"- {item}" for item in focus))
+
+        intensity = overview.get("typical_duration_intensity_pattern")
+        if intensity:
+            st.markdown(f"**Intensity pattern:** {intensity}")
+
+        non_neg = overview.get("non_negotiables") or []
+        if non_neg:
+            st.markdown("**Non‑negotiables:**")
+            st.markdown("\n".join(f"- {item}" for item in non_neg))
+
+        deload = active.get("deload")
+        if deload is not None:
+            status = "Yes" if deload else "No"
+            st.markdown(f"**Deload week in phase:** {status}")
+        with st.expander("Details", expanded=False):
+            if secondary:
+                st.markdown(f"**Secondary goal:** {secondary}")
+            rationale = active.get("deload_rationale")
+            if rationale:
+                st.markdown(f"**Deload rationale:** {rationale}")
+            adaptations = overview.get("expected_adaptations") or []
+            if adaptations:
+                st.markdown("**Expected adaptations:**")
+                st.markdown("\n".join(f"- {item}" for item in adaptations))
+            eval_focus = overview.get("evaluation_focus") or []
+            if eval_focus:
+                st.markdown("**How to tell it’s working:**")
+                st.markdown("\n".join(f"- {item}" for item in eval_focus))
+            assumptions = overview.get("phase_exit_assumptions") or []
+            if assumptions:
+                st.markdown("**Phase exit assumptions:**")
+                st.markdown("\n".join(f"- {item}" for item in assumptions))
 
 
 def _show_panel() -> None:
@@ -930,6 +1389,271 @@ def _show_panel() -> None:
         params.pop(key_name, None)
 
 
+def _process_pending_action() -> None:
+    rps_state = st.session_state["rps_state"]
+    sm: StateMachine = rps_state["state_machine"]
+    pending = sm.parameters.get("pending_action")
+    if not pending:
+        return
+    athlete_id: str = rps_state["athlete_id"]
+    year: int = rps_state["year"]
+    week: int = rps_state["week"]
+    scenario: str = rps_state["scenario"]
+    coach = _coach_state()
+    chain_action: str | None = None
+    chain_substate: str | None = None
+
+    try:
+        action_label = ACTION_LABELS.get(pending, pending)
+        on_log_line: Callable[[str], None]
+        finish_trace: Callable[[bool], None]
+        if pending == "coach_message":
+            on_log_line = lambda _line: None
+            finish_trace = lambda _ok: None
+        else:
+            on_log_line, finish_trace = _start_live_trace(action_label)
+        with st.spinner(f"Running: {action_label}"):
+            if pending == "coach_message":
+                text = sm.parameters.pop("coach_input", "")
+                stream_buf = io.StringIO()
+                runtime = _multi_runtime_for("coach")
+                spec = AGENTS["coach"]
+                injection_text = _build_injection_block("coach", mode="coach")
+                run_id = coach.get("run_id") or _make_ui_run_id("coach")
+                coach["run_id"] = run_id
+
+                def _run(prev_id: str | None):
+                    return run_agent_session(
+                        runtime,
+                        agent_name="coach",
+                        agent_vs_name=spec.vector_store_name,
+                        athlete_id=athlete_id,
+                        user_input=text,
+                        workspace_root=SETTINGS.workspace_root,
+                        schema_dir=SETTINGS.schema_dir,
+                        model_override=SETTINGS.model_for_agent("coach"),
+                        include_debug_file_search=False,
+                        force_file_search=False,
+                        max_num_results=SETTINGS.file_search_max_results,
+                        run_id=run_id,
+                        previous_response_id=prev_id,
+                        injection_text=injection_text,
+                    )
+
+                _set_coach_output("Thinking…", status="thinking")
+                try:
+                    with _TempEnv(
+                        {
+                            "OPENAI_STREAM": "0",
+                            "OPENAI_STREAM_REASONING": "none",
+                            "OPENAI_STREAM_TEXT": "0",
+                            "OPENAI_STREAM_USAGE": "0",
+                        }
+                    ):
+                        with redirect_stdout(stream_buf):
+                            result = _run(coach.get("previous_response_id"))
+                except Exception as exc:
+                    if _is_no_session_context(exc):
+                        coach["previous_response_id"] = None
+                        with _TempEnv(
+                            {
+                                "OPENAI_STREAM": "0",
+                                "OPENAI_STREAM_REASONING": "none",
+                                "OPENAI_STREAM_TEXT": "0",
+                                "OPENAI_STREAM_USAGE": "0",
+                            }
+                        ):
+                            with redirect_stdout(stream_buf):
+                                result = _run(None)
+                    else:
+                        raise
+                if isinstance(result, dict) and _looks_like_no_session(
+                    str(result.get("text") or "")
+                ):
+                    coach["previous_response_id"] = None
+                    with _TempEnv(
+                        {
+                            "OPENAI_STREAM": "0",
+                            "OPENAI_STREAM_REASONING": "none",
+                            "OPENAI_STREAM_TEXT": "0",
+                            "OPENAI_STREAM_USAGE": "0",
+                        }
+                    ):
+                        with redirect_stdout(stream_buf):
+                            result = _run(None)
+
+                summary_text = None
+                if isinstance(result, dict) and result.get("response"):
+                    summaries = extract_reasoning_summaries(result.get("response"))
+                    if summaries:
+                        summary_text = summaries[0]
+                if isinstance(result, dict) and result.get("response_id"):
+                    coach["previous_response_id"] = result["response_id"]
+                output = ""
+                if isinstance(result, dict):
+                    output = str(result.get("text") or "")
+                if not output:
+                    output = stream_buf.getvalue().strip()
+                if not output:
+                    output = "Coach did not return text."
+                normalized = _normalize_streamed_text(output)
+                _set_coach_output(normalized, status="done", summary=summary_text)
+                _append_message("assistant", normalized)
+            elif pending == "select_scenario":
+                rationale = sm.parameters.pop("scenario_rationale", None)
+                output = _action_select_scenario(
+                    athlete_id,
+                    year,
+                    week,
+                    scenario,
+                    rationale,
+                    on_log_line=on_log_line,
+                )
+                _append_message("assistant", output)
+                _append_system_log("select_scenario", output)
+                chain_action = "macro_overview"
+                chain_substate = "create_macro_overview"
+            elif pending == "macro_overview":
+                output = _action_macro_overview(
+                    athlete_id,
+                    year,
+                    week,
+                    scenario,
+                    on_log_line=on_log_line,
+                )
+                _append_message("assistant", output)
+                _append_system_log("macro_overview", output)
+                sm.state = "core"
+                sm.substate = None
+                _append_system_log("state", _state_log_line(sm, "macro_overview_done"))
+            elif pending == "scenarios":
+                output = _action_scenarios(athlete_id, year, week, on_log_line=on_log_line)
+                _append_message("assistant", output)
+                _append_system_log("scenarios", output)
+                sm.state = "macro_overview"
+                sm.substate = "select_scenario"
+                _append_message("assistant", "Scenarios created. Select a scenario to continue.")
+                _append_system_log("state", _state_log_line(sm, "scenarios_done"))
+            elif pending == "parse_availability":
+                output = _action_parse_availability(athlete_id, year, on_log_line=on_log_line)
+                _append_message("assistant", output)
+                _append_system_log("parse_availability", output)
+            elif pending == "parse_intervals":
+                output = _action_parse_intervals(athlete_id, on_log_line=on_log_line)
+                _append_message("assistant", output)
+                _append_system_log("parse_intervals", output)
+            elif pending == "plan_week":
+                sentinel = object()
+                stream_queue: "queue.Queue[object]" = queue.Queue()
+                stream_buf = _StreamingBuffer(stream_queue)
+                result_holder: dict[str, object] = {}
+
+                def _worker() -> None:
+                    try:
+                        runtime = _multi_runtime_for("macro_planner")
+                        run_id = f"ui_plan_week_{year}_{week:02d}"
+                        with redirect_stdout(stream_buf):
+                            result_holder["result"] = plan_week(
+                                runtime,
+                                athlete_id=athlete_id,
+                                year=year,
+                                week=week,
+                                run_id=run_id,
+                                model_resolver=SETTINGS.model_for_agent,
+                                temperature_resolver=SETTINGS.temperature_for_agent,
+                                reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
+                                reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
+                                force_file_search=True,
+                                max_num_results=SETTINGS.file_search_max_results,
+                            )
+                    except Exception as exc:  # pragma: no cover - UI safety net
+                        result_holder["error"] = exc
+                    finally:
+                        stream_queue.put(sentinel)
+
+                thread = threading.Thread(target=_worker, daemon=True)
+                thread.start()
+                with st.expander("Plan Week Output (live)", expanded=True):
+                    def _stream():
+                        while True:
+                            chunk = stream_queue.get()
+                            if chunk is sentinel:
+                                break
+                            on_log_line(str(chunk))
+                            yield str(chunk)
+
+                    st.write_stream(_stream())
+                thread.join()
+
+                if "error" in result_holder:
+                    raise result_holder["error"]  # handled by outer except
+
+                output = stream_buf.getvalue().strip()
+                status = "ok"
+                result_obj = result_holder.get("result")
+                if hasattr(result_obj, "ok"):
+                    status = "ok" if getattr(result_obj, "ok") else "error"
+                summary = (output + "\n\n" if output else "") + f"plan-week finished: {status}"
+                _append_message("assistant", summary)
+                _append_system_log("plan_week", summary)
+            else:
+                _append_message("assistant", f"Unknown action: {pending}")
+        finish_trace(True)
+    except SystemExit as exc:
+        msg = _format_exception(exc) or f"{pending} exited."
+        sm.parameters["last_error"] = msg
+        _append_message("assistant", msg)
+        _append_system_log(pending, msg)
+        if "finish_trace" in locals():
+            finish_trace(False)
+    except Exception as exc:  # pragma: no cover - UI safety net
+        msg = _format_exception(exc)
+        sm.parameters["last_error"] = msg
+        _append_message("assistant", msg)
+        _append_system_log(pending, msg)
+        if "finish_trace" in locals():
+            finish_trace(False)
+    finally:
+        sm.parameters.pop("pending_action", None)
+        if pending == "coach_message":
+            sm.substate = None
+        elif sm.substate == pending:
+            sm.substate = None
+        if chain_action:
+            sm.state = "macro_overview"
+            sm.substate = chain_substate
+            sm.parameters["pending_action"] = chain_action
+            _append_system_log("state", _state_log_line(sm, chain_action))
+            st.rerun()
+
+
+def _macro_flow_panel() -> None:
+    rps_state = st.session_state["rps_state"]
+    sm: StateMachine = rps_state["state_machine"]
+    if sm.state != "macro_overview" or sm.substate != "select_scenario":
+        return
+    if sm.parameters.get("pending_action"):
+        return
+    st.markdown("### Scenario selection")
+    current = rps_state.get("scenario", "B")
+    choice = st.radio(
+        "Choose scenario",
+        options=["A", "B", "C"],
+        index=["A", "B", "C"].index(current),
+        horizontal=True,
+    )
+    rationale = st.text_area("Rationale (optional)", value="")
+    if st.button("Confirm scenario selection"):
+        rps_state["scenario"] = choice
+        sm.parameters["scenario_rationale"] = rationale.strip() or None
+        _queue_action(
+            state="macro_overview",
+            substate="select_scenario",
+            params={"scenario": choice},
+            action="select_scenario",
+        )
+
+
 def _system_panel() -> None:
     logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
     with st.expander("System output / logs", expanded=False):
@@ -961,12 +1685,28 @@ def main() -> None:
         st.error("OPENAI_API_KEY is missing. Set it in .env before using agent actions.")
         st.stop()
 
+    cli_args = _parse_cli_args()
+    if cli_args.init and not st.session_state.get("_init_reset_done"):
+        athlete_id = cli_args.athlete_id or os.getenv("ATHLETE_ID") or "i150546"
+        st.session_state.clear()
+        st.session_state["_init_reset_done"] = True
+        st.session_state["_pending_init_reset"] = athlete_id
+        st.rerun()
+
     _ensure_session_state()
+    pending_reset = st.session_state.pop("_pending_init_reset", None)
+    if pending_reset:
+        summary = _reset_cached_artifacts(pending_reset)
+        _append_system_log("init", summary)
+    if cli_args.athlete_id:
+        st.session_state["rps_state"]["athlete_id"] = cli_args.athlete_id
     _sidebar_controls()
     preflight_ok, preflight_err = _auto_preflight()
     if st.session_state["rps_state"].pop("preflight_state_changed", False):
         st.rerun()
+    _process_pending_action()
     _show_panel()
+    _macro_flow_panel()
     _active_chat_panel()
 
     if not preflight_ok:
@@ -974,12 +1714,14 @@ def main() -> None:
         st.stop()
 
     with st.form("chat_input", clear_on_submit=True):
-        text = st.text_input("Command", placeholder="e.g., scenarios, plan week, show macro")
+        text = st.text_input("Command", placeholder="e.g., macro overview, plan week, show macro")
         submitted = st.form_submit_button("Send")
     if submitted:
         handle_input(text)
         st.rerun()
 
+    _coach_output_panel()
+    _athlete_phase_card()
     _system_panel()
     _history_panel()
 

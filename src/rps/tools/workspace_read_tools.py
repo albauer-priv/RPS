@@ -232,6 +232,22 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
     def workspace_get_latest(args: dict[str, Any]) -> Any:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
+        if artifact_type in {ArtifactType.SEASON_BRIEF, ArtifactType.EVENTS}:
+            input_type = "season_brief" if artifact_type == ArtifactType.SEASON_BRIEF else "events"
+            try:
+                path = _find_input_file(
+                    workspace.store.athlete_root(workspace.athlete_id),
+                    input_type,
+                )
+            except FileNotFoundError as exc:
+                return {"ok": False, "error": str(exc)}
+            return {
+                "ok": True,
+                "artifact_type": artifact_type.value,
+                "input_type": input_type,
+                "path": str(path),
+                "content": path.read_text(encoding="utf-8"),
+            }
         return workspace.get_latest(artifact_type)
 
     def workspace_get_version(args: dict[str, Any]) -> Any:

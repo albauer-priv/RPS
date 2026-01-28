@@ -183,43 +183,34 @@ PYTHONPATH=src python3 -m rps.main plan-week \
   --run-id run_2026_06
 ```
 
-### CLI: Macro Mode A (two-step)
-
-Scenarios first (pre-decision), then the selected scenario:
+### CLI: Macro flow (agent tasks)
 
 ```bash
-python3 scripts/macro_mode_a.py scenarios \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_scenarios_2026_w06
+# 1) Create scenarios (SEASON_SCENARIOS)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent season_scenario \
+  --task CREATE_SEASON_SCENARIOS \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Generate pre-decision scenarios."
 ```
 
 ```bash
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_overview_2026_w06 \
-  --scenario A \
-  --scenario-run-id macro_scenarios_2026_w06
+# 2) Select scenario (SEASON_SCENARIO_SELECTION)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent season_scenario \
+  --task CREATE_SEASON_SCENARIO_SELECTION \
+  --text "Select Scenario A for ISO week 2026-06. Use latest SEASON_SCENARIOS."
 ```
-
-Optional KPI moving-time rate band override (affects kJ corridor derivation):
 
 ```bash
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_overview_2026_w06 \
-  --scenario A \
-  --scenario-run-id macro_scenarios_2026_w06 \
-  --moving-time-rate-band fast_competitive
+# 3) Create macro overview (MACRO_OVERVIEW)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent macro_planner \
+  --task CREATE_MACRO_OVERVIEW \
+  --text "Scenario A. Create MACRO_OVERVIEW for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
 ```
 
-Available bands are read from the KPI profile (`data.durability.moving_time_rate_guidance.bands`):
-`brevet_ultra_sustainable`, `fast_competitive`, `top_record_oriented`.
-The override selects the W/kg and kJ/kg/h window used to derive weekly planned_Load_kJ corridors.
-
-By default, scenarios are written to `.cache/macro_scenarios/<run-id>.md`.
+Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the macro-planner text:
+`Moving time rate band: fast_competitive.`
 
 ### CLI: Single agent
 

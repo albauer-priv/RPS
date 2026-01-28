@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.27] - 2026-01-28
+
+### Changed
+- Coach output now renders in a dedicated panel with stored response + reasoning summary and no streaming token spam.
+- Coach execution runs synchronously to avoid Streamlit ScriptRunContext issues.
+- Workspace lookup now falls back to input files for Season Brief and Events when no latest artefact exists.
+- Streamlit UI tweaks: collapsible phase card, relocated coach output below input, and history/log layout adjustments.
+- Removed legacy macro_mode_a script and updated planning docs to reflect the new macro flow.
+
 ## [0.6.26] - 2026-01-27
 
 ### Changed

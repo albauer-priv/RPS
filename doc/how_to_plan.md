@@ -12,7 +12,7 @@ Last-Updated: 2026-01-22
 2) Select a `kpi_profile_des_*.json`, copy it to `var/athletes/<athlete_id>/latest/`, and rename to `kpi_profile.json`.  
 3) Update `events.md`.  
 4) Run **Season-Scenario-Agent** (generates `season_scenarios`).  
-5) Run **Macro** (Mode A uses selected scenario).  
+5) Select scenario and run **Macro** (uses selected scenario).  
 6) Run **Meso** -> `block_governance_yyyy-ww--yyyy-ww.json` + `block_execution_arch_yyyy-ww--yyyy-ww.json`.  
 7) Run **Micro** -> `workouts_plan_yyyy-ww.json`.  
 8) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
@@ -42,78 +42,56 @@ var/athletes/<athlete_id>/latest/kpi_profile.json
 
 Predefined KPI profiles live under `kpi_profiles/` at repo root.
 
-Macro Mode A CLI (two-step, scenario generation via Season-Scenario-Agent):
+Macro flow (agent tasks via CLI, or use the Streamlit UI "Create Macro Overview"):
 
 ```bash
-python3 scripts/macro_mode_a.py scenarios \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_scenarios_2026_w06
+# 1) Create scenarios (SEASON_SCENARIOS)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent season_scenario \
+  --task CREATE_SEASON_SCENARIOS \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Generate pre-decision scenarios."
 ```
-
-This stores `season_scenarios_yyyy-ww--yyyy-ww.json` under `data/plans/macro/` and
-writes the human-readable scenario dialogue to `.cache/macro_scenarios/`.
-
-Select scenario (stores `season_scenario_selection`):
 
 ```bash
-python3 scripts/macro_mode_a.py select \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_select_2026_w06 \
-  --scenario A \
-  --scenario-run-id macro_scenarios_2026_w06
+# 2) Select scenario (SEASON_SCENARIO_SELECTION)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent season_scenario \
+  --task CREATE_SEASON_SCENARIO_SELECTION \
+  --text "Select Scenario A for ISO week 2026-06. Use latest SEASON_SCENARIOS. Rationale: chosen for durability-first risk profile."
 ```
-
-Macro overview (scenario optional if selection exists):
 
 ```bash
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_overview_2026_w06 \
-  --scenario-run-id macro_scenarios_2026_w06
+# 3) Create macro overview (MACRO_OVERVIEW)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent macro_planner \
+  --task CREATE_MACRO_OVERVIEW \
+  --text "Scenario A. Create MACRO_OVERVIEW for ISO week 2026-06. Use the latest SEASON_SCENARIO_SELECTION."
 ```
 
-Optional KPI moving-time rate band override (affects kJ corridor derivation):
-
-```bash
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_overview_2026_w06 \
-  --scenario-run-id macro_scenarios_2026_w06 \
-  --moving-time-rate-band fast_competitive
-```
-
-Available bands are read from the KPI profile (`data.durability.moving_time_rate_guidance.bands`):
-`brevet_ultra_sustainable`, `fast_competitive`, `top_record_oriented`.
-The override selects the W/kg and kJ/kg/h window used to derive weekly planned_Load_kJ corridors.
-
-```bash
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_overview_2026_w06 \
-  --scenario-run-id macro_scenarios_2026_w06
-```
+Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the macro-planner text:
+`Moving time rate band: fast_competitive.`
 
 Macro, Meso, Micro cycles (concrete CLI):
 
 ```bash
-# Macro cycle (Mode A, two-step)
-python3 scripts/macro_mode_a.py scenarios \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_scenarios_2026_w06 \
-  --athlete ath_001
+# Macro cycle (agent tasks)
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent season_scenario \
+  --athlete ath_001 \
+  --task CREATE_SEASON_SCENARIOS \
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Generate pre-decision scenarios."
 
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_overview_2026_w06 \
-  --scenario-run-id macro_scenarios_2026_w06 \
-  --athlete ath_001
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent season_scenario \
+  --athlete ath_001 \
+  --task CREATE_SEASON_SCENARIO_SELECTION \
+  --text "Select Scenario A for ISO week 2026-06. Use latest SEASON_SCENARIOS."
+
+PYTHONPATH=src python3 -m rps.main run-agent \
+  --agent macro_planner \
+  --athlete ath_001 \
+  --task CREATE_MACRO_OVERVIEW \
+  --text "Scenario A. Create MACRO_OVERVIEW for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
 ```
 
 ```bash

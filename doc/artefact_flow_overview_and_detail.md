@@ -156,9 +156,10 @@ flowchart LR
 - Determine season intent, priorities, and constraints (8-32 weeks horizon).
 - Define phase structure and load corridors (availability weekly hours + wellness body_mass_kg).
 - Emit optional feed-forward if the next block needs explicit guidance.
-- Mode A (CLI) is a two-step flow:
-  1) `scripts/macro_mode_a.py scenarios` (stores `season_scenarios` and writes the scenario dialogue to `.cache/macro_scenarios/<run-id>.md`)
-  2) `scripts/macro_mode_a.py overview` (writes `macro_overview_yyyy-ww--yyyy-ww.json`)
+- Macro flow (agent tasks / UI):
+  1) **Season-Scenario-Agent** → `CREATE_SEASON_SCENARIOS` (stores `season_scenarios_yyyy-ww--yyyy-ww.json`)
+  2) **Season-Scenario-Agent** → `CREATE_SEASON_SCENARIO_SELECTION` (stores `season_scenario_selection_yyyy-ww.json`)
+  3) **Macro-Planner** → `CREATE_MACRO_OVERVIEW` (writes `macro_overview_yyyy-ww--yyyy-ww.json`)
 
 **Outputs (Artefacts)**
 - `macro_overview_yyyy-ww--yyyy-ww.json` (binding)
@@ -176,9 +177,8 @@ flowchart LR
   AV[availability_yyyy-ww.json]:::artefact -. info .-> MA
   WL[wellness_yyyy-ww.json]:::artefact -. info .-> MA
 
-  S1[macro_mode_a.py scenarios]:::script --> MA
-  MA --> SCN[scenario_dialogue<br/>.cache/macro_scenarios]:::component --> U
-  U --> S2[macro_mode_a.py overview]:::script --> MA
+  SS[Season-Scenario-Agent]:::agent --> SC
+  SS --> SEL[season_scenario_selection_yyyy-ww.json]:::artefact --> MA
 
   MA --> MO[macro_overview_yyyy-ww--yyyy-ww.json]:::artefact
   MA -. optional .-> MMFF[macro_meso_feed_forward_yyyy-ww.json]:::artefact
@@ -186,7 +186,6 @@ flowchart LR
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
-  classDef script fill:#f3f0ff,stroke:#5b4db8,stroke-width:1px,stroke-dasharray: 2 2;
   classDef component fill:#eef8ee,stroke:#2f6b2f,stroke-width:1px;
 ```
 
