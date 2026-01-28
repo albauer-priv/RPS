@@ -8,8 +8,8 @@ Scope: Shared
 Authority: Informational
 
 Applies-To:
-  - Micro-Planner
-  - Meso-Architect
+  - Week-Planner
+  - Phase-Architect
   - Performance-Analyst
 
 Dependencies:
@@ -29,7 +29,7 @@ Notes: >
 > **Non-decision policy:**
 > - This mapping is **informational only**.
 > - It **MUST NOT** create gates, progression decisions, deloads, or overrides.
-> - Decisions remain exclusively in KPI profiles / macro governance.
+> - Decisions remain exclusively in KPI profiles / season governance.
 
 ---
 
@@ -58,7 +58,7 @@ FIR changes are **indicative**, not diagnostically dominant.
 - FIR (5′/20′) *fresh to lightly fatigued*
 
 **Secondary effects**
-- Reduced neuromuscular fatigue → higher block tolerance (masters)
+- Reduced neuromuscular fatigue → higher phase tolerance (masters)
 
 **Non-target metrics**
 - BBR
@@ -246,7 +246,7 @@ DI is **diagnostically dominant**, but **decision‑neutral**.
 - **Durability metrics are diagnostically dominant, but not decisive.**  
 - **Governance actions (Progress, Hold, Deload)** remain with:
   - KPI-Profile
-  - Macro-/Meso-Gates
+  - Season-/Phase-Gates
 - Workout types **provide data**; they **do not interpret them**.
 
 

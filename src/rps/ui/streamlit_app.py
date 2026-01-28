@@ -156,8 +156,8 @@ RENDERABLE_ARTIFACT_KEYS: set[str] = {
     "phase_guardrails",
     "phase_structure",
     "phase_preview",
-    "block_feed_forward",
-    "macro_meso_feed_forward",
+    "phase_feed_forward",
+    "season_phase_feed_forward",
     "des_analysis_report",
     "activities_actual",
     "activities_trend",
@@ -172,7 +172,7 @@ STATE_LABELS: dict[str, str] = {
     "init": "Init",
     "core": "Core",
     "coach": "Coach",
-    "season_plan": "Macro Flow",
+    "season_plan": "Season Flow",
     "exit": "Exit",
 }
 
@@ -308,7 +308,7 @@ def _reset_cached_artifacts(athlete_id: str) -> str:
         athlete_dir / "logs",
         athlete_dir / "data",
     ]
-    cache_targets = [ROOT / ".cache" / "macro_scenarios"]
+    cache_targets = [ROOT / ".cache" / "season_scenarios"]
     removed: list[str] = []
     skipped: list[str] = []
     for path in targets + cache_targets:
@@ -943,9 +943,9 @@ def _action_season_plan(
     *,
     on_log_line: Callable[[str], None] | None = None,
 ) -> str:
-    runtime = _multi_runtime_for("macro_planner")
-    spec = AGENTS["macro_planner"]
-    injected_block = _build_injection_block("macro_planner", mode="season_plan")
+    runtime = _multi_runtime_for("season_planner")
+    spec = AGENTS["season_planner"]
+    injected_block = _build_injection_block("season_planner", mode="season_plan")
     user_input = (
         f"Scenario {scenario.upper()}. Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -971,7 +971,7 @@ def _action_season_plan(
         loggers=CAPTURE_LOGGERS,
         on_log_line=on_log_line,
     )
-    return output or _format_agent_result(result, f"Macro overview created: {run_id}")
+    return output or _format_agent_result(result, f"Season plan created: {run_id}")
 
 
 def _action_plan_week(
@@ -981,7 +981,7 @@ def _action_plan_week(
     *,
     on_log_line: Callable[[str], None] | None = None,
 ) -> str:
-    runtime = _multi_runtime_for("macro_planner")
+    runtime = _multi_runtime_for("season_planner")
     run_id = f"ui_plan_week_{year}_{week:02d}"
     result, output = _capture_output(
         lambda: plan_week(
@@ -1204,7 +1204,7 @@ def handle_input(text: str) -> None:
 
     action = ACTION_MAP.get(trigger or "")
     if not action:
-        _append_message("assistant", "No command matched. Try: coach, season plan, plan week, or show macro.")
+        _append_message("assistant", "No command matched. Try: coach, season plan, plan week, or show season plan.")
         return
 
     params: dict = {}
@@ -1322,10 +1322,10 @@ def _athlete_phase_card() -> None:
     week = int(rps_state["week"])
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     try:
-        macro = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
     except FileNotFoundError:
         return
-    phases = macro.get("data", {}).get("phases", []) if isinstance(macro, dict) else []
+    phases = season_plan.get("data", {}).get("phases", []) if isinstance(season_plan, dict) else []
     target = IsoWeek(year=year, week=week)
     active = None
     for phase in phases:
@@ -1603,7 +1603,7 @@ def _process_pending_action() -> None:
 
                 def _worker() -> None:
                     try:
-                        runtime = _multi_runtime_for("macro_planner")
+                        runtime = _multi_runtime_for("season_planner")
                         run_id = f"ui_plan_week_{year}_{week:02d}"
                         with redirect_stdout(stream_buf):
                             result_holder["result"] = plan_week(
@@ -1681,7 +1681,7 @@ def _process_pending_action() -> None:
             st.rerun()
 
 
-def _macro_flow_panel() -> None:
+def _season_flow_panel() -> None:
     rps_state = st.session_state["rps_state"]
     sm: StateMachine = rps_state["state_machine"]
     if sm.state != "season_plan" or sm.substate != "select_scenario":
@@ -1733,7 +1733,7 @@ def _coach_status_panel() -> None:
 def main() -> None:
     st.set_page_config(page_title="RPS - Randonneur Performance System", layout="wide")
     st.title("RPS - Randonneur Performance System")
-    st.caption("Chat-style control surface for preflight, macro, and plan-week flows.")
+    st.caption("Chat-style control surface for preflight, season-plan, and plan-week flows.")
 
     if not os.getenv("OPENAI_API_KEY"):
         st.error("OPENAI_API_KEY is missing. Set it in .env before using agent actions.")
@@ -1766,7 +1766,7 @@ def main() -> None:
     if st.session_state["rps_state"].pop("preflight_state_changed", False):
         st.rerun()
     _show_panel()
-    _macro_flow_panel()
+    _season_flow_panel()
     _active_chat_panel()
     _process_pending_action()
 
@@ -1775,7 +1775,7 @@ def main() -> None:
         st.stop()
 
     with st.form("chat_input", clear_on_submit=True):
-        text = st.text_input("Command", placeholder="e.g., season plan, plan week, show macro")
+        text = st.text_input("Command", placeholder="e.g., season plan, plan week, show season plan")
         submitted = st.form_submit_button("Send")
     if submitted:
         handle_input(text)

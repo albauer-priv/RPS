@@ -46,8 +46,8 @@ Each must include:
 
 #### 5) `data.weekly_analysis`
 Required:
-- `context.block_week` (int 1–4)
-- `context.block_focus` (string)
+- `context.phase_week` (int 1–4)
+- `context.phase_focus` (string)
 - `signals` (array of `{metric, observation, confidence}`)
 - `interpretation.summary` (string)
 
@@ -60,20 +60,20 @@ Required:
 #### 7) `data.recommendation`
 Required:
 - `type`: const `advisory`
-- `scope`: const `Macro-Planner`
+- `scope`: const `Season-Planner`
 - `urgency`: `low|medium|high`
 - `rationale` (array, min 1)
 - `suggested_considerations` (array, min 1)
 - `explicitly_not`: array of exactly 2 items:
-  - `direct_block_change`
+  - `direct_phase_change`
   - `weekly_intervention`
 
 #### 8) `data.narrative_report`
 Required strings:
 - `overview_current_status`
 - `detailed_analysis_last_week`
-- `trend_analysis_within_block`
-- `trend_analysis_macro`
+- `trend_analysis_within_phase`
+- `trend_analysis_season`
 - `interpretation_recommendation`
 
 #### 9) Validation & Stop (Binding)
@@ -101,7 +101,7 @@ Required strings:
     "owner_agent": "Performance-Analyst",
     "run_id": "example_des_report_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Macro",
+    "scope": "Season",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-04",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-01-25" },
@@ -118,7 +118,7 @@ Required strings:
       "fueling_stability": { "status": "green", "confidence": "low", "evidence_window": { "weeks": 2 }, "delta_vs_baseline": "Not evaluated." }
     },
     "weekly_analysis": {
-      "context": { "block_week": 1, "block_focus": "Base" },
+      "context": { "phase_week": 1, "phase_focus": "Base" },
       "signals": [
         { "metric": "work_kj", "observation": "Below target range", "confidence": "medium" }
       ],
@@ -132,17 +132,17 @@ Required strings:
     },
     "recommendation": {
       "type": "advisory",
-      "scope": "Macro-Planner",
+      "scope": "Season-Planner",
       "urgency": "medium",
       "rationale": ["Observe consistency and recovery."],
       "suggested_considerations": ["Review corridor fit for availability."],
-      "explicitly_not": ["direct_block_change", "weekly_intervention"]
+      "explicitly_not": ["direct_phase_change", "weekly_intervention"]
     },
     "narrative_report": {
       "overview_current_status": "Mixed signals, slight underload.",
       "detailed_analysis_last_week": "Last week load below corridor.",
-      "trend_analysis_within_block": "Stable trend with minor fluctuations.",
-      "trend_analysis_macro": "Macro trend stable.",
+      "trend_analysis_within_phase": "Stable trend with minor fluctuations.",
+      "trend_analysis_season": "Season trend stable.",
       "interpretation_recommendation": "Monitor and adjust only if pattern persists."
     }
   }

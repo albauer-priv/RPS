@@ -13,12 +13,12 @@ class AgentTask(str, Enum):
     CREATE_SEASON_SCENARIOS = "CREATE_SEASON_SCENARIOS"
     CREATE_SEASON_SCENARIO_SELECTION = "CREATE_SEASON_SCENARIO_SELECTION"
     CREATE_SEASON_PLAN = "CREATE_SEASON_PLAN"
-    CREATE_MACRO_MESO_FEED_FORWARD = "CREATE_MACRO_MESO_FEED_FORWARD"
+    CREATE_SEASON_PHASE_FEED_FORWARD = "CREATE_SEASON_PHASE_FEED_FORWARD"
 
     CREATE_PHASE_GUARDRAILS = "CREATE_PHASE_GUARDRAILS"
     CREATE_PHASE_STRUCTURE = "CREATE_PHASE_STRUCTURE"
     CREATE_PHASE_PREVIEW = "CREATE_PHASE_PREVIEW"
-    CREATE_BLOCK_FEED_FORWARD = "CREATE_BLOCK_FEED_FORWARD"
+    CREATE_PHASE_FEED_FORWARD = "CREATE_PHASE_FEED_FORWARD"
     CREATE_ZONE_MODEL = "CREATE_ZONE_MODEL"
 
     CREATE_WEEK_PLAN = "CREATE_WEEK_PLAN"
@@ -61,11 +61,11 @@ OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
         tool_name="store_season_plan",
         envelope=True,
     ),
-    AgentTask.CREATE_MACRO_MESO_FEED_FORWARD: OutputSpec(
-        task=AgentTask.CREATE_MACRO_MESO_FEED_FORWARD,
-        artifact_type=ArtifactType.MACRO_MESO_FEED_FORWARD,
-        schema_file="macro_meso_feed_forward.schema.json",
-        tool_name="store_macro_meso_feed_forward",
+    AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD: OutputSpec(
+        task=AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD,
+        artifact_type=ArtifactType.SEASON_PHASE_FEED_FORWARD,
+        schema_file="season_phase_feed_forward.schema.json",
+        tool_name="store_season_phase_feed_forward",
         envelope=True,
     ),
     AgentTask.CREATE_PHASE_GUARDRAILS: OutputSpec(
@@ -89,11 +89,11 @@ OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
         tool_name="store_phase_preview",
         envelope=True,
     ),
-    AgentTask.CREATE_BLOCK_FEED_FORWARD: OutputSpec(
-        task=AgentTask.CREATE_BLOCK_FEED_FORWARD,
-        artifact_type=ArtifactType.BLOCK_FEED_FORWARD,
-        schema_file="block_feed_forward.schema.json",
-        tool_name="store_block_feed_forward",
+    AgentTask.CREATE_PHASE_FEED_FORWARD: OutputSpec(
+        task=AgentTask.CREATE_PHASE_FEED_FORWARD,
+        artifact_type=ArtifactType.PHASE_FEED_FORWARD,
+        schema_file="phase_feed_forward.schema.json",
+        tool_name="store_phase_feed_forward",
         envelope=True,
     ),
     AgentTask.CREATE_ZONE_MODEL: OutputSpec(

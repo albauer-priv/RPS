@@ -6,6 +6,8 @@ Last-Updated: 2026-01-23
 
 ---
 
+Note: In this documentation, “season” refers to season-level planning. The season plan is the season artefact.
+
 ## 1. Purpose & Scope
 
 This document describes the technical architecture of the training planning system.
@@ -32,20 +34,20 @@ flowchart TD
   SB[season_brief] --> SS[Season-Scenario-Agent]
   KP[kpi_profile] --> SS
   SS --> SC[season_scenarios]
-  SC -. advisory .-> MA[Macro-Planner]
+  SC -. advisory .-> MA[Season-Planner]
   KP --> MA
   EV[events] -. info .-> SS
   EV -. info .-> MA
   MA --> MO[season_plan]
-  MA -. optional .-> MMFF[macro_meso_feed_forward]
+  MA -. optional .-> SPFF[season_phase_feed_forward]
 
-  MO --> ME[Meso-Architect]
-  MMFF -. optional .-> ME
+  MO --> ME[Phase-Architect]
+  SPFF -. optional .-> ME
   ME --> BG[phase_guardrails]
   ME --> BEA[phase_structure]
   ME -. optional .-> BEP[phase_preview]
 
-  BG --> MI[Micro-Planner]
+  BG --> MI[Week-Planner]
   BEA --> MI
   MI --> WP[week_plan]
   WP --> WB[Workout-Builder]
@@ -80,7 +82,7 @@ flowchart TD
 5. **Schema Validation**
    - JSON schema validation for all artifacts (envelope or raw payload).
 6. **Orchestrator (optional)**
-   - `plan-week` for Macro → Meso → Micro → Builder → Analysis sequencing.
+   - `plan-week` for Season → Phase → Week → Builder → Analysis sequencing.
 7. **Streamlit UI (optional)**
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
 
@@ -106,21 +108,21 @@ flowchart TD
 ### 3.2 Season-Scenario-Agent
 - Produces `season_scenarios` (informational).
 - Uses Season Brief (incl. weekday availability table) + KPI Profile to propose A/B/C options.
-- No planning decisions; Macro-Planner remains binding authority.
+- No planning decisions; Season-Planner remains binding authority.
 
-### 3.3 Macro-Planner
+### 3.3 Season-Planner
 - Defines long-term intent (8–32 weeks).
-- Produces `season_plan` and optional `macro_meso_feed_forward`.
+- Produces `season_plan` and optional `season_phase_feed_forward`.
 - Uses wellness `body_mass_kg` + Season Brief availability to anchor kJ corridor math.
-- **Important:** Macro phases define ISO week ranges, but MUST NOT define meso blocks.
+- **Important:** Season phases define ISO week ranges, but MUST NOT define phase-artefact outputs.
 
-### 3.4 Meso-Architect
-- Converts macro phase intent into phase guardrails and execution architecture.
-- **Block ranges are derived from macro phases**, not calendar alignment.
+### 3.4 Phase-Architect
+- Converts season phase intent into phase guardrails and phase structure.
+- **Phase ranges are derived from season phases**, not calendar alignment.
 
-### 3.5 Micro-Planner
+### 3.5 Week-Planner
 - Produces weekly execution plan (`week_plan`).
-- Must comply with governance + execution architecture.
+- Must comply with governance + phase structure.
 
 ### 3.6 Workout-Builder
 - Deterministic conversion into Intervals.icu JSON (raw export payload).
@@ -226,23 +228,23 @@ These are runtime access expectations per agent/mode. Knowledge sources should b
 queried via `file_search` with attribute filters; athlete artefacts come from
 workspace tools.
 
-Macro-Planner
+Season-Planner
 - Mode A: Season brief via `workspace_get_input("season_brief")`, KPI via `workspace_get_latest(KPI_PROFILE)`, optional events via `workspace_get_input("events")`.
 - Mode B: Season brief, KPI, existing season plan via `workspace_get_latest(SEASON_PLAN)`, optional events.
 - Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)`, optional events.
 
-Meso-Architect
-- Mode A (new block): `workspace_get_block_context(year, week)` and optional `offset_blocks=1`; optional `MACRO_MESO_FEED_FORWARD`, `ACTIVITIES_TREND`, `events`.
-- Mode B (update): `workspace_get_block_context`, optional `MACRO_MESO_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, `events`.
-- Mode C (no-change): `workspace_get_block_context`, optional `events`.
+Phase-Architect
+- Mode A (new phase): `workspace_get_phase_context(year, week)` and optional `offset_phases=1`; optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_TREND`, `events`.
+- Mode B (update): `workspace_get_phase_context`, optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, `events`.
+- Mode C (no-change): `workspace_get_phase_context`, optional `events`.
 
-Micro-Planner
-- Mode A/B: `workspace_get_block_context`, optional `events`.
-- Mode C: `workspace_get_block_context`, optional `BLOCK_FEED_FORWARD`, `events`.
+Week-Planner
+- Mode A/B: `workspace_get_phase_context`, optional `events`.
+- Mode C: `workspace_get_phase_context`, optional `PHASE_FEED_FORWARD`, `events`.
 
 Performance-Analyst
 - Required: `ACTIVITIES_ACTUAL`, `ACTIVITIES_TREND`, `KPI_PROFILE` via `workspace_get_latest`.
-- Optional: `SEASON_PLAN`, `workspace_get_block_context`, `events`.
+- Optional: `SEASON_PLAN`, `workspace_get_phase_context`, `events`.
 
 Workout-Builder
 - Required: `WEEK_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
@@ -260,7 +262,7 @@ Tools available to agents:
   - `workspace_get_latest`
   - `workspace_get_version`
   - `workspace_list_versions`
-  - `workspace_get_block_context`
+  - `workspace_get_phase_context`
   - `workspace_get_input` (season brief, events)
 - Strict store tools (one per output artefact, schema-bound)
 
@@ -276,8 +278,8 @@ Configuration:
 - `config/agent_knowledge_injection.yaml`
 
 Model:
-- Base block (always injected): `agents.<agent>.inject`
-- Mode block (one bundle per run):
+- Base phase (always injected): `agents.<agent>.inject`
+- Mode phase (one bundle per run):
   - `agents.<agent>.modes.<mode>.bundle_id`
   - `agents.<agent>.bundles[].inject`
 
@@ -327,9 +329,9 @@ It is the single source of truth for planning artefacts and factual data in dev.
 ```
 var/athletes/<athlete_id>/
   data/
-    plans/macro/
-    plans/meso/
-    plans/micro/
+    plans/season/
+    plans/phase/
+    plans/week/
     analysis/
     exports/
     YYYY/WW/
@@ -372,7 +374,7 @@ Use `scripts/artefact_renderer.py` to generate human-readable sidecars from JSON
 
 Artifacts are stored under `var/athletes/<athlete_id>/data/`:
 
-- `data/plans/macro/`, `data/plans/meso/`, `data/plans/micro/`, `data/analysis/`, `data/exports/`
+- `data/plans/season/`, `data/plans/phase/`, `data/plans/week/`, `data/analysis/`, `data/exports/`
 - `data/YYYY/WW/` holds data pipeline snapshots (CSV + JSON)
 - `latest/` contains the most recent artifact per type.
 - `index.json` records per-version metadata for lookup and routing.
@@ -402,14 +404,14 @@ The local store normalizes legacy labels (e.g., Structural → Derived).
 
 The `plan-week` command runs a staged plan if required artifacts are missing:
 
-1. Macro
-2. Meso (phase guardrails + execution arch)
-3. Micro (weekly plan)
+1. Season
+2. Phase (phase guardrails + execution arch)
+3. Week (weekly plan)
 4. Builder (Intervals export)
 5. Analysis (DES report)
 
 Routing uses:
-- Macro phase → block range resolution
+- Season phase → phase range resolution
 - `index.json` for exact range matching
 
 ---

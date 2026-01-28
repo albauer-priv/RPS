@@ -31,7 +31,7 @@ required schema, field sources, and a minimal valid example.
 - `owner_agent`: `"Season-Scenario-Agent"`
 - `run_id`: provided by runner
 - `created_at`: ISO‑8601 timestamp (UTC)
-- `scope`: `"Macro"`
+- `scope`: `"Season"`
 - `iso_week`: ISO week string `YYYY-WW`
 - `iso_week_range`: `YYYY-WW--YYYY-WW` (string, inclusive)
 - `temporal_scope`: `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
@@ -97,7 +97,7 @@ Notes:
     "owner_agent": "Season-Scenario-Agent",
     "run_id": "example_scenarios_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Macro",
+    "scope": "Season",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-19",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-05-17" },

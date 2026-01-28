@@ -91,16 +91,16 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "block_week",
-                "block_focus"
+                "phase_week",
+                "phase_focus"
               ],
               "properties": {
-                "block_week": {
+                "phase_week": {
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 4
                 },
-                "block_focus": {
+                "phase_focus": {
                   "type": "string",
                   "minLength": 1
                 }
@@ -209,7 +209,7 @@
               "type": "string"
             },
             "scope": {
-              "const": "Macro-Planner",
+              "const": "Season-Planner",
               "type": "string"
             },
             "urgency": {
@@ -243,7 +243,7 @@
               "items": {
                 "type": "string",
                 "enum": [
-                  "direct_block_change",
+                  "direct_phase_change",
                   "weekly_intervention"
                 ]
               }
@@ -256,8 +256,8 @@
           "required": [
             "overview_current_status",
             "detailed_analysis_last_week",
-            "trend_analysis_within_block",
-            "trend_analysis_macro",
+            "trend_analysis_within_phase",
+            "trend_analysis_season",
             "interpretation_recommendation"
           ],
           "properties": {
@@ -269,11 +269,11 @@
               "type": "string",
               "minLength": 1
             },
-            "trend_analysis_within_block": {
+            "trend_analysis_within_phase": {
               "type": "string",
               "minLength": 1
             },
-            "trend_analysis_macro": {
+            "trend_analysis_season": {
               "type": "string",
               "minLength": 1
             },

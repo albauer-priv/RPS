@@ -38,4 +38,4 @@ Optional fields:
 - `notes` (array of strings)
 
 ## Authority Notes
-`SEASON_SCENARIO_SELECTION` is informational; Macro-Planner remains binding.
+`SEASON_SCENARIO_SELECTION` is informational; Season-Planner remains binding.

@@ -1,14 +1,14 @@
 ---
 Type: Contract
-Contract-Name: macro__meso
+Contract-Name: season__phase
 Version: 1.3
 Status: Active
 
 Scope: Shared
 Authority: Binding
 
-From-Agent: Macro-Planner
-To-Agent: Meso-Architect
+From-Agent: Season-Planner
+To-Agent: Phase-Architect
 
 Dependencies:
   - ID: SeasonPlanInterface
@@ -21,7 +21,7 @@ Dependencies:
     Version: 1.0
   - ID: PhasePreviewInterface
     Version: 1.0
-  - ID: BlockFeedForwardInterface
+  - ID: PhaseFeedForwardInterface
     Version: 1.0
   - ID: ZoneModelInterface
     Version: 1.0
@@ -31,44 +31,44 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Macro-Planner -> Meso-Architect (v1.3)
+# Contract: Season-Planner -> Phase-Architect (v1.3)
 
 ## 1) Purpose (Binding)
-Translate macro-level seasonal intent into block-level governance and block
+Translate season-level intent into phase-level governance and phase
 structural architecture without introducing week- or workout-level planning.
 
-## 2) Producer Responsibilities (Macro-Planner)
+## 2) Producer Responsibilities (Season-Planner)
 - OWNS phase intent and seasonal priorities.
-- OWNS macro weekly kJ corridors (kJ-first).
+- OWNS season weekly kJ corridors (kJ-first).
 - OWNS high-level allowed/forbidden intensity domains and non-negotiables.
 - MUST derive availability assumptions from the Season Brief weekday availability table
   (Mon-Sun hours, indoor possible, travel risk) and fixed rest days, and include them in
   `season_plan.data.global_constraints.availability_assumptions` and
   `season_plan.data.global_constraints.recovery_protection`.
-- MUST validate macro outputs before release.
-- MAY issue `macro_meso_feed_forward_yyyy-ww.json` when macro changes are required.
+- MUST validate season outputs before release.
+- MAY issue `season_phase_feed_forward_yyyy-ww.json` when season changes are required.
 
-## 3) Consumer Responsibilities (Meso-Architect)
-- OWNS block selection within macro corridors.
-- OWNS block status (Green/Yellow/Red) and block-level guardrails.
-- OWNS semantic permissions at block level.
-- OWNS structural block architecture and preview (non-binding).
+## 3) Consumer Responsibilities (Phase-Architect)
+- OWNS phase selection within season corridors.
+- OWNS phase status (Green/Yellow/Red) and phase-level guardrails.
+- OWNS semantic permissions at phase level.
+- OWNS structural phase architecture and preview (non-binding).
 - MUST validate all input JSON before use and STOP on invalid artefacts.
 - MUST validate all output JSON before release.
-- MUST NOT reinterpret macro intent.
-- MUST NOT exceed macro kJ corridor without explicit upstream change.
-- MUST NOT derive block adjustments directly from `des_analysis_report_yyyy-ww.json`.
-- MUST preserve macro availability assumptions and fixed rest days in phase guardrails
+- MUST NOT reinterpret season intent.
+- MUST NOT exceed season kJ corridor without explicit upstream change.
+- MUST NOT derive phase adjustments directly from `des_analysis_report_yyyy-ww.json`.
+- MUST preserve season availability assumptions and fixed rest days in phase guardrails
   non-negotiables and recovery protection rules.
 - If the user explicitly specifies an `iso_week_range` for phase guardrails or execution,
-  it MUST be honored and may override phase-aligned block context resolution; document
+  it MUST be honored and may override phase-aligned phase context resolution; document
   the override in `meta.notes`.
 
 ## 4) Artefacts and Schemas (Binding)
 
-### Inputs (Meso-Architect consumes)
+### Inputs (Phase-Architect consumes)
 - `season_plan_yyyy-ww--yyyy-ww.json` -> `season_plan.schema.json` (required)
-- `macro_meso_feed_forward_yyyy-ww.json` -> `macro_meso_feed_forward.schema.json` (binding if present)
+- `season_phase_feed_forward_yyyy-ww.json` -> `season_phase_feed_forward.schema.json` (binding if present)
 
 ### Informational Inputs (no schema)
 - `events.md`
@@ -78,14 +78,14 @@ structural architecture without introducing week- or workout-level planning.
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
 - `zone_model_power_<FTP>W.json` -> `zone_model.schema.json` (informational; from Data-Pipeline)
 
-### Outputs (Meso-Architect produces)
+### Outputs (Phase-Architect produces)
 - `phase_guardrails_yyyy-ww--yyyy-ww.json` -> `phase_guardrails.schema.json` (required)
-- `block_feed_forward_yyyy-ww.json` -> `block_feed_forward.schema.json` (optional)
+- `phase_feed_forward_yyyy-ww.json` -> `phase_feed_forward.schema.json` (optional)
 - `phase_structure_yyyy-ww--yyyy-ww.json` -> `phase_structure.schema.json` (required)
 - `phase_preview_yyyy-ww--yyyy-ww.json` -> `phase_preview.schema.json` (optional)
 
 ## 5) Constraints / Forbidden (Binding)
-- All KPI-driven block changes require explicit `macro_meso_feed_forward_yyyy-ww.json`.
+- All KPI-driven phase changes require explicit `season_phase_feed_forward_yyyy-ww.json`.
 - `phase_structure_*` and `phase_preview_*` MUST NOT include:
   - workouts
   - intervals
@@ -93,12 +93,12 @@ structural architecture without introducing week- or workout-level planning.
   - daily kJ
 
 ## 6) Error Handling & STOP Rules
-- Missing macro weekly kJ corridor -> STOP (E_MACRO_INPUT_INCOMPLETE).
-- Conflicting macro directives -> STOP + escalate.
-- Block output exceeds macro corridor -> STOP + escalate.
+- Missing season weekly kJ corridor -> STOP (E_SEASON_INPUT_INCOMPLETE).
+- Conflicting season directives -> STOP + escalate.
+- Phase output exceeds season corridor -> STOP + escalate.
 
 ## 7) Traceability
-- Every block artefact MUST reference upstream `season_plan_yyyy-ww--yyyy-ww.json`
+- Every phase artefact MUST reference upstream `season_plan_yyyy-ww--yyyy-ww.json`
   filename + version.
 - Feed Forward MUST reference baseline `phase_guardrails_yyyy-ww--yyyy-ww.json`
   filename + version.

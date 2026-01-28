@@ -9,9 +9,9 @@ Authority: Informational
 
 Applies-To:
   - Data-Pipeline
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Performance-Analyst
 
 Temporal-Scope:
@@ -82,17 +82,17 @@ In addition to entries, the artefact MUST include:
 
 ## Interpretation Rules
 
-### Macro-Planner
+### Season-Planner
 - MAY use wellness signals for contextual risk flags only.
-- MUST NOT adjust macro corridors without explicit governance inputs.
+- MUST NOT adjust season corridors without explicit governance inputs.
 
-### Meso-Architect
-- MAY use wellness signals to inform block notes or feed-forward recommendations.
+### Phase-Architect
+- MAY use wellness signals to inform phase notes or feed-forward recommendations.
 - MUST NOT treat wellness as automatic triggers.
 
-### Micro-Planner
+### Week-Planner
 - MAY use wellness signals to adjust session logistics within governance.
-- MUST NOT override block guardrails.
+- MUST NOT override phase guardrails.
 
 ---
 
@@ -101,7 +101,7 @@ In addition to entries, the artefact MUST include:
 This artefact MUST NOT:
 - define training prescriptions
 - recommend load changes on its own
-- replace macro/meso guardrails
+- replace season/phase guardrails
 
 ---
 

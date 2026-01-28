@@ -69,7 +69,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "block_intent_summary",
+        "phase_intent_summary",
         "feel_overview",
         "weekly_agenda_preview",
         "week_to_week_narrative",
@@ -77,17 +77,17 @@
         "traceability"
       ],
       "properties": {
-        "block_intent_summary": {
+        "phase_intent_summary": {
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "block_type",
+            "phase_type",
             "primary_objective",
             "non_negotiables",
             "key_risks_warnings"
           ],
           "properties": {
-            "block_type": {
+            "phase_type": {
               "type": "string",
               "minLength": 1
             },
@@ -229,7 +229,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Meso-Architect",
+          "const": "Phase-Architect",
           "type": "string"
         }
       },

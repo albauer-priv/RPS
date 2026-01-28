@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .guards import DEFAULT_RULES, MissingDependenciesError
-from .helpers import BlockRange, resolve_current_block, resolve_current_week
+from .helpers import PhaseRange, resolve_current_phase, resolve_current_week
 from .local_store import LocalArtifactStore
 from .types import ArtifactType, Authority
 
@@ -45,9 +45,9 @@ class Workspace:
         """Return the ISO week key for a date."""
         return resolve_current_week(d)
 
-    def current_block(self, week_key: str, block_length_weeks: int = 4) -> BlockRange:
-        """Return a block range anchored at week_key."""
-        return resolve_current_block(week_key, block_length_weeks=block_length_weeks)
+    def current_phase(self, week_key: str, phase_length_weeks: int = 4) -> PhaseRange:
+        """Return a phase range anchored at week_key."""
+        return resolve_current_phase(week_key, phase_length_weeks=phase_length_weeks)
 
     def exists(self, artifact_type: ArtifactType, version_key: str) -> bool:
         """Return True if a specific version exists."""

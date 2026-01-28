@@ -5,5 +5,5 @@
 - [ ] `data.traceability.derived_from` references the `phase_structure` it summarizes.
 
 ## Content
-- [ ] Preview is agenda-style and derived only from execution architecture.
+- [ ] Preview is agenda-style and derived only from phase structure.
 - [ ] No workouts, intervals, zones, or kJ prescriptions.

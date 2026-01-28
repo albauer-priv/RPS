@@ -8,9 +8,9 @@ Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
 
 Dependencies:
@@ -162,7 +162,7 @@ schema‑compliant trace field. Do not invent new fields.
 `α` MUST come from LoadEstimationSpec (global default).
 No overrides exist unless an explicit override artefact is introduced.
 
-### G12) Micro‑Planner responsibilities (binding constraints)
+### G12) Week‑Planner responsibilities (binding constraints)
 - Produce 7‑day `WEEK_PLAN` such that:
   - `sum(planned_Load_kJ_day)` is within `weekly_kj_bands[w]`.
   - Allowed domains are respected.
@@ -170,7 +170,7 @@ No overrides exist unless an explicit override artefact is introduced.
 - Adjust primarily via **duration** for ENDURANCE_LOW/ENDURANCE_HIGH/RECOVERY; do not invent intensity.
 - Restdays produce zero load fields.
 
-Micro STOP conditions:
+Week STOP conditions:
 - Weekly band missing → STOP.
 - Weekly band infeasible under availability → STOP and report.
 - Attempt to schedule forbidden domains → STOP.
@@ -179,22 +179,22 @@ Micro STOP conditions:
 - No stochastic choices; all defaults are deterministic.
 - Every fallback usage MUST set `used_fallback_IF_direct = true`.
 - Weekly band derivation SHOULD emit (or log) a debug bundle when schema allows:
-  `macro_band`, `feasible_band`, `kpi_load_band`, `progression_band`, `final_band`.
+  `season_band`, `feasible_band`, `kpi_load_band`, `progression_band`, `final_band`.
 
 ### G14) Minimal test matrix (recommended)
 1) All ENDURANCE_LOW segments, 2h, FTP known → IF=0.65, kJ, Load check.
 2) Mixed intervals with ranges → midpoint rule.
 3) Unparseable workout_text with intent TEMPO → IF‑direct.
 4) Allowed domains exclude ENDURANCE_LOW/ENDURANCE_HIGH → IF_ref selection uses median/other rule.
-5) Availability too low vs macro_min → infeasible_corridor STOP.
+5) Availability too low vs season_min → infeasible_corridor STOP.
 6) Progression guardrail conflict → progression_guardrail_conflict STOP.
 
 ---
 
-## Macro spezifisch
+## Season spezifisch
 
-This section defines how the Macro‑Planner derives **weekly planned_Load_kJ corridors**
-for each macro phase.
+This section defines how the Season‑Planner derives **weekly planned_Load_kJ corridors**
+for each season phase.
 
 ### M1) Required inputs (binding)
 1) Season Brief (objectives, events, constraints)
@@ -212,17 +212,17 @@ If any required input is missing, STOP and request it (except body mass, see M2)
 - If missing, fall back to Season Brief body mass.
 - Only STOP if **both** sources are missing.
 - Use a robust reference (median of last 14–28 days) when available; document method.
-- If using Season Brief fallback, set `macro_assumption_body_mass_source = SEASON_BRIEF`
+- If using Season Brief fallback, set `season_assumption_body_mass_source = SEASON_BRIEF`
   and emit a warning.
 
-### M3) Availability → moving‑time capacity (macro‑only)
+### M3) Availability → moving‑time capacity (season‑only)
 - Use availability only to compute weekly moving‑time capacity:
   - weekly hours total (exclude fixed rest days)
   - apply a deterministic utilization factor
 - Do NOT build weekly schedules.
 
 Utilization authority (binding):
-- Use `KPI.utilization_macro_default` if present, else default to `0.95`.
+- Use `KPI.utilization_season_default` if present, else default to `0.95`.
 
 ### M4) Baselines from Activities Trend (binding)
 - Build eligible weeks table (work_kj, moving_time, activity_count).
@@ -233,7 +233,7 @@ Utilization authority (binding):
 - Use the most recent **8 eligible** weeks (from last 12) to compute baseline kJ range.
 
 ### M5) Convert baseline to planned_Load_kJ (binding)
-Macro corridors MUST be expressed as planned_Load_kJ:
+Season corridors MUST be expressed as planned_Load_kJ:
 - choose a phase‑level `phase_reference_IF` deterministically:
   1) `Scenario.phase_reference_IF[phase]` if present
   2) else by phase intent and allowed domains:
@@ -248,8 +248,8 @@ Macro corridors MUST be expressed as planned_Load_kJ:
 If activities_trend is missing or unusable:
 - Use KPI guidance + availability only and flag uncertainty.
 
-Macro MUST NOT narrow weekly bands by feasibility/availability intersection.
-That narrowing is strictly Meso (see Meso section).
+Season MUST NOT narrow weekly bands by feasibility/availability intersection.
+That narrowing is strictly Phase (see Phase section).
 
 ### M6) Phase corridors (binding)
 - Base: center around baseline.
@@ -261,13 +261,13 @@ Compute implied **mechanical** kJ/kg/h:
 `implied_kJ_kg_hr = planned_kJ_week / (body_mass_kg * moving_time_capacity_hours)`
 
 If implied values consistently exceed KPI guidance:
-- emit a feasibility warning; Meso will narrow via intersection.
+- emit a feasibility warning; Phase will narrow via intersection.
 
 Never turn this into weekly prescriptions.
 
 ### M8) Scenario‑driven semantics (binding)
 Use selected scenario to set allowed/forbidden domains and modalities.
-Macro level only; no session detail.
+Season level only; no session detail.
 
 ### M9) Global constraints & guardrails (binding)
 Populate:
@@ -280,13 +280,13 @@ No numeric progression rules beyond KPI guardrails.
 
 ---
 
-## Meso spezifisch
+## Phase spezifisch
 
-This section defines how Meso derives **weekly_kj_bands** (planned_Load_kJ/week)
-by intersecting macro corridors with feasibility and KPI metabolic capacity.
+This section defines how Phase derives **weekly_kj_bands** (planned_Load_kJ/week)
+by intersecting season corridors with feasibility and KPI metabolic capacity.
 
 ### S1) Inputs (per ISO week)
-1) Macro corridor (planned_Load_kJ/week)
+1) Season corridor (planned_Load_kJ/week)
 2) Availability hours
 3) FTP and IF defaults (Zone Model; fallback table from Section G8)
 4) Allowed domains (scenario/governance)
@@ -299,7 +299,7 @@ by intersecting macro corridors with feasibility and KPI metabolic capacity.
 ### S2) KPI band interpretation (binding)
 - KPI kJ/kg/h bands are **planned_kJ_per_kg_per_hour** (mechanical work rate).
 - They are **not** planned_Load_kJ/h.
-- Meso maps KPI mechanical kJ → Load via a single reference IF.
+- Phase maps KPI mechanical kJ → Load via a single reference IF.
 
 ### S3) Feasible load band (UPDATED, Binding)
 
@@ -384,13 +384,13 @@ kpi_load_max = kpi_kJ_max * (IF_ref_week / IF_ref_load) ** alpha
 
 ### S5) Final Weekly Band Derivation (Intersection + Fallbacks) — **Binding**
 
-This section defines how the Meso-Architect MUST derive the weekly governance corridor `weekly_kj_bands[w]` (in **planned_Load_kJ/week**) from Macro, feasibility, KPI capacity guidance, and progression guardrails.
+This section defines how the Phase-Architect MUST derive the weekly governance corridor `weekly_kj_bands[w]` (in **planned_Load_kJ/week**) from Season, feasibility, KPI capacity guidance, and progression guardrails.
 
 #### S5.1 Inputs (per ISO week `w`)
 
-Meso MUST have:
+Phase MUST have:
 
-* `macro_band = [macro_min, macro_max]` (planned_Load_kJ/week)
+* `season_band = [season_min, season_max]` (planned_Load_kJ/week)
 * `feasible_band = [feasible_min, feasible_max]` (planned_Load_kJ/week), computed per S3
 * `kpi_load_band = [kpi_load_min, kpi_load_max]` (planned_Load_kJ/week), computed per S4
 * Optional `progression_band = [prog_min, prog_max]` (planned_Load_kJ/week), derived from KPI progression guardrails if `prev_planned_Load_kJ_week > 0`
@@ -399,13 +399,13 @@ All bands are inclusive and expressed as floats internally, rounded only at outp
 
 #### S5.2 Normal case: intersection (Binding)
 
-Meso MUST first attempt the normal intersection:
+Phase MUST first attempt the normal intersection:
 
 1. Base intersection:
 
 ```
-base_min = max(macro_min, feasible_min, kpi_load_min)
-base_max = min(macro_max, feasible_max, kpi_load_max)
+base_min = max(season_min, feasible_min, kpi_load_min)
+base_max = min(season_max, feasible_max, kpi_load_max)
 ```
 
 2. Progression overlay (only if eligible):
@@ -423,18 +423,18 @@ band_min = base_min
 band_max = base_max
 ```
 
-If `band_min <= band_max`, Meso MUST output:
+If `band_min <= band_max`, Phase MUST output:
 
 * `weekly_kj_bands[w] = [round_int(band_min), round_int(band_max)]`
 * and return success with `fallback_level = 0`.
 
 #### S5.3 No-intersection resolution ladder (Binding)
 
-If at any step `band_min > band_max`, Meso MUST apply the following **deterministic** fallback ladder in order. Meso MUST stop at the first level that yields a non-empty corridor. Meso MUST emit trace flags indicating which level was used.
+If at any step `band_min > band_max`, Phase MUST apply the following **deterministic** fallback ladder in order. Phase MUST stop at the first level that yields a non-empty corridor. Phase MUST emit trace flags indicating which level was used.
 
 ###### Level 1 — Drop progression overlay (Binding)
 
-If the corridor becomes infeasible **only after applying progression**, Meso MUST retry without progression:
+If the corridor becomes infeasible **only after applying progression**, Phase MUST retry without progression:
 
 ```
 band_min = base_min
@@ -448,7 +448,7 @@ If `band_min <= band_max`, output the band and set:
 
 ###### Level 2 — KPI rate band escalation (Binding)
 
-If the corridor is infeasible before progression or remains infeasible after Level 1, Meso MUST attempt to relax the KPI capacity constraint by escalating `kpi_rate_band_selector` within the pre-defined KPI bands.
+If the corridor is infeasible before progression or remains infeasible after Level 1, Phase MUST attempt to relax the KPI capacity constraint by escalating `kpi_rate_band_selector` within the pre-defined KPI bands.
 
 Escalation order (Binding):
 
@@ -462,8 +462,8 @@ For each escalated selector:
 2. Recompute the base intersection:
 
 ```
-base_min = max(macro_min, feasible_min, kpi_load_min_escalated)
-base_max = min(macro_max, feasible_max, kpi_load_max_escalated)
+base_min = max(season_min, feasible_min, kpi_load_min_escalated)
+base_max = min(season_max, feasible_max, kpi_load_max_escalated)
 ```
 
 3. Apply progression overlay if eligible. If infeasible, retry once without progression (equivalent to Level 1 inside this attempt).
@@ -482,7 +482,7 @@ This level is ONLY permitted if the KPI profile explicitly enables it:
 
 * `kpi_mapping_utilization_override_allowed = true`
 
-If enabled, Meso MAY retry KPI mapping with:
+If enabled, Phase MAY retry KPI mapping with:
 
 * `moving_time_capacity_hours = availability_hours_w` (i.e., utilization override = `1.0`) **for KPI mapping only**.
 * Feasibility (`feasible_band`) MUST NOT change.
@@ -500,14 +500,14 @@ If feasible, output and set:
 
 ###### Level 4 — Degenerate corridor at hard maximum (Binding)
 
-If no feasible corridor exists after Levels 1–3, Meso MUST produce a valid corridor by collapsing the band to a single point within the **hard feasible envelope** that does not violate physical feasibility.
+If no feasible corridor exists after Levels 1–3, Phase MUST produce a valid corridor by collapsing the band to a single point within the **hard feasible envelope** that does not violate physical feasibility.
 
 Define the hard envelope (Binding):
 
 * Preferred: `hard_band = intersect(feasible_band, kpi_load_band_current)`
-* If KPI remains infeasible even after allowed escalation/override, Meso MAY set `hard_band = feasible_band` and MUST emit `fallback_reason_detail = "KPI_CONSTRAINT_UNACHIEVABLE"`.
+* If KPI remains infeasible even after allowed escalation/override, Phase MAY set `hard_band = feasible_band` and MUST emit `fallback_reason_detail = "KPI_CONSTRAINT_UNACHIEVABLE"`.
 
-If `hard_band` is empty, Meso MUST STOP with `infeasible_feasibility_band` (see S5.5).
+If `hard_band` is empty, Phase MUST STOP with `infeasible_feasibility_band` (see S5.5).
 
 Otherwise:
 
@@ -518,39 +518,39 @@ Otherwise:
   * `fallback_level = 4`
   * `fallback_reason = "DEGENERATE_BAND_AT_HARD_MAX"`
 
-#### S5.4 Macro infeasible override (Binding)
+#### S5.4 Season infeasible override (Binding)
 
-If the Macro corridor is entirely outside feasibility, Meso MUST enter a dedicated override mode rather than repeatedly failing intersection.
+If the Season corridor is entirely outside feasibility, Phase MUST enter a dedicated override mode rather than repeatedly failing intersection.
 
 Trigger (Binding):
 
-* If `intersect([macro_min, macro_max], [feasible_min, feasible_max])` is empty, Macro is **physically infeasible** for week `w`.
+* If `intersect([season_min, season_max], [feasible_min, feasible_max])` is empty, Season is **physically infeasible** for week `w`.
 
 Behavior (Binding):
 
-1. Meso MUST compute an override band from hard constraints:
+1. Phase MUST compute an override band from hard constraints:
 
    * Preferred: `override_band = intersect(feasible_band, kpi_load_band)` (after applying any allowed KPI escalations / mapping overrides)
    * If that is empty and KPI escalation/override is exhausted, `override_band = feasible_band`
 
-2. If `override_band` is empty, Meso MUST STOP with `infeasible_macro_vs_availability_or_domains`.
+2. If `override_band` is empty, Phase MUST STOP with `infeasible_season_vs_availability_or_domains`.
 
-3. Otherwise Meso MUST output a degenerate band at the closest feasible point to Macro intent:
+3. Otherwise Phase MUST output a degenerate band at the closest feasible point to Season intent:
 
-   * If Macro is above feasible: `x = override_band.max`
-   * If Macro is below feasible: `x = override_band.min`
+   * If Season is above feasible: `x = override_band.max`
+   * If Season is below feasible: `x = override_band.min`
    * Output `weekly_kj_bands[w] = [round_int(x), round_int(x)]`
 
-Meso MUST emit:
+Phase MUST emit:
 
-* `override_mode = "MACRO_INFEASIBLE_OVERRIDE"`
-* `override_reason = "MACRO_ABOVE_FEASIBLE"` or `"MACRO_BELOW_FEASIBLE"`
+* `override_mode = "SEASON_INFEASIBLE_OVERRIDE"`
+* `override_reason = "SEASON_ABOVE_FEASIBLE"` or `"SEASON_BELOW_FEASIBLE"`
 * and set `fallback_level = 5`
-* `fallback_reason = "MACRO_INFEASIBLE_OVERRIDE"`
+* `fallback_reason = "SEASON_INFEASIBLE_OVERRIDE"`
 
 #### S5.5 STOP conditions (Binding)
 
-Meso MUST STOP (and not emit `weekly_kj_bands[w]`) if any of the following hold:
+Phase MUST STOP (and not emit `weekly_kj_bands[w]`) if any of the following hold:
 
 * `missing_or_invalid_ftp`
 * `no_allowed_domains`
@@ -561,19 +561,19 @@ Meso MUST STOP (and not emit `weekly_kj_bands[w]`) if any of the following hold:
 
 #### S5.6 Output rounding and trace (Binding)
 
-* Meso MUST compute using unrounded floats and round only on output:
+* Phase MUST compute using unrounded floats and round only on output:
 
   * `min_out = int(round(band_min))`
   * `max_out = int(round(band_max))`
-* If rounding inverts the band (`min_out > max_out`), Meso MUST set both to the nearest integer to the underlying float target and emit `fallback_reason_detail = "ROUNDING_COLLAPSE"`.
+* If rounding inverts the band (`min_out > max_out`), Phase MUST set both to the nearest integer to the underlying float target and emit `fallback_reason_detail = "ROUNDING_COLLAPSE"`.
 
 Trace (Binding):
-Meso MUST emit schema-compliant trace notes/flags including at minimum:
+Phase MUST emit schema-compliant trace notes/flags including at minimum:
 
 * `fallback_level`
 * `fallback_reason`
 * `kpi_rate_band_selector_used`
-* and a debug bundle when schema allows: `macro_band`, `feasible_band`, `kpi_load_band`, `progression_band`, `final_band`.
+* and a debug bundle when schema allows: `season_band`, `feasible_band`, `kpi_load_band`, `progression_band`, `final_band`.
 
 
 ### S6) Stop conditions (binding)

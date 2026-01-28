@@ -33,23 +33,23 @@ Trace-Upstream:
 
 ## 0) Body Metadata
 
-- Block-ID: {{ body_metadata.block_id }}
-- Block-Type: {{ body_metadata.block_type }}
-- Block-Status: {{ body_metadata.block_status }}
+- Phase-ID: {{ body_metadata.phase_id }}
+- Phase-Type: {{ body_metadata.phase_type }}
+- Phase-Status: {{ body_metadata.phase_status }}
 - Change-Type: {{ body_metadata.change_type }}
 - Derived-From: {{ body_metadata.derived_from or "N/A" }}
 - Upstream-Inputs:
 {{ bullet_list(body_metadata.upstream_inputs) }}
 
-## 1) Block Summary (Readable, non-prescriptive)
+## 1) Phase Summary (Readable, non-prescriptive)
 
-- Primary Objective: {{ block_summary.primary_objective }}
+- Primary Objective: {{ phase_summary.primary_objective }}
 - Secondary Objectives:
-{{ bullet_list(block_summary.secondary_objectives) }}
+{{ bullet_list(phase_summary.secondary_objectives) }}
 - Key Risks / Warnings:
-{{ bullet_list(block_summary.key_risks_warnings) }}
+{{ bullet_list(phase_summary.key_risks_warnings) }}
 - Non-Negotiables:
-{{ bullet_list(block_summary.non_negotiables) }}
+{{ bullet_list(phase_summary.non_negotiables) }}
 
 ## 2) Load Guardrails (kJ-first, REQUIRED)
 
@@ -117,11 +117,11 @@ Trace-Upstream:
 
 ### 6.2 Required response (governance-level)
 {% set response = escalation_change_control.required_response or {} %}
-- Micro-Planner must:
-{{ bullet_list(response.micro_planner_must) }}
-- Micro-Planner must not:
-{{ bullet_list(response.micro_planner_must_not) }}
-- Meso-Architect decides: {{ response.meso_architect_decides or "N/A" }}
+- Week-Planner must:
+{{ bullet_list(response.week_planner_must) }}
+- Week-Planner must not:
+{{ bullet_list(response.week_planner_must_not) }}
+- Phase-Architect decides: {{ response.phase_architect_decides or "N/A" }}
 
 ## 7) Explicit Forbidden Content (VALIDATION)
 
@@ -132,5 +132,5 @@ Trace-Upstream:
 - [{{ "x" if check.weekly_kj_bands_present else " " }}] Weekly kJ bands are present for all 4 weeks
 - [{{ "x" if check.max_quality_days_specified else " " }}] Max QUALITY/week is specified
 - [{{ "x" if check.allowed_forbidden_enums_specified else " " }}] Allowed/Forbidden enums are specified
-- [{{ "x" if check.no_micro_planning_content else " " }}] No micro planning content exists
+- [{{ "x" if check.no_week_planning_content else " " }}] No week planning content exists
 - [{{ "x" if check.header_includes_implements_iso_week_range_trace else " " }}] Header includes Implements, ISO-Week-Range, and Trace-Upstream

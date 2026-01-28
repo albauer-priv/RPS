@@ -185,7 +185,7 @@
           "green": "stable / up",
           "yellow": "flat",
           "red": "down",
-          "context": "block trend"
+          "context": "phase trend"
         }
       }
     },
@@ -219,7 +219,7 @@
     },
     "decision_rules": {
       "green": "progress via kJ, duration, or controlled intensity density",
-      "yellow": "hold load, repeat block",
+      "yellow": "hold load, repeat phase",
       "red": "mandatory deload (-20-40 % kJ)"
     },
     "traceability": {
@@ -230,8 +230,8 @@
         "Relative preload preferred: use moving_time_rate_guidance (kJ/kg/h) for moving-time pacing; do not use legacy kJ/kg preloads.",
         "VO2 TiZ caps apply primarily in Build/Specificity phases.",
         "Base/early Build may increase VO2 TiZ by +5-10 min/week only if Durability is GREEN and weekly kJ stays inside corridor.",
-        "Micro-Planner MAY report KPI observations factually.",
-        "Micro-Planner MUST NOT trigger progression, hold/deload decisions, or interpret KPI color states."
+        "Week-Planner MAY report KPI observations factually.",
+        "Week-Planner MUST NOT trigger progression, hold/deload decisions, or interpret KPI color states."
       ]
     }
   }

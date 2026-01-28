@@ -28,21 +28,21 @@ required schema, field sources, and a minimal valid example.
   - `schema_id`: `"PhaseGuardrailsInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Meso-Architect"`
+  - `owner_agent`: `"Phase-Architect"`
 - `iso_week_range` is required (string `YYYY-WW--YYYY-WW`).
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
 - `temporal_scope` MUST be copied from an upstream artefact (e.g., Season Plan phase
-  `date_range` for the same block). **Do NOT compute calendar dates.**
+  `date_range` for the same phase). **Do NOT compute calendar dates.**
 
 #### 3) `data.body_metadata`
 Required:
-- `block_id`, `block_type` (strings)
-- `block_status`: `Green|Yellow|Red`
+- `phase_id`, `phase_type` (strings)
+- `phase_status`: `Green|Yellow|Red`
 - `change_type`: `NEW|ADJUSTED|NONE`
 - `derived_from` (string)
 - `upstream_inputs` (array of non‑empty strings)
 
-#### 4) `data.block_summary`
+#### 4) `data.phase_summary`
 Required:
 - `primary_objective` (string)
 - `secondary_objectives` (array of strings; can be empty)
@@ -62,24 +62,24 @@ Required:
 
 #### 5.2) Progression & deload shaping (binding)
 - Use `progressive_overload_policy.md` to shape progression, deload, and re-entry rules.
-- If Scenario/Macro provides `deload_cadence` or `phase_length_weeks`, treat them as **binding**.
+- If Scenario/Season provides `deload_cadence` or `phase_length_weeks`, treat them as **binding**.
 - Do NOT invent a default cadence.
 
-#### 5.1) Macro constraint propagation (binding)
+#### 5.1) Season constraint propagation (binding)
 Always import `season_plan.data.global_constraints`:
 - `availability_assumptions`, `risk_constraints`, `planned_event_windows`, `recovery_protection` (if present).
 
 Mapping (must include, do not omit):
-- Availability assumptions → `block_summary.non_negotiables` (verbatim).
+- Availability assumptions → `phase_summary.non_negotiables` (verbatim).
   Every entry from `season_plan.data.global_constraints.availability_assumptions`
-  MUST appear verbatim in `block_summary.non_negotiables`.
-- Risk constraints → `block_summary.key_risks_warnings` (verbatim).
+  MUST appear verbatim in `phase_summary.non_negotiables`.
+- Risk constraints → `phase_summary.key_risks_warnings` (verbatim).
   Every entry from `season_plan.data.global_constraints.risk_constraints`
-  MUST appear verbatim in `block_summary.key_risks_warnings`.
+  MUST appear verbatim in `phase_summary.key_risks_warnings`.
 - Planned event windows → MUST be represented in `events_constraints.events[]`
   using the A/B/C types already defined in `season_plan.data.phases[].events_constraints`.
   Do NOT source A/B/C event types from `events.md` (events.md is non-training logistics only).
-  Also add a single summary line to `block_summary.non_negotiables`:
+  Also add a single summary line to `phase_summary.non_negotiables`:
   `"Planned A/B/C windows included in events_constraints (from season_plan)."`
 - Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).
 
@@ -114,9 +114,9 @@ Required strings:
 Required:
 - `warning_signals` (array, min 1)
 - `required_response` object with:
-  - `micro_planner_must` (array, min 1)
-  - `micro_planner_must_not` (array, min 1)
-  - `meso_architect_decides` (string)
+  - `week_planner_must` (array, min 1)
+  - `week_planner_must_not` (array, min 1)
+  - `phase_architect_decides` (string)
 
 #### 10) `data.explicit_forbidden_content`
 - Must contain **exactly these 6 strings** (schema enum):
@@ -125,14 +125,14 @@ Required:
   3) `durations, zones (Z1-Z7), %FTP`
   4) `daily kJ targets`
   5) `numeric progression rules`
-  6) `recommendations that effectively plan the micro level`
+  6) `recommendations that effectively plan the week level`
 
 #### 11) `data.self_check`
 All required booleans must be present and set to `true`:
 - `weekly_kj_bands_present`
 - `max_quality_days_specified`
 - `allowed_forbidden_enums_specified`
-- `no_micro_planning_content`
+- `no_week_planning_content`
 - `header_includes_implements_iso_week_range_trace`
 
 #### 12) Validation & Stop (Binding)
@@ -147,9 +147,9 @@ All required booleans must be present and set to `true`:
 
 Additional hard stops (binding):
 - STOP if any entry from `season_plan.data.global_constraints.availability_assumptions`
-  is not present verbatim in `block_summary.non_negotiables`.
+  is not present verbatim in `phase_summary.non_negotiables`.
 - STOP if any entry from `season_plan.data.global_constraints.risk_constraints`
-  is not present verbatim in `block_summary.key_risks_warnings`.
+  is not present verbatim in `phase_summary.key_risks_warnings`.
 - STOP if any date in `season_plan.data.global_constraints.planned_event_windows`
   is not represented in `events_constraints.events[]` with matching date, correct ISO week,
   and A/B/C type from `season_plan.data.phases[].events_constraints`.
@@ -158,7 +158,7 @@ Additional hard stops (binding):
 - STOP only after applying the full **LoadEstimationSpec S5** ladder:
   - If any **S5.5** hard stop is triggered (e.g., `feasible_band` empty, `override_band` empty), STOP.
   - Otherwise accept the S5 output band (including degenerate/override outputs) even if it
-    does not lie inside the raw Macro∩Feasible∩KPI intersection.
+    does not lie inside the raw Season∩Feasible∩KPI intersection.
 
 ---
 
@@ -172,10 +172,10 @@ Additional hard stops (binding):
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Meso-Architect",
+    "owner_agent": "Phase-Architect",
     "run_id": "example_phase_guardrails_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Meso",
+    "scope": "Phase",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-05",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-02-01" },
@@ -188,14 +188,14 @@ Additional hard stops (binding):
   },
   "data": {
     "body_metadata": {
-      "block_id": "P01",
-      "block_type": "Base",
-      "block_status": "Green",
+      "phase_id": "P01",
+      "phase_type": "Base",
+      "phase_status": "Green",
       "change_type": "NEW",
       "derived_from": "season_plan_2026_w04",
       "upstream_inputs": ["SEASON_PLAN"]
     },
-    "block_summary": {
+    "phase_summary": {
       "primary_objective": "Establish base durability.",
       "secondary_objectives": [],
       "key_risks_warnings": ["Avoid excessive intensity density."],
@@ -245,9 +245,9 @@ Additional hard stops (binding):
     "escalation_change_control": {
       "warning_signals": ["Repeated missed recovery"],
       "required_response": {
-        "micro_planner_must": ["Hold load"],
-        "micro_planner_must_not": ["Add make-up load"],
-        "meso_architect_decides": "Escalate to Macro-Planner"
+        "week_planner_must": ["Hold load"],
+        "week_planner_must_not": ["Add make-up load"],
+        "phase_architect_decides": "Escalate to Season-Planner"
       }
     },
     "explicit_forbidden_content": [
@@ -256,13 +256,13 @@ Additional hard stops (binding):
       "durations, zones (Z1-Z7), %FTP",
       "daily kJ targets",
       "numeric progression rules",
-      "recommendations that effectively plan the micro level"
+      "recommendations that effectively plan the week level"
     ],
     "self_check": {
       "weekly_kj_bands_present": true,
       "max_quality_days_specified": true,
       "allowed_forbidden_enums_specified": true,
-      "no_micro_planning_content": true,
+      "no_week_planning_content": true,
       "header_includes_implements_iso_week_range_trace": true
     }
   }

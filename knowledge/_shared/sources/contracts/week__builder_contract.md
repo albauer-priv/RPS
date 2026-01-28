@@ -1,13 +1,13 @@
 ---
 Type: Contract
-Contract-Name: micro__builder
+Contract-Name: week__builder
 Version: 1.2
 Status: Active
 
 Scope: Shared
 Authority: Binding
 
-From-Agent: Micro-Planner
+From-Agent: Week-Planner
 To-Agent: Workout-Builder
 
 Dependencies:
@@ -25,13 +25,13 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Micro-Planner -> Workout-Builder (v1.2)
+# Contract: Week-Planner -> Workout-Builder (v1.2)
 
 ## 1) Purpose (Binding)
-Define the binding interface between workout design (Micro-Planner)
+Define the binding interface between workout design (Week-Planner)
 and technical transformation/validation (Workout-Builder).
 
-## 2) Producer Responsibilities (Micro-Planner)
+## 2) Producer Responsibilities (Week-Planner)
 - MUST design workouts and encode them in EBNF-compliant workout text.
 - MUST validate workouts before emitting `week_plan_yyyy-ww.json`.
 - MUST emit `week_plan_yyyy-ww.json` validated against `week_plan.schema.json`.

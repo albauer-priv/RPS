@@ -38,8 +38,8 @@ kpi_summary:
 
 weekly_analysis:
   context:
-    block_week: {{ weekly_analysis.context.block_week }}
-    block_focus: {{ weekly_analysis.context.block_focus }}
+    phase_week: {{ weekly_analysis.context.phase_week }}
+    phase_focus: {{ weekly_analysis.context.phase_focus }}
   signals:
 {% if weekly_analysis.signals %}{% for signal in weekly_analysis.signals %}    - metric: {{ signal.metric }}
       observation: {{ signal.observation }}
@@ -82,13 +82,13 @@ recommendation:
 ### 2) Detailed analysis - last week
 {{ narrative_report.detailed_analysis_last_week }}
 
-### 3) Trend analysis - block and macro
+### 3) Trend analysis - phase and season
 
-#### 3.1 Within-block development
-{{ narrative_report.trend_analysis_within_block }}
+#### 3.1 Within-phase development
+{{ narrative_report.trend_analysis_within_phase }}
 
-#### 3.2 Macro trend
-{{ narrative_report.trend_analysis_macro }}
+#### 3.2 Season trend
+{{ narrative_report.trend_analysis_season }}
 
 ### 4) Interpretation and recommendation
 {{ narrative_report.interpretation_recommendation }}

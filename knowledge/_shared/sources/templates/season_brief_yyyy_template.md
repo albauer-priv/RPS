@@ -7,7 +7,7 @@ Version: 1.0
 Scope: Shared
 Authority: Binding
 
-Owner-Agent: Macro-Planner
+Owner-Agent: Season-Planner
 
 Dependencies:
   - Specification-ID: DurabilityFirstPrinciples
@@ -298,7 +298,7 @@ Clarify when and how to reference principles during planning.
 **Purpose:**
 Keep planning decisions aligned with the Principles Paper. Reference at least one
 principle when:
-- defining a macro phase
+- defining a season phase
 - selecting training content
 - approving progression or deload
 

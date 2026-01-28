@@ -1,6 +1,6 @@
 ---
 Type: Contract
-Contract-Name: analyst__macro
+Contract-Name: analyst__season
 Version: 1.0
 Status: Active
 
@@ -8,7 +8,7 @@ Scope: Shared
 Authority: Binding
 
 From-Agent: Performance-Analyst
-To-Agent: Macro-Planner
+To-Agent: Season-Planner
 
 Dependencies:
   - ID: ActivitiesActualInterface
@@ -37,10 +37,10 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Performance-Analyst -> Macro-Planner (v1.0)
+# Contract: Performance-Analyst -> Season-Planner (v1.0)
 
 ## 1) Purpose (Binding)
-Provide evidence-based DES analysis for the Macro-Planner without granting
+Provide evidence-based DES analysis for the Season-Planner without granting
 operational control or progression authority.
 
 ## 2) Producer Responsibilities (Performance-Analyst)
@@ -49,15 +49,15 @@ operational control or progression authority.
 - MAY analyze KPI profiles, actuals, trends, and events as context (informational only).
 - MAY formulate advisory recommendations.
 - MUST NOT modify phase guardrails.
-- MUST NOT address Micro- or Meso-Architect directly.
+- MUST NOT address Week- or Phase-Architect directly.
 - MUST NOT approve or stop progression.
 - MUST NOT define operational actions.
 
-## 3) Consumer Responsibilities (Macro-Planner)
+## 3) Consumer Responsibilities (Season-Planner)
 - MUST validate `des_analysis_report_yyyy-ww.json` before use and STOP on invalid artefacts.
 - MAY read DES reports.
 - MAY interpret recommendations with delay as needed.
-- MAY issue feed-forward to Meso-Architect if needed.
+- MAY issue feed-forward to Phase-Architect if needed.
 
 ## 4) Artefacts and Schemas (Binding)
 

@@ -106,17 +106,17 @@ Notes: >
 
 ## Agent Interpretation Rules
 
-### Macro-Planner
+### Season-Planner
 - MAY consider planned events as phase constraints
 - MUST NOT react to single short-term events
 
-### Meso-Architect
+### Phase-Architect
 - MAY use occurred events as input for:
-  - BLOCK_FEED_FORWARD
+  - PHASE_FEED_FORWARD
   - new PHASE_GUARDRAILS
 - MUST NOT treat events as automatic triggers
 
-### Micro-Planner
+### Week-Planner
 - MAY adapt logistics only
 - MUST report consequences via PLANNER_COACH_FEED_BACK
 - MUST NOT compensate load or change intent

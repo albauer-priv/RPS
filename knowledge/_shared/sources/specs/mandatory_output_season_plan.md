@@ -28,10 +28,10 @@ required schema, field sources, and a minimal valid example.
 - `schema_version`: `"1.0"`
 - `version`: `"1.0"`
 - `authority`: `"Binding"`
-- `owner_agent`: `"Macro-Planner"`
+- `owner_agent`: `"Season-Planner"`
 - `run_id`: provided by runner
 - `created_at`: ISO‑8601 timestamp (UTC)
-- `scope`: `"Macro"`
+- `scope`: `"Season"`
 - `iso_week`: ISO week string `YYYY-WW` (use first week of `iso_week_range`)
 - `iso_week_range`: `YYYY-WW--YYYY-WW` (string, inclusive)
 - `temporal_scope`: `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
@@ -55,7 +55,7 @@ Required:
 Notes:
 - If the caller specifies a moving_time_rate_band, `moving_time_rate_guidance.segment` MUST match it.
 
-#### 4) `data.macro_intent_principles`
+#### 4) `data.season_intent_principles`
 Required:
 - `season_objective` (string)
 - `success_definition` (string enum: `event-focused` | `durability-focused` | `mixed`)
@@ -162,7 +162,7 @@ Required:
 
 #### 12) `data.explicit_forbidden_content`
 Must contain **exactly 6** items (from schema enum):
-1. `block definitions (block plans)`
+1. `phase definitions (phase plans)`
 2. `weekly schedules`
 3. `day-by-day structure`
 4. `workouts or interval prescriptions`
@@ -180,7 +180,7 @@ All required booleans must be present. Set to `true` only if valid:
 - `season_load_envelope_and_assumptions_documented`
 - `principles_and_scientific_foundation_documented`
 - `allowed_forbidden_domains_listed`
-- `no_meso_or_micro_planning_content`
+- `no_phase_or_week_planning_content`
 - `header_includes_implements_iso_week_range_trace`
 
 #### 14) Validation & Stop (Binding)
@@ -206,10 +206,10 @@ All required booleans must be present. Set to `true` only if valid:
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Macro-Planner",
+    "owner_agent": "Season-Planner",
     "run_id": "example_season_plan_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Macro",
+    "scope": "Season",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-11",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-03-15" },
@@ -236,7 +236,7 @@ All required booleans must be present. Set to `true` only if valid:
       "athlete_profile_ref": "season_brief_2026",
       "body_mass_kg": 90.0
     },
-    "macro_intent_principles": {
+    "season_intent_principles": {
       "season_objective": "Build durable endurance for A‑event.",
       "success_definition": "event-focused",
       "non_negotiable_principles": ["Protect recovery anchors."],
@@ -347,13 +347,13 @@ All required booleans must be present. Set to `true` only if valid:
       "absolute_no_go_rules": ["Missed recovery weeks"]
     },
     "justification": {
-      "summary": "Durability‑first macro structure aligned to constraints.",
+      "summary": "Durability‑first season structure aligned to constraints.",
       "citations": [
         {
           "source_type": "principles",
           "source_id": "principles_durability_first_cycling.md",
           "section": "3.2",
-          "rationale": "Backplanning and cadence guidance for macro structure."
+          "rationale": "Backplanning and cadence guidance for season structure."
         }
       ],
       "phase_justifications": [
@@ -362,7 +362,7 @@ All required booleans must be present. Set to `true` only if valid:
           "intensity_distribution": "Endurance‑dominant with minimal tempo.",
           "overload_pattern": "Conservative linear progression.",
           "kJ_first_statement": "Weekly load corridors set before intensity details.",
-          "citations": ["load_estimation_spec.md#Macro"]
+          "citations": ["load_estimation_spec.md#Season"]
         }
       ]
     },
@@ -384,7 +384,7 @@ All required booleans must be present. Set to `true` only if valid:
       }
     },
     "explicit_forbidden_content": [
-      "block definitions (block plans)",
+      "phase definitions (phase plans)",
       "weekly schedules",
       "day-by-day structure",
       "workouts or interval prescriptions",
@@ -401,7 +401,7 @@ All required booleans must be present. Set to `true` only if valid:
       "season_load_envelope_and_assumptions_documented": true,
       "principles_and_scientific_foundation_documented": true,
       "allowed_forbidden_domains_listed": true,
-      "no_meso_or_micro_planning_content": true,
+      "no_phase_or_week_planning_content": true,
       "header_includes_implements_iso_week_range_trace": true
     }
   }

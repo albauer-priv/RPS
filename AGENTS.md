@@ -1,9 +1,9 @@
 # Project Context: RPS (Randonneur Performance System)
 
 ## 🎯 Core Goal & Status
-- **Purpose:** End-to-end planning system for endurance athletes (Season/Meso/Micro/Workouts) with UI, agents, and artifact pipeline.
-- **Current focus:** Stabilize Streamlit UI (Coach/Plan-Week), logging presentation, knowledge injection, and preflight flows.
-- **Last milestone:** Coach streaming via Responses events, UI log levels, unified knowledge injection, Season/Meso/Micro flows in the UI.
+- **Purpose:** End-to-end planning system for endurance athletes (Season/Phase/Week/Workouts) with UI, agents, and artifact pipeline.
+- **Current focus:** Finish repo-wide Season/Phase/Week renames and keep Streamlit UI stable (Coach/Plan‑Week + logging).
+- **Last milestone:** Hard rename of core artefacts/agents + schemas, contracts, prompts, docs, and UI to Season/Phase/Week.
 
 ## 🛠 Tech Stack & Conventions
 - **Languages/Frameworks:** Python 3.14, Streamlit, OpenAI Responses API.
@@ -35,20 +35,20 @@
 - `/schemas`: JSON schemas (bundled + interface).
 
 ## 📝 Active Todo List (Backlog)
-- [ ] Coach: clean response bubble + reasoning, smooth UI state.
-- [ ] Logging: finalize UI/console/file levels; complete "speaking" UI logs.
-- [ ] Preflight: validate inputs, handle renderer errors robustly.
-- [ ] Agents: consistent workspace load order; stable Season Brief & Events access.
-- [ ] Artifact renderer: implement missing renderers (e.g., Wellness).
+- [ ] Run schema validation + bundler after rename sweep (and fix any broken refs).
+- [ ] Re-sync vector store after spec/contract/header changes.
+- [ ] Confirm UI flows (preflight → season → plan‑week) after renames.
+- [ ] Logging: finalize UI/console/file levels; keep “speaking” UI logs clean.
+- [ ] Coach UX: ensure response bubble + reasoning summary are consistent.
 
 ## 📌 Key Docs & Config
 - `doc/system_architecture.md`: System overview + UI/agent flows.
 - `doc/artefact_flow_overview_and_detail.md`: Artifact flows & dependencies.
-- `doc/how_to_plan.md`: Plan-week / Season / Meso / Micro process.
+- `doc/how_to_plan.md`: Plan-week / Season / Phase / Week process.
 - `doc/planners.md`: Planner roles & responsibilities.
 - `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
-- `prompts/agents/*.md`: Agent prompts (Season/Meso/Micro/Coach/etc.).
-- `knowledge/_shared/sources/specs/load_estimation_spec.md`: Load definitions + Meso intersection.
+- `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).
+- `knowledge/_shared/sources/specs/load_estimation_spec.md`: Load definitions + Phase intersection.
 - `knowledge/_shared/sources/policies/progressive_overload_policy.md`: Progression/Deload rules.
 - `knowledge/_shared/sources/principles/principles_durability_first_cycling.md`: Durability-first principles.
 - `schemas/**`: JSON schemas (esp. artifact interfaces).
@@ -64,7 +64,7 @@
 ## 🧭 Working Order (Short)
 - Preflight: inputs (Season Brief, Events), KPI profile, Availability, Intervals pipeline.
 - Season flow: Scenarios → Selection → Season Plan.
-- Plan week: Season Plan → Meso → Micro → Workouts (artifacts + renderer).
+- Plan week: Season Plan → Phase → Week → Workouts (artifacts + renderer).
 - UI: state machine drives actions; buttons only update state/params.
 - Phase artefacts: `phase_*` ISO-week ranges must align to the covering Season Plan phase range. Mismatches are auto-normalized with a warning log.
 

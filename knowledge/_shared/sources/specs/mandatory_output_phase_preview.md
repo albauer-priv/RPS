@@ -26,15 +26,15 @@ This chapter defines how to produce **schema‑valid PHASE_PREVIEW JSON**.
   - `schema_id`: `"PhasePreviewInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Meso-Architect"`
+  - `owner_agent`: `"Phase-Architect"`
 - `iso_week_range` required.
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
 - `temporal_scope` MUST be copied from an upstream artefact (prefer stored PHASE_STRUCTURE
   for the same range; otherwise use the Season Plan phase `date_range`). **Do NOT compute dates.**
 
-#### 3) `data.block_intent_summary`
+#### 3) `data.phase_intent_summary`
 Required:
-- `block_type` (string)
+- `phase_type` (string)
 - `primary_objective` (string)
 - `non_negotiables` (array, min 1)
 - `key_risks_warnings` (array, min 1)
@@ -99,10 +99,10 @@ Required strings:
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Meso-Architect",
+    "owner_agent": "Phase-Architect",
     "run_id": "example_phase_preview_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Meso",
+    "scope": "Phase",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-05",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-02-01" },
@@ -114,8 +114,8 @@ Required strings:
     "notes": "Example only. Replace with real trace references."
   },
   "data": {
-    "block_intent_summary": {
-      "block_type": "Base",
+    "phase_intent_summary": {
+      "phase_type": "Base",
       "primary_objective": "Establish durability",
       "non_negotiables": ["Fixed rest days preserved."],
       "key_risks_warnings": ["Travel risk"]
@@ -147,7 +147,7 @@ Required strings:
     "deviation_rules": ["If travel occurs, drop optional day without compensation"],
     "traceability": {
       "derived_from": ["phase_structure_2026-04.json"],
-      "conflict_resolution": ["Escalate to Macro-Planner if conflicts arise"]
+      "conflict_resolution": ["Escalate to Season-Planner if conflicts arise"]
     }
   }
 }

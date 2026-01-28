@@ -6,4 +6,4 @@
 
 ## Required content
 - [ ] Each event has a date, priority, and type.
-- [ ] Event windows align with the season brief and macro plan.
+- [ ] Event windows align with the season brief and season plan.

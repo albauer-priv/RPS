@@ -17,7 +17,7 @@
         "required": [
           "id",
           "title",
-          "blocks"
+          "items"
         ],
         "properties": {
           "id": {
@@ -28,7 +28,7 @@
             "type": "string",
             "minLength": 1
           },
-          "blocks": {
+          "items": {
             "type": "array",
             "minItems": 1,
             "items": {}
@@ -44,7 +44,7 @@
       "required": [
         "id",
         "title",
-        "blocks"
+        "items"
       ],
       "properties": {
         "id": {
@@ -55,13 +55,13 @@
           "type": "string",
           "minLength": 1
         },
-        "blocks": {
+        "items": {
           "type": "array",
           "minItems": 1,
           "items": {}
         }
       }
     },
-    "block": {}
+    "item": {}
   }
 }

@@ -11,15 +11,15 @@ Decision-Authority: GuardrailOnly
 
 Applies-To:
   - Performance-Analyst
-  - Macro-Planner
+  - Season-Planner
 
 Explicitly-Not-For:
-  - Meso-Architect
-  - Micro-Planner
+  - Phase-Architect
+  - Week-Planner
 
 Purpose: >
   Defines the normative evaluation logic for interpreting DES KPI domains
-  and deriving diagnostic block health status. This specification does not
+  and deriving diagnostic phase health status. This specification does not
   authorize actions, adjustments, or planning decisions.
 
 ---
@@ -35,14 +35,14 @@ This evaluation policy is diagnostic only.
 Durability metrics are diagnostically dominant but do not mandate
 governance actions.
 
-All training decisions (e.g. progression, deloads, block termination)
+All training decisions (e.g. progression, deloads, phase termination)
 remain the exclusive responsibility of KPI profiles and governance artefacts.
 
 ---
 
 ## 1. Priority Rule (Dominance Principle)
 
-**The weakest KPI domain determines the overall block health status.**
+**The weakest KPI domain determines the overall phase health status.**
 
 Domain dominance order:
 
@@ -64,7 +64,7 @@ Durability KPIs assess fatigue resistance and structural robustness under load.
 ### Interpretation Rules
 
 - Any **RED** durability indicator results in:
-  - `block_health_status: red`
+  - `phase_health_status: red`
 - **YELLOW** indicators imply limited tolerance and instability.
 - **GREEN** indicates sufficient durability for current demands.
 
@@ -88,7 +88,7 @@ Otherwise, the outcome SHALL be flagged as "inconclusive (context-limited)".
 
 Inconclusive evaluations are diagnostic null results.
 They MUST NOT be interpreted as Yellow or Red signals
-and MUST NOT influence block health status.
+and MUST NOT influence phase health status.
 
 ---
 
@@ -129,8 +129,8 @@ Intensity density KPIs evaluate distribution and concentration of high-intensity
 
 ### Interpretation Rules
 
-- Intensity alone does not determine block health.
-- RED intensity signals only influence block status
+- Intensity alone does not determine phase health.
+- RED intensity signals only influence phase status
   when higher domains are non-critical.
 
 ---
@@ -146,23 +146,23 @@ Execution KPIs describe how consistently the plan was executed.
 
 ---
 
-## 7. Diagnostic Block Health Logic (Non-Actionable)
+## 7. Diagnostic Phase Health Logic (Non-Actionable)
 
 ```text
 IF any Durability KPI = RED
-→ block_health_status = RED
+→ phase_health_status = RED
 
 ELSE IF any Recovery KPI = RED
-→ block_health_status = RED
+→ phase_health_status = RED
 
 ELSE IF any KPI = YELLOW
-→ block_health_status = YELLOW
+→ phase_health_status = YELLOW
 
 ELSE
-→ block_health_status = GREEN
+→ phase_health_status = GREEN
 ```
 This logic is diagnostic only.
-It does not prescribe actions, adjustments, deloads, or block termination.
+It does not prescribe actions, adjustments, deloads, or phase termination.
 
 ---
 
@@ -175,6 +175,6 @@ This policy MAY be used to:
 
 This policy MUST NOT be used to:
 - mandate deloads
-- enforce block termination
+- enforce phase termination
 - restrict or authorize progression
 - issue feed-forwards or governance changes

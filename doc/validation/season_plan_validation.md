@@ -16,10 +16,10 @@
 ## Content sanity
 - [ ] Phases cover the full horizon with no gaps.
 - [ ] Allowed/forbidden domains match `agenda_enum_spec.md`.
-- [ ] `explicit_forbidden_content` includes no micro or meso planning detail.
+- [ ] `explicit_forbidden_content` includes no week or phase planning detail.
 
 ## Principles compliance
 - [ ] Phase narratives or rationale state the intended intensity distribution (polarized vs pyramidal-leaning) in line with section 4.6.
 - [ ] Progressive overload follows section 5 (time/kJ primary, intensity last) and deload rationale is explicit where load drops.
-- [ ] If any phase uses steady-state load corridors, the narrative explains the macro-level reason.
+- [ ] If any phase uses steady-state load corridors, the narrative explains the season-level reason.
 - [ ] `data.justification` includes a summary, citations (principles + evidence), and per-phase justifications.

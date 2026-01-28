@@ -8,8 +8,8 @@ Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
+  - Season-Planner
+  - Phase-Architect
 
 Binding-Specs:
   - Specification-ID: TraceabilitySpec
@@ -27,14 +27,14 @@ Notes: >
 # Season Brief Interface Specification
 
 ## 1) Purpose (Binding)
-A **SEASON_BRIEF** provides the foundational context for macro-level planning:
+A **SEASON_BRIEF** provides the foundational context for season-level planning:
 - athlete profile and constraints
 - season time window
 - prioritized events and goals
 - availability, risks, and non-negotiables (as context)
 - data assumptions and known limitations
 
-It is consumed by Macro-Planner (authoring context), and read by downstream agents to understand intent and constraints.
+It is consumed by Season-Planner (authoring context), and read by downstream agents to understand intent and constraints.
 
 ## 2) Required Fields (Binding)
 A SEASON_BRIEF artefact or template implementing this interface MUST include the following sections (headings may vary, but semantics MUST be present):
@@ -126,8 +126,8 @@ A SEASON_BRIEF MAY include:
 ## 5) Forbidden Content (Binding)
 A SEASON_BRIEF implementing this interface MUST NOT contain:
 - weekly kJ corridors or progression ramps
-- phase guardrails (PHASE_GUARDRAILS / BLOCK_FEED_FORWARD semantics)
-- block structures (PHASE_STRUCTURE / PREVIEW)
+- phase guardrails (PHASE_GUARDRAILS / PHASE_FEED_FORWARD semantics)
+- phase structures (PHASE_STRUCTURE / PREVIEW)
 - weekly schedules (Mon-Sun planning)
 - workout prescriptions or interval definitions
 - KPI thresholds / GREEN-YELLOW-RED gates

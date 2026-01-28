@@ -1,6 +1,6 @@
 ---
 Type: Contract
-Contract-Name: data_pipeline__micro
+Contract-Name: data_pipeline__phase
 Version: 1.3
 Status: Active
 
@@ -8,7 +8,7 @@ Scope: Shared
 Authority: Binding
 
 From-Agent: Data-Pipeline
-To-Agent: Micro-Planner
+To-Agent: Phase-Architect
 
 Dependencies:
   - ID: ActivitiesActualInterface
@@ -29,10 +29,10 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Data-Pipeline -> Micro-Planner (v1.3)
+# Contract: Data-Pipeline -> Phase-Architect (v1.3)
 
 ## 1) Purpose (Binding)
-Provide validated factual artefacts (activities, wellness, zone model) to the Micro-Planner.
+Provide validated factual artefacts (activities, wellness, zone model) to the Phase-Architect.
 
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `activities_actual_yyyy-ww.json` validated against `activities_actual.schema.json`.
@@ -43,14 +43,14 @@ Provide validated factual artefacts (activities, wellness, zone model) to the Mi
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.
 - MUST STOP on schema validation failure.
 
-## 3) Consumer Responsibilities (Micro-Planner)
+## 3) Consumer Responsibilities (Phase-Architect)
 - MUST validate input JSON before use and STOP on invalid artefacts.
 - MUST treat activities artefacts as informational only.
-- MUST use `wellness.body_mass_kg` for any body-mass scaling in load or plausibility checks.
+- MUST use `wellness.body_mass_kg` for any body-mass scaling in load guardrails or plausibility checks.
 
 ## 4) Artefacts and Schemas (Binding)
 
-### Inputs (Micro-Planner consumes)
+### Inputs (Phase-Architect consumes)
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
 - `availability_yyyy-ww.json` -> `availability.schema.json`

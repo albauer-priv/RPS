@@ -106,7 +106,7 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 ## 6. PERIODIZATION, CONCURRENT TRAINING & STRENGTH
 
-41. Friel, J. (2016). *The Cyclist's Training Bible* (5th ed.). VeloPress. (Micro/macro cycles, force intervals).
+41. Friel, J. (2016). *The Cyclist's Training Bible* (5th ed.). VeloPress. (Week/season cycles, force intervals).
 
 42. Rønnestad, B. R., et al. (2021). Periodization for polarized training in endurance athletes. *Scandinavian Journal of Medicine & Science in Sports*, 31(5), 1125–1137.
 
@@ -130,9 +130,9 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 50. CTS Ep. 208 – *How Carbohydrate Fueling Affects Durability in Long Workouts* (Dr. Gabriele Gallo). (kJ-based fueling).
 
-51. CTS Ep. 209 – *Super Time-Crunched Cycling Training in 4 Hours/Week*. (Block architecture).
+51. CTS Ep. 209 – *Super Time-Crunched Cycling Training in 4 Hours/Week*. (Phase architecture).
 
-52. CTS – *Mastering Block Training for Time-Crunched Cyclists*. (BacktoBack Z2).
+52. CTS – *Mastering Phase Training for Time-Crunched Cyclists*. (BacktoBack Z2).
 
 53. CTS Ep. 187 – *Unlocking the Power of Anaerobic Capacity* (Coach John Croom). (AC dosage).
 
@@ -215,7 +215,7 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 82. SCYENCE Ep. 76 – *FATmax vs. Maximales Pyruvat-Defizit*. (Energetic pathways).
 
-83. SCYENCE Ep. 94 – *Das Laktatwaschbecken, Trainingslager & Crash-Diät*. (Long blocks planning).
+83. SCYENCE Ep. 94 – *Das Laktatwaschbecken, Trainingslager & Crash-Diät*. (Long phases planning).
 
 ---
 
@@ -251,7 +251,7 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 92. TrainingPeaks Education (trainingpeaks.com) – TSS, IF, CTL, PMC.
 
-93. TrainingPeaks Blog – *Break Through Your Performance Plateau by Increasing Training Density* (block training).
+93. TrainingPeaks Blog – *Break Through Your Performance Plateau by Increasing Training Density* (phase training).
 
 94. TrainingPeaks Blog – *VLamax in Training* & *Concurrent Training Risks* (Moore).
 

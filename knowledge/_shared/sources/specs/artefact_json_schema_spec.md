@@ -9,9 +9,9 @@ Authority: Binding
 
 Applies-To:
   - Data-Pipeline
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
   - Performance-Analyst
   - Policy-Owner
@@ -58,11 +58,11 @@ Sidecars are informational only and MUST NOT be used as agent inputs.
 
 ## 6. Required JSON Schemas (V1)
 - `season_plan.schema.json`
-- `macro_meso_feed_forward.schema.json`
+- `season_phase_feed_forward.schema.json`
 - `phase_guardrails.schema.json`
 - `phase_structure.schema.json`
 - `phase_preview.schema.json`
-- `block_feed_forward.schema.json`
+- `phase_feed_forward.schema.json`
 - `zone_model.schema.json`
 - `week_plan.schema.json`
 - `workouts.schema.json` (Workout-Builder output)

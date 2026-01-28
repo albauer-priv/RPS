@@ -76,9 +76,9 @@ class LocalArtifactStore:
         ensure_dir(base)
 
         ensure_dir(base / "inputs")
-        ensure_dir(base / "data/plans/macro")
-        ensure_dir(base / "data/plans/meso")
-        ensure_dir(base / "data/plans/micro")
+        ensure_dir(base / "data/plans/season")
+        ensure_dir(base / "data/plans/phase")
+        ensure_dir(base / "data/plans/week")
         ensure_dir(base / "data/exports")
         ensure_dir(base / "data/analysis")
         ensure_dir(base / "logs")

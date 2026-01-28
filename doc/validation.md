@@ -88,11 +88,11 @@ Manual validation checklists live under `doc/validation/`:
 - `doc/validation/events_validation.md`
 - `doc/validation/kpi_profile_validation.md`
 - `doc/validation/season_plan_validation.md`
-- `doc/validation/macro_meso_feed_forward_validation.md`
+- `doc/validation/season_phase_feed_forward_validation.md`
 - `doc/validation/phase_guardrails_validation.md`
 - `doc/validation/phase_structure_validation.md`
 - `doc/validation/phase_preview_validation.md`
-- `doc/validation/block_feed_forward_validation.md`
+- `doc/validation/phase_feed_forward_validation.md`
 - `doc/validation/zone_model_validation.md`
 - `doc/validation/week_plan_validation.md`
 - `doc/validation/intervals_workouts_validation.md`

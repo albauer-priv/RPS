@@ -1,17 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "macro_meso_feed_forward.schema.json",
-  "title": "MacroMesoFeedForward",
+  "$id": "season_phase_feed_forward.schema.json",
+  "title": "SeasonPhaseFeedForward",
   "type": "object",
   "$defs": {
-    "macro_meso_feed_forward_data": {
+    "season_phase_feed_forward_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "source_context",
         "decision_summary",
         "explicit_non_actions",
-        "block_adjustment"
+        "phase_adjustment"
       ],
       "properties": {
         "source_context": {
@@ -20,7 +20,7 @@
           "required": [
             "season_plan_ref",
             "des_analysis_report_ref",
-            "affected_block_id"
+            "affected_phase_id"
           ],
           "properties": {
             "season_plan_ref": {
@@ -31,7 +31,7 @@
               "type": "string",
               "minLength": 1
             },
-            "affected_block_id": {
+            "affected_phase_id": {
               "type": "string",
               "minLength": 1
             }
@@ -49,8 +49,8 @@
               "type": "string",
               "enum": [
                 "no_change",
-                "adjust_block",
-                "reweight_macro"
+                "adjust_phase",
+                "reweight_season"
               ]
             },
             "rationale": {
@@ -63,7 +63,7 @@
             }
           }
         },
-        "block_adjustment": {
+        "phase_adjustment": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -144,7 +144,7 @@
             "type": "string",
             "enum": [
               "No weekly workout changes",
-              "No micro-level intervention",
+              "No week-level intervention",
               "No KPI threshold enforcement"
             ]
           }
@@ -180,6 +180,7 @@
         "temporal_scope",
         "trace_data",
         "trace_events",
+        "data_confidence",
         "notes"
       ],
       "properties": {
@@ -213,9 +214,9 @@
           "enum": [
             "Data-Pipeline",
             "Season-Scenario-Agent",
-            "Macro-Planner",
-            "Meso-Architect",
-            "Micro-Planner",
+            "Season-Planner",
+            "Phase-Architect",
+            "Week-Planner",
             "Workout-Builder",
             "Performance-Analyst",
             "Policy-Owner"
@@ -233,9 +234,9 @@
           "type": "string",
           "enum": [
             "Shared",
-            "Macro",
-            "Meso",
-            "Micro",
+            "Season",
+            "Phase",
+            "Week",
             "Context"
           ]
         },
@@ -361,6 +362,18 @@
             }
           }
         },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "data_confidence.schema.json",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
+        },
         "notes": {
           "type": "string"
         }
@@ -373,7 +386,7 @@
         "source_context",
         "decision_summary",
         "explicit_non_actions",
-        "block_adjustment"
+        "phase_adjustment"
       ],
       "properties": {
         "source_context": {
@@ -382,7 +395,7 @@
           "required": [
             "season_plan_ref",
             "des_analysis_report_ref",
-            "affected_block_id"
+            "affected_phase_id"
           ],
           "properties": {
             "season_plan_ref": {
@@ -393,7 +406,7 @@
               "type": "string",
               "minLength": 1
             },
-            "affected_block_id": {
+            "affected_phase_id": {
               "type": "string",
               "minLength": 1
             }
@@ -411,8 +424,8 @@
               "type": "string",
               "enum": [
                 "no_change",
-                "adjust_block",
-                "reweight_macro"
+                "adjust_phase",
+                "reweight_season"
               ]
             },
             "rationale": {
@@ -425,7 +438,7 @@
             }
           }
         },
-        "block_adjustment": {
+        "phase_adjustment": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -506,7 +519,7 @@
             "type": "string",
             "enum": [
               "No weekly workout changes",
-              "No micro-level intervention",
+              "No week-level intervention",
               "No KPI threshold enforcement"
             ]
           }

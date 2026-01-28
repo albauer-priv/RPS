@@ -1,10 +1,10 @@
-"""Resolve meso block ranges from season plan phase definitions."""
+"""Resolve phase ranges from season plan phase definitions."""
 
 from __future__ import annotations
 
 from typing import Any, Optional
 
-from rps.workspace.block_resolution import add_weeks, iso_week_monday
+from rps.workspace.phase_resolution import add_weeks, iso_week_monday
 from rps.workspace.iso_helpers import (
     IsoWeek,
     IsoWeekRange,
@@ -38,14 +38,14 @@ def resolve_current_phase(
     return None
 
 
-def resolve_block_from_phase(
+def resolve_phase_window_from_phase(
     phase_range: IsoWeekRange,
     target: IsoWeek,
-    block_len: int = 4,
+    phase_len: int = 4,
 ) -> IsoWeekRange:
-    """Resolve a block range anchored to the phase start and clamped to its end."""
-    if block_len < 1:
-        raise ValueError("block_len must be >= 1")
+    """Resolve a phase range anchored to the phase start and clamped to its end."""
+    if phase_len < 1:
+        raise ValueError("phase_len must be >= 1")
 
     phase_start = iso_week_monday(phase_range.start.year, phase_range.start.week)
     target_start = iso_week_monday(target.year, target.week)
@@ -53,9 +53,9 @@ def resolve_block_from_phase(
     if delta_weeks < 0:
         delta_weeks = 0
 
-    block_index = delta_weeks // block_len
-    start = add_weeks(phase_range.start, block_index * block_len)
-    end = add_weeks(start, block_len - 1)
+    phase_index = delta_weeks // phase_len
+    start = add_weeks(phase_range.start, phase_index * phase_len)
+    end = add_weeks(start, phase_len - 1)
 
     if week_index(end) > week_index(phase_range.end):
         end = phase_range.end
@@ -63,16 +63,16 @@ def resolve_block_from_phase(
     return IsoWeekRange(start=start, end=end)
 
 
-def resolve_current_block_from_season_plan(
+def resolve_current_phase_window_from_season_plan(
     season_plan_envelope: dict[str, Any],
     target: IsoWeek,
-    block_len: int = 4,
+    phase_len: int = 4,
 ) -> IsoWeekRange:
-    """Resolve a phase-aligned block for a target week using season plan data."""
+    """Resolve a phase-aligned window for a target week using season plan data."""
     phase = resolve_current_phase(season_plan_envelope, target)
     if not phase:
         raise ValueError(
             f"No season plan phase covers target week {target.year:04d}-{target.week:02d}"
         )
     phase_range = parse_iso_week_range(phase["iso_week_range"])
-    return resolve_block_from_phase(phase_range, target, block_len=block_len)
+    return resolve_phase_window_from_phase(phase_range, target, phase_len=phase_len)

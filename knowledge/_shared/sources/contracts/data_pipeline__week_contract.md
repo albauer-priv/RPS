@@ -1,6 +1,6 @@
 ---
 Type: Contract
-Contract-Name: data_pipeline__meso
+Contract-Name: data_pipeline__week
 Version: 1.3
 Status: Active
 
@@ -8,7 +8,7 @@ Scope: Shared
 Authority: Binding
 
 From-Agent: Data-Pipeline
-To-Agent: Meso-Architect
+To-Agent: Week-Planner
 
 Dependencies:
   - ID: ActivitiesActualInterface
@@ -29,10 +29,10 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Data-Pipeline -> Meso-Architect (v1.3)
+# Contract: Data-Pipeline -> Week-Planner (v1.3)
 
 ## 1) Purpose (Binding)
-Provide validated factual artefacts (activities, wellness, zone model) to the Meso-Architect.
+Provide validated factual artefacts (activities, wellness, zone model) to the Week-Planner.
 
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `activities_actual_yyyy-ww.json` validated against `activities_actual.schema.json`.
@@ -43,14 +43,14 @@ Provide validated factual artefacts (activities, wellness, zone model) to the Me
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.
 - MUST STOP on schema validation failure.
 
-## 3) Consumer Responsibilities (Meso-Architect)
+## 3) Consumer Responsibilities (Week-Planner)
 - MUST validate input JSON before use and STOP on invalid artefacts.
 - MUST treat activities artefacts as informational only.
-- MUST use `wellness.body_mass_kg` for any body-mass scaling in load guardrails or plausibility checks.
+- MUST use `wellness.body_mass_kg` for any body-mass scaling in load or plausibility checks.
 
 ## 4) Artefacts and Schemas (Binding)
 
-### Inputs (Meso-Architect consumes)
+### Inputs (Week-Planner consumes)
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
 - `availability_yyyy-ww.json` -> `availability.schema.json`

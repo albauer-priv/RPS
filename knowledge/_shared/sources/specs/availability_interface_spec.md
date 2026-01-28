@@ -11,9 +11,9 @@ Inputs-From:
   - SeasonBriefInterface
 Outputs-To:
   - Season-Scenario-Agent
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
 ---
 
 # Availability Interface Specification

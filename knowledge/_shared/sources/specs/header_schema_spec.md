@@ -9,9 +9,9 @@ Authority: Binding
 
 Applies-To:
   - Data-Pipeline
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
   - Performance-Analyst
   - Policy-Owner
@@ -71,7 +71,7 @@ Canonical fields use **ID-based references** (not file paths) wherever possible.
 File references may be included as optional convenience fields, but never replace IDs.
 
 ### 2.6 Agent identifiers
-- Use **Title-Case with hyphens** (e.g., `Macro-Planner`, `Meso-Architect`).
+- Use **Title-Case with hyphens** (e.g., `Season-Planner`, `Phase-Architect`).
 
 ---
 
@@ -152,9 +152,9 @@ Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Performance-Analyst
 
 Dependencies:
@@ -214,7 +214,7 @@ Scope: Context
 Authority: Informational
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 
 Temporal-Scope:
@@ -240,7 +240,7 @@ Contract-Name: string
 Version: string
 Status: Draft | Active | Deprecated
 
-Scope: Shared | Macro | Meso | Micro
+Scope: Shared | Season | Phase | Week
 Authority: Binding | Informational | Derived
 
 From-Agent: Agent-ID
@@ -266,19 +266,19 @@ Notes: <text>
 ---
 ```
 
-### 6.3 Example: micro__builder contract
+### 6.3 Example: week__builder contract
 
 ```
 ---
 Type: Contract
-Contract-Name: micro__builder
+Contract-Name: week__builder
 Version: 1.2
 Status: Active
 
 Scope: Shared
 Authority: Binding
 
-From-Agent: Micro-Planner
+From-Agent: Week-Planner
 To-Agent: Workout-Builder
 
 Dependencies:
@@ -398,7 +398,7 @@ Legacy aliases (Transitional mode):
 
 ```
 ---
-Scope: <Shared|Macro|Meso|Micro|Context>
+Scope: <Shared|Season|Phase|Week|Context>
 ISO-Week: <yyyy-ww>
 ISO-Week-Range: <yyyy-ww--yyyy-ww>
 Temporal-Scope:
@@ -416,7 +416,7 @@ Notes: <text>
 
 The following **domain-specific fields belong in the artefact body**, not in the YAML header:
 
-- Block status and governance metadata (e.g., `Block-Status`, `Change-Type`, `Block-Type`)
+- Phase status and governance metadata (e.g., `Phase-Status`, `Change-Type`, `Phase-Type`)
 - Applicability/validity controls (e.g., `Applies-To`, `Valid-Until`)
 - Planning context markers (e.g., `Planning-Horizon`, `Season-Brief-Ref`, `Athlete-Profile-Ref`)
 - Lineage tables or trigger lists (e.g., `Derived-From`, `Upstream-Inputs`, `Upstream-Triggers`)
@@ -602,7 +602,7 @@ Normative-Role: Guardrails
 Decision-Authority: GuardrailOnly
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 
 Related-Evidence:
@@ -626,7 +626,7 @@ Normative-Role: Guardrails
 Decision-Authority: GuardrailOnly
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 
 Related-Evidence:
@@ -661,7 +661,7 @@ Normative-Role: JustificationOnly
 Decision-Authority: None
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 ---
 ```
@@ -682,7 +682,7 @@ Normative-Role: JustificationOnly
 Decision-Authority: None
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 ---
 ```
@@ -717,7 +717,7 @@ Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 ---
 
@@ -743,7 +743,7 @@ Implements:
   Version: 1.0
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 
 Dependencies:
@@ -775,7 +775,7 @@ Implements:
   Version: 1.0
 
 Applies-To:
-  - Macro-Planner
+  - Season-Planner
   - Performance-Analyst
 
 Dependencies:

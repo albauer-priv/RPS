@@ -10,9 +10,9 @@ Authority: Binding
 Applies-To:
   - Data-Pipeline
   - Performance-Analyst
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
 
 Notes: >
@@ -32,7 +32,7 @@ Define consistent filenames for all artefacts to support:
 ## 2. Common Tokens
 - `ww` = ISO week number (01–53), always two digits.
 - `yyyy` = four-digit year.
-- `yyyy-ww--yyyy-ww` = block range token for blocks (inclusive).
+- `yyyy-ww--yyyy-ww` = phase range token for phases (inclusive).
 
 ## 3. Required Filename Patterns (Normative)
 
@@ -49,18 +49,18 @@ Define consistent filenames for all artefacts to support:
 - `availability_yyyy-ww.json`
 - `wellness_yyyy-ww.json`
 
-### Macro-Planner
+### Season-Planner
 - `season_plan_yyyy-ww--yyyy-ww.json` (range may be 8–32 weeks)
-- `macro_meso_feed_forward_yyyy-ww.json`
+- `season_phase_feed_forward_yyyy-ww.json`
 
-### Meso-Architect
+### Phase-Architect
 - `phase_guardrails_yyyy-ww--yyyy-ww.json`
-- `block_feed_forward_yyyy-ww.json`
+- `phase_feed_forward_yyyy-ww.json`
 - `phase_structure_yyyy-ww--yyyy-ww.json`
 - `phase_preview_yyyy-ww--yyyy-ww.json`
 - `zone_model_power_<FTP>W.json`
 
-### Micro-Planner
+### Week-Planner
 - `week_plan_yyyy-ww.json`
 
 ### Workout-Builder (post-workout export)

@@ -192,7 +192,7 @@
           "green": "stable / up",
           "yellow": "flat",
           "red": "down",
-          "context": "multi-block trend"
+          "context": "multi-phase trend"
         }
       }
     },

@@ -92,7 +92,7 @@
       "additionalProperties": false,
       "required": [
         "body_metadata",
-        "macro_intent_principles",
+        "season_intent_principles",
         "phases",
         "global_constraints",
         "season_load_envelope",
@@ -163,7 +163,7 @@
             }
           }
         },
-        "macro_intent_principles": {
+        "season_intent_principles": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -476,7 +476,7 @@
           "items": {
             "type": "string",
             "enum": [
-              "block definitions (block plans)",
+              "phase definitions (phase plans)",
               "weekly schedules",
               "day-by-day structure",
               "workouts or interval prescriptions",
@@ -498,7 +498,7 @@
             "season_load_envelope_and_assumptions_documented",
             "principles_and_scientific_foundation_documented",
             "allowed_forbidden_domains_listed",
-            "no_meso_or_micro_planning_content",
+            "no_phase_or_week_planning_content",
             "header_includes_implements_iso_week_range_trace"
           ],
           "properties": {
@@ -538,7 +538,7 @@
               "const": true,
               "type": "boolean"
             },
-            "no_meso_or_micro_planning_content": {
+            "no_phase_or_week_planning_content": {
               "const": true,
               "type": "boolean"
             },
@@ -802,7 +802,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Macro-Planner",
+          "const": "Season-Planner",
           "type": "string"
         }
       },

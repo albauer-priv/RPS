@@ -1,4 +1,4 @@
-"""General helper utilities for week and block calculations."""
+"""General helper utilities for week and phase calculations."""
 
 from __future__ import annotations
 
@@ -37,21 +37,21 @@ def _week_key_add_weeks(week_key: str, weeks: int) -> str:
 
 
 @dataclass(frozen=True)
-class BlockRange:
-    """Simple block range container with a precomputed key."""
+class PhaseRange:
+    """Simple phase range container with a precomputed key."""
     start_week: str
     end_week: str
     range_key: str
 
 
-def resolve_current_block(week_key: str, block_length_weeks: int = 4) -> BlockRange:
-    """Return a block range starting at week_key."""
-    if block_length_weeks < 1:
-        raise ValueError("block_length_weeks must be >= 1")
+def resolve_current_phase(week_key: str, phase_length_weeks: int = 4) -> PhaseRange:
+    """Return a phase range starting at week_key."""
+    if phase_length_weeks < 1:
+        raise ValueError("phase_length_weeks must be >= 1")
 
     start_week = week_key
-    end_week = _week_key_add_weeks(start_week, block_length_weeks - 1)
-    return BlockRange(
+    end_week = _week_key_add_weeks(start_week, phase_length_weeks - 1)
+    return PhaseRange(
         start_week=start_week,
         end_week=end_week,
         range_key=f"{start_week}--{end_week}",

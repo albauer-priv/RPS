@@ -7,5 +7,5 @@
 
 ## Governance alignment
 - [ ] Weekly load stays inside kJ bands from phase guardrails.
-- [ ] Allowed day roles and intensity domains match execution architecture.
+- [ ] Allowed day roles and intensity domains match phase structure.
 - [ ] Quality density limits are respected.

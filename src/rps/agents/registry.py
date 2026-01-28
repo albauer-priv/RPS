@@ -10,23 +10,23 @@ AGENTS: dict[str, AgentSpec] = {
         vector_store_name="vs_rps_all_agents",
         prompt_file_stem="season_scenario",
     ),
-    "macro_planner": AgentSpec(
-        name="macro_planner",
-        display_name="Macro-Planner",
+    "season_planner": AgentSpec(
+        name="season_planner",
+        display_name="Season-Planner",
         vector_store_name="vs_rps_all_agents",
-        prompt_file_stem="macro_planner",
+        prompt_file_stem="season_planner",
     ),
-    "meso_architect": AgentSpec(
-        name="meso_architect",
-        display_name="Meso-Architect",
+    "phase_architect": AgentSpec(
+        name="phase_architect",
+        display_name="Phase-Architect",
         vector_store_name="vs_rps_all_agents",
-        prompt_file_stem="meso_architect",
+        prompt_file_stem="phase_architect",
     ),
-    "micro_planner": AgentSpec(
-        name="micro_planner",
-        display_name="Micro-Planner",
+    "week_planner": AgentSpec(
+        name="week_planner",
+        display_name="Week-Planner",
         vector_store_name="vs_rps_all_agents",
-        prompt_file_stem="micro_planner",
+        prompt_file_stem="week_planner",
     ),
     "workout_builder": AgentSpec(
         name="workout_builder",

@@ -44,15 +44,15 @@ Trace-Upstream:
   - kJ/kg/h: {{ body_metadata.moving_time_rate_guidance.kj_per_kg_per_hour or "N/A" }}
   - Notes: {{ body_metadata.moving_time_rate_guidance.notes or "N/A" }}
 
-## 1) Macro Intent & Principles
+## 1) Season Intent & Principles
 
-- Season objective: {{ macro_intent.season_objective }}
-- Success definition: {{ macro_intent.success_definition }}
+- Season objective: {{ season_intent.season_objective }}
+- Success definition: {{ season_intent.success_definition }}
 - Non-negotiable principles:
-{{ bullet_list(macro_intent.non_negotiable_principles) }}
+{{ bullet_list(season_intent.non_negotiable_principles) }}
 
 - kJ corridor design notes:
-{{ bullet_list(macro_intent.kj_corridor_design_notes) }}
+{{ bullet_list(season_intent.kj_corridor_design_notes) }}
 
 ## 2) Phases (REQUIRED)
 
@@ -126,7 +126,7 @@ Trace-Upstream:
 
 ## 5) Explicit Assumptions & Unknowns (REQUIRED)
 
-- Assumptions made at macro level:
+- Assumptions made at season level:
 {{ bullet_list(assumptions_unknowns.assumptions) }}
 
 - Known uncertainties entering the season:
@@ -141,7 +141,7 @@ Trace-Upstream:
 - Conditions that trigger conservative handling:
 {{ bullet_list(phase_transitions_guardrails.conservative_triggers) }}
 
-- Absolute no-go rules across the macro plan:
+- Absolute no-go rules across the season plan:
 {{ bullet_list(phase_transitions_guardrails.absolute_no_go_rules) }}
 
 ## 7) Principles & Scientific Foundation

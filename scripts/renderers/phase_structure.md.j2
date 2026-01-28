@@ -33,9 +33,9 @@ Trace-Upstream:
 
 ## 1) Upstream Intent (Read-only)
 
-- Block type: {{ upstream_intent.block_type }}
+- Phase type: {{ upstream_intent.phase_type }}
 - Primary objective: {{ upstream_intent.primary_objective }}
-- Block-Status: {{ upstream_intent.block_status }}
+- Phase status: {{ upstream_intent.phase_status }}
 - Non-Negotiables:
 {{ bullet_list(upstream_intent.non_negotiables) }}
 - Constraints (time, recovery, intensity density):
@@ -43,7 +43,7 @@ Trace-Upstream:
 - Key risks / warnings:
 {{ bullet_list(upstream_intent.key_risks_warnings) }}
 
-## 2) Execution Principles (Block-level, non-numeric)
+## 2) Execution Principles (Phase-level, non-numeric)
 
 ### 2.1 Load & Intensity Handling (conceptual)
 {% set load = execution_principles.load_intensity_handling %}
@@ -65,16 +65,16 @@ Trace-Upstream:
 ### 2.3 Consistency over Optimization
 {{ bullet_list(execution_principles.consistency_over_optimization.statements) }}
 
-## 3) Structural Building Blocks (Abstract)
+## 3) Structural Phase Elements (Abstract)
 
 ### 3.1 Allowed Day Roles
-{{ bullet_list(structural_building_blocks.allowed_day_roles) }}
+{{ bullet_list(structural_phase_elements.allowed_day_roles) }}
 
 ### 3.2 Allowed Intensity Domains
-{{ bullet_list(structural_building_blocks.allowed_intensity_domains) }}
+{{ bullet_list(structural_phase_elements.allowed_intensity_domains) }}
 
 ### 3.3 Allowed Load Modalities
-{{ bullet_list(structural_building_blocks.allowed_load_modalities) }}
+{{ bullet_list(structural_phase_elements.allowed_load_modalities) }}
 
 ## 4) Week Skeleton Logic (Structural Only)
 
@@ -116,9 +116,9 @@ Trace-Upstream:
 
 ## 7) Consistency & Self-Check
 {% set check = self_check %}
-- [{{ "x" if check.block_status_respected else " " }}] Block-Status respected
-- [{{ "x" if check.block_range_covered else " " }}] Block range covered
-- [{{ "x" if check.week_roles_defined_for_block_range else " " }}] Week roles defined for all weeks in block
+- [{{ "x" if check.phase_status_respected else " " }}] Phase status respected
+- [{{ "x" if check.phase_range_covered else " " }}] Phase range covered
+- [{{ "x" if check.week_roles_defined_for_phase_range else " " }}] Week roles defined for all weeks in phase
 - [{{ "x" if check.no_new_decision_introduced else " " }}] No new decision introduced
 - [{{ "x" if check.no_numeric_target_introduced else " " }}] No numeric target introduced
 - [{{ "x" if check.no_kpi_gate_inferred else " " }}] No KPI gate inferred

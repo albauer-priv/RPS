@@ -12,16 +12,16 @@ Last-Updated: 2026-01-22
 2) Select a `kpi_profile_des_*.json`, copy it to `var/athletes/<athlete_id>/latest/`, and rename to `kpi_profile.json`.  
 3) Update `events.md`.  
 4) Run **Season-Scenario-Agent** (generates `season_scenarios`).  
-5) Select scenario and run **Macro** (uses selected scenario).  
-6) Run **Meso** -> `phase_guardrails_yyyy-ww--yyyy-ww.json` + `phase_structure_yyyy-ww--yyyy-ww.json`.  
-7) Run **Micro** -> `week_plan_yyyy-ww.json`.  
+5) Select scenario and run **Season** (uses selected scenario).  
+6) Run **Phase** -> `phase_guardrails_yyyy-ww--yyyy-ww.json` + `phase_structure_yyyy-ww--yyyy-ww.json`.  
+7) Run **Week** -> `week_plan_yyyy-ww.json`.  
 8) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
 9) Post workouts: `python scripts/data_pipeline/post_workout.py`.  
 10) Run data pipeline: `python -m rps.main parse-intervals`.  
 11) Validate outputs: `python scripts/validate_outputs.py`.  
 12) Run **Performance-Analyst** -> `des_analysis_report_yyyy-ww.json`.  
 
-Macro changes are rare (months). Meso every block. Micro weekly. Analysis weekly.
+Season changes are rare (months). Phase every phase. Week weekly. Analysis weekly.
 
 Place `season_brief_yyyy.md` and `events.md` under:
 
@@ -42,7 +42,7 @@ var/athletes/<athlete_id>/latest/kpi_profile.json
 
 Predefined KPI profiles live under `kpi_profiles/` at repo root.
 
-Macro flow (agent tasks via CLI, or use the Streamlit UI "Create Season Plan"):
+Season flow (agent tasks via CLI, or use the Streamlit UI "Create Season Plan"):
 
 ```bash
 # 1) Create scenarios (SEASON_SCENARIOS)
@@ -63,18 +63,18 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 ```bash
 # 3) Create season plan (SEASON_PLAN)
 PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent macro_planner \
+  --agent season_planner \
   --task CREATE_SEASON_PLAN \
   --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06. Use the latest SEASON_SCENARIO_SELECTION."
 ```
 
-Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the macro-planner text:
+Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the season-planner text:
 `Moving time rate band: fast_competitive.`
 
-Macro, Meso, Micro cycles (concrete CLI):
+Season, Phase, Week cycles (concrete CLI):
 
 ```bash
-# Macro cycle (agent tasks)
+# Season cycle (agent tasks)
 PYTHONPATH=src python3 -m rps.main run-agent \
   --agent season_scenario \
   --athlete ath_001 \
@@ -88,25 +88,25 @@ PYTHONPATH=src python3 -m rps.main run-agent \
   --text "Select Scenario A for ISO week 2026-06. Use latest SEASON_SCENARIOS."
 
 PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent macro_planner \
+  --agent season_planner \
   --athlete ath_001 \
   --task CREATE_SEASON_PLAN \
   --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
 ```
 
 ```bash
-# Meso cycle (target ISO week = 2026-06)
+# Phase cycle (target ISO week = 2026-06)
 PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent meso_architect \
+  --agent phase_architect \
   --athlete ath_001 \
   --task CREATE_PHASE_GUARDRAILS CREATE_PHASE_STRUCTURE \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create phase_guardrails and phase_structure for the block covering ISO week 2026-06."
+  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create phase_guardrails and phase_structure for the phase covering ISO week 2026-06."
 ```
 
 ```bash
-# Micro cycle (target ISO week = 2026-06)
+# Week cycle (target ISO week = 2026-06)
 PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent micro_planner \
+  --agent week_planner \
   --athlete ath_001 \
   --task CREATE_WEEK_PLAN \
   --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create week_plan for ISO week 2026-06."
@@ -140,17 +140,17 @@ This guide explains the planning sequence, artefacts, and cadence.
 
 **Governance and cycles**
 - **Season-Scenario**: generates advisory A/B/C scenarios from the season brief.
-- **Macro**: long-horizon intent (8-32 weeks), phases, load corridors.
-- **Meso**: phase-aligned blocks (default 4 weeks).
-- **Micro**: weekly plan and sessions.
+- **Season**: long-horizon intent (8-32 weeks), phases, load corridors.
+- **Phase**: phase-aligned phases (default 4 weeks).
+- **Week**: weekly plan and sessions.
 - **Workout-Builder**: deterministic conversion to Intervals.icu JSON.
 - **Performance-Analyst**: diagnostic report (advisory).
 - **Data Pipeline**: factual activity data (actual + trend).
 
 **Artefact types**
-- **Binding**: must be followed (macro, governance, execution arch, week plan).
+- **Binding**: must be followed (season, governance, execution arch, week plan).
 - **Informational**: context only (season_scenarios, events, previews).
-- **Advisory**: analysis report (macro may use to adjust later).
+- **Advisory**: analysis report (season may use to adjust later).
 
 **Formats**
 - Agent artefacts are JSON and validated by schema.
@@ -162,10 +162,10 @@ This guide explains the planning sequence, artefacts, and cadence.
 
 ### 2.1 Cadence summary
 
-- Athlete writes season brief first (macro input).
-- Macro: when goals or A/B events change.
-- Meso: every block (default 4 weeks).
-- Micro: weekly.
+- Athlete writes season brief first (season input).
+- Season: when goals or A/B events change.
+- Phase: every phase (default 4 weeks).
+- Week: weekly.
 - Analysis: weekly after data pipeline outputs exist.
 
 ### 2.2 Overview diagram
@@ -175,22 +175,22 @@ flowchart TD
   SB[season_brief_yyyy.md] --> SS[Season-Scenario]
   KP[kpi_profile_des_*.json] --> SS
   SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]
-  SC -. advisory .-> MA[Macro cycle]
+  SC -. advisory .-> MA[Season cycle]
   KP --> MA
   EV[events.md] -. info .-> SS
   EV -. info .-> MA
 
   MA --> MO[season_plan_yyyy-ww--yyyy-ww.json]
-  MA -. optional .-> MMFF[macro_meso_feed_forward_yyyy-ww.json]
+  MA -. optional .-> SPFF[season_phase_feed_forward_yyyy-ww.json]
 
-  MO --> ME[Meso cycle]
-  MMFF -. optional .-> ME
+  MO --> ME[Phase cycle]
+  SPFF -. optional .-> ME
 
   ME --> BG[phase_guardrails_yyyy-ww--yyyy-ww.json]
   ME --> BEA[phase_structure_yyyy-ww--yyyy-ww.json]
-  ME -. optional .-> BFF[block_feed_forward_yyyy-ww.json]
+  ME -. optional .-> BFF[phase_feed_forward_yyyy-ww.json]
 
-  BG --> MI[Micro cycle]
+  BG --> MI[Week cycle]
   BEA --> MI
   BFF -. optional .-> MI
 
@@ -213,30 +213,30 @@ flowchart TD
 
 ---
 
-## 3. Macro vs Meso boundaries
+## 3. Season vs Phase boundaries
 
-- `season_plan` defines **phases** with `iso_week_range`.
-- Macro must not define meso blocks.
-- Meso block ranges are derived **inside** a macro phase.
+- `season_plan` defines **season phases** with `iso_week_range`.
+- Season must not define phase-artefact outputs (guardrails/structure/preview).
+- Phase ranges are derived **inside** the season phase.
 
-Agents resolve the phase and block range internally via workspace tools
+Agents resolve the phase and phase range internally via workspace tools
 (no user prompt hints required):
 
-- `workspace_get_block_context({ "year": YYYY, "week": WW })`
+- `workspace_get_phase_context({ "year": YYYY, "week": WW })`
 
 ---
 
 ## 4. Agent modes (summary)
 
-### Macro-Planner
+### Season-Planner
 - Create or update season plan.
-- Optional feed-forward when a block needs explicit guidance.
+- Optional feed-forward when a phase needs explicit guidance.
 
-### Meso-Architect
-- Create phase guardrails + execution architecture.
+### Phase-Architect
+- Create phase guardrails + phase structure.
 - Optional preview and feed-forward when requested.
 
-### Micro-Planner
+### Week-Planner
 - Always outputs one `week_plan` per target week.
 
 ### Workout-Builder
@@ -249,7 +249,7 @@ Agents resolve the phase and block range internally via workspace tools
 
 ## 5. Common pitfalls
 
-- Do not create meso blocks in Macro.
+- Do not create phase-artefact outputs in Season.
 - Always set `meta.iso_week` or `meta.iso_week_range`.
 - Ensure `latest/` reflects the current version for downstream agents.
 

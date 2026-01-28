@@ -192,7 +192,7 @@
           "green": "stable / up",
           "yellow": "flat",
           "red": "down",
-          "context": "multi-block trend"
+          "context": "multi-phase trend"
         }
       }
     },
@@ -226,7 +226,7 @@
     },
     "decision_rules": {
       "green": "cautious progression via duration or density",
-      "yellow": "hold load, extend block, reduce intensity density",
+      "yellow": "hold load, extend phase, reduce intensity density",
       "red": "mandatory deload (-30-50 % kJ), reassess readiness"
     },
     "traceability": {

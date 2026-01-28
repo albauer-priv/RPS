@@ -8,7 +8,7 @@ from typing import List
 from rps.agents.tasks import AgentTask
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.season_plan_service import resolve_block_range_from_season_plan
+from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
 from rps.workspace.iso_helpers import IsoWeek, envelope_week
 from rps.workspace.types import ArtifactType
 
@@ -26,8 +26,8 @@ class AgentTaskRouter:
         """Initialize with routing context."""
         self.ctx = ctx
 
-    def route_macro(self, target: IsoWeek) -> List[AgentTask]:
-        """Return macro tasks required for the target week."""
+    def route_season(self, target: IsoWeek) -> List[AgentTask]:
+        """Return season-plan tasks required for the target week."""
         tasks: List[AgentTask] = []
 
         if not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PLAN):
@@ -35,43 +35,43 @@ class AgentTaskRouter:
 
         if (
             self.ctx.workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT)
-            and not self.ctx.workspace.latest_exists(ArtifactType.MACRO_MESO_FEED_FORWARD)
+            and not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PHASE_FEED_FORWARD)
         ):
             pass
 
         return tasks
 
-    def route_meso(self, target: IsoWeek) -> List[AgentTask]:
-        """Return meso tasks required for the target week."""
+    def route_phase(self, target: IsoWeek) -> List[AgentTask]:
+        """Return phase tasks required for the target week."""
         tasks: List[AgentTask] = []
 
         if not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PLAN):
             return tasks
 
-        macro = self.ctx.workspace.get_latest(ArtifactType.SEASON_PLAN)
-        block_range = resolve_block_range_from_season_plan(macro, target, block_len=4)
+        season_plan = self.ctx.workspace.get_latest(ArtifactType.SEASON_PLAN)
+        phase_range = resolve_phase_range_from_season_plan(season_plan, target, phase_len=4)
 
         index_query = IndexExactQuery(
             root=self.ctx.workspace.store.root,
             athlete_id=self.ctx.workspace.athlete_id,
         )
 
-        if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, block_range):
+        if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range):
             tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
 
-        if not index_query.has_exact_range(ArtifactType.PHASE_STRUCTURE.value, block_range):
+        if not index_query.has_exact_range(ArtifactType.PHASE_STRUCTURE.value, phase_range):
             tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
 
         if not self.ctx.workspace.latest_exists(ArtifactType.PHASE_PREVIEW):
             tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
 
-        if self.ctx.workspace.latest_exists(ArtifactType.MACRO_MESO_FEED_FORWARD):
-            tasks.append(AgentTask.CREATE_BLOCK_FEED_FORWARD)
+        if self.ctx.workspace.latest_exists(ArtifactType.SEASON_PHASE_FEED_FORWARD):
+            tasks.append(AgentTask.CREATE_PHASE_FEED_FORWARD)
 
         return tasks
 
-    def route_micro(self, target: IsoWeek) -> List[AgentTask]:
-        """Return micro tasks required for the target week."""
+    def route_week(self, target: IsoWeek) -> List[AgentTask]:
+        """Return week tasks required for the target week."""
         tasks: List[AgentTask] = []
 
         if not (

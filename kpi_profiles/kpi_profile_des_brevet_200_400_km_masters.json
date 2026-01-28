@@ -185,7 +185,7 @@
           "green": "stable / up",
           "yellow": "flat",
           "red": "down",
-          "context": "block trend"
+          "context": "phase trend"
         }
       }
     },
@@ -219,7 +219,7 @@
     },
     "decision_rules": {
       "green": "progress via kJ or duration",
-      "yellow": "hold load, repeat block",
+      "yellow": "hold load, repeat phase",
       "red": "mandatory deload (-20-40 % kJ)"
     },
     "traceability": {
@@ -228,8 +228,8 @@
         "Principles Paper (Section 2 Load, Section 4 Durability, Section 5 Overload)",
         "Energetic preload: >= 3,000-3,500 kJ single-day; >= 6,000-8,000 kJ back-to-back.",
         "Relative preload preferred: use moving_time_rate_guidance (kJ/kg/h) for moving-time pacing; do not use legacy kJ/kg preloads.",
-        "Micro-Planner MAY report KPI observations factually.",
-        "Micro-Planner MUST NOT trigger progression, hold/deload decisions, or interpret KPI color states."
+        "Week-Planner MAY report KPI observations factually.",
+        "Week-Planner MUST NOT trigger progression, hold/deload decisions, or interpret KPI color states."
       ]
     }
   }

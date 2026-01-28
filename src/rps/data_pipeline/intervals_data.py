@@ -160,7 +160,7 @@ def load_kj_plan_by_week(athlete_id: str) -> dict[tuple[int, int], float]:
     """Load planned weekly kJ from week_plan artefacts when available."""
     plan_map: dict[tuple[int, int], float] = {}
     base = athlete_root(athlete_id)
-    candidate_dirs = [base / "data" / "plans" / "micro", base / "plans" / "micro"]
+    candidate_dirs = [base / "data" / "plans" / "week", base / "plans" / "week"]
     for plan_dir in candidate_dirs:
         if not plan_dir.exists():
             continue

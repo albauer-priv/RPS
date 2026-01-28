@@ -54,7 +54,7 @@ Specs / policies:
 - `traceability_spec.md`
 
 Contracts:
-- `micro__builder_contract.md`
+- `week__builder_contract.md`
 
 Schemas:
 - `week_plan.schema.json` (input validation)
@@ -105,7 +105,7 @@ You MUST NOT invent or alter workouts; you only convert.
 4) `workout_json_spec.md` (mapping rules)
 5) `intervals_workout_ebnf.md` + `workout_syntax_and_validation.md` (input workout_text validity)
 6) `week_plan.schema.json` (input schema validity)
-7) `micro__builder_contract.md`
+7) `week__builder_contract.md`
 
 If any conflict/ambiguity exists: STOP.
 

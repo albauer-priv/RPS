@@ -1,6 +1,6 @@
 ---
 Type: Contract
-Contract-Name: data_pipeline__macro
+Contract-Name: data_pipeline__season
 Version: 1.3
 Status: Active
 
@@ -8,7 +8,7 @@ Scope: Shared
 Authority: Binding
 
 From-Agent: Data-Pipeline
-To-Agent: Macro-Planner
+To-Agent: Season-Planner
 
 Dependencies:
   - ID: ActivitiesActualInterface
@@ -29,10 +29,10 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Data-Pipeline -> Macro-Planner (v1.3)
+# Contract: Data-Pipeline -> Season-Planner (v1.3)
 
 ## 1) Purpose (Binding)
-Provide validated factual artefacts (activities, wellness, zone model) to the Macro-Planner.
+Provide validated factual artefacts (activities, wellness, zone model) to the Season-Planner.
 
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `activities_actual_yyyy-ww.json` validated against `activities_actual.schema.json`.
@@ -43,14 +43,14 @@ Provide validated factual artefacts (activities, wellness, zone model) to the Ma
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.
 - MUST STOP on schema validation failure.
 
-## 3) Consumer Responsibilities (Macro-Planner)
+## 3) Consumer Responsibilities (Season-Planner)
 - MUST validate input JSON before use and STOP on invalid artefacts.
-- MUST treat activities artefacts as informational unless explicitly overridden by macro governance.
+- MUST treat activities artefacts as informational unless explicitly overridden by season governance.
 - MUST use `wellness.body_mass_kg` as the sole body-mass source for any kJ/kg/h or W/kg scaling.
 
 ## 4) Artefacts and Schemas (Binding)
 
-### Inputs (Macro-Planner consumes)
+### Inputs (Season-Planner consumes)
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`
 - `activities_trend_yyyy-ww.json` -> `activities_trend.schema.json`
 - `availability_yyyy-ww.json` -> `availability.schema.json`
@@ -61,7 +61,7 @@ Provide validated factual artefacts (activities, wellness, zone model) to the Ma
 - None.
 
 ## 5) Constraints / Forbidden (Binding)
-- Macro-Planner MUST NOT treat activities artefacts as governance.
+- Season-Planner MUST NOT treat activities artefacts as governance.
 
 ## 6) Error Handling & STOP Rules
 - Missing or invalid activities artefacts -> STOP and escalate.

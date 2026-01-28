@@ -9,9 +9,9 @@ Authority: Binding
 
 Applies-To:
   - Data-Pipeline
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
 
 Notes: >
@@ -25,7 +25,7 @@ Notes: >
 
 1. Governance Artefacts
    - `phase_guardrails_yyyy-ww--yyyy-ww.json`
-   - `block_feed_forward_yyyy-ww.json` (within validity window)
+   - `phase_feed_forward_yyyy-ww.json` (within validity window)
 2. Agent Contracts
 3. Specifications & Schemas
 4. Templates (legacy, deprecated)
@@ -41,7 +41,7 @@ Higher layers always override lower layers.
 ## 3. Contract vs. Contract
 
 If multiple contracts apply:
-1. More specific scope wins (Micro > Meso > Macro > Shared)
+1. More specific scope wins (Week > Phase > Season > Shared)
 2. If equal scope, upstream governance intent wins
 3. If unresolved, STOP and require explicit resolution
 

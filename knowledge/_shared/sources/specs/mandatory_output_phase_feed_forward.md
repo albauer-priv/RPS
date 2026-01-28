@@ -1,16 +1,16 @@
 # Mandatory Output Chapter
 
 Purpose
-This chapter defines how to produce **schema‑valid BLOCK_FEED_FORWARD JSON**.
+This chapter defines how to produce **schema‑valid PHASE_FEED_FORWARD JSON**.
 
 ---
 
-## ARTIFACT: BLOCK_FEED_FORWARD
+## ARTIFACT: PHASE_FEED_FORWARD
 
 ### WHICH SCHEMA TO USE AND HOW TO FIND
-- Schema: `block_feed_forward.schema.json`
-  - Filter: `{"type":"eq","key":"schema_id","value":"block_feed_forward.schema.json"}`
-- You MUST validate output against this schema before calling `store_block_feed_forward`.
+- Schema: `phase_feed_forward.schema.json`
+  - Filter: `{"type":"eq","key":"schema_id","value":"phase_feed_forward.schema.json"}`
+- You MUST validate output against this schema before calling `store_phase_feed_forward`.
 
 ### HOW TO FILL (BINDING)
 
@@ -22,11 +22,11 @@ This chapter defines how to produce **schema‑valid BLOCK_FEED_FORWARD JSON**.
 #### 2) `meta` (required fields)
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
-  - `artifact_type`: `"BLOCK_FEED_FORWARD"`
-  - `schema_id`: `"BlockFeedForwardInterface"`
+  - `artifact_type`: `"PHASE_FEED_FORWARD"`
+  - `schema_id`: `"PhaseFeedForwardInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Meso-Architect"`
+  - `owner_agent`: `"Phase-Architect"`
 - `iso_week_range` required.
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
 - `temporal_scope` MUST be copied from an upstream artefact (prefer stored PHASE_GUARDRAILS for
@@ -64,7 +64,7 @@ Required strings:
 - `anchor_protection_changes`
 - `explicit_expiry_condition`
 
-#### 8) `data.micro_planner_operating_rules`
+#### 8) `data.week_planner_operating_rules`
 - Array of strings (min 1)
 
 #### 9) `data.explicit_forbidden_content`
@@ -79,34 +79,34 @@ All required booleans must be present and set to `true`:
 - `applies_to_weeks_specified`
 - `valid_until_defined`
 - `only_deltas_vs_baseline_included`
-- `no_micro_content_present`
+- `no_week_content_present`
 
 #### 11) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
-- Validate against `block_feed_forward.schema.json` before calling the store tool.
+- Validate against `phase_feed_forward.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
-- Validate against schema before calling `store_block_feed_forward`.
+- Validate against schema before calling `store_phase_feed_forward`.
 - On any error: **STOP** and report schema errors.
 
 ---
 
-### EXAMPLE: BLOCK_FEED_FORWARD (minimal valid)
+### EXAMPLE: PHASE_FEED_FORWARD (minimal valid)
 
 ```json
 {
   "meta": {
-    "artifact_type": "BLOCK_FEED_FORWARD",
-    "schema_id": "BlockFeedForwardInterface",
+    "artifact_type": "PHASE_FEED_FORWARD",
+    "schema_id": "PhaseFeedForwardInterface",
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Meso-Architect",
-    "run_id": "example_block_feed_forward_2026_w04",
+    "owner_agent": "Phase-Architect",
+    "run_id": "example_phase_feed_forward_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Meso",
+    "scope": "Phase",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-04",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-01-25" },
@@ -159,13 +159,13 @@ All required booleans must be present and set to `true`:
       "anchor_protection_changes": "Protect long ride",
       "explicit_expiry_condition": "Expires after 2026-04"
     },
-    "micro_planner_operating_rules": ["No catch-up sessions"],
+    "week_planner_operating_rules": ["No catch-up sessions"],
     "explicit_forbidden_content": ["day-by-day schedules"],
     "self_check": {
       "applies_to_weeks_specified": true,
       "valid_until_defined": true,
       "only_deltas_vs_baseline_included": true,
-      "no_micro_content_present": true
+      "no_week_content_present": true
     }
   }
 }

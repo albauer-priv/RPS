@@ -220,16 +220,16 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "block_week",
-                "block_focus"
+                "phase_week",
+                "phase_focus"
               ],
               "properties": {
-                "block_week": {
+                "phase_week": {
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 4
                 },
-                "block_focus": {
+                "phase_focus": {
                   "type": "string",
                   "minLength": 1
                 }
@@ -343,7 +343,7 @@
               "type": "string"
             },
             "scope": {
-              "const": "Macro-Planner",
+              "const": "Season-Planner",
               "type": "string"
             },
             "urgency": {
@@ -377,7 +377,7 @@
               "items": {
                 "type": "string",
                 "enum": [
-                  "direct_block_change",
+                  "direct_phase_change",
                   "weekly_intervention"
                 ]
               }
@@ -390,8 +390,8 @@
           "required": [
             "overview_current_status",
             "detailed_analysis_last_week",
-            "trend_analysis_within_block",
-            "trend_analysis_macro",
+            "trend_analysis_within_phase",
+            "trend_analysis_season",
             "interpretation_recommendation"
           ],
           "properties": {
@@ -403,11 +403,11 @@
               "type": "string",
               "minLength": 1
             },
-            "trend_analysis_within_block": {
+            "trend_analysis_within_phase": {
               "type": "string",
               "minLength": 1
             },
-            "trend_analysis_macro": {
+            "trend_analysis_season": {
               "type": "string",
               "minLength": 1
             },
@@ -494,6 +494,7 @@
         "temporal_scope",
         "trace_data",
         "trace_events",
+        "data_confidence",
         "notes"
       ],
       "properties": {
@@ -527,9 +528,9 @@
           "enum": [
             "Data-Pipeline",
             "Season-Scenario-Agent",
-            "Macro-Planner",
-            "Meso-Architect",
-            "Micro-Planner",
+            "Season-Planner",
+            "Phase-Architect",
+            "Week-Planner",
             "Workout-Builder",
             "Performance-Analyst",
             "Policy-Owner"
@@ -547,9 +548,9 @@
           "type": "string",
           "enum": [
             "Shared",
-            "Macro",
-            "Meso",
-            "Micro",
+            "Season",
+            "Phase",
+            "Week",
             "Context"
           ]
         },
@@ -674,6 +675,18 @@
               }
             }
           }
+        },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "data_confidence.schema.json",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
         },
         "notes": {
           "type": "string"
@@ -879,16 +892,16 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "block_week",
-                "block_focus"
+                "phase_week",
+                "phase_focus"
               ],
               "properties": {
-                "block_week": {
+                "phase_week": {
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 4
                 },
-                "block_focus": {
+                "phase_focus": {
                   "type": "string",
                   "minLength": 1
                 }
@@ -1002,7 +1015,7 @@
               "type": "string"
             },
             "scope": {
-              "const": "Macro-Planner",
+              "const": "Season-Planner",
               "type": "string"
             },
             "urgency": {
@@ -1036,7 +1049,7 @@
               "items": {
                 "type": "string",
                 "enum": [
-                  "direct_block_change",
+                  "direct_phase_change",
                   "weekly_intervention"
                 ]
               }
@@ -1049,8 +1062,8 @@
           "required": [
             "overview_current_status",
             "detailed_analysis_last_week",
-            "trend_analysis_within_block",
-            "trend_analysis_macro",
+            "trend_analysis_within_phase",
+            "trend_analysis_season",
             "interpretation_recommendation"
           ],
           "properties": {
@@ -1062,11 +1075,11 @@
               "type": "string",
               "minLength": 1
             },
-            "trend_analysis_within_block": {
+            "trend_analysis_within_phase": {
               "type": "string",
               "minLength": 1
             },
-            "trend_analysis_macro": {
+            "trend_analysis_season": {
               "type": "string",
               "minLength": 1
             },

@@ -8,7 +8,7 @@
 {% endif %}
 {%- endmacro %}
 
-# MACRO_MESO_FEED_FORWARD - {{ meta.iso_week or "N/A" }}
+# SEASON_PHASE_FEED_FORWARD - {{ meta.iso_week or "N/A" }}
 
 ## YAML Header
 ```yaml
@@ -34,7 +34,7 @@ Trace-Upstream:
 ## Source Context
 - Season Plan: {{ source_context.season_plan_ref }}
 - DES Analysis Report: {{ source_context.des_analysis_report_ref }}
-- Affected Block: {{ source_context.affected_block_id }}
+- Affected Phase: {{ source_context.affected_phase_id }}
 
 ## Decision Summary
 - Conclusion: {{ decision_summary.conclusion }}
@@ -42,15 +42,15 @@ Trace-Upstream:
 ### Rationale
 {{ bullet_list(decision_summary.rationale) }}
 
-{% if block_adjustment %}
-## Block Adjustment
+{% if phase_adjustment %}
+## Phase Adjustment
 
 ### Applies To Weeks
-{{ bullet_list(block_adjustment.applies_to_weeks) }}
+{{ bullet_list(phase_adjustment.applies_to_weeks) }}
 
 ### Adjustments
-{% set kj = block_adjustment.adjustments.kj_corridor %}
-{% set quality = block_adjustment.adjustments.quality_density %}
+{% set kj = phase_adjustment.adjustments.kj_corridor %}
+{% set quality = phase_adjustment.adjustments.quality_density %}
 - kJ Corridor: {{ kj.direction }} by {{ kj.percent }}%
 - Quality Density: {{ quality.action }} - {{ quality.details }}
 {% endif %}

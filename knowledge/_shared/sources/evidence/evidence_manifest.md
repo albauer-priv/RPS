@@ -11,9 +11,9 @@ Normative-Role: ReferenceOnly
 Decision-Authority: None
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
 
 Notes: >
   Defines the hierarchy, usage rules, and constraints for evidence sources
@@ -25,7 +25,7 @@ Notes: >
 ## 1. Purpose
 
 This document defines **how evidence sources are used** within the RPS  
-(Macro → Block → Micro) planning architecture.
+(Season → Phase → Week) planning architecture.
 
 Evidence exists to:
 - support rationale
@@ -49,14 +49,14 @@ Examples:
 - durability / fatigue resistance literature
 
 Primary evidence MAY:
-- support macro phase design
+- support season phase design
 - justify load corridors
-- explain block intent
+- explain phase intent
 
 Primary evidence MUST NOT:
 - prescribe specific workouts
 - override governance constraints
-- justify micro-level changes
+- justify week-level changes
 
 ### 2.2 Secondary Evidence (Contextual / Interpretive)
 
@@ -93,7 +93,7 @@ They are not executable instructions.
 
 ## 4. Evidence Usage by Agent
 
-### 4.1 Macro-Planner
+### 4.1 Season-Planner
 
 MAY:
 - cite evidence to justify phase structure
@@ -103,7 +103,7 @@ MUST NOT:
 - derive prescriptions directly from evidence
 - quote podcasts as decision authority
 
-### 4.2 Meso-Architect
+### 4.2 Phase-Architect
 
 MAY:
 - use evidence to justify guardrails
@@ -111,9 +111,9 @@ MAY:
 
 MUST NOT:
 - translate evidence into workout rules
-- override Macro intent using evidence
+- override Season intent using evidence
 
-### 4.3 Micro-Planner (Optional, Informational)
+### 4.3 Week-Planner (Optional, Informational)
 
 MAY:
 - reference evidence for explanation only
@@ -154,7 +154,7 @@ Evidence MUST NOT be used to:
 - override kJ limits
 - introduce progression logic
 - bypass Feed Forward or Governance resets
-- escalate Micro decisions
+- escalate Week decisions
 
 ## 8. Self-Check
 

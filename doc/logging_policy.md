@@ -119,7 +119,7 @@ When logging:
 
 INFO:
 ```
-2026-01-24T15:30:12Z INFO micro_planner Start micro_planner argv=--task CREATE_WEEK_PLAN ...
+2026-01-24T15:30:12Z INFO week_planner Start week_planner argv=--task CREATE_WEEK_PLAN ...
 ```
 
 WARNING:

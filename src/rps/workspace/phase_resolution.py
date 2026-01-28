@@ -1,4 +1,4 @@
-"""Helpers for aligned ISO-week block ranges."""
+"""Helpers for aligned ISO-week phase ranges."""
 
 from __future__ import annotations
 
@@ -27,26 +27,26 @@ def add_weeks(iso: IsoWeek, weeks: int) -> IsoWeek:
     return date_to_iso_week(target)
 
 
-def resolve_block_for_target_week(
+def resolve_phase_for_target_week(
     target: IsoWeek,
-    block_len: int = 4,
+    phase_len: int = 4,
     anchor: IsoWeek | None = None,
 ) -> IsoWeekRange:
-    """Resolve an aligned block range that contains the target week."""
-    if block_len < 1:
-        raise ValueError("block_len must be >= 1")
+    """Resolve an aligned phase range that contains the target week."""
+    if phase_len < 1:
+        raise ValueError("phase_len must be >= 1")
 
     if anchor:
         anchor_m = iso_week_monday(anchor.year, anchor.week)
         target_m = iso_week_monday(target.year, target.week)
         delta_weeks = (target_m - anchor_m).days // 7
-        offset = delta_weeks % block_len
+        offset = delta_weeks % phase_len
         start = add_weeks(target, -offset)
     else:
-        start_week = target.week - ((target.week - 1) % block_len)
+        start_week = target.week - ((target.week - 1) % phase_len)
         start = IsoWeek(year=target.year, week=start_week)
 
-    end = add_weeks(start, block_len - 1)
+    end = add_weeks(start, phase_len - 1)
     return IsoWeekRange(start=start, end=end)
 
 

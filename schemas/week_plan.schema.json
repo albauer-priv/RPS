@@ -120,7 +120,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Micro-Planner",
+          "const": "Week-Planner",
           "type": "string"
         }
       },

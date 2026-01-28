@@ -26,7 +26,7 @@ This chapter defines how to produce **schema‑valid WEEK_PLAN JSON**.
   - `schema_id`: `"WeekPlanInterface"`
   - `schema_version`: `"1.2"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Micro-Planner"`
+  - `owner_agent`: `"Week-Planner"`
 - `iso_week` required (string `YYYY-WW`).
 
 #### 3) `data.week_summary`
@@ -79,10 +79,10 @@ Required:
     "schema_version": "1.2",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Micro-Planner",
+    "owner_agent": "Week-Planner",
     "run_id": "example_week_plan_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Micro",
+    "scope": "Week",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-04",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-01-25" },

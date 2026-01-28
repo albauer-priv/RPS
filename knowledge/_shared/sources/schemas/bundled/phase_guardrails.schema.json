@@ -9,7 +9,7 @@
       "additionalProperties": false,
       "required": [
         "body_metadata",
-        "block_summary",
+        "phase_summary",
         "load_guardrails",
         "allowed_forbidden_semantics",
         "events_constraints",
@@ -23,23 +23,23 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "block_id",
-            "block_type",
-            "block_status",
+            "phase_id",
+            "phase_type",
+            "phase_status",
             "change_type",
             "derived_from",
             "upstream_inputs"
           ],
           "properties": {
-            "block_id": {
+            "phase_id": {
               "type": "string",
               "minLength": 1
             },
-            "block_type": {
+            "phase_type": {
               "type": "string",
               "minLength": 1
             },
-            "block_status": {
+            "phase_status": {
               "type": "string",
               "enum": [
                 "Green",
@@ -67,7 +67,7 @@
             }
           }
         },
-        "block_summary": {
+        "phase_summary": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -457,12 +457,12 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "micro_planner_must",
-                "micro_planner_must_not",
-                "meso_architect_decides"
+                "week_planner_must",
+                "week_planner_must_not",
+                "phase_architect_decides"
               ],
               "properties": {
-                "micro_planner_must": {
+                "week_planner_must": {
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -470,7 +470,7 @@
                     "minLength": 1
                   }
                 },
-                "micro_planner_must_not": {
+                "week_planner_must_not": {
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -478,7 +478,7 @@
                     "minLength": 1
                   }
                 },
-                "meso_architect_decides": {
+                "phase_architect_decides": {
                   "type": "string",
                   "minLength": 1
                 }
@@ -498,7 +498,7 @@
               "durations, zones (Z1-Z7), %FTP",
               "daily kJ targets",
               "numeric progression rules",
-              "recommendations that effectively plan the micro level"
+              "recommendations that effectively plan the week level"
             ]
           }
         },
@@ -509,7 +509,7 @@
             "weekly_kj_bands_present",
             "max_quality_days_specified",
             "allowed_forbidden_enums_specified",
-            "no_micro_planning_content",
+            "no_week_planning_content",
             "header_includes_implements_iso_week_range_trace"
           ],
           "properties": {
@@ -525,7 +525,7 @@
               "const": true,
               "type": "boolean"
             },
-            "no_micro_planning_content": {
+            "no_week_planning_content": {
               "const": true,
               "type": "boolean"
             },
@@ -608,6 +608,7 @@
         "temporal_scope",
         "trace_data",
         "trace_events",
+        "data_confidence",
         "notes"
       ],
       "properties": {
@@ -641,9 +642,9 @@
           "enum": [
             "Data-Pipeline",
             "Season-Scenario-Agent",
-            "Macro-Planner",
-            "Meso-Architect",
-            "Micro-Planner",
+            "Season-Planner",
+            "Phase-Architect",
+            "Week-Planner",
             "Workout-Builder",
             "Performance-Analyst",
             "Policy-Owner"
@@ -661,9 +662,9 @@
           "type": "string",
           "enum": [
             "Shared",
-            "Macro",
-            "Meso",
-            "Micro",
+            "Season",
+            "Phase",
+            "Week",
             "Context"
           ]
         },
@@ -789,6 +790,18 @@
             }
           }
         },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "data_confidence.schema.json",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
+        },
         "notes": {
           "type": "string"
         }
@@ -799,7 +812,7 @@
       "additionalProperties": false,
       "required": [
         "body_metadata",
-        "block_summary",
+        "phase_summary",
         "load_guardrails",
         "allowed_forbidden_semantics",
         "events_constraints",
@@ -813,23 +826,23 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "block_id",
-            "block_type",
-            "block_status",
+            "phase_id",
+            "phase_type",
+            "phase_status",
             "change_type",
             "derived_from",
             "upstream_inputs"
           ],
           "properties": {
-            "block_id": {
+            "phase_id": {
               "type": "string",
               "minLength": 1
             },
-            "block_type": {
+            "phase_type": {
               "type": "string",
               "minLength": 1
             },
-            "block_status": {
+            "phase_status": {
               "type": "string",
               "enum": [
                 "Green",
@@ -857,7 +870,7 @@
             }
           }
         },
-        "block_summary": {
+        "phase_summary": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -1247,12 +1260,12 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "micro_planner_must",
-                "micro_planner_must_not",
-                "meso_architect_decides"
+                "week_planner_must",
+                "week_planner_must_not",
+                "phase_architect_decides"
               ],
               "properties": {
-                "micro_planner_must": {
+                "week_planner_must": {
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -1260,7 +1273,7 @@
                     "minLength": 1
                   }
                 },
-                "micro_planner_must_not": {
+                "week_planner_must_not": {
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -1268,7 +1281,7 @@
                     "minLength": 1
                   }
                 },
-                "meso_architect_decides": {
+                "phase_architect_decides": {
                   "type": "string",
                   "minLength": 1
                 }
@@ -1288,7 +1301,7 @@
               "durations, zones (Z1-Z7), %FTP",
               "daily kJ targets",
               "numeric progression rules",
-              "recommendations that effectively plan the micro level"
+              "recommendations that effectively plan the week level"
             ]
           }
         },
@@ -1299,7 +1312,7 @@
             "weekly_kj_bands_present",
             "max_quality_days_specified",
             "allowed_forbidden_enums_specified",
-            "no_micro_planning_content",
+            "no_week_planning_content",
             "header_includes_implements_iso_week_range_trace"
           ],
           "properties": {
@@ -1315,7 +1328,7 @@
               "const": true,
               "type": "boolean"
             },
-            "no_micro_planning_content": {
+            "no_week_planning_content": {
               "const": true,
               "type": "boolean"
             },

@@ -12,7 +12,7 @@ Decision-Authority: None
 
 Applies-To:
   - Workout-Builder
-  - Micro-Planner
+  - Week-Planner
 
 Notes: >
   Defines the formal EBNF grammar for Intervals.icu-compatible workout text.

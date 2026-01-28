@@ -336,9 +336,9 @@ def main() -> None:
 
     strict_only_agents = {
         "season_scenario",
-        "macro_planner",
-        "meso_architect",
-        "micro_planner",
+        "season_planner",
+        "phase_architect",
+        "week_planner",
         "workout_builder",
         "performance_analysis",
     }
@@ -545,7 +545,7 @@ def main() -> None:
                 force_intervals=args.force_intervals,
             )
             result = plan_week(
-                multi_runtime_for_agent("macro_planner"),
+                multi_runtime_for_agent("season_planner"),
                 athlete_id=args.athlete,
                 year=args.year,
                 week=args.week,

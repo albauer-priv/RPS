@@ -11,12 +11,12 @@ Normative-Role: Guardrails
 Decision-Authority: GuardrailOnly
 
 Applies-To:
-  - Micro-Planner
+  - Week-Planner
   - Workout-Builder
 
 Explicitly-Not-For:
-  - Macro-Planner
-  - Meso-Architect
+  - Season-Planner
+  - Phase-Architect
 
 Dependencies:
   - Specification-ID: AgendaEnumSpec
@@ -46,8 +46,8 @@ It consolidates:
 - validation guardrails
 
 It is the **single source of truth** for how workouts are designed once they are permitted by:
-- Macro intent
-- Meso phase guardrails
+- Season intent
+- Phase phase guardrails
 - Weekly agenda permissions
 
 This document does **not** decide *when* or *how often* workouts are scheduled.
@@ -95,7 +95,7 @@ Every workout MUST follow a clear, explicit structure. Sections are ordered and 
 **Canonical Order**
 1. Warmup
 2. Activation (optional but mandatory for specific workout types)
-3. Main Work Block(s)
+3. Main Work Phase(s)
 4. Optional Add-On
 5. Cooldown
 
@@ -140,7 +140,7 @@ Clarifications:
 
 ---
 
-#### Add-On (Aerobic Extension Block)
+#### Add-On (Aerobic Extension Phase)
 
 **Purpose**
 
@@ -157,7 +157,7 @@ Clarifications:
 **Typical Parameters**
 
 - Intensity range: 65–80 % FTP
-- Format: short ramps or alternating steady blocks
+- Format: short ramps or alternating steady phases
 - Cadence: 85–95 rpm
 
 **Canonical Example (EBNF-compatible)**
@@ -181,7 +181,7 @@ Clarifications:
 - WarmupBlock REQUIRED (see WarmupBlock rules)
 - CooldownBlock REQUIRED (see CooldownBlock rules)
 - SWEET_SPOT / Threshold / VO2max:
-  - Activation block REQUIRED unless explicitly forbidden
+  - Activation phase REQUIRED unless explicitly forbidden
 
 
 #### WarmupBlock (Binding)
@@ -284,7 +284,7 @@ Each workout type follows a primary design principle. These principles are norma
 
 | Workout-Type | Primary Principle | Normative Interpretation |
 |--------------|------------------|--------------------------|
-| VO₂max | Progressive | Density and stimulus increase over blocks; intensity may rise only after structural progression |
+| VO₂max | Progressive | Density and stimulus increase over phases; intensity may rise only after structural progression |
 | Sweet Spot | Stable | Intensity held constant; progression via TiZ only |
 | K3 / strength endurance | Neuromuscular | Constant tension, low cadence, no intensity spikes |
 | Endurance / Z2 | Loose–Variable | Low intensity with optional variability (ramps) |
@@ -295,35 +295,35 @@ Each workout type follows a primary design principle. These principles are norma
 ### 4.3 Progressive Overload (Binding)
 
 All workout progressions follow the principle of **progressive overload**.
-This section governs **session-level** progression only. Block/weekly kJ
+This section governs **session-level** progression only. Phase/weekly kJ
 progression, deload, and re-entry rules are governed by
 `progressive_overload_policy.md`.
 
 Rules:
-- Only **one progression dimension** may be increased per micro-cycle:
+- Only **one progression dimension** may be increased per week-cycle:
   - intensity
   - volume (TiZ)
   - repetitions
 - Never increase multiple dimensions simultaneously.
 
 Workout-type specific focus:
-- **VO₂max:** repetitions → blocks → interval length → intensity
+- **VO₂max:** repetitions → phases → interval length → intensity
 - **Sweet Spot & K3:** increase TiZ before intensity
 - **Endurance:** increase duration by 5–10%, later allow back-to-back days
 
 ---
 
-### 4.4 QUALITY Intent -> Intensity Target Band (Binding, Micro-Planner)
+### 4.4 QUALITY Intent -> Intensity Target Band (Binding, Week-Planner)
 
 Normative status:
-- Authority: Binding (Micro-Planner responsibility)
+- Authority: Binding (Week-Planner responsibility)
 - Decision Authority: GuardrailOnly
 - Binding Effect: Required when explicit QUALITY intent is declared upstream
 
 Validation note:
-- This rule is enforced by the Micro-Planner and is not required to be validated by the Workout-Builder.
+- This rule is enforced by the Week-Planner and is not required to be validated by the Workout-Builder.
 
-This section provides a lookup heuristic for Micro-Planners to parameterize workouts
+This section provides a lookup heuristic for Week-Planners to parameterize workouts
 within already permitted intensity domains, based on the QUALITY intent declared via:
 - `phase_guardrails_*`
 - `phase_structure_*`
@@ -340,18 +340,18 @@ All workouts MUST still comply with:
 #### 4.4.1 Purpose
 
 Within the allowed %FTP ranges of each intensity domain, the QUALITY intent
-defines a preferred target band to align workout feel and stress level with block intent.
+defines a preferred target band to align workout feel and stress level with phase intent.
 
 QUALITY intent answers:
 Where inside the allowed window should this workout sit?
 
 #### 4.4.2 Input Signals (Required)
 
-The Micro-Planner MUST apply this lookup if:
-- an explicit QUALITY intent is present in phase guardrails or execution architecture
+The Week-Planner MUST apply this lookup if:
+- an explicit QUALITY intent is present in phase guardrails or phase structure
 - the corresponding intensity domain is allowed for the day
 
-If no QUALITY intent is specified, the Micro-Planner MUST target the mid-range default of the domain
+If no QUALITY intent is specified, the Week-Planner MUST target the mid-range default of the domain
 or apply conservative placement within the allowed domain range.
 
 #### 4.4.3 Lookup Table - Preferred % FTP Target Bands
@@ -381,11 +381,11 @@ Progression MAY occur, but is not required.
 | SWEET_SPOT (Sweet Spot) | 90-95 %                        |
 | Threshold        | 96-102 %                       |
 
-C) Overload (Block-Specific, Explicit Only)
+C) Overload (Phase-Specific, Explicit Only)
 
 Intent:
 Temporary stress concentration with accepted fatigue.
-Requires explicit macro or block-level authorization.
+Requires explicit season or phase-level authorization.
 
 | Intensity Domain | Preferred Target Band (% FTP) |
 | ---------------- | ------------------------------ |
@@ -403,20 +403,20 @@ Requires explicit macro or block-level authorization.
 - Progression logic remains governed exclusively by Section 4.3 (Progressive Overload).
 
 If multiple signals conflict:
-- Phase Guardrails > Execution Architecture > This lookup.
+- Phase Guardrails > Phase Structure > This lookup.
 
 #### 4.4.5 Default Behavior (No Intent Provided)
 
 If no QUALITY intent is declared upstream:
-- Micro-Planner MUST target the midpoint of the allowed domain range
+- Week-Planner MUST target the midpoint of the allowed domain range
 - or apply conservative placement based on athlete context.
 
 #### 4.4.6 Non-Normative Clarification
 
 This lookup exists to:
-- improve coherence between block intent and workout feel,
+- improve coherence between phase intent and workout feel,
 - reduce accidental over- or under-shooting of intended stress,
-- support consistent micro-level execution.
+- support consistent week-level execution.
 
 It does not:
 - encode training strategy,
@@ -459,12 +459,12 @@ This workout type is explicitly aligned with **Tabata- and Rønnestad-style inte
 
 **Progression Rules (Binding)**
 Progression MUST follow this order:
-1. Increase repetitions per block
-2. Increase number of blocks
+1. Increase repetitions per phase
+2. Increase number of phases
 3. Increase work interval duration (20 → 30 → 40 s)
 4. Increase intensity (last)
 
-Only **one dimension** may be progressed per micro-cycle.
+Only **one dimension** may be progressed per week-cycle.
 
 ---
 
@@ -591,7 +591,7 @@ Rhythmic: structured alternation between under- and over-threshold intensity.
 **Parameter Ranges**
 - Under: 90–95 % FTP
 - Over: 100–105 % FTP
-- Oscillation block: 3–6 min
+- Oscillation phase: 3–6 min
 
 **Progression Rules**
 - Increase number of oscillations
@@ -802,7 +802,7 @@ Direct preparation for brevet race pacing (0.80–0.85 IF) with HR drift control
 
 **Design Rules (Binding)**
 - Intensity **80–85 % FTP**
-- Long, uninterrupted blocks
+- Long, uninterrupted phases
 - HR drift target ≤5 %
 
 **Parameter Ranges**
@@ -833,7 +833,7 @@ Durability development: maintain power under prior fatigue.
 
 **Design Rules (Binding)**
 - Z2 preload **≥120 minutes** required
-- Subsequent finish block **tempo or SWEET_SPOT**
+- Subsequent finish phase **tempo or SWEET_SPOT**
 
 **Parameter Ranges**
 - Preload: 65–72 % FTP
@@ -897,9 +897,9 @@ Workout-Builder MUST reject invalid workouts.
 
 | Agent | Usage |
 |------|------|
-| Micro-Planner | Design & parameterize workouts |
+| Week-Planner | Design & parameterize workouts |
 | Workout-Builder | Validate & convert |
-| Meso-Architect | ❌ |
-| Macro-Planner | ❌ |
+| Phase-Architect | ❌ |
+| Season-Planner | ❌ |
 
 ---

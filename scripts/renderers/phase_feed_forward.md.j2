@@ -8,7 +8,7 @@
 {% endif %}
 {%- endmacro %}
 
-# BLOCK_FEED_FORWARD - {{ meta.iso_week_range or "N/A" }}
+# PHASE_FEED_FORWARD - {{ meta.iso_week_range or "N/A" }}
 
 ## YAML Header
 ```yaml
@@ -77,8 +77,8 @@ Trace-Upstream:
 - Anchor protection changes: {{ temporary_non_negotiables.anchor_protection_changes }}
 - Explicit expiry condition (if not date-based): {{ temporary_non_negotiables.explicit_expiry_condition or "N/A" }}
 
-## 5) Micro-Planner Operating Rules (Required)
-{{ bullet_list(micro_planner_operating_rules) }}
+## 5) Week-Planner Operating Rules (Required)
+{{ bullet_list(week_planner_operating_rules) }}
 
 ## 6) Explicit Forbidden Content
 {{ bullet_list(explicit_forbidden_content) }}
@@ -88,4 +88,4 @@ Trace-Upstream:
 - [{{ "x" if check.applies_to_weeks_specified else " " }}] Applies-To weeks specified
 - [{{ "x" if check.valid_until_defined else " " }}] Valid-Until defined
 - [{{ "x" if check.only_deltas_vs_baseline_included else " " }}] Only deltas vs baseline included
-- [{{ "x" if check.no_micro_content_present else " " }}] No micro content present
+- [{{ "x" if check.no_week_content_present else " " }}] No week content present

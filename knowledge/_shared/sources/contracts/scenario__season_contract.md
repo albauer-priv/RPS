@@ -1,24 +1,24 @@
 ---
 Type: Contract
-Contract-Name: scenario__macro_contract
+Contract-Name: scenario__season_contract
 Version: 1.1
 Scope: Agent
 Authority: Informational
 Owner: Governance
 Parties:
   - Season-Scenario-Agent
-  - Macro-Planner
+  - Season-Planner
 Implements:
   Interface-ID: SeasonScenariosInterface
   Version: 1.0
 ---
 
-# Scenario ↔ Macro Contract (Season Scenarios)
+# Scenario ↔ Season Contract (Season Scenarios)
 
 ## 1) Purpose
-Define the handoff between Season-Scenario-Agent and Macro-Planner for
+Define the handoff between Season-Scenario-Agent and Season-Planner for
 scenario generation and selection. Season-Scenario output is advisory;
-Macro-Planner retains binding decision authority.
+Season-Planner retains binding decision authority.
 
 ## 2) Responsibilities
 ### Season-Scenario-Agent
@@ -28,9 +28,9 @@ Macro-Planner retains binding decision authority.
 - Use the AVAILABILITY artefact (derived from the Season Brief) and fixed rest days
   in scenario guidance (constraints summary and phase shaping).
 - Provide three scenarios (A/B/C) with clear trade-offs.
-- Do not create macro plans or governance decisions.
+- Do not create season plans or governance decisions.
 
-### Macro-Planner
+### Season-Planner
 - Load the latest `SEASON_SCENARIOS` artefact when available.
 - Load the latest `SEASON_SCENARIO_SELECTION` when available and align planning to it.
 - Use scenario content as advisory input only.
@@ -62,17 +62,17 @@ The `SEASON_SCENARIO_SELECTION` artefact MUST include:
 - `data.selection_source` (`user` or `system`)
 
 ## 5) Handoff Rules
-- Macro-Planner may request clarification if scenario content conflicts with
+- Season-Planner may request clarification if scenario content conflicts with
   Season Brief constraints or KPI Profile gates.
-- If `SEASON_SCENARIOS` is missing, Macro-Planner may proceed using its own
+- If `SEASON_SCENARIOS` is missing, Season-Planner may proceed using its own
   scenario generation rules.
 - Scenario guidance (phase suggestions, deload cadence) is advisory and may be
-  adjusted by Macro-Planner.
-- If scenario guidance includes planning math fields, Macro-Planner must
+  adjusted by Season-Planner.
+- If scenario guidance includes planning math fields, Season-Planner must
   compute its own phase count from the selected calendar range and cross-check.
 - Risk flags, event alignment, and intensity guidance are advisory and may be
-  overridden by Macro-Planner.
+  overridden by Season-Planner.
 
 ## 6) Non-Goals
-- No weekly planning, block design, or workout prescription.
+- No weekly planning, phase design, or workout prescription.
 - No KPI enforcement beyond referencing the selected KPI Profile.

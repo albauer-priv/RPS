@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rps.workspace.api import Workspace
-from rps.workspace.block_from_season_plan import IsoWeek
-from rps.workspace.block_resolution import add_weeks
+from rps.workspace.phase_from_season_plan import IsoWeek
+from rps.workspace.phase_resolution import add_weeks
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.season_plan_service import resolve_block_range_from_season_plan
+from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.rendering.auto_render import render_sidecar
@@ -75,19 +75,19 @@ def get_tool_defs() -> list[dict[str, Any]]:
         },
         {
             "type": "function",
-            "name": "workspace_get_block_context",
+            "name": "workspace_get_phase_context",
             "description": (
-                "Resolve the phase-aligned block range for a target ISO week and return the "
-                "newest exact-range block artefacts for that range. Supports offset_blocks "
-                "to shift into the next or previous block."
+                "Resolve the phase-aligned phase range for a target ISO week and return the "
+                "newest exact-range phase artefacts for that range. Supports offset_phases "
+                "to shift into the next or previous phase."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "year": {"type": "integer"},
                     "week": {"type": "integer"},
-                    "block_len": {"type": "integer", "default": 4},
-                    "offset_blocks": {"type": "integer", "default": 0},
+                    "phase_len": {"type": "integer", "default": 4},
+                    "offset_phases": {"type": "integer", "default": 0},
                 },
                 "required": ["year", "week"],
             },
@@ -135,14 +135,14 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         athlete_id=workspace.athlete_id,
     )
 
-    def _best_exact_range_doc(artifact_type: ArtifactType, block_range) -> dict[str, Any]:
-        """Load the newest exact-range artifact for a block range."""
-        best_vk = index_query.best_exact_range_version(artifact_type.value, block_range)
+    def _best_exact_range_doc(artifact_type: ArtifactType, phase_range) -> dict[str, Any]:
+        """Load the newest exact-range artifact for a phase range."""
+        best_vk = index_query.best_exact_range_version(artifact_type.value, phase_range)
         if not best_vk:
             return {
                 "ok": False,
-                "error": f"No exact-range {artifact_type.value} found for block {block_range.key}",
-                "block_range_key": block_range.key,
+                "error": f"No exact-range {artifact_type.value} found for phase {phase_range.key}",
+                "phase_range_key": phase_range.key,
             }
         try:
             doc = workspace.get(artifact_type, best_vk)
@@ -151,13 +151,13 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
                 "ok": False,
                 "error": f"Found version_key={best_vk} but failed to load: {exc}",
                 "version_key": best_vk,
-                "block_range_key": block_range.key,
+                "phase_range_key": phase_range.key,
             }
         return {
             "ok": True,
             "artifact_type": artifact_type.value,
             "version_key": best_vk,
-            "block_range_key": block_range.key,
+            "phase_range_key": phase_range.key,
             "document": doc,
         }
 
@@ -176,44 +176,46 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.list_versions(artifact_type)
 
-    def workspace_get_block_context(args: dict[str, Any]) -> Any:
-        """Resolve a block range and return the newest exact-range block artifacts."""
+    def workspace_get_phase_context(args: dict[str, Any]) -> Any:
+        """Resolve a phase range and return the newest exact-range phase artifacts."""
         year = int(args["year"])
         week = int(args["week"])
-        block_len = int(args.get("block_len", 4))
-        offset_blocks = int(args.get("offset_blocks", 0))
+        phase_len = int(args.get("phase_len", 4))
+        offset_phases = int(args.get("offset_phases", 0))
 
         target = IsoWeek(year, week)
-        if offset_blocks:
-            target = add_weeks(target, offset_blocks * block_len)
+        if offset_phases:
+            target = add_weeks(target, offset_phases * phase_len)
 
         try:
-            macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
+            season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
         except FileNotFoundError:
             return {
                 "ok": False,
-                "error": "SEASON_PLAN latest missing. Cannot resolve block range.",
+                "error": "SEASON_PLAN latest missing. Cannot resolve phase range.",
             }
 
-        block_range = resolve_block_range_from_season_plan(macro, target, block_len=block_len)
+        phase_range = resolve_phase_range_from_season_plan(
+            season_plan, target, phase_len=phase_len
+        )
 
         return {
             "ok": True,
             "target_week": {"year": target.year, "week": target.week},
-            "block_len": block_len,
-            "offset_blocks": offset_blocks,
-            "block_range": {
-                "start": {"year": block_range.start.year, "week": block_range.start.week},
-                "end": {"year": block_range.end.year, "week": block_range.end.week},
-                "range_key": block_range.key,
+            "phase_len": phase_len,
+            "offset_phases": offset_phases,
+            "phase_range": {
+                "start": {"year": phase_range.start.year, "week": phase_range.start.week},
+                "end": {"year": phase_range.end.year, "week": phase_range.end.week},
+                "range_key": phase_range.key,
             },
             "artifacts": {
-                "phase_guardrails": _best_exact_range_doc(ArtifactType.PHASE_GUARDRAILS, block_range),
+                "phase_guardrails": _best_exact_range_doc(ArtifactType.PHASE_GUARDRAILS, phase_range),
                 "phase_structure": _best_exact_range_doc(
-                    ArtifactType.PHASE_STRUCTURE, block_range
+                    ArtifactType.PHASE_STRUCTURE, phase_range
                 ),
                 "phase_preview": _best_exact_range_doc(
-                    ArtifactType.PHASE_PREVIEW, block_range
+                    ArtifactType.PHASE_PREVIEW, phase_range
                 ),
             },
         }
@@ -304,6 +306,6 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         "workspace_get_latest": workspace_get_latest,
         "workspace_get": workspace_get,
         "workspace_list_versions": workspace_list_versions,
-        "workspace_get_block_context": workspace_get_block_context,
+        "workspace_get_phase_context": workspace_get_phase_context,
         "workspace_put_validated": workspace_put_validated,
     }

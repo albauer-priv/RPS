@@ -12,11 +12,11 @@ Typical weekly flow:
 
 1. Ensure inputs: season brief (including weekday availability table), KPI profile (copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`), events, and fresh data pipeline outputs (zone model + wellness with body mass).
 2. Run availability parser to generate `availability_yyyy-ww.json` from the Season Brief.
-3. Run **Season-Scenario-Agent** when a new macro plan is needed.
+3. Run **Season-Scenario-Agent** when a new season plan is needed.
 4. Store a scenario selection (A/B/C).
-5. Run **Macro** (scenario optional if selection exists).
-6. Run **Meso** for the current block (phase-aligned).
-7. Run **Micro** for the target ISO week.
+5. Run **Season** (scenario optional if selection exists).
+6. Run **Phase** for the current phase (phase-aligned).
+7. Run **Week** for the target ISO week.
 8. Run **Workout-Builder** to export Intervals JSON.
 9. Run **Performance-Analyst** after factual data is available.
 
@@ -35,22 +35,22 @@ flowchart TD
   AV --> SS[Season-Scenario-Agent]
   KP[kpi_profile] --> SS
   SS --> SC[season_scenarios]
-  SC -. advisory .-> MA[Macro-Planner]
+  SC -. advisory .-> MA[Season-Planner]
   EV[events] -. info .-> SS
   EV -. info .-> MA
   AV -. info .-> MA
   KP --> MA
   MA --> MO[season_plan]
-  MA -. optional .-> MMFF[macro_meso_feed_forward]
+  MA -. optional .-> SPFF[season_phase_feed_forward]
 
-  MO --> ME[Meso-Architect]
-  MMFF -. optional .-> ME
+  MO --> ME[Phase-Architect]
+  SPFF -. optional .-> ME
   AV -. info .-> ME
   ME --> BG[phase_guardrails]
   ME --> BEA[phase_structure]
   ME -. optional .-> BEP[phase_preview]
 
-  BG --> MI[Micro-Planner]
+  BG --> MI[Week-Planner]
   BEA --> MI
   AV -. info .-> MI
   MI --> WP[week_plan]
@@ -78,16 +78,16 @@ flowchart TD
 
 ## 2. Core Concepts
 
-### 2.1 Macro Phases vs Meso Blocks
+### 2.1 Season Plan Phases vs Phase Artefacts
 
-- `season_plan` defines **phases** with `iso_week_range`.
-- Macro **must not** define meso blocks.
-- Meso blocks are derived **inside** the macro phase:
-  - Phase start = anchor
-  - Block length default = 4 weeks
-  - Block end is clamped to phase end
+- `season_plan` defines **season phases** with `iso_week_range`.
+- Season **must not** define phase-artefact outputs (guardrails/structure/preview).
+- Phase artefacts are derived **inside** the season phase that contains the target ISO week:
+  - Phase start = anchor (season phase start or explicit `iso_week_range`)
+  - Phase length default = 4 weeks (unless overridden)
+  - Phase end is clamped to the season phase end
 
-The system includes helpers and tools that resolve block ranges from the macro
+The system includes helpers and tools that resolve phase ranges from the season
 phase automatically.
 
 ### 2.2 Workspace Storage
@@ -97,9 +97,9 @@ Artifacts are stored under `var/athletes/<athlete_id>/` with an index:
 ```
 var/athletes/<athlete_id>/
   data/
-    plans/macro/
-    plans/meso/
-    plans/micro/
+    plans/season/
+    plans/phase/
+    plans/week/
     analysis/
     exports/
     YYYY/WW/
@@ -124,18 +124,18 @@ against the local schemas.
 - Outputs: `season_scenarios` (advisory).
 - Inputs: season brief, KPI profile, events (optional).
 
-### Macro-Planner
-- Outputs: `season_plan` (+ optional `macro_meso_feed_forward`).
+### Season-Planner
+- Outputs: `season_plan` (+ optional `season_phase_feed_forward`).
 - Inputs: season brief, KPI profile, season scenarios (advisory), events, analysis (advisory), wellness (informational).
 
-### Meso-Architect
+### Phase-Architect
 - Outputs: `phase_guardrails`, `phase_structure` (+ optional preview/feed-forward).
-- Inputs: season plan, optional macro feed-forward, events, factual data, zone model (latest), wellness (informational).
-- Block range **must** use macro-phase alignment.
+- Inputs: season plan, optional season→phase feed-forward, events, factual data, zone model (latest), wellness (informational).
+- Phase range **must** use season-phase alignment.
 
-### Micro-Planner
+### Week-Planner
 - Outputs: `week_plan` (weekly).
-- Inputs: phase guardrails + execution architecture (+ optional feed-forward, zone model).
+- Inputs: phase guardrails + phase structure (+ optional feed-forward, zone model).
 
 ### Workout-Builder
 - Outputs: `intervals_workouts` (raw Intervals JSON export).
@@ -162,13 +162,13 @@ against the local schemas.
 
 ## 5. Tooling for Agents
 
-Agents resolve phases and block ranges internally via workspace tools (no user
+Agents resolve phases and phase ranges internally via workspace tools (no user
 prompt hints required):
 
-- `workspace_get_block_context({ "year": YYYY, "week": WW })`
+- `workspace_get_phase_context({ "year": YYYY, "week": WW })`
 - `workspace_get_input("season_brief")` and `workspace_get_input("events")`
 
-This avoids manual version-key guessing and ensures macro-phase alignment.
+This avoids manual version-key guessing and ensures season-phase alignment.
 
 ---
 
@@ -183,7 +183,7 @@ PYTHONPATH=src python3 -m rps.main plan-week \
   --run-id run_2026_06
 ```
 
-### CLI: Macro flow (agent tasks)
+### CLI: Season flow (agent tasks)
 
 ```bash
 # 1) Create scenarios (SEASON_SCENARIOS)
@@ -204,19 +204,19 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 ```bash
 # 3) Create season plan (SEASON_PLAN)
 PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent macro_planner \
+  --agent season_planner \
   --task CREATE_SEASON_PLAN \
   --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06. Use latest SEASON_SCENARIO_SELECTION."
 ```
 
-Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the macro-planner text:
+Optional KPI moving-time rate band override (affects kJ corridor derivation): add to the season-planner text:
 `Moving time rate band: fast_competitive.`
 
 ### CLI: Single agent
 
 ```bash
 PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent micro_planner \
+  --agent week_planner \
   --task CREATE_WEEK_PLAN \
   --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Create week_plan for ISO week 2026-06."
 ```
@@ -229,10 +229,10 @@ If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
 ## 7. Notes & Best Practices
 
 - **One artifact per task** is the default. The multi-output runner is used
-  when a single agent must emit multiple artifacts in one run (e.g., Meso).
+  when a single agent must emit multiple artifacts in one run (e.g., Phase).
 - Authority values must follow schema enums (Binding/Derived/Informational/Factual).
 - Always set `meta.iso_week` or `meta.iso_week_range` correctly; this drives
-  index resolution and block matching.
+  index resolution and phase matching.
 - Raw exports (`intervals_workouts`) default to `version_key = raw` in strict runs.
   If you need week-specific keys, pass an explicit version key via the workspace API.
 

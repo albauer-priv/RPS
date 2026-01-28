@@ -103,9 +103,9 @@ class GuardedValidatedStore:
             raw = str(payload)
         return self._normalize_text(raw)
 
-    def _macro_constraints(self, macro_doc: dict[str, Any]) -> dict[str, list[str]]:
-        """Collect macro constraints for propagation checks."""
-        data = macro_doc.get("data", {})
+    def _season_constraints(self, season_plan: dict[str, Any]) -> dict[str, list[str]]:
+        """Collect season plan constraints for propagation checks."""
+        data = season_plan.get("data", {})
         global_constraints = data.get("global_constraints", {})
         availability = [
             str(item).strip()
@@ -202,10 +202,10 @@ class GuardedValidatedStore:
     def _enforce_phase_guardrails_constraints(
         self,
         document: dict[str, Any],
-        macro_doc: dict[str, Any],
+        season_plan: dict[str, Any],
     ) -> None:
-        """Ensure macro constraints are propagated into phase guardrails."""
-        constraints = self._macro_constraints(macro_doc)
+        """Ensure season plan constraints are propagated into phase guardrails."""
+        constraints = self._season_constraints(season_plan)
         data = document.get("data", {})
         blob = self._normalize_payload(data)
         errors: list[str] = []
@@ -219,7 +219,7 @@ class GuardedValidatedStore:
             for item in items:
                 normalized = self._normalize_text(item)
                 if normalized and normalized not in blob:
-                    errors.append(f"Macro {label} missing in phase_guardrails: {item}")
+                    errors.append(f"Season plan {label} missing in phase_guardrails: {item}")
 
         if constraints["fixed_days"]:
             day_aliases = {
@@ -238,15 +238,15 @@ class GuardedValidatedStore:
                     errors.append(f"Fixed rest day missing in phase_guardrails: {day}")
 
         if errors:
-            raise SchemaValidationError("Macro constraint propagation failed", errors)
+            raise SchemaValidationError("Season plan constraint propagation failed", errors)
 
     def _enforce_phase_structure_constraints(
         self,
         document: dict[str, Any],
-        macro_doc: dict[str, Any],
+        season_plan: dict[str, Any],
     ) -> None:
-        """Ensure macro constraints and load ranges are propagated into execution arch."""
-        constraints = self._macro_constraints(macro_doc)
+        """Ensure season plan constraints and load ranges are propagated into execution arch."""
+        constraints = self._season_constraints(season_plan)
         data = document.get("data", {})
         upstream_constraints = data.get("upstream_intent", {}).get("constraints", [])
         upstream_blob = self._normalize_text(" ".join(str(item) for item in upstream_constraints))
@@ -261,7 +261,7 @@ class GuardedValidatedStore:
             for item in items:
                 normalized = self._normalize_text(item)
                 if normalized and normalized not in upstream_blob:
-                    errors.append(f"Macro {label} missing in upstream_intent.constraints: {item}")
+                    errors.append(f"Season plan {label} missing in upstream_intent.constraints: {item}")
 
         fixed_days = constraints["fixed_days"]
         exec_days = (
@@ -272,7 +272,7 @@ class GuardedValidatedStore:
         if fixed_days:
             if sorted(exec_days) != sorted(fixed_days):
                 errors.append(
-                    "fixed_non_training_days must match macro fixed_rest_days."
+                    "fixed_non_training_days must match season plan fixed_rest_days."
                 )
 
         load_ranges = data.get("load_ranges", {})
@@ -280,7 +280,7 @@ class GuardedValidatedStore:
         try:
             phase_guardrails, bg_version_key = self._load_phase_guardrails_for_range(expected_range)
         except MissingDependenciesError as exc:
-            raise SchemaValidationError("Macro constraint propagation failed", [str(exc)]) from exc
+            raise SchemaValidationError("Season plan constraint propagation failed", [str(exc)]) from exc
 
         bg_guardrails = phase_guardrails.get("data", {}).get("load_guardrails", {})
         for label in ("weekly_kj_bands",):
@@ -299,13 +299,13 @@ class GuardedValidatedStore:
             errors.append(f"load_ranges.source must be '{expected_source}'.")
 
         if errors:
-            raise SchemaValidationError("Macro constraint propagation failed", errors)
+            raise SchemaValidationError("Season plan constraint propagation failed", errors)
 
     def _enforce_phase_preview_traceability(
         self,
         document: dict[str, Any],
     ) -> None:
-        """Ensure execution preview references execution architecture."""
+        """Ensure execution preview references phase structure."""
         expected_range = document.get("meta", {}).get("iso_week_range")
         try:
             _, arch_version_key = self._load_phase_structure_for_range(expected_range)
@@ -327,24 +327,24 @@ class GuardedValidatedStore:
                 [f"data.traceability.derived_from must include '{expected_arch}'."],
             )
 
-    def _ensure_block_range_matches_macro(
+    def _ensure_phase_range_matches_plan(
         self,
         document: dict[str, Any],
-        macro_doc: dict[str, Any],
+        season_plan_doc: dict[str, Any],
     ) -> None:
-        """Normalize block_* iso_week_range to the covering macro phase."""
+        """Normalize phase iso_week_range to the covering season plan phase."""
         range_spec = envelope_week_range(document)
         if not range_spec:
             return
-        phase_info = resolve_season_plan_phase_info(macro_doc, range_spec.start)
+        phase_info = resolve_season_plan_phase_info(season_plan_doc, range_spec.start)
         if not phase_info:
             raise SchemaValidationError(
-                "Macro phase mismatch",
-                [f"No macro phase covers block range {range_spec.key}."],
+                "Season plan phase mismatch",
+                [f"No season plan phase covers phase range {range_spec.key}."],
             )
         if phase_info.phase_range.key != range_spec.key:
             self.logger.warning(
-                "Normalized block iso_week_range from %s to season plan phase %s (%s).",
+                "Normalized phase iso_week_range from %s to season plan phase %s (%s).",
                 range_spec.key,
                 phase_info.phase_range.key,
                 phase_info.phase_id or phase_info.phase_name or "unknown",
@@ -499,22 +499,24 @@ class GuardedValidatedStore:
                 validate_or_raise(validator, document)
                 version_key = "raw"
 
-            macro_doc: dict[str, Any] | None = None
+            season_plan_doc: dict[str, Any] | None = None
             if target in (
                 ArtifactType.PHASE_GUARDRAILS,
                 ArtifactType.PHASE_STRUCTURE,
                 ArtifactType.PHASE_PREVIEW,
-                ArtifactType.BLOCK_FEED_FORWARD,
+                ArtifactType.PHASE_FEED_FORWARD,
             ):
-                macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
-                self._ensure_block_range_matches_macro(document, macro_doc)
+                season_plan_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+                self._ensure_phase_range_matches_plan(document, season_plan_doc)
             if target in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE):
-                if macro_doc is None:
-                    macro_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+                if season_plan_doc is None:
+                    season_plan_doc = self.store.load_latest(
+                        self.athlete_id, ArtifactType.SEASON_PLAN
+                    )
                 if target == ArtifactType.PHASE_GUARDRAILS:
-                    self._enforce_phase_guardrails_constraints(document, macro_doc)
+                    self._enforce_phase_guardrails_constraints(document, season_plan_doc)
                 else:
-                    self._enforce_phase_structure_constraints(document, macro_doc)
+                    self._enforce_phase_structure_constraints(document, season_plan_doc)
             elif target == ArtifactType.PHASE_PREVIEW:
                 self._enforce_phase_preview_traceability(document)
 

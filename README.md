@@ -41,7 +41,7 @@ Per-agent model overrides (optional):
 
 ```
 OPENAI_MODEL=gpt-4.1
-OPENAI_MODEL_MICRO_PLANNER=gpt-4.1-mini
+OPENAI_MODEL_WEEK_PLANNER=gpt-4.1-mini
 OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
 ```
 
@@ -91,18 +91,18 @@ ws = Workspace.for_athlete("ath_001")
 ws.ensure()
 
 week_key = ws.current_week_key(date.today())
-block = ws.current_block(week_key, block_length_weeks=4)
+phase = ws.current_phase(week_key, phase_length_weeks=4)
 ws.put(
     ArtifactType.WEEK_PLAN,
     version_key=week_key,
     payload={"week": week_key, "sessions": []},
-    producer_agent="micro_planner",
-    run_id="run_2026-06_micro_001",
+    producer_agent="week_planner",
+    run_id="run_2026-06_week_001",
 )
 
 print(ws.list_versions(ArtifactType.WEEK_PLAN))
-print(block.range_key)
-print(block.start_week, block.end_week)
+print(phase.range_key)
+print(phase.start_week, phase.end_week)
 ```
 
 ```python
@@ -115,8 +115,8 @@ ws.guard_put(
     ArtifactType.WEEK_PLAN,
     version_key="2026-06",
     payload={"week": "2026-06", "sessions": []},
-    producer_agent="micro_planner",
-    run_id="run_2026-06_micro_001",
+    producer_agent="week_planner",
+    run_id="run_2026-06_week_001",
     authority=Authority.STRUCTURAL,
     trace_upstream=[
         upstream_ref(
@@ -149,12 +149,12 @@ ws.put_validated(
         "schema_version": "1.0",
         "version": "1.0",
         "authority": "Binding",
-        "owner_agent": "Meso-Architect",
+        "owner_agent": "Phase-Architect",
         "iso_week_range": {"start": {"year": 2026, "week": 6}, "end": {"year": 2026, "week": 9}},
         "trace_upstream": [],
     },
-    producer_agent="meso_architect",
-    run_id="run_2026-06_meso_001",
+    producer_agent="phase_architect",
+    run_id="run_2026-06_phase_001",
     schema_dir=Path("schemas"),
 )
 ```
@@ -177,8 +177,8 @@ python3 scripts/artefact_renderer.py kpi_profiles/kpi_profile_des_brevet_200_400
 
 ```bash
 PYTHONPATH=src python -m rps.main \\
-  --agent micro_planner \\
-  --text "Plane Woche 2026-06 basierend auf dem aktuellen Block und KPI Profil."
+  --agent week_planner \\
+  --text "Plane Woche 2026-06 basierend auf der aktuellen Phase und dem KPI Profil."
 ```
 
 ```bash
@@ -191,27 +191,27 @@ PYTHONPATH=src python -m rps.main plan-week \\
 If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
 Use `--no-file-search` to disable forced vector store retrieval.
 
-## Macro Mode A (two-step)
+## Season planning (two-step)
 
-Generate scenarios first, then pick A/B/C for the season plan:
+Generate scenarios first, then create the season plan using the selected scenario:
 
 ```bash
-python3 scripts/macro_mode_a.py scenarios \
-  --year 2026 \
-  --week 6 \
-  --run-id macro_scenarios_2026_w06
+PYTHONPATH=src python -m rps.main run-agent \
+  --agent season_scenario \
+  --task CREATE_SEASON_SCENARIOS \
+  --text "Create season scenarios for ISO week 2026-06." \
+  --run-id season_scenarios_2026_w06
 ```
 
 ```bash
-python3 scripts/macro_mode_a.py overview \
-  --year 2026 \
-  --week 6 \
-  --run-id season_plan_2026_w06 \
-  --scenario A \
-  --scenario-run-id macro_scenarios_2026_w06
+PYTHONPATH=src python -m rps.main run-agent \
+  --agent season_planner \
+  --task CREATE_SEASON_PLAN \
+  --text "Create the season plan for ISO week 2026-06 using scenario A." \
+  --run-id season_plan_2026_w06
 ```
 
-Scenarios are written to `.cache/macro_scenarios/<run-id>.md` by default.
+Scenarios are written to `.cache/season_scenarios/<run-id>.md` by default.
 
 ## Notes
 

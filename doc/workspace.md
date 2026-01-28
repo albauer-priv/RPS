@@ -20,9 +20,9 @@ gitignored.
 var/athletes/<athlete_id>/
   inputs/
   data/
-    plans/macro/
-    plans/meso/
-    plans/micro/
+    plans/season/
+    plans/phase/
+    plans/week/
     analysis/
     exports/
     YYYY/WW/        # data pipeline snapshots (CSV + JSON)
@@ -65,9 +65,9 @@ Templates are available under:
 | Directory | Owner | Typical artefacts |
 | --- | --- | --- |
 | `inputs/` | User / operator | `season_brief_*.md`, `events.md`, `kpi_profile_*.json` |
-| `data/plans/macro/` | Season-Scenario-Agent, Macro-Planner | `season_scenarios_*`, `season_scenario_selection_*`, `season_plan_*`, `macro_meso_feed_forward_*` |
-| `data/plans/meso/` | Meso-Architect (plus Data-Pipeline for `zone_model_*`) | `phase_guardrails_*`, `phase_structure_*`, `phase_preview_*`, `block_feed_forward_*`, `zone_model_*` |
-| `data/plans/micro/` | Micro-Planner | `week_plan_*` |
+| `data/plans/season/` | Season-Scenario-Agent, Season-Planner | `season_scenarios_*`, `season_scenario_selection_*`, `season_plan_*`, `season_phase_feed_forward_*` |
+| `data/plans/phase/` | Phase-Architect (plus Data-Pipeline for `zone_model_*`) | `phase_guardrails_*`, `phase_structure_*`, `phase_preview_*`, `phase_feed_forward_*`, `zone_model_*` |
+| `data/plans/week/` | Week-Planner | `week_plan_*` |
 | `data/analysis/` | Performance-Analyst | `des_analysis_report_*` |
 | `data/exports/` | Workout-Builder | `intervals_workouts_*` |
 | `data/YYYY/WW/` | Data Pipeline | `activities_actual_*`, `activities_trend_*`, `availability_*`, `wellness_*` (+ CSV mirrors) |

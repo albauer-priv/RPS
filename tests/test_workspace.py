@@ -15,7 +15,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from rps.workspace.guards import MissingDependenciesError  # noqa: E402
-from rps.workspace.helpers import resolve_current_block, resolve_current_week, upstream_ref  # noqa: E402
+from rps.workspace.helpers import resolve_current_phase, resolve_current_week, upstream_ref  # noqa: E402
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
 from rps.workspace.api import Workspace  # noqa: E402
@@ -27,12 +27,12 @@ class WorkspaceHelperTests(unittest.TestCase):
         """Verify ISO week key formatting."""
         self.assertEqual(resolve_current_week(date(2026, 2, 3)), "2026-06")
 
-    def test_resolve_current_block(self) -> None:
-        """Verify block range calculation."""
-        block = resolve_current_block("2026-06", block_length_weeks=4)
-        self.assertEqual(block.start_week, "2026-06")
-        self.assertEqual(block.end_week, "2026-09")
-        self.assertEqual(block.range_key, "2026-06--2026-09")
+    def test_resolve_current_phase(self) -> None:
+        """Verify phase range calculation."""
+        phase = resolve_current_phase("2026-06", phase_length_weeks=4)
+        self.assertEqual(phase.start_week, "2026-06")
+        self.assertEqual(phase.end_week, "2026-09")
+        self.assertEqual(phase.range_key, "2026-06--2026-09")
 
     def test_upstream_ref(self) -> None:
         """Verify upstream reference formatting."""
@@ -92,8 +92,8 @@ class GuardTests(unittest.TestCase):
                     ArtifactType.WEEK_PLAN,
                     version_key="2026-06",
                     payload={"week": "2026-06"},
-                    producer_agent="micro_planner",
-                    run_id="run_2026-06_micro_001",
+                    producer_agent="week_planner",
+                    run_id="run_2026-06_week_001",
                 )
 
 

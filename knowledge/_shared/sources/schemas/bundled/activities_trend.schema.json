@@ -1668,6 +1668,7 @@
         "temporal_scope",
         "trace_data",
         "trace_events",
+        "data_confidence",
         "notes"
       ],
       "properties": {
@@ -1701,9 +1702,9 @@
           "enum": [
             "Data-Pipeline",
             "Season-Scenario-Agent",
-            "Macro-Planner",
-            "Meso-Architect",
-            "Micro-Planner",
+            "Season-Planner",
+            "Phase-Architect",
+            "Week-Planner",
             "Workout-Builder",
             "Performance-Analyst",
             "Policy-Owner"
@@ -1721,9 +1722,9 @@
           "type": "string",
           "enum": [
             "Shared",
-            "Macro",
-            "Meso",
-            "Micro",
+            "Season",
+            "Phase",
+            "Week",
             "Context"
           ]
         },
@@ -1848,6 +1849,18 @@
               }
             }
           }
+        },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "data_confidence.schema.json",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
         },
         "notes": {
           "type": "string"

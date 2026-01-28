@@ -31,14 +31,14 @@ Trace-Upstream:
 {% endfor %}---
 ```
 
-## 1) Block intent (Read-only summary)
+## 1) Phase intent (Read-only summary)
 
-- Block type: {{ block_intent_summary.block_type }}
-- Primary objective: {{ block_intent_summary.primary_objective }}
+- Phase type: {{ phase_intent_summary.phase_type }}
+- Primary objective: {{ phase_intent_summary.primary_objective }}
 - Non-Negotiables:
-{{ bullet_list(block_intent_summary.non_negotiables) }}
+{{ bullet_list(phase_intent_summary.non_negotiables) }}
 - Key risks / warnings:
-{{ bullet_list(block_intent_summary.key_risks_warnings) }}
+{{ bullet_list(phase_intent_summary.key_risks_warnings) }}
 
 ## 2) What the next 4 weeks will feel like
 
@@ -121,7 +121,7 @@ N/A
 
 - Direction (conceptual): {{ week_to_week_narrative.direction }}
 - What will NOT change (non-negotiables upheld): {{ week_to_week_narrative.what_will_not_change }}
-- What is flexible (allowed micro adjustments): {{ week_to_week_narrative.what_is_flexible }}
+- What is flexible (allowed week adjustments): {{ week_to_week_narrative.what_is_flexible }}
 
 ## 6) If reality deviates (Ops rules)
 {{ bullet_list(deviation_rules) }}

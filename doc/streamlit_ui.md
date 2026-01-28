@@ -1,6 +1,6 @@
 # Streamlit UI (RPS)
 
-Minimal browser UI that wraps common RPS flows (preflight, macro, plan-week)
+Minimal browser UI that wraps common RPS flows (preflight, season, plan-week)
 behind a chat-style control surface.
 
 ## Run
@@ -24,4 +24,4 @@ PYTHONPATH=src python3.14 -m streamlit run src/rps/ui/streamlit_app.py
   - `select scenario`
   - `season plan`
   - `plan week`
-  - `show macro`
+  - `show season plan`

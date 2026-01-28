@@ -1,17 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "macro_meso_feed_forward.schema.json",
-  "title": "MacroMesoFeedForward",
+  "$id": "season_phase_feed_forward.schema.json",
+  "title": "SeasonPhaseFeedForward",
   "type": "object",
   "$defs": {
-    "macro_meso_feed_forward_data": {
+    "season_phase_feed_forward_data": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "source_context",
         "decision_summary",
         "explicit_non_actions",
-        "block_adjustment"
+        "phase_adjustment"
       ],
       "properties": {
         "source_context": {
@@ -20,7 +20,7 @@
           "required": [
             "season_plan_ref",
             "des_analysis_report_ref",
-            "affected_block_id"
+            "affected_phase_id"
           ],
           "properties": {
             "season_plan_ref": {
@@ -31,7 +31,7 @@
               "type": "string",
               "minLength": 1
             },
-            "affected_block_id": {
+            "affected_phase_id": {
               "type": "string",
               "minLength": 1
             }
@@ -49,8 +49,8 @@
               "type": "string",
               "enum": [
                 "no_change",
-                "adjust_block",
-                "reweight_macro"
+                "adjust_phase",
+                "reweight_season"
               ]
             },
             "rationale": {
@@ -63,7 +63,7 @@
             }
           }
         },
-        "block_adjustment": {
+        "phase_adjustment": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -140,7 +140,7 @@
             "type": "string",
             "enum": [
               "No weekly workout changes",
-              "No micro-level intervention",
+              "No week-level intervention",
               "No KPI threshold enforcement"
             ]
           }
@@ -158,11 +158,11 @@
       "$ref": "artefact_meta.schema.json",
       "properties": {
         "artifact_type": {
-          "const": "MACRO_MESO_FEED_FORWARD",
+          "const": "SEASON_PHASE_FEED_FORWARD",
           "type": "string"
         },
         "schema_id": {
-          "const": "MacroMesoFeedForwardInterface",
+          "const": "SeasonPhaseFeedForwardInterface",
           "type": "string"
         },
         "schema_version": {
@@ -174,7 +174,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Macro-Planner",
+          "const": "Season-Planner",
           "type": "string"
         }
       },
@@ -189,7 +189,7 @@
       "type": "object"
     },
     "data": {
-      "$ref": "#/$defs/macro_meso_feed_forward_data"
+      "$ref": "#/$defs/season_phase_feed_forward_data"
     }
   }
 }

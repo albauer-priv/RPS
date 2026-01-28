@@ -9,9 +9,9 @@ Authority: Binding
 
 Applies-To:
   - Data-Pipeline
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
 
 Notes: >
@@ -41,22 +41,22 @@ If an artefact has no upstream (e.g., Data-Pipeline raw outputs), it MUST includ
 - A Run-ID identifies ONE generation run and MUST NOT be reused for a different artefact.
 
 ## 4. Upstream Trace Rules
-### Macro outputs
+### Season outputs
 - MUST reference Season Brief (if present) or equivalent upstream input identifier in `trace_upstream`.
 
-### Meso outputs (Block-Architect / Meso-Architect)
+### Phase outputs (Phase-Architect)
 - MUST reference exactly one `season_plan_yyyy-ww--yyyy-ww.json` in `trace_upstream`.
 
-### Micro outputs
+### Week outputs (Week-Planner)
 - MUST reference exactly one `phase_guardrails_yyyy-ww--yyyy-ww.json` in `trace_upstream`.
-- If a `block_feed_forward_yyyy-ww.json` is applied, it MUST also be referenced.
+- If a `phase_feed_forward_yyyy-ww.json` is applied, it MUST also be referenced.
 
 ### Workout-Builder outputs
 - MUST reference the input `week_plan_yyyy-ww.json` (or `workout_request_*` if introduced later).
 
 ## 5. Precedence & “Latest Valid” Rules
-### block_feed_forward_yyyy-ww.json precedence
-If multiple `block_feed_forward_yyyy-ww.json` artefacts exist:
+### phase_feed_forward_yyyy-ww.json precedence
+If multiple `phase_feed_forward_yyyy-ww.json` artefacts exist:
 - Apply the one with:
   1) scope covering the target week, AND
   2) `Valid-Until` not expired, AND

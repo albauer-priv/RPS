@@ -11,9 +11,9 @@ Normative-Role: JustificationOnly
 Decision-Authority: None
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
 
 Notes: >
   Provides scientific and practice-based evidence supporting durability-first

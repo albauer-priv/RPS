@@ -8,14 +8,14 @@ Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
   - Workout-Builder
 
 Notes: >
   Defines the canonical agenda vocabulary and allowed combinations
-  for block and micro-level planning artefacts.
+  for phase and week-level planning artefacts.
   This specification is semantic and normative; enum values are defined in schema and
   this spec defines meanings and combination constraints.
 ---
@@ -46,7 +46,7 @@ This spec defines semantics and combination rules only. If there is any mismatch
 ## 1) DAY_ROLE_ENUM
 **(Mandatory · exactly one per day)**
 ​
-Describes the **structural role of a day** in the block.
+Describes the **structural role of a day** in the phase.
 
 ### Semantics
 
@@ -163,9 +163,9 @@ This specification is referenced by:
 
 - `phase_structure_yyyy-ww--yyyy-ww.json`
 - `phase_preview_yyyy-ww--yyyy-ww.json`
-- Micro-Planner validation logic
+- Week-Planner validation logic
 
-Higher-level artefacts (Meso-Architect, DES)  
+Higher-level artefacts (Phase-Architect, DES)  
 may restrict allowed combinations further,  
 but may not expand them.
 

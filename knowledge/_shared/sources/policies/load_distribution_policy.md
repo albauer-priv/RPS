@@ -8,13 +8,13 @@ Scope: Shared
 Authority: Informational
 
 Applies-To:
-  - Micro-Planner
+  - Week-Planner
   - Workout-Builder
 
 Notes: >
   Optional, non-binding guidance for distributing weekly planned_Load_kJ
-  across days. This policy MUST NOT override governance bands or block intent.
-  This policy MUST NOT be used by Macro or Meso.
+  across days. This policy MUST NOT override governance bands or phase intent.
+  This policy MUST NOT be used by Season or Phase.
 ---
 
 # Load Distribution Policy (Optional)
@@ -71,7 +71,7 @@ After workouts are drafted:
    flexible endurance sessions (not quality sessions).
 3) Recompute until within band or availability prevents compliance.
 
-If compliance cannot be achieved, stop and escalate to Meso/Macro.
+If compliance cannot be achieved, stop and escalate to Phase/Season.
 
 ## Rounding & residuals (optional)
 
@@ -85,7 +85,7 @@ When distributing a weekly target to days:
 
 ## Non-Override Rules
 
-- Never change block intent or quality density.
+- Never change phase intent or quality density.
 - Never increase intensity solely to hit the band.
 - Use duration/volume adjustments first.
 

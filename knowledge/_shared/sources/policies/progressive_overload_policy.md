@@ -8,26 +8,26 @@ Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
 
 Notes: >
   Binding rules for kJ-based progressive overload, deload, re-entry, and
-  cadence selection. Applies to phase/block planning and weekly corridor
-  derivation in Macro/Meso, and weekly execution planning in Micro.
+  cadence selection. Applies to phase/phase planning and weekly corridor
+  derivation in Season/Phase, and weekly execution planning in Week.
 ---
 
 # Progressive Overload Policy (kJ-based)
 
-## Block Cadence, Deload and Re-Entry Rules for Phase Planning (2:1 / 3:1 / 2:1:1)
+## Phase Cadence, Deload and Re-Entry Rules for Phase Planning (2:1 / 3:1 / 2:1:1)
 
 ## Scope and intent
 
-This policy defines enforceable rules for planning phases/blocks using
+This policy defines enforceable rules for planning phases/phases using
 weekly work (kJ) as the primary load metric. It specifies:
 
-- how to progress load within a block,
+- how to progress load within a phase,
 - how to execute a deload (or mini-reset),
 - how to set re-entry load after deload,
 - and how to choose between 2:1, 3:1, and 2:1:1 cadences based on athlete
@@ -277,7 +277,7 @@ If fatigue in W2 is high or readiness in W3 is poor:
 - replace MR_kJ with a true DL_kJ per Section 3.1,
 - treat W4 as RE_kJ per Section 3.2 (baseline-anchored re-entry).
 
-### C3) Baseline update for next block
+### C3) Baseline update for next phase
 
 Update BL_kJ conservatively:
 - BL_kJ_next = mean(W2_kJ, W4_kJ) (or use CH_kJ if you prefer rolling stability).

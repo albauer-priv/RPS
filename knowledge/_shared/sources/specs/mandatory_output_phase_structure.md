@@ -26,7 +26,7 @@ This chapter defines how to produce **schema‑valid PHASE_STRUCTURE JSON**.
   - `schema_id`: `"PhaseStructureInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Meso-Architect"`
+  - `owner_agent`: `"Phase-Architect"`
 - `iso_week_range` required.
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
 - `temporal_scope` MUST be copied from an upstream artefact (prefer stored PHASE_GUARDRAILS for
@@ -34,21 +34,21 @@ This chapter defines how to produce **schema‑valid PHASE_STRUCTURE JSON**.
 
 #### 3) `data.upstream_intent`
 Required:
-- `block_type`, `primary_objective` (strings)
-- `block_status`: `Green|Yellow|Red`
+- `phase_type`, `primary_objective` (strings)
+- `phase_status`: `Green|Yellow|Red`
 - `non_negotiables` (array, min 1)
 - `constraints` (array, min 1)
 - `key_risks_warnings` (array, min 1)
 
-#### 3.1) Macro constraint propagation (binding)
-Map macro constraints into `upstream_intent`:
+#### 3.1) Season constraint propagation (binding)
+Map season constraints into `upstream_intent`:
 - `upstream_intent.constraints` MUST include (verbatim) all of:
   - `season_plan.data.global_constraints.availability_assumptions`
   - `season_plan.data.global_constraints.risk_constraints`
   - `season_plan.data.global_constraints.planned_event_windows`
   - `season_plan.data.global_constraints.recovery_protection.notes`
 - `upstream_intent.key_risks_warnings` MUST be copied from
-  `phase_guardrails.block_summary.key_risks_warnings` (verbatim).
+  `phase_guardrails.phase_summary.key_risks_warnings` (verbatim).
 
 #### 4) `data.load_ranges`
 Required:
@@ -77,7 +77,7 @@ Required:
   - `fixed_non_training_days` (array of weekdays)
 - `consistency_over_optimization.statements` (array, min 1)
 
-#### 6) `data.structural_building_blocks`
+#### 6) `data.structural_phase_elements`
 Required arrays:
 - `allowed_day_roles`
 - `allowed_intensity_domains`
@@ -109,9 +109,9 @@ Required:
 
 #### 10) `data.self_check`
 All required booleans must be present and set to `true`:
-- `block_status_respected`
-- `block_range_covered`
-- `week_roles_defined_for_block_range`
+- `phase_status_respected`
+- `phase_range_covered`
+- `week_roles_defined_for_phase_range`
 - `no_new_decision_introduced`
 - `no_numeric_target_introduced`
 - `no_kpi_gate_inferred`
@@ -126,7 +126,7 @@ All required booleans must be present and set to `true`:
   If none specified upstream, add:
   `"None specified upstream; do not introduce new forbidden sequences."`
 - `execution_principles.recovery_protection.mandatory_recovery_spacing_rules` and
-  `forbidden_sequences` must reflect any recovery protection notes in macro constraints.
+  `forbidden_sequences` must reflect any recovery protection notes in season constraints.
   Do not invent new rules.
 
 #### 11) Validation & Stop (Binding)
@@ -160,10 +160,10 @@ Additional hard stops (binding):
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Meso-Architect",
+    "owner_agent": "Phase-Architect",
     "run_id": "example_phase_structure_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
-    "scope": "Meso",
+    "scope": "Phase",
     "iso_week": "2026-04",
     "iso_week_range": "2026-04--2026-05",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-02-01" },
@@ -176,9 +176,9 @@ Additional hard stops (binding):
   },
   "data": {
     "upstream_intent": {
-      "block_type": "Base",
+      "phase_type": "Base",
       "primary_objective": "Build durability",
-      "block_status": "Green",
+      "phase_status": "Green",
       "non_negotiables": ["Fixed rest days"],
       "constraints": ["No back-to-back quality"],
       "key_risks_warnings": ["Travel risk"]
@@ -207,7 +207,7 @@ Additional hard stops (binding):
         "statements": ["Prefer repeatability over aggressive overload"]
       }
     },
-    "structural_building_blocks": {
+    "structural_phase_elements": {
       "allowed_day_roles": ["ENDURANCE"],
       "allowed_intensity_domains": ["ENDURANCE_LOW"],
       "allowed_load_modalities": ["NONE"]
@@ -236,13 +236,13 @@ Additional hard stops (binding):
     },
     "adaptation_rules": ["Reduce load if recovery signals worsen"],
     "relationships": {
-      "guides": ["meso__micro_contract.md"],
+      "guides": ["phase__week_contract.md"],
       "does_not_replace": ["phase_guardrails"]
     },
     "self_check": {
-      "block_status_respected": true,
-      "block_range_covered": true,
-      "week_roles_defined_for_block_range": true,
+      "phase_status_respected": true,
+      "phase_range_covered": true,
+      "week_roles_defined_for_phase_range": true,
       "no_new_decision_introduced": true,
       "no_numeric_target_introduced": true,
       "no_kpi_gate_inferred": true

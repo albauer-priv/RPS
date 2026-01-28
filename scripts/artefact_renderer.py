@@ -24,8 +24,8 @@ RENDERERS = {
     "PHASE_GUARDRAILS": "phase_guardrails.md.j2",
     "PHASE_STRUCTURE": "phase_structure.md.j2",
     "PHASE_PREVIEW": "phase_preview.md.j2",
-    "BLOCK_FEED_FORWARD": "block_feed_forward.md.j2",
-    "MACRO_MESO_FEED_FORWARD": "macro_meso_feed_forward.md.j2",
+    "PHASE_FEED_FORWARD": "phase_feed_forward.md.j2",
+    "SEASON_PHASE_FEED_FORWARD": "season_phase_feed_forward.md.j2",
     "DES_ANALYSIS_REPORT": "des_analysis_report.md.j2",
     "ACTIVITIES_ACTUAL": "activities_actual.md.j2",
     "ACTIVITIES_TREND": "activities_trend.md.j2",
@@ -41,8 +41,8 @@ SCHEMA_FILES = {
     "PHASE_GUARDRAILS": "phase_guardrails.schema.json",
     "PHASE_STRUCTURE": "phase_structure.schema.json",
     "PHASE_PREVIEW": "phase_preview.schema.json",
-    "BLOCK_FEED_FORWARD": "block_feed_forward.schema.json",
-    "MACRO_MESO_FEED_FORWARD": "macro_meso_feed_forward.schema.json",
+    "PHASE_FEED_FORWARD": "phase_feed_forward.schema.json",
+    "SEASON_PHASE_FEED_FORWARD": "season_phase_feed_forward.schema.json",
     "DES_ANALYSIS_REPORT": "des_analysis_report.schema.json",
     "ACTIVITIES_ACTUAL": "activities_actual.schema.json",
     "ACTIVITIES_TREND": "activities_trend.schema.json",
@@ -71,7 +71,7 @@ SELF_CHECK_LABELS = {
         "Principles and scientific foundation are documented"
     ),
     "allowed_forbidden_domains_listed": "Allowed / forbidden domains are explicitly listed",
-    "no_meso_or_micro_planning_content": "No meso or micro planning content exists",
+    "no_phase_or_week_planning_content": "No phase or week planning content exists",
     "header_includes_implements_iso_week_range_trace": (
         "Header includes Implements, ISO-Week-Range, and Trace-Upstream"
     ),
@@ -198,7 +198,7 @@ def build_season_plan_context(doc):
     data = doc.get("data", {})
 
     body = data.get("body_metadata", {})
-    macro_intent = data.get("macro_intent_principles", {})
+    season_intent = data.get("season_intent_principles", {})
 
     phases = []
     for phase in data.get("phases", []):
@@ -275,11 +275,11 @@ def build_season_plan_context(doc):
                 "notes": (body.get("moving_time_rate_guidance") or {}).get("notes"),
             },
         },
-        "macro_intent": {
-            "season_objective": macro_intent.get("season_objective"),
-            "success_definition": macro_intent.get("success_definition"),
-            "non_negotiable_principles": macro_intent.get("non_negotiable_principles", []),
-            "kj_corridor_design_notes": macro_intent.get("kJ_corridor_design_notes", []),
+        "season_intent": {
+            "season_objective": season_intent.get("season_objective"),
+            "success_definition": season_intent.get("success_definition"),
+            "non_negotiable_principles": season_intent.get("non_negotiable_principles", []),
+            "kj_corridor_design_notes": season_intent.get("kJ_corridor_design_notes", []),
         },
         "phases": phases,
         "global_constraints": {
@@ -337,7 +337,7 @@ def build_phase_guardrails_context(doc):
     meta = doc.get("meta", {})
     data = doc.get("data", {})
     body_metadata = data.get("body_metadata", {})
-    block_summary = data.get("block_summary", {})
+    phase_summary = data.get("phase_summary", {})
     load_guardrails = data.get("load_guardrails", {})
     confidence_assumptions = load_guardrails.get("confidence_assumptions", {})
     semantics = data.get("allowed_forbidden_semantics", {})
@@ -379,18 +379,18 @@ def build_phase_guardrails_context(doc):
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
         "body_metadata": {
-            "block_id": body_metadata.get("block_id", ""),
-            "block_type": body_metadata.get("block_type", ""),
-            "block_status": body_metadata.get("block_status", ""),
+            "phase_id": body_metadata.get("phase_id", ""),
+            "phase_type": body_metadata.get("phase_type", ""),
+            "phase_status": body_metadata.get("phase_status", ""),
             "change_type": body_metadata.get("change_type", ""),
             "derived_from": body_metadata.get("derived_from"),
             "upstream_inputs": body_metadata.get("upstream_inputs", []),
         },
-        "block_summary": {
-            "primary_objective": block_summary.get("primary_objective", ""),
-            "secondary_objectives": block_summary.get("secondary_objectives", []),
-            "key_risks_warnings": block_summary.get("key_risks_warnings", []),
-            "non_negotiables": block_summary.get("non_negotiables", []),
+        "phase_summary": {
+            "primary_objective": phase_summary.get("primary_objective", ""),
+            "secondary_objectives": phase_summary.get("secondary_objectives", []),
+            "key_risks_warnings": phase_summary.get("key_risks_warnings", []),
+            "non_negotiables": phase_summary.get("non_negotiables", []),
         },
         "weekly_kj_bands": weekly_band_rows(
             load_guardrails.get("weekly_kj_bands", [])
@@ -435,12 +435,12 @@ def build_phase_guardrails_context(doc):
         "escalation_change_control": {
             "warning_signals": escalation_change_control.get("warning_signals", []),
             "required_response": {
-                "micro_planner_must": required_response.get("micro_planner_must", []),
-                "micro_planner_must_not": required_response.get(
-                    "micro_planner_must_not", []
+                "week_planner_must": required_response.get("week_planner_must", []),
+                "week_planner_must_not": required_response.get(
+                    "week_planner_must_not", []
                 ),
-                "meso_architect_decides": required_response.get(
-                    "meso_architect_decides", ""
+                "phase_architect_decides": required_response.get(
+                    "phase_architect_decides", ""
                 ),
             },
         },
@@ -451,7 +451,7 @@ def build_phase_guardrails_context(doc):
             "allowed_forbidden_enums_specified": bool(
                 self_check.get("allowed_forbidden_enums_specified")
             ),
-            "no_micro_planning_content": bool(self_check.get("no_micro_planning_content")),
+            "no_week_planning_content": bool(self_check.get("no_week_planning_content")),
             "header_includes_implements_iso_week_range_trace": bool(
                 self_check.get("header_includes_implements_iso_week_range_trace")
             ),
@@ -528,7 +528,7 @@ def build_phase_structure_context(doc):
     load_intensity = execution_principles.get("load_intensity_handling", {})
     recovery_protection = execution_principles.get("recovery_protection", {})
     consistency = execution_principles.get("consistency_over_optimization", {})
-    structural = data.get("structural_building_blocks", {})
+    structural = data.get("structural_phase_elements", {})
     week_skeleton = data.get("week_skeleton_logic", {})
     week_roles = week_skeleton.get("week_roles", {})
     mandatory_elements = week_skeleton.get("mandatory_elements", {})
@@ -544,9 +544,9 @@ def build_phase_structure_context(doc):
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
         "upstream_intent": {
-            "block_type": upstream_intent.get("block_type", ""),
+            "phase_type": upstream_intent.get("phase_type", ""),
             "primary_objective": upstream_intent.get("primary_objective", ""),
-            "block_status": upstream_intent.get("block_status", ""),
+            "phase_status": upstream_intent.get("phase_status", ""),
             "non_negotiables": upstream_intent.get("non_negotiables", []),
             "constraints": upstream_intent.get("constraints", []),
             "key_risks_warnings": upstream_intent.get("key_risks_warnings", []),
@@ -583,7 +583,7 @@ def build_phase_structure_context(doc):
                 "statements": consistency.get("statements", []),
             },
         },
-        "structural_building_blocks": {
+        "structural_phase_elements": {
             "allowed_day_roles": structural.get("allowed_day_roles", []),
             "allowed_intensity_domains": structural.get("allowed_intensity_domains", []),
             "allowed_load_modalities": structural.get("allowed_load_modalities", []),
@@ -628,10 +628,10 @@ def build_phase_structure_context(doc):
             "does_not_replace": relationships.get("does_not_replace", []),
         },
         "self_check": {
-            "block_status_respected": bool(self_check.get("block_status_respected")),
-            "block_range_covered": bool(self_check.get("block_range_covered")),
-            "week_roles_defined_for_block_range": bool(
-                self_check.get("week_roles_defined_for_block_range")
+            "phase_status_respected": bool(self_check.get("phase_status_respected")),
+            "phase_range_covered": bool(self_check.get("phase_range_covered")),
+            "week_roles_defined_for_phase_range": bool(
+                self_check.get("week_roles_defined_for_phase_range")
             ),
             "no_new_decision_introduced": bool(self_check.get("no_new_decision_introduced")),
             "no_numeric_target_introduced": bool(self_check.get("no_numeric_target_introduced")),
@@ -646,7 +646,7 @@ def build_phase_preview_context(doc):
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
-    block_intent_summary = data.get("block_intent_summary", {})
+    phase_intent_summary = data.get("phase_intent_summary", {})
     feel_overview = data.get("feel_overview", {})
 
     week_previews = []
@@ -679,11 +679,11 @@ def build_phase_preview_context(doc):
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
-        "block_intent_summary": {
-            "block_type": block_intent_summary.get("block_type", ""),
-            "primary_objective": block_intent_summary.get("primary_objective", ""),
-            "non_negotiables": block_intent_summary.get("non_negotiables", []),
-            "key_risks_warnings": block_intent_summary.get("key_risks_warnings", []),
+        "phase_intent_summary": {
+            "phase_type": phase_intent_summary.get("phase_type", ""),
+            "primary_objective": phase_intent_summary.get("primary_objective", ""),
+            "non_negotiables": phase_intent_summary.get("non_negotiables", []),
+            "key_risks_warnings": phase_intent_summary.get("key_risks_warnings", []),
         },
         "feel_overview": {
             "dominant_theme": feel_overview.get("dominant_theme", ""),
@@ -709,8 +709,8 @@ def build_phase_preview_context(doc):
     return context
 
 
-def build_block_feed_forward_context(doc):
-    """Build context for block feed forward rendering."""
+def build_phase_feed_forward_context(doc):
+    """Build context for phase feed forward rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
@@ -789,7 +789,7 @@ def build_block_feed_forward_context(doc):
             ),
             "explicit_expiry_condition": non_negotiables.get("explicit_expiry_condition"),
         },
-        "micro_planner_operating_rules": data.get("micro_planner_operating_rules", []),
+        "week_planner_operating_rules": data.get("week_planner_operating_rules", []),
         "explicit_forbidden_content": data.get("explicit_forbidden_content", []),
         "self_check": {
             "applies_to_weeks_specified": bool(
@@ -799,20 +799,20 @@ def build_block_feed_forward_context(doc):
             "only_deltas_vs_baseline_included": bool(
                 self_check.get("only_deltas_vs_baseline_included")
             ),
-            "no_micro_content_present": bool(self_check.get("no_micro_content_present")),
+            "no_week_content_present": bool(self_check.get("no_week_content_present")),
         },
     }
     return context
 
 
-def build_macro_meso_feed_forward_context(doc):
-    """Build context for macro meso feed forward rendering."""
+def build_season_phase_feed_forward_context(doc):
+    """Build context for season phase feed-forward rendering."""
     meta = doc.get("meta", {})
     data = doc.get("data", {})
 
     source_context = data.get("source_context", {})
     decision_summary = data.get("decision_summary", {})
-    block_adjustment = data.get("block_adjustment")
+    phase_adjustment = data.get("phase_adjustment")
 
     context = {
         "meta": meta,
@@ -822,13 +822,13 @@ def build_macro_meso_feed_forward_context(doc):
         "source_context": {
             "season_plan_ref": source_context.get("season_plan_ref", ""),
             "des_analysis_report_ref": source_context.get("des_analysis_report_ref", ""),
-            "affected_block_id": source_context.get("affected_block_id", ""),
+            "affected_phase_id": source_context.get("affected_phase_id", ""),
         },
         "decision_summary": {
             "conclusion": decision_summary.get("conclusion", ""),
             "rationale": decision_summary.get("rationale", []),
         },
-        "block_adjustment": block_adjustment,
+        "phase_adjustment": phase_adjustment,
         "explicit_non_actions": data.get("explicit_non_actions", []),
     }
     return context
@@ -872,8 +872,8 @@ def build_des_analysis_report_context(doc):
         },
         "weekly_analysis": {
             "context": {
-                "block_week": weekly_analysis.get("context", {}).get("block_week"),
-                "block_focus": weekly_analysis.get("context", {}).get("block_focus", ""),
+                "phase_week": weekly_analysis.get("context", {}).get("phase_week"),
+                "phase_focus": weekly_analysis.get("context", {}).get("phase_focus", ""),
             },
             "signals": weekly_analysis.get("signals", []),
             "interpretation": {
@@ -897,10 +897,10 @@ def build_des_analysis_report_context(doc):
             "detailed_analysis_last_week": narrative_report.get(
                 "detailed_analysis_last_week", ""
             ),
-            "trend_analysis_within_block": narrative_report.get(
-                "trend_analysis_within_block", ""
+            "trend_analysis_within_phase": narrative_report.get(
+                "trend_analysis_within_phase", ""
             ),
-            "trend_analysis_macro": narrative_report.get("trend_analysis_macro", ""),
+            "trend_analysis_season": narrative_report.get("trend_analysis_season", ""),
             "interpretation_recommendation": narrative_report.get(
                 "interpretation_recommendation", ""
             ),
@@ -1665,8 +1665,8 @@ def render_phase_preview(doc, template_dir: Path):
     return template.render(**context)
 
 
-def render_block_feed_forward(doc, template_dir: Path):
-    """Render block feed forward using a Jinja template."""
+def render_phase_feed_forward(doc, template_dir: Path):
+    """Render phase feed forward using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1675,13 +1675,13 @@ def render_block_feed_forward(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["BLOCK_FEED_FORWARD"])
-    context = build_block_feed_forward_context(doc)
+    template = env.get_template(RENDERERS["PHASE_FEED_FORWARD"])
+    context = build_phase_feed_forward_context(doc)
     return template.render(**context)
 
 
-def render_macro_meso_feed_forward(doc, template_dir: Path):
-    """Render macro meso feed forward using a Jinja template."""
+def render_season_phase_feed_forward(doc, template_dir: Path):
+    """Render season phase feed forward using a Jinja template."""
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=False,
@@ -1690,8 +1690,8 @@ def render_macro_meso_feed_forward(doc, template_dir: Path):
         lstrip_blocks=True,
     )
     env.filters["join_or_na"] = join_or_na
-    template = env.get_template(RENDERERS["MACRO_MESO_FEED_FORWARD"])
-    context = build_macro_meso_feed_forward_context(doc)
+    template = env.get_template(RENDERERS["SEASON_PHASE_FEED_FORWARD"])
+    context = build_season_phase_feed_forward_context(doc)
     return template.render(**context)
 
 
@@ -1836,10 +1836,10 @@ def main():
         rendered = render_phase_structure(doc, template_dir)
     elif artifact_type == "PHASE_PREVIEW":
         rendered = render_phase_preview(doc, template_dir)
-    elif artifact_type == "BLOCK_FEED_FORWARD":
-        rendered = render_block_feed_forward(doc, template_dir)
-    elif artifact_type == "MACRO_MESO_FEED_FORWARD":
-        rendered = render_macro_meso_feed_forward(doc, template_dir)
+    elif artifact_type == "PHASE_FEED_FORWARD":
+        rendered = render_phase_feed_forward(doc, template_dir)
+    elif artifact_type == "SEASON_PHASE_FEED_FORWARD":
+        rendered = render_season_phase_feed_forward(doc, template_dir)
     elif artifact_type == "DES_ANALYSIS_REPORT":
         rendered = render_des_analysis_report(doc, template_dir)
     elif artifact_type == "ACTIVITIES_ACTUAL":

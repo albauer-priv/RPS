@@ -11,7 +11,7 @@ Owner: Governance
 
 ## Purpose
 Define the required structure for the `SEASON_SCENARIOS` artefact used to
-capture three macro planning scenarios for user selection.
+capture three season planning scenarios for user selection.
 
 ## Required Structure
 The artefact MUST be a JSON envelope with `meta` and `data` fields.
@@ -74,5 +74,5 @@ Each scenario MUST include `scenario_guidance` with:
 - `unknowns` (array)
 
 ## Authority Notes
-`SEASON_SCENARIOS` is **informational**; Macro-Planner must treat it as advisory
+`SEASON_SCENARIOS` is **informational**; Season-Planner must treat it as advisory
 input only. Binding decisions are made in `SEASON_PLAN`.

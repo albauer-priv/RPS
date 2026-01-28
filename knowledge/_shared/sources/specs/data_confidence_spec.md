@@ -9,9 +9,9 @@ Authority: Binding
 
 Applies-To:
   - Data-Pipeline
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
 
 Notes: >
   Defines the canonical confidence and data-quality model for all factual
@@ -54,9 +54,9 @@ The Data-Pipeline MUST:
 
 ## 4. Consumer Constraints (Binding)
 
-- Macro-Planner: LOW or UNKNOWN confidence forbids strategic inference
-- Meso-Architect: LOW confidence enforces conservative block status
-- Micro-Planner: LOW confidence allows reporting only, no interpretation
+- Season-Planner: LOW or UNKNOWN confidence forbids strategic inference
+- Phase-Architect: LOW confidence enforces conservative phase status
+- Week-Planner: LOW confidence allows reporting only, no interpretation
 
 ## 5. Decision Interaction Rules
 

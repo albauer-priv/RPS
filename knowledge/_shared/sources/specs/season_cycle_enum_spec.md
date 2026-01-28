@@ -1,32 +1,32 @@
 ---
 Type: Specification
-Specification-For: MACRO_CYCLE_ENUM
-Specification-ID: MacroCycleEnumSpec
+Specification-For: SEASON_CYCLE_ENUM
+Specification-ID: SeasonCycleEnumSpec
 Version: 1.0
 
 Scope: Shared
 Authority: Binding
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
+  - Season-Planner
+  - Phase-Architect
   - Performance-Analyst
 
 Notes: >
-  Defines the canonical cycle labels used in macro-level planning.
+  Defines the canonical cycle labels used in season-level planning.
   These are labels only and must match exactly.
 ---
 
-# MACRO CYCLE ENUM SPECIFICATION
+# SEASON CYCLE ENUM SPECIFICATION
 
 ## Schema Reference (Normative)
 
 The canonical enum values are defined in:
-- `macro_cycle_enum.schema.json`
+- `season_cycle_enum.schema.json`
 
 This spec defines semantics only. If there is any mismatch, the schema prevails.
 
-## 1) Macro Cycle Semantics
+## 1) Season Cycle Semantics
 
 | Cycle       | Meaning                                     |
 | ----------- | ------------------------------------------- |
@@ -40,4 +40,4 @@ This spec defines semantics only. If there is any mismatch, the schema prevails.
 - Values are case-sensitive per schema.
 
 ---
-End of MACRO CYCLE ENUM SPECIFICATION v1.0
+End of SEASON CYCLE ENUM SPECIFICATION v1.0

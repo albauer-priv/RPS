@@ -12,7 +12,7 @@ Decision-Authority: None
 
 Applies-To:
   - Workout-Builder
-  - Micro-Planner
+  - Week-Planner
 
 Dependencies:
   - Specification-ID: IntervalsWorkoutEBNF

@@ -39,7 +39,7 @@
         "upstream_intent",
         "load_ranges",
         "execution_principles",
-        "structural_building_blocks",
+        "structural_phase_elements",
         "week_skeleton_logic",
         "adaptation_rules",
         "relationships",
@@ -50,15 +50,15 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "block_type",
+            "phase_type",
             "primary_objective",
-            "block_status",
+            "phase_status",
             "non_negotiables",
             "constraints",
             "key_risks_warnings"
           ],
           "properties": {
-            "block_type": {
+            "phase_type": {
               "type": "string",
               "minLength": 1
             },
@@ -66,7 +66,7 @@
               "type": "string",
               "minLength": 1
             },
-            "block_status": {
+            "phase_status": {
               "type": "string",
               "enum": [
                 "Green",
@@ -231,7 +231,7 @@
             }
           }
         },
-        "structural_building_blocks": {
+        "structural_phase_elements": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -414,23 +414,23 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "block_status_respected",
-            "block_range_covered",
-            "week_roles_defined_for_block_range",
+            "phase_status_respected",
+            "phase_range_covered",
+            "week_roles_defined_for_phase_range",
             "no_new_decision_introduced",
             "no_numeric_target_introduced",
             "no_kpi_gate_inferred"
           ],
           "properties": {
-            "block_status_respected": {
+            "phase_status_respected": {
               "const": true,
               "type": "boolean"
             },
-            "block_range_covered": {
+            "phase_range_covered": {
               "const": true,
               "type": "boolean"
             },
-            "week_roles_defined_for_block_range": {
+            "week_roles_defined_for_phase_range": {
               "const": true,
               "type": "boolean"
             },
@@ -477,7 +477,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Meso-Architect",
+          "const": "Phase-Architect",
           "type": "string"
         }
       },

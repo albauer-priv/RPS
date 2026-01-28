@@ -225,7 +225,7 @@ def run_agent_multi_output(
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
 
-    def _load_load_estimation_spec_macro() -> str | None:
+def _load_load_estimation_spec_season() -> str | None:
         root = Path(__file__).resolve().parents[3]
         path = root / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
         if not path.exists():
@@ -234,7 +234,7 @@ def run_agent_multi_output(
         lines = content.splitlines()
         end = None
         for i, line in enumerate(lines):
-            if line.startswith("## Meso"):
+            if line.startswith("## Phase"):
                 end = i
                 break
         section = "\n".join(lines[:end]).strip() if end else content
@@ -250,11 +250,11 @@ def run_agent_multi_output(
     mandatory_by_schema = {
         "season_scenarios.schema.json": "mandatory_output_season_scenarios.md",
         "season_plan.schema.json": "mandatory_output_season_plan.md",
-        "macro_meso_feed_forward.schema.json": "mandatory_output_macro_meso_feed_forward.md",
+        "season_phase_feed_forward.schema.json": "mandatory_output_season_phase_feed_forward.md",
         "phase_guardrails.schema.json": "mandatory_output_phase_guardrails.md",
         "phase_structure.schema.json": "mandatory_output_phase_structure.md",
         "phase_preview.schema.json": "mandatory_output_phase_preview.md",
-        "block_feed_forward.schema.json": "mandatory_output_block_feed_forward.md",
+        "phase_feed_forward.schema.json": "mandatory_output_phase_feed_forward.md",
         "week_plan.schema.json": "mandatory_output_week_plan.md",
         "workouts.schema.json": "mandatory_output_intervals_workouts.md",
         "des_analysis_report.schema.json": "mandatory_output_des_analysis_report.md",
@@ -274,13 +274,13 @@ def run_agent_multi_output(
                 f"\"\"\"\n{mandatory}\n\"\"\"\n"
             )
 
-    if agent_name == "macro_planner":
-        if "LoadEstimationSpec (Macro section" not in system_prompt and "load_estimation_spec.md" not in system_prompt:
-            spec_section = _load_load_estimation_spec_macro()
+    if agent_name == "season_planner":
+        if "LoadEstimationSpec (Season section" not in system_prompt and "load_estimation_spec.md" not in system_prompt:
+            spec_section = _load_load_estimation_spec_season()
             if spec_section:
                 system_prompt = (
                     f"{system_prompt}\n"
-                    "LoadEstimationSpec (Macro section; injected):\n"
+                    "LoadEstimationSpec (Season section; injected):\n"
                     f"\"\"\"\n{spec_section}\n\"\"\"\n"
                 )
 
@@ -549,7 +549,7 @@ def run_agent_multi_output(
         meta["schema_id"] = "WeekPlanInterface"
         meta["schema_version"] = "1.2"
         meta["authority"] = "Binding"
-        meta["owner_agent"] = "Micro-Planner"
+        meta["owner_agent"] = "Week-Planner"
         if "notes" not in meta or meta.get("notes") is None:
             meta["notes"] = ""
         document["meta"] = meta
@@ -574,7 +574,7 @@ def run_agent_multi_output(
             rec = data.get("recommendation")
             if isinstance(rec, dict):
                 rec["type"] = "advisory"
-                rec["scope"] = "Macro-Planner"
+                rec["scope"] = "Season-Planner"
                 data["recommendation"] = rec
             document["data"] = data
         return document

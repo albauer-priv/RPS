@@ -47,34 +47,34 @@ def _log(message: str, level: int = logging.INFO) -> None:
     log_and_print(logger, _format_screen_text(message), level)
 
 
-def _extract_general_and_meso(spec_text: str) -> str:
-    """Return General + Meso sections, skipping Macro section when present."""
+def _extract_general_and_phase(spec_text: str) -> str:
+    """Return General + Phase sections, skipping Season section when present."""
     lines = spec_text.splitlines()
-    macro_idx = None
-    meso_idx = None
+    season_idx = None
+    phase_idx = None
     for idx, line in enumerate(lines):
         if line.startswith("## "):
-            if macro_idx is None and line.startswith("## Macro"):
-                macro_idx = idx
-            if meso_idx is None and line.startswith("## Meso"):
-                meso_idx = idx
-        if macro_idx is not None and meso_idx is not None:
+            if season_idx is None and line.startswith("## Season"):
+                season_idx = idx
+            if phase_idx is None and line.startswith("## Phase"):
+                phase_idx = idx
+        if season_idx is not None and phase_idx is not None:
             break
 
-    if meso_idx is None:
+    if phase_idx is None:
         return spec_text
-    if macro_idx is None or meso_idx < macro_idx:
+    if season_idx is None or phase_idx < season_idx:
         return spec_text
-    head = "\n".join(lines[:macro_idx]).rstrip()
-    tail = "\n".join(lines[meso_idx:]).lstrip()
+    head = "\n".join(lines[:season_idx]).rstrip()
+    tail = "\n".join(lines[phase_idx:]).lstrip()
     return f"{head}\n\n{tail}".strip()
 
 
-def _load_load_estimation_spec_meso() -> tuple[str, str]:
-    """Load LoadEstimationSpec and keep General + Meso sections only."""
+def _load_load_estimation_spec_phase() -> tuple[str, str]:
+    """Load LoadEstimationSpec and keep General + Phase sections only."""
     path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
     content = path.read_text(encoding="utf-8")
-    return str(path), _extract_general_and_meso(content)
+    return str(path), _extract_general_and_phase(content)
 
 
 def _extract_load_estimation_section(spec_text: str, section: str | None) -> str:
@@ -83,16 +83,16 @@ def _extract_load_estimation_section(spec_text: str, section: str | None) -> str
     section_key = section.strip().lower()
     if section_key == "general":
         lines = spec_text.splitlines()
-        macro_idx = None
+        season_idx = None
         for idx, line in enumerate(lines):
-            if line.startswith("## Macro"):
-                macro_idx = idx
+            if line.startswith("## Season"):
+                season_idx = idx
                 break
-        if macro_idx is None:
+        if season_idx is None:
             return spec_text
-        return "\n".join(lines[:macro_idx]).rstrip()
-    if section_key == "general+meso":
-        return _extract_general_and_meso(spec_text)
+        return "\n".join(lines[:season_idx]).rstrip()
+    if section_key == "general+phase":
+        return _extract_general_and_phase(spec_text)
     return spec_text
 
 
@@ -112,7 +112,7 @@ def _mode_for_task(task: AgentTask) -> str | None:
         AgentTask.CREATE_PHASE_GUARDRAILS: "phase_guardrails",
         AgentTask.CREATE_PHASE_STRUCTURE: "phase_structure",
         AgentTask.CREATE_PHASE_PREVIEW: "phase_preview",
-        AgentTask.CREATE_BLOCK_FEED_FORWARD: "block_feed_forward",
+        AgentTask.CREATE_PHASE_FEED_FORWARD: "phase_feed_forward",
         AgentTask.CREATE_WEEK_PLAN: "week_plan",
         AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: "intervals_workouts",
         AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
@@ -208,7 +208,7 @@ def plan_week(
     force_file_search: bool = True,
     max_num_results: int = 20,
 ) -> PlanWeekResult:
-    """Run the Macro -> Meso -> Micro -> Builder -> Analysis flow if needed."""
+    """Run the Season -> Phase -> Week -> Builder -> Analysis flow if needed."""
     workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
     store = LocalArtifactStore(root=runtime.workspace_root)
     target = IsoWeek(year=year, week=week)
@@ -229,48 +229,48 @@ def plan_week(
         )
 
     if not workspace.latest_exists(ArtifactType.SEASON_PLAN):
-        message = "Season Plan NOT FOUND. Run macro planning first."
+        message = "Season Plan NOT FOUND. Run season planning first."
         _log(message, logging.ERROR)
         steps.append(
             {
-                "agent": "macro_planner",
+                "agent": "season_planner",
                 "tasks": [],
                 "result": {"ok": False, "error": "SEASON_PLAN not found"},
             }
         )
         return PlanWeekResult(ok=False, steps=steps)
 
-    macro = workspace.get_latest(ArtifactType.SEASON_PLAN)
-    macro_range = envelope_week_range(macro)
-    if not macro_range or not range_contains(macro_range, target):
-        range_label = macro_range.range_key if macro_range else "missing"
+    season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+    season_range = envelope_week_range(season_plan)
+    if not season_range or not range_contains(season_range, target):
+        range_label = season_range.range_key if season_range else "missing"
         message = (
             "Season Plan NOT FOUND for target week "
-            f"{target_label} (macro iso_week_range={range_label})."
+            f"{target_label} (season_plan iso_week_range={range_label})."
         )
         _log(message, logging.ERROR)
         steps.append(
             {
-                "agent": "macro_planner",
+                "agent": "season_planner",
                 "tasks": [],
                 "result": {
                     "ok": False,
                     "error": "SEASON_PLAN does not cover target week",
-                    "macro_range": range_label,
+                    "season_plan_range": range_label,
                 },
             }
         )
         return PlanWeekResult(ok=False, steps=steps)
 
-    phase_info = resolve_season_plan_phase_info(macro, target)
+    phase_info = resolve_season_plan_phase_info(season_plan, target)
     if not phase_info:
         message = f"Matching Phase NOT FOUND in Season Plan for {target_label}."
         _log(message, logging.ERROR)
         steps.append(
             {
-                "agent": "macro_planner",
+                "agent": "season_planner",
                 "tasks": [],
-                "result": {"ok": False, "error": "Macro phase not found"},
+                "result": {"ok": False, "error": "Season plan phase not found"},
             }
         )
         return PlanWeekResult(ok=False, steps=steps)
@@ -285,8 +285,8 @@ def plan_week(
     )
     _log(message)
 
-    block_range = phase_info.phase_range
-    block_range_label = block_range.range_key
+    phase_range = phase_info.phase_range
+    phase_range_label = phase_range.range_key
 
     index_query = IndexExactQuery(
         root=workspace.store.root,
@@ -315,7 +315,7 @@ def plan_week(
             if not full_path.exists():
                 continue
             range_obj = parse_iso_week_range(record.get("iso_week_range"))
-            if not range_obj or range_obj.key != block_range.key:
+            if not range_obj or range_obj.key != phase_range.key:
                 continue
             candidates.append((record.get("created_at", ""), {"record": record, "path": full_path}))
         if not candidates:
@@ -324,64 +324,64 @@ def plan_week(
         chosen = candidates[-1][1]
         return chosen["record"], chosen["path"], _mtime(chosen["path"])
 
-    macro_path = store.latest_path(athlete_id, ArtifactType.SEASON_PLAN)
-    macro_mtime = _mtime(macro_path)
+    season_plan_path = store.latest_path(athlete_id, ArtifactType.SEASON_PLAN)
+    season_plan_mtime = _mtime(season_plan_path)
 
-    block_gov_record, block_gov_path, block_gov_mtime = _latest_range_record(ArtifactType.PHASE_GUARDRAILS)
-    block_arch_record, block_arch_path, block_arch_mtime = _latest_range_record(ArtifactType.PHASE_STRUCTURE)
-    block_preview_record, block_preview_path, block_preview_mtime = _latest_range_record(ArtifactType.PHASE_PREVIEW)
+    phase_guardrails_record, phase_guardrails_path, phase_guardrails_mtime = _latest_range_record(ArtifactType.PHASE_GUARDRAILS)
+    phase_structure_record, phase_structure_path, phase_structure_mtime = _latest_range_record(ArtifactType.PHASE_STRUCTURE)
+    phase_preview_record, phase_preview_path, phase_preview_mtime = _latest_range_record(ArtifactType.PHASE_PREVIEW)
 
-    needs_block_gov = block_gov_path is None
-    if macro_mtime and block_gov_mtime and macro_mtime > block_gov_mtime:
-        needs_block_gov = True
+    needs_phase_guardrails = phase_guardrails_path is None
+    if season_plan_mtime and phase_guardrails_mtime and season_plan_mtime > phase_guardrails_mtime:
+        needs_phase_guardrails = True
 
-    needs_block_arch = block_arch_path is None
-    if macro_mtime and block_arch_mtime and macro_mtime > block_arch_mtime:
-        needs_block_arch = True
-    if block_gov_mtime and block_arch_mtime and block_gov_mtime > block_arch_mtime:
-        needs_block_arch = True
+    needs_phase_structure = phase_structure_path is None
+    if season_plan_mtime and phase_structure_mtime and season_plan_mtime > phase_structure_mtime:
+        needs_phase_structure = True
+    if phase_guardrails_mtime and phase_structure_mtime and phase_guardrails_mtime > phase_structure_mtime:
+        needs_phase_structure = True
 
-    needs_block_preview = block_preview_path is None
-    if block_arch_mtime and block_preview_mtime and block_arch_mtime > block_preview_mtime:
-        needs_block_preview = True
+    needs_phase_preview = phase_preview_path is None
+    if phase_structure_mtime and phase_preview_mtime and phase_structure_mtime > phase_preview_mtime:
+        needs_phase_preview = True
 
-    if needs_block_gov:
-        needs_block_arch = True
-        needs_block_preview = True
-    if needs_block_arch:
-        needs_block_preview = True
+    if needs_phase_guardrails:
+        needs_phase_structure = True
+        needs_phase_preview = True
+    if needs_phase_structure:
+        needs_phase_preview = True
 
-    meso_tasks: list[AgentTask] = []
-    if not needs_block_gov:
-        message = f"Found PHASE_GUARDRAILS for block range {block_range_label}."
+    phase_tasks: list[AgentTask] = []
+    if not needs_phase_guardrails:
+        message = f"Found PHASE_GUARDRAILS for phase range {phase_range_label}."
         _log(message)
     else:
-        message = f"PHASE_GUARDRAILS missing/stale for block range {block_range_label}. Will create."
+        message = f"PHASE_GUARDRAILS missing/stale for phase range {phase_range_label}. Will create."
         _log(message)
-        meso_tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
+        phase_tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
 
-    if not needs_block_arch:
-        message = f"Found PHASE_STRUCTURE for block range {block_range_label}."
+    if not needs_phase_structure:
+        message = f"Found PHASE_STRUCTURE for phase range {phase_range_label}."
         _log(message)
     else:
-        message = f"PHASE_STRUCTURE missing/stale for block range {block_range_label}. Will create."
+        message = f"PHASE_STRUCTURE missing/stale for phase range {phase_range_label}. Will create."
         _log(message)
-        meso_tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
+        phase_tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
 
-    if not needs_block_preview:
-        message = f"Found PHASE_PREVIEW for block range {block_range_label}."
+    if not needs_phase_preview:
+        message = f"Found PHASE_PREVIEW for phase range {phase_range_label}."
         _log(message)
     else:
-        message = f"PHASE_PREVIEW missing/stale for block range {block_range_label}. Will create."
+        message = f"PHASE_PREVIEW missing/stale for phase range {phase_range_label}. Will create."
         _log(message)
-        meso_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
+        phase_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
 
-    if meso_tasks:
-        spec = AGENTS["meso_architect"]
-        for task in meso_tasks:
+    if phase_tasks:
+        spec = AGENTS["phase_architect"]
+        for task in phase_tasks:
             mode = _mode_for_task(task)
-            injected_block = _build_injection_block("meso_architect", mode=mode)
-            message = f"Running Meso-Architect task {task.value} for block range {block_range_label}."
+            injected_block = _build_injection_block("phase_architect", mode=mode)
+            message = f"Running Phase-Architect task {task.value} for phase range {phase_range_label}."
             _log(message)
             out = run_agent_multi_output(
                 runtime_for(spec.name),
@@ -390,52 +390,52 @@ def plan_week(
                 athlete_id=athlete_id,
                 tasks=[task],
                 user_input=(
-                    f"Create meso artefact {task.value} for block range {block_range_label} "
+                    f"Create phase artefact {task.value} for phase range {phase_range_label} "
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
-                    "Use this block range as the iso_week_range for the artefact. "
+                    "Use this phase range as the iso_week_range for the artefact. "
                     "Read season_plan and use workspace_get_latest to pull required inputs. "
                     f"{injected_block}"
                 ),
-                run_id=f"{run_id}_meso_{task.value.lower()}",
+                run_id=f"{run_id}_phase_{task.value.lower()}",
                 model_override=model_resolver(spec.name) if model_resolver else None,
                 temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
-            steps.append({"agent": "meso_architect", "tasks": [task.value], "result": out})
+            steps.append({"agent": "phase_architect", "tasks": [task.value], "result": out})
             if out.get("ok") and out.get("produced"):
                 _log("Done.")
 
-    if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, block_range) or not index_query.has_exact_range(
-        ArtifactType.PHASE_STRUCTURE.value, block_range
+    if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not index_query.has_exact_range(
+        ArtifactType.PHASE_STRUCTURE.value, phase_range
     ):
         message = (
-            f"Required block artefacts missing for range {block_range_label}. "
-            "Cannot proceed to Micro-Planner."
+            f"Required phase artefacts missing for range {phase_range_label}. "
+            "Cannot proceed to Week-Planner."
         )
         _log(message, logging.ERROR)
         steps.append(
             {
-                "agent": "micro_planner",
+                "agent": "week_planner",
                 "tasks": [],
-                "result": {"ok": False, "error": "Missing block artefacts"},
+                "result": {"ok": False, "error": "Missing phase artefacts"},
             }
         )
         return PlanWeekResult(ok=False, steps=steps)
 
-    micro_tasks: list[AgentTask] = []
+    week_tasks: list[AgentTask] = []
     version_key = target_label
     version_exists = store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key)
     plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, version_key) if version_exists else None
     plan_mtime = _mtime(plan_path)
     needs_week_plan = not version_exists
-    if macro_mtime and plan_mtime and macro_mtime > plan_mtime:
+    if season_plan_mtime and plan_mtime and season_plan_mtime > plan_mtime:
         needs_week_plan = True
-    if block_gov_mtime and plan_mtime and block_gov_mtime > plan_mtime:
+    if phase_guardrails_mtime and plan_mtime and phase_guardrails_mtime > plan_mtime:
         needs_week_plan = True
-    if block_arch_mtime and plan_mtime and block_arch_mtime > plan_mtime:
+    if phase_structure_mtime and plan_mtime and phase_structure_mtime > plan_mtime:
         needs_week_plan = True
-    if needs_block_gov or needs_block_arch:
+    if needs_phase_guardrails or needs_phase_structure:
         needs_week_plan = True
 
     if not needs_week_plan:
@@ -456,33 +456,33 @@ def plan_week(
         else:
             message = f"WEEK_PLAN NOT FOUND. Will create for ISO week {target_label}."
             _log(message)
-        micro_tasks.append(AgentTask.CREATE_WEEK_PLAN)
+        week_tasks.append(AgentTask.CREATE_WEEK_PLAN)
 
-    if micro_tasks:
-        spec = AGENTS["micro_planner"]
-        message = f"Running Micro-Planner for ISO week {target_label}."
+    if week_tasks:
+        spec = AGENTS["week_planner"]
+        message = f"Running Week-Planner for ISO week {target_label}."
         _log(message)
         mode = _mode_for_task(AgentTask.CREATE_WEEK_PLAN)
-        injected_block = _build_injection_block("micro_planner", mode=mode)
+        injected_block = _build_injection_block("week_planner", mode=mode)
         out = run_agent_multi_output(
             runtime_for(spec.name),
             agent_name=spec.name,
             agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
-            tasks=micro_tasks,
+            tasks=week_tasks,
             user_input=(
                 f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
-                "Do NOT output multiple weeks even if the block range spans multiple weeks. "
+                "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
                 f"{injected_block}"
             ),
-            run_id=f"{run_id}_micro",
+            run_id=f"{run_id}_week",
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
             force_file_search=force_file_search,
             max_num_results=max_num_results,
         )
-        steps.append({"agent": "micro_planner", "tasks": [t.value for t in micro_tasks], "result": out})
+        steps.append({"agent": "week_planner", "tasks": [t.value for t in week_tasks], "result": out})
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
@@ -537,10 +537,10 @@ def plan_week(
     analysis_tasks: list[AgentTask] = []
     report_week = previous_iso_week(target)
     report_label = f"{report_week.year:04d}-{report_week.week:02d}"
-    if macro_range and not range_contains(macro_range, report_week):
+    if season_range and not range_contains(season_range, report_week):
         message = (
             "Performance analysis skipped: report week "
-            f"{report_label} is outside macro range {macro_range.range_key}."
+            f"{report_label} is outside season plan range {season_range.range_key}."
         )
         _log(message)
     else:
@@ -586,7 +586,7 @@ def plan_week(
                 user_input=(
                     f"Create des_analysis_report for ISO week {report_label} "
                     f"(planning week {target_label} minus one). "
-                    "Read activities_actual, activities_trend, KPI profile, season plan, meso artefacts from workspace. "
+                    "Read activities_actual, activities_trend, KPI profile, season plan, phase artefacts from workspace. "
                     f"{injected_block}"
                 ),
                 run_id=f"{run_id}_analysis",

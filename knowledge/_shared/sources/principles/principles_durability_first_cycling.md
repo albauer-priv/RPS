@@ -11,9 +11,9 @@ Normative-Role: Guardrails
 Decision-Authority: GuardrailOnly
 
 Applies-To:
-  - Macro-Planner
-  - Meso-Architect
-  - Micro-Planner
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
 
 Related-Evidence:
   - Specification-ID: DurabilityEvidenceLayer
@@ -38,7 +38,7 @@ Notes: >
 
 ## HARD CONSTRAINT
 This document MUST NOT be used to:
-- justify micro-level decisions
+- justify week-level decisions
 - override governance artefacts
 - replace KPI profiles or contracts
 
@@ -71,7 +71,7 @@ For ultra and brevet distances, **mechanical work (kilojoules, kJ)** is the **pr
 > governance load). Mechanical `planned_kJ_week` remains the energy/fueling anchor.
 
 ### 2.2 Hierarchy of steering metrics
-1. **Primary:** kJ (per session, week, block, year)
+1. **Primary:** kJ (per session, week, phase, year)
 2. **Secondary:** CTL, ATL, TSB (tolerance and trend)
 3. **Tertiary:** IF, intensity distribution (characterization)
 
@@ -93,7 +93,7 @@ Concrete calculations and thresholds are **outside this document** in the KPI/DE
 
 ---
 
-## 3. Macro Periodization and Annual Logic
+## 3. Season Periodization and Annual Logic
 
 ### 3.1 Base structure
 The annual plan follows a classic, robust sequence:
@@ -105,26 +105,26 @@ The annual plan follows a classic, robust sequence:
 
 ### 3.2 Backplanning and event prioritization (Agent-Executable Planning Cookbook)
 
-This cookbook defines how planning agents must reason (Macro / Meso / Micro). It governs
+This cookbook defines how planning agents must reason (Season / Phase / Week). It governs
 annual structure, event prioritization, peak logic, and conflict resolution. It does not define
 workouts, numeric load targets, or intensity prescriptions.
 
 #### 3.2.1 Agent roles and responsibilities
 
-**Macro Planner (Season Architect)**
+**Season Planner (Season Architect)**
 - Authority: highest-level planner; owns annual structure and event logic.
 - Responsibilities: interpret Season Brief; classify events (A/B/C); define macrocycles; determine peak windows; enforce priority hierarchy.
-- Prohibitions: must not create workouts; must not optimize short-term performance at the expense of macro logic.
+- Prohibitions: must not create workouts; must not optimize short-term performance at the expense of season logic.
 
-**Meso Architect (Block Designer)**
-- Authority: subordinate to Macro Planner; owns block-level structure.
-- Responsibilities: translate macro phases into blocks; assign blocks to calendar ranges; respect taper and recovery constraints; integrate B/C events per macro rules.
+**Phase Architect (Phase Designer)**
+- Authority: subordinate to Season Planner; owns phase-level structure.
+- Responsibilities: translate season phases into phases; assign phases to calendar ranges; respect taper and recovery constraints; integrate B/C events per season rules.
 - Prohibitions: must not redefine event priority; must not introduce additional peaks.
 
-**Micro Planner (Execution Layer)**
+**Week Planner (Execution Layer)**
 - Authority: lowest level; implements sessions.
-- Responsibilities: execute block intent; manage day-to-day load; respect fatigue and recovery signals.
-- Prohibitions: must not compensate missed sessions; must not override block intent.
+- Responsibilities: execute phase intent; manage day-to-day load; respect fatigue and recovery signals.
+- Prohibitions: must not compensate missed sessions; must not override phase intent.
 
 #### 3.2.2 Core planning principle (Hard rule)
 ALL plans MUST be built via backplanning from the highest-priority event (A event). Forward-only
@@ -139,13 +139,13 @@ planning without reference to the A event is invalid.
 **B event**
 - Definition: secondary event supporting the A event.
 - Allowed purposes: specificity rehearsal, durability testing, pacing/fueling validation.
-- Rules: no full taper; may receive short load reduction only; must not disrupt macro progression.
+- Rules: no full taper; may receive short load reduction only; must not disrupt season progression.
 
 **C event**
 - Definition: low-priority event treated as training.
 - Rules: no taper; no structural changes; no recovery debt carried forward.
 
-#### 3.2.4 Backplanning algorithm (Macro level)
+#### 3.2.4 Backplanning algorithm (Season level)
 
 **Inputs**
 - Season Brief
@@ -218,16 +218,16 @@ If any answer is "no", the plan is invalid.
 
 **Execution summary:** Agents must optimize for long-term performance integrity, not short-term event satisfaction.
 
-### 3.3 Mesocycle load-recovery cadence (3:1, 2:1, 2:1:1) and constrained time windows
+### 3.3 Phase-cycle load-recovery cadence (3:1, 2:1, 2:1:1) and constrained time windows
 
-This section defines **standard mesocycle cadence patterns** and **how agents must choose them**.
+This section defines **standard phase-cycle (mesocycle) cadence patterns** and **how agents must choose them**.
 These patterns define **load-recovery rhythm only** (not intensity distribution or taper logic).
 
 #### 3.3.1 Standard cadence patterns (accepted practice)
 
 | Pattern | Phase length | Structure | Typical use |
 |---|---|---|---|
-| 3:1 | 4 weeks | 3 load weeks + 1 deload | Scenario/Macro default when no constraints |
+| 3:1 | 4 weeks | 3 load weeks + 1 deload | Scenario/Season default when no constraints |
 | 2:1 | 3 weeks | 2 load weeks + 1 deload | Time-crunched or high intensity |
 | 2:1:1 | 4 weeks | 2 load + 1 deload + 1 reload | Masters / lower recovery bandwidth |
 
@@ -253,12 +253,12 @@ Mapping:
 ```
 
 #### 3.3.4 Selection heuristics (agent-safe defaults)
-**Scope note (binding):** Cadence selection belongs to **Scenario/Macro**.
-Meso MUST use `deload_cadence` and `phase_length_weeks` from Scenario/Macro
+**Scope note (binding):** Cadence selection belongs to **Scenario/Season**.
+Phase MUST use `deload_cadence` and `phase_length_weeks` from Scenario/Season
 and MUST NOT apply its own default cadence.
 
-Scenario/Macro agents SHOULD:
-- default to **3:1** (only at Scenario/Macro selection time, not at Meso)
+Scenario/Season agents SHOULD:
+- default to **3:1** (only at Scenario/Season selection time, not at Phase)
 - select **2:1** when:
   - intensity density is high, or
   - the calendar is constrained (see below), or
@@ -270,7 +270,7 @@ Scenario/Macro agents SHOULD:
 
 #### 3.3.5 Constrained time window (formal definition)
 A **constrained time window** exists when **at least one** is true:
-- time to the next **A event** is shorter than a full default mesocycle (usually < 4 weeks), or
+- time to the next **A event** is shorter than a full default phase-cycle (usually < 4 weeks), or
 - a complete load -> deload -> adaptation sequence cannot fit before a required checkpoint, or
 - external constraints (travel, work, illness) compress or remove weeks.
 
@@ -293,32 +293,32 @@ Agents MUST NOT:
 - borrow recovery from future phases
 - attempt repeated peak logic
 
-### 3.4 Permitted macro archetype: "Kinzlbauer macro template" (ultra / brevet)
+### 3.4 Permitted season archetype: "Kinzlbauer season template" (ultra / brevet)
 
-**Status:** permitted macro-level pattern.
-**Scope:** macro architecture only (phase sequencing, emphasis, and intent).
+**Status:** permitted season-level pattern.
+**Scope:** season architecture only (phase sequencing, emphasis, and intent).
 **Non-scope:** no workout prescriptions, no session-level structure, no numeric progression rules. Concrete dosing and guardrails remain owned by KPI profiles and governance artefacts.
 
 This archetype is useful when the season objective prioritizes long-distance performance (marathon -> ultracycling) and the athlete's constraints require a time-efficient weekday structure with weekend volume expansion, while maintaining a coherent progression that first develops the aerobic ceiling (VO2max) and then improves long-duration economy (VLamax lowering + volume stabilization).
 
-#### 3.4.1 Intent and sequencing (macro-only)
+#### 3.4.1 Intent and sequencing (season-only)
 
 The template follows a two-step progression logic:
 
-1. **Aerobic ceiling first (VO2 foundation -> VO2 block):** establish or reinforce VO2max as a system-wide "ceiling" before large volume ramps.
+1. **Aerobic ceiling first (VO2 foundation -> VO2 phase):** establish or reinforce VO2max as a system-wide "ceiling" before large volume ramps.
 2. **Economy and durability next (VLamax lowering + volume raise):** shift emphasis toward metabolic efficiency and fatigue-resilience while stabilizing the aerobic ceiling.
 
-A typical high-level sequence (illustrative, scenario-level instantiation defines exact block lengths) is:
+A typical high-level sequence (illustrative, scenario-level instantiation defines exact phase lengths) is:
 
 - **Phase A - VO2 foundation (short build):** build tolerance and repeatability of high-intensity exposure without compromising low-intensity volume.
-- **Phase B - VO2-focused block:** concentrated VO2 emphasis with protected recovery; low-intensity remains the dominant volume.
-- **Phase C - Transition coupling:** maintain VO2 exposure while introducing VLamax-lowering emphasis (still macro-level: "domains allowed/forbidden", not sessions).
+- **Phase B - VO2-focused phase:** concentrated VO2 emphasis with protected recovery; low-intensity remains the dominant volume.
+- **Phase C - Transition coupling:** maintain VO2 exposure while introducing VLamax-lowering emphasis (still season-level: "domains allowed/forbidden", not sessions).
 - **Phase D - VLamax reduction + VO2 stabilization + volume raise:** longer consolidation period where volume becomes the primary overload axis and metabolic efficiency is the dominant focus.
 - **Repeatable cycle option:** the VLamax-focused cycle can be repeated once more to time a peak later in the season, if the planning horizon and recovery capacity support it.
 
-#### 3.4.2 Allowed macro characteristics (what makes it "Kinzlbauer-like")
+#### 3.4.2 Allowed season characteristics (what makes it "Kinzlbauer-like")
 
-At macro level, the following characteristics define compliance with this archetype:
+At season level, the following characteristics define compliance with this archetype:
 
 - **Progression order:** intensification precedes major volume escalation (first "intensity tolerance", then "volume stability").
 - **Weekday time-crunch compatibility:** structure assumes most athletes have limited weekday time; weekend rides are the primary lever for long-duration exposure.
@@ -327,7 +327,7 @@ At macro level, the following characteristics define compliance with this archet
 
 #### 3.4.3 How this maps into Season Plan artefacts
 
-When this archetype is used, it must be expressed via macro artefacts only:
+When this archetype is used, it must be expressed via season artefacts only:
 
 - **Phase naming and cycle labels:** Base/Build/Peak/Transition remain valid; the archetype influences phase intent and allowed/forbidden domains.
 - **Weekly load corridors:** kJ-first corridors are derived from the athlete's historical activities_trend baselines and constrained by the chosen KPI profile; the archetype does not override governance guardrails.
@@ -452,7 +452,7 @@ Progressive overload in a durability-first system is not more intensity; it is *
 
 ### 5.1 Definition (for this system)
 
-Progressive overload means a **planned, stepwise increase** in training stimulus over weeks/blocks **without** compromising consistency.
+Progressive overload means a **planned, stepwise increase** in training stimulus over weeks/phases **without** compromising consistency.
 
 In a brevet/ultra context:
 

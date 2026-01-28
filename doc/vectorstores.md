@@ -44,7 +44,7 @@ description: Unified knowledge store for all agents
 
 sources:
   - path: ../_shared/sources/specs/load_estimation_spec.md
-    tags: [micro, rules]
+    tags: [week, rules]
   - path: sources/week_plan_contract.md
     tags: [schema]
 ```
@@ -92,7 +92,7 @@ At runtime, the Responses API attaches the shared store via `file_search`:
 ```python
 from rps.openai.runtime import build_file_search_tool
 
-tool = build_file_search_tool("micro_planner")  # resolves vs_rps_all_agents
+tool = build_file_search_tool("week_planner")  # resolves vs_rps_all_agents
 ```
 
 Or directly via state resolver:
