@@ -225,7 +225,7 @@ def run_agent_multi_output(
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
 
-def _load_load_estimation_spec_season() -> str | None:
+    def _load_load_estimation_spec_season() -> str | None:
         root = Path(__file__).resolve().parents[3]
         path = root / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
         if not path.exists():

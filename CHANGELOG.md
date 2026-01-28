@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-01-28
+
+### Changed
+- Streamlit season flow now auto-enters scenario selection when scenarios exist; scenario selection UI is state‑driven and the command input hides during selection.
+- Season plan lifecycle controls added: recreate/drop commands with PROCEED confirmation and targeted artifact purge.
+- Plan‑week gating now enforces “season plan exists + ISO week covered” before enabling.
+- Phase card now renders via Jinja template (narrative, structured overview table, load corridor, semantics) with a cleaner header.
+- Documented per‑channel log levels and `APP_LOG_STDOUT` in `.env.example`.
+
 ## [0.8.0] - 2026-01-28
 
 ### Changed

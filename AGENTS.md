@@ -2,7 +2,7 @@
 
 ## 🎯 Core Goal & Status
 - **Purpose:** End-to-end planning system for endurance athletes (Season/Phase/Week/Workouts) with UI, agents, and artifact pipeline.
-- **Current focus:** Finish repo-wide Season/Phase/Week renames and keep Streamlit UI stable (Coach/Plan‑Week + logging).
+- **Current focus:** Stabilize the Season flow in Streamlit (scenarios → selection → season plan) and confirm plan‑week gating + UI logging.
 - **Last milestone:** Hard rename of core artefacts/agents + schemas, contracts, prompts, docs, and UI to Season/Phase/Week.
 
 ## 🛠 Tech Stack & Conventions
@@ -37,9 +37,21 @@
 ## 📝 Active Todo List (Backlog)
 - [ ] Run schema validation + bundler after rename sweep (and fix any broken refs).
 - [ ] Re-sync vector store after spec/contract/header changes.
-- [ ] Confirm UI flows (preflight → season → plan‑week) after renames.
-- [ ] Logging: finalize UI/console/file levels; keep “speaking” UI logs clean.
-- [ ] Coach UX: ensure response bubble + reasoning summary are consistent.
+- [ ] Verify season flow end‑to‑end (scenarios → selection → season plan → plan‑week enabled).
+- [ ] Confirm plan‑week gating and ISO‑week range checks in UI.
+- [ ] Coach UX: confirm response bubble + reasoning summary + state transitions.
+
+## ✅ Recent Progress Summary
+- Added state‑driven Season flow UI (scenario display + selection) with auto‑enter selection when scenarios exist.
+- Added season plan lifecycle commands (drop/recreate) with PROCEED confirmation and artifact purge.
+- Plan‑week button now gated by “season plan exists + ISO week covered”.
+- Phase card now renders via Jinja template with narrative, structured overview, load corridor, and semantics.
+- Added per‑channel logging knobs to `.env.example` (file/console/UI + APP_LOG_STDOUT).
+
+## 🧭 Next Steps
+- Re-run schema validation + bundler and fix any remaining schema/header refs.
+- Sync vector store after spec/contract updates.
+- Smoke‑test Streamlit: preflight → scenarios → selection → season plan → plan‑week, plus coach UX.
 
 ## 📌 Key Docs & Config
 - `doc/system_architecture.md`: System overview + UI/agent flows.
@@ -78,8 +90,8 @@
 ## ✅ Change Impact Checklist
 - **Schema changes (`/schemas`, `knowledge/_shared/sources/schemas`):**
   - For schemas used by the Responses API: ensure **all properties are listed in `required`** (strict tool schema requirement).
-  - Run `python scripts/check_schema_required.py` to verify required coverage.
-  - Re-run the schema bundler (if used in your workflow).
+  - Run `python3 scripts/check_schema_required.py` to verify required coverage.
+  - Re-run the schema bundler: `python3 scripts/bundle_schemas.py`.
   - Validate affected artifacts locally.
 - **Specs/Policies/Principles in vector store:**
   - Re-sync vector store (often `sync_vectorstores.py --reset` when IDs/headers change).

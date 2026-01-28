@@ -384,7 +384,7 @@ def build_availability_payload(
         "trace_data": [],
         "trace_events": [],
         "notes": "Derived from Season Brief availability table.",
-        "data_confidence": "medium",
+        "data_confidence": "MEDIUM",
     }
 
     return {

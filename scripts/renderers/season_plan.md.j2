@@ -54,7 +54,7 @@ Trace-Upstream:
 - kJ corridor design notes:
 {{ bullet_list(season_intent.kj_corridor_design_notes) }}
 
-## 2) Phases (REQUIRED)
+## 2) Phases
 
 {% for phase in phases %}
 ### Phase {{ loop.index }} - {{ phase.name }}
@@ -68,7 +68,7 @@ Trace-Upstream:
 #### Phase narrative
 {{ phase.narrative }}
 
-#### Phase Overview (Structured)
+#### Phase Overview 
 
 | Area | Content |
 |---|---|
@@ -81,13 +81,13 @@ Trace-Upstream:
 | Typical duration and intensity pattern (conceptual) | {{ phase.overview.typical_duration_intensity_pattern }} |
 | Non-negotiables | {% if phase.overview.non_negotiables %}{{ phase.overview.non_negotiables | join('<br>') }}{% else %}N/A{% endif %} |
 
-#### Weekly Load Corridor (kJ-first, REQUIRED)
+#### Weekly Load Corridor (kJ-first)
 
 | Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
 |---|---:|---:|---:|---:|---|
 | Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes or '' }} |
 
-#### Allowed / Forbidden Semantics (REQUIRED)
+#### Allowed / Forbidden Semantics
 
 | Allowed INTENSITY_DOMAIN_ENUM | Allowed LOAD_MODALITY_ENUM | Forbidden INTENSITY_DOMAIN_ENUM |
 |---|---|---|

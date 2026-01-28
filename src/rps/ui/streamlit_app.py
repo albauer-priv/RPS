@@ -16,6 +16,7 @@ import sys
 import threading
 from typing import Callable
 
+from jinja2 import BaseLoader, Environment
 import streamlit as st
 
 from rps.agents.registry import AGENTS
@@ -23,7 +24,7 @@ from rps.agents.runner import run_agent_session
 from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings, load_env_file
-from rps.core.logging import _normalize_level
+from rps.core.logging import _normalize_level, setup_logging, timestamped_log_path
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.main import _preflight
@@ -34,6 +35,7 @@ from rps.orchestrator.plan_week import _build_injection_block, plan_week
 from rps.prompts.loader import PromptLoader
 from rps.rendering.auto_render import render_sidecar
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range, range_contains
 from rps.workspace.types import ArtifactType
 
@@ -63,6 +65,8 @@ COMMAND_SYNONYMS: dict[str, list[str]] = {
     "scenarios": ["scenarios", "create scenarios", "season scenarios"],
     "select_scenario": ["select scenario", "choose scenario", "scenario selection"],
     "season_plan": ["season plan", "create season plan", "season roadmap"],
+    "drop_season_plan": ["drop season plan", "delete season plan", "reset season plan"],
+    "recreate_season_plan": ["recreate season plan", "change scenario", "reset scenario"],
     "plan_week": ["plan week", "plan-week", "plan"],
     "show": ["show"],
     "coach": ["coach"],
@@ -125,10 +129,12 @@ ARTIFACT_ALIASES: dict[str, list[str]] = {
     "kpi_profile": ["kpi profile", "profile"],
     "season_brief": ["season brief", "brief"],
     "wellness": ["wellness"],
+    "season_scenarios": ["season scenarios", "scenario options", "scenario set", "scenarios list"],
 }
 
 ARTIFACT_TYPE_BY_KEY: dict[str, ArtifactType] = {
     "season_plan": ArtifactType.SEASON_PLAN,
+    "season_scenarios": ArtifactType.SEASON_SCENARIOS,
     "phase_guardrails": ArtifactType.PHASE_GUARDRAILS,
     "phase_structure": ArtifactType.PHASE_STRUCTURE,
     "phase_preview": ArtifactType.PHASE_PREVIEW,
@@ -145,6 +151,7 @@ ARTIFACT_TYPE_BY_KEY: dict[str, ArtifactType] = {
 
 ARTIFACT_DISPLAY_NAMES: dict[str, str] = {
     "season_plan": "Season Plan",
+    "season_scenarios": "Season Scenarios",
     "phase_guardrails": "Phase Guardrails",
     "phase_structure": "Phase Structure",
     "phase_preview": "Phase Preview",
@@ -167,6 +174,36 @@ RENDERABLE_ARTIFACT_KEYS: set[str] = {
     "availability",
     "wellness",
 }
+
+PHASE_CARD_TEMPLATE = """#### Phase narrative
+{{ phase.narrative or "N/A" }}
+
+#### Phase Overview
+
+| Area | Content |
+|---|---|
+| Core focus and characteristics | {{ phase.overview.core_focus_and_characteristics | join_lines }} |
+| Phase goals |{% if phase.overview.phase_goals_primary %} - Primary: {{ phase.overview.phase_goals_primary }}{% endif %}{% if phase.overview.phase_goals_secondary %}<br>- Secondary: {{ phase.overview.phase_goals_secondary }}{% endif %} |
+| Metabolic focus | {{ phase.overview.metabolic_focus or "N/A" }} |
+| Expected adaptations (conceptual) | {{ phase.overview.expected_adaptations | join_lines }} |
+| Evaluation focus (non-binding) | {{ phase.overview.evaluation_focus | join_lines }} |
+| Phase exit assumptions | {{ phase.overview.phase_exit_assumptions | join_lines }} |
+| Typical duration and intensity pattern (conceptual) | {{ phase.overview.typical_duration_intensity_pattern or "N/A" }} |
+| Non-negotiables | {{ phase.overview.non_negotiables | join_lines }} |
+
+#### Weekly Load Corridor (kJ-first)
+
+| Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
+|---|---:|---:|---:|---:|---|
+| Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes }} |
+
+#### Allowed / Forbidden Semantics
+
+| Allowed INTENSITY_DOMAIN_ENUM | Allowed LOAD_MODALITY_ENUM | Forbidden INTENSITY_DOMAIN_ENUM |
+|---|---|---|
+| {{ phase.allowed_intensity_domains | join_or_na }} | {{ phase.allowed_load_modalities | join_or_na }} | {{ phase.forbidden_intensity_domains | join_or_na }} |
+"""
+
 
 STATE_LABELS: dict[str, str] = {
     "init": "Init",
@@ -193,7 +230,7 @@ ACTION_LABELS: dict[str, str] = {
     "parse_intervals": "Fetch Intervals Data",
     "parse_availability": "Fetch Availability",
     "scenarios": "Create Scenarios",
-    "select_scenario": "Select Scenario",
+    "select_scenario": "Creating Season Plan",
     "season_plan": "Create Season Plan",
     "coach_message": "Coach",
     "coach_start": "Coach Start",
@@ -270,7 +307,8 @@ def _ensure_session_state() -> None:
             "athlete_id": os.getenv("ATHLETE_ID") or "i150546",
             "year": now.year,
             "week": now.week,
-            "scenario": "B",
+            "scenario": None,
+            "scenario_selected": False,
             "messages": [],
             "system_logs": [],
             "preflight_done": False,
@@ -328,6 +366,89 @@ def _reset_cached_artifacts(athlete_id: str) -> str:
     return "Init reset: " + " ".join(parts)
 
 
+def _purge_artifacts(
+    athlete_id: str,
+    artifact_types: list[ArtifactType],
+    *,
+    clear_rendered: bool = True,
+    clear_cache: bool = False,
+) -> str:
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    removed: list[str] = []
+    for artifact_type in artifact_types:
+        cfg = ARTIFACT_PATHS.get(artifact_type)
+        if not cfg:
+            continue
+        latest_path = store.latest_path(athlete_id, artifact_type)
+        if latest_path.exists():
+            latest_path.unlink()
+            removed.append(str(latest_path))
+        type_dir = store.type_dir(athlete_id, artifact_type)
+        if type_dir.exists():
+            for path in type_dir.glob(f"{cfg.filename_prefix}_*.json"):
+                path.unlink()
+                removed.append(str(path))
+        if clear_rendered:
+            rendered_dir = store.athlete_root(athlete_id) / "rendered"
+            if rendered_dir.exists():
+                for path in rendered_dir.glob(f"{cfg.filename_prefix}_*.md"):
+                    path.unlink()
+                    removed.append(str(path))
+                rendered_latest = rendered_dir / f"{cfg.filename_prefix}.md"
+                if rendered_latest.exists():
+                    rendered_latest.unlink()
+                    removed.append(str(rendered_latest))
+    if clear_cache:
+        cache_dir = ROOT / ".cache" / "season_scenarios"
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, ignore_errors=True)
+            removed.append(str(cache_dir))
+    if not removed:
+        return "No artifacts removed."
+    return "Removed: " + ", ".join(removed)
+
+
+def _action_drop_season_plan(athlete_id: str, year: int, week: int) -> str:
+    del year, week
+    removed = _purge_artifacts(
+        athlete_id,
+        [
+            ArtifactType.SEASON_SCENARIOS,
+            ArtifactType.SEASON_SCENARIO_SELECTION,
+            ArtifactType.SEASON_PLAN,
+            ArtifactType.SEASON_PHASE_FEED_FORWARD,
+            ArtifactType.PHASE_GUARDRAILS,
+            ArtifactType.PHASE_STRUCTURE,
+            ArtifactType.PHASE_PREVIEW,
+            ArtifactType.PHASE_FEED_FORWARD,
+            ArtifactType.WEEK_PLAN,
+        ],
+        clear_rendered=True,
+        clear_cache=True,
+    )
+    return f"Season Plan dropped. {removed}"
+
+
+def _action_recreate_season_plan(athlete_id: str, year: int, week: int) -> str:
+    del year, week
+    removed = _purge_artifacts(
+        athlete_id,
+        [
+            ArtifactType.SEASON_SCENARIO_SELECTION,
+            ArtifactType.SEASON_PLAN,
+            ArtifactType.SEASON_PHASE_FEED_FORWARD,
+            ArtifactType.PHASE_GUARDRAILS,
+            ArtifactType.PHASE_STRUCTURE,
+            ArtifactType.PHASE_PREVIEW,
+            ArtifactType.PHASE_FEED_FORWARD,
+            ArtifactType.WEEK_PLAN,
+        ],
+        clear_rendered=True,
+        clear_cache=False,
+    )
+    return f"Season Plan cleared for reselect. {removed}"
+
+
 def _base_runtime() -> dict:
     cache_key = "_rps_runtime_cache"
     cached = st.session_state.get(cache_key)
@@ -341,6 +462,20 @@ def _base_runtime() -> dict:
     }
     st.session_state[cache_key] = runtime
     return runtime
+
+
+def _ensure_ui_logging(athlete_id: str) -> str:
+    rps_state = st.session_state["rps_state"]
+    current = rps_state.get("_ui_log_file")
+    if current and rps_state.get("_ui_log_athlete") == athlete_id:
+        return str(current)
+
+    log_dir = SETTINGS.workspace_root / athlete_id / "logs"
+    log_file = str(timestamped_log_path(log_dir, f"rps_ui_{athlete_id}"))
+    setup_logging(log_file=log_file)
+    rps_state["_ui_log_file"] = log_file
+    rps_state["_ui_log_athlete"] = athlete_id
+    return log_file
 
 
 def _multi_runtime_for(agent_name: str) -> MultiRuntime:
@@ -704,6 +839,54 @@ def _input_markdown_for(athlete_id: str, prefix: str, year: int | None = None) -
     return candidates[0].read_text(encoding="utf-8")
 
 
+def _render_phase_markdown(phase: dict) -> str:
+    overview = phase.get("overview", {}) if isinstance(phase, dict) else {}
+    goals = overview.get("phase_goals", {}) if isinstance(overview, dict) else {}
+    overview = dict(overview)
+    overview["phase_goals_primary"] = goals.get("primary")
+    overview["phase_goals_secondary"] = goals.get("secondary")
+    weekly = (phase.get("weekly_load_corridor") or {}).get("weekly_kj") or {}
+    semantics = phase.get("allowed_forbidden_semantics") or {}
+
+    def join_lines(value: object) -> str:
+        if not value:
+            return "N/A"
+        if isinstance(value, list):
+            return "<br>".join(str(item) for item in value)
+        return str(value)
+
+    def join_or_na(value: object) -> str:
+        if not value:
+            return "N/A"
+        if isinstance(value, list):
+            return ", ".join(str(item) for item in value)
+        return str(value)
+
+    def norm(value: object) -> str:
+        return "N/A" if value in (None, "") else str(value)
+
+    env = Environment(loader=BaseLoader(), autoescape=False)
+    env.filters["join_lines"] = join_lines
+    env.filters["join_or_na"] = join_or_na
+    template = env.from_string(PHASE_CARD_TEMPLATE)
+    return template.render(
+        phase={
+            "narrative": phase.get("narrative"),
+            "overview": overview,
+            "weekly_kj": {
+                "min": norm(weekly.get("min")),
+                "max": norm(weekly.get("max")),
+                "kj_per_kg_min": norm(weekly.get("kj_per_kg_min")),
+                "kj_per_kg_max": norm(weekly.get("kj_per_kg_max")),
+                "notes": weekly.get("notes") or "",
+            },
+            "allowed_intensity_domains": semantics.get("allowed_intensity_domains", []),
+            "allowed_load_modalities": semantics.get("allowed_load_modalities", []),
+            "forbidden_intensity_domains": semantics.get("forbidden_intensity_domains", []),
+        }
+    )
+
+
 def _render_artifact_for_display(
     athlete_id: str,
     artifact_key: str,
@@ -743,6 +926,44 @@ def _render_artifact_for_display(
     if preview:
         return "code", preview
     return "warning", f"No artifact found for: {artifact_key}"
+
+
+def _season_plan_covers_week(athlete_id: str, year: int, week: int) -> tuple[bool, str | None]:
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    try:
+        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    except FileNotFoundError:
+        return False, "Plan Week requires a Season Plan."
+
+    if not isinstance(season_plan, dict):
+        return False, "Plan Week requires a Season Plan."
+
+    meta = season_plan.get("meta", {}) or {}
+    iso_range = meta.get("iso_week_range")
+    target = IsoWeek(year=year, week=week)
+
+    if isinstance(iso_range, str):
+        try:
+            if range_contains(parse_iso_week_range(iso_range), target):
+                return True, None
+        except Exception:
+            pass
+
+    data = season_plan.get("data", {}) or {}
+    phases = data.get("phases") if isinstance(data, dict) else None
+    if isinstance(phases, list):
+        for phase in phases:
+            if not isinstance(phase, dict):
+                continue
+            phase_range = phase.get("iso_week_range")
+            if isinstance(phase_range, str):
+                try:
+                    if range_contains(parse_iso_week_range(phase_range), target):
+                        return True, None
+                except Exception:
+                    continue
+
+    return False, f"Iso week {week:02d} {year} not part of Season Plan."
 
 
 def _action_preflight(athlete_id: str, year: int, week: int) -> str:
@@ -786,8 +1007,8 @@ def _auto_preflight() -> tuple[bool, str | None]:
         was_init = sm.state == "init"
         output = _action_preflight(athlete_id, year, week)
         rps_state["preflight_ok"] = True
-        sm.transition("core", None, action="preflight_ok")
         if was_init:
+            sm.transition("core", None, action="preflight_ok")
             rps_state["preflight_state_changed"] = True
         _append_system_log("preflight", output)
         return True, None
@@ -803,6 +1024,27 @@ def _auto_preflight() -> tuple[bool, str | None]:
         sm.transition("exit", action="preflight_error")
         _append_system_log("preflight", msg)
         return False, msg
+
+
+def _auto_enter_scenario_selection() -> None:
+    rps_state = st.session_state["rps_state"]
+    sm: StateMachine = rps_state["state_machine"]
+    if sm.parameters.get("pending_action"):
+        return
+    if sm.state not in {"core", "init"}:
+        return
+    if rps_state.get("_auto_scenario_select_done"):
+        return
+    athlete_id: str = rps_state["athlete_id"]
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    if store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
+        return
+    if not store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIOS):
+        return
+    sm.transition("season_plan", "select_scenario", action="scenarios_ready")
+    _append_system_log("state", _state_log_line(sm, "scenarios_ready"))
+    rps_state["_auto_scenario_select_done"] = True
+    st.rerun()
 
 
 def _action_parse_availability(
@@ -1094,6 +1336,8 @@ ACTION_MAP: dict[str, Callable[..., str]] = {
     "scenarios": _action_scenarios,
     "select_scenario": _action_select_scenario,
     "season_plan": _action_season_plan,
+    "drop_season_plan": _action_drop_season_plan,
+    "recreate_season_plan": _action_recreate_season_plan,
     "plan_week": _action_plan_week,
 }
 
@@ -1202,13 +1446,34 @@ def handle_input(text: str) -> None:
         _append_message("assistant", "Stopped.")
         return
 
+    if trigger in {"drop_season_plan", "recreate_season_plan"}:
+        if "PROCEED" not in text:
+            if trigger == "drop_season_plan":
+                _append_message(
+                    "assistant",
+                    "Dangerous action. To proceed, type: DROP SEASON PLAN PROCEED",
+                )
+            else:
+                _append_message(
+                    "assistant",
+                    "Dangerous action. To proceed, type: RECREATE SEASON PLAN PROCEED",
+                )
+            return
+
     action = ACTION_MAP.get(trigger or "")
     if not action:
-        _append_message("assistant", "No command matched. Try: coach, season plan, plan week, or show season plan.")
+        _append_message(
+            "assistant",
+            "No command matched. Try: coach, season plan, plan week, show season plan, drop season plan, or recreate season plan.",
+        )
         return
 
     params: dict = {}
     if trigger == "plan_week":
+        allowed, reason = _season_plan_covers_week(athlete_id, year, week)
+        if not allowed:
+            _append_message("assistant", reason or "Plan Week not available.")
+            return
         params = {"year": year, "week": week, "iso_week": f"{year}-{week:02d}"}
     elif trigger == "parse_availability":
         params = {"year": year}
@@ -1226,18 +1491,27 @@ def _sidebar_controls() -> None:
     st.sidebar.markdown("---")
     sm: StateMachine = rps_state["state_machine"]
     st.sidebar.caption(f"State: {_format_state_label(sm)}")
-    st.sidebar.caption(f"Scenario: {rps_state.get('scenario', 'B')}")
+    scenario_label = rps_state.get("scenario") if rps_state.get("scenario_selected") else None
+    st.sidebar.caption(f"Scenario: {scenario_label or '—'}")
     st.sidebar.markdown("---")
     st.sidebar.caption("Actions")
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    has_season_plan = store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN)
+    plan_week_allowed = False
+    plan_week_reason = None
+    if has_season_plan:
+        plan_week_allowed, plan_week_reason = _season_plan_covers_week(athlete_id, int(year), int(week))
     if st.sidebar.button("Coach"):
         _enter_coach_mode("coach_start")
-    if st.sidebar.button("Plan Week"):
+    if st.sidebar.button("Plan Week", disabled=not plan_week_allowed):
         _queue_action(
             state="core",
             substate="plan_week",
             params={"year": int(year), "week": int(week), "iso_week": f"{int(year)}-{int(week):02d}"},
             action="plan_week",
         )
+    if not plan_week_allowed:
+        st.sidebar.caption(plan_week_reason or "Plan Week requires a Season Plan.")
     if st.sidebar.button("Fetch Intervals Data"):
         _queue_action(
             state="core",
@@ -1254,13 +1528,14 @@ def _sidebar_controls() -> None:
             action="parse_availability",
         )
     st.sidebar.markdown("---")
-    if st.sidebar.button("Create Season Plan"):
-        _queue_action(
-            state="season_plan",
-            substate="create_scenarios",
-            params={"year": int(year), "week": int(week)},
-            action="scenarios",
-        )
+    if not has_season_plan:
+        if st.sidebar.button("Create Season Plan"):
+            _queue_action(
+                state="season_plan",
+                substate="create_scenarios",
+                params={"year": int(year), "week": int(week)},
+                action="scenarios",
+            )
 
 
 def _chat_window() -> None:
@@ -1341,53 +1616,14 @@ def _athlete_phase_card() -> None:
 
     overview = active.get("overview", {}) if isinstance(active, dict) else {}
     phase_name = active.get("name", "Phase")
-    with st.expander(f"{phase_name}", expanded=False):
-        st.caption(f"{active.get('cycle', '')} · {active.get('iso_week_range', '')}")
-        date_range = active.get("date_range") or {}
-        if date_range:
-            st.caption(f"Dates: {date_range.get('from', '?')} → {date_range.get('to', '?')}")
+    iso_range = active.get("iso_week_range", "")
+    headline = f"Phase: {phase_name} {iso_range}".strip()
+    with st.expander(headline, expanded=False):
+        # Omit cycle and date captions for a cleaner phase card header.
 
-        primary = overview.get("phase_goals", {}).get("primary")
-        secondary = overview.get("phase_goals", {}).get("secondary")
-        if primary:
-            st.markdown(f"**Primary goal:** {primary}")
+        st.markdown(_render_phase_markdown(active), unsafe_allow_html=True)
 
-        focus = overview.get("core_focus_and_characteristics") or []
-        if focus:
-            st.markdown("**What to focus on:**")
-            st.markdown("\n".join(f"- {item}" for item in focus))
-
-        intensity = overview.get("typical_duration_intensity_pattern")
-        if intensity:
-            st.markdown(f"**Intensity pattern:** {intensity}")
-
-        non_neg = overview.get("non_negotiables") or []
-        if non_neg:
-            st.markdown("**Non‑negotiables:**")
-            st.markdown("\n".join(f"- {item}" for item in non_neg))
-
-        deload = active.get("deload")
-        if deload is not None:
-            status = "Yes" if deload else "No"
-            st.markdown(f"**Deload week in phase:** {status}")
-        with st.expander("Details", expanded=False):
-            if secondary:
-                st.markdown(f"**Secondary goal:** {secondary}")
-            rationale = active.get("deload_rationale")
-            if rationale:
-                st.markdown(f"**Deload rationale:** {rationale}")
-            adaptations = overview.get("expected_adaptations") or []
-            if adaptations:
-                st.markdown("**Expected adaptations:**")
-                st.markdown("\n".join(f"- {item}" for item in adaptations))
-            eval_focus = overview.get("evaluation_focus") or []
-            if eval_focus:
-                st.markdown("**How to tell it’s working:**")
-                st.markdown("\n".join(f"- {item}" for item in eval_focus))
-            assumptions = overview.get("phase_exit_assumptions") or []
-            if assumptions:
-                st.markdown("**Phase exit assumptions:**")
-                st.markdown("\n".join(f"- {item}" for item in assumptions))
+        # Deload fields are intentionally omitted here; the phase card is rendered via the template.
 
 
 def _show_panel() -> None:
@@ -1437,6 +1673,60 @@ def _show_panel() -> None:
         params.pop(key_name, None)
 
 
+def _season_scenarios_panel(athlete_id: str, year: int, week: int) -> None:
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    version_key = f"{year:04d}-{week:02d}"
+    doc: dict[str, Any] | None = None
+    try:
+        doc = store.load_version(athlete_id, ArtifactType.SEASON_SCENARIOS, version_key)
+    except FileNotFoundError:
+        try:
+            doc = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+        except FileNotFoundError:
+            doc = None
+
+    with st.expander("Season Scenarios", expanded=True):
+        if not doc:
+            st.caption("No season scenarios found yet. Run “Create Scenarios” to generate them.")
+            return
+
+        meta = doc.get("meta", {})
+        data = doc.get("data", {})
+        scenarios = data.get("scenarios") if isinstance(data, dict) else None
+        source_key = meta.get("version_key") or meta.get("iso_week") or version_key
+        st.caption(f"Source: season_scenarios {source_key}")
+        if not isinstance(scenarios, list) or not scenarios:
+            preview = json.dumps(doc, ensure_ascii=False, indent=2)
+            st.code(preview)
+            return
+
+        planning_horizon = data.get("planning_horizon_weeks")
+        if planning_horizon:
+            st.caption(f"Planning horizon: {planning_horizon} weeks")
+
+        for scenario in scenarios:
+            if not isinstance(scenario, dict):
+                continue
+            scenario_id = scenario.get("scenario_id", "?")
+            name = scenario.get("name") or "Scenario"
+            st.markdown(f"**Scenario {scenario_id}: {name}**")
+            core_idea = scenario.get("core_idea")
+            if core_idea:
+                st.markdown(f"- Core idea: {core_idea}")
+            load_philosophy = scenario.get("load_philosophy")
+            if load_philosophy:
+                st.markdown(f"- Load philosophy: {load_philosophy}")
+            risk_profile = scenario.get("risk_profile")
+            if risk_profile:
+                st.markdown(f"- Risk profile: {risk_profile}")
+            key_diff = scenario.get("key_differences")
+            if key_diff:
+                st.markdown(f"- Key differences: {key_diff}")
+            best_suited = scenario.get("best_suited_if")
+            if best_suited:
+                st.markdown(f"- Best suited if: {best_suited}")
+
+
 def _process_pending_action() -> None:
     rps_state = st.session_state["rps_state"]
     sm: StateMachine = rps_state["state_machine"]
@@ -1446,12 +1736,20 @@ def _process_pending_action() -> None:
     athlete_id: str = rps_state["athlete_id"]
     year: int = rps_state["year"]
     week: int = rps_state["week"]
-    scenario: str = rps_state["scenario"]
+    scenario = rps_state.get("scenario")
     coach = _coach_state()
     chain_action: str | None = None
     chain_substate: str | None = None
 
     try:
+        if pending in {"select_scenario", "season_plan"} and not scenario:
+            _append_system_log(
+                pending,
+                "Scenario not selected yet. Run Create Scenarios and select one before continuing.",
+                level=logging.WARNING,
+            )
+            _append_message("assistant", "Please select a scenario before continuing.")
+            return
         action_label = ACTION_LABELS.get(pending, pending)
         on_log_line: Callable[[str], None]
         finish_trace: Callable[[bool], None]
@@ -1564,6 +1862,8 @@ def _process_pending_action() -> None:
                 )
                 _append_message("assistant", output)
                 _append_system_log("select_scenario", output)
+                _append_message("assistant", "Scenario selected. Creating Season Plan...")
+                _append_system_log("state", "Scenario confirmed; auto-creating Season Plan.")
                 chain_action = "season_plan"
                 chain_substate = "create_season_plan"
             elif pending == "season_plan":
@@ -1579,6 +1879,7 @@ def _process_pending_action() -> None:
                 sm.state = "core"
                 sm.substate = None
                 _append_system_log("state", _state_log_line(sm, "season_plan_done"))
+                rps_state["_force_rerun"] = True
             elif pending == "scenarios":
                 output = _action_scenarios(athlete_id, year, week, on_log_line=on_log_line)
                 _append_message("assistant", output)
@@ -1587,6 +1888,23 @@ def _process_pending_action() -> None:
                 sm.substate = "select_scenario"
                 _append_message("assistant", "Scenarios created. Select a scenario to continue.")
                 _append_system_log("state", _state_log_line(sm, "scenarios_done"))
+                rps_state["_force_rerun"] = True
+            elif pending == "drop_season_plan":
+                output = _action_drop_season_plan(athlete_id, year, week)
+                rps_state["scenario"] = None
+                rps_state["scenario_selected"] = False
+                _append_message("assistant", output)
+                _append_system_log("drop_season_plan", output)
+                sm.state = "core"
+                sm.substate = None
+            elif pending == "recreate_season_plan":
+                output = _action_recreate_season_plan(athlete_id, year, week)
+                rps_state["scenario"] = None
+                rps_state["scenario_selected"] = False
+                _append_message("assistant", output)
+                _append_system_log("recreate_season_plan", output)
+                sm.state = "season_plan"
+                sm.substate = "select_scenario"
             elif pending == "parse_availability":
                 output = _action_parse_availability(athlete_id, year, on_log_line=on_log_line)
                 _append_message("assistant", output)
@@ -1673,6 +1991,8 @@ def _process_pending_action() -> None:
             sm.substate = None
         elif sm.substate == pending:
             sm.substate = None
+        if rps_state.pop("_force_rerun", False):
+            st.rerun()
         if chain_action:
             sm.state = "season_plan"
             sm.substate = chain_substate
@@ -1688,8 +2008,13 @@ def _season_flow_panel() -> None:
         return
     if sm.parameters.get("pending_action"):
         return
+    _season_scenarios_panel(
+        athlete_id=rps_state["athlete_id"],
+        year=rps_state["year"],
+        week=rps_state["week"],
+    )
     st.markdown("### Scenario selection")
-    current = rps_state.get("scenario", "B")
+    current = rps_state.get("scenario") or "B"
     choice = st.radio(
         "Choose scenario",
         options=["A", "B", "C"],
@@ -1699,6 +2024,7 @@ def _season_flow_panel() -> None:
     rationale = st.text_area("Rationale (optional)", value="")
     if st.button("Confirm scenario selection"):
         rps_state["scenario"] = choice
+        rps_state["scenario_selected"] = True
         sm.parameters["scenario_rationale"] = rationale.strip() or None
         _queue_action(
             state="season_plan",
@@ -1748,11 +2074,9 @@ def main() -> None:
         st.rerun()
 
     _ensure_session_state()
+    athlete_id = st.session_state["rps_state"]["athlete_id"]
+    log_file = _ensure_ui_logging(athlete_id)
     if not st.session_state["rps_state"].get("_log_file_announced"):
-        athlete_id = st.session_state["rps_state"]["athlete_id"]
-        log_file = os.getenv("APP_LOG_FILE")
-        if not log_file:
-            log_file = str(SETTINGS.workspace_root / athlete_id / "logs" / "rps_ui.log")
         _append_system_log("log", f"Log file: {log_file}", level=logging.INFO)
         st.session_state["rps_state"]["_log_file_announced"] = True
     pending_reset = st.session_state.pop("_pending_init_reset", None)
@@ -1765,6 +2089,8 @@ def main() -> None:
     preflight_ok, preflight_err = _auto_preflight()
     if st.session_state["rps_state"].pop("preflight_state_changed", False):
         st.rerun()
+    if preflight_ok:
+        _auto_enter_scenario_selection()
     _show_panel()
     _season_flow_panel()
     _active_chat_panel()
@@ -1774,12 +2100,15 @@ def main() -> None:
         st.error(preflight_err or "Preflight failed. See system output for details.")
         st.stop()
 
-    with st.form("chat_input", clear_on_submit=True):
-        text = st.text_input("Command", placeholder="e.g., season plan, plan week, show season plan")
-        submitted = st.form_submit_button("Send")
-    if submitted:
-        handle_input(text)
-        st.rerun()
+    sm: StateMachine = st.session_state["rps_state"]["state_machine"]
+    hide_command = sm.state == "season_plan" and sm.substate == "select_scenario"
+    if not hide_command:
+        with st.form("chat_input", clear_on_submit=True):
+            text = st.text_input("Command", placeholder="e.g., season plan, plan week, show season plan")
+            submitted = st.form_submit_button("Send")
+        if submitted:
+            handle_input(text)
+            st.rerun()
     _coach_output_panel()
     _athlete_phase_card()
     _system_panel()
