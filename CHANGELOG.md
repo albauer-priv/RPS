@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed legacy macro_mode_a script and updated planning docs to reflect the new macro flow.
 - Coach output now streams into a chat bubble above the input, while the reasoning box shows summary only.
 - System output/logs panel now expands by default.
+- Streamlit UI no longer logs coach state transitions; coach reasoning clears on exit.
+- Added per-target log levels (file/console/UI) and UI now shows log file path as the first entry.
+- `.env` now documents all variables with inline comments.
 
 ## [0.6.26] - 2026-01-27
 

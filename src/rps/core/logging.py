@@ -42,11 +42,17 @@ def setup_logging(
     log_file: str | Path | None = None,
     *,
     log_stdout: bool | None = None,
+    file_level: str | int | None = None,
+    console_level: str | int | None = None,
 ) -> None:
     """Configure root logging with optional file output."""
     root = logging.getLogger()
     root.handlers.clear()
-    root.setLevel(_normalize_level(level))
+    env_file_level = os.getenv("RPS_LOG_LEVEL_FILE")
+    env_console_level = os.getenv("RPS_LOG_LEVEL_CONSOLE")
+    file_level_value = _normalize_level(file_level or env_file_level or level or logging.INFO)
+    console_level_value = _normalize_level(console_level or env_console_level or logging.WARNING)
+    root.setLevel(min(file_level_value, console_level_value, logging.DEBUG))
 
     formatter = logging.Formatter(
         "%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -64,6 +70,7 @@ def setup_logging(
     if log_stdout:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
+        stream_handler.setLevel(console_level_value)
         handlers = [stream_handler]
 
     if log_file:
@@ -71,15 +78,21 @@ def setup_logging(
         path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(path, encoding="utf-8")
         file_handler.setFormatter(formatter)
+        file_handler.setLevel(file_level_value)
         handlers = [*handlers, file_handler]
 
     if not handlers:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
+        stream_handler.setLevel(console_level_value)
         handlers = [stream_handler]
 
     for handler in handlers:
         root.addHandler(handler)
+
+    if log_file:
+        announce_level = max(file_level_value, console_level_value)
+        logging.getLogger("rps.logging").log(announce_level, "Log file: %s", log_file)
 
 
 def log_and_print(logger: logging.Logger, message: str, level: int = logging.INFO) -> None:

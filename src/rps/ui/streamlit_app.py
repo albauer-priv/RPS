@@ -23,6 +23,7 @@ from rps.agents.runner import run_agent_session
 from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings, load_env_file
+from rps.core.logging import _normalize_level
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.main import _preflight
@@ -45,6 +46,7 @@ LOGGER = logging.getLogger("rps.streamlit")
 if not LOGGER.handlers:
     logging.basicConfig(level=logging.INFO)
 LOGGER.setLevel(logging.WARNING)
+UI_LOG_LEVEL = _normalize_level(os.getenv("RPS_LOG_LEVEL_UI", "INFO"))
 
 # Keep system output focused on stdout from the pipeline/agents.
 CAPTURE_LOGGERS: list[logging.Logger] = []
@@ -333,7 +335,9 @@ def _append_message(role: str, content: str, fmt: str | None = None) -> None:
     st.session_state["rps_state"]["messages"].append(message)
 
 
-def _append_system_log(source: str, content: str) -> None:
+def _append_system_log(source: str, content: str, level: int = logging.INFO) -> None:
+    if level < UI_LOG_LEVEL:
+        return
     logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
     logs.append(
         {
@@ -568,7 +572,6 @@ def _enter_coach_mode(source: str) -> None:
     _append_message("assistant", msg)
     _append_system_log("coach", msg)
     _set_coach_output(msg, status="done")
-    _append_system_log("state", _state_log_line(sm, "coach_start"))
 
 
 def find_artifact_key(token: str) -> str | None:
@@ -1123,7 +1126,6 @@ def handle_input(text: str) -> None:
             msg = "Coach session ended. Back in core mode."
             _append_message("assistant", msg)
             _append_system_log("coach", msg)
-            _append_system_log("state", _state_log_line(sm, "coach_stop"))
             return
         sm.transition("exit", action="stopword")
         _append_message("assistant", "Session stopped (:quit).")
@@ -1427,6 +1429,7 @@ def _process_pending_action() -> None:
             finish_trace = lambda _ok: None
         else:
             on_log_line, finish_trace = _start_live_trace(action_label)
+        _append_system_log("action", f"Starting {action_label}…", level=logging.INFO)
         with st.spinner(f"Running: {action_label}"):
             if pending == "coach_message":
                 text = sm.parameters.pop("coach_input", "")
@@ -1618,18 +1621,19 @@ def _process_pending_action() -> None:
             else:
                 _append_message("assistant", f"Unknown action: {pending}")
         finish_trace(True)
+        _append_system_log("action", f"{action_label} done.", level=logging.INFO)
     except SystemExit as exc:
         msg = _format_exception(exc) or f"{pending} exited."
         sm.parameters["last_error"] = msg
         _append_message("assistant", msg)
-        _append_system_log(pending, msg)
+        _append_system_log(pending, msg, level=logging.ERROR)
         if "finish_trace" in locals():
             finish_trace(False)
     except Exception as exc:  # pragma: no cover - UI safety net
         msg = _format_exception(exc)
         sm.parameters["last_error"] = msg
         _append_message("assistant", msg)
-        _append_system_log(pending, msg)
+        _append_system_log(pending, msg, level=logging.ERROR)
         if "finish_trace" in locals():
             finish_trace(False)
     finally:
@@ -1713,6 +1717,13 @@ def main() -> None:
         st.rerun()
 
     _ensure_session_state()
+    if not st.session_state["rps_state"].get("_log_file_announced"):
+        athlete_id = st.session_state["rps_state"]["athlete_id"]
+        log_file = os.getenv("APP_LOG_FILE")
+        if not log_file:
+            log_file = str(SETTINGS.workspace_root / athlete_id / "logs" / "rps_ui.log")
+        _append_system_log("log", f"Log file: {log_file}", level=logging.INFO)
+        st.session_state["rps_state"]["_log_file_announced"] = True
     pending_reset = st.session_state.pop("_pending_init_reset", None)
     if pending_reset:
         summary = _reset_cached_artifacts(pending_reset)
