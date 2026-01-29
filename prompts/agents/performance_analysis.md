@@ -67,8 +67,8 @@ Schemas:
 ### Runtime artefacts (workspace; load via tools) — Binding
 | Artifact | Tool | Notes |
 |---|---|---|
-| Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` | Must cover target week |
-| Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` | Must cover target week |
+| Activities Actual | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })` or `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "iso_week" })` | Must cover target week |
+| Activities Trend | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })` or `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "iso_week" })`| Must cover target week |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | KPI thresholds |
 | Season Plan | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` | Optional; planning context |
 | Phase Context | `workspace_get_phase_context({ "year": YYYY, "week": WW })` | Optional; may include phase context |

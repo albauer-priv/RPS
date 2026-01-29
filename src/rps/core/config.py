@@ -104,7 +104,10 @@ def load_env_file(path: str | Path) -> None:
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip().strip("\"'")
-        if key and key not in os.environ:
+        if not key:
+            continue
+        current = os.environ.get(key)
+        if current is None or current == "":
             os.environ[key] = value
 
 

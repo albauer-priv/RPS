@@ -28,16 +28,7 @@ announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
 
-col_year, col_week = st.columns(2)
-year = int(
-    col_year.number_input(
-        "ISO Year",
-        min_value=2000,
-        max_value=2100,
-        value=year,
-        step=1,
-    )
-)
+col_week, col_year = st.columns(2)
 week = int(
     col_week.number_input(
         "ISO Week",
@@ -47,6 +38,19 @@ week = int(
         step=1,
     )
 )
+year = int(
+    col_year.number_input(
+        "ISO Year",
+        min_value=2000,
+        max_value=2100,
+        value=year,
+        step=1,
+    )
+)
+
+create_report = st.button("Create Report")
+if create_report:
+    st.info("Report creation requested. Following the plan-week run, this will queue the DES analysis report.")
 state["iso_year"] = year
 state["iso_week"] = week
 st.session_state["iso_year"] = year

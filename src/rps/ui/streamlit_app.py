@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import os
+
 import streamlit as st
+
+from rps.ui.intervals_refresh import ensure_intervals_data
+from rps.ui.shared import get_athlete_id
 
 st.set_page_config(page_title="RPS - Randonneur Performance System", layout="wide")
 
@@ -61,12 +66,14 @@ logistics = st.Page(
 )
 
 pg = st.navigation(
-    [
-        home,
-        coach,
-        {"Performance": [performance_data, performance_report]},
-        {"Plan": [plan_season, plan_phase, plan_week, plan_wow]},
-        {"Athlete Profile": [about_you, season_brief, availability, logistics]},
-    ]
+        {
+            "Home": [home],
+            "Coach": [coach],
+        "Analyse": [performance_data, performance_report],
+        "Plan": [plan_season, plan_phase, plan_week, plan_wow],
+        "Athlete Profile": [about_you, season_brief, availability, logistics],
+    }
 )
+max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))
+ensure_intervals_data(get_athlete_id(), max_age_hours)
 pg.run()

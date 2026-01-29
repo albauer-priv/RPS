@@ -129,7 +129,7 @@ class LocalArtifactStore:
 
     def load_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Any:
         """Load a specific artifact version."""
-        path = self.versioned_path(athlete_id, artifact_type, version_key)
+        path = self._path_for_version(athlete_id, artifact_type, version_key)
         if not path.exists():
             raise FileNotFoundError(f"No artifact version found: {path}")
         return self._read_json(path)
@@ -191,6 +191,21 @@ class LocalArtifactStore:
             versions.append(version_key)
 
         return sorted(versions, key=_version_sort_key)
+
+    def _path_for_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Path:
+        """Return the path for a recorded version, falling back to the canonical layout."""
+        root = self.athlete_root(athlete_id)
+        index = self._index_manager(athlete_id).load()
+        artefacts = index.get("artefacts", {})
+        entry = artefacts.get(artifact_type.value, {})
+        version = entry.get("versions", {}).get(version_key)
+        if isinstance(version, dict):
+            relative = version.get("path")
+            if isinstance(relative, str):
+                candidate = root / relative
+                if candidate.exists():
+                    return candidate
+        return self.versioned_path(athlete_id, artifact_type, version_key)
 
     def save_version(
         self,

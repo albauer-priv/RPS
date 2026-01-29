@@ -7,9 +7,10 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+import altair as alt
 import streamlit as st
 
-from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
+from rps.ui.intervals_refresh import ensure_intervals_data
 from rps.ui.shared import SETTINGS, announce_log_file, get_athlete_id, init_ui_state
 
 try:
@@ -19,58 +20,51 @@ except Exception:  # pragma: no cover - optional dependency
 
 
 ROOT = SETTINGS.workspace_root
+_INTERVALS_JOB_PREFIX = "intervals_refresh_job"
 
 
-def _parse_iso_datetime(value: str | None) -> datetime | None:
-    if not value:
+
+def _axis_domain(series, pad: float = 0.1) -> tuple[float, float] | None:
+    valid = series.dropna()
+    if valid.empty:
         return None
-    try:
-        if value.endswith("Z"):
-            value = value.replace("Z", "+00:00")
-        return datetime.fromisoformat(value)
-    except ValueError:
-        return None
+    minimum = float(valid.min())
+    maximum = float(valid.max())
+    padding = pad if maximum == minimum else abs(maximum - minimum) * pad
+    lower = minimum - padding
+    upper = maximum + padding
+    return (min(0.0, lower), upper)
 
 
-def _is_stale(path: Path, max_age_hours: float) -> bool:
-    if not path.exists():
-        return True
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return True
-    created_at = _parse_iso_datetime(payload.get("meta", {}).get("created_at"))
-    if not created_at:
-        return True
-    age = datetime.now(timezone.utc) - created_at
-    return age.total_seconds() > max_age_hours * 3600
-
-
-def _ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, str]:
-    latest_dir = ROOT / athlete_id / "latest"
-    actual_path = latest_dir / "activities_actual.json"
-    trend_path = latest_dir / "activities_trend.json"
-    stale = _is_stale(actual_path, max_age_hours) or _is_stale(trend_path, max_age_hours)
-    if not stale:
-        return True, "Intervals data is fresh."
-
-    args = argparse.Namespace(
-        year=None,
-        week=None,
-        from_date=None,
-        to_date=None,
-        athlete=athlete_id,
-        skip_validate=False,
+def _build_line_chart(df):
+    ordered = df.sort_values("period_order")
+    long_df = (
+        ordered[["label", "durability_index", "decoupling_percent"]]
+        .rename(columns={"durability_index": "Durability Index", "decoupling_percent": "Decoupling (%)"})
+        .melt(id_vars="label", var_name="metric", value_name="value")
+        .dropna(subset=["value"])
     )
-    logger = logging.getLogger("rps.ui.performance")
-    try:
-        run_intervals_pipeline(args, logger=logger)
-    except Exception as exc:  # pragma: no cover - UI fallback
-        return False, f"Intervals pipeline failed: {exc}"
-    return True, "Intervals data refreshed."
+    return (
+        alt.Chart(long_df)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("label:N", sort=list(ordered["label"]), axis=alt.Axis(title="Week", labelAngle=-45)),
+            y=alt.Y("value:Q", axis=alt.Axis(title="Metric Value")),
+            color=alt.Color("metric:N", scale=alt.Scale(domain=["Durability Index", "Decoupling (%)"], range=["#f15a22", "#2ca02c"])),
+            tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q", format=".2f")],
+        )
+    )
 
 
 def _flatten_weekly_trends(weekly_trends: list[dict]) -> list[dict]:
+    def flatten_into(target: dict, source: dict | None, prefix: str) -> None:
+        if not source:
+            return
+        for key, value in source.items():
+            safe_key = f"{prefix}{key}"
+            if safe_key not in target:
+                target[safe_key] = value
+
     rows: list[dict] = []
     ordered = sorted(
         weekly_trends,
@@ -85,24 +79,43 @@ def _flatten_weekly_trends(weekly_trends: list[dict]) -> list[dict]:
         aggregates = entry.get("weekly_aggregates") or {}
         intensity = entry.get("intensity_load_metrics") or {}
         metrics = entry.get("metrics") or {}
-        rows.append(
-            {
-                "year": entry.get("year"),
-                "iso_week": entry.get("iso_week"),
-                "period_from": period.get("from"),
-                "period_to": period.get("to"),
-                "activity_count": aggregates.get("activity_count"),
-                "moving_time": aggregates.get("moving_time"),
-                "distance_km": aggregates.get("distance_km"),
-                "load_tss": aggregates.get("load_tss"),
-                "work_kj": aggregates.get("work_kj"),
-                "intensity_factor": intensity.get("intensity_factor"),
-                "durability_index": intensity.get("durability_index"),
-                "weekly_moving_time_total_min": metrics.get("weekly_moving_time_total_min"),
-                "weekly_z2_share": metrics.get("weekly_z2_share"),
-                "tsb_today": metrics.get("tsb_today"),
-            }
-        )
+        distribution = entry.get("distribution_metrics") or {}
+        flag_counts = entry.get("flag_counts") or {}
+        flag_any = entry.get("flag_any") or {}
+        power_tiz = entry.get("power_tiz") or {}
+        hr_tiz = entry.get("hr_tiz") or {}
+
+        row: dict[str, object] = {
+            "year": entry.get("year"),
+            "iso_week": entry.get("iso_week"),
+            "period_from": period.get("from"),
+            "period_to": period.get("to"),
+            "activity_count": aggregates.get("activity_count"),
+            "moving_time": aggregates.get("moving_time"),
+            "distance_km": aggregates.get("distance_km"),
+            "load_tss": aggregates.get("load_tss"),
+            "work_kj": aggregates.get("work_kj"),
+            "intensity_factor": intensity.get("intensity_factor"),
+            "decoupling_percent": intensity.get("decoupling_percent"),
+            "durability_index": intensity.get("durability_index"),
+            "normalized_power_w": intensity.get("normalized_power_w"),
+            "efficiency_factor": intensity.get("efficiency_factor"),
+            "functional_intensity_ratio": intensity.get("functional_intensity_ratio"),
+            "ftp_estimated_w": intensity.get("ftp_estimated_w"),
+            "vo2_ftp": intensity.get("vo2_ftp"),
+            "tsb_today": metrics.get("tsb_today"),
+            "weekly_moving_time_total_min": metrics.get("weekly_moving_time_total_min"),
+            "weekly_z2_time_total_min": metrics.get("weekly_z2_time_total_min"),
+            "weekly_z2_share": metrics.get("weekly_z2_share"),
+            "weekly_moving_time_max_min": metrics.get("weekly_moving_time_max_min"),
+            "weekly_z2_time_max_min": metrics.get("weekly_z2_time_max_min"),
+        }
+        flatten_into(row, distribution, "distribution_")
+        flatten_into(row, flag_counts, "flag_count_")
+        flatten_into(row, flag_any, "flag_any_")
+        flatten_into(row, power_tiz, "power_tiz_")
+        flatten_into(row, hr_tiz, "hr_tiz_")
+        rows.append(row)
     return rows
 
 
@@ -142,6 +155,36 @@ def _flatten_activities_actual(activities: list[dict]) -> list[dict]:
     return rows
 
 
+def _load_weekly_trends_cached(trend_path: Path) -> tuple[list[dict], str | None, bool]:
+    """Read weekly trend data, fall back to last cached payload while updates are in-flight."""
+    cached_trends = st.session_state.get("cached_weekly_trends") or []
+    cached_notes = st.session_state.get("cached_weekly_trend_notes")
+    used_cache = False
+    weekly_trends: list[dict] = []
+    notes: str | None = None
+    if trend_path.exists():
+        try:
+            payload = json.loads(trend_path.read_text(encoding="utf-8"))
+            weekly_trends = payload.get("data", {}).get("weekly_trends") or []
+            notes = payload.get("data", {}).get("notes")
+            if weekly_trends:
+                st.session_state.cached_weekly_trends = weekly_trends
+                st.session_state.cached_weekly_trend_notes = notes
+            else:
+                used_cache = True
+                weekly_trends = cached_trends
+                notes = cached_notes
+        except json.JSONDecodeError:
+            used_cache = True
+            weekly_trends = cached_trends
+            notes = cached_notes
+    else:
+        used_cache = True
+        weekly_trends = cached_trends
+        notes = cached_notes
+    return weekly_trends, notes, used_cache
+
+
 init_ui_state()
 athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
@@ -154,17 +197,20 @@ actual_path = latest_dir / "activities_actual.json"
 trend_path = latest_dir / "activities_trend.json"
 
 max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))
-ok, message = _ensure_intervals_data(athlete_id, max_age_hours)
+ok, message = ensure_intervals_data(athlete_id, max_age_hours)
 if not ok:
     st.error(message)
 elif message:
     st.info(message)
+weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(trend_path)
 
 with st.container():
     st.subheader("Weekly Load and Durability Metrics")
-    if trend_path.exists() and pd:
-        trend_payload = json.loads(trend_path.read_text(encoding="utf-8"))
-        weekly_trends = trend_payload.get("data", {}).get("weekly_trends") or []
+    if not pd:
+        st.info("Charts require pandas; showing data tables below.")
+    else:
+        if trend_used_cache:
+            st.info("Using the most recent valid workflow output because the latest file is still being written.")
         ordered = sorted(
             weekly_trends,
             key=lambda entry: (
@@ -176,42 +222,51 @@ with st.container():
         for entry in ordered:
             year = entry.get("year")
             iso_week = entry.get("iso_week")
-            label = f"{year}-W{int(iso_week):02d}" if year and iso_week else None
+            if not year or iso_week is None:
+                continue
+            label = f"{year}-W{int(iso_week):02d}"
             weekly_kj = (entry.get("weekly_aggregates") or {}).get("work_kj")
             durability_index = (entry.get("intensity_load_metrics") or {}).get("durability_index")
+            decoupling_percent = (entry.get("metrics") or {}).get("decoupling_percent")
             rows.append(
                 {
-                    "label": label or "",
+                    "year": year,
+                    "iso_week": iso_week,
+                    "label": label,
                     "weekly_kj": weekly_kj,
                     "durability_index": durability_index,
+                    "decoupling_percent": decoupling_percent,
                 }
             )
-        df = pd.DataFrame(rows).dropna(subset=["label"]).set_index("label")
+        df = (
+            pd.DataFrame(rows)
+            .dropna(subset=["label"])
+            .sort_values(["year", "iso_week"])
+        )
         if not df.empty:
-            st.caption("Weekly kJ")
-            st.bar_chart(df["weekly_kj"])
-            st.caption("Durability Index")
-            st.line_chart(df["durability_index"])
-        else:
-            st.info("No weekly trend data available yet.")
-    elif trend_path.exists():
-        st.info("Charts require pandas; showing data tables below.")
-    else:
-        st.info("Charts will appear once activities_trend is available.")
+            df["period_order"] = df["year"] * 100 + df["iso_week"]
+            df["durability_index"] = pd.to_numeric(df["durability_index"], errors="coerce")
+            df["decoupling_percent"] = pd.to_numeric(df["decoupling_percent"], errors="coerce")
+            df["durability_avg"] = df["durability_index"].rolling(window=4, min_periods=1).mean()
+            df["decoupling_avg"] = df["decoupling_percent"].rolling(window=4, min_periods=1).mean()
+            load_df = df.set_index("label")[["weekly_kj"]]
+            st.caption("Weekly load (kJ) and raw Durability/Decoupling trends.")
+            st.bar_chart(load_df)
+            st.altair_chart(
+                _build_line_chart(df),
+                width="stretch",
+            )
 
 with st.container():
     st.subheader("Activities Trend")
     if trend_path.exists():
-        trend_payload = json.loads(trend_path.read_text(encoding="utf-8"))
-        weekly_trends = trend_payload.get("data", {}).get("weekly_trends") or []
         st.data_editor(
             _flatten_weekly_trends(weekly_trends),
             num_rows="dynamic",
             width="stretch",
         )
-        notes = trend_payload.get("data", {}).get("notes")
-        if notes:
-            st.write(notes)
+        if trend_notes:
+            st.write(trend_notes)
     else:
         st.error("No activities_trend.json found for this athlete.")
 

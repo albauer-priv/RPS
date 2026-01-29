@@ -216,6 +216,7 @@ def run_agent_multi_output(
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
     max_num_results: int | None = None,
+    stream_handlers: dict[str, Callable[[str], Any]] | None = None,
 ) -> dict[str, Any]:
     """Run an agent that can emit multiple strict tool outputs."""
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
@@ -750,7 +751,7 @@ def run_agent_multi_output(
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
         start = time.perf_counter()
-        response = create_response(runtime.client, payload, logger)
+        response = create_response(runtime.client, payload, logger, stream_handlers=stream_handlers)
         elapsed = time.perf_counter() - start
         label = forced_tool_name or ("file_search" if force_search_flag else "auto")
         _log_response_diagnostics(response, label=label, elapsed_s=elapsed)

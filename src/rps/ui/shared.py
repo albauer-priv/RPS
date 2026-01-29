@@ -25,7 +25,7 @@ from rps.workspace.types import ArtifactType
 from rps.workspace.paths import ARTIFACT_PATHS
 
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[3]
 load_env_file(ROOT / ".env")
 SETTINGS = load_app_settings()
 
@@ -141,6 +141,15 @@ def announce_log_file(athlete_id: str) -> None:
     if not state.get("_log_file_announced"):
         append_system_log("log", f"Log file: {log_file}", level=logging.INFO)
         state["_log_file_announced"] = True
+
+
+def ui_log(message: str, *, level: int = logging.INFO, source: str = "ui") -> None:
+    """Log to file and UI system logs."""
+    athlete_id = get_athlete_id()
+    ensure_logging(athlete_id)
+    announce_log_file(athlete_id)
+    LOGGER.log(level, message)
+    append_system_log(source, message, level=level)
 
 
 def system_log_panel(expanded: bool = True) -> None:

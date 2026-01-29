@@ -120,6 +120,144 @@ def _mode_for_task(task: AgentTask) -> str | None:
     return mapping.get(task)
 
 
+def create_performance_report(
+    runtime_for: Callable[[str], AgentRuntime],
+    *,
+    athlete_id: str,
+    report_week: IsoWeek,
+    run_id_prefix: str = "performance_report",
+    force_file_search: bool = True,
+    max_num_results: int = 20,
+    model_resolver: Callable[[str], str] | None = None,
+    temperature_resolver: Callable[[str], float | None] | None = None,
+    reasoning_effort_resolver: Callable[[str], str | None] | None = None,
+    reasoning_summary_resolver: Callable[[str], str | None] | None = None,
+    reasoning_stream_handler: Callable[[str], None] | None = None,
+) -> dict:
+    """Create a DES analysis report for the requested ISO week."""
+    agent_logger = logging.getLogger("rps.agents.multi_output_runner")
+    summaries: list[str] = []
+    log_messages: list[str] = []
+
+    class _ReasoningCaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            message = record.getMessage()
+            log_messages.append(message)
+            marker = "Reasoning summary:"
+            if marker in message:
+                summary = message.split(marker, 1)[1].strip()
+                if summary and summary not in summaries:
+                    summaries.append(summary)
+
+    handler = _ReasoningCaptureHandler()
+    agent_logger.addHandler(handler)
+    handler.setLevel(logging.INFO)
+    runtime = runtime_for("performance_analysis")
+    workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
+    season_range = None
+    if workspace.latest_exists(ArtifactType.SEASON_PLAN):
+        season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+        season_range = envelope_week_range(season_plan)
+    report_label = f"{report_week.year:04d}-{report_week.week:02d}"
+    if not season_range or not range_contains(season_range, report_week):
+        message = (
+            "Performance analysis running despite report week "
+            f"{report_label} being outside season plan range {season_range.range_key if season_range else 'missing'}."
+        )
+        _log(message, logging.WARNING)
+
+    required = [
+        ArtifactType.ACTIVITIES_ACTUAL,
+        ArtifactType.ACTIVITIES_TREND,
+        ArtifactType.KPI_PROFILE,
+        ArtifactType.SEASON_PLAN,
+        ArtifactType.PHASE_GUARDRAILS,
+        ArtifactType.PHASE_STRUCTURE,
+    ]
+    missing_required = [item for item in required if not workspace.latest_exists(item)]
+    if missing_required:
+        message = "Performance analysis skipped: required inputs missing."
+        _log(message)
+        return {"ok": False, "message": message, "step": None}
+
+    analysis_tasks: list[AgentTask] = []
+    if workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
+        report = workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
+        week = envelope_week(report)
+        if week and week.year == report_week.year and week.week == report_week.week:
+            message = f"Found DES_ANALYSIS_REPORT for ISO week {report_label}."
+            _log(message)
+        else:
+            message = f"DES_ANALYSIS_REPORT missing for ISO week {report_label}. Will create."
+            _log(message)
+            analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
+    else:
+        message = f"DES_ANALYSIS_REPORT NOT FOUND. Will create for ISO week {report_label}."
+        _log(message)
+        analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
+
+    if not analysis_tasks:
+        return {"ok": True, "message": message, "step": None}
+
+    def runtime_for_agent(agent_name: str) -> AgentRuntime:
+        if not reasoning_effort_resolver and not reasoning_summary_resolver:
+            return runtime_for(agent_name)
+        runtime_base = runtime_for(agent_name)
+        return replace(
+            runtime_base,
+            reasoning_effort=reasoning_effort_resolver(agent_name) if reasoning_effort_resolver else runtime_base.reasoning_effort,
+            reasoning_summary=reasoning_summary_resolver(agent_name) if reasoning_summary_resolver else runtime_base.reasoning_summary,
+        )
+    try:
+        spec = AGENTS["performance_analysis"]
+        message = f"Running Performance-Analyst for ISO week {report_label}."
+        _log(message)
+        mode = _mode_for_task(AgentTask.CREATE_DES_ANALYSIS_REPORT)
+        injected_block = _build_injection_block("performance_analysis", mode=mode)
+        stream_chunks: list[str] = []
+        def _on_reasoning_chunk(delta: str) -> None:
+            stream_chunks.append(delta)
+            if reasoning_stream_handler:
+                reasoning_stream_handler(delta)
+
+        out = run_agent_multi_output(
+            runtime_for_agent(spec.name),
+            agent_name=spec.name,
+            agent_vs_name=spec.vector_store_name,
+            athlete_id=athlete_id,
+            tasks=analysis_tasks,
+            user_input=(
+                f"Create des_analysis_report for ISO week {report_label} "
+                f"(planning week reference). "
+                "Read activities_actual, activities_trend, KPI profile, season plan, phase artefacts from workspace. "
+                f"{injected_block}"
+            ),
+            run_id=f"{run_id_prefix}_{report_label}",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            force_file_search=force_file_search,
+            max_num_results=max_num_results,
+            stream_handlers={"on_reasoning": _on_reasoning_chunk},
+        )
+        step = {
+            "agent": "performance_analysis",
+            "tasks": [t.value for t in analysis_tasks],
+            "result": out,
+        }
+        if out.get("ok") and out.get("produced"):
+            _log("Done.")
+        return {
+            "ok": out.get("ok", False),
+            "message": message,
+            "step": step,
+            "reasoning_summaries": summaries,
+            "reasoning_log": log_messages.copy(),
+            "reasoning_stream": "".join(stream_chunks),
+        }
+    finally:
+        agent_logger.removeHandler(handler)
+
+
 def _build_injection_block(agent_name: str, mode: str | None = None) -> str:
     config = _load_agent_injection_config()
     agent_cfg = (config.get("agents") or {}).get(agent_name) or {}
@@ -534,70 +672,6 @@ def plan_week(
         message = f"Workout-Builder skipped: WEEK_PLAN {target_label} not found."
         _log(message)
 
-    analysis_tasks: list[AgentTask] = []
-    report_week = previous_iso_week(target)
-    report_label = f"{report_week.year:04d}-{report_week.week:02d}"
-    if season_range and not range_contains(season_range, report_week):
-        message = (
-            "Performance analysis skipped: report week "
-            f"{report_label} is outside season plan range {season_range.range_key}."
-        )
-        _log(message)
-    else:
-        required = [
-            ArtifactType.ACTIVITIES_ACTUAL,
-            ArtifactType.ACTIVITIES_TREND,
-            ArtifactType.KPI_PROFILE,
-            ArtifactType.SEASON_PLAN,
-            ArtifactType.PHASE_GUARDRAILS,
-            ArtifactType.PHASE_STRUCTURE,
-        ]
-        if all(workspace.latest_exists(item) for item in required):
-            if workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
-                report = workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
-                week = envelope_week(report)
-                if week and (week.year == report_week.year and week.week == report_week.week):
-                    message = f"Found DES_ANALYSIS_REPORT for ISO week {report_label}."
-                    _log(message)
-                else:
-                    message = f"DES_ANALYSIS_REPORT missing for ISO week {report_label}. Will create."
-                    _log(message)
-                    analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
-            else:
-                message = f"DES_ANALYSIS_REPORT NOT FOUND. Will create for ISO week {report_label}."
-                _log(message)
-                analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
-        else:
-            message = "Performance analysis skipped: required inputs missing."
-            _log(message)
-
-        if analysis_tasks:
-            spec = AGENTS["performance_analysis"]
-            message = f"Running Performance-Analyst for ISO week {report_label}."
-            _log(message)
-            mode = _mode_for_task(AgentTask.CREATE_DES_ANALYSIS_REPORT)
-            injected_block = _build_injection_block("performance_analysis", mode=mode)
-            out = run_agent_multi_output(
-                runtime_for(spec.name),
-                agent_name=spec.name,
-                agent_vs_name=spec.vector_store_name,
-                athlete_id=athlete_id,
-                tasks=analysis_tasks,
-                user_input=(
-                    f"Create des_analysis_report for ISO week {report_label} "
-                    f"(planning week {target_label} minus one). "
-                    "Read activities_actual, activities_trend, KPI profile, season plan, phase artefacts from workspace. "
-                    f"{injected_block}"
-                ),
-                run_id=f"{run_id}_analysis",
-                model_override=model_resolver(spec.name) if model_resolver else None,
-                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
-            steps.append({"agent": "performance_analysis", "tasks": [t.value for t in analysis_tasks], "result": out})
-            if out.get("ok") and out.get("produced"):
-                _log("Done.")
 
     ok = all(step["result"].get("ok") for step in steps) if steps else True
     message = f"Plan-week completed for ISO week {target_label} (ok={ok})."

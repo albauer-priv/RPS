@@ -1606,7 +1606,7 @@ def compile_activities_actual(
     groups = list(df.groupby(["ISO Year", "ISO Week"], sort=True))
     if not groups:
         raise ValueError("No rows available for activities_actual export.")
-    groups = [groups[-1]]
+    latest_entry = groups[-1]
 
     run_ts = datetime.now(timezone.utc)
     run_stamp = run_ts.strftime("%Y%m%d-%H%M%S")
@@ -1617,6 +1617,8 @@ def compile_activities_actual(
     data_dir = athlete_data_dir(athlete_id)
     latest_dir = athlete_latest_dir(athlete_id)
 
+    last_out_file: Path | None = None
+    last_out_json_file: Path | None = None
     for (yr, wk), g in groups:
         g = g.sort_values(dt_col)
         out_df = g[output_cols]
@@ -1785,11 +1787,8 @@ def compile_activities_actual(
         with open(out_json_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
 
-        latest_dir.mkdir(parents=True, exist_ok=True)
-        latest_csv = latest_dir / "activities_actual.csv"
-        latest_json = latest_dir / "activities_actual.json"
-        latest_csv.write_bytes(out_file.read_bytes())
-        latest_json.write_bytes(out_json_file.read_bytes())
+        last_out_file = out_file
+        last_out_json_file = out_json_file
 
         record_index_write(
             athlete_id=athlete_id,
@@ -1803,6 +1802,13 @@ def compile_activities_actual(
         )
 
         print(f"JSON exported: {out_json_file}")
+
+    if last_out_file and last_out_json_file:
+        latest_dir.mkdir(parents=True, exist_ok=True)
+        latest_csv = latest_dir / "activities_actual.csv"
+        latest_json = latest_dir / "activities_actual.json"
+        latest_csv.write_bytes(last_out_file.read_bytes())
+        latest_json.write_bytes(last_out_json_file.read_bytes())
 
 
 # === Activities Trend helpers ===
