@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import streamlit as st
+from jinja2 import BaseLoader, Environment
 
 from rps.agents.multi_output_runner import run_agent_multi_output
 from rps.agents.registry import AGENTS
@@ -20,10 +21,10 @@ from rps.ui.shared import (
     load_rendered_markdown,
     make_ui_run_id,
     multi_runtime_for,
+    render_phase_markdown,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-
 
 st.title("Season")
 
@@ -35,6 +36,43 @@ announce_log_file(athlete_id)
 st.caption(f"Athlete: {athlete_id}")
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
+has_plan = store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN)
+
+SCENARIO_TEMPLATE = """
+### Metadata
+| Field | Value |
+| --- | --- |
+| Scenario ID | {{ scenario.scenario_id or 'N/A' }} |
+| Name | {{ scenario.name or 'N/A' }} |
+| Selected week range | {{ selection.selection_iso_week_range or 'N/A' }} |
+| Selection rationale | {{ selection.selection_rationale or 'N/A' }} |
+| Deload cadence | {{ guidance.deload_cadence or 'N/A' }} |
+| Phase length (weeks) | {{ guidance.phase_length_weeks or 'N/A' }} |
+| Phase count expected | {{ guidance.phase_count_expected or 'N/A' }} |
+| Shortened phases allowed | {{ guidance.max_shortened_phases or 'N/A' }} |
+| Shortening budget (weeks) | {{ guidance.shortening_budget_weeks or 'N/A' }} |
+| Fixed rest days | {{ guidance.fixed_rest_days | join(', ') or 'N/A' }} |
+| Constraint summary | {% if guidance.constraint_summary %}{% for item in guidance.constraint_summary %}{{ item }}<br>{% endfor %}{% else %}N/A{% endif %} |
+| KPI guardrail notes | {% if guidance.kpi_guardrail_notes %}{% for note in guidance.kpi_guardrail_notes %}{{ note }}<br>{% endfor %}{% else %}N/A{% endif %} |
+| Intensity guidance | Allowed: {{ guidance.intensity_guidance.allowed_domains | join(', ') or 'N/A' }}<br>Avoid: {{ guidance.intensity_guidance.avoid_domains | join(', ') or 'N/A' }} |
+
+### Macro Intent & Principles
+| Area | Details |
+| --- | --- |
+| Core idea | {{ scenario.core_idea or 'N/A' }} |
+| Load philosophy | {{ scenario.load_philosophy or 'N/A' }} |
+| Risk profile | {{ scenario.risk_profile or 'N/A' }} |
+| Key differences | {{ scenario.key_differences or 'N/A' }} |
+| Best suited if | {{ scenario.best_suited_if or 'N/A' }} |
+| Decision notes | {% if guidance.decision_notes %}{% for note in guidance.decision_notes %}{{ note }}<br>{% endfor %}{% else %}None{% endif %} |
+| Event alignment notes | {% if guidance.event_alignment_notes %}{% for note in guidance.event_alignment_notes %}{{ note }}<br>{% endfor %}{% else %}None{% endif %} |
+| Risk flags | {% if guidance.risk_flags %}{% for note in guidance.risk_flags %}{{ note }}<br>{% endfor %}{% else %}None{% endif %} |
+| Planning assumptions | {% if guidance.assumptions %}{% for item in guidance.assumptions %}{{ item }}<br>{% endfor %}{% else %}None{% endif %} |
+| Unknowns | {% if guidance.unknowns %}{% for item in guidance.unknowns %}{{ item }}<br>{% endfor %}{% else %}None{% endif %} |
+"""
+
+
+state = init_ui_state()
 
 
 def _format_agent_result(result: object | None, fallback: str) -> str:
@@ -137,17 +175,100 @@ def _action_season_plan(selected: str) -> str:
     return output or _format_agent_result(result, f"Season plan created: {run_id}")
 
 
-has_plan = store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN)
+def _load_latest_payload(store: LocalArtifactStore, artifact_type: ArtifactType) -> dict | None:
+    if not store.latest_exists(athlete_id, artifact_type):
+        return None
+    payload = store.load_latest(athlete_id, artifact_type)
+    return payload if isinstance(payload, dict) else None
+
+
+def _render_selected_scenario_markdown(store: LocalArtifactStore, athlete_id: str) -> str | None:
+    selection = _load_latest_payload(store, ArtifactType.SEASON_SCENARIO_SELECTION)
+    if not selection:
+        return None
+    selected_id = (selection.get("data") or {}).get("selected_scenario_id")
+    scenarios_payload = _load_latest_payload(store, ArtifactType.SEASON_SCENARIOS)
+    if not scenarios_payload or not selected_id:
+        return None
+    scenario = next(
+        (s for s in (scenarios_payload.get("data") or {}).get("scenarios", []) if s.get("scenario_id") == selected_id),
+        None,
+    )
+    if not scenario:
+        return None
+    guidance = scenario.get("scenario_guidance") or {}
+    env = Environment(loader=BaseLoader(), autoescape=False)
+    template = env.from_string(SCENARIO_TEMPLATE)
+    return template.render(
+        scenario=scenario,
+        guidance=guidance,
+        selection={
+            "selection_rationale": (selection.get("data") or {}).get("selection_rationale"),
+            "selection_iso_week_range": (selection.get("meta") or {}).get("iso_week_range"),
+        },
+    )
+
+
+def _render_phase_panels(plan_payload: dict | None) -> None:
+    if not isinstance(plan_payload, dict):
+        return
+    phases = plan_payload.get("data", {}).get("phases", [])
+    if not phases:
+        return
+    st.subheader("Phases")
+    for phase in phases:
+        phase_id = phase.get("phase_id", "Phase")
+        name = phase.get("name") or "Phase"
+        iso_range = phase.get("iso_week_range") or ""
+        header = f"{phase_id} · {name}"
+        if iso_range:
+            header = f"{header} · {iso_range}"
+        with st.expander(header, expanded=False):
+            st.markdown(render_phase_markdown(phase), unsafe_allow_html=True)
+
+
+def _show_action_buttons(has_plan: bool) -> None:
+    with st.container():
+        cols = st.columns([1, 1, 1])
+        with cols[0]:
+            if st.button("Create Season Plan", disabled=has_plan):
+                append_system_log("season", "Create Season Plan requested.")
+                st.info("Create flow will trigger (TODO).")
+        with cols[1]:
+            if st.button("Reset Season Plan", disabled=not has_plan):
+                st.session_state["season_plan_pending_action"] = "reset"
+        with cols[2]:
+            if st.button("Delete Season Plan", disabled=not has_plan):
+                st.session_state["season_plan_pending_action"] = "delete"
+
+    pending = st.session_state.get("season_plan_pending_action")
+    if pending:
+        with st.container():
+            st.subheader(f"Confirm {pending.capitalize()} action")
+            confirmation = st.text_input(
+                'Type "YES I WANT TO PROCEED" to continue',
+                key="season_plan_reset_delete_confirm",
+            )
+            if st.button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED"):
+                append_system_log("season", f"{pending.capitalize()} Season Plan requested.")
+                st.info(f"{pending.capitalize()} flow will trigger (TODO).")
+                st.session_state["season_plan_pending_action"] = None
+
+
+_show_action_buttons(has_plan)
+
 if has_plan:
     st.success("Season plan exists for this athlete.")
     rendered = load_rendered_markdown(athlete_id, ArtifactType.SEASON_PLAN)
+    plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
     if rendered:
         st.markdown(rendered)
-    else:
-        plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
-        st.json(plan_payload)
+    scenario_intro = _render_selected_scenario_markdown(store, athlete_id)
+    if scenario_intro:
+        with st.container():
+            st.markdown(scenario_intro, unsafe_allow_html=True)
+    _render_phase_panels(plan_payload)
     st.stop()
-
 
 if st.button("Create Scenarios"):
     append_system_log("season", "Create Scenarios started.")

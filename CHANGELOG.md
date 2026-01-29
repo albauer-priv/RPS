@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Season page now provides Create/Reset/Delete controls, renders scenario overview tables, and reuses the Phase page’s rendering per phase (no JSON dump), aligning it with the Phase card template.
+
 ## [0.10.1] - 2026-01-29
 
 ### Changed
@@ -158,6 +163,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - plan-week now treats downstream artefacts as stale when upstream season/phase/workouts updates are newer, and re-runs as needed (cascade rebuilds).
+
+## [Unreleased]
+
+### Added
+- Clarified that `compile_activities_actual` iterates every ISO week in the Intervals export and writes schema-compliant CSV/JSON per week (latest copy still lives under `var/athletes/<athlete>/latest`), so additional artefacts only require rerunning with a wider range if older weeks are needed.
+### Changed
+- The root Streamlit app now triggers the background-threaded Intervals pipeline refresh (tracked in `st.session_state`) so stale data starts refreshing before any page needs it, and the Data & Metrics page can simply surface the status without blocking.
+- Local workspace reads now respect the actual recorded paths for archived artifacts (e.g., `ACTIVITIES_ACTUAL` per ISO week) when loading specific versions, instead of assuming a single `data/analysis` folder.
 - Vector store sync now retries transient API errors with backoff instead of failing immediately.
 - Streaming output supports optional italic rendering of reasoning via `OPENAI_STREAM_ITALICS`.
 - Consolidated all agent knowledge into a single vector store (`vs_rps_all_agents`) with a unified `knowledge/all_agents/manifest.yaml`.

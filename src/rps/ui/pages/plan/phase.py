@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import streamlit as st
+from jinja2 import BaseLoader, Environment
 
 from rps.ui.shared import (
     SETTINGS,
@@ -15,6 +16,19 @@ from rps.ui.shared import (
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
+
+PHASE_PREVIEW_TEMPLATE = """
+### What the next 4 weeks will feel like
+| Topic | Details |
+| --- | --- |
+| Dominant theme | {{ feel.dominant_theme or 'N/A' }} |
+| Intensity handling concept | {{ feel.intensity_handling_conceptual or 'N/A' }} |
+| Recovery protection | {{ feel.recovery_protection_conceptual or 'N/A' }} |
+| Week-to-week direction | {{ narrative.direction or 'N/A' }} |
+| What will not change | {{ narrative.what_will_not_change or 'N/A' }} |
+| What is flexible | {{ narrative.what_is_flexible or 'N/A' }} |
+| Deviations | {% if deviations %}{% for d in deviations %}{{ d }}<br>{% endfor %}{% else %}N/A{% endif %} |
+"""
 
 
 st.title("Phase")
@@ -56,33 +70,48 @@ header = f"Phase: {phase_name} {iso_range}".strip()
 
 with st.expander(header, expanded=True):
     st.markdown(render_phase_markdown(selected_phase), unsafe_allow_html=True)
+    preview = _find_phase_preview(store, iso_range)
+    if preview:
+        env = Environment(loader=BaseLoader(), autoescape=False)
+        template = env.from_string(PHASE_PREVIEW_TEMPLATE)
+        st.markdown(
+            template.render(
+                feel=preview.get("feel_overview", {}),
+                narrative=preview.get("week_to_week_narrative", {}),
+                deviations=preview.get("deviation_rules", []),
+            ),
+            unsafe_allow_html=True,
+        )
+        for week in preview.get("weekly_agenda_preview", []):
+            with st.expander(f"Week {week.get('week', 'N/A')} preview", expanded=False):
+                st.markdown(_render_week_table(week), unsafe_allow_html=True)
 
 
-def _find_artifact_for_range(artifact_type: ArtifactType, target_range: str) -> str | None:
-    versions = store.list_versions(athlete_id, artifact_type)
+def _find_phase_preview(store: LocalArtifactStore, target_range: str) -> dict | None:
+    if not target_range:
+        return None
+    versions = store.list_versions(athlete_id, ArtifactType.PHASE_PREVIEW)
     for version_key in reversed(versions):
-        payload = store.load_version(athlete_id, artifact_type, version_key)
+        payload = store.load_version(athlete_id, ArtifactType.PHASE_PREVIEW, version_key)
         if not isinstance(payload, dict):
             continue
         meta = payload.get("meta", {}) or {}
         if meta.get("iso_week_range") == target_range:
-            return version_key
+            return payload.get("data", {})
     return None
 
 
-for label, artifact_type in (
-    ("Phase Guardrails", ArtifactType.PHASE_GUARDRAILS),
-    ("Phase Structure", ArtifactType.PHASE_STRUCTURE),
-    ("Phase Preview", ArtifactType.PHASE_PREVIEW),
-):
-    st.subheader(label)
-    version_key = _find_artifact_for_range(artifact_type, iso_range)
-    if not version_key:
-        st.info(f"No {label.lower()} found for this phase.")
-        continue
-    rendered = load_rendered_markdown(athlete_id, artifact_type, version_key=version_key)
-    if rendered:
-        st.markdown(rendered)
-    else:
-        payload = store.load_version(athlete_id, artifact_type, version_key)
-        st.json(payload)
+def _render_week_table(week: dict) -> str:
+    header = "| Day | Role | Intensity | Modality | Notes |\n| --- | --- | --- | --- | --- |\n"
+    rows = []
+    for day in week.get("days", []):
+        rows.append(
+            "| {day} | {role} | {intensity} | {modality} | {notes} |".format(
+                day=day.get("day_of_week", "N/A"),
+                role=day.get("day_role", "N/A"),
+                intensity=day.get("intensity_domain", "N/A"),
+                modality=day.get("load_modality", "N/A"),
+                notes=day.get("notes", "N/A"),
+            )
+        )
+    return header + "\n".join(rows)
