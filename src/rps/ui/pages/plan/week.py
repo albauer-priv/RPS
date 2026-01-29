@@ -18,12 +18,8 @@ from rps.ui.shared import (
     system_log_panel,
 )
 
-st.set_page_config(
-    page_title="RPS - Randonneur Performance System",
-    layout="wide",
-)
 
-st.title("Plan")
+st.title("Week")
 
 state = init_ui_state()
 athlete_id = get_athlete_id()

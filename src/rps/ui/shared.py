@@ -22,6 +22,7 @@ from rps.prompts.loader import PromptLoader
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range, range_contains
 from rps.workspace.types import ArtifactType
+from rps.workspace.paths import ARTIFACT_PATHS
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -364,3 +365,24 @@ def athlete_phase_card(athlete_id: str, year: int, week: int) -> None:
     with st.expander(headline, expanded=False):
         st.markdown(render_phase_markdown(active), unsafe_allow_html=True)
 
+
+def load_rendered_markdown(
+    athlete_id: str,
+    artifact_type: ArtifactType,
+    *,
+    version_key: str | None = None,
+) -> str | None:
+    """Return rendered markdown for an artifact if available."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    try:
+        if not version_key:
+            version_key = store.get_latest_version_key(athlete_id, artifact_type)
+    except Exception:
+        return None
+
+    rendered_dir = SETTINGS.workspace_root / athlete_id / "rendered"
+    prefix = ARTIFACT_PATHS[artifact_type].filename_prefix
+    candidate = rendered_dir / f"{prefix}_{version_key}.md"
+    if not candidate.exists():
+        return None
+    return candidate.read_text(encoding="utf-8")

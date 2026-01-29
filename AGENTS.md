@@ -2,8 +2,8 @@
 
 ## 🎯 Core Goal & Status
 - **Purpose:** End-to-end planning system for endurance athletes (Season/Phase/Week/Workouts) with UI, agents, and artifact pipeline.
-- **Current focus:** Stabilize the new **multi-page Streamlit UI** (navigation + shared state/logging), verify plan-week gating, and ensure athlete data pages resolve inputs correctly.
-- **Last milestone:** Hard rename of core artefacts/agents + schemas, contracts, prompts, docs, and UI to Season/Phase/Week.
+- **Current focus:** Stabilize the **multi-page Streamlit UI** (navigation + Plan/Performance subpages), verify season flow + plan-week gating, and ensure athlete data pages resolve inputs correctly.
+- **Last milestone:** Multi-page UI restructure with isolated page scripts and Coach chat migration.
 
 ## 🛠 Tech Stack & Conventions
 - **Languages/Frameworks:** Python 3.14, Streamlit, OpenAI Responses API.
@@ -45,10 +45,10 @@
 
 ## ✅ Recent Progress Summary
 - Migrated to multi-page Streamlit navigation with isolated page scripts and shared UI helpers.
-- Added shared UI state + logging utilities (`src/rps/ui/shared.py`) and unified system log panel.
+- Added Plan/Performance subpages (Season/Phase/Week/WoW + Data/Report) and kept Athlete Profile pages grouped.
 - Home page renders the phase card via the Season Plan template; system log panel moved to multipage.
-- Coach page now uses the agent runner + prompt injection with session-scoped history.
-- Analysis page shows charts and parsed trend/actual tables; Season Brief/Logistics load newest input files.
+- Coach page now uses the streamlit-openai chat pattern with prompt injection and workspace tool access.
+- Performance data page shows charts and parsed trend/actual tables; Season Brief/Logistics load newest input files.
 
 ## 🧭 Next Steps
 - Re-run schema validation + bundler and fix any remaining schema/header refs.

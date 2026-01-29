@@ -11,11 +11,6 @@ from rps.ui.shared import (
     system_log_panel,
 )
 
-st.set_page_config(
-    page_title="RPS - Randonneur Performance System",
-    layout="wide",
-)
-
 st.title("RPS - Randonneur Performance System")
 st.caption("Chat-style control surface for preflight, season-plan, and plan-week flows.")
 

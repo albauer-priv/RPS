@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2026-01-29
+
+### Changed
+- Reordered multipage navigation and grouped Performance/Plan/Athlete Profile subpages.
+- Added new Season/Phase/Week/WoW and Performance subpages with rendered markdown support where available.
+- Switched Coach page to the streamlit-openai chat pattern with prompt injection + workspace tools.
+
 ## [0.10.0] - 2026-01-29
 
 ### Changed

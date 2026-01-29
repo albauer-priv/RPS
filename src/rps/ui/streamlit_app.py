@@ -2,15 +2,42 @@ from __future__ import annotations
 
 import streamlit as st
 
-st.set_page_config(
-    page_title="RPS - Randonneur Performance System",
-    layout="wide",
-)
+st.set_page_config(page_title="RPS - Randonneur Performance System", layout="wide")
 
 home = st.Page("pages/home.py", title="Home", icon=":material/home:", default=True)
 coach = st.Page("pages/coach.py", title="Coach", icon=":material/support_agent:")
-analyse = st.Page("pages/analysis.py", title="Analyse", icon=":material/insights:")
-plan = st.Page("pages/plan.py", title="Plan", icon=":material/calendar_month:")
+
+performance_data = st.Page(
+    "pages/performance/data_metrics.py",
+    title="Data & Metrics",
+    icon=":material/insights:",
+)
+performance_report = st.Page(
+    "pages/performance/report.py",
+    title="Report",
+    icon=":material/assignment:",
+)
+
+plan_season = st.Page(
+    "pages/plan/season.py",
+    title="Season",
+    icon=":material/emoji_events:",
+)
+plan_phase = st.Page(
+    "pages/plan/phase.py",
+    title="Phase",
+    icon=":material/timeline:",
+)
+plan_week = st.Page(
+    "pages/plan/week.py",
+    title="Week",
+    icon=":material/calendar_month:",
+)
+plan_wow = st.Page(
+    "pages/plan/wow.py",
+    title="WoW",
+    icon=":material/fitness_center:",
+)
 
 about_you = st.Page(
     "pages/athlete_profile/about_you.py",
@@ -34,9 +61,12 @@ logistics = st.Page(
 )
 
 pg = st.navigation(
-    {
-        "Main": [home, coach, analyse, plan],
-        "Athlete Profile": [about_you, season_brief, availability, logistics],
-    }
+    [
+        home,
+        coach,
+        {"Performance": [performance_data, performance_report]},
+        {"Plan": [plan_season, plan_phase, plan_week, plan_wow]},
+        {"Athlete Profile": [about_you, season_brief, availability, logistics]},
+    ]
 )
 pg.run()

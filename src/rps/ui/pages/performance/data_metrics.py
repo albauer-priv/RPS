@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import os
@@ -15,6 +16,9 @@ try:
     import pandas as pd
 except Exception:  # pragma: no cover - optional dependency
     pd = None
+
+
+ROOT = SETTINGS.workspace_root
 
 
 def _parse_iso_datetime(value: str | None) -> datetime | None:
@@ -43,7 +47,7 @@ def _is_stale(path: Path, max_age_hours: float) -> bool:
 
 
 def _ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, str]:
-    latest_dir = ROOT / "var" / "athletes" / athlete_id / "latest"
+    latest_dir = ROOT / athlete_id / "latest"
     actual_path = latest_dir / "activities_actual.json"
     trend_path = latest_dir / "activities_trend.json"
     stale = _is_stale(actual_path, max_age_hours) or _is_stale(trend_path, max_age_hours)
@@ -58,38 +62,12 @@ def _ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool,
         athlete=athlete_id,
         skip_validate=False,
     )
-    logger = logging.getLogger("rps.ui.analysis")
+    logger = logging.getLogger("rps.ui.performance")
     try:
         run_intervals_pipeline(args, logger=logger)
-    except Exception as exc:
+    except Exception as exc:  # pragma: no cover - UI fallback
         return False, f"Intervals pipeline failed: {exc}"
     return True, "Intervals data refreshed."
-
-
-import argparse
-
-st.set_page_config(
-    page_title="RPS - Randonneur Performance System",
-    layout="wide",
-)
-
-ROOT = SETTINGS.workspace_root
-
-st.title("Analyse")
-
-init_ui_state()
-athlete_id = get_athlete_id()
-announce_log_file(athlete_id)
-latest_dir = ROOT / athlete_id / "latest"
-actual_path = latest_dir / "activities_actual.json"
-trend_path = latest_dir / "activities_trend.json"
-
-max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))
-ok, message = _ensure_intervals_data(athlete_id, max_age_hours)
-if not ok:
-    st.error(message)
-elif message:
-    st.info(message)
 
 
 def _flatten_weekly_trends(weekly_trends: list[dict]) -> list[dict]:
@@ -164,6 +142,24 @@ def _flatten_activities_actual(activities: list[dict]) -> list[dict]:
     return rows
 
 
+init_ui_state()
+athlete_id = get_athlete_id()
+announce_log_file(athlete_id)
+
+st.title("Data & Metrics")
+st.caption(f"Athlete: {athlete_id}")
+
+latest_dir = ROOT / athlete_id / "latest"
+actual_path = latest_dir / "activities_actual.json"
+trend_path = latest_dir / "activities_trend.json"
+
+max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))
+ok, message = _ensure_intervals_data(athlete_id, max_age_hours)
+if not ok:
+    st.error(message)
+elif message:
+    st.info(message)
+
 with st.container():
     st.subheader("Weekly Load and Durability Metrics")
     if trend_path.exists() and pd:
@@ -191,10 +187,13 @@ with st.container():
                 }
             )
         df = pd.DataFrame(rows).dropna(subset=["label"]).set_index("label")
-        st.caption("Weekly kJ")
-        st.bar_chart(df["weekly_kj"])
-        st.caption("Durability Index")
-        st.line_chart(df["durability_index"])
+        if not df.empty:
+            st.caption("Weekly kJ")
+            st.bar_chart(df["weekly_kj"])
+            st.caption("Durability Index")
+            st.line_chart(df["durability_index"])
+        else:
+            st.info("No weekly trend data available yet.")
     elif trend_path.exists():
         st.info("Charts require pandas; showing data tables below.")
     else:
