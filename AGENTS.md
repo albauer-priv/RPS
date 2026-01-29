@@ -2,7 +2,7 @@
 
 ## 🎯 Core Goal & Status
 - **Purpose:** End-to-end planning system for endurance athletes (Season/Phase/Week/Workouts) with UI, agents, and artifact pipeline.
-- **Current focus:** Stabilize the Season flow in Streamlit (scenarios → selection → season plan) and confirm plan‑week gating + UI logging.
+- **Current focus:** Stabilize the new **multi-page Streamlit UI** (navigation + shared state/logging), verify plan-week gating, and ensure athlete data pages resolve inputs correctly.
 - **Last milestone:** Hard rename of core artefacts/agents + schemas, contracts, prompts, docs, and UI to Season/Phase/Week.
 
 ## 🛠 Tech Stack & Conventions
@@ -22,7 +22,8 @@
   - **Examples** (short usage snippet if relevant)
 
 ## 📂 Key Paths (Structure Map)
-- `/src/rps/ui`: Streamlit UI (`streamlit_app.py`).
+- `/src/rps/ui`: Streamlit UI entry (`streamlit_app.py`) + shared helpers.
+- `/src/rps/ui/pages`: Multi-page UI screens (Home/Coach/Analyse/Plan/Athlete Profile).
 - `/src/rps/agents`: Agent runner / multi-output / tasks.
 - `/src/rps/orchestrator`: Plan-week orchestration.
 - `/src/rps/tools`: Workspace tools (read/write).
@@ -37,21 +38,22 @@
 ## 📝 Active Todo List (Backlog)
 - [ ] Run schema validation + bundler after rename sweep (and fix any broken refs).
 - [ ] Re-sync vector store after spec/contract/header changes.
-- [ ] Verify season flow end‑to‑end (scenarios → selection → season plan → plan‑week enabled).
-- [ ] Confirm plan‑week gating and ISO‑week range checks in UI.
-- [ ] Coach UX: confirm response bubble + reasoning summary + state transitions.
+- [ ] Verify multi-page flow end-to-end (scenario creation → selection → season plan → plan-week enabled).
+- [ ] Confirm plan-week gating and ISO-week range checks in UI.
+- [ ] Coach UX: confirm response bubble + reasoning summary + tool access + rate-limit handling.
+- [ ] Validate input pages: Season Brief + Logistics resolve newest input files; Availability editor behavior.
 
 ## ✅ Recent Progress Summary
-- Added state‑driven Season flow UI (scenario display + selection) with auto‑enter selection when scenarios exist.
-- Added season plan lifecycle commands (drop/recreate) with PROCEED confirmation and artifact purge.
-- Plan‑week button now gated by “season plan exists + ISO week covered”.
-- Phase card now renders via Jinja template with narrative, structured overview, load corridor, and semantics.
-- Added per‑channel logging knobs to `.env.example` (file/console/UI + APP_LOG_STDOUT).
+- Migrated to multi-page Streamlit navigation with isolated page scripts and shared UI helpers.
+- Added shared UI state + logging utilities (`src/rps/ui/shared.py`) and unified system log panel.
+- Home page renders the phase card via the Season Plan template; system log panel moved to multipage.
+- Coach page now uses the agent runner + prompt injection with session-scoped history.
+- Analysis page shows charts and parsed trend/actual tables; Season Brief/Logistics load newest input files.
 
 ## 🧭 Next Steps
 - Re-run schema validation + bundler and fix any remaining schema/header refs.
 - Sync vector store after spec/contract updates.
-- Smoke‑test Streamlit: preflight → scenarios → selection → season plan → plan‑week, plus coach UX.
+- Smoke-test Streamlit: scenarios → selection → season plan → plan-week; then verify Coach/Analysis pages.
 
 ## 📌 Key Docs & Config
 - `doc/system_architecture.md`: System overview + UI/agent flows.
@@ -77,11 +79,12 @@
 - Preflight: inputs (Season Brief, Events), KPI profile, Availability, Intervals pipeline.
 - Season flow: Scenarios → Selection → Season Plan.
 - Plan week: Season Plan → Phase → Week → Workouts (artifacts + renderer).
-- UI: state machine drives actions; buttons only update state/params.
+- UI: multi-page layout; shared state tracks athlete id + logs across pages.
 - Phase artefacts: `phase_*` ISO-week ranges must align to the covering Season Plan phase range. Mismatches are auto-normalized with a warning log.
 
 ## 🏷 Versioning Flow (Git Release Flow)
 - Determine next SemVer (usually patch for UI/logging tweaks, minor for new flows).
+- Update `pyproject.toml` with the new version.
 - Update `CHANGELOG.md` with the new version header and bullet list.
 - Commit changes.
 - Create/update git tag (e.g., `v0.6.29`) pointing to the changelog commit.

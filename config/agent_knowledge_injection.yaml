@@ -85,21 +85,12 @@ agents:
     - path: knowledge/_shared/sources/specs/events_interface_spec.md
     - path: knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/schemas/bundled/season_plan.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
     modes:
       coach:
         bundle_id: coach_coach
     bundles:
     - id: coach_coach
       inject:
-      - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
-      - path: knowledge/_shared/sources/specs/season_cycle_enum_spec.md
-      - path: knowledge/_shared/sources/specs/data_confidence_spec.md
   phase_architect:
     inject:
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md

@@ -1,0 +1,366 @@
+"""Shared UI helpers for multipage Streamlit app."""
+
+from __future__ import annotations
+
+import io
+import logging
+import os
+import re
+from contextlib import redirect_stdout
+from datetime import date, datetime, timezone
+from pathlib import Path
+from typing import Callable
+
+from jinja2 import BaseLoader, Environment
+import streamlit as st
+
+from rps.core.config import load_app_settings, load_env_file
+from rps.core.logging import _normalize_level, setup_logging, timestamped_log_path
+from rps.openai.client import get_client
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.prompts.loader import PromptLoader
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range, range_contains
+from rps.workspace.types import ArtifactType
+
+
+ROOT = Path(__file__).resolve().parents[4]
+load_env_file(ROOT / ".env")
+SETTINGS = load_app_settings()
+
+LOGGER = logging.getLogger("rps.streamlit")
+UI_LOG_LEVEL = _normalize_level(os.getenv("RPS_LOG_LEVEL_UI", "INFO"))
+
+CAPTURE_LOGGERS: list[logging.Logger] = [
+    logging.getLogger("rps.workspace.guarded_store"),
+]
+
+PHASE_CARD_TEMPLATE = """#### Phase narrative
+{{ phase.narrative or "N/A" }}
+
+#### Phase Overview
+
+| Area | Content |
+|---|---|
+| Core focus and characteristics | {{ phase.overview.core_focus_and_characteristics | join_lines }} |
+| Phase goals |{% if phase.overview.phase_goals_primary %} - Primary: {{ phase.overview.phase_goals_primary }}{% endif %}{% if phase.overview.phase_goals_secondary %}<br>- Secondary: {{ phase.overview.phase_goals_secondary }}{% endif %} |
+| Metabolic focus | {{ phase.overview.metabolic_focus or "N/A" }} |
+| Expected adaptations (conceptual) | {{ phase.overview.expected_adaptations | join_lines }} |
+| Evaluation focus (non-binding) | {{ phase.overview.evaluation_focus | join_lines }} |
+| Phase exit assumptions | {{ phase.overview.phase_exit_assumptions | join_lines }} |
+| Typical duration and intensity pattern (conceptual) | {{ phase.overview.typical_duration_intensity_pattern or "N/A" }} |
+| Non-negotiables | {{ phase.overview.non_negotiables | join_lines }} |
+
+#### Weekly Load Corridor (kJ-first)
+
+| Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
+|---|---:|---:|---:|---:|---|
+| Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes }} |
+
+#### Allowed / Forbidden Semantics
+
+| Allowed INTENSITY_DOMAIN_ENUM | Allowed LOAD_MODALITY_ENUM | Forbidden INTENSITY_DOMAIN_ENUM |
+|---|---|---|
+| {{ phase.allowed_intensity_domains | join_or_na }} | {{ phase.allowed_load_modalities | join_or_na }} | {{ phase.forbidden_intensity_domains | join_or_na }} |
+"""
+
+
+def init_ui_state() -> dict:
+    """Initialize the shared UI state for the multipage app."""
+    state = st.session_state.setdefault("rps_state", {})
+    athlete_id = state.get("athlete_id") or os.getenv("ATHLETE_ID") or "i150546"
+    state["athlete_id"] = athlete_id
+    if "iso_year" not in state or "iso_week" not in state:
+        iso = date.today().isocalendar()
+        state.setdefault("iso_year", iso.year)
+        state.setdefault("iso_week", iso.week)
+    state.setdefault("system_logs", [])
+    state.setdefault("coach_session", {"previous_response_id": None, "run_id": None})
+    st.session_state["athlete_id"] = athlete_id
+    st.session_state["iso_year"] = state["iso_year"]
+    st.session_state["iso_week"] = state["iso_week"]
+    return state
+
+
+def get_athlete_id() -> str:
+    """Return the current athlete id, persisting it in session state."""
+    state = init_ui_state()
+    athlete_id = state.get("athlete_id") or os.getenv("ATHLETE_ID") or "i150546"
+    state["athlete_id"] = athlete_id
+    st.session_state["athlete_id"] = athlete_id
+    return athlete_id
+
+
+def get_iso_year_week() -> tuple[int, int]:
+    """Return the current ISO year/week, persisting them in session state."""
+    state = init_ui_state()
+    year = int(state.get("iso_year") or date.today().isocalendar().year)
+    week = int(state.get("iso_week") or date.today().isocalendar().week)
+    state["iso_year"] = year
+    state["iso_week"] = week
+    st.session_state["iso_year"] = year
+    st.session_state["iso_week"] = week
+    return year, week
+
+
+def ensure_logging(athlete_id: str) -> str:
+    """Ensure file logging is configured for the current athlete."""
+    state = init_ui_state()
+    current = state.get("_ui_log_file")
+    if current and state.get("_ui_log_athlete") == athlete_id:
+        return str(current)
+
+    log_dir = SETTINGS.workspace_root / athlete_id / "logs"
+    log_file = str(timestamped_log_path(log_dir, f"rps_ui_{athlete_id}"))
+    setup_logging(log_file=log_file)
+    state["_ui_log_file"] = log_file
+    state["_ui_log_athlete"] = athlete_id
+    state["_log_file_announced"] = False
+    return log_file
+
+
+def append_system_log(source: str, content: str, level: int = logging.INFO) -> None:
+    """Append a UI system log line if it meets the UI log level."""
+    if level < UI_LOG_LEVEL:
+        return
+    logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
+    logs.append(
+        {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "source": source,
+            "content": content,
+        }
+    )
+
+
+def announce_log_file(athlete_id: str) -> None:
+    """Ensure the log file path is recorded as the first UI log entry."""
+    state = init_ui_state()
+    log_file = ensure_logging(athlete_id)
+    if not state.get("_log_file_announced"):
+        append_system_log("log", f"Log file: {log_file}", level=logging.INFO)
+        state["_log_file_announced"] = True
+
+
+def system_log_panel(expanded: bool = True) -> None:
+    """Render the system log panel with the latest entry plus history."""
+    logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
+    with st.expander("System output / logs", expanded=expanded):
+        if not logs:
+            st.caption("No system output yet.")
+            return
+        last = logs[-1]
+        st.caption(f"{last['ts']} · {last['source']}")
+        st.code(last["content"])
+        if len(logs) > 1:
+            with st.expander("History", expanded=False):
+                for entry in reversed(logs[:-1]):
+                    st.caption(f"{entry['ts']} · {entry['source']}")
+                    st.code(entry["content"])
+
+
+def base_runtime() -> dict:
+    """Return a cached runtime bundle (client/prompt loader/vectorstore)."""
+    cache_key = "_rps_runtime_cache"
+    cached = st.session_state.get(cache_key)
+    if cached:
+        return cached
+    client = get_client()
+    runtime = {
+        "client": client,
+        "prompt_loader": PromptLoader(SETTINGS.prompts_dir),
+        "vs_resolver": VectorStoreResolver(SETTINGS.vs_state_path),
+    }
+    st.session_state[cache_key] = runtime
+    return runtime
+
+
+def multi_runtime_for(agent_name: str):
+    """Return an AgentRuntime for the requested agent."""
+    from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime
+
+    base = base_runtime()
+    return MultiRuntime(
+        client=base["client"],
+        model=SETTINGS.openai_model,
+        temperature=SETTINGS.openai_temperature,
+        reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
+        reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
+        prompt_loader=base["prompt_loader"],
+        vs_resolver=base["vs_resolver"],
+        schema_dir=SETTINGS.schema_dir,
+        workspace_root=SETTINGS.workspace_root,
+    )
+
+
+class _BufferHandler(logging.Handler):
+    def __init__(self, sink: list[str], on_emit: Callable[[str], None] | None = None) -> None:
+        super().__init__()
+        self.sink = sink
+        self.on_emit = on_emit
+
+    def emit(self, record: logging.LogRecord) -> None:  # pragma: no cover - simple glue
+        msg = self.format(record)
+        if msg:
+            self.sink.append(msg)
+            if self.on_emit:
+                self.on_emit(msg)
+
+
+def capture_output(
+    fn: Callable[[], object],
+    *,
+    loggers: list[logging.Logger] | None = None,
+    on_log_line: Callable[[str], None] | None = None,
+) -> tuple[object | None, str]:
+    """Capture stdout + selected logger output for UI display."""
+    buf = io.StringIO()
+    log_lines: list[str] = []
+    handler = _BufferHandler(log_lines, on_emit=on_log_line)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    targets = list(dict.fromkeys(loggers or []))
+    previous_levels: dict[logging.Logger, int] = {}
+    for lg in targets:
+        previous_levels[lg] = lg.level
+        if lg.level > logging.INFO:
+            lg.setLevel(logging.INFO)
+        lg.addHandler(handler)
+    result: object | None = None
+    try:
+        with redirect_stdout(buf):
+            result = fn()
+    finally:
+        for lg in targets:
+            lg.removeHandler(handler)
+            prev = previous_levels.get(lg)
+            if prev is not None:
+                lg.setLevel(prev)
+    stdout_text = buf.getvalue().strip()
+    logs_text = "\n".join(log_lines).strip()
+    combined = "\n\n".join(part for part in (stdout_text, logs_text) if part)
+    return result, combined
+
+
+def make_ui_run_id(name: str) -> str:
+    """Return a timestamped UI run id for logging/traceability."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", name)
+    return f"ui_{safe}_{stamp}"
+
+
+def season_plan_covers_week(athlete_id: str, year: int, week: int) -> tuple[bool, str | None]:
+    """Return whether the latest season plan covers the given ISO week."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    try:
+        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    except FileNotFoundError:
+        return False, "Plan Week requires a Season Plan."
+
+    if not isinstance(season_plan, dict):
+        return False, "Plan Week requires a Season Plan."
+
+    meta = season_plan.get("meta", {}) or {}
+    iso_range = meta.get("iso_week_range")
+    target = IsoWeek(year=year, week=week)
+
+    if isinstance(iso_range, str):
+        try:
+            if range_contains(parse_iso_week_range(iso_range), target):
+                return True, None
+        except Exception:
+            pass
+
+    data = season_plan.get("data", {}) or {}
+    phases = data.get("phases") if isinstance(data, dict) else None
+    if isinstance(phases, list):
+        for phase in phases:
+            if not isinstance(phase, dict):
+                continue
+            phase_range = phase.get("iso_week_range")
+            if isinstance(phase_range, str):
+                try:
+                    if range_contains(parse_iso_week_range(phase_range), target):
+                        return True, None
+                except Exception:
+                    continue
+
+    return False, f"Iso week {week:02d} {year} not part of Season Plan."
+
+
+def render_phase_markdown(phase: dict) -> str:
+    """Render phase details using the legacy phase card template."""
+    overview = phase.get("overview", {}) if isinstance(phase, dict) else {}
+    goals = overview.get("phase_goals", {}) if isinstance(overview, dict) else {}
+    overview = dict(overview)
+    overview["phase_goals_primary"] = goals.get("primary")
+    overview["phase_goals_secondary"] = goals.get("secondary")
+    weekly = (phase.get("weekly_load_corridor") or {}).get("weekly_kj") or {}
+    semantics = phase.get("allowed_forbidden_semantics") or {}
+
+    def join_lines(value: object) -> str:
+        if not value:
+            return "N/A"
+        if isinstance(value, list):
+            return "<br>".join(str(item) for item in value)
+        return str(value)
+
+    def join_or_na(value: object) -> str:
+        if not value:
+            return "N/A"
+        if isinstance(value, list):
+            return ", ".join(str(item) for item in value)
+        return str(value)
+
+    def norm(value: object) -> str:
+        return "N/A" if value in (None, "") else str(value)
+
+    env = Environment(loader=BaseLoader(), autoescape=False)
+    env.filters["join_lines"] = join_lines
+    env.filters["join_or_na"] = join_or_na
+    template = env.from_string(PHASE_CARD_TEMPLATE)
+    return template.render(
+        phase={
+            "narrative": phase.get("narrative"),
+            "overview": overview,
+            "weekly_kj": {
+                "min": norm(weekly.get("min")),
+                "max": norm(weekly.get("max")),
+                "kj_per_kg_min": norm(weekly.get("kj_per_kg_min")),
+                "kj_per_kg_max": norm(weekly.get("kj_per_kg_max")),
+                "notes": weekly.get("notes") or "",
+            },
+            "allowed_intensity_domains": semantics.get("allowed_intensity_domains", []),
+            "allowed_load_modalities": semantics.get("allowed_load_modalities", []),
+            "forbidden_intensity_domains": semantics.get("forbidden_intensity_domains", []),
+        }
+    )
+
+
+def athlete_phase_card(athlete_id: str, year: int, week: int) -> None:
+    """Render the active phase card for the current athlete/week."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    try:
+        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    except FileNotFoundError:
+        return
+    phases = season_plan.get("data", {}).get("phases", []) if isinstance(season_plan, dict) else []
+    target = IsoWeek(year=year, week=week)
+    active = None
+    for phase in phases:
+        rng = phase.get("iso_week_range")
+        if not rng:
+            continue
+        parsed = parse_iso_week_range(rng)
+        if parsed and range_contains(parsed, target):
+            active = phase
+            break
+    if not active:
+        return
+
+    phase_name = active.get("name", "Phase")
+    iso_range = active.get("iso_week_range", "")
+    headline = f"Phase: {phase_name} {iso_range}".strip()
+    with st.expander(headline, expanded=False):
+        st.markdown(render_phase_markdown(active), unsafe_allow_html=True)
+

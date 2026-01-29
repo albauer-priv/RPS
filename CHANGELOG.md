@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-01-29
+
+### Changed
+- Rebuilt Streamlit UI as a multi-page app with isolated page scripts and ordered navigation.
+- Added shared UI helpers for session state + logging; Home now reuses the phase overview widget and system log panel.
+- Coach page now uses the agent runner with prompt injection and session history (no external chat widget).
+- Analysis page renders weekly kJ + durability charts and parsed activities trend/actual tables.
+- Athlete Profile pages load newest Season Brief / Events from inputs and reuse availability editor.
+
+
 ## [0.9.0] - 2026-01-28
 
 ### Changed

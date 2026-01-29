@@ -1,12 +1,13 @@
 [project]
 name = "my-openai-platform"
-version = "0.9.0"
+version = "0.10.0"
 description = "Scaffold for OpenAI hosted vector stores with versioned knowledge."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "openai>=1.40.0",
   "streamlit>=1.38.0",
+  "streamlit-openai>=0.1.4",
   "pyyaml>=6.0.1",
   "jsonschema>=4.21.1",
   "referencing>=0.34.0",

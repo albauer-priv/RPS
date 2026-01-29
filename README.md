@@ -45,6 +45,15 @@ OPENAI_MODEL_WEEK_PLANNER=gpt-4.1-mini
 OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
 ```
 
+## Streamlit coach experiment
+
+The optional coach-only streaming UI uses `streamlit-openai`.
+
+```bash
+pip install streamlit-openai
+PYTHONPATH=src streamlit run src/rps/ui/coach_experiment.py
+```
+
 ## Build checklist
 
 Prerequisites:

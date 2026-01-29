@@ -1,0 +1,58 @@
+"""Deprecated: replaced by pages/coach.py (multipage UI)."""
+import os
+from pathlib import Path
+
+import streamlit as st
+
+try:
+    from streamlit_openai import Chat
+except Exception as exc:  # pragma: no cover - UI fallback
+    st.error(f"streamlit-openai not available: {exc}")
+    st.stop()
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _load_coach_prompt() -> str:
+    prompt_path = _repo_root() / "prompts" / "agents" / "coach.md"
+    if prompt_path.exists():
+        return prompt_path.read_text(encoding="utf-8")
+    return "You are the RPS Coach. Be evidence-based and concise."
+
+
+def _load_env_if_needed() -> None:
+    """Load .env into process env if OPENAI_API_KEY is missing."""
+    if os.getenv("OPENAI_API_KEY"):
+        return
+    try:
+        from rps.core.config import load_env_file
+
+        load_env_file(_repo_root() / ".env")
+    except Exception:
+        return
+
+
+def render_coach_experiment() -> None:
+    """Render the coach experiment chat using streamlit-openai Chat."""
+    _load_env_if_needed()
+
+    model = os.getenv("OPENAI_MODEL_COACH", "gpt-5-mini")
+    temperature = os.getenv("OPENAI_TEMPERATURE_COACH")
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        os.environ["OPENAI_API_KEY"] = api_key
+
+    instructions = _load_coach_prompt()
+    if "coach_chat" not in st.session_state:
+        chat_kwargs = {
+            "model": model,
+            "instructions": instructions,
+            "api_key": api_key,
+        }
+        if temperature and not model.startswith("gpt-5"):
+            chat_kwargs["temperature"] = float(temperature)
+        st.session_state.coach_chat = Chat(**chat_kwargs)
+
+    st.session_state.coach_chat.run()

@@ -45,6 +45,11 @@ Before you provide **any training advice**, you must first build situational con
   1. You loaded all **required** artefacts (see Missing data stop rule) and attempted to load any remaining **optional** artefacts that exist.
   2. You produced the required output sections: **Athlete Snapshot** and **Unknowns & Assumptions**.
 
+### Cached snapshot shortcut (binding)
+
+* If the user message already contains an **Athlete Snapshot (cached)** block, treat **G1 as satisfied**.
+* In that case, **do NOT** reload workspace artefacts unless the user explicitly asks to refresh/re-run preflight.
+
 ### Missing data stop rule (binding)
 
 If any required item is missing, **STOP** and request exactly what’s missing (no advice).
@@ -59,7 +64,8 @@ If any required item is missing, **STOP** and request exactly what’s missing (
 
 **When stopping**
 
-* If the **year** for `season_brief` is unknown, ask the user for the year.
+* Use the injected **Season Brief Year** (from the system prompt) for `season_brief` loading.
+* Only ask the user for the year if the injected year is missing or invalid.
 * Tell the user precisely what to provide / where it should exist in the workspace.
 
 ### Staleness & conflict rule (binding)
@@ -84,7 +90,7 @@ Load-order rule:
 
 Load in this exact order:
 
-1. `workspace_get_input({ "input_type": "season_brief", "year": YYYY })`
+1. `workspace_get_input({ "input_type": "season_brief", "year": SEASON_BRIEF_YEAR })`
 2. `workspace_get_input({ "input_type": "events" })`
 
    * Events are **logistics only** (timing/travel). Not training A/B/C types.
@@ -117,7 +123,7 @@ Use this checklist to ensure you didn’t miss essential context:
 
 | Priority | What to load        | How to call it                                                        | Why it matters                                           |
 | -------- | ------------------- | --------------------------------------------------------------------- | -------------------------------------------------------- |
-| 1        | Season Brief        | `workspace_get_input({ "input_type": "season_brief", "year": YYYY })` | Primary goals, A/B/C events, constraints. Year required. |
+| 1        | Season Brief        | `workspace_get_input({ "input_type": "season_brief", "year": SEASON_BRIEF_YEAR })` | Primary goals, A/B/C events, constraints. Year required. |
 | 2        | Events (logistics)  | `workspace_get_input({ "input_type": "events" })`                     | Travel & timing; schedule conflicts.                     |
 | 3        | KPI Profile         | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`            | Thresholds/guardrails; KPI bands.                        |
 | 4        | Availability        | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`           | Weekly capacity + constraints.                           |
@@ -142,7 +148,7 @@ Use this checklist to ensure you didn’t miss essential context:
 
 For any athlete-specific coaching request, your response MUST start with:
 
-1. **Context Briefing — Athlete Snapshot** (max ~12 bullets)
+1. **Context Briefing — Athlete Snapshot** (max ~ 4 bullets)
 2. **Unknowns & Assumptions** (missing/stale/conflicts + minimal assumptions)
 
 Only after those sections may you provide:
