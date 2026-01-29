@@ -68,23 +68,6 @@ phase_name = selected_phase.get("name", "Phase")
 iso_range = selected_phase.get("iso_week_range", "")
 header = f"Phase: {phase_name} {iso_range}".strip()
 
-with st.expander(header, expanded=True):
-    st.markdown(render_phase_markdown(selected_phase), unsafe_allow_html=True)
-    preview = _find_phase_preview(store, iso_range)
-    if preview:
-        env = Environment(loader=BaseLoader(), autoescape=False)
-        template = env.from_string(PHASE_PREVIEW_TEMPLATE)
-        st.markdown(
-            template.render(
-                feel=preview.get("feel_overview", {}),
-                narrative=preview.get("week_to_week_narrative", {}),
-                deviations=preview.get("deviation_rules", []),
-            ),
-            unsafe_allow_html=True,
-        )
-        for week in preview.get("weekly_agenda_preview", []):
-            with st.expander(f"Week {week.get('week', 'N/A')} preview", expanded=False):
-                st.markdown(_render_week_table(week), unsafe_allow_html=True)
 
 
 def _find_phase_preview(store: LocalArtifactStore, target_range: str) -> dict | None:
@@ -115,3 +98,25 @@ def _render_week_table(week: dict) -> str:
             )
         )
     return header + "\n".join(rows)
+
+
+
+with st.expander(header, expanded=True):
+    st.markdown(render_phase_markdown(selected_phase), unsafe_allow_html=True)
+    # preview = _find_phase_preview(store, iso_range)
+    if preview:
+        env = Environment(loader=BaseLoader(), autoescape=False)
+        template = env.from_string(PHASE_PREVIEW_TEMPLATE)
+        st.markdown(
+            template.render(
+                feel=preview.get("feel_overview", {}),
+                narrative=preview.get("week_to_week_narrative", {}),
+                deviations=preview.get("deviation_rules", []),
+            ),
+            unsafe_allow_html=True,
+        )
+        for week in preview.get("weekly_agenda_preview", []):
+            with st.expander(f"Week {week.get('week', 'N/A')} preview", expanded=False):
+                st.markdown(_render_week_table(week), unsafe_allow_html=True)
+
+

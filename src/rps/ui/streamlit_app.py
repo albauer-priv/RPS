@@ -64,6 +64,11 @@ logistics = st.Page(
     title="Logistics",
     icon=":material/local_shipping:",
 )
+zones = st.Page(
+    "pages/athlete_profile/zones.py",
+    title="Zones",
+    icon=":material/straighten:",
+)
 
 pg = st.navigation(
         {
@@ -71,7 +76,7 @@ pg = st.navigation(
             "Coach": [coach],
         "Analyse": [performance_data, performance_report],
         "Plan": [plan_season, plan_phase, plan_week, plan_wow],
-        "Athlete Profile": [about_you, season_brief, availability, logistics],
+        "Athlete Profile": [about_you, season_brief, availability, logistics, zones],
     }
 )
 max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))

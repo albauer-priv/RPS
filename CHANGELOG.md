@@ -459,6 +459,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Legacy schema copies under `knowledge/_shared/sources/schemas/` (replaced by bundled variants).
 - Obsolete shared schemas `data_confidence` and `season_cycle_enum` from knowledge sources.
 
+## [Unreleased]
+
+### Added
+- Athlete Profile now exposes a `Zones` page that renders the latest `zone_model.json` as a tabular overview (FTP ranges, watts, IF, intent) and appears in the navigation menu next to Availability and Logistics.
+- Added an agents TODO reminding us to reconcile the Phase page preview helpers before reapplying the custom UI/templating work.
+
 ## [0.1.0] - 2026-01-20
 
 ### Changed

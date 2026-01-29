@@ -46,9 +46,10 @@
 - [ ] Note the Intervals pipeline already emits `activities_actual` artifacts for every ISO week present in the export; reruns or wider export ranges are required only when older weeks are needed.
 - [ ] Surface the CLI reasoning stream inside the Report UI reasoning panel and ensure the workspace read tool resolves the correct week-specific artifact paths (e.g., activities_actual_2026-03) so the agent can load the required versions.
 - [ ] Investigate why the “Creating performance report…” banner reappears twice on reruns and why the reasoning stream only shows after the agent finishes; make the UI show the streamed text/glitches in real time without duplicated banners.
-- [ ] Season page should render the selected scenario summary (metadata + macro intent tables) before duplicating the Phase card for each phase; ensure the JSON dump is removed and the template table matches the rendered `season_plan_*` chapters.
-- [ ] Add Create / Reset / Delete controls to the Season page with the requested enable/confirmation semantics (Create when no plan exists; Reset/Delete when a plan exists and require “YES I WANT TO PROCEED”); we’ll define the flows once the buttons are wired.
-- [ ] Season page now renders scenario overview tables plus repeated phase cards when a plan exists; confirm screen content matches the Phase template’s render and keep the Reset/Delete confirmation container gated properly.
+ - [ ] Season page should render the selected scenario summary (metadata + macro intent tables) before duplicating the Phase card for each phase; ensure the JSON dump is removed and the template table matches the rendered `season_plan_*` chapters.
+ - [ ] Add Create / Reset / Delete controls to the Season page with the requested enable/confirmation semantics (Create when no plan exists; Reset/Delete when a plan exists and require “YES I WANT TO PROCEED”); we’ll define the flows once the buttons are wired.
+ - [ ] Season page now renders scenario overview tables plus repeated phase cards when a plan exists; confirm screen content matches the Phase template’s render and keep the Reset/Delete confirmation container gated properly.
+ - [ ] Revisit the Phase page helper updates (preview templating, `_find_phase_preview` signature, `_find_artifact_for_range`) to avoid the missing-argument errors that surfaced when the page was partially reverted; ensure all new helpers are restored cleanly before reapplying the UI changes.
 
 ## ✅ Recent Progress Summary
 - Migrated to multi-page Streamlit navigation with isolated page scripts and shared UI helpers.
