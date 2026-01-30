@@ -25,3 +25,106 @@ PYTHONPATH=src python3.14 -m streamlit run src/rps/ui/streamlit_app.py
   - `season plan`
   - `plan week`
   - `show season plan`
+
+## Plan UI layout contract
+
+This section defines the **layout contract** for the Plan pages in the Streamlit UI.
+
+### Goals
+
+- Keep Plan pages consistent and predictable across Season, Phase, Week, and WoW.
+- Reduce unintended reruns by using `st.form` for primary actions.
+- Surface user-visible status at all times.
+
+### Global sidebar (Plan pages)
+
+All Plan pages should use a shared sidebar block that reads/writes the same
+session keys. The sidebar is for **global state** only (not heavy IO).
+
+**Required keys**
+
+- `athlete_id`
+- `iso_year`
+- `iso_week`
+- `selected_phase_label` (optional, if Phase selection is shared)
+- `ui_dev_mode`
+
+**Sidebar contents (recommended)**
+
+- Athlete selector/input (if applicable)
+- ISO Year / ISO Week inputs
+- Phase selectbox (when a Season Plan exists and it applies)
+- Dev mode toggle
+- Optional read-only: latest artifact timestamp
+
+### Status panel (always visible)
+
+Each Plan page must render a **Status Panel** in the main flow.
+
+**State keys**
+
+- `status_state` (enum: "idle" | "running" | "done" | "error")
+- `status_title`
+- `status_message`
+- `status_last_run_id`
+- `status_last_action`
+
+**Placement**
+
+Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debug
+
+### Page layout contracts
+
+#### Plan -> Season
+
+**Action panel (forms)**
+
+- Form: Create Scenarios (submit)
+- Form: Scenario Selection (radio + rationale + submit)
+- Form: Create Season Plan (submit, only after selection exists)
+- Form: Reset/Delete (confirmation input + submit)
+
+**Main content**
+
+- If Season Plan exists: render plan + scenario summary + phase expanders.
+- Else: show scenarios list -> selection -> create plan flow.
+
+#### Plan -> Phase
+
+**Action panel**
+
+- Optional form: phase selectbox + submit (if avoiding rerun on selection).
+
+**Main content**
+
+- Selected phase markdown
+- Phase preview table
+- Weekly agenda expanders
+
+#### Plan -> Week
+
+**Action panel**
+
+- Form: Plan Week (submit)
+- Optional secondary action: Create Report
+
+**Main content**
+
+- Plan Week output expander
+- System logs expander
+
+#### Plan -> WoW
+
+**Action panel**
+
+- Form: Load Week Plan (submit)
+
+**Main content**
+
+- Rendered Week Plan or JSON fallback
+
+### Notes
+
+- Use `st.form` for primary actions to prevent unintended reruns.
+- Avoid expensive IO in the sidebar; do it after submit.
+- Status Panel should show "Idle" when no action is in progress.

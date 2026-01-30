@@ -4,10 +4,19 @@ import json
 
 import streamlit as st
 
-from rps.ui.shared import SETTINGS, announce_log_file, get_athlete_id, init_ui_state
+from rps.ui.shared import (
+    SETTINGS,
+    announce_log_file,
+    get_athlete_id,
+    init_ui_state,
+    render_global_sidebar,
+    render_status_panel,
+    set_status,
+)
 
 
 init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
 
@@ -18,7 +27,12 @@ zone_path = SETTINGS.workspace_root / athlete_id / "latest" / "zone_model.json"
 
 if not zone_path.exists():
     st.error("No zone_model.json artifact found for this athlete.")
+    set_status(status_state="error", title="Zones", message="No zone_model.json found.")
+    render_status_panel()
     st.stop()
+
+set_status(status_state="done", title="Zones", message="Ready.")
+render_status_panel()
 
 payload = json.loads(zone_path.read_text(encoding="utf-8"))
 data = payload.get("data", {}) or {}

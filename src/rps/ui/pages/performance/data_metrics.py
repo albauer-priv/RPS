@@ -11,7 +11,15 @@ import altair as alt
 import streamlit as st
 
 from rps.ui.intervals_refresh import ensure_intervals_data
-from rps.ui.shared import SETTINGS, announce_log_file, get_athlete_id, init_ui_state
+from rps.ui.shared import (
+    SETTINGS,
+    announce_log_file,
+    get_athlete_id,
+    init_ui_state,
+    render_global_sidebar,
+    render_status_panel,
+    set_status,
+)
 
 try:
     import pandas as pd
@@ -186,6 +194,7 @@ def _load_weekly_trends_cached(trend_path: Path) -> tuple[list[dict], str | None
 
 
 init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
 
@@ -199,10 +208,14 @@ trend_path = latest_dir / "activities_trend.json"
 max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))
 ok, message = ensure_intervals_data(athlete_id, max_age_hours)
 if not ok:
-    st.error(message)
+    set_status(status_state="error", title="Data & Metrics", message=message or "Intervals refresh failed.")
 elif message:
-    st.info(message)
+    set_status(status_state="done", title="Data & Metrics", message=message)
+else:
+    set_status(status_state="done", title="Data & Metrics", message="Intervals data ready.")
 weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(trend_path)
+
+render_status_panel()
 
 with st.container():
     st.subheader("Weekly Load and Durability Metrics")

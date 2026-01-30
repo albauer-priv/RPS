@@ -18,6 +18,9 @@ from rps.ui.shared import (
     init_ui_state,
     load_rendered_markdown,
     multi_runtime_for,
+    render_global_sidebar,
+    render_status_panel,
+    set_status,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -101,6 +104,7 @@ def _load_trend_week_options(athlete_id: str) -> list[dict[str, int]]:
 
 
 init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
@@ -148,10 +152,17 @@ st.markdown(
 
 job_key = _report_job_key(athlete_id, year, week)
 job = st.session_state.get(job_key)
-create_button = st.button("Create Report")
+with st.expander("Actions", expanded=False):
+    create_button = st.button("Create Report")
 if create_button:
     if job and job["status"] == "running":
         st.info("Report creation already requested; please wait for completion.")
+        set_status(
+            status_state="running",
+            title="Report",
+            message="Report already running.",
+            last_action="Create Report",
+        )
     else:
         job = _schedule_report_job(
             athlete_id,
@@ -162,6 +173,12 @@ if create_button:
         )
         st.session_state[job_key] = job
         st.info(job["message"])
+        set_status(
+            status_state="running",
+            title="Report",
+            message=job["message"],
+            last_action="Create Report",
+        )
 
 if job:
     with st.expander("Model reasoning", expanded=True):
@@ -176,6 +193,15 @@ if job:
             for entry in logs[-10:]:
                 st.code(entry)
     st.info(job["message"])
+    status_state = "running" if job["status"] == "running" else "done"
+    if job["status"] == "failed":
+        status_state = "error"
+    set_status(
+        status_state=status_state,
+        title="Report",
+        message=job["message"],
+        last_action="Create Report",
+    )
     if job["status"] == "running":
         refresh_interval = 1.5
         next_refresh = st.session_state.get("report_next_refresh", 0.0)
@@ -187,6 +213,13 @@ if job:
                 rerun_fn()
 elif not trend_options:
     st.warning("Create Report is disabled until you select a week covered by activities_trend.")
+    set_status(
+        status_state="idle",
+        title="Report",
+        message="Select a week covered by activities_trend.",
+    )
+
+render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 version_key = f"{year:04d}-{week:02d}"

@@ -77,9 +77,18 @@ def init_ui_state() -> dict:
         state.setdefault("iso_week", iso.week)
     state.setdefault("system_logs", [])
     state.setdefault("coach_session", {"previous_response_id": None, "run_id": None})
+    state.setdefault("ui_dev_mode", False)
+    state.setdefault("selected_phase_label", None)
+    state.setdefault("status_state", "idle")
+    state.setdefault("status_title", "Status")
+    state.setdefault("status_message", "Idle")
+    state.setdefault("status_last_run_id", None)
+    state.setdefault("status_last_action", None)
     st.session_state["athlete_id"] = athlete_id
     st.session_state["iso_year"] = state["iso_year"]
     st.session_state["iso_week"] = state["iso_week"]
+    st.session_state["ui_dev_mode"] = state["ui_dev_mode"]
+    st.session_state["selected_phase_label"] = state["selected_phase_label"]
     return state
 
 
@@ -102,6 +111,128 @@ def get_iso_year_week() -> tuple[int, int]:
     st.session_state["iso_year"] = year
     st.session_state["iso_week"] = week
     return year, week
+
+
+@st.cache_data(show_spinner=False)
+def _cached_season_plan(athlete_id: str, workspace_root: Path) -> dict | None:
+    """Return the latest season plan for sidebar selection (cached)."""
+    store = LocalArtifactStore(root=workspace_root)
+    if not store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
+        return None
+    payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    return payload if isinstance(payload, dict) else None
+
+
+def build_phase_options(phases: list[dict]) -> tuple[list[str], dict[str, dict]]:
+    """Build selectbox options and a label->phase map for the sidebar."""
+    options: list[str] = []
+    phase_map: dict[str, dict] = {}
+    for phase in phases:
+        phase_id = phase.get("phase_id") or ""
+        name = phase.get("name") or "Phase"
+        iso_range = phase.get("iso_week_range") or ""
+        label = f"{phase_id} · {name} · {iso_range}".strip(" ·")
+        options.append(label)
+        phase_map[label] = phase
+    return options, phase_map
+
+
+def render_global_sidebar() -> dict:
+    """Render the global sidebar controls and update session state."""
+    state = init_ui_state()
+    workspace_root = Path(os.getenv("ATHLETE_WORKSPACE_ROOT", str(SETTINGS.workspace_root)))
+    with st.sidebar:
+        st.subheader("Global")
+        athlete_id = st.text_input("Athlete ID", value=state["athlete_id"])
+        year = int(
+            st.number_input(
+                "ISO Year",
+                min_value=2000,
+                max_value=2100,
+                value=state["iso_year"],
+                step=1,
+            )
+        )
+        week = int(
+            st.number_input(
+                "ISO Week",
+                min_value=1,
+                max_value=53,
+                value=state["iso_week"],
+                step=1,
+            )
+        )
+        ui_dev_mode = st.toggle("Dev mode", value=bool(state.get("ui_dev_mode", False)))
+
+        phases = []
+        phase_label = state.get("selected_phase_label")
+        season_plan = _cached_season_plan(athlete_id, workspace_root)
+        if isinstance(season_plan, dict):
+            phases = season_plan.get("data", {}).get("phases", []) or []
+        if phases:
+            options, _ = build_phase_options(phases)
+            if phase_label not in options:
+                phase_label = options[0]
+            phase_label = st.selectbox("Phase", options=options, index=options.index(phase_label))
+
+    state["athlete_id"] = athlete_id
+    state["iso_year"] = year
+    state["iso_week"] = week
+    state["ui_dev_mode"] = ui_dev_mode
+    state["selected_phase_label"] = phase_label
+    st.session_state["athlete_id"] = athlete_id
+    st.session_state["iso_year"] = year
+    st.session_state["iso_week"] = week
+    st.session_state["ui_dev_mode"] = ui_dev_mode
+    st.session_state["selected_phase_label"] = phase_label
+    return state
+
+
+def set_status(
+    *,
+    status_state: str,
+    title: str | None = None,
+    message: str | None = None,
+    last_action: str | None = None,
+    last_run_id: str | None = None,
+) -> None:
+    """Set global status panel values."""
+    state = init_ui_state()
+    if title is not None:
+        state["status_title"] = title
+    if message is not None:
+        state["status_message"] = message
+    state["status_state"] = status_state
+    if last_action is not None:
+        state["status_last_action"] = last_action
+    if last_run_id is not None:
+        state["status_last_run_id"] = last_run_id
+
+
+def render_status_panel() -> None:
+    """Render the always-visible status panel."""
+    state = init_ui_state()
+    title = state.get("status_title") or "Status"
+    message = state.get("status_message") or "Idle"
+    status_state = state.get("status_state") or "idle"
+    last_action = state.get("status_last_action")
+    last_run_id = state.get("status_last_run_id")
+
+    with st.container():
+        body = f"**{title}** — {message}"
+        if last_action:
+            body = f"{body}\n\nLast action: {last_action}"
+        if last_run_id:
+            body = f"{body}\n\nRun id: {last_run_id}"
+
+        if status_state == "error":
+            st.error(body)
+        elif status_state == "running":
+            st.warning(body)
+        elif status_state == "done":
+            st.success(body)
+        else:
+            st.info(body)
 
 
 def ensure_logging(athlete_id: str) -> str:

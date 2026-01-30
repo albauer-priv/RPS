@@ -22,6 +22,9 @@ from rps.ui.shared import (
     make_ui_run_id,
     multi_runtime_for,
     render_phase_markdown,
+    render_global_sidebar,
+    render_status_panel,
+    set_status,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -29,6 +32,7 @@ from rps.workspace.types import ArtifactType
 st.title("Season")
 
 state = init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
@@ -72,9 +76,6 @@ SCENARIO_TEMPLATE = """
 """
 
 
-state = init_ui_state()
-
-
 def _format_agent_result(result: object | None, fallback: str) -> str:
     if isinstance(result, dict):
         return json.dumps(result, indent=2)
@@ -93,6 +94,13 @@ def _action_scenarios() -> str:
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
     )
     run_id = make_ui_run_id(f"season_scenarios_{year}_{week:02d}")
+    set_status(
+        status_state="running",
+        title="Season",
+        message="Creating scenarios...",
+        last_action="Create Scenarios",
+        last_run_id=run_id,
+    )
     result, output = capture_output(
         lambda: run_agent_multi_output(
             runtime,
@@ -108,6 +116,13 @@ def _action_scenarios() -> str:
             max_num_results=SETTINGS.file_search_max_results,
         ),
         loggers=CAPTURE_LOGGERS,
+    )
+    set_status(
+        status_state="done",
+        title="Season",
+        message="Scenarios created.",
+        last_action="Create Scenarios",
+        last_run_id=run_id,
     )
     return output or _format_agent_result(result, f"Scenarios created: {run_id}")
 
@@ -125,6 +140,13 @@ def _action_select_scenario(selected: str, rationale: str | None) -> str:
         "Follow the Mandatory Output Chapter for SEASON_SCENARIO_SELECTION."
     )
     run_id = make_ui_run_id(f"season_scenario_selection_{year}_{week:02d}")
+    set_status(
+        status_state="running",
+        title="Season",
+        message=f"Selecting scenario {selected.upper()}...",
+        last_action="Select Scenario",
+        last_run_id=run_id,
+    )
     result, output = capture_output(
         lambda: run_agent_multi_output(
             runtime,
@@ -141,6 +163,13 @@ def _action_select_scenario(selected: str, rationale: str | None) -> str:
         ),
         loggers=CAPTURE_LOGGERS,
     )
+    set_status(
+        status_state="done",
+        title="Season",
+        message=f"Scenario {selected.upper()} selected.",
+        last_action="Select Scenario",
+        last_run_id=run_id,
+    )
     return output or _format_agent_result(result, f"Scenario {selected.upper()} selected.")
 
 
@@ -156,6 +185,13 @@ def _action_season_plan(selected: str) -> str:
         "Follow the Mandatory Output Chapter for SEASON_PLAN."
     )
     run_id = make_ui_run_id(f"season_plan_{year}_{week:02d}")
+    set_status(
+        status_state="running",
+        title="Season",
+        message="Creating season plan...",
+        last_action="Create Season Plan",
+        last_run_id=run_id,
+    )
     result, output = capture_output(
         lambda: run_agent_multi_output(
             runtime,
@@ -171,6 +207,13 @@ def _action_season_plan(selected: str) -> str:
             max_num_results=SETTINGS.file_search_max_results,
         ),
         loggers=CAPTURE_LOGGERS,
+    )
+    set_status(
+        status_state="done",
+        title="Season",
+        message="Season plan created.",
+        last_action="Create Season Plan",
+        last_run_id=run_id,
     )
     return output or _format_agent_result(result, f"Season plan created: {run_id}")
 
@@ -227,38 +270,82 @@ def _render_phase_panels(plan_payload: dict | None) -> None:
             st.markdown(render_phase_markdown(phase), unsafe_allow_html=True)
 
 
-def _show_action_buttons(has_plan: bool) -> None:
-    with st.container():
-        cols = st.columns([1, 1, 1])
-        with cols[0]:
-            if st.button("Create Season Plan", disabled=has_plan):
-                append_system_log("season", "Create Season Plan requested.")
-                st.info("Create flow will trigger (TODO).")
-        with cols[1]:
-            if st.button("Reset Season Plan", disabled=not has_plan):
-                st.session_state["season_plan_pending_action"] = "reset"
-        with cols[2]:
-            if st.button("Delete Season Plan", disabled=not has_plan):
-                st.session_state["season_plan_pending_action"] = "delete"
-
-    pending = st.session_state.get("season_plan_pending_action")
-    if pending:
-        with st.container():
-            st.subheader(f"Confirm {pending.capitalize()} action")
-            confirmation = st.text_input(
-                'Type "YES I WANT TO PROCEED" to continue',
-                key="season_plan_reset_delete_confirm",
-            )
-            if st.button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED"):
-                append_system_log("season", f"{pending.capitalize()} Season Plan requested.")
-                st.info(f"{pending.capitalize()} flow will trigger (TODO).")
-                st.session_state["season_plan_pending_action"] = None
+def _show_reset_delete_actions() -> None:
+    with st.form("season_plan_actions"):
+        action = st.selectbox("Action", options=["Reset Season Plan", "Delete Season Plan"])
+        confirmation = st.text_input('Type "YES I WANT TO PROCEED" to continue')
+        submitted = st.form_submit_button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED")
+    if submitted:
+        append_system_log("season", f"{action} requested.")
+        st.info(f"{action} flow will trigger (TODO).")
+        set_status(
+            status_state="running",
+            title="Season",
+            message=f"{action} requested.",
+            last_action=action,
+        )
 
 
-_show_action_buttons(has_plan)
+scenarios_payload = None
+if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIOS):
+    scenarios_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+
+selection_payload = None
+if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
+    selection_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+
+selected_default = None
+if selection_payload:
+    selected_default = selection_payload.get("data", {}).get("selected_scenario_id")
+
+scenario_options = []
+if scenarios_payload:
+    scenario_options = [s.get("scenario_id") for s in scenarios_payload.get("data", {}).get("scenarios", [])]
+    scenario_options = [opt for opt in scenario_options if opt]
+
+selected = selected_default or (scenario_options[0] if scenario_options else None)
+
+with st.expander("Actions", expanded=False):
+    if has_plan:
+        _show_reset_delete_actions()
+        set_status(status_state="done", title="Season", message="Season plan exists.")
+    else:
+        with st.form("season_create_scenarios"):
+            create_scenarios = st.form_submit_button("Create Scenarios")
+        if create_scenarios:
+            append_system_log("season", "Create Scenarios started.")
+            output = _action_scenarios()
+            state["season_scenarios_output"] = output
+            append_system_log("season", "Create Scenarios done.")
+        if scenario_options:
+            with st.form("season_scenario_selection"):
+                selected = st.radio(
+                    "Choose scenario",
+                    options=scenario_options,
+                    index=scenario_options.index(selected_default) if selected_default in scenario_options else 0,
+                    horizontal=True,
+                )
+                rationale = st.text_area("Rationale (optional)")
+                select_submit = st.form_submit_button("Confirm Scenario Selection")
+            if select_submit:
+                append_system_log("season", f"Selecting scenario {selected}.")
+                output = _action_select_scenario(selected, rationale)
+                state["season_selection_output"] = output
+                append_system_log("season", f"Scenario {selected} selected.")
+                st.rerun()
+        if selection_payload:
+            with st.form("season_create_plan"):
+                create_plan = st.form_submit_button("Create Season Plan")
+            if create_plan and selected:
+                append_system_log("season", "Create Season Plan started.")
+                output = _action_season_plan(selected)
+                state["season_plan_output"] = output
+                append_system_log("season", "Create Season Plan done.")
+                st.rerun()
+
+render_status_panel()
 
 if has_plan:
-    st.success("Season plan exists for this athlete.")
     rendered = load_rendered_markdown(athlete_id, ArtifactType.SEASON_PLAN)
     plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
     if rendered:
@@ -270,19 +357,9 @@ if has_plan:
     _render_phase_panels(plan_payload)
     st.stop()
 
-if st.button("Create Scenarios"):
-    append_system_log("season", "Create Scenarios started.")
-    output = _action_scenarios()
-    state["season_scenarios_output"] = output
-    append_system_log("season", "Create Scenarios done.")
-
 if output := state.get("season_scenarios_output"):
     with st.expander("Create Scenarios Output", expanded=False):
         st.code(output)
-
-scenarios_payload = None
-if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIOS):
-    scenarios_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
 
 if not scenarios_payload:
     st.info("No SEASON_SCENARIOS found yet.")
@@ -303,49 +380,16 @@ else:
         st.markdown(f"- Key differences: {scenario.get('key_differences', 'N/A')}")
         st.markdown(f"- Best suited if: {scenario.get('best_suited_if', 'N/A')}")
 
-selection_payload = None
-if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
-    selection_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-
-selected_default = None
-if selection_payload:
-    selected_default = selection_payload.get("data", {}).get("selected_scenario_id")
-
-scenario_options = [s.get("scenario_id") for s in scenarios_payload.get("data", {}).get("scenarios", [])]
-scenario_options = [opt for opt in scenario_options if opt]
-
 if not scenario_options:
     st.info("No scenario IDs available to select.")
     st.stop()
-
-st.subheader("Scenario Selection")
-selected = st.radio(
-    "Choose scenario",
-    options=scenario_options,
-    index=scenario_options.index(selected_default) if selected_default in scenario_options else 0,
-    horizontal=True,
-)
-rationale = st.text_area("Rationale (optional)")
-
-if st.button("Confirm Scenario Selection"):
-    append_system_log("season", f"Selecting scenario {selected}.")
-    output = _action_select_scenario(selected, rationale)
-    state["season_selection_output"] = output
-    append_system_log("season", f"Scenario {selected} selected.")
-    st.rerun()
 
 if output := state.get("season_selection_output"):
     with st.expander("Scenario Selection Output", expanded=False):
         st.code(output)
 
-if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
+if selection_payload:
     st.subheader("Create Season Plan")
-    if st.button("Create Season Plan"):
-        append_system_log("season", "Create Season Plan started.")
-        output = _action_season_plan(selected)
-        state["season_plan_output"] = output
-        append_system_log("season", "Create Season Plan done.")
-        st.rerun()
 
 if output := state.get("season_plan_output"):
     with st.expander("Create Season Plan Output", expanded=False):

@@ -54,4 +54,6 @@ def test_phase_page_renders(tmp_path, monkeypatch):
     at.run()
 
     assert len(at.error) == 0
-    assert len(at.selectbox) == 1
+    assert len(at.selectbox) >= 1
+    assert len(at.text_input) >= 1
+    assert len(at.number_input) >= 2

@@ -34,6 +34,7 @@ This file is the **README for coding agents** working in this repository. It con
 * **Current focus:** Stabilize **multi-page Streamlit UI** (navigation + Plan/Performance subpages), verify season flow + plan-week gating, and ensure athlete data pages resolve inputs correctly.
 * **Last milestone:** Multi-page UI restructure with isolated page scripts and Coach chat migration.
 * **Recent status:** Coach chat refactor (in-repo chat + compaction + summary UI) is stable across 8–10 dialog turns without errors.
+* **Recent status:** Phase preview layout moved to its own expander with weekly previews below.
 
 ### Tech stack & constraints
 

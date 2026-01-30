@@ -14,7 +14,10 @@ from rps.ui.shared import (
     init_ui_state,
     make_ui_run_id,
     multi_runtime_for,
+    render_global_sidebar,
+    render_status_panel,
     season_plan_covers_week,
+    set_status,
     system_log_panel,
 )
 
@@ -22,35 +25,12 @@ from rps.ui.shared import (
 st.title("Week")
 
 state = init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
-
-col_week, col_year = st.columns(2)
-week = int(
-    col_week.number_input(
-        "ISO Week",
-        min_value=1,
-        max_value=53,
-        value=week,
-        step=1,
-    )
-)
-year = int(
-    col_year.number_input(
-        "ISO Year",
-        min_value=2000,
-        max_value=2100,
-        value=year,
-        step=1,
-    )
-)
-
-create_report = st.button("Create Report")
-if create_report:
-    st.info("Report creation requested. Following the plan-week run, this will queue the DES analysis report.")
 state["iso_year"] = year
 state["iso_week"] = week
 st.session_state["iso_year"] = year
@@ -58,9 +38,30 @@ st.session_state["iso_week"] = week
 
 allowed, reason = season_plan_covers_week(athlete_id, year, week)
 
-if st.button("Plan Week", disabled=not allowed):
+with st.expander("Actions", expanded=False):
+    with st.form("plan_week_actions"):
+        plan_submit = st.form_submit_button("Plan Week", disabled=not allowed)
+        report_submit = st.form_submit_button("Create Report")
+
+if report_submit:
+    st.info("Report creation requested. Following the plan-week run, this will queue the DES analysis report.")
+    set_status(
+        status_state="running",
+        title="Week",
+        message="Report creation requested.",
+        last_action="Create Report",
+    )
+
+if plan_submit:
     run_id = make_ui_run_id(f"plan_week_{year}_{week:02d}")
     append_system_log("plan_week", f"Plan Week started for {year}-W{week:02d}.")
+    set_status(
+        status_state="running",
+        title="Week",
+        message=f"Planning week {year}-W{week:02d}...",
+        last_action="Plan Week",
+        last_run_id=run_id,
+    )
 
     runtime = multi_runtime_for("season_planner")
 
@@ -86,9 +87,18 @@ if st.button("Plan Week", disabled=not allowed):
         summary = f"{output}\n\n{summary}"
     st.session_state["plan_week_output"] = summary
     append_system_log("plan_week", summary)
+    set_status(
+        status_state="done",
+        title="Week",
+        message=f"Plan week finished ({status}).",
+        last_action="Plan Week",
+        last_run_id=run_id,
+    )
 
 if not allowed and reason:
     st.caption(reason)
+
+render_status_panel()
 
 plan_output = st.session_state.get("plan_week_output")
 if plan_output:

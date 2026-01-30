@@ -1,0 +1,30 @@
+import pytest
+from streamlit.testing.v1 import AppTest
+
+
+@pytest.fixture(autouse=True)
+def _env_setup(monkeypatch, tmp_path):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("ATHLETE_ID", "test_athlete")
+    monkeypatch.setenv("ATHLETE_WORKSPACE_ROOT", str(tmp_path))
+
+
+def test_season_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/plan/season.py")
+    at.run()
+    assert len(at.error) == 0
+    assert len(at.text_input) >= 1
+
+
+def test_week_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/plan/week.py")
+    at.run()
+    assert len(at.error) == 0
+    assert len(at.number_input) >= 2
+
+
+def test_wow_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/plan/wow.py")
+    at.run()
+    assert len(at.error) == 0
+    assert len(at.info) >= 1

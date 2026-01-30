@@ -4,10 +4,19 @@ import json
 
 import streamlit as st
 
-from rps.ui.shared import SETTINGS, announce_log_file, get_athlete_id, init_ui_state
+from rps.ui.shared import (
+    SETTINGS,
+    announce_log_file,
+    get_athlete_id,
+    init_ui_state,
+    render_global_sidebar,
+    render_status_panel,
+    set_status,
+)
 
 
 init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
 
@@ -18,7 +27,12 @@ availability_path = SETTINGS.workspace_root / athlete_id / "latest" / "availabil
 
 if not availability_path.exists():
     st.error("No availability.json found for this athlete.")
+    set_status(status_state="error", title="Availability", message="No availability.json found.")
+    render_status_panel()
     raise SystemExit()
+
+set_status(status_state="done", title="Availability", message="Ready.")
+render_status_panel()
 
 payload = json.loads(availability_path.read_text(encoding="utf-8"))
 availability_table = payload.get("data", {}).get("availability_table") or []

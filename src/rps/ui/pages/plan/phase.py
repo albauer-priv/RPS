@@ -8,10 +8,14 @@ from jinja2 import BaseLoader, Environment
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
+    build_phase_options,
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
+    render_global_sidebar,
     render_phase_markdown,
+    render_status_panel,
+    set_status,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -19,7 +23,7 @@ from rps.workspace.types import ArtifactType
 logger = logging.getLogger(__name__)
 
 PHASE_PREVIEW_TEMPLATE = """
-### What the next 4 weeks will feel like
+### What the next weeks will feel like
 | Topic | Details |
 | --- | --- |
 | Dominant theme | {{ feel.dominant_theme or 'N/A' }} |
@@ -40,20 +44,6 @@ def _load_season_plan(store: LocalArtifactStore, athlete_id: str) -> dict | None
     if not isinstance(payload, dict):
         return None
     return payload
-
-
-def _build_phase_options(phases: list[dict]) -> tuple[list[str], dict[str, dict]]:
-    """Build selectbox options and a label→phase map."""
-    options: list[str] = []
-    phase_map: dict[str, dict] = {}
-    for phase in phases:
-        phase_id = phase.get("phase_id") or ""
-        name = phase.get("name") or "Phase"
-        iso_range = phase.get("iso_week_range") or ""
-        label = f"{phase_id} · {name} · {iso_range}".strip(" ·")
-        options.append(label)
-        phase_map[label] = phase
-    return options, phase_map
 
 
 def _find_phase_preview(
@@ -91,7 +81,7 @@ def _render_week_table(week: dict) -> str:
 
 
 def _render_phase_preview(preview: dict) -> None:
-    """Render phase preview details and weekly agenda."""
+    """Render phase preview overview table."""
     env = Environment(loader=BaseLoader(), autoescape=False)
     template = env.from_string(PHASE_PREVIEW_TEMPLATE)
     st.markdown(
@@ -102,6 +92,10 @@ def _render_phase_preview(preview: dict) -> None:
         ),
         unsafe_allow_html=True,
     )
+
+
+def _render_week_previews(preview: dict) -> None:
+    """Render weekly agenda previews."""
     for week in preview.get("weekly_agenda_preview", []):
         with st.expander(f"Week {week.get('week', 'N/A')} preview", expanded=False):
             st.markdown(_render_week_table(week), unsafe_allow_html=True)
@@ -112,6 +106,7 @@ def _render_phase_preview(preview: dict) -> None:
 st.title("Phase")
 
 init_ui_state()
+render_global_sidebar()
 athlete_id = get_athlete_id()
 get_iso_year_week()
 announce_log_file(athlete_id)
@@ -129,16 +124,30 @@ if not phases:
     st.info("No phases found in Season Plan.")
     st.stop()
 
-options, phase_map = _build_phase_options(phases)
-selected_label = st.selectbox("Select phase", options=options)
+options, phase_map = build_phase_options(phases)
+options, phase_map = build_phase_options(phases)
+selected_label = st.session_state.get("selected_phase_label")
+if selected_label not in phase_map:
+    selected_label = options[0]
 selected_phase = phase_map[selected_label]
+set_status(
+    status_state="done",
+    title="Phase",
+    message=f"Viewing {selected_phase.get('name', 'Phase')}.",
+    last_action="View Phase",
+)
+render_status_panel()
 
 phase_name = selected_phase.get("name", "Phase")
 iso_range = selected_phase.get("iso_week_range", "")
 header = f"Phase: {phase_name} {iso_range}".strip()
+preview: dict | None = None
 
 with st.expander(header, expanded=True):
     st.markdown(render_phase_markdown(selected_phase), unsafe_allow_html=True)
-    preview = _find_phase_preview(store, athlete_id, iso_range)
-    if preview:
+
+preview = _find_phase_preview(store, athlete_id, iso_range)
+if preview:
+    with st.expander("What the next weeks will feel like", expanded=True):
         _render_phase_preview(preview)
+    _render_week_previews(preview)
