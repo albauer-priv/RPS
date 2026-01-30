@@ -81,10 +81,10 @@ agents:
     - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
     - path: knowledge/_shared/sources/evidence/durability_bibliography.md
     - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-    - path: knowledge/_shared/sources/specs/events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+#    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
+#    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+#    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+#    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
     modes:
       coach:
         bundle_id: coach_coach
