@@ -66,7 +66,7 @@ This file is the **README for coding agents** working in this repository. It con
 * `doc/system_architecture.md`: System overview + UI/agent flows.
 * `doc/artefact_flow_overview_and_detail.md`: Artifact flows & dependencies.
 * `doc/how_to_plan.md`: Plan-week / Season / Phase / Week process.
-* `doc/planners.md`: Planner roles & responsibilities.
+* `doc/how_to_plan.md`: Planner roles & responsibilities and end-to-end flow.
 * `doc/plan_hub_proposal.md`: Plan Hub proposal with readiness rules and layout.
 * `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
 * `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).

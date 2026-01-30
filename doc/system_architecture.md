@@ -1,8 +1,8 @@
 # System Architecture
 
-Version: 2.2  
+Version: 2.3  
 Status: Updated  
-Last-Updated: 2026-01-23
+Last-Updated: 2026-01-30
 
 ---
 
@@ -52,6 +52,7 @@ flowchart TD
   MI --> WP[week_plan]
   WP --> WB[Workout-Builder]
   WB --> WJ[workouts_yyyy-ww.json]
+  WJ --> POST[Post to Intervals (commit)]
 
   DP[Data Pipeline\nparse-intervals] --> AA[activities_actual]
   DP --> AT[activities_trend]
@@ -83,7 +84,9 @@ flowchart TD
    - JSON schema validation for all artifacts (envelope or raw payload).
 6. **Orchestrator (optional)**
    - `plan-week` for Season → Phase → Week → Builder → Analysis sequencing.
-7. **Streamlit UI (optional)**
+7. **Run Store**
+   - Per-run JSON state under `runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
+8. **Streamlit UI (optional)**
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
 
 ---
@@ -99,7 +102,7 @@ flowchart TD
 
 - Deterministic scripts ingest external activity data.
 - Writes `activities_actual`, `activities_trend`, `zone_model`, `wellness`, and `availability` into the athlete workspace.
-- Updates `latest/` so planners always read the freshest factual data.
+- Updates `latest/` so planners and the Plan Hub always read the freshest factual data.
 - Pipeline entrypoint: `python -m rps.main parse-intervals`.
 - Season Brief availability parser: `python -m rps.main parse-availability` (module: `rps.data_pipeline.season_brief_availability`).
 - Validation helper: `scripts/validate_outputs.py`.

@@ -19,7 +19,7 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 - `doc/README.md`: entry point and index for system docs.
 - `doc/system_architecture.md`: system overview and design principles.
 - `doc/vectorstores.md`: vector store setup and sync workflow.
-- `doc/planners.md`: planner roles, artifacts, and flow.
+- `doc/how_to_plan.md`: planner roles, artifacts, and flow.
 - `doc/how_to_plan.md`: step-by-step planning workflow and cadence.
 - `doc/artefact_flow_overview_and_detail.md`: end-to-end artefact flow with detail diagrams.
 - `doc/artefact_renderer.md`: JSON-to-Markdown sidecar rendering.

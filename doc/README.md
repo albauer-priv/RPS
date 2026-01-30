@@ -6,9 +6,10 @@ This directory contains system-level documentation for the platform.
 
 - `system_architecture.md`: component overview and design principles.
 - `vectorstores.md`: knowledge sync and runtime attachment workflow.
-- `planners.md`: planning flow, artifacts, and agent responsibilities.
-- `how_to_plan.md`: step-by-step planning workflow and cadence.
+- `how_to_plan.md`: step-by-step planning workflow and cadence (includes planner responsibilities).
 - `artefact_flow_overview_and_detail.md`: end-to-end artefact flow with detail diagrams.
+- `plan_hub_proposal.md`: Plan Hub layout and readiness rules.
+- `ui_system_overview.md`: UI structure and page layout notes.
 - `artefact_renderer.md`: JSON-to-Markdown rendering for human review.
 - `validation.md`: how to validate pipeline outputs against schemas.
 - `data_pipeline.md`: pipeline entrypoints, outputs, and defaults.

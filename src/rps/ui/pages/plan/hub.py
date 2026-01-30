@@ -965,12 +965,12 @@ def _worker_loop(root: Path, athlete_id: str, run_id: str, stop_event: threading
                                 )
                         elif step_id == "SEASON_PLAN":
                             exec_result = _execute_season_plan(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
-                    elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
-                        exec_result = _execute_plan_week(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
-                    elif step_id == "POST_INTERVALS":
-                        exec_result = _execute_post_intervals(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
-                    elif step_id == "PERF_REPORT":
-                        exec_result = _execute_performance_report(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                        elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
+                            exec_result = _execute_plan_week(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                        elif step_id == "POST_INTERVALS":
+                            exec_result = _execute_post_intervals(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                        elif step_id == "PERF_REPORT":
+                            exec_result = _execute_performance_report(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
 
                         if exec_result and exec_result.get("ok"):
                             step["Status"] = "DONE"

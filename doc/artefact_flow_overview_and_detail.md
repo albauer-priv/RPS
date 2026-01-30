@@ -1,8 +1,8 @@
 # ARTEFACT_FLOW_OVERVIEW_AND_DETAIL.md
 
-Version: 2.1  
+Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-01-23  
+Last-Updated: 2026-01-30  
 Format: GitHub-renderable Markdown + Mermaid
 
 ---
@@ -23,7 +23,8 @@ flowchart TD
   EXP[parse-intervals]:::script
   AVP[rps.main parse-availability]:::script
   VAL[validate_outputs.py]:::script
-  POST[post_workout.py]:::script
+  POST[post_to_intervals (commit)]:::script
+  RCPT[post_receipts_yyyy-ww.json]:::artefact
 
   %% Artefacts
   SB[season_brief_yyyy.md]:::artefact
@@ -71,7 +72,7 @@ flowchart TD
 
   MI --> WP --> WB
   WB --> WJ --> POST
-  POST --> CAL --> I
+  POST --> RCPT --> CAL --> I
 
   %% Data & analysis loop
   I --> EXP
@@ -281,17 +282,18 @@ flowchart LR
 
 **Processing (Conceptual)**
 - Deterministic conversion into Intervals.icu JSON payload.
-- Optional posting to Intervals.icu calendar.
+- Optional commit step writes receipts (idempotency) and posts to Intervals.icu.
 
 **Outputs**
 - `workouts_yyyy-ww.json`
+- `receipts/post_to_intervals/<athlete>/<yyyy-Www>/<uid>.json`
 - Planned calendar entries in Intervals.icu
 
 ```mermaid
 flowchart LR
   WP[week_plan_yyyy-ww.json]:::artefact --> WB[Workout-Builder]:::agent
-  WB --> WJ[workouts_yyyy-ww.json]:::artefact --> POST[post_workout.py]:::script
-  POST --> CAL[Planned Activities<br/>in Calendar]:::artefact --> I[Intervals.icu]:::external
+  WB --> WJ[workouts_yyyy-ww.json]:::artefact --> POST[post_to_intervals (commit)]:::script
+  POST --> RCPT[post_receipts_yyyy-ww.json]:::artefact --> CAL[Planned Activities<br/>in Calendar]:::artefact --> I[Intervals.icu]:::external
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef external fill:#fff3e6,stroke:#a35b00,stroke-width:1px;
