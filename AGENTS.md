@@ -67,6 +67,7 @@ This file is the **README for coding agents** working in this repository. It con
 * `doc/artefact_flow_overview_and_detail.md`: Artifact flows & dependencies.
 * `doc/how_to_plan.md`: Plan-week / Season / Phase / Week process.
 * `doc/how_to_plan.md`: Planner roles & responsibilities and end-to-end flow.
+* `doc/intervals_posting.md`: Intervals posting semantics, receipts, and external_id strategy.
 * `doc/plan_hub_proposal.md`: Plan Hub proposal with readiness rules and layout.
 * `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
 * `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).
@@ -334,6 +335,7 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 * Add heartbeat + “stuck run” UI (timeout → mark failed / requeue).
 * Add unposted count + receipts diff check on Week page.
 * Add receipt conflict UX (manual confirm) and external idempotency headers when available.
+* Define external_id semantics for Intervals posting (upsert/delete) and store both external_id + Intervals id/uid in receipts.
 
 ---
 

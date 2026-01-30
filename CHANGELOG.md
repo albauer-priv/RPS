@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub now persists per-run `run.json`/`steps.json` plus events, with async worker execution, run summaries, and blocked step propagation.
 - Added Intervals posting receipts with idempotency (commit step) plus Week/Plan Hub UI to post workouts and inspect receipt status.
 - Plan Hub run history now includes run store rows (muted superseded runs) with event table filtering.
+- Added `intervals_posting.md` and refactored Intervals posting script into the data pipeline module.
 
 ### Changed
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
