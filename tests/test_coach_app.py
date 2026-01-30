@@ -29,7 +29,6 @@ def test_coach_summary_above_input(monkeypatch):
             break
     assert summary_info is not None
 
-    nodes = list(at.main)
-    info_index = next(idx for idx, node in enumerate(nodes) if node is summary_info)
-    chat_index = next(idx for idx, node in enumerate(nodes) if node.type == "chat_input")
+    info_index = next(idx for idx, node in enumerate(list(at)) if node is summary_info)
+    chat_index = next(idx for idx, node in enumerate(list(at)) if node.type == "chat_input")
     assert info_index < chat_index
