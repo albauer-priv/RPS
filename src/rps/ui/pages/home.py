@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 
 import streamlit as st
@@ -60,9 +61,19 @@ def _artifact_status_rows(store: LocalArtifactStore, athlete_id: str) -> list[di
     for label, owner, description, source in items:
         if isinstance(source, ArtifactType):
             path = store.latest_path(athlete_id, source)
+            validity = "—"
+            if path.exists():
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                    if isinstance(payload, dict):
+                        meta = payload.get("meta") or {}
+                        validity = meta.get("iso_week_range") or meta.get("iso_week") or "—"
+                except json.JSONDecodeError:
+                    validity = "—"
         else:
             key = str(source).split(":", maxsplit=1)[-1]
             path = _latest_input(inputs_dir, key) or Path()
+            validity = "—"
         exists = path.exists()
         updated_at = "—"
         if exists:
@@ -73,6 +84,7 @@ def _artifact_status_rows(store: LocalArtifactStore, athlete_id: str) -> list[di
                 "Artifact": label,
                 "Owner": owner,
                 "Description": description,
+                "Validity (ISO)": validity,
                 "Status": "OK" if exists else "X",
                 "Last updated": updated_at,
             }

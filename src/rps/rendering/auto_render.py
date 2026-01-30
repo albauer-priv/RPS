@@ -2,12 +2,30 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 import subprocess
 import sys
 
 logger = logging.getLogger(__name__)
+
+_SUPPORTED_RENDER_TYPES = {
+    "SEASON_PLAN",
+    "PHASE_GUARDRAILS",
+    "PHASE_STRUCTURE",
+    "PHASE_PREVIEW",
+    "PHASE_FEED_FORWARD",
+    "SEASON_PHASE_FEED_FORWARD",
+    "DES_ANALYSIS_REPORT",
+    "ACTIVITIES_ACTUAL",
+    "ACTIVITIES_TREND",
+    "ZONE_MODEL",
+    "WEEK_PLAN",
+    "KPI_PROFILE",
+    "AVAILABILITY",
+    "WELLNESS",
+}
 
 
 def _repo_root() -> Path:
@@ -23,6 +41,14 @@ def render_sidecar(json_path: Path) -> None:
         return
     if not json_path.exists():
         logger.error("Artefact JSON not found at %s", json_path)
+        return
+    try:
+        with json_path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        artifact_type = (payload.get("meta") or {}).get("artifact_type")
+        if artifact_type and artifact_type not in _SUPPORTED_RENDER_TYPES:
+            return
+    except Exception:  # pragma: no cover - best-effort guard
         return
 
     cmd = [sys.executable, str(script_path), str(json_path)]

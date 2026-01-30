@@ -39,7 +39,7 @@ flowchart TD
   BFF[phase_feed_forward_yyyy-ww.json]:::artefact
   ZM[zone_model_power_<FTP>W.json]:::artefact
   WP[week_plan_yyyy-ww.json]:::artefact
-  WJ[intervals_workouts_yyyy-ww.json]:::artefact
+  WJ[workouts_yyyy-ww.json]:::artefact
   CAL[Planned Activities<br/>in Calendar]:::artefact
   AA[activities_actual_yyyy-ww.json]:::artefact
   AT[activities_trend_yyyy-ww.json]:::artefact
@@ -284,13 +284,13 @@ flowchart LR
 - Optional posting to Intervals.icu calendar.
 
 **Outputs**
-- `intervals_workouts_yyyy-ww.json`
+- `workouts_yyyy-ww.json`
 - Planned calendar entries in Intervals.icu
 
 ```mermaid
 flowchart LR
   WP[week_plan_yyyy-ww.json]:::artefact --> WB[Workout-Builder]:::agent
-  WB --> WJ[intervals_workouts_yyyy-ww.json]:::artefact --> POST[post_workout.py]:::script
+  WB --> WJ[workouts_yyyy-ww.json]:::artefact --> POST[post_workout.py]:::script
   POST --> CAL[Planned Activities<br/>in Calendar]:::artefact --> I[Intervals.icu]:::external
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
@@ -415,7 +415,7 @@ flowchart LR
 - `week_plan_yyyy-ww.json`
 
 ### 3.6 Workout-Builder / Posting
-- `intervals_workouts_yyyy-ww.json`
+- `workouts_yyyy-ww.json`
 - Planned calendar activities (Intervals.icu)
 
 ### 3.7 Data Pipeline

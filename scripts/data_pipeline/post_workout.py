@@ -37,7 +37,7 @@ def parse_args(default_base_url: str) -> argparse.Namespace:
         "-j",
         help=(
             "Path to JSON file with events array "
-            "(default: var/athletes/<athlete_id>/latest/intervals_workouts.json)"
+            "(default: var/athletes/<athlete_id>/latest/workouts.json)"
         ),
     )
     parser.add_argument("--base-url", default=default_base_url, help="Base API URL")
@@ -75,7 +75,7 @@ def main() -> int:
     json_path = (
         Path(args.json)
         if args.json
-        else athlete_latest_dir(athlete_id) / "intervals_workouts.json"
+        else athlete_latest_dir(athlete_id) / "workouts.json"
     )
     if not json_path.exists():
         print(f"ERROR: JSON file not found: {json_path}", file=sys.stderr)

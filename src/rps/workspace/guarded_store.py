@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import logging
 import json
 from pathlib import Path
@@ -497,7 +498,10 @@ class GuardedValidatedStore:
             else:
                 document = self._apply_rounding(document, schema)
                 validate_or_raise(validator, document)
-                version_key = "raw"
+                if target == ArtifactType.INTERVALS_WORKOUTS:
+                    version_key = self._derive_intervals_version_key(document)
+                else:
+                    version_key = "raw"
 
             season_plan_doc: dict[str, Any] | None = None
             if target in (
@@ -565,6 +569,28 @@ class GuardedValidatedStore:
             return json.dumps(document, ensure_ascii=False, indent=2)
         except TypeError:
             return repr(document)
+
+    def _derive_intervals_version_key(self, document: Any) -> str:
+        """Derive ISO week version key from Intervals workouts payload."""
+        if not isinstance(document, list):
+            return "raw"
+        dates = []
+        for item in document:
+            if not isinstance(item, dict):
+                continue
+            start = item.get("start_date_local")
+            if not isinstance(start, str):
+                continue
+            date_str = start.split("T")[0]
+            try:
+                dt = datetime.fromisoformat(date_str)
+            except ValueError:
+                continue
+            dates.append(dt.date())
+        if not dates:
+            return "raw"
+        iso = min(dates).isocalendar()
+        return f"{iso.year:04d}-{iso.week:02d}"
 
     def _log_store_attempt(
         self,

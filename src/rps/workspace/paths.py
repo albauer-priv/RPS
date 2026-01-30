@@ -30,7 +30,7 @@ ARTIFACT_PATHS: dict[ArtifactType, ArtifactPathConfig] = {
     ArtifactType.PHASE_FEED_FORWARD: ArtifactPathConfig("data/plans/phase", "phase_feed_forward"),
     ArtifactType.ZONE_MODEL: ArtifactPathConfig("data/plans/phase", "zone_model"),
     ArtifactType.WEEK_PLAN: ArtifactPathConfig("data/plans/week", "week_plan"),
-    ArtifactType.INTERVALS_WORKOUTS: ArtifactPathConfig("data/exports", "intervals_workouts"),
+    ArtifactType.INTERVALS_WORKOUTS: ArtifactPathConfig("data/exports", "workouts"),
     ArtifactType.ACTIVITIES_ACTUAL: ArtifactPathConfig("data/analysis", "activities_actual"),
     ArtifactType.ACTIVITIES_TREND: ArtifactPathConfig("data/analysis", "activities_trend"),
     ArtifactType.AVAILABILITY: ArtifactPathConfig("data/analysis", "availability"),

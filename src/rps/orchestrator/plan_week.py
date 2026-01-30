@@ -626,7 +626,7 @@ def plan_week(
 
     builder_tasks: list[AgentTask] = []
     if store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key):
-        intervals_version = "raw"
+        intervals_version = f"{year:04d}-{week:02d}"
         intervals_path = (
             store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)
             if store.exists(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)

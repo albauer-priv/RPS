@@ -15,7 +15,7 @@ Last-Updated: 2026-01-22
 5) Select scenario and run **Season** (uses selected scenario).  
 6) Run **Phase** -> `phase_guardrails_yyyy-ww--yyyy-ww.json` + `phase_structure_yyyy-ww--yyyy-ww.json`.  
 7) Run **Week** -> `week_plan_yyyy-ww.json`.  
-8) Run **Workout-Builder** -> `intervals_workouts_yyyy-ww.json`.  
+8) Run **Workout-Builder** -> `workouts_yyyy-ww.json`.  
 9) Post workouts: `python scripts/data_pipeline/post_workout.py`.  
 10) Run data pipeline: `python -m rps.main parse-intervals`.  
 11) Validate outputs: `python scripts/validate_outputs.py`.  
@@ -196,7 +196,7 @@ flowchart TD
 
   MI --> WP[week_plan_yyyy-ww.json]
   WP --> WB[Workout-Builder]
-  WB --> WJ[intervals_workouts_yyyy-ww.json]
+  WB --> WJ[workouts_yyyy-ww.json]
   WJ --> POST[post_workout.py] --> IC[Intervals.icu]
 
   IC --> EXP[parse-intervals]

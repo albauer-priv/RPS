@@ -51,7 +51,7 @@ flowchart TD
   BEA --> MI
   MI --> WP[week_plan]
   WP --> WB[Workout-Builder]
-  WB --> WJ[intervals_workouts]
+  WB --> WJ[workouts_yyyy-ww.json]
 
   DP[Data Pipeline\nparse-intervals] --> AA[activities_actual]
   DP --> AT[activities_trend]

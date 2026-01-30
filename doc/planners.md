@@ -55,7 +55,7 @@ flowchart TD
   AV -. info .-> MI
   MI --> WP[week_plan]
   WP --> WB[Workout-Builder]
-  WB --> WJ[intervals_workouts]
+  WB --> WJ[workouts_yyyy-ww.json]
 
   DP[Data Pipeline\nparse-intervals] --> AA[activities_actual]
   DP --> AT[activities_trend]
@@ -138,7 +138,7 @@ against the local schemas.
 - Inputs: phase guardrails + phase structure (+ optional feed-forward, zone model).
 
 ### Workout-Builder
-- Outputs: `intervals_workouts` (raw Intervals JSON export).
+- Outputs: `INTERVALS_WORKOUTS` (raw Intervals JSON export, stored as `workouts_yyyy-ww.json`).
 - Inputs: `week_plan`.
 
 ### Performance-Analyst
@@ -153,7 +153,7 @@ against the local schemas.
 - `phase_guardrails` → `phase_guardrails.schema.json`
 - `phase_structure` → `phase_structure.schema.json`
 - `week_plan` → `week_plan.schema.json`
-- `intervals_workouts` → `workouts.schema.json` (raw payload)
+- `INTERVALS_WORKOUTS` → `workouts.schema.json` (raw payload)
 - `activities_actual` → `activities_actual.schema.json`
 - `activities_trend` → `activities_trend.schema.json`
 - `des_analysis_report` → `des_analysis_report.schema.json`
@@ -233,7 +233,7 @@ If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
 - Authority values must follow schema enums (Binding/Derived/Informational/Factual).
 - Always set `meta.iso_week` or `meta.iso_week_range` correctly; this drives
   index resolution and phase matching.
-- Raw exports (`intervals_workouts`) default to `version_key = raw` in strict runs.
+- Raw exports (`INTERVALS_WORKOUTS`) now use `version_key = yyyy-ww` based on the workout ISO week.
   If you need week-specific keys, pass an explicit version key via the workspace API.
 
 ---

@@ -40,7 +40,7 @@ python scripts/validate_outputs.py --year 2026 --week 6 --athlete ath_001
 
 ```bash
 python scripts/data_pipeline/post_workout.py \
-  --json var/athletes/<athlete_id>/latest/intervals_workouts.json
+  --json var/athletes/<athlete_id>/latest/workouts.json
 ```
 
 With an explicit athlete id:
