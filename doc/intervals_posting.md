@@ -157,8 +157,8 @@ Show before commit:
 
 ## 6) External API Usage
 
-- Use bulk upsert keyed by `external_id` (if supported).
-- Use bulk delete by `external_id`.
+- Use bulk upsert keyed by `external_id` (`/events/bulk?upsert=true`).
+- Use bulk delete by `external_id` (`/events/bulk-delete`).
 - Persist returned Intervals `id` + `uid`.
 
 ---
@@ -188,5 +188,6 @@ Execution steps:
 
 Plan Hub should surface:
 - Post toggle
+- Delete-removed toggle (optional)
 - Counts (create/update/delete)
 - Link to Week page for posting status

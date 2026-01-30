@@ -37,7 +37,7 @@ from rps.ui.run_store import (
     release_athlete_lock,
     update_run,
 )
-from rps.ui.intervals_post import inspect_intervals_receipts, post_to_intervals_receipts
+from rps.ui.intervals_post import inspect_intervals_receipts, post_to_intervals_commit
 from rps.openai.client import get_client
 from rps.agents.multi_output_runner import run_agent_multi_output, AgentRuntime
 from rps.agents.registry import AGENTS
@@ -260,10 +260,17 @@ def _execute_performance_report(athlete_id: str, year: int, week: int, run_id: s
     return result if isinstance(result, dict) else {"ok": False, "error": "Unknown report error"}
 
 
-def _execute_post_intervals(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+def _execute_post_intervals(athlete_id: str, year: int, week: int, run_id: str, *, allow_delete: bool) -> dict[str, Any]:
     """Create idempotent posting receipts for Intervals workouts."""
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
-    result = post_to_intervals_receipts(store, athlete_id, year=year, week=week, run_id=run_id)
+    result = post_to_intervals_commit(
+        store,
+        athlete_id,
+        year=year,
+        week=week,
+        run_id=run_id,
+        allow_delete=allow_delete,
+    )
     if not result.ok:
         return {"ok": False, "error": result.error or "Posting receipts failed."}
     return {
@@ -968,7 +975,13 @@ def _worker_loop(root: Path, athlete_id: str, run_id: str, stop_event: threading
                         elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
                             exec_result = _execute_plan_week(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
                         elif step_id == "POST_INTERVALS":
-                            exec_result = _execute_post_intervals(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                            exec_result = _execute_post_intervals(
+                                athlete_id,
+                                active.get("iso_year"),
+                                active.get("iso_week"),
+                                run_id,
+                                allow_delete=bool(active.get("delete_removed_intervals")),
+                            )
                         elif step_id == "PERF_REPORT":
                             exec_result = _execute_performance_report(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
 
@@ -1184,6 +1197,7 @@ with header_right:
         run_id = f"plan_hub_{year:04d}W{week:02d}"
         readiness = _compute_readiness(athlete_id, year, week)
         post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
+        delete_removed = st.session_state.get("plan_hub_delete_intervals", False)
         steps = _build_execution_steps(readiness, "Orchestrated", None, include_post_intervals=post_to_intervals)
         log_ref = ensure_logging(athlete_id)
         for step in steps:
@@ -1202,6 +1216,7 @@ with header_right:
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
             "post_to_intervals": post_to_intervals,
+            "delete_removed_intervals": delete_removed,
         }
         append_run(SETTINGS.workspace_root, athlete_id, record)
         st.session_state["plan_hub_running"] = True
@@ -1253,7 +1268,9 @@ with right:
     run_mode = st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])
     scope = None
     post_toggle = st.checkbox("Post to Intervals after export", value=False)
+    delete_toggle = st.checkbox("Delete removed workouts", value=False)
     st.session_state["plan_hub_post_intervals"] = post_toggle
+    st.session_state["plan_hub_delete_intervals"] = delete_toggle
     if post_toggle:
         st.warning("This will post workouts externally. Already-posted workouts will be skipped.")
     receipt_status = inspect_intervals_receipts(
@@ -1264,7 +1281,8 @@ with right:
     )
     if receipt_status.error is None:
         st.caption(
-            f"Intervals: {len(receipt_status.unposted)} unposted · {len(receipt_status.conflicts)} conflicts"
+            f"Intervals: {len(receipt_status.unposted)} unposted · "
+            f"{len(receipt_status.updates)} updates · {len(receipt_status.conflicts)} conflicts"
         )
         if st.button("View posting status"):
             st.session_state["expand_posting_status"] = True
@@ -1322,6 +1340,7 @@ with right:
                 "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
                 "current_step": None,
                 "post_to_intervals": post_toggle,
+                "delete_removed_intervals": delete_toggle,
             }
             append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
             st.session_state["plan_hub_running"] = True
@@ -1362,6 +1381,7 @@ if active_run:
         new_run_id = f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_{int(time.time())}"
         readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
         post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
+        delete_removed = st.session_state.get("plan_hub_delete_intervals", False)
         new_steps = _build_execution_steps(readiness, "Orchestrated", None, include_post_intervals=post_to_intervals)
         log_ref = ensure_logging(hub_scope["athlete_id"])
         for step in new_steps:
@@ -1380,6 +1400,7 @@ if active_run:
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
             "post_to_intervals": post_to_intervals,
+            "delete_removed_intervals": delete_removed,
         }
         append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
         _mark_runs_superseded(

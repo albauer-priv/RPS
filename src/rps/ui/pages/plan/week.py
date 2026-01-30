@@ -23,7 +23,7 @@ from rps.ui.shared import (
 )
 from rps.ui.intervals_post import (
     inspect_intervals_receipts,
-    post_to_intervals_receipts,
+    post_to_intervals_commit,
     resolve_receipt_conflict,
 )
 from rps.workspace.local_store import LocalArtifactStore
@@ -120,6 +120,7 @@ with st.expander("Actions", expanded=False):
         plan_submit = st.form_submit_button("Plan Week", disabled=not allowed)
         report_submit = st.form_submit_button("Create Report")
         post_submit = st.form_submit_button("Post to Intervals")
+        delete_removed = st.checkbox("Delete removed workouts", value=False)
 
 if report_submit:
     st.info("Report creation requested. Following the plan-week run, this will queue the DES analysis report.")
@@ -134,14 +135,18 @@ expand_posting = st.session_state.pop("expand_posting_status", False)
 receipt_status = inspect_intervals_receipts(LocalArtifactStore(root=SETTINGS.workspace_root), athlete_id, year=year, week=week)
 if receipt_status.error is None:
     unposted_count = len(receipt_status.unposted)
+    updates_count = len(receipt_status.updates)
     conflict_count = len(receipt_status.conflicts)
-    st.caption(f"Intervals posting: {unposted_count} unposted · {conflict_count} conflicts")
+    st.caption(f"Intervals posting: {unposted_count} unposted · {updates_count} updates · {conflict_count} conflicts")
     with st.expander("Intervals posting status", expanded=expand_posting):
         if receipt_status.unposted:
             st.subheader("Unposted workouts")
             st.dataframe(receipt_status.unposted, use_container_width=True)
+        if receipt_status.updates:
+            st.subheader("Updates needed")
+            st.dataframe(receipt_status.updates, use_container_width=True)
         if receipt_status.conflicts:
-            st.subheader("Conflicts (payload changed)")
+            st.subheader("Conflicts (invalid receipts)")
             st.dataframe(receipt_status.conflicts, use_container_width=True)
             if st.button("Resolve conflicts (overwrite receipts)"):
                 resolved = 0
@@ -162,15 +167,18 @@ if receipt_status.error is None:
 
 if post_submit:
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
-    result = post_to_intervals_receipts(
+    result = post_to_intervals_commit(
         store,
         athlete_id,
         year=year,
         week=week,
         run_id=f"post_intervals_{year:04d}W{week:02d}",
+        allow_delete=delete_removed,
     )
     if result.ok:
-        st.success(f"Posted {result.posted} workouts (skipped {result.skipped}).")
+        st.success(
+            f"Posted {result.posted} workouts (skipped {result.skipped}, deleted {result.deleted})."
+        )
         set_status(
             status_state="done",
             title="Week",

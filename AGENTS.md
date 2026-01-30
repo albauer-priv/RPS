@@ -336,6 +336,7 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 * Add unposted count + receipts diff check on Week page.
 * Add receipt conflict UX (manual confirm) and external idempotency headers when available.
 * Define external_id semantics for Intervals posting (upsert/delete) and store both external_id + Intervals id/uid in receipts.
+* Posting supports bulk upsert/delete via external_id; delete-removed is opt-in.
 
 ---
 
