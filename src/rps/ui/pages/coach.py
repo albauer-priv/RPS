@@ -5,16 +5,16 @@ import os
 import streamlit as st
 
 try:
-    from streamlit_openai.utils import CustomFunction
+    from rps.ui.rps_chatbot import CustomFunction
 except Exception as exc:  # pragma: no cover - UI fallback
-    st.error(f"streamlit-openai not available: {exc}")
+    st.error(f"Coach toolkit not available: {exc}")
     st.stop()
 
 from rps.agents.registry import AGENTS
 from rps.orchestrator.plan_week import _build_injection_block
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
-from rps.ui.rps_chat import RPSChat
+from rps.ui.rps_chatbot import Chat
 from rps.ui.shared import (
     SETTINGS,
     base_runtime,
@@ -90,7 +90,7 @@ model = os.getenv("OPENAI_MODEL_COACH", "gpt-5-mini")
 use_background = os.getenv("OPENAI_COACH_BACKGROUND", "").lower() in {"1", "true", "yes"}
 poll_interval = os.getenv("OPENAI_COACH_POLL_INTERVAL_SEC")
 chat = st.session_state.get("coach_chat")
-if chat and not isinstance(chat, RPSChat):
+if chat and not isinstance(chat, Chat):
     st.session_state.pop("coach_chat", None)
     chat = None
 if chat and getattr(chat, "model", None) != model:
@@ -106,11 +106,21 @@ if "coach_chat" not in st.session_state:
         "allow_web_search": allow_web_search,
         "allow_image_generation": False,
         "placeholder": "Ask the coach…",
+        "auto_compact_turns": 3,
     }
+    compact_turns = os.getenv("OPENAI_COACH_COMPACT_TURNS")
+    if compact_turns:
+        try:
+            chat_kwargs["auto_compact_turns"] = int(compact_turns)
+        except ValueError:
+            pass
+    compact_model = os.getenv("OPENAI_COACH_COMPACT_MODEL")
+    if compact_model:
+        chat_kwargs["compact_model"] = compact_model
     temperature = os.getenv("OPENAI_TEMPERATURE_COACH")
     if temperature and not model.startswith("gpt-5"):
         chat_kwargs["temperature"] = float(temperature)
-    st.session_state.coach_chat = RPSChat(**chat_kwargs)
+    st.session_state.coach_chat = Chat(**chat_kwargs)
 
 ui_log(f"Coach initialized with model={model}")
 

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Season page now provides Create/Reset/Delete controls, renders scenario overview tables, and reuses the Phase page’s rendering per phase (no JSON dump), aligning it with the Phase card template.
 
+### Changed
+- Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
+
 ## [0.10.1] - 2026-01-29
 
 ### Changed

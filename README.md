@@ -47,10 +47,9 @@ OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
 
 ## Streamlit coach experiment
 
-The optional coach-only streaming UI uses `streamlit-openai`.
+The optional coach-only streaming UI uses the in-repo chat implementation.
 
 ```bash
-pip install streamlit-openai
 PYTHONPATH=src streamlit run src/rps/ui/coach_experiment.py
 ```
 
@@ -66,8 +65,15 @@ Prerequisites:
 3. Build bundled schemas: `python scripts/bundle_schemas.py`.
 4. Sync vector stores: `python scripts/sync_vectorstores.py`.
 5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
-6. Run data pipeline: `python -m rps.main parse-intervals`.
+6. Run data pipeline: use the current CLI entrypoint for `parse-intervals` (do not use deprecated `rps.main`).
 7. Validate outputs: `python scripts/validate_outputs.py`.
+
+## Testing
+
+- UI changes must include Streamlit AppTest coverage in `tests/` (`streamlit.testing.v1.AppTest`).
+- UI smoke test (manual): `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
+- Intervals pipeline help (safe CLI smoke): `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`
+- Run tests with `pytest -q`.
 
 ## Data pipeline (Intervals.icu)
 

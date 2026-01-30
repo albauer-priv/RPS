@@ -5,9 +5,9 @@ from pathlib import Path
 import streamlit as st
 
 try:
-    from streamlit_openai import Chat
+    from rps.ui.rps_chatbot import Chat
 except Exception as exc:  # pragma: no cover - UI fallback
-    st.error(f"streamlit-openai not available: {exc}")
+    st.error(f"Coach toolkit not available: {exc}")
     st.stop()
 
 
@@ -35,7 +35,7 @@ def _load_env_if_needed() -> None:
 
 
 def render_coach_experiment() -> None:
-    """Render the coach experiment chat using streamlit-openai Chat."""
+    """Render the coach experiment chat using the in-repo Chat."""
     _load_env_if_needed()
 
     model = os.getenv("OPENAI_MODEL_COACH", "gpt-5-mini")
