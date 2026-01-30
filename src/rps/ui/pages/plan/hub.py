@@ -1,0 +1,1590 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+import threading
+import time
+import json
+import difflib
+
+import streamlit as st
+import logging
+import pandas as pd
+
+from rps.ui.shared import (
+    SETTINGS,
+    announce_log_file,
+    ensure_logging,
+    build_phase_options,
+    get_athlete_id,
+    get_iso_year_week,
+    init_ui_state,
+    render_status_panel,
+    set_status,
+)
+from rps.workspace.index_manager import WorkspaceIndexManager
+from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range, range_contains
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
+from rps.ui.run_store import (
+    acquire_athlete_lock,
+    append_event,
+    append_run,
+    load_events,
+    load_runs,
+    release_athlete_lock,
+    update_run,
+)
+from rps.ui.intervals_post import inspect_intervals_receipts, post_to_intervals_receipts
+from rps.openai.client import get_client
+from rps.agents.multi_output_runner import run_agent_multi_output, AgentRuntime
+from rps.agents.registry import AGENTS
+from rps.agents.tasks import AgentTask
+from rps.orchestrator.plan_week import _build_injection_block, plan_week, create_performance_report
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.prompts.loader import PromptLoader
+
+
+logger = logging.getLogger(__name__)
+
+STEP_DEFINITIONS = [
+    {
+        "step_id": "INPUTS_CHECK",
+        "label": "Inputs",
+        "agent": "Data Check",
+        "writes": [],
+        "authority": [],
+    },
+    {
+        "step_id": "SEASON_SCENARIOS",
+        "label": "Season Scenarios",
+        "agent": "Scenario Planner",
+        "writes": [ArtifactType.SEASON_SCENARIOS],
+        "authority": ["Informational"],
+    },
+    {
+        "step_id": "SCENARIO_SELECTION",
+        "label": "Selected Scenario",
+        "agent": "Selection",
+        "writes": [ArtifactType.SEASON_SCENARIO_SELECTION],
+        "authority": ["Binding-ish"],
+    },
+    {
+        "step_id": "SEASON_PLAN",
+        "label": "Season Plan",
+        "agent": "Season Planner",
+        "writes": [ArtifactType.SEASON_PLAN],
+        "authority": ["Binding"],
+    },
+    {
+        "step_id": "PHASE_GUARDRAILS",
+        "label": "Phase Guardrails",
+        "agent": "Phase Planner",
+        "writes": [ArtifactType.PHASE_GUARDRAILS],
+        "authority": ["Binding"],
+    },
+    {
+        "step_id": "PHASE_STRUCTURE",
+        "label": "Phase Structure",
+        "agent": "Phase Planner",
+        "writes": [ArtifactType.PHASE_STRUCTURE],
+        "authority": ["Binding"],
+    },
+    {
+        "step_id": "PHASE_PREVIEW",
+        "label": "Phase Preview",
+        "agent": "Phase Planner",
+        "writes": [ArtifactType.PHASE_PREVIEW],
+        "authority": ["Informational"],
+    },
+    {
+        "step_id": "WEEK_PLAN",
+        "label": "Week Plan",
+        "agent": "Week Planner",
+        "writes": [ArtifactType.WEEK_PLAN],
+        "authority": ["Binding"],
+    },
+    {
+        "step_id": "EXPORT_WORKOUTS",
+        "label": "Export Workouts",
+        "agent": "Workout Builder",
+        "writes": [ArtifactType.INTERVALS_WORKOUTS],
+        "authority": ["Raw"],
+    },
+    {
+        "step_id": "POST_INTERVALS",
+        "label": "Post to Intervals",
+        "agent": "Intervals Commit",
+        "writes": [],
+        "authority": ["Commit"],
+    },
+    {
+        "step_id": "PERF_REPORT",
+        "label": "Performance Report",
+        "agent": "Analyst",
+        "writes": [ArtifactType.DES_ANALYSIS_REPORT],
+        "authority": ["Advisory"],
+    },
+]
+
+STEP_DEPS = {
+    "SEASON_SCENARIOS": ["INPUTS_CHECK"],
+    "SCENARIO_SELECTION": ["SEASON_SCENARIOS"],
+    "SEASON_PLAN": ["SCENARIO_SELECTION"],
+    "PHASE_GUARDRAILS": ["SEASON_PLAN"],
+    "PHASE_STRUCTURE": ["SEASON_PLAN", "PHASE_GUARDRAILS"],
+    "PHASE_PREVIEW": ["PHASE_STRUCTURE"],
+    "WEEK_PLAN": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
+    "EXPORT_WORKOUTS": ["WEEK_PLAN"],
+    "POST_INTERVALS": ["EXPORT_WORKOUTS"],
+    "PERF_REPORT": ["WEEK_PLAN"],
+}
+
+SCOPE_STEPS = {
+    "Season Scenarios": ["SEASON_SCENARIOS"],
+    "Selected Scenario": ["SCENARIO_SELECTION"],
+    "Season Plan": ["SEASON_PLAN"],
+    "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
+    "Week Plan": ["WEEK_PLAN"],
+    "Export Workouts": ["EXPORT_WORKOUTS"],
+    "Post to Intervals": ["POST_INTERVALS"],
+    "Performance Report": ["PERF_REPORT"],
+}
+
+
+def _runtime_for_agent(agent_name: str) -> AgentRuntime:
+    """Build a runtime for the given agent without Streamlit state."""
+    client = get_client()
+    return AgentRuntime(
+        client=client,
+        model=SETTINGS.openai_model,
+        temperature=SETTINGS.openai_temperature,
+        reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
+        reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
+        prompt_loader=PromptLoader(SETTINGS.prompts_dir),
+        vs_resolver=VectorStoreResolver(SETTINGS.vs_state_path),
+        schema_dir=SETTINGS.schema_dir,
+        workspace_root=SETTINGS.workspace_root,
+    )
+
+
+def _execute_season_scenarios(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+    """Run Season Scenarios agent."""
+    spec = AGENTS["season_scenario"]
+    runtime = _runtime_for_agent(spec.name)
+    injected_block = _build_injection_block("season_scenario", mode="scenario")
+    user_input = (
+        "Mode A. Generate the pre-decision scenarios. "
+        f"Target ISO week: {year}-{week:02d}. "
+        "Use workspace_get_input for Season Brief and Events. "
+        f"{injected_block}"
+        "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
+    )
+    return run_agent_multi_output(
+        runtime,
+        agent_name=spec.name,
+        agent_vs_name=spec.vector_store_name,
+        athlete_id=athlete_id,
+        tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
+        user_input=user_input,
+        run_id=run_id,
+        model_override=SETTINGS.model_for_agent(spec.name),
+        temperature_override=SETTINGS.temperature_for_agent(spec.name),
+        force_file_search=True,
+        max_num_results=SETTINGS.file_search_max_results,
+    )
+
+
+def _execute_scenario_selection(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+    """Scenario selection is manual (performed on Season page)."""
+    return {"ok": False, "error": "Scenario selection is manual. Use the Season page."}
+
+
+def _execute_season_plan(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+    """Run Season Plan agent."""
+    spec = AGENTS["season_planner"]
+    runtime = _runtime_for_agent(spec.name)
+    injected_block = _build_injection_block("season_planner", mode="season_plan")
+    user_input = (
+        f"Mode A. Create the SEASON_PLAN for ISO week {year}-{week:02d}. "
+        "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
+        f"{injected_block}"
+        "Follow the Mandatory Output Chapter for SEASON_PLAN."
+    )
+    return run_agent_multi_output(
+        runtime,
+        agent_name=spec.name,
+        agent_vs_name=spec.vector_store_name,
+        athlete_id=athlete_id,
+        tasks=[AgentTask.CREATE_SEASON_PLAN],
+        user_input=user_input,
+        run_id=run_id,
+        model_override=SETTINGS.model_for_agent(spec.name),
+        temperature_override=SETTINGS.temperature_for_agent(spec.name),
+        force_file_search=True,
+        max_num_results=SETTINGS.file_search_max_results,
+    )
+
+
+def _execute_plan_week(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+    """Run the plan-week orchestrator (phase + week + export)."""
+    runtime = _runtime_for_agent("season_planner")
+    result = plan_week(
+        runtime,
+        athlete_id=athlete_id,
+        year=year,
+        week=week,
+        run_id=run_id,
+        model_resolver=SETTINGS.model_for_agent,
+        temperature_resolver=SETTINGS.temperature_for_agent,
+        reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
+        reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
+        force_file_search=True,
+        max_num_results=SETTINGS.file_search_max_results,
+    )
+    return {"ok": result.ok}
+
+
+def _execute_performance_report(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+    """Run the performance report generation."""
+    runtime = _runtime_for_agent("performance_analysis")
+    result = create_performance_report(
+        lambda agent: runtime,
+        athlete_id=athlete_id,
+        report_week=IsoWeek(year=year, week=week),
+        run_id_prefix=run_id,
+        reasoning_stream_handler=lambda _delta: None,
+    )
+    return result if isinstance(result, dict) else {"ok": False, "error": "Unknown report error"}
+
+
+def _execute_post_intervals(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
+    """Create idempotent posting receipts for Intervals workouts."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    result = post_to_intervals_receipts(store, athlete_id, year=year, week=week, run_id=run_id)
+    if not result.ok:
+        return {"ok": False, "error": result.error or "Posting receipts failed."}
+    return {
+        "ok": True,
+        "posted": result.posted,
+        "skipped": result.skipped,
+        "outputs": result.outputs,
+    }
+
+
+@dataclass(frozen=True)
+class ReadinessStep:
+    """Represents readiness status for a planning pipeline step."""
+
+    key: str
+    label: str
+    status: str
+    summary: str
+    reason: str
+    latest: str | None = None
+    run_id: str | None = None
+    created_at: str | None = None
+    optional: bool = False
+    fix_label: str | None = None
+
+
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    """Parse ISO-8601 timestamps with optional Z suffix."""
+    if not value:
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value.replace("Z", "+00:00")
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _latest_input(inputs_dir: Path, prefix: str) -> Path | None:
+    """Return the latest markdown input file matching the prefix."""
+    if not inputs_dir.exists():
+        return None
+    matches = sorted(inputs_dir.glob(f"{prefix}*.md"), key=lambda p: p.stat().st_mtime)
+    return matches[-1] if matches else None
+
+
+def _load_index(athlete_id: str) -> dict:
+    """Load the workspace index for an athlete."""
+    mgr = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id)
+    return mgr.load()
+
+
+def _latest_record(index: dict, artifact_type: ArtifactType) -> dict | None:
+    """Return the latest record for an artifact type from index.json."""
+    entry = (index.get("artefacts") or {}).get(artifact_type.value)
+    if isinstance(entry, dict):
+        return entry.get("latest")
+    return None
+
+
+def _record_matches_context(record: dict | None, target_week: IsoWeek) -> bool:
+    """Check if a record's iso_week or iso_week_range matches the selected week."""
+    if not isinstance(record, dict):
+        return False
+    iso_week = parse_iso_week(record.get("iso_week"))
+    if iso_week and iso_week == target_week:
+        return True
+    iso_range = parse_iso_week_range(record.get("iso_week_range"))
+    if iso_range and range_contains(iso_range, target_week):
+        return True
+    version_key = record.get("version_key")
+    if isinstance(version_key, str):
+        parsed = parse_iso_week(version_key)
+        if parsed and parsed == target_week:
+            return True
+    return False
+
+
+def _status_badge(status: str) -> str:
+    """Return the badge icon for a status."""
+    return {
+        "ready": "✅",
+        "stale": "⚠️",
+        "missing": "❌",
+        "blocked": "🔒",
+    }.get(status, "•")
+
+
+def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
+    """Compute readiness across the planning pipeline."""
+    logger.info("Computing readiness athlete=%s iso=%04d-W%02d", athlete_id, year, week)
+    target_week = IsoWeek(year=year, week=week)
+    index = _load_index(athlete_id)
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    inputs_dir = SETTINGS.workspace_root / athlete_id / "inputs"
+
+    steps: list[ReadinessStep] = []
+    status_map: dict[str, ReadinessStep] = {}
+
+    def add_step(step: ReadinessStep) -> None:
+        steps.append(step)
+        status_map[step.key] = step
+
+    # Step 1: Inputs
+    inputs_required = [
+        ("season_brief", "Season Brief"),
+        ("events", "Events"),
+    ]
+    inputs_missing = [
+        label
+        for prefix, label in inputs_required
+        if _latest_input(inputs_dir, prefix) is None
+    ]
+    input_artifacts = [
+        (ArtifactType.KPI_PROFILE, "KPI Profile"),
+        (ArtifactType.AVAILABILITY, "Availability"),
+        (ArtifactType.ZONE_MODEL, "Zones"),
+        (ArtifactType.WELLNESS, "Wellness"),
+    ]
+    for artifact_type, label in input_artifacts:
+        if not store.latest_exists(athlete_id, artifact_type):
+            inputs_missing.append(label)
+    if inputs_missing:
+        add_step(
+            ReadinessStep(
+                key="inputs",
+                label="Inputs",
+                status="missing",
+                summary="Missing inputs",
+                reason="Missing: " + ", ".join(inputs_missing),
+                fix_label="Add Inputs",
+            )
+        )
+    else:
+        add_step(
+            ReadinessStep(
+                key="inputs",
+                label="Inputs",
+                status="ready",
+                summary="Inputs present",
+                reason="All required inputs found.",
+            )
+        )
+
+    # Helper to evaluate artifact steps
+    def artifact_step(
+        key: str,
+        label: str,
+        artifact_type: ArtifactType,
+        required: list[str],
+        *,
+        match_context: bool = True,
+        optional: bool = False,
+        fix_label: str | None = None,
+    ) -> None:
+        record = _latest_record(index, artifact_type)
+        created_at = record.get("created_at") if record else None
+        latest_ts = _parse_iso_datetime(created_at)
+        latest_label = record.get("version_key") if record else None
+        run_id = record.get("run_id") if record else None
+
+        missing = record is None
+        blocked = missing and any(status_map[r].status in {"missing", "blocked"} for r in required)
+        stale = False
+        reason = ""
+        if not missing:
+            if match_context and not _record_matches_context(record, target_week):
+                stale = True
+                reason = "Latest does not match the selected ISO week."
+            for upstream in required:
+                upstream_ts = _parse_iso_datetime(status_map[upstream].created_at)
+                if latest_ts and upstream_ts and upstream_ts > latest_ts:
+                    stale = True
+                    reason = "Upstream artifact is newer."
+        if missing and optional:
+            status = "ready"
+            summary = "Optional"
+            reason = "Optional step; no artifact present."
+        elif blocked:
+            status = "blocked"
+            summary = "Blocked"
+            reason = "Required upstream artifacts are missing."
+        elif missing:
+            status = "missing"
+            summary = "Missing"
+            reason = "No artifact found."
+        elif stale:
+            status = "stale"
+            summary = "Stale"
+        else:
+            status = "ready"
+            summary = "Ready"
+            reason = "Latest artifact is current."
+
+        add_step(
+            ReadinessStep(
+                key=key,
+                label=label,
+                status=status,
+                summary=summary,
+                reason=reason,
+                latest=latest_label,
+                run_id=run_id,
+                created_at=created_at,
+                optional=optional,
+                fix_label=fix_label,
+            )
+        )
+
+    artifact_step(
+        key="season_scenarios",
+        label="Season Scenarios",
+        artifact_type=ArtifactType.SEASON_SCENARIOS,
+        required=["inputs"],
+        match_context=False,
+        fix_label="Create Scenarios",
+    )
+    artifact_step(
+        key="scenario_selection",
+        label="Selected Scenario",
+        artifact_type=ArtifactType.SEASON_SCENARIO_SELECTION,
+        required=["season_scenarios"],
+        match_context=False,
+        fix_label="Select Scenario",
+    )
+    artifact_step(
+        key="season_plan",
+        label="Season Plan",
+        artifact_type=ArtifactType.SEASON_PLAN,
+        required=["scenario_selection"],
+        fix_label="Create Season Plan",
+    )
+    artifact_step(
+        key="phase_guardrails",
+        label="Phase Guardrails",
+        artifact_type=ArtifactType.PHASE_GUARDRAILS,
+        required=["season_plan"],
+        fix_label="Run Phase Guardrails",
+    )
+    artifact_step(
+        key="phase_structure",
+        label="Phase Structure",
+        artifact_type=ArtifactType.PHASE_STRUCTURE,
+        required=["season_plan"],
+        fix_label="Run Phase Structure",
+    )
+    artifact_step(
+        key="phase_preview",
+        label="Phase Preview (optional)",
+        artifact_type=ArtifactType.PHASE_PREVIEW,
+        required=["phase_structure"],
+        optional=True,
+        fix_label="Create Phase Preview",
+    )
+    artifact_step(
+        key="week_plan",
+        label="Week Plan",
+        artifact_type=ArtifactType.WEEK_PLAN,
+        required=["phase_guardrails", "phase_structure"],
+        fix_label="Plan This Week",
+    )
+    artifact_step(
+        key="intervals_workouts",
+        label="Export Workouts",
+        artifact_type=ArtifactType.INTERVALS_WORKOUTS,
+        required=["week_plan"],
+        fix_label="Export Workouts",
+    )
+    artifact_step(
+        key="des_report",
+        label="Performance Report",
+        artifact_type=ArtifactType.DES_ANALYSIS_REPORT,
+        required=["week_plan"],
+        fix_label="Run Performance Report",
+    )
+
+    return steps
+
+
+def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
+    """Return a list of latest artifact summaries for cards."""
+    logger.info("Building latest outputs athlete=%s", athlete_id)
+    index = _load_index(athlete_id)
+    targets = [
+        (ArtifactType.SEASON_PLAN, "Season Plan"),
+        (ArtifactType.PHASE_GUARDRAILS, "Phase Guardrails"),
+        (ArtifactType.PHASE_STRUCTURE, "Phase Structure"),
+        (ArtifactType.WEEK_PLAN, "Week Plan"),
+        (ArtifactType.INTERVALS_WORKOUTS, "Export Workouts"),
+        (ArtifactType.DES_ANALYSIS_REPORT, "Performance Report"),
+    ]
+    rows = []
+    for artifact_type, label in targets:
+        record = _latest_record(index, artifact_type) or {}
+        rows.append(
+            {
+                "Type": artifact_type.value,
+                "Title": label,
+                "Version": str(record.get("version_key") or "—"),
+                "Run": str(record.get("run_id") or "—"),
+                "Updated": str(record.get("created_at") or "—"),
+            }
+        )
+    return rows
+
+
+def _run_history(
+    athlete_id: str,
+    *,
+    limit: int = 20,
+    allowed: set[str] | None = None,
+) -> list[dict[str, str]]:
+    """Build a flattened run history table from index.json."""
+    logger.info("Building run history athlete=%s", athlete_id)
+    index = _load_index(athlete_id)
+    entries: list[dict[str, str]] = []
+    artefacts = index.get("artefacts") or {}
+    for artifact_type, entry in artefacts.items():
+        if allowed is not None and artifact_type not in allowed:
+            continue
+        versions = (entry or {}).get("versions") or {}
+        for version_key, record in versions.items():
+            if not isinstance(record, dict):
+                continue
+            entries.append(
+                {
+                    "Artifact": artifact_type,
+                    "Version": str(version_key),
+                    "Run": str(record.get("run_id") or "—"),
+                    "Producer": str(record.get("producer_agent") or "—"),
+                    "Created": str(record.get("created_at") or "—"),
+                }
+            )
+    entries.sort(key=lambda e: e.get("Created") or "", reverse=True)
+    return entries[:limit]
+
+
+def _run_store_history(athlete_id: str, *, limit: int = 20) -> list[dict[str, str]]:
+    """Return recent Plan Hub runs from the run store."""
+    runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=limit)
+    rows: list[dict[str, str]] = []
+    for run in runs:
+        rows.append(
+            {
+                "Run ID": str(run.get("run_id") or "—"),
+                "Status": str(run.get("status") or "—"),
+                "Mode": str(run.get("mode") or "—"),
+                "Scope": str(run.get("scope") or "—"),
+                "Created": str(run.get("created_at") or "—"),
+                "Superseded By": str(run.get("superseded_by") or "—"),
+            }
+        )
+    return rows
+
+
+def _style_superseded(df: pd.DataFrame) -> pd.io.formats.style.Styler:
+    """Apply muted style to superseded rows."""
+    def _row_style(row: pd.Series) -> list[str]:
+        if row.get("Status") == "SUPERSEDED":
+            return ["color: #8c8c8c; background-color: #f5f5f5;"] * len(row)
+        return ["" for _ in row]
+
+    return df.style.apply(_row_style, axis=1)
+
+
+def _version_records(index: dict, artifact_type: ArtifactType) -> list[dict]:
+    """Return all version records for an artifact type."""
+    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
+    versions = entry.get("versions") or {}
+    records = []
+    for version_key, record in versions.items():
+        if isinstance(record, dict):
+            record = dict(record)
+            record["version_key"] = version_key
+            records.append(record)
+    records.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    return records
+
+
+def _load_artifact_json(athlete_id: str, record: dict) -> dict | list | None:
+    """Load an artifact JSON from a record path if possible."""
+    path = record.get("path") or record.get("relative_path")
+    if not isinstance(path, str):
+        return None
+    full_path = SETTINGS.workspace_root / athlete_id / path
+    if not full_path.exists():
+        return None
+    try:
+        return json.loads(full_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _diff_json(a: dict | list | None, b: dict | list | None) -> str:
+    """Return a unified diff between two JSON documents."""
+    if a is None or b is None:
+        return "No diff available."
+    left = json.dumps(a, ensure_ascii=False, indent=2).splitlines()
+    right = json.dumps(b, ensure_ascii=False, indent=2).splitlines()
+    diff = difflib.unified_diff(left, right, lineterm="")
+    return "\n".join(diff) or "No differences."
+
+
+def _build_execution_steps(
+    readiness: list[ReadinessStep],
+    mode: str,
+    scope: str | None,
+    *,
+    include_post_intervals: bool = False,
+) -> list[dict[str, Any]]:
+    """Build execution steps from readiness + scope mapping."""
+    readiness_map = {step.key: step for step in readiness}
+    selected_steps = [step["step_id"] for step in STEP_DEFINITIONS if step["step_id"] != "INPUTS_CHECK"]
+    if mode == "Scoped" and scope in SCOPE_STEPS:
+        selected_steps = SCOPE_STEPS[scope]
+    if "POST_INTERVALS" in selected_steps and not include_post_intervals and scope != "Post to Intervals":
+        selected_steps = [step for step in selected_steps if step != "POST_INTERVALS"]
+
+    steps: list[dict[str, Any]] = []
+    for definition in STEP_DEFINITIONS:
+        step_id = definition["step_id"]
+        if step_id == "INPUTS_CHECK":
+            continue
+        if step_id not in selected_steps:
+            continue
+        readiness_key = {
+            "SEASON_SCENARIOS": "season_scenarios",
+            "SCENARIO_SELECTION": "scenario_selection",
+            "SEASON_PLAN": "season_plan",
+            "PHASE_GUARDRAILS": "phase_guardrails",
+            "PHASE_STRUCTURE": "phase_structure",
+            "PHASE_PREVIEW": "phase_preview",
+            "WEEK_PLAN": "week_plan",
+            "EXPORT_WORKOUTS": "intervals_workouts",
+            "PERF_REPORT": "des_report",
+        }.get(step_id)
+        readiness_step = readiness_map.get(readiness_key, ReadinessStep("", "", "missing", "", ""))
+        readiness_status = readiness_step.status
+        readiness_reason = readiness_step.reason or "—"
+        if step_id == "POST_INTERVALS":
+            status = "QUEUED"
+            details = "Posting requested."
+        else:
+            status = "QUEUED" if readiness_status in {"missing", "stale"} else "SKIPPED"
+            details = readiness_reason if status == "QUEUED" else "Already up-to-date."
+        writes_detail = []
+        for artifact_type, authority in zip(definition["writes"], definition["authority"]):
+            writes_detail.append(
+                {
+                    "artifact_key": artifact_type.value,
+                    "display_name": artifact_type.value,
+                    "authority": authority,
+                }
+            )
+        steps.append(
+            {
+                "Step": definition["label"],
+                "Agent": definition["agent"],
+                "Writes": ", ".join([t.value for t in definition["writes"]]),
+                "Authority": ", ".join(definition["authority"]),
+                "Status": status,
+                "Started": None,
+                "Duration": None,
+                "Ended": None,
+                "Details": details,
+                "step_id": step_id,
+                "response_id": None,
+                "write_types": [t.value for t in definition["writes"]],
+                "writes": writes_detail,
+                "Deps": STEP_DEPS.get(step_id, []),
+                "Outputs": [],
+            }
+        )
+    return steps
+
+
+def _artifact_written_for_run(index: dict, artifact_type: ArtifactType, run_id: str) -> bool:
+    """Check if any version for artifact_type matches run_id."""
+    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
+    versions = entry.get("versions") or {}
+    for record in versions.values():
+        if isinstance(record, dict) and record.get("run_id") == run_id:
+            return True
+    return False
+
+
+def _artifact_records_for_run(index: dict, artifact_type: ArtifactType, run_id: str) -> list[dict[str, Any]]:
+    """Return artifact records for a given run_id."""
+    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
+    versions = entry.get("versions") or {}
+    outputs = []
+    for version_key, record in versions.items():
+        if not isinstance(record, dict):
+            continue
+        if record.get("run_id") != run_id:
+            continue
+        outputs.append(
+            {
+                "artifact": artifact_type.value,
+                "version": str(version_key),
+                "path": record.get("path") or record.get("relative_path") or "—",
+                "created_at": record.get("created_at") or "—",
+            }
+        )
+    return outputs
+
+
+def _run_summary(steps: list[dict[str, Any]]) -> dict[str, int]:
+    """Return summary counts for a run."""
+    done = sum(1 for step in steps if step.get("Status") == "DONE")
+    failed = sum(1 for step in steps if step.get("Status") == "FAILED")
+    outputs = sum(len(step.get("Outputs") or []) for step in steps)
+    return {
+        "steps_done": done,
+        "steps_failed": failed,
+        "artefacts_written": outputs,
+    }
+
+
+def _poll_response_status(response_id: str) -> str | None:
+    """Poll OpenAI response status for a background response."""
+    try:
+        client = get_client()
+        resp = client.responses.retrieve(response_id)
+        return getattr(resp, "status", None) or resp.get("status")
+    except Exception:
+        return None
+
+
+def _cancel_response(response_id: str) -> bool:
+    """Cancel a background response by id."""
+    try:
+        client = get_client()
+        resp = client.responses.cancel(response_id)
+        return (getattr(resp, "status", None) or resp.get("status")) == "cancelled"
+    except Exception:
+        return False
+
+
+def _set_duration(step: dict[str, Any]) -> None:
+    """Set duration for a step if started/ended timestamps exist."""
+    started = step.get("Started")
+    ended = step.get("Ended")
+    if not started or not ended:
+        return
+    try:
+        start_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(ended.replace("Z", "+00:00"))
+    except ValueError:
+        return
+    seconds = int((end_dt - start_dt).total_seconds())
+    step["Duration"] = f"{max(seconds, 0)}s"
+
+
+def _worker_loop(root: Path, athlete_id: str, run_id: str, stop_event: threading.Event) -> None:
+    """Background worker to update run steps based on artifacts or response status."""
+    logger.info("Plan hub worker started run_id=%s athlete=%s", run_id, athlete_id)
+    store = LocalArtifactStore(root=root)
+    def _is_blocked(step_id: str, failed_step_id: str, deps: dict[str, list[str]], visited: set[str]) -> bool:
+        if step_id in visited:
+            return False
+        visited.add(step_id)
+        parents = deps.get(step_id, [])
+        if failed_step_id in parents:
+            return True
+        return any(_is_blocked(parent, failed_step_id, deps, visited) for parent in parents)
+
+    def _mark_blocked(steps: list[dict[str, Any]], failed_step: dict[str, Any]) -> None:
+        """Mark queued steps as blocked when a failure prevents downstream steps."""
+        failed_step_id = failed_step.get("step_id") or ""
+        reason = f"Blocked by failed step: {failed_step.get('Step') or failed_step_id}"
+        deps = {step.get("step_id"): step.get("Deps") or [] for step in steps}
+        for pending in steps:
+            if pending.get("Status") != "QUEUED":
+                continue
+            step_id = pending.get("step_id") or ""
+            if _is_blocked(step_id, failed_step_id, deps, set()):
+                pending["Status"] = "BLOCKED"
+                pending["Details"] = reason
+
+    acquired_lock = acquire_athlete_lock(root, athlete_id, run_id)
+    if not acquired_lock:
+        records = load_runs(root, athlete_id, limit=50)
+        active = next((r for r in records if r.get("run_id") == run_id), None)
+        steps = (active or {}).get("steps") or []
+        for step in steps:
+            if step.get("Status") == "QUEUED":
+                step["Status"] = "BLOCKED"
+                step["Details"] = "Athlete lock busy."
+        update_run(
+            root,
+            athlete_id,
+            run_id,
+            {
+                "status": "FAILED",
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "summary": _run_summary(steps),
+                "steps": steps,
+            },
+        )
+        append_event(root, athlete_id, run_id, {"type": "RUN_FAILED", "reason": "Athlete lock busy."})
+        return
+
+    try:
+        while not stop_event.is_set():
+            records = load_runs(root, athlete_id, limit=50)
+            active = next((r for r in records if r.get("run_id") == run_id), None)
+            if not active:
+                break
+            status = active.get("status")
+            if status in {"DONE", "FAILED", "CANCELLED"}:
+                break
+            steps = active.get("steps") or []
+            index = _load_index(athlete_id)
+            running_found = any(step.get("Status") == "RUNNING" for step in steps)
+
+            for step in steps:
+                step_status = step.get("Status")
+                if step_status in {"DONE", "FAILED", "SKIPPED", "BLOCKED"}:
+                    continue
+                if step_status == "QUEUED" and not running_found:
+                    step["Status"] = "RUNNING"
+                    step["Started"] = datetime.now(timezone.utc).isoformat()
+                    if not active.get("started_at"):
+                        append_event(root, athlete_id, run_id, {"type": "RUN_STARTED"})
+                        update_run(
+                            root,
+                            athlete_id,
+                            run_id,
+                            {
+                                "status": "RUNNING",
+                                "started_at": datetime.now(timezone.utc).isoformat(),
+                                "current_step": step.get("step_id"),
+                                "steps": steps,
+                            },
+                        )
+                    else:
+                        update_run(
+                            root,
+                            athlete_id,
+                            run_id,
+                            {"status": "RUNNING", "current_step": step.get("step_id"), "steps": steps},
+                        )
+                    append_event(
+                        root,
+                        athlete_id,
+                        run_id,
+                        {"type": "STEP_STARTED", "step_id": step.get("step_id")},
+                    )
+                    running_found = True
+                    break
+                if step_status == "RUNNING":
+                    response_id = step.get("response_id")
+                    response_status = _poll_response_status(response_id) if response_id else None
+                    if response_status in {"completed"}:
+                        step["Status"] = "DONE"
+                        step["Ended"] = datetime.now(timezone.utc).isoformat()
+                        _set_duration(step)
+                        outputs = []
+                        for artifact_type in step.get("write_types") or []:
+                            outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
+                        if outputs:
+                            step["Outputs"] = outputs
+                            append_event(root, athlete_id, run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
+                        append_event(root, athlete_id, run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                    elif response_status in {"failed", "cancelled"}:
+                        step["Status"] = "FAILED"
+                        step["Details"] = f"Response {response_status}"
+                        step["Ended"] = datetime.now(timezone.utc).isoformat()
+                        _set_duration(step)
+                        _mark_blocked(steps, step)
+                        append_event(root, athlete_id, run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
+                        update_run(
+                            root,
+                            athlete_id,
+                            run_id,
+                            {
+                                "status": "FAILED",
+                                "finished_at": datetime.now(timezone.utc).isoformat(),
+                                "summary": _run_summary(steps),
+                                "steps": steps,
+                            },
+                        )
+                        return
+                    else:
+                        exec_result = None
+                        step_id = step.get("step_id")
+                        if step_id == "SEASON_SCENARIOS":
+                            exec_result = _execute_season_scenarios(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                        elif step_id == "SCENARIO_SELECTION":
+                            if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
+                                exec_result = {"ok": True}
+                            else:
+                                exec_result = _execute_scenario_selection(
+                                    athlete_id,
+                                    active.get("iso_year"),
+                                    active.get("iso_week"),
+                                    run_id,
+                                )
+                        elif step_id == "SEASON_PLAN":
+                            exec_result = _execute_season_plan(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                    elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
+                        exec_result = _execute_plan_week(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                    elif step_id == "POST_INTERVALS":
+                        exec_result = _execute_post_intervals(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+                    elif step_id == "PERF_REPORT":
+                        exec_result = _execute_performance_report(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
+
+                        if exec_result and exec_result.get("ok"):
+                            step["Status"] = "DONE"
+                            step["Ended"] = datetime.now(timezone.utc).isoformat()
+                            _set_duration(step)
+                            outputs = []
+                            if exec_result.get("outputs"):
+                                outputs.extend(exec_result.get("outputs") or [])
+                            for artifact_type in step.get("write_types") or []:
+                                outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
+                            if outputs:
+                                step["Outputs"] = outputs
+                                append_event(root, athlete_id, run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
+                            append_event(root, athlete_id, run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                        else:
+                            for artifact_type in step.get("write_types") or []:
+                                if _artifact_written_for_run(index, ArtifactType(artifact_type), run_id):
+                                    step["Status"] = "DONE"
+                                    step["Ended"] = datetime.now(timezone.utc).isoformat()
+                                    _set_duration(step)
+                                    outputs = []
+                                    for artifact_type in step.get("write_types") or []:
+                                        outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
+                                    if outputs:
+                                        step["Outputs"] = outputs
+                                        append_event(root, athlete_id, run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
+                                    append_event(root, athlete_id, run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                                    break
+                            if step.get("Status") != "DONE":
+                                step["Status"] = "FAILED"
+                                step["Details"] = (exec_result or {}).get("error") or "Execution failed."
+                                step["Ended"] = datetime.now(timezone.utc).isoformat()
+                                _set_duration(step)
+                                _mark_blocked(steps, step)
+                                append_event(root, athlete_id, run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
+                                update_run(
+                                    root,
+                                    athlete_id,
+                                    run_id,
+                                    {
+                                        "status": "FAILED",
+                                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                                        "summary": _run_summary(steps),
+                                        "steps": steps,
+                                    },
+                                )
+                                return
+                    update_run(root, athlete_id, run_id, {"summary": _run_summary(steps), "steps": steps})
+                    break
+
+            if all(step.get("Status") in {"DONE", "SKIPPED", "BLOCKED"} for step in steps):
+                update_run(
+                    root,
+                    athlete_id,
+                    run_id,
+                    {
+                        "status": "DONE",
+                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                        "summary": _run_summary(steps),
+                        "current_step": None,
+                        "steps": steps,
+                    },
+                )
+                append_event(root, athlete_id, run_id, {"type": "RUN_FINISHED"})
+                break
+
+            time.sleep(2)
+    finally:
+        release_athlete_lock(root, athlete_id)
+
+    logger.info("Plan hub worker stopped run_id=%s athlete=%s", run_id, athlete_id)
+
+
+def _ensure_worker(root: Path, athlete_id: str, run_id: str) -> None:
+    """Start a background worker thread if not already running."""
+    worker = st.session_state.get("plan_hub_worker")
+    if worker and worker.get("run_id") == run_id and worker.get("thread", None):
+        if worker["thread"].is_alive():
+            return
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        target=_worker_loop,
+        args=(root, athlete_id, run_id, stop_event),
+        daemon=True,
+    )
+    st.session_state["plan_hub_worker"] = {"run_id": run_id, "stop": stop_event, "thread": thread}
+    thread.start()
+
+
+def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_run_id: str) -> None:
+    """Mark previous runs as superseded."""
+    for old_run_id in run_ids:
+        update_run(
+            root,
+            athlete_id,
+            old_run_id,
+            {"status": "SUPERSEDED", "superseded_by": new_run_id},
+        )
+
+
+st.title("Plan Hub")
+
+state = init_ui_state()
+athlete_id = get_athlete_id()
+year, week = get_iso_year_week()
+announce_log_file(athlete_id)
+
+hub_scope = st.session_state.get("hub_scope") or {
+    "athlete_id": athlete_id,
+    "iso_year": year,
+    "iso_week": week,
+    "phase_label": st.session_state.get("selected_phase_label"),
+}
+
+active_run_id = st.session_state.get("plan_hub_active_run_id")
+run_records = load_runs(SETTINGS.workspace_root, hub_scope["athlete_id"], limit=5)
+active_run = None
+if active_run_id:
+    for record in run_records:
+        if record.get("run_id") == active_run_id:
+            active_run = record
+            break
+elif run_records:
+    active_run = run_records[0]
+
+if active_run and active_run.get("status") in {"QUEUED", "RUNNING"}:
+    active_run_id = active_run.get("run_id")
+    st.session_state["plan_hub_active_run_id"] = active_run_id
+
+run_state = bool(active_run and active_run.get("status") in {"QUEUED", "RUNNING"})
+st.session_state["plan_hub_running"] = run_state
+scope_lock = run_state
+
+if run_state:
+    st.autorefresh(interval=2000, key="plan_hub_autorefresh")
+
+if active_run_id:
+    _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id)
+
+header_left, header_right = st.columns([2, 1])
+with header_left:
+    st.caption(f"Athlete: {hub_scope['athlete_id']} · ISO {hub_scope['iso_year']}-W{hub_scope['iso_week']:02d}")
+
+with header_right:
+    st.markdown("**Scope**")
+    scope_cols = st.columns(3)
+    with scope_cols[0]:
+        athlete_id = st.text_input(
+            "Athlete",
+            value=hub_scope["athlete_id"],
+            disabled=scope_lock,
+            label_visibility="collapsed",
+        )
+    with scope_cols[1]:
+        year = int(
+            st.number_input(
+                "ISO Year",
+                min_value=2000,
+                max_value=2100,
+                value=hub_scope["iso_year"],
+                step=1,
+                disabled=scope_lock,
+                label_visibility="collapsed",
+            )
+        )
+    with scope_cols[2]:
+        week = int(
+            st.number_input(
+                "ISO Week",
+                min_value=1,
+                max_value=53,
+                value=hub_scope["iso_week"],
+                step=1,
+                disabled=scope_lock,
+                label_visibility="collapsed",
+            )
+        )
+
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    phase_label = hub_scope.get("phase_label")
+    phases = []
+    season_plan = None
+    try:
+        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    except FileNotFoundError:
+        season_plan = None
+    if isinstance(season_plan, dict):
+        phases = season_plan.get("data", {}).get("phases", []) or []
+    if phases:
+        options, _ = build_phase_options(phases)
+        if phase_label not in options:
+            phase_label = options[0]
+        phase_label = st.selectbox(
+            "Phase",
+            options=options,
+            index=options.index(phase_label),
+            disabled=scope_lock,
+            label_visibility="collapsed",
+        )
+    hub_scope = {
+        "athlete_id": athlete_id,
+        "iso_year": year,
+        "iso_week": week,
+        "phase_label": phase_label,
+    }
+    st.session_state["hub_scope"] = hub_scope
+
+    if run_state:
+        st.caption(f"Running for {athlete_id} · {year}-W{week:02d}")
+    if st.button("Plan this Week", disabled=scope_lock is True):
+        run_id = f"plan_hub_{year:04d}W{week:02d}"
+        readiness = _compute_readiness(athlete_id, year, week)
+        post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
+        steps = _build_execution_steps(readiness, "Orchestrated", None, include_post_intervals=post_to_intervals)
+        log_ref = ensure_logging(athlete_id)
+        for step in steps:
+            step["Log"] = log_ref
+        record = {
+            "run_id": run_id,
+            "athlete_id": athlete_id,
+            "iso_year": year,
+            "iso_week": week,
+            "phase_label": phase_label,
+            "mode": "Orchestrated",
+            "scope": None,
+            "status": "QUEUED",
+            "steps": steps,
+            "log_ref": log_ref,
+            "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+            "current_step": None,
+            "post_to_intervals": post_to_intervals,
+        }
+        append_run(SETTINGS.workspace_root, athlete_id, record)
+        st.session_state["plan_hub_running"] = True
+        st.session_state["plan_hub_active_run_id"] = run_id
+        _ensure_worker(SETTINGS.workspace_root, athlete_id, run_id)
+        st.info("Run requested (placeholder).")
+
+left, right = st.columns([1, 2])
+
+with left:
+    st.subheader("Readiness")
+    readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
+    required_steps = [step for step in readiness if not step.optional]
+    total_required = len(required_steps)
+    ready_required = sum(1 for step in required_steps if step.status == "ready")
+    has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
+    overall_status = "ready" if not has_attention else "stale"
+    overall_message = (
+        f"{ready_required}/{total_required} ready · "
+        f"{sum(1 for step in required_steps if step.status == 'stale')} warnings · "
+        f"{sum(1 for step in required_steps if step.status in {'missing', 'blocked'})} missing/blocked"
+    )
+    status_state = "done" if overall_status == "ready" else "stale"
+    status_message = "Ready" if overall_status == "ready" else "Attention needed"
+    if run_state:
+        status_state = "running"
+        status_message = "Running"
+    set_status(status_state=status_state, title="Plan Hub", message=status_message)
+    render_status_panel()
+    st.caption(overall_message)
+    for step in readiness:
+        header = f"{_status_badge(step.status)} {step.label}"
+        with st.expander(header, expanded=step.status in {"missing", "blocked"}):
+            st.write(step.summary)
+            st.caption(step.reason)
+            if step.latest:
+                st.caption(f"Latest version: {step.latest}")
+            if step.run_id:
+                st.caption(f"Run id: {step.run_id}")
+            if step.fix_label:
+                cols = st.columns(2)
+                with cols[0]:
+                    st.button(step.fix_label, key=f"fix_{step.key}")
+                with cols[1]:
+                    st.button("View dependency", key=f"dep_{step.key}")
+
+with right:
+    st.subheader("Run Planning")
+    run_mode = st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])
+    scope = None
+    post_toggle = st.checkbox("Post to Intervals after export", value=False)
+    st.session_state["plan_hub_post_intervals"] = post_toggle
+    if post_toggle:
+        st.warning("This will post workouts externally. Already-posted workouts will be skipped.")
+    receipt_status = inspect_intervals_receipts(
+        LocalArtifactStore(root=SETTINGS.workspace_root),
+        hub_scope["athlete_id"],
+        year=hub_scope["iso_year"],
+        week=hub_scope["iso_week"],
+    )
+    if receipt_status.error is None:
+        st.caption(
+            f"Intervals: {len(receipt_status.unposted)} unposted · {len(receipt_status.conflicts)} conflicts"
+        )
+        if st.button("View posting status"):
+            st.session_state["expand_posting_status"] = True
+            st.switch_page("pages/plan/week.py")
+    if run_mode == "Scoped":
+        scope = st.selectbox(
+            "Scope",
+            [
+                "Season Scenarios",
+                "Selected Scenario",
+                "Season Plan",
+                "Phase (Guardrails + Structure)",
+                "Week Plan",
+                "Export Workouts",
+                "Post to Intervals",
+                "Performance Report",
+            ],
+        )
+    run_id = st.text_input("Run ID", value=f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}")
+    validate_only = st.checkbox("Validate only (no write)", value=False)
+    scope_summary = {
+        None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Export Workouts",
+        "Season Scenarios": "Will write: Season Scenarios",
+        "Selected Scenario": "Will write: Selected Scenario",
+        "Season Plan": "Will write: Season Plan",
+        "Phase (Guardrails + Structure)": "Will write: Phase Guardrails, Phase Structure",
+        "Week Plan": "Will write: Week Plan",
+        "Export Workouts": "Will write: Export Workouts",
+        "Post to Intervals": "Will post workouts to Intervals (idempotent receipts).",
+        "Performance Report": "Will write: Performance Report",
+    }
+    summary_text = scope_summary.get(scope, scope_summary[None])
+    if run_mode != "Scoped" and post_toggle:
+        summary_text = f"{summary_text} + Post to Intervals"
+    st.info(summary_text)
+    if run_mode == "Scoped":
+        if st.button("Run scoped"):
+            readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
+            include_post = True if scope == "Post to Intervals" else post_toggle
+            steps = _build_execution_steps(readiness, "Scoped", scope, include_post_intervals=include_post)
+            log_ref = ensure_logging(hub_scope["athlete_id"])
+            for step in steps:
+                step["Log"] = log_ref
+            record = {
+                "run_id": run_id,
+                "athlete_id": hub_scope["athlete_id"],
+                "iso_year": hub_scope["iso_year"],
+                "iso_week": hub_scope["iso_week"],
+                "phase_label": hub_scope.get("phase_label"),
+                "mode": "Scoped",
+                "scope": scope,
+                "status": "QUEUED",
+                "steps": steps,
+                "log_ref": log_ref,
+                "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+                "current_step": None,
+                "post_to_intervals": post_toggle,
+            }
+            append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
+            st.session_state["plan_hub_running"] = True
+            st.session_state["plan_hub_active_run_id"] = run_id
+            _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id)
+            st.info("Run requested (placeholder).")
+
+st.subheader("Run Execution")
+if active_run:
+    steps = active_run.get("steps") or []
+    if active_run.get("log_ref"):
+        st.caption(f"Log file: {active_run.get('log_ref')}")
+    if active_run.get("status") == "FAILED":
+        if any(step.get("Details") == "Athlete lock busy." for step in steps):
+            st.info("Another run is active for this athlete. Try again after it finishes.")
+    can_restart = False
+    if active_run.get("status") == "FAILED":
+        store = LocalArtifactStore(root=SETTINGS.workspace_root)
+        can_restart = store.latest_exists(hub_scope["athlete_id"], ArtifactType.SEASON_SCENARIO_SELECTION)
+    if active_run.get("summary"):
+        summary = active_run.get("summary") or {}
+        st.caption(
+            "Summary: "
+            f"{summary.get('steps_done', 0)} done · "
+            f"{summary.get('steps_failed', 0)} failed · "
+            f"{summary.get('artefacts_written', 0)} outputs"
+        )
+    if active_run.get("current_step"):
+        st.caption(f"Current step: {active_run.get('current_step')}")
+    manual_missing = False
+    if any(step.get("step_id") == "SCENARIO_SELECTION" and step.get("Status") == "FAILED" for step in steps):
+        store = LocalArtifactStore(root=SETTINGS.workspace_root)
+        manual_missing = not store.latest_exists(hub_scope["athlete_id"], ArtifactType.SEASON_SCENARIO_SELECTION)
+    if manual_missing:
+        st.info("Scenario selection is manual. Complete it on the Season page, then restart the run.")
+        st.page_link("pages/plan/season.py", label="Go to Season page")
+    if can_restart and st.button("Restart run"):
+        new_run_id = f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_{int(time.time())}"
+        readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
+        post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
+        new_steps = _build_execution_steps(readiness, "Orchestrated", None, include_post_intervals=post_to_intervals)
+        log_ref = ensure_logging(hub_scope["athlete_id"])
+        for step in new_steps:
+            step["Log"] = log_ref
+        record = {
+            "run_id": new_run_id,
+            "athlete_id": hub_scope["athlete_id"],
+            "iso_year": hub_scope["iso_year"],
+            "iso_week": hub_scope["iso_week"],
+            "phase_label": hub_scope.get("phase_label"),
+            "mode": "Orchestrated",
+            "scope": None,
+            "status": "QUEUED",
+            "steps": new_steps,
+            "log_ref": log_ref,
+            "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+            "current_step": None,
+            "post_to_intervals": post_to_intervals,
+        }
+        append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
+        _mark_runs_superseded(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            [active_run.get("run_id")] if active_run.get("run_id") else [],
+            new_run_id,
+        )
+        st.session_state["plan_hub_running"] = True
+        st.session_state["plan_hub_active_run_id"] = new_run_id
+        _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], new_run_id)
+        st.rerun()
+    st.dataframe(steps, use_container_width=True)
+    events = load_events(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run.get("run_id") or "", limit=200)
+    if events:
+        with st.expander("Run events", expanded=False):
+            event_types = sorted({event.get("type") for event in events if event.get("type")})
+            filter_options = ["All", "STEP_*", "RUN_*"] + event_types
+            default_index = 1 if active_run and active_run.get("status") in {"QUEUED", "RUNNING"} else 0
+            selected_filter = st.selectbox("Filter", options=filter_options, index=default_index)
+            event_rows = []
+            for event in events:
+                event_type = event.get("type") or ""
+                if selected_filter == "STEP_*" and not event_type.startswith("STEP_"):
+                    continue
+                if selected_filter == "RUN_*" and not event_type.startswith("RUN_"):
+                    continue
+                if selected_filter not in {"All", "STEP_*", "RUN_*"} and event_type != selected_filter:
+                    continue
+                event_rows.append(
+                    {
+                        "Timestamp": event.get("ts") or "—",
+                        "Type": event_type or "—",
+                        "Step": event.get("step_id") or "—",
+                        "Details": event.get("reason") or event.get("outputs") or "—",
+                    }
+                )
+            st.dataframe(pd.DataFrame(event_rows), use_container_width=True)
+    cols = st.columns(2)
+    if cols[0].button("Mark run done"):
+        update_run(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            active_run.get("run_id") or "",
+            {"status": "DONE"},
+        )
+        st.session_state["plan_hub_running"] = False
+        st.session_state["plan_hub_active_run_id"] = None
+        st.rerun()
+    if cols[1].button("Clear run state"):
+        st.session_state["plan_hub_running"] = False
+        st.session_state["plan_hub_active_run_id"] = None
+        st.rerun()
+    if st.button("Cancel run"):
+        steps = active_run.get("steps") or []
+        cancelled = False
+        for step in steps:
+            if step.get("Status") == "RUNNING" and step.get("response_id"):
+                cancelled = _cancel_response(step["response_id"])
+                step["Status"] = "FAILED"
+                step["Details"] = "Cancelled by user"
+                step["Ended"] = datetime.now(timezone.utc).isoformat()
+                _set_duration(step)
+                break
+        update_run(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            active_run.get("run_id") or "",
+            {"status": "FAILED" if cancelled else active_run.get("status"), "steps": steps},
+        )
+        worker = st.session_state.get("plan_hub_worker")
+        if worker and worker.get("stop"):
+            worker["stop"].set()
+        st.session_state["plan_hub_running"] = False
+        st.session_state["plan_hub_active_run_id"] = None
+        st.rerun()
+else:
+    st.info("No active run. Start planning to see execution steps.")
+
+st.subheader("Latest Outputs")
+latest_rows = _latest_outputs(hub_scope["athlete_id"])
+table_header = st.columns([2, 1, 1, 1, 1, 1.5])
+table_header[0].markdown("**Artefact**")
+table_header[1].markdown("**Authority**")
+table_header[2].markdown("**Version**")
+table_header[3].markdown("**Run**")
+table_header[4].markdown("**Updated**")
+table_header[5].markdown("**Actions**")
+
+authority_map = {
+    ArtifactType.SEASON_PLAN.value: "Binding",
+    ArtifactType.PHASE_GUARDRAILS.value: "Binding",
+    ArtifactType.PHASE_STRUCTURE.value: "Binding",
+    ArtifactType.WEEK_PLAN.value: "Binding",
+    ArtifactType.INTERVALS_WORKOUTS.value: "Raw",
+    ArtifactType.DES_ANALYSIS_REPORT.value: "Advisory",
+}
+
+open_pages = {
+    ArtifactType.SEASON_PLAN.value: "pages/plan/season.py",
+    ArtifactType.PHASE_GUARDRAILS.value: "pages/plan/phase.py",
+    ArtifactType.PHASE_STRUCTURE.value: "pages/plan/phase.py",
+    ArtifactType.WEEK_PLAN.value: "pages/plan/week.py",
+    ArtifactType.INTERVALS_WORKOUTS.value: "pages/plan/wow.py",
+    ArtifactType.DES_ANALYSIS_REPORT.value: "pages/performance/report.py",
+}
+
+for row in latest_rows:
+    cols = st.columns([2, 1, 1, 1, 1, 1.5])
+    cols[0].write(row["Title"])
+    cols[1].write(authority_map.get(row["Type"], "—"))
+    cols[2].write(row["Version"])
+    cols[3].write(row["Run"])
+    cols[4].write(row["Updated"])
+    with cols[5]:
+        action_cols = st.columns(3)
+        page_path = open_pages.get(row["Type"])
+        if page_path:
+            action_cols[0].page_link(page_path, label="Open")
+        else:
+            action_cols[0].button("Open", key=f"open_{row['Type']}", disabled=True)
+        if action_cols[1].button("Diff", key=f"diff_{row['Type']}"):
+            st.session_state["plan_hub_diff_type"] = row["Type"]
+        if action_cols[2].button("Versions", key=f"versions_{row['Type']}"):
+            st.session_state["plan_hub_versions_type"] = row["Type"]
+
+versions_type = st.session_state.get("plan_hub_versions_type")
+diff_type = st.session_state.get("plan_hub_diff_type")
+index = _load_index(athlete_id)
+
+if versions_type:
+    try:
+        artifact_type = ArtifactType(versions_type)
+    except ValueError:
+        artifact_type = None
+    if artifact_type:
+        st.subheader(f"Versions · {artifact_type.value}")
+        records = _version_records(index, artifact_type)
+        if not records:
+            st.info("No versions found.")
+        else:
+            for record in records[:10]:
+                label = f"{record.get('version_key')} · {record.get('created_at') or '—'}"
+                with st.expander(label, expanded=False):
+                    st.caption(f"Run: {record.get('run_id') or '—'}")
+                    st.caption(f"Producer: {record.get('producer_agent') or '—'}")
+                    payload = _load_artifact_json(athlete_id, record)
+                    if payload is None:
+                        st.info("No payload found.")
+                    else:
+                        st.json(payload)
+        if st.button("Close Versions"):
+            st.session_state["plan_hub_versions_type"] = None
+
+if diff_type:
+    try:
+        artifact_type = ArtifactType(diff_type)
+    except ValueError:
+        artifact_type = None
+    if artifact_type:
+        st.subheader(f"Diff · {artifact_type.value}")
+        records = _version_records(index, artifact_type)
+        if len(records) < 2:
+            st.info("Need at least two versions to diff.")
+        else:
+            a = _load_artifact_json(athlete_id, records[1])
+            b = _load_artifact_json(athlete_id, records[0])
+            st.code(_diff_json(a, b))
+        if st.button("Close Diff"):
+            st.session_state["plan_hub_diff_type"] = None
+
+st.subheader("Run History")
+planning_types = {
+    ArtifactType.SEASON_SCENARIOS.value,
+    ArtifactType.SEASON_SCENARIO_SELECTION.value,
+    ArtifactType.SEASON_PLAN.value,
+    ArtifactType.PHASE_GUARDRAILS.value,
+    ArtifactType.PHASE_STRUCTURE.value,
+    ArtifactType.PHASE_PREVIEW.value,
+    ArtifactType.PHASE_FEED_FORWARD.value,
+    ArtifactType.SEASON_PHASE_FEED_FORWARD.value,
+    ArtifactType.WEEK_PLAN.value,
+    ArtifactType.INTERVALS_WORKOUTS.value,
+    ArtifactType.DES_ANALYSIS_REPORT.value,
+}
+data_types = {
+    ArtifactType.ACTIVITIES_ACTUAL.value,
+    ArtifactType.ACTIVITIES_TREND.value,
+    ArtifactType.ZONE_MODEL.value,
+    ArtifactType.WELLNESS.value,
+    ArtifactType.AVAILABILITY.value,
+    ArtifactType.KPI_PROFILE.value,
+}
+
+tab_planning, tab_data = st.tabs(["Planning", "Data"])
+with tab_planning:
+    st.caption("Plan Hub runs")
+    plan_runs = _run_store_history(athlete_id, limit=20)
+    if plan_runs:
+        df_runs = pd.DataFrame(plan_runs)
+        st.dataframe(_style_superseded(df_runs), use_container_width=True)
+    else:
+        st.info("No Plan Hub runs yet.")
+    st.caption("Artefact history")
+    st.dataframe(_run_history(athlete_id, allowed=planning_types), use_container_width=True)
+with tab_data:
+    st.dataframe(_run_history(athlete_id, allowed=data_types), use_container_width=True)
+logger = logging.getLogger(__name__)

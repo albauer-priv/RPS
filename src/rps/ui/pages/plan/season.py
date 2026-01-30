@@ -390,6 +390,8 @@ if output := state.get("season_selection_output"):
 
 if selection_payload:
     st.subheader("Create Season Plan")
+    st.success("Scenario selection saved.")
+    st.page_link("pages/plan/hub.py", label="Back to Plan Hub")
 
 if output := state.get("season_plan_output"):
     with st.expander("Create Season Plan Output", expanded=False):

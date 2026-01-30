@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Home page marketing copy is now externalized (`static/marketing/home.md`) and rendered with a system state table that summarizes artifact availability, owners, and timestamps.
 - Added Streamlit AppTest coverage for Home and Plan pages.
 - WoW page now renders Intervals workouts from the export JSON as per-day expanders with code blocks.
+- Plan Hub now persists per-run `run.json`/`steps.json` plus events, with async worker execution, run summaries, and blocked step propagation.
+- Added Intervals posting receipts with idempotency (commit step) plus Week/Plan Hub UI to post workouts and inspect receipt status.
+- Plan Hub run history now includes run store rows (muted superseded runs) with event table filtering.
 
 ### Changed
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
@@ -19,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.
 - Week/ WoW pages now present workouts in expandable day-focused views with agenda summaries and extracted week totals.
 - Intervals export files are now versioned as `workouts_yyyy-ww.json` and stored under `data/exports/` with ISO-week keys.
+- Plan Hub now supports manual scenario selection handoff (Season page) with restart + superseded run tracking.
 
 ## [0.10.1] - 2026-01-29
 

@@ -28,6 +28,11 @@ plan_season = st.Page(
     title="Season",
     icon=":material/emoji_events:",
 )
+plan_hub = st.Page(
+    "pages/plan/hub.py",
+    title="Plan Hub",
+    icon=":material/view_kanban:",
+)
 plan_phase = st.Page(
     "pages/plan/phase.py",
     title="Phase",
@@ -75,7 +80,7 @@ pg = st.navigation(
             "Home": [home],
             "Coach": [coach],
         "Analyse": [performance_data, performance_report],
-        "Plan": [plan_season, plan_phase, plan_week, plan_wow],
+        "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_wow],
         "Athlete Profile": [about_you, season_brief, availability, logistics, zones],
     }
 )

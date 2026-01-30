@@ -67,6 +67,7 @@ This file is the **README for coding agents** working in this repository. It con
 * `doc/artefact_flow_overview_and_detail.md`: Artifact flows & dependencies.
 * `doc/how_to_plan.md`: Plan-week / Season / Phase / Week process.
 * `doc/planners.md`: Planner roles & responsibilities.
+* `doc/plan_hub_proposal.md`: Plan Hub proposal with readiness rules and layout.
 * `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
 * `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).
 * `schemas/**`: JSON schemas (esp. artifact interfaces).
@@ -322,6 +323,17 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 * Season page: render selected scenario summary; remove JSON dump; align tables with template output.
 * Add Create/Reset/Delete controls with requested confirmation semantics.
 * Revisit Phase page helpers to avoid missing-argument errors after partial revert.
+
+### Possible extensions (post‑MVP)
+
+* Introduce a file‑backed queue with `pending/active/done` markers (multi‑worker readiness).
+* Add worker heartbeats + stuck‑run recovery (timeout → FAILED or requeue).
+* Support `validate_only` runs (no writes, validation only).
+* Add `cancel_requested` handling so the worker can safely stop between steps.
+* Optional per‑step log files (`runs/<run_id>/logs/<step_id>.log`) for deep debugging.
+* Add heartbeat + “stuck run” UI (timeout → mark failed / requeue).
+* Add unposted count + receipts diff check on Week page.
+* Add receipt conflict UX (manual confirm) and external idempotency headers when available.
 
 ---
 
