@@ -282,7 +282,7 @@ render_run_history(ctx)
 
 The decision is whether to:
 
-1) Keep **separate Plan pages** (Season/Phase/Week/WoW), or  
+1) Keep **separate Plan pages** (Season/Phase/Week/Workouts), or  
 2) Build a **central Plan Hub** with readiness and model execution view.
 
 This proposal assumes the Hub is a **summary + orchestration layer**, with deep links to existing pages.

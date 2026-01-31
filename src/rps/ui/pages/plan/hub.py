@@ -1504,7 +1504,7 @@ open_pages = {
     ArtifactType.PHASE_GUARDRAILS.value: "pages/plan/phase.py",
     ArtifactType.PHASE_STRUCTURE.value: "pages/plan/phase.py",
     ArtifactType.WEEK_PLAN.value: "pages/plan/week.py",
-    ArtifactType.INTERVALS_WORKOUTS.value: "pages/plan/wow.py",
+    ArtifactType.INTERVALS_WORKOUTS.value: "pages/plan/workouts.py",
     ArtifactType.DES_ANALYSIS_REPORT.value: "pages/performance/report.py",
 }
 

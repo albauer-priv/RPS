@@ -7,11 +7,11 @@ This document describes the current Streamlit UI at a systems level so a UI/UX e
 ## 1) Executive Summary
 
 **Current structure:** Multi‑page Streamlit app with distinct sections (Home, Coach, Performance, Plan, Athlete Profile).  
-**Plan** is split into subpages: Season, Phase, Week, WoW (Workouts of the Week).  
+**Plan** is split into subpages: Season, Phase, Week, Workouts (Workouts of the Week).  
 **Status**: Each page uses a **global sidebar** (athlete + ISO week + phase) and a **single always‑visible status banner**.
 
 **Key question:**  
-Should planning stay **distributed across subpages** (Season/Phase/Week/WoW) or be consolidated into a **single “Plan Hub”** that also surfaces model execution state and run history?
+Should planning stay **distributed across subpages** (Season/Phase/Week/Workouts) or be consolidated into a **single “Plan Hub”** that also surfaces model execution state and run history?
 
 ---
 
@@ -54,7 +54,7 @@ Should planning stay **distributed across subpages** (Season/Phase/Week/WoW) or 
   - Workout text as code block
 - Status banner: “Planning week …” etc.
 
-### Plan → WoW
+### Plan → Workouts
 - Loads Intervals export (`workouts_yyyy-ww.json`)
 - Per‑workout expanders with description (code block)
 - Status banner: “Viewing …”
@@ -94,7 +94,7 @@ flowchart TB
   Plan --> PlanSeason
   Plan --> PlanPhase
   Plan --> PlanWeek
-  Plan --> PlanWoW
+  Plan --> PlanWorkouts
 
   Performance --> PerfData
   Performance --> PerfReport
@@ -152,7 +152,7 @@ flowchart LR
 1. Should the **Plan workflow** be represented as a single guided hub or remain split by artifact stage?
 2. What is the most intuitive representation of **model execution state** (timeline, checklist, activity feed)?
 3. How should **artifact readiness** and **validation status** be visualized?
-4. Should “Week” and “WoW” merge into one page or remain separate?
+4. Should “Week” and “Workouts” merge into one page or remain separate?
 5. Is the global sidebar the right place for ISO week/phase selection, or should those live in context panels?
 
 ---

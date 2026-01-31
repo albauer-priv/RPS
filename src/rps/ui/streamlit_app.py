@@ -43,9 +43,9 @@ plan_week = st.Page(
     title="Week",
     icon=":material/calendar_month:",
 )
-plan_wow = st.Page(
-    "pages/plan/wow.py",
-    title="WoW",
+plan_workouts = st.Page(
+    "pages/plan/workouts.py",
+    title="Workouts",
     icon=":material/fitness_center:",
 )
 
@@ -80,7 +80,7 @@ pg = st.navigation(
             "Home": [home],
             "Coach": [coach],
         "Analyse": [performance_data, performance_report],
-        "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_wow],
+        "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_workouts],
         "Athlete Profile": [about_you, season_brief, availability, logistics, zones],
     }
 )

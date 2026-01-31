@@ -495,3 +495,97 @@ def post_to_intervals_commit(
         outputs=outputs,
         error=None,
     )
+
+
+def delete_posted_workouts(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    year: int,
+    week: int,
+    run_id: str,
+    base_url: str | None = None,
+    api_key: str | None = None,
+) -> ReceiptResult:
+    """Delete posted workouts for a given ISO week (by external_id)."""
+    load_env()
+    base_url = base_url or os.getenv("BASE_URL")
+    api_key = api_key or os.getenv("API_KEY")
+    if not base_url or not api_key:
+        return ReceiptResult(
+            ok=False,
+            posted=0,
+            skipped=0,
+            conflicts=[],
+            outputs=[],
+            deleted=0,
+            error="BASE_URL or API_KEY missing for Intervals delete.",
+        )
+    receipt_dir = _receipt_dir(store.root, athlete_id, year, week)
+    if not receipt_dir.exists():
+        return ReceiptResult(
+            ok=True,
+            posted=0,
+            skipped=0,
+            conflicts=[],
+            outputs=[],
+            deleted=0,
+            error=None,
+        )
+    receipts = []
+    for path in receipt_dir.glob("*.json"):
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if record.get("status") == "POSTED" and record.get("external_id"):
+            receipts.append((record["external_id"], path, record))
+    if not receipts:
+        return ReceiptResult(
+            ok=True,
+            posted=0,
+            skipped=0,
+            conflicts=[],
+            outputs=[],
+            deleted=0,
+            error=None,
+        )
+    external_ids = [item[0] for item in receipts]
+    result = delete_events(
+        external_ids=external_ids,
+        athlete_id=athlete_id,
+        base_url=base_url,
+        api_key=api_key,
+    )
+    if not result.get("ok"):
+        return ReceiptResult(
+            ok=False,
+            posted=0,
+            skipped=0,
+            conflicts=[],
+            outputs=[],
+            deleted=0,
+            error=f"Intervals delete error: {result.get('status')}",
+        )
+    deleted = 0
+    outputs: list[dict[str, Any]] = []
+    for external_id, path, record in receipts:
+        tombstone = {
+            "external_id": external_id,
+            "status": "DELETED",
+            "deleted_at": _utc_iso_now(),
+            "run_id": run_id,
+            "last_payload_hash": record.get("payload_hash"),
+        }
+        path.write_text(json.dumps(tombstone, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        deleted += 1
+        outputs.append({"receipt": str(path), "status": "deleted"})
+    return ReceiptResult(
+        ok=True,
+        posted=0,
+        skipped=0,
+        deleted=deleted,
+        conflicts=[],
+        outputs=outputs,
+        error=None,
+    )

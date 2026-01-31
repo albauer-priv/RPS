@@ -25,8 +25,8 @@ def test_week_page_renders():
     assert "Post to Intervals" in labels
 
 
-def test_wow_page_renders():
-    at = AppTest.from_file("src/rps/ui/pages/plan/wow.py")
+def test_workouts_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/plan/workouts.py")
     at.run()
     assert len(at.error) == 0
     assert len(at.info) >= 1

@@ -32,7 +32,7 @@ This section defines the **layout contract** for the Plan pages in the Streamlit
 
 ### Goals
 
-- Keep Plan pages consistent and predictable across Season, Phase, Week, and WoW.
+- Keep Plan pages consistent and predictable across Season, Phase, Week, and Workouts.
 - Reduce unintended reruns by using `st.form` for primary actions.
 - Surface user-visible status at all times.
 
@@ -113,7 +113,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Plan Week output expander
 - System logs expander
 
-#### Plan -> WoW
+#### Plan -> Workouts
 
 **Action panel**
 

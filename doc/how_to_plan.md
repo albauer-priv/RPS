@@ -53,7 +53,7 @@ available for manual, step-by-step runs.
 - Actions: Plan Week, Create Report, Post to Intervals.
 - Posting status (unposted/conflicts) + conflict resolution.
 
-### Plan -> WoW
+### Plan -> Workouts
 - Intervals export view (per-day expanders, descriptions).
 
 ---
@@ -225,4 +225,3 @@ PYTHONPATH=src python3 -m rps.main run-agent \
 - Phase artifacts are derived from season phase ranges (no manual range guessing).
 - Exports use `workouts_yyyy-ww.json` version keys.
 - Commit steps should be manual or explicitly toggled to avoid unintended side effects.
-
