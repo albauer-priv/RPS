@@ -167,11 +167,16 @@ def _planning_block_reason(root: Path, athlete_id: str, desired_subtype: str) ->
     desired_priority = _planning_priority(desired_subtype)
     for run in active:
         active_subtype = run.get("process_subtype") or "unknown"
+        run_id = run.get("run_id") or "—"
         if active_subtype == desired_subtype:
-            return f"{desired_subtype.replace('_', ' ').title()} is already running."
+            return (
+                f"{desired_subtype.replace('_', ' ').title()} is already running "
+                f"(run {run_id})."
+            )
         if _planning_priority(active_subtype) > desired_priority:
             return (
-                "A higher-priority planning run is active. "
+                "A higher-priority planning run is active "
+                f"(run {run_id}, {active_subtype.replace('_', ' ')}). "
                 "Wait for it to finish before starting this run."
             )
     return None
