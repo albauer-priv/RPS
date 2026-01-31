@@ -359,7 +359,7 @@ flowchart LR
 - Every write creates a **versioned file** (e.g. `phase_structure_2026-05--2026-08.json`).
 - `latest/` holds the most recent version per artefact type.
 - `index.json` tracks per-version metadata for routing and exact range lookups.
-- Streamlit startup prunes missing index entries in the background to keep `index.json` and `latest/` consistent.
+- Streamlit startup prunes missing index entries and orphaned rendered sidecars in the background to keep `index.json`, `latest/`, and `rendered/` consistent.
 - The workspace is **gitignored** and should never be committed.
 
 **Data pipeline outputs**

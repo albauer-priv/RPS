@@ -68,3 +68,48 @@ def render_sidecar(json_path: Path) -> None:
             result.returncode,
             (result.stderr or "").strip(),
         )
+
+
+def prune_rendered_sidecars(root: Path, athlete_id: str) -> int:
+    """Remove rendered sidecars that no longer have a JSON artefact.
+
+    Args:
+        root: Workspace root path (var/athletes).
+        athlete_id: Athlete workspace identifier.
+
+    Returns:
+        Number of rendered files removed.
+    """
+    rendered_dir = root / athlete_id / "rendered"
+    if not rendered_dir.exists():
+        return 0
+
+    json_stems: set[str] = set()
+    athlete_root = root / athlete_id
+    for json_path in athlete_root.rglob("*.json"):
+        if json_path.is_dir():
+            continue
+        if rendered_dir in json_path.parents:
+            continue
+        json_stems.add(json_path.stem)
+
+    removed = 0
+    for rendered_path in rendered_dir.glob("*.md"):
+        if rendered_path.stem in json_stems:
+            continue
+        try:
+            rendered_path.unlink()
+            removed += 1
+        except OSError as exc:
+            logger.warning(
+                "Rendered cleanup failed path=%s error=%s",
+                rendered_path,
+                exc,
+            )
+    if removed:
+        logger.info(
+            "Rendered cleanup removed=%s athlete_id=%s",
+            removed,
+            athlete_id,
+        )
+    return removed

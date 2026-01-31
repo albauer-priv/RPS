@@ -171,6 +171,7 @@ Streamlit reruns are the core performance constraint.
 ### Workspace index maintenance
 
 * Streamlit startup now prunes missing artifact index entries in the background.
+* Startup cleanup also removes orphaned rendered sidecars in `rendered/`.
 * Keep the cleanup thread fire-once per session and never call `st.*` from it.
 * Use the workspace index manager to remove missing paths and fix `latest/` pointers.
 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.ui.intervals_refresh import ensure_intervals_data
 from rps.ui.shared import SETTINGS, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
@@ -20,6 +21,7 @@ def _cleanup_index_background(root: Path) -> None:
             continue
         mgr = WorkspaceIndexManager(root=root, athlete_id=athlete_dir.name)
         mgr.prune_missing()
+        prune_rendered_sidecars(root, athlete_dir.name)
 
 
 if "index_cleanup_started" not in st.session_state:
