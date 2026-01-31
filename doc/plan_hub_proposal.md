@@ -4,6 +4,28 @@ This document captures the proposed **Plan Hub** layout and readiness logic, and
 
 ---
 
+## Implementation status (as of 2026-01-31)
+
+**Implemented**
+
+- Plan Hub page with readiness checklist, run controls, run execution table, latest outputs, and run history.
+- Run store (`runs/<run_id>/run.json`, `steps.json`, `events.jsonl`) with async worker execution.
+- Manual scenario selection handoff + restart run (superseded runs tracked).
+- Export/post separation with receipts and Intervals commit support.
+
+**Partially implemented**
+
+- Readiness reasons + fix CTAs are present; refine reason granularity and upstream diffs as needed.
+- Run scope summaries exist; expand with binding/informational/advisory grouping where helpful.
+
+**Not implemented (still proposed)**
+
+- Latest outputs card layout with per-card key metrics (currently a table).
+- Optional "Run Execution" live polling tied to worker events (events table available; live polling tuning remains).
+- Rich per-step dependency viewer (upstream “why” drilldown).
+
+---
+
 ## 1) Streamlit-Komponentenstruktur (Seitenlayout + Widgets)
 
 ### A) Page Skeleton (Top-level)
@@ -34,12 +56,12 @@ This follows the current UI contract: global sidebar + always-visible status ban
 1. Inputs (Season Brief, Events, KPI, Availability, Zones, Wellness)
 2. Season Scenarios (`season_scenarios`)
 3. Scenario Selection (`season_scenario_selection`)
-4. **Season Plan** (`macro_overview`)
-5. **Phase Guardrails** (`block_governance`)
-6. **Phase Structure** (`block_execution_arch`)
-7. **Phase Preview** (`block_execution_preview`) *(optional / informational)*
-8. **Week Plan** (`workouts_plan`)
-9. Export (Intervals) (`intervals_workouts`)
+4. **Season Plan** (`season_plan`)
+5. **Phase Guardrails** (`phase_guardrails`)
+6. **Phase Structure** (`phase_structure`)
+7. **Phase Preview** (`phase_preview`) *(optional / informational)*
+8. **Week Plan** (`week_plan`)
+9. Export (Intervals) (`workouts_yyyy-ww.json`)
 10. Performance Report (`des_analysis_report`)
 
 **Pro Step anzeigen:**
@@ -102,10 +124,10 @@ Pipeline mit harten Dependencies (Binding) → deterministische UI‑Prüfung:
 
 **Macro → Meso → Micro → Builder → Analysis**
 
-- Macro outputs: `macro_overview`
-- Meso outputs: `block_governance`, `block_execution_arch` (+ optional preview)
-- Micro outputs: `workouts_plan`
-- Builder outputs: `intervals_workouts`
+- Macro outputs: `season_plan`
+- Meso outputs: `phase_guardrails`, `phase_structure` (+ optional preview)
+- Micro outputs: `week_plan`
+- Builder outputs: `workouts_yyyy-ww.json`
 - Analysis outputs: `des_analysis_report`
 
 ---
@@ -188,7 +210,7 @@ Mindestens eines:
 - **blocked**: scenarios missing
 - **stale**: selection älter als scenarios (oder bezieht sich auf anderes scenario set)
 
-#### Step 4: Season Plan (macro_overview → “Season Plan”)
+#### Step 4: Season Plan (`season_plan`)
 
 - **blocked**: selection missing (wenn zwingend)
 - **stale**: selection newer als macro_overview, oder inputs newer (season_brief / wellness)
@@ -208,7 +230,7 @@ Mindestens eines:
 - **blocked**: guardrails oder structure missing
 - **stale**: guardrails/structure newer, oder week mismatch
 
-#### Step 9: Export (intervals_workouts)
+#### Step 9: Export (workouts_yyyy-ww.json)
 
 - **blocked**: week plan missing
 - **stale**: workouts_plan newer als export
