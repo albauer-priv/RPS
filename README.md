@@ -179,7 +179,7 @@ ws.put_validated(
 Render human-readable sidecars for JSON artefacts:
 
 ```bash
-python3 scripts/artefact_renderer.py kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json
+PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer import render_json_sidecar; render_json_sidecar(Path('kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json'))"
 ```
 
 ## Vector store runtime

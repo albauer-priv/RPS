@@ -351,7 +351,7 @@ flowchart LR
   WS --> VERS[Versioned Files]
   WS --> LATEST[latest/ pointers]
   WS --> IDX[index.json]
-  RENDER[artefact_renderer.py] -. optional .-> VERS
+  RENDER[rendering/renderer.py] -. optional .-> VERS
 ```
 
 **Key rules**
@@ -373,7 +373,7 @@ These are validated against schemas and indexed for downstream analysis.
 
 **Rendering (optional)**
 
-Use `scripts/artefact_renderer.py` to generate human-readable sidecars from JSON.
+Use `rps.rendering.renderer.render_json_sidecar` to generate human-readable sidecars from JSON.
 
 ---
 
@@ -399,8 +399,8 @@ The local store normalizes legacy labels (e.g., Structural → Derived).
 
 ## 6.1 Artefact Renderer
 
-- Script: `scripts/artefact_renderer.py`
-- Templates: `scripts/renderers/*.md.j2`
+- Module: `src/rps/rendering/renderer.py`
+- Templates: `src/rps/rendering/templates/*.md.j2`
 - Purpose: produce human-readable `.md` sidecars (informational only).
 
 ---

@@ -16,22 +16,22 @@ replace the JSON source of truth.
 
 ## 2. Location
 
-- Script: `scripts/artefact_renderer.py`
-- Templates: `scripts/renderers/*.md.j2`
+- Module: `src/rps/rendering/renderer.py`
+- Templates: `src/rps/rendering/templates/*.md.j2`
 
 ---
 
 ## 3. Usage
 
 ```bash
-python3 scripts/artefact_renderer.py path/to/artefact.json
+PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer import render_json_sidecar; render_json_sidecar(Path('path/to/artefact.json'))"
 ```
 
-Optional flags:
+Optional parameters (call-level):
 
-- `--out <path>`: write to a specific output file
-- `--validate`: validate against JSON schema before rendering
-- `--schema-dir <dir>`: override schema directory (default: `SCHEMA_DIR` or `./schemas`)
+- `output_path`: write to a specific output file
+- `validate`: validate against JSON schema before rendering
+- `schema_dir`: override schema directory (default: `SCHEMA_DIR` or `./schemas`)
 
 ---
 
@@ -59,9 +59,9 @@ The renderer supports the following artifact types (meta.artifact_type):
 - Default output location (if `--out` is omitted):
   - `var/athletes/<ATHLETE_ID>/rendered/<filename>.md`
   - `ATHLETE_ID` is loaded from `.env` (Intervals.icu athlete ID).
-- Artefacts saved via the runner are auto-rendered using this script.
+- Artefacts saved via the runner are auto-rendered using the integrated renderer.
 - If `meta.trace_upstream` is a list of strings, it is rendered directly.
-- If `--validate` is enabled, schema validation occurs before rendering.
+- If `validate=True` is enabled, schema validation occurs before rendering.
 - Raw payload artifacts (e.g., `INTERVALS_WORKOUTS`) are not rendered.
 
 ---

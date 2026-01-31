@@ -1,23 +1,17 @@
-#!/usr/bin/env python3
 """Render JSON artifacts to human-readable Markdown sidecars."""
 
-import argparse
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path
-import sys
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-ROOT = Path(__file__).resolve().parents[1]
-SYS_PATH = str(ROOT / "src")
-if SYS_PATH not in sys.path:
-    # Allow running this script directly without installing the package.
-    sys.path.insert(0, SYS_PATH)
+from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 
-from rps.core.config import load_env_file  # noqa: E402
-from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise  # noqa: E402
-from script_logging import configure_logging  # noqa: E402
+REPO_ROOT = Path(__file__).resolve().parents[3]
+TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 RENDERERS = {
     "SEASON_PLAN": "season_plan.md.j2",
@@ -76,28 +70,6 @@ SELF_CHECK_LABELS = {
         "Header includes Implements, ISO-Week-Range, and Trace-Upstream"
     ),
 }
-
-
-def parse_args():
-    """Parse CLI arguments."""
-    parser = argparse.ArgumentParser(
-        description="Render JSON artefacts to Markdown sidecars for HITL/QS."
-    )
-    parser.add_argument("input_json", help="Path to the JSON artefact")
-    parser.add_argument(
-        "--out",
-        help="Optional output path for the rendered Markdown sidecar",
-    )
-    parser.add_argument(
-        "--schema-dir",
-        help="Schema directory for validation (default: SCHEMA_DIR or ./schemas).",
-    )
-    parser.add_argument(
-        "--validate",
-        action="store_true",
-        help="Validate the JSON artefact against the schema before rendering",
-    )
-    return parser.parse_args()
 
 
 def load_json(path: Path):
@@ -1795,39 +1767,49 @@ def render_wellness(doc, template_dir: Path):
     return template.render(**context)
 
 
-def main():
-    """CLI entry point."""
-    args = parse_args()
-    input_path = Path(args.input_json)
+def render_json_sidecar(
+    input_path: Path,
+    output_path: Path | None = None,
+    *,
+    schema_dir: Path | None = None,
+    validate: bool = False,
+    athlete_id: str | None = None,
+) -> Path | None:
+    """Render a JSON artefact to a Markdown sidecar.
+
+    Args:
+        input_path: Path to the JSON artefact.
+        output_path: Optional output path for the rendered Markdown.
+        schema_dir: Optional schema directory for validation.
+        validate: Whether to validate before rendering.
+        athlete_id: Optional athlete id to resolve rendered output location.
+
+    Returns:
+        Path to the rendered Markdown sidecar, or None if nothing was rendered.
+    """
+    if not input_path.exists():
+        return None
+
     doc = load_json(input_path)
-
-    load_env_file(ROOT / ".env")
-    logger = configure_logging(ROOT, Path(__file__).stem)
-
     if isinstance(doc, list):
-        logger.error("Unsupported JSON list artefact (no meta). Skipping render for %s", input_path)
-        print("Unsupported JSON list artefact; skipping render.")
-        return 2
+        return None
 
     meta = doc.get("meta", {})
     artifact_type = meta.get("artifact_type")
     if not artifact_type:
-        raise ValueError("Missing meta.artifact_type in JSON artefact.")
+        return None
 
-    logger.info("Render artifact_type=%s input=%s", artifact_type, input_path)
     if artifact_type not in RENDERERS:
-        logger.error("No renderer registered for %s", artifact_type)
-        print(f"No renderer registered for {artifact_type}. Skipping render.")
-        return 0
+        return None
 
-    schema_dir = Path(
-        args.schema_dir
-        or os.getenv("SCHEMA_DIR", str(Path(__file__).resolve().parents[1] / "schemas"))
+    resolved_schema_dir = Path(
+        schema_dir
+        or os.getenv("SCHEMA_DIR", str(REPO_ROOT / "schemas"))
     ).resolve()
-    if args.validate:
-        validate_document(doc, artifact_type, schema_dir)
+    if validate:
+        validate_document(doc, artifact_type, resolved_schema_dir)
 
-    template_dir = Path(__file__).parent / "renderers"
+    template_dir = TEMPLATE_DIR
     if artifact_type == "SEASON_PLAN":
         rendered = render_season_plan(doc, template_dir)
     elif artifact_type == "PHASE_GUARDRAILS":
@@ -1857,23 +1839,17 @@ def main():
     elif artifact_type == "WELLNESS":
         rendered = render_wellness(doc, template_dir)
     else:
-        raise ValueError(f"Renderer not implemented for {artifact_type}.")
+        return None
 
-    if args.out:
-        output_path = Path(args.out)
-    else:
-        athlete_id = os.getenv("ATHLETE_ID")
-        if athlete_id:
-            out_dir = ROOT / "var" / "athletes" / athlete_id / "rendered"
+    if output_path is None:
+        resolved_athlete_id = athlete_id or os.getenv("ATHLETE_ID")
+        if resolved_athlete_id:
+            out_dir = REPO_ROOT / "var" / "athletes" / resolved_athlete_id / "rendered"
             out_dir.mkdir(parents=True, exist_ok=True)
             output_path = out_dir / f"{input_path.stem}.md"
         else:
             output_path = input_path.with_suffix(".md")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(rendered, encoding="utf-8")
-    print(f"Rendered: {output_path}")
-    logger.info("Rendered output=%s", output_path)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return output_path

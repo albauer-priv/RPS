@@ -73,14 +73,14 @@ Templates are available under:
 | `data/YYYY/WW/` | Data Pipeline | `activities_actual_*`, `activities_trend_*`, `availability_*`, `wellness_*` (+ CSV mirrors) |
 | `latest/` | System | Latest copy of each artefact type (mirrors versioned writes) |
 | `logs/` | System | Per-run logs from scripts and agents |
-| `rendered/` | artefact_renderer | Markdown sidecars derived from JSON artefacts |
+| `rendered/` | renderer | Markdown sidecars derived from JSON artefacts |
 
 ---
 
 ## Rendering (Optional)
 
-Use `scripts/artefact_renderer.py` to generate human-readable sidecars from
-JSON artefacts. These are informational and never authoritative.
+Use `rps.rendering.renderer.render_json_sidecar` to generate human-readable
+sidecars from JSON artefacts. These are informational and never authoritative.
 
 ---
 

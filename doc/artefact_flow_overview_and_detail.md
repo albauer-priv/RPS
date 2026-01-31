@@ -349,8 +349,8 @@ flowchart LR
 - Any JSON artefact (e.g., `phase_guardrails_yyyy-ww--yyyy-ww.json`)
 
 **Processing**
-- `scripts/artefact_renderer.py`
-- Templates in `scripts/renderers/`
+- `rps.rendering.renderer.render_json_sidecar`
+- Templates in `src/rps/rendering/templates/`
 
 **Outputs**
 - `<artefact>.md` (informational only)
