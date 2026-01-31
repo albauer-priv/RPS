@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intervals export files are now versioned as `workouts_yyyy-ww.json` and stored under `data/exports/` with ISO-week keys.
 - Plan Hub now supports manual scenario selection handoff (Season page) with restart + superseded run tracking.
 - Consolidated `doc/planners.md` into `doc/how_to_plan.md` and updated planning/system docs to reflect Plan Hub and commit steps.
+- Renamed Plan WoW page to Workouts and added posting, delete, coach revision, and history views.
 
 ## [0.10.1] - 2026-01-29
 
