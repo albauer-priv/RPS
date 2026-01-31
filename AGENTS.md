@@ -174,6 +174,7 @@ Streamlit reruns are the core performance constraint.
 * Startup cleanup also removes orphaned rendered sidecars in `rendered/`.
 * Keep the cleanup thread fire-once per session and never call `st.*` from it.
 * Use the workspace index manager to remove missing paths and fix `latest/` pointers.
+* Artefact rendering is integrated in `rps.rendering.renderer`; templates live in `src/rps/rendering/templates/`.
 
 ---
 

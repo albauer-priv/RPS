@@ -1,8 +1,8 @@
 # Artefact Renderer
 
-Version: 2.0  
+Version: 2.1  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-01-31
 
 ---
 
