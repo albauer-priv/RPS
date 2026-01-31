@@ -167,6 +167,12 @@ PYTHONPATH=src python3 -m rps.main plan-week \
   --run-id run_2026_06
 ```
 
+### Macro Mode A (scenarios + selection + season plan)
+
+```bash
+PYTHONPATH=src python3 scripts/macro_mode_a.py --year 2026 --week 6 --all --select A --rationale "Base durability focus."
+```
+
 ### Agent tasks
 
 ```bash

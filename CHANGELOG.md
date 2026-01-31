@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Background processes (data pipeline refresh, housekeeping, report generation) now log to the run store with process type/subtype filters in System → Status.
 - Added a background run tracker helper to standardize status updates for async jobs.
 - Scheduling guards prevent overlapping runs of the same process type/subtype and block lower-priority planning runs when higher-priority ones are active.
+- Restored `scripts/macro_mode_a.py` to run Mode A scenarios, selection, and season plan via current agent calls.
 
 ### Changed
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
