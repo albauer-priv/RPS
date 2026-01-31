@@ -11,7 +11,8 @@ Last-Updated: 2026-01-30
 1) Add inputs in `var/athletes/<athlete_id>/inputs/`:
    - `season_brief_yyyy.md`
    - `events.md`
-2) Copy a KPI profile to `var/athletes/<athlete_id>/latest/kpi_profile.json`.
+2) Select a KPI profile (UI: Athlete Profile → KPI Profile) to copy it into
+   `var/athletes/<athlete_id>/latest/kpi_profile.json` and `inputs/kpi_profile.json`.
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
    `python -m rps.main parse-intervals` or UI auto-refresh.
 4) Open the **Plan Hub** and confirm Scope (athlete, ISO year/week, phase).
@@ -55,6 +56,13 @@ available for manual, step-by-step runs.
 
 ### Plan -> Workouts
 - Intervals export view (per-day expanders, descriptions).
+- Posting actions (post/delete), unposted/conflict status.
+- History grouped by month → week → workouts.
+
+### System
+- Status (running processes + latest artefacts).
+- History (artefacts grouped by time with validity).
+- Log (log output + log level selector persisted to `.env`).
 
 ---
 

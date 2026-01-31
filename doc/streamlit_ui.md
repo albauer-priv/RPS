@@ -1,7 +1,7 @@
 # Streamlit UI (RPS)
 
-Minimal browser UI that wraps common RPS flows (preflight, season, plan-week)
-behind a chat-style control surface.
+Multi-page Streamlit UI that surfaces planning, performance, and system
+operations with a consistent global sidebar and status banner.
 
 ## Run
 
@@ -14,17 +14,9 @@ PYTHONPATH=src python3.14 -m streamlit run src/rps/ui/streamlit_app.py
 ## Notes
 
 - Uses the same `.env` as the CLI (`OPENAI_API_KEY` is required).
-- Preflight runs automatically at startup; on success the UI enters core mode.
-- Base state is stored in `st.session_state["rps_state"]`.
-- The sidebar provides explicit buttons; the chat input supports commands like:
-  - `coach` (enter coach mode; use `:quit` to leave coach mode)
-  - `parse availability`
-  - `parse intervals`
-  - `scenarios`
-  - `select scenario`
-  - `season plan`
-  - `plan week`
-  - `show season plan`
+- Non-Coach pages share a global sidebar for athlete + ISO scope.
+- All non-Coach pages render a single status banner for last action/result.
+- Plan Hub relies on the run store (`runs/<run_id>/*`) for execution status.
 
 ## Plan UI layout contract
 
@@ -75,6 +67,20 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 ### Page layout contracts
 
+#### Plan -> Plan Hub
+
+**Header**
+
+- Scope panel (athlete, ISO year/week, phase) + primary CTA (Plan this Week).
+- Status banner summarizing readiness/run state.
+
+**Body**
+
+- Readiness checklist with reasons + fix CTAs.
+- Run planning panel (mode, scope, run id, validate-only, post-to-intervals toggle).
+- Run execution table (steps, status, outputs, events).
+- Latest outputs table + Run history.
+
 #### Plan -> Season
 
 **Action panel (forms)**
@@ -118,6 +124,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 **Action panel**
 
 - Form: Post to Intervals, Delete posted, Revise Week Plan
+- Posting status: unposted/updates/conflicts
 
 **Main content**
 

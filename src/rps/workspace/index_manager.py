@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+from datetime import datetime
 
 
 def utc_iso_now() -> str:
@@ -77,6 +78,66 @@ class WorkspaceIndexManager:
         tmp = path.with_suffix(".json.tmp")
         tmp.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(path)
+
+    def prune_missing(self) -> dict[str, int]:
+        """Remove index entries whose files are missing on disk."""
+        index = self.load()
+        artefacts = index.get("artefacts", {})
+        removed_versions = 0
+        removed_types = 0
+        changed = False
+
+        def _parse_created(value: str | None) -> datetime | None:
+            if not value:
+                return None
+            try:
+                if value.endswith("Z"):
+                    value = value.replace("Z", "+00:00")
+                return datetime.fromisoformat(value)
+            except ValueError:
+                return None
+
+        for artifact_type in list(artefacts.keys()):
+            entry = artefacts.get(artifact_type)
+            if not isinstance(entry, dict):
+                continue
+            versions = entry.get("versions", {})
+            if not isinstance(versions, dict):
+                continue
+            for version_key in list(versions.keys()):
+                record = versions.get(version_key)
+                if not isinstance(record, dict):
+                    continue
+                rel_path = record.get("path") or record.get("relative_path")
+                if not isinstance(rel_path, str):
+                    continue
+                full_path = self.athlete_root() / rel_path
+                if not full_path.exists():
+                    versions.pop(version_key, None)
+                    removed_versions += 1
+                    changed = True
+
+            if not versions:
+                artefacts.pop(artifact_type, None)
+                removed_types += 1
+                changed = True
+                continue
+
+            latest = entry.get("latest")
+            latest_key = latest.get("version_key") if isinstance(latest, dict) else None
+            if latest_key not in versions:
+                sorted_versions = sorted(
+                    versions.values(),
+                    key=lambda rec: _parse_created(rec.get("created_at")) or datetime.min,
+                )
+                entry["latest"] = sorted_versions[-1] if sorted_versions else None
+                changed = True
+
+        if changed:
+            index["artefacts"] = artefacts
+            self.save(index)
+
+        return {"removed_versions": removed_versions, "removed_types": removed_types}
 
     def record_write(
         self,

@@ -6,12 +6,12 @@ This document describes the current Streamlit UI at a systems level so a UI/UX e
 
 ## 1) Executive Summary
 
-**Current structure:** Multi‑page Streamlit app with distinct sections (Home, Coach, Performance, Plan, Athlete Profile).  
-**Plan** is split into subpages: Season, Phase, Week, Workouts (Workouts of the Week).  
-**Status**: Each page uses a **global sidebar** (athlete + ISO week + phase) and a **single always‑visible status banner**.
+**Current structure:** Multi‑page Streamlit app with distinct sections (Home, Coach, Analyse, Plan, Athlete Profile, System).  
+**Plan** includes a **Plan Hub** for orchestration plus subpages: Season, Phase, Week, Workouts.  
+**Status**: Each non‑Coach page uses a **global sidebar** (athlete + ISO week + phase) and a **single always‑visible status banner**.
 
 **Key question:**  
-Should planning stay **distributed across subpages** (Season/Phase/Week/Workouts) or be consolidated into a **single “Plan Hub”** that also surfaces model execution state and run history?
+How should the Plan Hub and subpages balance **overview** vs. **detail** (i.e., what belongs in the hub vs. the subpages)?
 
 ---
 
@@ -57,16 +57,22 @@ Should planning stay **distributed across subpages** (Season/Phase/Week/Workouts
 ### Plan → Workouts
 - Loads Intervals export (`workouts_yyyy-ww.json`)
 - Per‑workout expanders with description (code block)
-- Status banner: “Viewing …”
+- Posting actions: post/delete + conflict indicators
+- History grouped by month → week → workouts
 
-### Performance
+### Analyse
 - Data & Metrics: charts from intervals pipeline
 - Report: run report generation + reasoning display
 - Feed Forward: show last-week DES recommendation + trigger feed-forward steps
 
 ### Athlete Profile
-- Season Brief, Events, Availability, KPI Profile, Zones, Logistics
+- About You, Season Brief, Availability, KPI Profile, Logistics, Zones
 - Status banner for readiness/errors
+
+### System
+- Status: running processes + latest artefacts table
+- History: artefact history grouped by time (with validity)
+- Log: log output + log level selector (persisted)
 
 ---
 
@@ -88,23 +94,31 @@ Should planning stay **distributed across subpages** (Season/Phase/Week/Workouts
 ```mermaid
 flowchart TB
   Home --> Plan
-  Home --> Performance
+  Home --> Analyse
   Home --> AthleteProfile
   Home --> Coach
+  Home --> System
 
   Plan --> PlanSeason
+  Plan --> PlanHub
   Plan --> PlanPhase
   Plan --> PlanWeek
   Plan --> PlanWorkouts
 
-  Performance --> PerfData
-  Performance --> PerfReport
+  Analyse --> PerfData
+  Analyse --> PerfReport
+  Analyse --> PerfFeedForward
 
   AthleteProfile --> AboutYou
   AthleteProfile --> SeasonBrief
   AthleteProfile --> Availability
+  AthleteProfile --> KPIProfile
   AthleteProfile --> Logistics
   AthleteProfile --> Zones
+  
+  System --> SystemStatus
+  System --> SystemHistory
+  System --> SystemLog
 ```
 
 ### 5.2 Planning Flow (Artifact Pipeline)
@@ -162,3 +176,8 @@ flowchart LR
 
 Given Streamlit rerun behavior and testability, **separate pages** are simpler and safer.  
 If a Plan Hub is desired, consider it as a **summary + orchestration layer** that links out to the specialized pages rather than fully replacing them.
+### Plan → Plan Hub
+- Scope panel in header (athlete, ISO year/week, phase)
+- Readiness checklist with reasons + fix CTAs
+- Run planning (orchestrated/scoped) + run execution table
+- Latest outputs + run history

@@ -168,6 +168,12 @@ Streamlit reruns are the core performance constraint.
 * Cache expensive file reads/parsing.
 * Compute summaries once and store in session state when appropriate.
 
+### Workspace index maintenance
+
+* Streamlit startup now prunes missing artifact index entries in the background.
+* Keep the cleanup thread fire-once per session and never call `st.*` from it.
+* Use the workspace index manager to remove missing paths and fix `latest/` pointers.
+
 ---
 
 ## 7) Concurrency / multithreading (important)

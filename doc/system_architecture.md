@@ -88,6 +88,7 @@ flowchart TD
    - Per-run JSON state under `runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
 8. **Streamlit UI (optional)**
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
+   - Multi-page UI with Plan Hub, Plan subpages, Analyse, Athlete Profile, and System tooling.
 
 ---
 
@@ -358,6 +359,7 @@ flowchart LR
 - Every write creates a **versioned file** (e.g. `phase_structure_2026-05--2026-08.json`).
 - `latest/` holds the most recent version per artefact type.
 - `index.json` tracks per-version metadata for routing and exact range lookups.
+- Streamlit startup prunes missing index entries in the background to keep `index.json` and `latest/` consistent.
 - The workspace is **gitignored** and should never be committed.
 
 **Data pipeline outputs**
