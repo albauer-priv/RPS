@@ -178,6 +178,7 @@ Streamlit reruns are the core performance constraint.
 * Background jobs (data pipeline, housekeeping, report generation) write run records with `process_type`/`process_subtype`.
 * Use the background run tracker helper in `rps.ui.run_store` to standardize async job status updates.
 * Scheduler guardrails: only one active run per `process_type` + `process_subtype`; lower-priority planning runs are blocked while higher-priority runs are active.
+* Mode A scenario generation + selection are integrated in the Plan → Season UI (no separate script required).
 
 ---
 

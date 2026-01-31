@@ -45,6 +45,7 @@ available for manual, step-by-step runs.
 - Create scenarios (agent).
 - Manual scenario selection (user decision).
 - Create Season Plan.
+  - Mode A scenario generation + selection are already integrated here (no separate script needed).
 
 ### Plan -> Phase
 - View phase guardrails/structure/preview.
