@@ -35,6 +35,7 @@ This file is the **README for coding agents** working in this repository. It con
 * **Last milestone:** Multi-page UI restructure with isolated page scripts and Coach chat migration.
 * **Recent status:** Coach chat refactor (in-repo chat + compaction + summary UI) is stable across 8–10 dialog turns without errors.
 * **Recent status:** Phase preview layout moved to its own expander with weekly previews below.
+* **Recent status:** Plan Hub season plan reset/delete actions now live in a collapsed expander; run summary banner uses plain text (no "Was wird alles erstellt" prefix).
 
 ### Tech stack & constraints
 

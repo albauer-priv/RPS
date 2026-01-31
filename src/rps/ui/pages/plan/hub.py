@@ -16,6 +16,7 @@ import pandas as pd
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
+    append_system_log,
     ensure_logging,
     build_phase_options,
     get_athlete_id,
@@ -602,6 +603,23 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     return steps
 
 
+def _show_reset_delete_actions() -> None:
+    """Render reset/delete season plan actions with confirmation."""
+    with st.form("plan_hub_season_actions"):
+        action = st.selectbox("Action", options=["Reset Season Plan", "Delete Season Plan"])
+        confirmation = st.text_input('Type "YES I WANT TO PROCEED" to continue')
+        submitted = st.form_submit_button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED")
+    if submitted:
+        append_system_log("plan_hub", f"{action} requested.")
+        st.info(f"{action} flow will trigger (TODO).")
+        set_status(
+            status_state="running",
+            title="Plan Hub",
+            message=f"{action} requested.",
+            last_action=action,
+        )
+
+
 def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
     """Return a list of latest artifact summaries for cards."""
     logger.info("Building latest outputs athlete=%s", athlete_id)
@@ -1175,46 +1193,87 @@ if run_state:
 if active_run_id:
     _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id)
 
-header_left, header_right = st.columns([2, 1])
-with header_left:
-    st.caption(f"Athlete: {hub_scope['athlete_id']} · ISO {hub_scope['iso_year']}-W{hub_scope['iso_week']:02d}")
+st.subheader("Readiness")
+st.caption("Review required artefacts and resolve missing or stale steps before planning.")
+readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
+required_steps = [step for step in readiness if not step.optional]
+total_required = len(required_steps)
+ready_required = sum(1 for step in required_steps if step.status == "ready")
+has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
+overall_status = "ready" if not has_attention else "stale"
+overall_message = (
+    f"{ready_required}/{total_required} ready · "
+    f"{sum(1 for step in required_steps if step.status == 'stale')} warnings · "
+    f"{sum(1 for step in required_steps if step.status in {'missing', 'blocked'})} missing/blocked"
+)
+status_state = "done" if overall_status == "ready" else "stale"
+status_message = "Ready" if overall_status == "ready" else "Attention needed"
+if run_state:
+    status_state = "running"
+    status_message = "Running"
+set_status(status_state=status_state, title="Plan Hub", message=status_message)
+render_status_panel()
+st.caption(overall_message)
 
-with header_right:
-    st.markdown("**Scope**")
-    scope_cols = st.columns(3)
-    with scope_cols[0]:
-        athlete_id = st.text_input(
-            "Athlete",
-            value=hub_scope["athlete_id"],
-            disabled=scope_lock,
-            label_visibility="collapsed",
-        )
-    with scope_cols[1]:
-        year = int(
-            st.number_input(
-                "ISO Year",
-                min_value=2000,
-                max_value=2100,
-                value=hub_scope["iso_year"],
-                step=1,
-                disabled=scope_lock,
-                label_visibility="collapsed",
-            )
-        )
-    with scope_cols[2]:
-        week = int(
-            st.number_input(
-                "ISO Week",
-                min_value=1,
-                max_value=53,
-                value=hub_scope["iso_week"],
-                step=1,
-                disabled=scope_lock,
-                label_visibility="collapsed",
-            )
-        )
+readiness_container = st.container()
+readiness_cols = readiness_container.columns(2)
+split_idx = (len(readiness) + 1) // 2
+for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_idx:]]):
+    with col:
+        for step in steps:
+            header = f"{_status_badge(step.status)} {step.label}"
+            with st.expander(header, expanded=step.status in {"missing", "blocked"}):
+                st.write(step.summary)
+                st.caption(step.reason)
+                if step.latest:
+                    st.caption(f"Latest version: {step.latest}")
+                if step.run_id:
+                    st.caption(f"Run id: {step.run_id}")
+                if step.fix_label:
+                    cols = st.columns(2)
+                    with cols[0]:
+                        st.button(step.fix_label, key=f"fix_{step.key}")
+                    with cols[1]:
+                        st.button("View dependency", key=f"dep_{step.key}")
 
+with st.expander("Season Plan: Delete or Reset", expanded=False):
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    has_plan = store.latest_exists(hub_scope["athlete_id"], ArtifactType.SEASON_PLAN)
+    if has_plan:
+        _show_reset_delete_actions()
+    else:
+        st.caption("No season plan available for reset/delete actions.")
+
+scope_col, run_col = st.columns([1, 1])
+
+with scope_col:
+    st.subheader("Scope")
+    st.caption(f"Athlete: {hub_scope['athlete_id']} · ISO {hub_scope['iso_year']}-W{hub_scope['iso_week']:02d}")
+    athlete_id = st.text_input(
+        "Athlete",
+        value=hub_scope["athlete_id"],
+        disabled=scope_lock,
+    )
+    year = int(
+        st.number_input(
+            "ISO Year",
+            min_value=2000,
+            max_value=2100,
+            value=hub_scope["iso_year"],
+            step=1,
+            disabled=scope_lock,
+        )
+    )
+    week = int(
+        st.number_input(
+            "ISO Week",
+            min_value=1,
+            max_value=53,
+            value=hub_scope["iso_week"],
+            step=1,
+            disabled=scope_lock,
+        )
+    )
     phase_label = hub_scope.get("phase_label")
     phases = []
     season_plan = None
@@ -1233,7 +1292,6 @@ with header_right:
             options=options,
             index=options.index(phase_label),
             disabled=scope_lock,
-            label_visibility="collapsed",
         )
     hub_scope = {
         "athlete_id": athlete_id,
@@ -1242,9 +1300,12 @@ with header_right:
         "phase_label": phase_label,
     }
     st.session_state["hub_scope"] = hub_scope
-
     if run_state:
         st.caption(f"Running for {athlete_id} · {year}-W{week:02d}")
+
+summary_text = None
+with run_col:
+    st.subheader("Run Planning")
     if st.button("Plan this Week", disabled=scope_lock is True):
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
@@ -1286,47 +1347,6 @@ with header_right:
         _ensure_worker(SETTINGS.workspace_root, athlete_id, run_id)
         st.info("Run requested (placeholder).")
 
-left, right = st.columns([1, 2])
-
-with left:
-    st.subheader("Readiness")
-    readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
-    required_steps = [step for step in readiness if not step.optional]
-    total_required = len(required_steps)
-    ready_required = sum(1 for step in required_steps if step.status == "ready")
-    has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
-    overall_status = "ready" if not has_attention else "stale"
-    overall_message = (
-        f"{ready_required}/{total_required} ready · "
-        f"{sum(1 for step in required_steps if step.status == 'stale')} warnings · "
-        f"{sum(1 for step in required_steps if step.status in {'missing', 'blocked'})} missing/blocked"
-    )
-    status_state = "done" if overall_status == "ready" else "stale"
-    status_message = "Ready" if overall_status == "ready" else "Attention needed"
-    if run_state:
-        status_state = "running"
-        status_message = "Running"
-    set_status(status_state=status_state, title="Plan Hub", message=status_message)
-    render_status_panel()
-    st.caption(overall_message)
-    for step in readiness:
-        header = f"{_status_badge(step.status)} {step.label}"
-        with st.expander(header, expanded=step.status in {"missing", "blocked"}):
-            st.write(step.summary)
-            st.caption(step.reason)
-            if step.latest:
-                st.caption(f"Latest version: {step.latest}")
-            if step.run_id:
-                st.caption(f"Run id: {step.run_id}")
-            if step.fix_label:
-                cols = st.columns(2)
-                with cols[0]:
-                    st.button(step.fix_label, key=f"fix_{step.key}")
-                with cols[1]:
-                    st.button("View dependency", key=f"dep_{step.key}")
-
-with right:
-    st.subheader("Run Planning")
     run_mode = st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])
     scope = None
     post_toggle = st.checkbox("Post to Intervals after export", value=False)
@@ -1379,7 +1399,6 @@ with right:
     summary_text = scope_summary.get(scope, scope_summary[None])
     if run_mode != "Scoped" and post_toggle:
         summary_text = f"{summary_text} + Post to Intervals"
-    st.info(summary_text)
     if run_mode == "Scoped":
         if st.button("Run scoped"):
             desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
@@ -1420,6 +1439,9 @@ with right:
             st.session_state["plan_hub_active_run_id"] = run_id
             _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id)
             st.info("Run requested (placeholder).")
+
+if summary_text:
+    st.info(summary_text)
 
 st.subheader("Run Execution")
 if active_run:
