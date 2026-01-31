@@ -79,7 +79,6 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Readiness checklist with reasons + fix CTAs.
 - Run planning panel (mode, scope, run id, validate-only, post-to-intervals toggle).
 - Run execution table (steps, status, outputs, events).
-- Latest outputs table + Run history.
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
 
 #### Plan -> Season
@@ -146,6 +145,8 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Latest artefacts list (latest per type)
 
 #### System -> History
+- Latest outputs table (with diff/versions)
+- Run history tables (planning + data)
 - Historical artefacts grouped by month with Season/Phase/Week focus
 
 #### System -> Log
