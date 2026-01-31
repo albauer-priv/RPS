@@ -169,6 +169,9 @@ if not rows:
 set_status(status_state="done", title="System", message="History loaded.")
 render_status_panel()
 
+st.subheader("Overview")
+st.caption("Latest outputs and run history (planning + data).")
+
 st.subheader("Latest Outputs")
 latest_rows = _latest_outputs(athlete_id)
 table_header = st.columns([2, 1, 1, 1, 1, 1.5])
@@ -295,6 +298,9 @@ with tab_planning:
     st.dataframe(_run_history(limit=50, allowed=planning_types), use_container_width=True)
 with tab_data:
     st.dataframe(_run_history(limit=50, allowed=data_types), use_container_width=True)
+
+st.subheader("Artifact History")
+st.caption("Historical artefacts grouped by month (newest first).")
 
 month_map: dict[str, list[dict[str, str]]] = defaultdict(list)
 for row in rows:
