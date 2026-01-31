@@ -61,6 +61,11 @@ def _utc_run_id_suffix() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
+def _utc_timestamp() -> str:
+    """Return current UTC time as ISO-8601 string."""
+    return _utc_iso_now()
+
+
 def _atomic_write_json(path: Path, payload: dict | list) -> None:
     """Write JSON atomically to avoid partial reads."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,6 +192,60 @@ def start_background_run(
         record["started_at"] = _utc_iso_now()
     append_run(root, athlete_id, record)
     return run_id
+
+
+@dataclass(frozen=True)
+class BackgroundRunTracker:
+    """Helper for updating background run status."""
+
+    root: Path
+    athlete_id: str
+    run_id: str
+
+    def mark_running(self, message: str) -> None:
+        update_run(
+            self.root,
+            self.athlete_id,
+            self.run_id,
+            {"status": "RUNNING", "message": message, "started_at": _utc_timestamp()},
+        )
+
+    def mark_done(self, message: str) -> None:
+        update_run(
+            self.root,
+            self.athlete_id,
+            self.run_id,
+            {"status": "DONE", "message": message, "finished_at": _utc_timestamp()},
+        )
+
+    def mark_failed(self, message: str) -> None:
+        update_run(
+            self.root,
+            self.athlete_id,
+            self.run_id,
+            {"status": "FAILED", "message": message, "finished_at": _utc_timestamp()},
+        )
+
+
+def start_background_tracker(
+    root: Path,
+    athlete_id: str,
+    *,
+    process_type: str,
+    process_subtype: str,
+    message: str,
+    status: str = "QUEUED",
+) -> BackgroundRunTracker:
+    """Start a background run and return a tracker for updates."""
+    run_id = start_background_run(
+        root,
+        athlete_id,
+        process_type=process_type,
+        process_subtype=process_subtype,
+        message=message,
+        status=status,
+    )
+    return BackgroundRunTracker(root=root, athlete_id=athlete_id, run_id=run_id)
 
 
 def acquire_athlete_lock(root: Path, athlete_id: str, run_id: str) -> bool:

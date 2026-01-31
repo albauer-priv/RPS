@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import os
 import threading
-from datetime import datetime, timezone
 from pathlib import Path
 
 import streamlit as st
 
 from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.ui.intervals_refresh import ensure_intervals_data
-from rps.ui.run_store import start_background_run, update_run
+from rps.ui.run_store import start_background_tracker
 from rps.ui.shared import SETTINGS, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
 
@@ -21,7 +20,7 @@ def _cleanup_index_background(root: Path) -> None:
     for athlete_dir in root.iterdir():
         if not athlete_dir.is_dir():
             continue
-        run_id = start_background_run(
+        tracker = start_background_tracker(
             root,
             athlete_dir.name,
             process_type="system_housekeeping",
@@ -33,27 +32,9 @@ def _cleanup_index_background(root: Path) -> None:
         try:
             mgr.prune_missing()
             prune_rendered_sidecars(root, athlete_dir.name)
-            update_run(
-                root,
-                athlete_dir.name,
-                run_id,
-                {
-                    "status": "DONE",
-                    "message": "Housekeeping cleanup complete.",
-                    "finished_at": datetime.now(timezone.utc).isoformat(),
-                },
-            )
+            tracker.mark_done("Housekeeping cleanup complete.")
         except Exception as exc:  # pragma: no cover - background guard
-            update_run(
-                root,
-                athlete_dir.name,
-                run_id,
-                {
-                    "status": "FAILED",
-                    "message": f"Housekeeping cleanup failed: {exc}",
-                    "finished_at": datetime.now(timezone.utc).isoformat(),
-                },
-            )
+            tracker.mark_failed(f"Housekeeping cleanup failed: {exc}")
 
 
 if "index_cleanup_started" not in st.session_state:

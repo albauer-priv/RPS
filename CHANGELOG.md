@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streamlit startup now prunes missing artifact index entries in the background.
 - Streamlit startup now removes orphaned rendered sidecars when source JSON is missing.
 - Background processes (data pipeline refresh, housekeeping, report generation) now log to the run store with process type/subtype filters in System → Status.
+- Added a background run tracker helper to standardize status updates for async jobs.
 
 ### Changed
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
