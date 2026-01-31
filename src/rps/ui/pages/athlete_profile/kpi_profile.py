@@ -6,6 +6,7 @@ from pathlib import Path
 import streamlit as st
 
 from rps.ui.shared import (
+    ROOT,
     SETTINGS,
     announce_log_file,
     get_athlete_id,
@@ -32,7 +33,7 @@ announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
 
-profiles_dir = Path(SETTINGS.repo_root) / "kpi_profiles"
+profiles_dir = ROOT / "kpi_profiles"
 profile_paths = sorted(profiles_dir.glob("kpi_profile_*.json"))
 
 if not profile_paths:
@@ -90,6 +91,9 @@ if st.button("Use this KPI Profile"):
         run_id=f"kpi_profile_select_{version_key}",
         update_latest=True,
     )
+    # Ensure a canonical inputs copy exists (kpi_profile.json) alongside versioned input.
+    inputs_path = store.type_dir(athlete_id, ArtifactType.KPI_PROFILE) / "kpi_profile.json"
+    inputs_path.write_text(json.dumps(selected_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     set_status(
         status_state="done",
         title="KPI Profile",

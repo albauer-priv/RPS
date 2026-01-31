@@ -50,3 +50,9 @@ def test_kpi_profile_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
     at.run()
     assert len(at.error) == 0
+
+
+def test_feed_forward_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/performance/feed_forward.py")
+    at.run()
+    assert len(at.error) == 0

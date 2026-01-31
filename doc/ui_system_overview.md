@@ -62,6 +62,7 @@ Should planning stay **distributed across subpages** (Season/Phase/Week/Workouts
 ### Performance
 - Data & Metrics: charts from intervals pipeline
 - Report: run report generation + reasoning display
+- Feed Forward: show last-week DES recommendation + trigger feed-forward steps
 
 ### Athlete Profile
 - Season Brief, Events, Availability, KPI Profile, Zones, Logistics

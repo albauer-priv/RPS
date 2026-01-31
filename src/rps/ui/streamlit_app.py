@@ -22,6 +22,11 @@ performance_report = st.Page(
     title="Report",
     icon=":material/assignment:",
 )
+performance_feed_forward = st.Page(
+    "pages/performance/feed_forward.py",
+    title="Feed Forward",
+    icon=":material/forward:",
+)
 
 plan_season = st.Page(
     "pages/plan/season.py",
@@ -100,7 +105,7 @@ pg = st.navigation(
         {
             "Home": [home],
             "Coach": [coach],
-        "Analyse": [performance_data, performance_report],
+        "Analyse": [performance_data, performance_report, performance_feed_forward],
         "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_workouts],
         "Athlete Profile": [about_you, season_brief, availability, kpi_profile, logistics, zones],
         "System": [system_status, system_history, system_log],

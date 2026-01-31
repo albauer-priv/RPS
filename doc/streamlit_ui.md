@@ -124,6 +124,13 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Current week workouts (from Intervals export)
 - History grouped by month -> week -> workouts
 
+### Performance pages
+
+#### Performance -> Feed Forward
+- Last-week DES recommendation (Season Planner focus)
+- Trigger Season → Phase and Phase → Week feed-forward
+- Feed-forward artefact table + process status
+
 ### System pages
 
 #### System -> Status

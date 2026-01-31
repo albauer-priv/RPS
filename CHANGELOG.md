@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `intervals_posting.md` and refactored Intervals posting script into the data pipeline module.
 - Posting commit now supports Intervals bulk upsert (updates) and bulk delete via external_id.
 - Athlete Profile now includes a KPI Profile page with selection and workspace sync.
+- Added Feed Forward page under Analyse with DES recommendations and feed-forward triggers.
 
 ### Changed
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
