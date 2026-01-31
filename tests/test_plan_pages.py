@@ -30,3 +30,23 @@ def test_workouts_page_renders():
     at.run()
     assert len(at.error) == 0
     assert len(at.info) >= 1
+
+
+def test_system_pages_render():
+    status = AppTest.from_file("src/rps/ui/pages/system/status.py")
+    status.run()
+    assert len(status.error) == 0
+
+    history = AppTest.from_file("src/rps/ui/pages/system/history.py")
+    history.run()
+    assert len(history.error) == 0
+
+    log_page = AppTest.from_file("src/rps/ui/pages/system/log.py")
+    log_page.run()
+    assert len(log_page.error) == 0
+
+
+def test_kpi_profile_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
+    at.run()
+    assert len(at.error) == 0

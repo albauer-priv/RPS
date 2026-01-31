@@ -64,7 +64,7 @@ Should planning stay **distributed across subpages** (Season/Phase/Week/Workouts
 - Report: run report generation + reasoning display
 
 ### Athlete Profile
-- Season Brief, Events, Availability, Zones, Logistics
+- Season Brief, Events, Availability, KPI Profile, Zones, Logistics
 - Status banner for readiness/errors
 
 ---

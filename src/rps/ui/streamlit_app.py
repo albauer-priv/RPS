@@ -64,6 +64,11 @@ availability = st.Page(
     title="Availability",
     icon=":material/event_available:",
 )
+kpi_profile = st.Page(
+    "pages/athlete_profile/kpi_profile.py",
+    title="KPI Profile",
+    icon=":material/analytics:",
+)
 logistics = st.Page(
     "pages/athlete_profile/logistics.py",
     title="Logistics",
@@ -75,13 +80,30 @@ zones = st.Page(
     icon=":material/straighten:",
 )
 
+system_status = st.Page(
+    "pages/system/status.py",
+    title="Status",
+    icon=":material/monitor_heart:",
+)
+system_history = st.Page(
+    "pages/system/history.py",
+    title="History",
+    icon=":material/history:",
+)
+system_log = st.Page(
+    "pages/system/log.py",
+    title="Log",
+    icon=":material/receipt_long:",
+)
+
 pg = st.navigation(
         {
             "Home": [home],
             "Coach": [coach],
         "Analyse": [performance_data, performance_report],
         "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_workouts],
-        "Athlete Profile": [about_you, season_brief, availability, logistics, zones],
+        "Athlete Profile": [about_you, season_brief, availability, kpi_profile, logistics, zones],
+        "System": [system_status, system_history, system_log],
     }
 )
 max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))

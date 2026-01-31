@@ -117,11 +117,24 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 **Action panel**
 
-- Form: Load Week Plan (submit)
+- Form: Post to Intervals, Delete posted, Revise Week Plan
 
 **Main content**
 
-- Rendered Week Plan or JSON fallback
+- Current week workouts (from Intervals export)
+- History grouped by month -> week -> workouts
+
+### System pages
+
+#### System -> Status
+- Running processes with filters
+- Latest artefacts list (latest per type)
+
+#### System -> History
+- Historical artefacts grouped by month with Season/Phase/Week focus
+
+#### System -> Log
+- System log output + log level selector (persist to .env)
 
 ### Notes
 
