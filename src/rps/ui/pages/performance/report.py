@@ -22,7 +22,7 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.ui.run_store import start_background_tracker
+from rps.ui.run_store import find_active_runs, start_background_tracker
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from rps.workspace.iso_helpers import IsoWeek
@@ -40,6 +40,22 @@ def _schedule_report_job(
     runtime_provider: Callable[[str], Any],
     run_id_prefix: str,
 ) -> dict:
+    active = find_active_runs(
+        SETTINGS.workspace_root,
+        athlete_id,
+        process_type="agent",
+        process_subtype="performance_report",
+    )
+    if active:
+        return {
+            "thread": None,
+            "status": "running",
+            "message": "Report creation already running.",
+            "reasonings": [],
+            "logs": [],
+            "result": None,
+            "run_id": active[0].get("run_id") or "active",
+        }
     tracker = start_background_tracker(
         SETTINGS.workspace_root,
         athlete_id,

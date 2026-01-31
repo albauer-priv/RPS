@@ -32,6 +32,7 @@ from rps.ui.run_store import (
     acquire_athlete_lock,
     append_event,
     append_run,
+    find_active_runs,
     load_events,
     load_runs,
     release_athlete_lock,
@@ -128,6 +129,52 @@ STEP_DEFINITIONS = [
         "authority": ["Advisory"],
     },
 ]
+
+PLANNING_SCOPE_SUBTYPE = {
+    "Season Scenarios": "season_scenarios",
+    "Selected Scenario": "scenario_selection",
+    "Season Plan": "season_plan",
+    "Phase (Guardrails + Structure)": "phase",
+    "Week Plan": "week_plan",
+    "Export Workouts": "export_workouts",
+    "Post to Intervals": "post_intervals",
+    "Performance Report": "performance_report",
+}
+
+PLANNING_PRIORITY = {
+    "orchestrated": 3,
+    "season_scenarios": 3,
+    "scenario_selection": 3,
+    "season_plan": 3,
+    "phase": 2,
+    "week_plan": 1,
+    "export_workouts": 0,
+    "post_intervals": 0,
+    "performance_report": 0,
+}
+
+
+def _planning_priority(subtype: str | None) -> int:
+    if not subtype:
+        return 0
+    return PLANNING_PRIORITY.get(subtype, 0)
+
+
+def _planning_block_reason(root: Path, athlete_id: str, desired_subtype: str) -> str | None:
+    active = find_active_runs(root, athlete_id, process_type="planning")
+    if not active:
+        return None
+    desired_priority = _planning_priority(desired_subtype)
+    for run in active:
+        active_subtype = run.get("process_subtype") or "unknown"
+        if active_subtype == desired_subtype:
+            return f"{desired_subtype.replace('_', ' ').title()} is already running."
+        if _planning_priority(active_subtype) > desired_priority:
+            return (
+                "A higher-priority planning run is active. "
+                "Wait for it to finish before starting this run."
+            )
+    return None
 
 STEP_DEPS = {
     "SEASON_SCENARIOS": ["INPUTS_CHECK"],
@@ -1194,6 +1241,14 @@ with header_right:
     if run_state:
         st.caption(f"Running for {athlete_id} · {year}-W{week:02d}")
     if st.button("Plan this Week", disabled=scope_lock is True):
+        block_reason = _planning_block_reason(
+            SETTINGS.workspace_root,
+            athlete_id,
+            "orchestrated",
+        )
+        if block_reason:
+            st.warning(block_reason)
+            st.stop()
         run_id = f"plan_hub_{year:04d}W{week:02d}"
         readiness = _compute_readiness(athlete_id, year, week)
         post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
@@ -1209,6 +1264,8 @@ with header_right:
             "iso_week": week,
             "phase_label": phase_label,
             "mode": "Orchestrated",
+            "process_type": "planning",
+            "process_subtype": "orchestrated",
             "scope": None,
             "status": "QUEUED",
             "steps": steps,
@@ -1320,6 +1377,15 @@ with right:
     st.info(summary_text)
     if run_mode == "Scoped":
         if st.button("Run scoped"):
+            desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
+            block_reason = _planning_block_reason(
+                SETTINGS.workspace_root,
+                hub_scope["athlete_id"],
+                desired_subtype,
+            )
+            if block_reason:
+                st.warning(block_reason)
+                st.stop()
             readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
             include_post = True if scope == "Post to Intervals" else post_toggle
             steps = _build_execution_steps(readiness, "Scoped", scope, include_post_intervals=include_post)
@@ -1333,6 +1399,8 @@ with right:
                 "iso_week": hub_scope["iso_week"],
                 "phase_label": hub_scope.get("phase_label"),
                 "mode": "Scoped",
+                "process_type": "planning",
+                "process_subtype": desired_subtype,
                 "scope": scope,
                 "status": "QUEUED",
                 "steps": steps,

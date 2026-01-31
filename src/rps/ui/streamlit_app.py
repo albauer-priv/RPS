@@ -8,7 +8,7 @@ import streamlit as st
 
 from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.ui.intervals_refresh import ensure_intervals_data
-from rps.ui.run_store import start_background_tracker
+from rps.ui.run_store import find_active_runs, start_background_tracker
 from rps.ui.shared import SETTINGS, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
 
@@ -19,6 +19,14 @@ def _cleanup_index_background(root: Path) -> None:
     """Background cleanup for missing index entries."""
     for athlete_dir in root.iterdir():
         if not athlete_dir.is_dir():
+            continue
+        active = find_active_runs(
+            root,
+            athlete_dir.name,
+            process_type="system_housekeeping",
+            process_subtype="index_cleanup",
+        )
+        if active:
             continue
         tracker = start_background_tracker(
             root,

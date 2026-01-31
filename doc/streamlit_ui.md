@@ -80,6 +80,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Run planning panel (mode, scope, run id, validate-only, post-to-intervals toggle).
 - Run execution table (steps, status, outputs, events).
 - Latest outputs table + Run history.
+- Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
 
 #### Plan -> Season
 

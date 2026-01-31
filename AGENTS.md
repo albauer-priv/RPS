@@ -177,6 +177,7 @@ Streamlit reruns are the core performance constraint.
 * Artefact rendering is integrated in `rps.rendering.renderer`; templates live in `src/rps/rendering/templates/`.
 * Background jobs (data pipeline, housekeeping, report generation) write run records with `process_type`/`process_subtype`.
 * Use the background run tracker helper in `rps.ui.run_store` to standardize async job status updates.
+* Scheduler guardrails: only one active run per `process_type` + `process_subtype`; lower-priority planning runs are blocked while higher-priority runs are active.
 
 ---
 

@@ -11,7 +11,7 @@ import streamlit as st
 
 from rps.core.config import load_app_settings, load_env_file
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
-from rps.ui.run_store import start_background_tracker
+from rps.ui.run_store import find_active_runs, start_background_tracker
 
 ROOT = Path(__file__).resolve().parents[3]
 load_env_file(ROOT / ".env")
@@ -50,6 +50,21 @@ def _intervals_job_key(athlete_id: str) -> str:
 
 
 def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key: str) -> dict:
+    active = find_active_runs(
+        SETTINGS.workspace_root,
+        athlete_id,
+        process_type="data_pipeline",
+        process_subtype="intervals_fetch",
+    )
+    if active:
+        run_id = active[0].get("run_id") or "active"
+        return {
+            "thread": None,
+            "status": "running",
+            "message": "Intervals pipeline already running.",
+            "exception": None,
+            "run_id": run_id,
+        }
     args = argparse.Namespace(
         year=None,
         week=None,

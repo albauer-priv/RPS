@@ -88,6 +88,7 @@ flowchart TD
    - Per-run JSON state under `runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
    - Background jobs (data pipeline, housekeeping, agent reports) also write run records with `process_type`/`process_subtype`.
    - Use the background run tracker helper to standardize status updates.
+   - Scheduling guards block concurrent runs sharing the same type/subtype and prevent lower-priority planning runs while higher-priority ones are active.
 8. **Streamlit UI (optional)**
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
    - Multi-page UI with Plan Hub, Plan subpages, Analyse, Athlete Profile, and System tooling.

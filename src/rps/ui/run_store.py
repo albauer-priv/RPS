@@ -13,6 +13,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+ACTIVE_RUN_STATUSES = {"QUEUED", "RUNNING"}
 
 @dataclass(frozen=True)
 class RunStoreConfig:
@@ -120,6 +121,40 @@ def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[dict[str,
                 logger.warning("Skipping invalid run_store line in %s", path)
     records.sort(key=lambda r: r.get("created_at") or "", reverse=True)
     return records[:limit]
+
+
+def find_active_runs(
+    root: Path,
+    athlete_id: str,
+    *,
+    process_type: str | None = None,
+    process_subtype: str | None = None,
+    statuses: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Return active runs optionally filtered by type/subtype."""
+    active_statuses = statuses or ACTIVE_RUN_STATUSES
+    runs = load_runs(root, athlete_id, limit=200)
+    results: list[dict[str, Any]] = []
+    for run in runs:
+        if run.get("status") not in active_statuses:
+            continue
+        if process_type and run.get("process_type") != process_type:
+            continue
+        if process_subtype and run.get("process_subtype") != process_subtype:
+            continue
+        results.append(run)
+    return results
+
+
+def has_active_run(
+    root: Path,
+    athlete_id: str,
+    *,
+    process_type: str | None = None,
+    process_subtype: str | None = None,
+) -> bool:
+    """Return True if any active run exists for the filters."""
+    return bool(find_active_runs(root, athlete_id, process_type=process_type, process_subtype=process_subtype))
 
 
 def append_run(root: Path, athlete_id: str, record: dict[str, Any]) -> None:
