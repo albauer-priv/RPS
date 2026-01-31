@@ -11,6 +11,7 @@ import streamlit as st
 
 from rps.core.config import load_app_settings, load_env_file
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
+from rps.ui.run_store import start_background_run, update_run
 
 ROOT = Path(__file__).resolve().parents[3]
 load_env_file(ROOT / ".env")
@@ -57,25 +58,52 @@ def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key
         athlete=athlete_id,
         skip_validate=False,
     )
+    run_id = start_background_run(
+        SETTINGS.workspace_root,
+        athlete_id,
+        process_type="data_pipeline",
+        process_subtype="intervals_fetch",
+        message="Intervals refresh queued...",
+        status="QUEUED",
+    )
     job: dict = {
         "thread": None,
         "status": "queued",
         "message": "Intervals refresh queued...",
         "exception": None,
+        "run_id": run_id,
     }
 
     def worker() -> None:
         job["status"] = "running"
         job["message"] = "Running Intervals pipeline..."
+        update_run(
+            SETTINGS.workspace_root,
+            athlete_id,
+            run_id,
+            {"status": "RUNNING", "message": job["message"], "started_at": datetime.now(timezone.utc).isoformat()},
+        )
         try:
             run_intervals_pipeline(args, logger=logger)
             job["status"] = "done"
             job["message"] = "Intervals data refreshed."
+            update_run(
+                SETTINGS.workspace_root,
+                athlete_id,
+                run_id,
+                {"status": "DONE", "message": job["message"], "finished_at": datetime.now(timezone.utc).isoformat()},
+            )
         except Exception as exc:  # pragma: no cover - thread fallback
             job["status"] = "failed"
             job["message"] = f"Intervals pipeline failed: {exc}"
             job["exception"] = exc
             logger.exception("Intervals pipeline failed for athlete=%s", athlete_id)
+            update_run(
+                SETTINGS.workspace_root,
+                athlete_id,
+                run_id,
+                {"status": "FAILED", "message": job["message"], "finished_at": datetime.now(timezone.utc).isoformat()},
+            )
 
     thread = threading.Thread(target=worker, daemon=True)
     job["thread"] = thread

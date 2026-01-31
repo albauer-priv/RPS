@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any, Callable
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
@@ -22,6 +23,7 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
+from rps.ui.run_store import start_background_run, update_run
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from rps.workspace.iso_helpers import IsoWeek
@@ -39,6 +41,14 @@ def _schedule_report_job(
     runtime_provider: Callable[[str], Any],
     run_id_prefix: str,
 ) -> dict:
+    run_id = start_background_run(
+        SETTINGS.workspace_root,
+        athlete_id,
+        process_type="agent",
+        process_subtype="performance_report",
+        message="Queued report creation.",
+        status="QUEUED",
+    )
     job: dict = {
         "thread": None,
         "status": "queued",
@@ -46,11 +56,18 @@ def _schedule_report_job(
         "reasonings": [],
         "logs": [],
         "result": None,
+        "run_id": run_id,
     }
 
     def worker() -> None:
         job["status"] = "running"
         job["message"] = "Creating performance report..."
+        update_run(
+            SETTINGS.workspace_root,
+            athlete_id,
+            run_id,
+            {"status": "RUNNING", "message": job["message"], "started_at": datetime.now(timezone.utc).isoformat()},
+        )
 
         def _capture_stream(delta: str) -> None:
             job["reasonings"].append(delta)
@@ -67,10 +84,22 @@ def _schedule_report_job(
             job["logs"] = result.get("reasoning_log", [])
             job["message"] = result.get("message", "Report creation completed.")
             job["status"] = "done"
+            update_run(
+                SETTINGS.workspace_root,
+                athlete_id,
+                run_id,
+                {"status": "DONE", "message": job["message"], "finished_at": datetime.now(timezone.utc).isoformat()},
+            )
         except Exception as exc:  # pragma: no cover - background failure
             job["result"] = {"ok": False, "message": str(exc)}
             job["message"] = f"Report creation failed: {exc}"
             job["status"] = "failed"
+            update_run(
+                SETTINGS.workspace_root,
+                athlete_id,
+                run_id,
+                {"status": "FAILED", "message": job["message"], "finished_at": datetime.now(timezone.utc).isoformat()},
+            )
 
     thread = threading.Thread(target=worker, daemon=True)
     ctx = get_script_run_ctx()

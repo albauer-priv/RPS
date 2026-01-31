@@ -70,7 +70,7 @@ How should the Plan Hub and subpages balance **overview** vs. **detail** (i.e., 
 - Status banner for readiness/errors
 
 ### System
-- Status: running processes + latest artefacts table
+- Status: running processes + latest artefacts table (filterable by type/subtype)
 - History: artefact history grouped by time (with validity)
 - Log: log output + log level selector (persisted)
 

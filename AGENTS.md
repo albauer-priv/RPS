@@ -175,6 +175,7 @@ Streamlit reruns are the core performance constraint.
 * Keep the cleanup thread fire-once per session and never call `st.*` from it.
 * Use the workspace index manager to remove missing paths and fix `latest/` pointers.
 * Artefact rendering is integrated in `rps.rendering.renderer`; templates live in `src/rps/rendering/templates/`.
+* Background jobs (data pipeline, housekeeping, report generation) write run records with `process_type`/`process_subtype`.
 
 ---
 

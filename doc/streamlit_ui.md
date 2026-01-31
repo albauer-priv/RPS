@@ -141,7 +141,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 ### System pages
 
 #### System -> Status
-- Running processes with filters
+- Running processes with filters (status/type/subtype)
 - Latest artefacts list (latest per type)
 
 #### System -> History

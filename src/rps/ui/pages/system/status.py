@@ -32,18 +32,38 @@ announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
 
-runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=50)
+runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=100)
 status_filter = st.selectbox(
     "Process status",
     options=["All", "QUEUED", "RUNNING", "DONE", "FAILED", "CANCELLED", "SUPERSEDED"],
     index=1,
 )
+type_values = sorted({run.get("process_type") or "Unspecified" for run in runs})
+type_filter = st.selectbox(
+    "Process type",
+    options=["All", *type_values],
+    index=0,
+)
+subtype_values = sorted({run.get("process_subtype") or "Unspecified" for run in runs})
+subtype_filter = st.selectbox(
+    "Process subtype",
+    options=["All", *subtype_values],
+    index=0,
+)
 
-filtered_runs = [
-    run
-    for run in runs
-    if status_filter == "All" or run.get("status") == status_filter
-]
+def _matches_filter(run: dict) -> bool:
+    if status_filter != "All" and run.get("status") != status_filter:
+        return False
+    process_type = run.get("process_type") or "Unspecified"
+    if type_filter != "All" and process_type != type_filter:
+        return False
+    process_subtype = run.get("process_subtype") or "Unspecified"
+    if subtype_filter != "All" and process_subtype != subtype_filter:
+        return False
+    return True
+
+
+filtered_runs = [run for run in runs if _matches_filter(run)]
 
 set_status(
     status_state="done" if filtered_runs else "idle",
@@ -61,6 +81,8 @@ if filtered_runs:
             {
                 "Run ID": run.get("run_id"),
                 "Status": run.get("status"),
+                "Type": run.get("process_type") or "Unspecified",
+                "Subtype": run.get("process_subtype") or "Unspecified",
                 "Mode": run.get("mode"),
                 "Scope": run.get("scope") or "—",
                 "Created": run.get("created_at") or "—",

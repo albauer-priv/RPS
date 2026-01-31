@@ -56,6 +56,11 @@ def _utc_iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _utc_run_id_suffix() -> str:
+    """Return a filesystem-safe UTC suffix for run ids."""
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
 def _atomic_write_json(path: Path, payload: dict | list) -> None:
     """Write JSON atomically to avoid partial reads."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -156,6 +161,32 @@ def append_event(root: Path, athlete_id: str, run_id: str, event: dict[str, Any]
     payload.setdefault("ts", _utc_iso_now())
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def start_background_run(
+    root: Path,
+    athlete_id: str,
+    *,
+    process_type: str,
+    process_subtype: str,
+    message: str,
+    status: str = "QUEUED",
+) -> str:
+    """Create a run store record for a background process."""
+    run_id = f"bg_{process_type}_{process_subtype}_{_utc_run_id_suffix()}"
+    record = {
+        "run_id": run_id,
+        "status": status,
+        "mode": "BACKGROUND",
+        "process_type": process_type,
+        "process_subtype": process_subtype,
+        "message": message,
+        "created_at": _utc_iso_now(),
+    }
+    if status == "RUNNING":
+        record["started_at"] = _utc_iso_now()
+    append_run(root, athlete_id, record)
+    return run_id
 
 
 def acquire_athlete_lock(root: Path, athlete_id: str, run_id: str) -> bool:
