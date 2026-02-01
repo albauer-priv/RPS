@@ -109,6 +109,10 @@ KPI-agnostic rule:
 ### Primary Goal
 Produce stable, coherent, enforceable phase governance that enables Week-Planner execution without ambiguity.
 
+Planned event windows (binding):
+- Always copy every entry from `season_plan.data.global_constraints.planned_event_windows`
+  into `events_constraints.events[]` (even if outside the phase range).
+
 ### Core Outputs (by contract; one per run)
 Depending on the user request / injected Mandatory Output Chapter, produce exactly ONE of:
 - `PHASE_GUARDRAILS`

@@ -78,6 +78,8 @@ Mapping (must include, do not omit):
   MUST appear verbatim in `phase_summary.key_risks_warnings`.
 - Planned event windows → MUST be represented in `events_constraints.events[]`
   using the A/B/C types already defined in `season_plan.data.phases[].events_constraints`.
+  Include **all** entries from `season_plan.data.global_constraints.planned_event_windows`
+  (even if they fall outside the phase range).
   Do NOT source A/B/C event types from `events.md` (events.md is non-training logistics only).
   Also add a single summary line to `phase_summary.non_negotiables`:
   `"Planned A/B/C windows included in events_constraints (from season_plan)."`
