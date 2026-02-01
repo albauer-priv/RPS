@@ -7,8 +7,7 @@ agents:
   season_planner:
     inject:
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md
-      section: general
-      label: LoadEstimationSpec (General section)
+      label: LoadEstimationSpec
     - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
     - path: knowledge/_shared/sources/evidence/durability_bibliography.md
     - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
@@ -42,8 +41,7 @@ agents:
     - id: season_feed_forward
       inject:
       - path: knowledge/_shared/sources/specs/load_estimation_spec.md
-        section: general
-        label: LoadEstimationSpec (General section)
+        label: LoadEstimationSpec
       - path: knowledge/_shared/sources/specs/mandatory_output_season_phase_feed_forward.md
       - path: knowledge/_shared/sources/schemas/bundled/season_phase_feed_forward.schema.json
     - id: season_scenario
@@ -94,8 +92,7 @@ agents:
   phase_architect:
     inject:
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md
-      section: general+phase
-      label: LoadEstimationSpec (General + Phase sections)
+      label: LoadEstimationSpec
     - path: knowledge/_shared/sources/contracts/season__phase_contract.md
     - path: knowledge/_shared/sources/contracts/phase__week_contract.md
     - path: knowledge/_shared/sources/contracts/data_pipeline__phase_contract.md
@@ -147,8 +144,7 @@ agents:
   week_planner:
     inject:
     - path: knowledge/_shared/sources/specs/load_estimation_spec.md
-      section: general
-      label: LoadEstimationSpec (General section)
+      label: LoadEstimationSpec
     - path: knowledge/_shared/sources/contracts/data_pipeline__week_contract.md
     - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
     - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
