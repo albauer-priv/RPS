@@ -184,6 +184,17 @@ STEP_DEPS = {
     "EXPORT_WORKOUTS": ["WEEK_PLAN"],
 }
 
+READINESS_DEPENDENCIES = {
+    "season_scenarios": ["inputs"],
+    "scenario_selection": ["season_scenarios"],
+    "season_plan": ["scenario_selection"],
+    "phase_guardrails": ["season_plan"],
+    "phase_structure": ["season_plan"],
+    "phase_preview": ["phase_structure"],
+    "week_plan": ["phase_guardrails", "phase_structure"],
+    "intervals_workouts": ["week_plan"],
+}
+
 SCOPE_STEPS = {
     "Season Scenarios": ["SEASON_SCENARIOS"],
     "Selected Scenario": ["SCENARIO_SELECTION"],
@@ -881,6 +892,23 @@ total_required = len(required_steps)
 ready_required = sum(1 for step in required_steps if step.status == "ready")
 has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
 has_blockers = any(step.status in {"missing", "blocked"} for step in required_steps)
+blocked_messages: list[str] = []
+if has_blockers:
+    for step in required_steps:
+        if step.status not in {"missing", "blocked"}:
+            continue
+        deps = READINESS_DEPENDENCIES.get(step.key, [])
+        blocking = []
+        for dep_key in deps:
+            dep_step = readiness_map.get(dep_key)
+            if dep_step and dep_step.status in {"missing", "blocked"}:
+                blocking.append(dep_step.label)
+        if blocking:
+            blocked_messages.append(f"{step.label} blocked by missing {', '.join(blocking)}")
+        elif step.status == "missing":
+            blocked_messages.append(f"{step.label} missing")
+        else:
+            blocked_messages.append(f"{step.label} blocked")
 overall_status = "ready" if not has_attention else "stale"
 overall_message = (
     f"{ready_required}/{total_required} ready · "
@@ -925,6 +953,8 @@ with st.expander("Season Plan: Delete or Reset", expanded=False):
 summary_text = None
 if has_blockers:
     st.info("Resolve missing inputs/artifacts above before Run Planning is available.")
+    if blocked_messages:
+        st.markdown("\n".join([f"- {msg}" for msg in blocked_messages]))
 else:
     scope_col, run_col = st.columns([1, 1])
 
