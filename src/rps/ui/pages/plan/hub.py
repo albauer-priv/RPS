@@ -952,9 +952,11 @@ with st.expander("Season Plan: Delete or Reset", expanded=False):
 
 summary_text = None
 if has_blockers:
-    st.info("Resolve missing inputs/artifacts above before Run Planning is available.")
+    info_lines = ["Resolve missing inputs/artifacts above before Run Planning is available."]
     if blocked_messages:
-        st.markdown("\n".join([f"- {msg}" for msg in blocked_messages]))
+        info_lines.append("")
+        info_lines.extend([f"- {msg}" for msg in blocked_messages])
+    st.info("\n".join(info_lines))
 else:
     scope_col, run_col = st.columns([1, 1])
 

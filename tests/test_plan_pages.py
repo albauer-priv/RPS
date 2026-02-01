@@ -37,6 +37,7 @@ def test_plan_hub_season_actions_expander(tmp_path):
     # Run planning UI is hidden when readiness has blockers.
     info_text = "\n".join(info.value for info in at.info)
     assert "Resolve missing inputs/artifacts above" in info_text
+    assert "Inputs missing" in info_text
 
 
 def test_plan_hub_reset_delete_latest(tmp_path):
