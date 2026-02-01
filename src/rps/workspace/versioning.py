@@ -22,6 +22,15 @@ WEEK_SCOPED_ARTIFACTS = {
     ArtifactType.WEEK_PLAN,
     ArtifactType.INTERVALS_WORKOUTS,
     ArtifactType.DES_ANALYSIS_REPORT,
+    ArtifactType.SEASON_SCENARIOS,
+    ArtifactType.SEASON_SCENARIO_SELECTION,
+    ArtifactType.SEASON_PLAN,
+}
+
+RANGE_SCOPED_ARTIFACTS = {
+    ArtifactType.PHASE_GUARDRAILS,
+    ArtifactType.PHASE_STRUCTURE,
+    ArtifactType.PHASE_PREVIEW,
 }
 
 
@@ -64,11 +73,52 @@ def normalize_week_version_key(
     return f"{base}__{_format_timestamp(created_at)}"
 
 
+def normalize_range_version_key(
+    value: str,
+    created_at: str | None = None,
+    *,
+    artifact_type: ArtifactType | None = None,
+) -> str:
+    """Ensure a range version key includes a timestamp suffix when required."""
+    if "--" not in value:
+        return value
+    if "__" in value:
+        return value
+    if artifact_type is not None and artifact_type not in RANGE_SCOPED_ARTIFACTS:
+        return value
+    return f"{value}__{_format_timestamp(created_at)}"
+
+
+def normalize_version_key(
+    value: str,
+    created_at: str | None = None,
+    *,
+    artifact_type: ArtifactType | None = None,
+) -> str:
+    """Normalize a version key for week or range scoped artifacts."""
+    if "--" in value:
+        return normalize_range_version_key(value, created_at, artifact_type=artifact_type)
+    return normalize_week_version_key(value, created_at, artifact_type=artifact_type)
+
+
 def split_week_version_key(value: str) -> tuple[str | None, str | None]:
     """Split a week version key into (base, timestamp)."""
     base = _normalize_week_key(value)
     if not base:
         return None, None
+    if "__" not in value:
+        return base, None
+    suffix = value.split("__", 1)[1]
+    if _WEEK_TIMESTAMP_RE.match(suffix):
+        return base, suffix
+    return base, None
+
+
+def split_range_version_key(value: str) -> tuple[str | None, str | None]:
+    """Split a range version key into (base, timestamp)."""
+    if "--" not in value:
+        return None, None
+    base = value.split("__", 1)[0]
     if "__" not in value:
         return base, None
     suffix = value.split("__", 1)[1]
@@ -114,12 +164,12 @@ def derive_version_key_from_envelope(
         if wk_key:
             version_key = meta.get("version_key") if isinstance(meta, dict) else None
             if isinstance(version_key, str):
-                return normalize_week_version_key(
+                return normalize_version_key(
                     version_key,
                     meta.get("created_at"),
                     artifact_type=artifact_type,
                 )
-            return normalize_week_version_key(
+            return normalize_version_key(
                 wk_key,
                 meta.get("created_at"),
                 artifact_type=artifact_type,
@@ -128,7 +178,11 @@ def derive_version_key_from_envelope(
     if "iso_week_range" in meta:
         range_key = _coerce_range(meta["iso_week_range"])
         if range_key:
-            return range_key
+            return normalize_version_key(
+                range_key,
+                meta.get("created_at"),
+                artifact_type=artifact_type,
+            )
 
     if "temporal_scope" in meta:
         scope = meta["temporal_scope"]
@@ -136,7 +190,11 @@ def derive_version_key_from_envelope(
             start = scope.get("start") or scope.get("from")
             end = scope.get("end") or scope.get("to")
             if start and end:
-                return f"{start}--{end}"
+                return normalize_version_key(
+                    f"{start}--{end}",
+                    meta.get("created_at"),
+                    artifact_type=artifact_type,
+                )
 
     if "date_range" in meta:
         date_range = meta["date_range"]
@@ -146,6 +204,10 @@ def derive_version_key_from_envelope(
             if start and end:
                 return f"{start}--{end}"
         elif isinstance(date_range, str):
-            return date_range
+            return normalize_version_key(
+                date_range,
+                meta.get("created_at"),
+                artifact_type=artifact_type,
+            )
 
     return "unversioned"

@@ -74,9 +74,10 @@ def create_intervals_workouts_export(
         _log(message)
         return {"ran": False, "ok": True, "produced": False, "result": None, "message": message}
 
+    intervals_key = store.resolve_week_version_key(athlete_id, ArtifactType.INTERVALS_WORKOUTS, version_key)
     intervals_path = (
-        store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, version_key)
-        if store.exists(athlete_id, ArtifactType.INTERVALS_WORKOUTS, version_key)
+        store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_key)
+        if intervals_key
         else None
     )
     intervals_mtime = _mtime(intervals_path)

@@ -13,7 +13,13 @@ from typing import Any, Optional
 from .index_manager import WorkspaceIndexManager
 from .paths import ARTIFACT_PATHS, ensure_dir
 from .types import ArtifactMeta, ArtifactType, Authority
-from .versioning import normalize_week_version_key, split_week_version_key, WEEK_SCOPED_ARTIFACTS
+from .versioning import (
+    normalize_version_key,
+    split_range_version_key,
+    split_week_version_key,
+    RANGE_SCOPED_ARTIFACTS,
+    WEEK_SCOPED_ARTIFACTS,
+)
 
 
 def utc_iso_now() -> str:
@@ -138,7 +144,10 @@ class LocalArtifactStore:
 
     def exists(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> bool:
         """Return True if the given version exists on disk."""
-        resolved = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
+        if "--" in version_key:
+            resolved = self._resolve_range_version_key(athlete_id, artifact_type, version_key)
+        else:
+            resolved = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
         path = self.versioned_path(athlete_id, artifact_type, resolved)
         return path.exists()
 
@@ -205,7 +214,10 @@ class LocalArtifactStore:
 
     def _path_for_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Path:
         """Return the path for a recorded version, falling back to the canonical layout."""
-        version_key = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
+        if "--" in version_key:
+            version_key = self._resolve_range_version_key(athlete_id, artifact_type, version_key)
+        else:
+            version_key = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
         root = self.athlete_root(athlete_id)
         index = self._index_manager(athlete_id).load()
         artefacts = index.get("artefacts", {})
@@ -241,6 +253,28 @@ class LocalArtifactStore:
             return candidates[-1][2]
         return version_key
 
+    def _resolve_range_version_key(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> str:
+        """Return the newest range-scoped version key for a base range key."""
+        if artifact_type not in RANGE_SCOPED_ARTIFACTS:
+            return version_key
+        base_range, suffix = split_range_version_key(version_key)
+        if not base_range or suffix:
+            return version_key
+        entry = self._index_manager(athlete_id).load().get("artefacts", {}).get(artifact_type.value) or {}
+        versions = entry.get("versions", {}) if isinstance(entry, dict) else {}
+        candidates: list[tuple[datetime, str, str]] = []
+        for key, record in versions.items():
+            cand_base, cand_suffix = split_range_version_key(key)
+            if cand_base != base_range:
+                continue
+            created_raw = record.get("created_at") if isinstance(record, dict) else None
+            created_dt = _parse_created_at(created_raw)
+            candidates.append((created_dt, cand_suffix or "", key))
+        if candidates:
+            candidates.sort()
+            return candidates[-1][2]
+        return version_key
+
     def save_version(
         self,
         athlete_id: str,
@@ -258,7 +292,7 @@ class LocalArtifactStore:
         """Write a schema-style {meta,data} envelope to disk."""
         self.ensure_workspace(athlete_id)
 
-        normalized_key = normalize_week_version_key(version_key, artifact_type=artifact_type)
+        normalized_key = normalize_version_key(version_key, artifact_type=artifact_type)
         meta = ArtifactMeta(
             artifact_type=artifact_type,
             athlete_id=athlete_id,
@@ -285,7 +319,7 @@ class LocalArtifactStore:
         }
 
         if "version_key" in payload_meta or not payload_meta:
-            meta_doc["version_key"] = normalize_week_version_key(
+            meta_doc["version_key"] = normalize_version_key(
                 payload_meta.get("version_key", meta.version_key),
                 meta_doc.get("created_at"),
                 artifact_type=artifact_type,
@@ -335,14 +369,14 @@ class LocalArtifactStore:
         """Write a validated document (envelope or raw) to disk."""
         self.ensure_workspace(athlete_id)
 
-        normalized_key = normalize_week_version_key(version_key, artifact_type=artifact_type)
+        normalized_key = normalize_version_key(version_key, artifact_type=artifact_type)
         meta_doc = None
         if isinstance(document, dict):
             candidate = document.get("meta")
             if isinstance(candidate, dict):
                 meta_doc = candidate
                 if "version_key" in meta_doc:
-                    meta_doc["version_key"] = normalize_week_version_key(
+                    meta_doc["version_key"] = normalize_version_key(
                         str(meta_doc.get("version_key")),
                         meta_doc.get("created_at"),
                         artifact_type=artifact_type,
@@ -444,9 +478,10 @@ def _version_sort_key(version_key: str) -> tuple:
     """Sort version keys with week-like keys first."""
     try:
         if "--" in version_key:
-            start = version_key.split("--", 1)[0]
+            start = version_key.split("__", 1)[0].split("--", 1)[0]
             year, week = start.split("-")
-            return (0, int(year), int(week), version_key)
+            _, suffix = split_range_version_key(version_key)
+            return (0, int(year), int(week), suffix or "", version_key)
         base_week, suffix = split_week_version_key(version_key)
         if base_week:
             year, week = base_week.split("-")

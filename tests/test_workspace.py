@@ -83,6 +83,25 @@ class LocalStoreTests(unittest.TestCase):
                 "2026-06__20260201_120000",
             )
 
+    def test_range_version_resolution(self) -> None:
+        """Verify range-scoped versions resolve to newest timestamped version."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_003"
+            store.save_version(
+                athlete_id=athlete_id,
+                artifact_type=ArtifactType.PHASE_GUARDRAILS,
+                version_key="2026-05--2026-08__20260201_090000",
+                payload={"foo": "bar"},
+            )
+            store.save_version(
+                athlete_id=athlete_id,
+                artifact_type=ArtifactType.PHASE_GUARDRAILS,
+                version_key="2026-05--2026-08__20260201_120000",
+                payload={"foo": "baz"},
+            )
+            self.assertTrue(store.exists(athlete_id, ArtifactType.PHASE_GUARDRAILS, "2026-05--2026-08"))
+
 
 class GuardTests(unittest.TestCase):
     """Coverage for dependency guard behavior."""

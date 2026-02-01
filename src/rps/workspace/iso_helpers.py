@@ -83,7 +83,8 @@ def parse_iso_week_range(value: Any) -> IsoWeekRange | None:
         return None
 
     if isinstance(value, str):
-        parts = value.strip().split("--")
+        value = value.strip().split("__", 1)[0]
+        parts = value.split("--")
         if len(parts) != 2:
             return None
         start = parse_iso_week(parts[0])
