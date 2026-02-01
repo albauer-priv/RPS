@@ -2,7 +2,7 @@
 
 Version: 2.3  
 Status: Updated  
-Last-Updated: 2026-01-30
+Last-Updated: 2026-02-01
 
 ---
 
@@ -92,6 +92,7 @@ flowchart TD
 8. **Streamlit UI (optional)**
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
    - Multi-page UI with Plan Hub, Plan subpages, Analyse, Athlete Profile, and System tooling.
+   - Performance readiness (DES analysis / performance report) is surfaced on Performance pages (Feed Forward + Report), not in Plan Hub planning readiness.
 
 ---
 

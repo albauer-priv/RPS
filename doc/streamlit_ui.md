@@ -76,7 +76,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 **Body**
 
-- Readiness checklist with reasons + fix CTAs.
+- Readiness checklist with reasons + fix CTAs (planning-only; performance report readiness is on Performance pages).
 - Run planning panel (mode, scope, run id, validate-only, post-to-intervals toggle).
 - Run execution table (steps, status, outputs, events).
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
@@ -135,8 +135,13 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 #### Performance -> Feed Forward
 - Last-week DES recommendation (Season Planner focus)
+- Performance Report readiness (DES analysis availability for last week)
 - Trigger Season → Phase and Phase → Week feed-forward
 - Feed-forward artefact table + process status
+
+#### Performance -> Report
+- Performance Report readiness (DES analysis availability for selected week)
+- Report creation action + reasoning log
 
 ### System pages
 

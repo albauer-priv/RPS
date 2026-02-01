@@ -36,6 +36,7 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Coach chat refactor (in-repo chat + compaction + summary UI) is stable across 8–10 dialog turns without errors.
 * **Recent status:** Phase preview layout moved to its own expander with weekly previews below.
 * **Recent status:** Plan Hub season plan reset/delete actions now live in a collapsed expander; run summary banner uses plain text (no "Was wird alles erstellt" prefix).
+* **Recent status:** Performance report readiness is now surfaced on Performance pages (Feed Forward + Report), and removed from Plan Hub planning readiness.
 
 ### Tech stack & constraints
 

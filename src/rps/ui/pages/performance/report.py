@@ -141,6 +141,8 @@ announce_log_file(athlete_id)
 st.title("Report")
 st.caption(f"Athlete: {athlete_id}")
 
+store = LocalArtifactStore(root=SETTINGS.workspace_root)
+
 trend_options = _load_trend_week_options(athlete_id)
 selection = None
 if trend_options:
@@ -173,6 +175,29 @@ else:
             step=1,
         )
     )
+
+report_key = f"{year:04d}-{week:02d}"
+st.subheader("Performance Report Readiness")
+report_for_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, report_key)
+report_latest = store.latest_exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
+if report_for_week:
+    report_status = "Ready"
+    report_detail = f"Report available for {report_key}."
+elif report_latest:
+    report_status = "Stale"
+    report_detail = "Latest DES report is from another week."
+else:
+    report_status = "Missing"
+    report_detail = "No DES analysis report found."
+st.table(
+    [
+        {
+            "Check": "Performance Report (DES Analysis)",
+            "Status": report_status,
+            "Details": report_detail,
+        }
+    ]
+)
 
 st.markdown(
     "Report can only be generated for current or past weeks covered by `activities_trend`. "

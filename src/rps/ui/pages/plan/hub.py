@@ -122,13 +122,6 @@ STEP_DEFINITIONS = [
         "writes": [],
         "authority": ["Commit"],
     },
-    {
-        "step_id": "PERF_REPORT",
-        "label": "Performance Report",
-        "agent": "Analyst",
-        "writes": [ArtifactType.DES_ANALYSIS_REPORT],
-        "authority": ["Advisory"],
-    },
 ]
 
 PLANNING_SCOPE_SUBTYPE = {
@@ -139,7 +132,6 @@ PLANNING_SCOPE_SUBTYPE = {
     "Week Plan": "week_plan",
     "Export Workouts": "export_workouts",
     "Post to Intervals": "post_intervals",
-    "Performance Report": "performance_report",
 }
 
 PLANNING_PRIORITY = {
@@ -151,7 +143,6 @@ PLANNING_PRIORITY = {
     "week_plan": 1,
     "export_workouts": 0,
     "post_intervals": 0,
-    "performance_report": 0,
 }
 
 
@@ -192,7 +183,6 @@ STEP_DEPS = {
     "WEEK_PLAN": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
     "EXPORT_WORKOUTS": ["WEEK_PLAN"],
     "POST_INTERVALS": ["EXPORT_WORKOUTS"],
-    "PERF_REPORT": ["WEEK_PLAN"],
 }
 
 SCOPE_STEPS = {
@@ -203,7 +193,6 @@ SCOPE_STEPS = {
     "Week Plan": ["WEEK_PLAN"],
     "Export Workouts": ["EXPORT_WORKOUTS"],
     "Post to Intervals": ["POST_INTERVALS"],
-    "Performance Report": ["PERF_REPORT"],
 }
 
 
@@ -592,14 +581,6 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
         required=["week_plan"],
         fix_label="Export Workouts",
     )
-    artifact_step(
-        key="des_report",
-        label="Performance Report",
-        artifact_type=ArtifactType.DES_ANALYSIS_REPORT,
-        required=["week_plan"],
-        fix_label="Run Performance Report",
-    )
-
     return steps
 
 
@@ -630,7 +611,6 @@ def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
         (ArtifactType.PHASE_STRUCTURE, "Phase Structure"),
         (ArtifactType.WEEK_PLAN, "Week Plan"),
         (ArtifactType.INTERVALS_WORKOUTS, "Export Workouts"),
-        (ArtifactType.DES_ANALYSIS_REPORT, "Performance Report"),
     ]
     rows = []
     for artifact_type, label in targets:
@@ -775,7 +755,6 @@ def _build_execution_steps(
             "PHASE_PREVIEW": "phase_preview",
             "WEEK_PLAN": "week_plan",
             "EXPORT_WORKOUTS": "intervals_workouts",
-            "PERF_REPORT": "des_report",
         }.get(step_id)
         readiness_step = readiness_map.get(readiness_key, ReadinessStep("", "", "missing", "", ""))
         readiness_status = readiness_step.status
@@ -1052,8 +1031,6 @@ def _worker_loop(root: Path, athlete_id: str, run_id: str, stop_event: threading
                                 run_id,
                                 allow_delete=bool(active.get("delete_removed_intervals")),
                             )
-                        elif step_id == "PERF_REPORT":
-                            exec_result = _execute_performance_report(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
 
                         if exec_result and exec_result.get("ok"):
                             step["Status"] = "DONE"
@@ -1380,7 +1357,6 @@ with run_col:
                 "Week Plan",
                 "Export Workouts",
                 "Post to Intervals",
-                "Performance Report",
             ],
         )
     run_id = st.text_input("Run ID", value=f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}")
@@ -1394,7 +1370,6 @@ with run_col:
         "Week Plan": "Will write: Week Plan",
         "Export Workouts": "Will write: Export Workouts",
         "Post to Intervals": "Will post workouts to Intervals (idempotent receipts).",
-        "Performance Report": "Will write: Performance Report",
     }
     summary_text = scope_summary.get(scope, scope_summary[None])
     if run_mode != "Scoped" and post_toggle:

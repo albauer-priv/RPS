@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intervals export files are now versioned as `workouts_yyyy-ww.json` and stored under `data/exports/` with ISO-week keys.
 - Plan Hub now supports manual scenario selection handoff (Season page) with restart + superseded run tracking.
 - Plan Hub season plan reset/delete actions now live in a collapsed expander, and the run summary banner no longer includes the "Was wird alles erstellt:" prefix.
+- Performance report readiness moved to Performance pages (Feed Forward + Report) and removed from Plan Hub planning readiness.
 - Consolidated `doc/planners.md` into `doc/how_to_plan.md` and updated planning/system docs to reflect Plan Hub and commit steps.
 - Renamed Plan WoW page to Workouts and added posting, delete, coach revision, and history views.
 - Integrated artefact renderer into `rps.rendering.renderer`, removed the standalone script, and moved templates under `src/rps/rendering/templates/`.

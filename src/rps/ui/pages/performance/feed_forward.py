@@ -69,6 +69,28 @@ else:
     st.markdown("- " + "\n- ".join(recommendation.get("suggested_considerations") or ["N/A"]))
     st.caption("Rationale: " + "; ".join(recommendation.get("rationale") or ["N/A"]))
 
+st.subheader("Feed Forward Readiness")
+report_for_last_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, last_week_key)
+report_latest = store.latest_exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
+if report_for_last_week:
+    report_status = "Ready"
+    report_detail = f"Last week report available ({last_week_key})."
+elif report_latest:
+    report_status = "Stale"
+    report_detail = "Latest DES report is from another week."
+else:
+    report_status = "Missing"
+    report_detail = "No DES analysis report found."
+st.table(
+    [
+        {
+            "Check": "Performance Report (DES Analysis)",
+            "Status": report_status,
+            "Details": report_detail,
+        }
+    ]
+)
+
 st.subheader("Trigger Feed Forward")
 run_cols = st.columns(2)
 if run_cols[0].button("Run Season → Phase Feed Forward"):
