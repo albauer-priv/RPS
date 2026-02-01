@@ -875,10 +875,12 @@ if active_run_id:
 st.subheader("Readiness")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
+readiness_map = {step.key: step for step in readiness}
 required_steps = [step for step in readiness if not step.optional]
 total_required = len(required_steps)
 ready_required = sum(1 for step in required_steps if step.status == "ready")
 has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
+has_blockers = any(step.status in {"missing", "blocked"} for step in required_steps)
 overall_status = "ready" if not has_attention else "stale"
 overall_message = (
     f"{ready_required}/{total_required} ready · "
@@ -911,7 +913,8 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                 if step.fix_label:
                     cols = st.columns(2)
                     with cols[0]:
-                        st.button(step.fix_label, key=f"fix_{step.key}")
+                        allow_fix = step.key == "season_scenarios" and readiness_map.get("inputs", step).status == "ready"
+                        st.button(step.fix_label, key=f"fix_{step.key}", disabled=not allow_fix)
                     with cols[1]:
                         st.button("View dependency", key=f"dep_{step.key}")
 
@@ -923,11 +926,16 @@ with st.expander("Season Plan: Delete or Reset", expanded=False):
     else:
         st.caption("No season plan available for reset/delete actions.")
 
-scope_col, run_col = st.columns([1, 1])
+summary_text = None
+if has_blockers:
+    st.info("Resolve missing inputs/artifacts above before Run Planning is available.")
+else:
+    scope_col, run_col = st.columns([1, 1])
 
-with scope_col:
-    st.subheader("Scope")
-    st.caption(f"Athlete: {hub_scope['athlete_id']} · ISO {hub_scope['iso_year']}-W{hub_scope['iso_week']:02d}")
+if not has_blockers:
+    with scope_col:
+        st.subheader("Scope")
+        st.caption(f"Athlete: {hub_scope['athlete_id']} · ISO {hub_scope['iso_year']}-W{hub_scope['iso_week']:02d}")
     athlete_id = st.text_input(
         "Athlete",
         value=hub_scope["athlete_id"],
@@ -982,80 +990,79 @@ with scope_col:
     if run_state:
         st.caption(f"Running for {athlete_id} · {year}-W{week:02d}")
 
-summary_text = None
-with run_col:
-    st.subheader("Run Planning")
-    run_readiness = _compute_readiness(athlete_id, year, week)
-    base_week = IsoWeek(year=year, week=week)
-    current_week = _current_iso_week()
-    plan_next = base_week == current_week and _is_week_ready(run_readiness)
-    target_week = next_iso_week(base_week) if plan_next else base_week
-    target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
-    cta_prefix = "Plan Next Week" if plan_next else "Plan Week"
-    cta_label = f"{cta_prefix}: {target_week.year:04d}-W{target_week.week:02d}"
-    cta_disabled = scope_lock or not _is_week_in_scope(target_week)
+    with run_col:
+        st.subheader("Run Planning")
+        run_readiness = _compute_readiness(athlete_id, year, week)
+        base_week = IsoWeek(year=year, week=week)
+        current_week = _current_iso_week()
+        plan_next = base_week == current_week and _is_week_ready(run_readiness)
+        target_week = next_iso_week(base_week) if plan_next else base_week
+        target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
+        cta_prefix = "Plan Next Week" if plan_next else "Plan Week"
+        cta_label = f"{cta_prefix}: {target_week.year:04d}-W{target_week.week:02d}"
+        cta_disabled = scope_lock or not _is_week_in_scope(target_week)
 
-    run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
-    scope = None
-    if run_mode == "Scoped":
-        scope = st.selectbox(
-            "Scope",
-            [
-                "Season Scenarios",
-                "Selected Scenario",
-                "Season Plan",
-                "Phase (Guardrails + Structure)",
-                "Week Plan",
-                "Export Workouts",
-            ],
-            index=4,
+        run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
+        scope = None
+        if run_mode == "Scoped":
+            scope = st.selectbox(
+                "Scope",
+                [
+                    "Season Scenarios",
+                    "Selected Scenario",
+                    "Season Plan",
+                    "Phase (Guardrails + Structure)",
+                    "Week Plan",
+                    "Export Workouts",
+                ],
+                index=4,
+            )
+        override_required = _override_required(scope, run_readiness)
+        override_text = None
+        if run_mode == "Scoped":
+            override_text = st.text_area(
+                "Override (optional)",
+                placeholder="Describe what to change at the selected scope.",
+                disabled=not scope,
+            )
+            if override_required and not (override_text or "").strip():
+                st.warning("Override required when modifying existing artifacts.")
+        default_run_id = (
+            f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_"
+            f"{time.strftime('%Y%m%d_%H%M%S')}"
         )
-    override_required = _override_required(scope, run_readiness)
-    override_text = None
-    if run_mode == "Scoped":
-        override_text = st.text_area(
-            "Override (optional)",
-            placeholder="Describe what to change at the selected scope.",
-            disabled=not scope,
-        )
-        if override_required and not (override_text or "").strip():
-            st.warning("Override required when modifying existing artifacts.")
-    default_run_id = (
-        f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_"
-        f"{time.strftime('%Y%m%d_%H%M%S')}"
-    )
-    if not st.session_state.get("plan_hub_run_id"):
-        st.session_state["plan_hub_run_id"] = default_run_id
-    run_id = st.text_input("Run ID", key="plan_hub_run_id")
-    validate_only = st.checkbox("Validate only (no write)", value=False)
-    scope_summary = {
-        None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Export Workouts",
-        "Season Scenarios": "Will write: Season Scenarios",
-        "Selected Scenario": "Will write: Selected Scenario",
-        "Season Plan": "Will write: Season Plan",
-        "Phase (Guardrails + Structure)": "Will write: Phase Guardrails, Phase Structure",
-        "Week Plan": "Will write: Week Plan",
-        "Export Workouts": "Will write: Export Workouts",
-    }
-    summary_text = scope_summary.get(scope, scope_summary[None])
-    run_actions = st.container()
-    with run_actions:
-        st.markdown("**Run actions**")
-        st.caption(
-            "Plan Week runs a scoped week plan for the current/next ISO week. "
-            "Run orchestrated executes the full plan cascade. Run scoped only reruns the selected scope "
-            "and dependent outputs."
-        )
-        col_week, col_scoped, col_orchestrated = st.columns(3)
-        run_week = col_week.button(cta_label, disabled=cta_disabled)
-        run_scoped = col_scoped.button(
-            "Run scoped",
-            disabled=run_mode != "Scoped",
-        )
-        run_orchestrated = col_orchestrated.button(
-            "Run orchestrated",
-            disabled=scope_lock or run_mode != "Orchestrated",
-        )
+        if not st.session_state.get("plan_hub_run_id"):
+            st.session_state["plan_hub_run_id"] = default_run_id
+        run_id = st.text_input("Run ID", key="plan_hub_run_id")
+        validate_only = st.checkbox("Validate only (no write)", value=False)
+        scope_summary = {
+            None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Export Workouts",
+            "Season Scenarios": "Will write: Season Scenarios",
+            "Selected Scenario": "Will write: Selected Scenario",
+            "Season Plan": "Will write: Season Plan",
+            "Phase (Guardrails + Structure)": "Will write: Phase Guardrails, Phase Structure",
+            "Week Plan": "Will write: Week Plan",
+            "Export Workouts": "Will write: Export Workouts",
+        }
+        summary_text = scope_summary.get(scope, scope_summary[None])
+        run_actions = st.container()
+        with run_actions:
+            st.markdown("**Run actions**")
+            st.caption(
+                "Plan Week runs a scoped week plan for the current/next ISO week. "
+                "Run orchestrated executes the full plan cascade. Run scoped only reruns the selected scope "
+                "and dependent outputs."
+            )
+            col_week, col_scoped, col_orchestrated = st.columns(3)
+            run_week = col_week.button(cta_label, disabled=cta_disabled)
+            run_scoped = col_scoped.button(
+                "Run scoped",
+                disabled=run_mode != "Scoped",
+            )
+            run_orchestrated = col_orchestrated.button(
+                "Run orchestrated",
+                disabled=scope_lock or run_mode != "Orchestrated",
+            )
 
     if run_week:
         if not _is_week_in_scope(target_week):
