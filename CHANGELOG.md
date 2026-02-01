@@ -74,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Mandatory Output chapter for SEASON_SCENARIO_SELECTION (schema_version 1.1) and inject it into prompts.
 - Season Scenario Selection now writes locally from UI inputs (no LLM).
 - Season page no longer creates Season Plans; it directs to Plan Hub for planning.
+- Season Planner prompt now requires Zone Model (FTP from data.model_metadata.ftp_watts).
 - Plan Hub "Create Season Plan" now enqueues a scoped season-plan run instead of linking to Season page.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.

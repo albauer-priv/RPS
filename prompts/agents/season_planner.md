@@ -53,6 +53,7 @@ Runtime artefacts (workspace; load via tools):
 | Season Brief | `workspace_get_input("season_brief")` | Required (Mode A/B) |
 | Events | `workspace_get_input("events")` | Required (all modes; logistics only) |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one required (Mode A/B) |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required (Mode A/B) |
 | Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required (Mode A/B; body_mass_kg) |
 | Season Scenarios (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` | If present, use scenario guidance |
