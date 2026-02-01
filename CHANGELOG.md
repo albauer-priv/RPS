@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub now groups run actions into a dedicated box with a short explanation of each run mode.
 - Plan Hub run actions now include the Plan Week CTA inside the actions box.
 - Plan Week CTA now includes the target ISO week in its label.
+- Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

@@ -1252,7 +1252,7 @@ if active_run:
             process_subtype=active_run.get("process_subtype"),
         )
         st.rerun()
-    st.dataframe(steps, use_container_width=True)
+    st.dataframe(steps, width="stretch")
     events = load_events(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run.get("run_id") or "", limit=200)
     if events:
         with st.expander("Run events", expanded=False):
@@ -1277,7 +1277,7 @@ if active_run:
                         "Details": event.get("reason") or event.get("outputs") or "—",
                     }
                 )
-            st.dataframe(pd.DataFrame(event_rows), use_container_width=True)
+            st.dataframe(pd.DataFrame(event_rows), width="stretch")
     cols = st.columns(2)
     if cols[0].button("Mark run done"):
         update_run(

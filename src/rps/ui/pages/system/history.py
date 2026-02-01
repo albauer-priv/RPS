@@ -291,13 +291,13 @@ with tab_planning:
     plan_runs = _run_store_history(limit=20)
     if plan_runs:
         df_runs = pd.DataFrame(plan_runs)
-        st.dataframe(_style_superseded(df_runs), use_container_width=True)
+        st.dataframe(_style_superseded(df_runs), width="stretch")
     else:
         st.info("No Plan Hub runs yet.")
     st.caption("Artefact history")
-    st.dataframe(_run_history(limit=50, allowed=planning_types), use_container_width=True)
+    st.dataframe(_run_history(limit=50, allowed=planning_types), width="stretch")
 with tab_data:
-    st.dataframe(_run_history(limit=50, allowed=data_types), use_container_width=True)
+    st.dataframe(_run_history(limit=50, allowed=data_types), width="stretch")
 
 st.subheader("Artifact History")
 st.caption("Historical artefacts grouped by month (newest first).")
@@ -330,13 +330,13 @@ for month_key in sorted(month_map.keys(), reverse=True):
         ]
         if season_rows:
             st.subheader("Season Plan")
-            st.dataframe(season_rows, use_container_width=True)
+            st.dataframe(season_rows, width="stretch")
         if phase_rows:
             st.subheader("Phase")
-            st.dataframe(phase_rows, use_container_width=True)
+            st.dataframe(phase_rows, width="stretch")
         if week_rows:
             st.subheader("Week")
-            st.dataframe(week_rows, use_container_width=True)
+            st.dataframe(week_rows, width="stretch")
         if other_rows:
             st.subheader("Other")
-            st.dataframe(other_rows, use_container_width=True)
+            st.dataframe(other_rows, width="stretch")

@@ -116,7 +116,7 @@ if filtered_runs:
                 "Current Step": run.get("current_step") or "—",
             }
         )
-    st.dataframe(rows, use_container_width=True)
+    st.dataframe(rows, width="stretch")
 else:
     st.info("No matching runs.")
 
@@ -142,6 +142,6 @@ for artifact_type in ArtifactType:
 
 latest_rows.sort(key=lambda row: row.get("Updated") or "", reverse=True)
 if latest_rows:
-    st.dataframe(latest_rows, use_container_width=True)
+    st.dataframe(latest_rows, width="stretch")
 else:
     st.info("No artefacts found.")

@@ -220,7 +220,7 @@ if runs:
                 "Created": run.get("created_at") or "—",
             }
         )
-    st.dataframe(status_rows, use_container_width=True)
+    st.dataframe(status_rows, width="stretch")
 else:
     st.info("No runs found.")
 
@@ -276,6 +276,6 @@ for artifact_type in (
 
 rows.sort(key=lambda row: row.get("Created") or "", reverse=True)
 if rows:
-    st.dataframe(rows, use_container_width=True)
+    st.dataframe(rows, width="stretch")
 else:
     st.info("No feed forward artefacts found yet.")
