@@ -444,14 +444,7 @@ with st.expander("Actions", expanded=False):
                     state["season_selection_error_output"] = output
                 st.rerun()
         if selection_payload:
-            with st.form("season_create_plan"):
-                create_plan = st.form_submit_button("Create Season Plan")
-            if create_plan and selected:
-                append_system_log("season", "Create Season Plan started.")
-                output = _action_season_plan(selected)
-                state["season_plan_output"] = output
-                append_system_log("season", "Create Season Plan done.")
-                st.rerun()
+            st.info("Season plan creation happens in Plan → Hub.")
 
 render_status_panel()
 
