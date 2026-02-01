@@ -429,8 +429,8 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
                     stale = True
                     reason = "Upstream artifact is newer."
         if missing and optional:
-            status = "ready"
-            summary = "Optional"
+            status = "missing"
+            summary = "Missing (optional)"
             reason = "Optional step; no artifact present."
         elif blocked:
             status = "blocked"
