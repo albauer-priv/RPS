@@ -39,7 +39,7 @@ def test_plan_hub_season_actions_expander(tmp_path):
     assert run_id_inputs
     assert re.match(r"^plan_hub_\d{4}W\d{2}_\d{8}_\d{6}$", run_id_inputs[0].value)
     button_labels = [button.label for button in at.button]
-    assert "Plan Week" in button_labels or "Plan Next Week" in button_labels
+    assert any(label.startswith("Plan Week:") or label.startswith("Plan Next Week:") for label in button_labels)
     assert "Run orchestrated" in button_labels
     assert "Run scoped" in button_labels
     captions = [caption.value for caption in at.caption]

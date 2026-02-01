@@ -977,7 +977,8 @@ with run_col:
     plan_next = base_week == current_week and _is_week_ready(run_readiness)
     target_week = next_iso_week(base_week) if plan_next else base_week
     target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
-    cta_label = "Plan Next Week" if plan_next else "Plan Week"
+    cta_prefix = "Plan Next Week" if plan_next else "Plan Week"
+    cta_label = f"{cta_prefix}: {target_week.year:04d}-W{target_week.week:02d}"
     cta_disabled = scope_lock or not _is_week_in_scope(target_week)
 
     run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
@@ -1031,15 +1032,15 @@ with run_col:
             "Run orchestrated executes the full plan cascade. Run scoped only reruns the selected scope "
             "and dependent outputs."
         )
-        col_week, col_orchestrated, col_scoped = st.columns(3)
+        col_week, col_scoped, col_orchestrated = st.columns(3)
         run_week = col_week.button(cta_label, disabled=cta_disabled)
-        run_orchestrated = col_orchestrated.button(
-            "Run orchestrated",
-            disabled=scope_lock or run_mode != "Orchestrated",
-        )
         run_scoped = col_scoped.button(
             "Run scoped",
             disabled=run_mode != "Scoped",
+        )
+        run_orchestrated = col_orchestrated.button(
+            "Run orchestrated",
+            disabled=scope_lock or run_mode != "Orchestrated",
         )
 
     if run_week:
