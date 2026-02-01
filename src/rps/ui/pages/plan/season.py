@@ -116,7 +116,7 @@ def _action_scenarios() -> str:
     return output or _format_agent_result(result, f"Scenarios created: {run_id}")
 
 
-def _action_select_scenario(selected: str, rationale: str | None) -> str:
+def _action_select_scenario(selected: str, rationale: str | None, kpi_selection: dict | None) -> str:
     run_id = make_ui_run_id(f"season_scenario_selection_{year}_{week:02d}")
     set_status(
         status_state="running",
@@ -134,6 +134,7 @@ def _action_select_scenario(selected: str, rationale: str | None) -> str:
             run_id=run_id,
             selected=selected,
             rationale=rationale,
+            kpi_selection=kpi_selection,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
             force_file_search=True,
@@ -265,12 +266,36 @@ selected_default = None
 if selection_payload:
     selected_default = selection_payload.get("data", {}).get("selected_scenario_id")
 
+kpi_selection_default = None
+if selection_payload:
+    kpi_selection_default = (selection_payload.get("data") or {}).get("kpi_moving_time_rate_guidance_selection")
+
 scenario_options = []
 if scenarios_payload:
     scenario_options = [s.get("scenario_id") for s in scenarios_payload.get("data", {}).get("scenarios", [])]
     scenario_options = [opt for opt in scenario_options if opt]
 
 selected = selected_default or (scenario_options[0] if scenario_options else None)
+
+kpi_profile = None
+if store.latest_exists(athlete_id, ArtifactType.KPI_PROFILE):
+    kpi_profile = store.load_latest(athlete_id, ArtifactType.KPI_PROFILE)
+
+kpi_bands = []
+if isinstance(kpi_profile, dict):
+    bands = (
+        (kpi_profile.get("data") or {})
+        .get("durability", {})
+        .get("moving_time_rate_guidance", {})
+        .get("bands", [])
+    )
+    for band in bands:
+        segment = band.get("segment")
+        w_per_kg = band.get("w_per_kg") or {}
+        if not segment or "min" not in w_per_kg or "max" not in w_per_kg:
+            continue
+        label = f"{segment.replace('_', ' ').title()}: {w_per_kg.get('min')} - {w_per_kg.get('max')} W/kg"
+        kpi_bands.append({"label": label, "value": band})
 
 with st.expander("Actions", expanded=False):
     if has_plan:
@@ -292,11 +317,33 @@ with st.expander("Actions", expanded=False):
                     index=scenario_options.index(selected_default) if selected_default in scenario_options else 0,
                     horizontal=True,
                 )
+                kpi_selection = None
+                if kpi_bands:
+                    kpi_labels = [item["label"] for item in kpi_bands]
+                    default_label = None
+                    if isinstance(kpi_selection_default, dict):
+                        default_segment = kpi_selection_default.get("segment")
+                        for item in kpi_bands:
+                            if item["value"].get("segment") == default_segment:
+                                default_label = item["label"]
+                                break
+                    kpi_selection_label = st.selectbox(
+                        "KPI moving_time_rate_guidance",
+                        options=kpi_labels,
+                        index=kpi_labels.index(default_label) if default_label in kpi_labels else 0,
+                    )
+                    selected_band = next(
+                        (item for item in kpi_bands if item["label"] == kpi_selection_label),
+                        None,
+                    )
+                    kpi_selection = selected_band["value"] if selected_band else None
+                else:
+                    st.caption("No KPI profile bands available.")
                 rationale = st.text_area("Rationale (optional)")
                 select_submit = st.form_submit_button("Confirm Scenario Selection")
             if select_submit:
                 append_system_log("season", f"Selecting scenario {selected}.")
-                output = _action_select_scenario(selected, rationale)
+                output = _action_select_scenario(selected, rationale, kpi_selection)
                 state["season_selection_output"] = output
                 append_system_log("season", f"Scenario {selected} selected.")
                 st.rerun()

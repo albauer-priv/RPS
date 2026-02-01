@@ -1,7 +1,7 @@
 ---
 Type: InterfaceSpecification
 Interface-ID: SeasonScenarioSelectionInterface
-Version: 1.0
+Version: 1.1
 Scope: Agent
 Authority: Informational
 Owner: Governance
@@ -20,7 +20,7 @@ The artefact MUST be a JSON envelope with `meta` and `data` fields.
 Must include:
 - `artifact_type`: `SEASON_SCENARIO_SELECTION`
 - `schema_id`: `SeasonScenarioSelectionInterface`
-- `schema_version`: `1.0`
+- `schema_version`: `1.1`
 - `version`
 - `authority`: `Informational`
 - `owner_agent`: `Season-Scenario-Agent`
@@ -36,6 +36,12 @@ Required fields:
 Optional fields:
 - `selection_rationale` (string)
 - `notes` (array of strings)
+
+Required fields (nullable):
+- `kpi_moving_time_rate_guidance_selection` (object or null)
+  - `segment` (string)
+  - `w_per_kg` (`min`/`max` numbers)
+  - `kj_per_kg_per_hour` (`min`/`max` numbers)
 
 ## Authority Notes
 `SEASON_SCENARIO_SELECTION` is informational; Season-Planner remains binding.

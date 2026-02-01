@@ -18,7 +18,7 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "1.0",
+          "const": "1.1",
           "type": "string"
         },
         "authority": {
@@ -49,7 +49,8 @@
         "selected_scenario_id",
         "selection_source",
         "selection_rationale",
-        "notes"
+        "notes",
+        "kpi_moving_time_rate_guidance_selection"
       ],
       "properties": {
         "season_scenarios_ref": {
@@ -72,6 +73,35 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        },
+        "kpi_moving_time_rate_guidance_selection": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["segment", "w_per_kg", "kj_per_kg_per_hour"],
+          "properties": {
+            "segment": {
+              "type": "string",
+              "minLength": 1
+            },
+            "w_per_kg": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["min", "max"],
+              "properties": {
+                "min": {"type": "number"},
+                "max": {"type": "number"}
+              }
+            },
+            "kj_per_kg_per_hour": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["min", "max"],
+              "properties": {
+                "min": {"type": "number"},
+                "max": {"type": "number"}
+              }
+            }
           }
         }
       }
