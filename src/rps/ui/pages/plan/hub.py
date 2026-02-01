@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-import threading
 import time
 import json
 import difflib
@@ -30,26 +29,37 @@ from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_ra
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from rps.ui.run_store import (
-    acquire_athlete_lock,
     append_event,
     append_run,
     find_active_runs,
     load_events,
     load_runs,
-    release_athlete_lock,
     update_run,
 )
-from rps.ui.intervals_post import inspect_intervals_receipts, post_to_intervals_commit
+from rps.ui.intervals_post import inspect_intervals_receipts
 from rps.openai.client import get_client
-from rps.agents.multi_output_runner import run_agent_multi_output, AgentRuntime
-from rps.agents.registry import AGENTS
-from rps.agents.tasks import AgentTask
-from rps.orchestrator.plan_week import _build_injection_block, plan_week, create_performance_report
+from rps.agents.multi_output_runner import AgentRuntime
+from rps.orchestrator.queue_scheduler import enqueue_run, start_queue_scheduler, ensure_queue_dirs
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 
 
 logger = logging.getLogger(__name__)
+
+RESET_LATEST_TYPES = (
+    ArtifactType.SEASON_PLAN,
+    ArtifactType.PHASE_GUARDRAILS,
+    ArtifactType.PHASE_STRUCTURE,
+    ArtifactType.PHASE_PREVIEW,
+    ArtifactType.WEEK_PLAN,
+    ArtifactType.INTERVALS_WORKOUTS,
+)
+
+DELETE_LATEST_TYPES = (
+    ArtifactType.SEASON_SCENARIOS,
+    ArtifactType.SEASON_SCENARIO_SELECTION,
+    *RESET_LATEST_TYPES,
+)
 
 STEP_DEFINITIONS = [
     {
@@ -210,117 +220,6 @@ def _runtime_for_agent(agent_name: str) -> AgentRuntime:
         schema_dir=SETTINGS.schema_dir,
         workspace_root=SETTINGS.workspace_root,
     )
-
-
-def _execute_season_scenarios(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
-    """Run Season Scenarios agent."""
-    spec = AGENTS["season_scenario"]
-    runtime = _runtime_for_agent(spec.name)
-    injected_block = _build_injection_block("season_scenario", mode="scenario")
-    user_input = (
-        "Mode A. Generate the pre-decision scenarios. "
-        f"Target ISO week: {year}-{week:02d}. "
-        "Use workspace_get_input for Season Brief and Events. "
-        f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
-    )
-    return run_agent_multi_output(
-        runtime,
-        agent_name=spec.name,
-        agent_vs_name=spec.vector_store_name,
-        athlete_id=athlete_id,
-        tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
-        user_input=user_input,
-        run_id=run_id,
-        model_override=SETTINGS.model_for_agent(spec.name),
-        temperature_override=SETTINGS.temperature_for_agent(spec.name),
-        force_file_search=True,
-        max_num_results=SETTINGS.file_search_max_results,
-    )
-
-
-def _execute_scenario_selection(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
-    """Scenario selection is manual (performed on Season page)."""
-    return {"ok": False, "error": "Scenario selection is manual. Use the Season page."}
-
-
-def _execute_season_plan(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
-    """Run Season Plan agent."""
-    spec = AGENTS["season_planner"]
-    runtime = _runtime_for_agent(spec.name)
-    injected_block = _build_injection_block("season_planner", mode="season_plan")
-    user_input = (
-        f"Mode A. Create the SEASON_PLAN for ISO week {year}-{week:02d}. "
-        "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
-        f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_PLAN."
-    )
-    return run_agent_multi_output(
-        runtime,
-        agent_name=spec.name,
-        agent_vs_name=spec.vector_store_name,
-        athlete_id=athlete_id,
-        tasks=[AgentTask.CREATE_SEASON_PLAN],
-        user_input=user_input,
-        run_id=run_id,
-        model_override=SETTINGS.model_for_agent(spec.name),
-        temperature_override=SETTINGS.temperature_for_agent(spec.name),
-        force_file_search=True,
-        max_num_results=SETTINGS.file_search_max_results,
-    )
-
-
-def _execute_plan_week(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
-    """Run the plan-week orchestrator (phase + week + export)."""
-    runtime = _runtime_for_agent("season_planner")
-    result = plan_week(
-        runtime,
-        athlete_id=athlete_id,
-        year=year,
-        week=week,
-        run_id=run_id,
-        model_resolver=SETTINGS.model_for_agent,
-        temperature_resolver=SETTINGS.temperature_for_agent,
-        reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
-        reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
-        force_file_search=True,
-        max_num_results=SETTINGS.file_search_max_results,
-    )
-    return {"ok": result.ok}
-
-
-def _execute_performance_report(athlete_id: str, year: int, week: int, run_id: str) -> dict[str, Any]:
-    """Run the performance report generation."""
-    runtime = _runtime_for_agent("performance_analysis")
-    result = create_performance_report(
-        lambda agent: runtime,
-        athlete_id=athlete_id,
-        report_week=IsoWeek(year=year, week=week),
-        run_id_prefix=run_id,
-        reasoning_stream_handler=lambda _delta: None,
-    )
-    return result if isinstance(result, dict) else {"ok": False, "error": "Unknown report error"}
-
-
-def _execute_post_intervals(athlete_id: str, year: int, week: int, run_id: str, *, allow_delete: bool) -> dict[str, Any]:
-    """Create idempotent posting receipts for Intervals workouts."""
-    store = LocalArtifactStore(root=SETTINGS.workspace_root)
-    result = post_to_intervals_commit(
-        store,
-        athlete_id,
-        year=year,
-        week=week,
-        run_id=run_id,
-        allow_delete=allow_delete,
-    )
-    if not result.ok:
-        return {"ok": False, "error": result.error or "Posting receipts failed."}
-    return {
-        "ok": True,
-        "posted": result.posted,
-        "skipped": result.skipped,
-        "outputs": result.outputs,
-    }
 
 
 @dataclass(frozen=True)
@@ -584,21 +483,56 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     return steps
 
 
-def _show_reset_delete_actions() -> None:
+def _show_reset_delete_actions(athlete_id: str) -> None:
     """Render reset/delete season plan actions with confirmation."""
     with st.form("plan_hub_season_actions"):
         action = st.selectbox("Action", options=["Reset Season Plan", "Delete Season Plan"])
         confirmation = st.text_input('Type "YES I WANT TO PROCEED" to continue')
         submitted = st.form_submit_button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED")
     if submitted:
-        append_system_log("plan_hub", f"{action} requested.")
-        st.info(f"{action} flow will trigger (TODO).")
         set_status(
             status_state="running",
             title="Plan Hub",
             message=f"{action} requested.",
             last_action=action,
         )
+        append_system_log("plan_hub", f"{action} requested.")
+        store = LocalArtifactStore(root=SETTINGS.workspace_root)
+        types = DELETE_LATEST_TYPES if action == "Delete Season Plan" else RESET_LATEST_TYPES
+        removed = _clear_latest_artifacts(store, athlete_id, types)
+        if removed:
+            st.success(f"Removed {len(removed)} latest artefacts.")
+            with st.expander("Removed artefacts", expanded=False):
+                st.code("\n".join(removed))
+        else:
+            st.info("No latest artefacts were removed.")
+        set_status(
+            status_state="done",
+            title="Plan Hub",
+            message=f"{action} completed.",
+            last_action=action,
+        )
+        st.rerun()
+
+
+def _clear_latest_artifacts(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    artifact_types: tuple[ArtifactType, ...],
+) -> list[str]:
+    """Delete latest artefact files for the given types and return removed paths."""
+    removed: list[str] = []
+    for artifact_type in artifact_types:
+        path = store.latest_path(athlete_id, artifact_type)
+        if not path.exists():
+            continue
+        try:
+            path.unlink()
+            removed.append(str(path))
+            logger.info("Deleted latest artefact %s", path)
+        except OSError as exc:
+            logger.warning("Failed to delete latest artefact %s: %s", path, exc)
+    return removed
 
 
 def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
@@ -796,328 +730,43 @@ def _build_execution_steps(
     return steps
 
 
-def _artifact_written_for_run(index: dict, artifact_type: ArtifactType, run_id: str) -> bool:
-    """Check if any version for artifact_type matches run_id."""
-    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
-    versions = entry.get("versions") or {}
-    for record in versions.values():
-        if isinstance(record, dict) and record.get("run_id") == run_id:
-            return True
-    return False
-
-
-def _artifact_records_for_run(index: dict, artifact_type: ArtifactType, run_id: str) -> list[dict[str, Any]]:
-    """Return artifact records for a given run_id."""
-    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
-    versions = entry.get("versions") or {}
-    outputs = []
-    for version_key, record in versions.items():
-        if not isinstance(record, dict):
-            continue
-        if record.get("run_id") != run_id:
-            continue
-        outputs.append(
-            {
-                "artifact": artifact_type.value,
-                "version": str(version_key),
-                "path": record.get("path") or record.get("relative_path") or "—",
-                "created_at": record.get("created_at") or "—",
-            }
+def _ensure_worker(
+    root: Path,
+    athlete_id: str,
+    run_id: str,
+    *,
+    allow_delete: bool,
+    process_subtype: str | None,
+) -> None:
+    """Ensure scheduler is running and enqueue the run."""
+    @st.cache_resource
+    def _get_scheduler() -> dict:
+        return start_queue_scheduler(
+            root=root,
+            runtime_for_agent=_runtime_for_agent,
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
+            reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
+            reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
+            force_file_search=True,
+            max_num_results=SETTINGS.file_search_max_results,
         )
-    return outputs
 
-
-def _run_summary(steps: list[dict[str, Any]]) -> dict[str, int]:
-    """Return summary counts for a run."""
-    done = sum(1 for step in steps if step.get("Status") == "DONE")
-    failed = sum(1 for step in steps if step.get("Status") == "FAILED")
-    outputs = sum(len(step.get("Outputs") or []) for step in steps)
-    return {
-        "steps_done": done,
-        "steps_failed": failed,
-        "artefacts_written": outputs,
-    }
-
-
-def _poll_response_status(response_id: str) -> str | None:
-    """Poll OpenAI response status for a background response."""
-    try:
-        client = get_client()
-        resp = client.responses.retrieve(response_id)
-        return getattr(resp, "status", None) or resp.get("status")
-    except Exception:
-        return None
-
-
-def _cancel_response(response_id: str) -> bool:
-    """Cancel a background response by id."""
-    try:
-        client = get_client()
-        resp = client.responses.cancel(response_id)
-        return (getattr(resp, "status", None) or resp.get("status")) == "cancelled"
-    except Exception:
-        return False
-
-
-def _set_duration(step: dict[str, Any]) -> None:
-    """Set duration for a step if started/ended timestamps exist."""
-    started = step.get("Started")
-    ended = step.get("Ended")
-    if not started or not ended:
-        return
-    try:
-        start_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(ended.replace("Z", "+00:00"))
-    except ValueError:
-        return
-    seconds = int((end_dt - start_dt).total_seconds())
-    step["Duration"] = f"{max(seconds, 0)}s"
-
-
-def _worker_loop(root: Path, athlete_id: str, run_id: str, stop_event: threading.Event) -> None:
-    """Background worker to update run steps based on artifacts or response status."""
-    logger.info("Plan hub worker started run_id=%s athlete=%s", run_id, athlete_id)
-    store = LocalArtifactStore(root=root)
-    def _is_blocked(step_id: str, failed_step_id: str, deps: dict[str, list[str]], visited: set[str]) -> bool:
-        if step_id in visited:
-            return False
-        visited.add(step_id)
-        parents = deps.get(step_id, [])
-        if failed_step_id in parents:
-            return True
-        return any(_is_blocked(parent, failed_step_id, deps, visited) for parent in parents)
-
-    def _mark_blocked(steps: list[dict[str, Any]], failed_step: dict[str, Any]) -> None:
-        """Mark queued steps as blocked when a failure prevents downstream steps."""
-        failed_step_id = failed_step.get("step_id") or ""
-        reason = f"Blocked by failed step: {failed_step.get('Step') or failed_step_id}"
-        deps = {step.get("step_id"): step.get("Deps") or [] for step in steps}
-        for pending in steps:
-            if pending.get("Status") != "QUEUED":
-                continue
-            step_id = pending.get("step_id") or ""
-            if _is_blocked(step_id, failed_step_id, deps, set()):
-                pending["Status"] = "BLOCKED"
-                pending["Details"] = reason
-
-    acquired_lock = acquire_athlete_lock(root, athlete_id, run_id)
-    if not acquired_lock:
-        records = load_runs(root, athlete_id, limit=50)
-        active = next((r for r in records if r.get("run_id") == run_id), None)
-        steps = (active or {}).get("steps") or []
-        for step in steps:
-            if step.get("Status") == "QUEUED":
-                step["Status"] = "BLOCKED"
-                step["Details"] = "Athlete lock busy."
-        update_run(
-            root,
-            athlete_id,
-            run_id,
-            {
-                "status": "FAILED",
-                "finished_at": datetime.now(timezone.utc).isoformat(),
-                "summary": _run_summary(steps),
-                "steps": steps,
-            },
-        )
-        append_event(root, athlete_id, run_id, {"type": "RUN_FAILED", "reason": "Athlete lock busy."})
-        return
-
-    try:
-        while not stop_event.is_set():
-            records = load_runs(root, athlete_id, limit=50)
-            active = next((r for r in records if r.get("run_id") == run_id), None)
-            if not active:
-                break
-            status = active.get("status")
-            if status in {"DONE", "FAILED", "CANCELLED"}:
-                break
-            steps = active.get("steps") or []
-            index = _load_index(athlete_id)
-            running_found = any(step.get("Status") == "RUNNING" for step in steps)
-
-            for step in steps:
-                step_status = step.get("Status")
-                if step_status in {"DONE", "FAILED", "SKIPPED", "BLOCKED"}:
-                    continue
-                if step_status == "QUEUED" and not running_found:
-                    step["Status"] = "RUNNING"
-                    step["Started"] = datetime.now(timezone.utc).isoformat()
-                    if not active.get("started_at"):
-                        append_event(root, athlete_id, run_id, {"type": "RUN_STARTED"})
-                        update_run(
-                            root,
-                            athlete_id,
-                            run_id,
-                            {
-                                "status": "RUNNING",
-                                "started_at": datetime.now(timezone.utc).isoformat(),
-                                "current_step": step.get("step_id"),
-                                "steps": steps,
-                            },
-                        )
-                    else:
-                        update_run(
-                            root,
-                            athlete_id,
-                            run_id,
-                            {"status": "RUNNING", "current_step": step.get("step_id"), "steps": steps},
-                        )
-                    append_event(
-                        root,
-                        athlete_id,
-                        run_id,
-                        {"type": "STEP_STARTED", "step_id": step.get("step_id")},
-                    )
-                    running_found = True
-                    break
-                if step_status == "RUNNING":
-                    response_id = step.get("response_id")
-                    response_status = _poll_response_status(response_id) if response_id else None
-                    if response_status in {"completed"}:
-                        step["Status"] = "DONE"
-                        step["Ended"] = datetime.now(timezone.utc).isoformat()
-                        _set_duration(step)
-                        outputs = []
-                        for artifact_type in step.get("write_types") or []:
-                            outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
-                        if outputs:
-                            step["Outputs"] = outputs
-                            append_event(root, athlete_id, run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
-                        append_event(root, athlete_id, run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
-                    elif response_status in {"failed", "cancelled"}:
-                        step["Status"] = "FAILED"
-                        step["Details"] = f"Response {response_status}"
-                        step["Ended"] = datetime.now(timezone.utc).isoformat()
-                        _set_duration(step)
-                        _mark_blocked(steps, step)
-                        append_event(root, athlete_id, run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
-                        update_run(
-                            root,
-                            athlete_id,
-                            run_id,
-                            {
-                                "status": "FAILED",
-                                "finished_at": datetime.now(timezone.utc).isoformat(),
-                                "summary": _run_summary(steps),
-                                "steps": steps,
-                            },
-                        )
-                        return
-                    else:
-                        exec_result = None
-                        step_id = step.get("step_id")
-                        if step_id == "SEASON_SCENARIOS":
-                            exec_result = _execute_season_scenarios(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
-                        elif step_id == "SCENARIO_SELECTION":
-                            if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
-                                exec_result = {"ok": True}
-                            else:
-                                exec_result = _execute_scenario_selection(
-                                    athlete_id,
-                                    active.get("iso_year"),
-                                    active.get("iso_week"),
-                                    run_id,
-                                )
-                        elif step_id == "SEASON_PLAN":
-                            exec_result = _execute_season_plan(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
-                        elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
-                            exec_result = _execute_plan_week(athlete_id, active.get("iso_year"), active.get("iso_week"), run_id)
-                        elif step_id == "POST_INTERVALS":
-                            exec_result = _execute_post_intervals(
-                                athlete_id,
-                                active.get("iso_year"),
-                                active.get("iso_week"),
-                                run_id,
-                                allow_delete=bool(active.get("delete_removed_intervals")),
-                            )
-
-                        if exec_result and exec_result.get("ok"):
-                            step["Status"] = "DONE"
-                            step["Ended"] = datetime.now(timezone.utc).isoformat()
-                            _set_duration(step)
-                            outputs = []
-                            if exec_result.get("outputs"):
-                                outputs.extend(exec_result.get("outputs") or [])
-                            for artifact_type in step.get("write_types") or []:
-                                outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
-                            if outputs:
-                                step["Outputs"] = outputs
-                                append_event(root, athlete_id, run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
-                            append_event(root, athlete_id, run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
-                        else:
-                            for artifact_type in step.get("write_types") or []:
-                                if _artifact_written_for_run(index, ArtifactType(artifact_type), run_id):
-                                    step["Status"] = "DONE"
-                                    step["Ended"] = datetime.now(timezone.utc).isoformat()
-                                    _set_duration(step)
-                                    outputs = []
-                                    for artifact_type in step.get("write_types") or []:
-                                        outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
-                                    if outputs:
-                                        step["Outputs"] = outputs
-                                        append_event(root, athlete_id, run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
-                                    append_event(root, athlete_id, run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
-                                    break
-                            if step.get("Status") != "DONE":
-                                step["Status"] = "FAILED"
-                                step["Details"] = (exec_result or {}).get("error") or "Execution failed."
-                                step["Ended"] = datetime.now(timezone.utc).isoformat()
-                                _set_duration(step)
-                                _mark_blocked(steps, step)
-                                append_event(root, athlete_id, run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
-                                update_run(
-                                    root,
-                                    athlete_id,
-                                    run_id,
-                                    {
-                                        "status": "FAILED",
-                                        "finished_at": datetime.now(timezone.utc).isoformat(),
-                                        "summary": _run_summary(steps),
-                                        "steps": steps,
-                                    },
-                                )
-                                return
-                    update_run(root, athlete_id, run_id, {"summary": _run_summary(steps), "steps": steps})
-                    break
-
-            if all(step.get("Status") in {"DONE", "SKIPPED", "BLOCKED"} for step in steps):
-                update_run(
-                    root,
-                    athlete_id,
-                    run_id,
-                    {
-                        "status": "DONE",
-                        "finished_at": datetime.now(timezone.utc).isoformat(),
-                        "summary": _run_summary(steps),
-                        "current_step": None,
-                        "steps": steps,
-                    },
-                )
-                append_event(root, athlete_id, run_id, {"type": "RUN_FINISHED"})
-                break
-
-            time.sleep(2)
-    finally:
-        release_athlete_lock(root, athlete_id)
-
-    logger.info("Plan hub worker stopped run_id=%s athlete=%s", run_id, athlete_id)
-
-
-def _ensure_worker(root: Path, athlete_id: str, run_id: str) -> None:
-    """Start a background worker thread if not already running."""
-    worker = st.session_state.get("plan_hub_worker")
-    if worker and worker.get("run_id") == run_id and worker.get("thread", None):
-        if worker["thread"].is_alive():
-            return
-    stop_event = threading.Event()
-    thread = threading.Thread(
-        target=_worker_loop,
-        args=(root, athlete_id, run_id, stop_event),
-        daemon=True,
+    ensure_queue_dirs(root)
+    scheduler = _get_scheduler()
+    if not scheduler.get("thread") or not scheduler["thread"].is_alive():
+        _get_scheduler.clear()
+        scheduler = _get_scheduler()
+    enqueue_run(
+        root,
+        run_id,
+        {
+            "athlete_id": athlete_id,
+            "process_type": "planning",
+            "process_subtype": process_subtype or "orchestrated",
+            "allow_delete_intervals": allow_delete,
+        },
     )
-    st.session_state["plan_hub_worker"] = {"run_id": run_id, "stop": stop_event, "thread": thread}
-    thread.start()
 
 
 def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_run_id: str) -> None:
@@ -1168,7 +817,7 @@ if run_state:
     st.autorefresh(interval=2000, key="plan_hub_autorefresh")
 
 if active_run_id:
-    _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id)
+    _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id, allow_delete=bool(active_run.get("delete_removed_intervals")), process_subtype=active_run.get("process_subtype"))
 
 st.subheader("Readiness")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
@@ -1217,7 +866,7 @@ with st.expander("Season Plan: Delete or Reset", expanded=False):
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     has_plan = store.latest_exists(hub_scope["athlete_id"], ArtifactType.SEASON_PLAN)
     if has_plan:
-        _show_reset_delete_actions()
+        _show_reset_delete_actions(hub_scope["athlete_id"])
     else:
         st.caption("No season plan available for reset/delete actions.")
 
@@ -1321,7 +970,7 @@ with run_col:
         append_run(SETTINGS.workspace_root, athlete_id, record)
         st.session_state["plan_hub_running"] = True
         st.session_state["plan_hub_active_run_id"] = run_id
-        _ensure_worker(SETTINGS.workspace_root, athlete_id, run_id)
+        _ensure_worker(SETTINGS.workspace_root, athlete_id, run_id, allow_delete=bool(delete_removed), process_subtype="orchestrated")
         st.info("Run requested (placeholder).")
 
     run_mode = st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])
@@ -1412,7 +1061,7 @@ with run_col:
             append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
             st.session_state["plan_hub_running"] = True
             st.session_state["plan_hub_active_run_id"] = run_id
-            _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id)
+            _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id, allow_delete=bool(delete_toggle), process_subtype=desired_subtype)
             st.info("Run requested (placeholder).")
 
 if summary_text:
@@ -1481,7 +1130,7 @@ if active_run:
         )
         st.session_state["plan_hub_running"] = True
         st.session_state["plan_hub_active_run_id"] = new_run_id
-        _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], new_run_id)
+        _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], new_run_id, allow_delete=bool(delete_removed), process_subtype=active_run.get("process_subtype"))
         st.rerun()
     st.dataframe(steps, use_container_width=True)
     events = load_events(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run.get("run_id") or "", limit=200)

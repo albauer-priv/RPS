@@ -37,6 +37,9 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Phase preview layout moved to its own expander with weekly previews below.
 * **Recent status:** Plan Hub season plan reset/delete actions now live in a collapsed expander; run summary banner uses plain text (no "Was wird alles erstellt" prefix).
 * **Recent status:** Performance report readiness is now surfaced on Performance pages (Feed Forward + Report), and removed from Plan Hub planning readiness.
+* **Recent status:** Plan Hub reset/delete now deletes latest artefacts (reset keeps scenarios/selection; delete removes them too).
+* **Recent status:** Plan Hub worker loop moved into orchestrator helpers; System → Status now shows planning worker status.
+* **Recent status:** Automatic planning flow document includes Mermaid labels wrapped in triple quotes for rendering.
 
 ### Tech stack & constraints
 
@@ -85,6 +88,11 @@ This file is the **README for coding agents** working in this repository. It con
 * Classes: `PascalCase`
 * Constants: `UPPER_SNAKE_CASE`
 
+### Documentation (Mermaid)
+
+* Mermaid diagram labels should wrap text in quotes, e.g. `["Label"]` or `{"Decision?"}`, to ensure consistent rendering.
+* Avoid `\\n` in Mermaid labels; use `<br>` or a single space instead.
+
 ### Script/layout discipline (Streamlit-aware)
 
 Streamlit reruns scripts top-to-bottom. To avoid duplicated side effects and flaky UI:
@@ -103,6 +111,7 @@ Streamlit reruns scripts top-to-bottom. To avoid duplicated side effects and fla
 * No expensive operations at module import time.
 * No `st.*` calls inside worker threads.
 * Keep page scripts small; move logic into helpers/services.
+* UI pages must not call agents directly; delegate to orchestrator/service helpers (Plan Hub is UI, not controller).
 
 ---
 
@@ -270,6 +279,65 @@ Functions with side effects, IO, or non-trivial logic must have docstrings inclu
 * Side effects (files/network/state)
 * Errors/exceptions
 * Example (if helpful)
+
+---
+
+## Architecture Decision Log
+
+### ADR-001: UI Pages Delegate to Orchestrators
+
+**Status:** Accepted  
+**Date:** 2026-02-01  
+**Context:** UI pages were mixing presentation and controller logic (agent calls, worker loops). This made reuse from other pages (e.g., System → Status) harder and duplicated flow logic.  
+**Decision:** UI pages must remain UI-only. All run execution, worker loops, and agent calls live in orchestrator/service helpers. UI pages call a single helper per action and read status from shared helpers.  
+**Consequences:**  
+- Plan Hub is UI-only; background worker lives in `rps.orchestrator.plan_hub_worker`.  
+- System/Status can show planning worker status via shared helper.  
+- Future actions should be added to orchestrator modules, not UI pages.
+
+### ADR-002: Run Store is the Source of Truth for Planning Status
+
+**Status:** Accepted  
+**Date:** 2026-02-01  
+**Context:** Multiple pages need consistent, real-time planning status. Spreading status logic across pages risks divergence.  
+**Decision:** Run status is persisted in the run store (`runs/<run_id>/*`) and is the single source of truth. UI pages read status via helpers (e.g., `get_planning_run_status`).  
+**Consequences:**  
+- System → Status and Plan Hub always reflect the same run state.  
+- Worker logic updates status in one place; UI only reads.
+
+### ADR-003: Posting Workouts is a Separate Flow
+
+**Status:** Accepted  
+**Date:** 2026-02-01  
+**Context:** Planning completion should not be coupled to external posting. Auto-posting mixes concerns and can block planning UX.  
+**Decision:** Planning flow ends after workout export. Posting to Intervals is a separate “Post Workouts” flow initiated from the Workouts page.  
+**Consequences:**  
+- Planning is considered complete when exports are current.  
+- Posting can be retried independently without re-running planning.
+
+### ADR-004: Latest Artefact Reset/Delete Semantics
+
+**Status:** Accepted  
+**Date:** 2026-02-01  
+**Context:** Athletes need a safe reset vs a full delete. Ambiguous behavior can cause accidental loss of scenario work.  
+**Decision:**  
+- **Reset** removes latest Season Plan, Phase artefacts, Week Plan, and Workouts exports.  
+- **Delete** removes the same plus Season Scenarios and Scenario Selection.  
+**Consequences:**  
+- Reset keeps scenario work intact.  
+- Delete clears planning context for a clean restart.
+
+### ADR-005: Run Store + Queue + Scheduler Separation
+
+**Status:** Accepted  
+**Date:** 2026-02-01  
+**Context:** Run Store currently holds state, but scheduling and execution were embedded in page-level workers. This limited reuse and made orchestration harder to scale.  
+**Decision:** Keep Run Store as state only. Add a file-based queue + scheduler that decides run eligibility and delegates to workers.  
+**Consequences:**  
+- UI pages enqueue runs instead of running them directly.  
+- Worker(s) consume queue items and update Run Store.  
+- System/Status can display queue states consistently.
+- Scheduler lifecycle is managed via `st.cache_resource` (one per process).
 
 ---
 

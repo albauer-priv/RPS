@@ -21,6 +21,7 @@ from rps.workspace.iso_helpers import (
     range_contains,
 )
 from rps.workspace.season_plan_service import resolve_season_plan_phase_info
+from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.workspace.api import Workspace
 from rps.workspace.local_store import LocalArtifactStore
 from rps.core.logging import log_and_print
@@ -624,53 +625,37 @@ def plan_week(
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
-    builder_tasks: list[AgentTask] = []
-    if store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key):
-        intervals_version = f"{year:04d}-{week:02d}"
-        intervals_path = (
-            store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)
-            if store.exists(athlete_id, ArtifactType.INTERVALS_WORKOUTS, intervals_version)
-            else None
+    injected_block = _build_injection_block(
+        "workout_builder",
+        mode=_mode_for_task(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT),
+    )
+    export_result = create_intervals_workouts_export(
+        runtime_for,
+        store=store,
+        athlete_id=athlete_id,
+        year=year,
+        week=week,
+        run_id=run_id,
+        injected_block=injected_block,
+        plan_mtime=plan_mtime,
+        needs_week_plan=needs_week_plan,
+        force_file_search=force_file_search,
+        max_num_results=max_num_results,
+        model_resolver=model_resolver,
+        temperature_resolver=temperature_resolver,
+        log_fn=_log,
+    )
+    if export_result.get("ran"):
+        out = export_result.get("result") or {}
+        steps.append(
+            {
+                "agent": "workout_builder",
+                "tasks": [AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT.value],
+                "result": out,
+            }
         )
-        intervals_mtime = _mtime(intervals_path)
-        needs_intervals = intervals_path is None
-        if plan_mtime and intervals_mtime and plan_mtime > intervals_mtime:
-            needs_intervals = True
-        if needs_week_plan:
-            needs_intervals = True
-        if not needs_intervals:
-            message = f"Found INTERVALS_WORKOUTS for ISO week {target_label}."
-            _log(message)
-        else:
-            builder_tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
-            message = f"Running Workout-Builder for ISO week {target_label}."
-            _log(message)
-            spec = AGENTS["workout_builder"]
-            mode = _mode_for_task(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
-            injected_block = _build_injection_block("workout_builder", mode=mode)
-            out = run_agent_multi_output(
-                runtime_for(spec.name),
-                agent_name=spec.name,
-                agent_vs_name=spec.vector_store_name,
-                athlete_id=athlete_id,
-                tasks=builder_tasks,
-                user_input=(
-                    f"Convert week_plan into Intervals.icu workouts JSON for ISO week {target_label}. "
-                    "Read week_plan from workspace. "
-                    f"{injected_block}"
-                ),
-                run_id=f"{run_id}_builder",
-                model_override=model_resolver(spec.name) if model_resolver else None,
-                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
-            steps.append({"agent": "workout_builder", "tasks": [t.value for t in builder_tasks], "result": out})
-            if out.get("ok") and out.get("produced"):
-                _log("Done.")
-    else:
-        message = f"Workout-Builder skipped: WEEK_PLAN {target_label} not found."
-        _log(message)
+        if out.get("ok") and out.get("produced"):
+            _log("Done.")
 
 
     ok = all(step["result"].get("ok") for step in steps) if steps else True

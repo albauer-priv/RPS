@@ -35,6 +35,32 @@ def test_plan_hub_season_actions_expander(tmp_path):
     assert all("Was wird alles erstellt:" not in info.value for info in at.info)
 
 
+def test_plan_hub_reset_delete_latest(tmp_path):
+    from rps.ui.pages.plan import hub as plan_hub
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    for artifact_type in plan_hub.DELETE_LATEST_TYPES:
+        path = store.latest_path("test_athlete", artifact_type)
+        path.write_text("{}", encoding="utf-8")
+
+    removed_delete = plan_hub._clear_latest_artifacts(store, "test_athlete", plan_hub.DELETE_LATEST_TYPES)
+    assert removed_delete
+    for artifact_type in plan_hub.DELETE_LATEST_TYPES:
+        assert not store.latest_path("test_athlete", artifact_type).exists()
+
+    for artifact_type in plan_hub.DELETE_LATEST_TYPES:
+        path = store.latest_path("test_athlete", artifact_type)
+        path.write_text("{}", encoding="utf-8")
+
+    removed_reset = plan_hub._clear_latest_artifacts(store, "test_athlete", plan_hub.RESET_LATEST_TYPES)
+    assert removed_reset
+    for artifact_type in plan_hub.RESET_LATEST_TYPES:
+        assert not store.latest_path("test_athlete", artifact_type).exists()
+    assert store.latest_path("test_athlete", ArtifactType.SEASON_SCENARIOS).exists()
+    assert store.latest_path("test_athlete", ArtifactType.SEASON_SCENARIO_SELECTION).exists()
+
+
 def test_week_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/plan/week.py")
     at.run()

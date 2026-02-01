@@ -14,6 +14,8 @@ from rps.ui.shared import (
     set_status,
 )
 from rps.ui.run_store import load_runs
+from rps.orchestrator.plan_hub_worker import get_planning_run_status
+from rps.orchestrator.queue_scheduler import ensure_queue_dirs
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 
@@ -31,6 +33,31 @@ athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+
+runs_status = get_planning_run_status(SETTINGS.workspace_root, athlete_id)
+if runs_status:
+    st.subheader("Planning Worker Status")
+    st.table(
+        [
+            {
+                "Run ID": runs_status.get("run_id"),
+                "Status": runs_status.get("status"),
+                "Current Step": runs_status.get("current_step") or "—",
+                "Started": runs_status.get("started_at") or "—",
+                "Finished": runs_status.get("finished_at") or "—",
+            }
+        ]
+    )
+
+queue_paths = ensure_queue_dirs(SETTINGS.workspace_root)
+queue_counts = {
+    "Pending": len(list(queue_paths.pending.glob("*.json"))),
+    "Active": len(list(queue_paths.active.glob("*.json"))),
+    "Done": len(list(queue_paths.done.glob("*.json"))),
+    "Failed": len(list(queue_paths.failed.glob("*.json"))),
+}
+st.subheader("Queue Status")
+st.table([queue_counts])
 
 runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=100)
 status_filter = st.selectbox(

@@ -7,10 +7,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from rps.agents.multi_output_runner import run_agent_multi_output
-from rps.agents.registry import AGENTS
-from rps.agents.tasks import AgentTask
-from rps.orchestrator.plan_week import _build_injection_block, _mode_for_task
+from rps.orchestrator.week_revision import revise_week_plan
 from rps.ui.intervals_post import delete_posted_workouts, post_to_intervals_commit
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
@@ -105,27 +102,16 @@ if revise_submit:
             last_action="Revise Week Plan",
             last_run_id=run_id,
         )
-        runtime = multi_runtime_for("week_planner")
-        injected_block = _build_injection_block("week_planner", mode=_mode_for_task(AgentTask.CREATE_WEEK_PLAN))
-        user_input = (
-            f"Target ISO week: year={year}, week={week} (ISO {version_key}). "
-            "Revise the week plan based on the following coach message. "
-            f"Message: {message}\n"
-            f"{injected_block}"
-            "Follow the Mandatory Output Chapter for WEEK_PLAN."
-        )
-        spec = AGENTS["week_planner"]
         result, output = capture_output(
-            lambda: run_agent_multi_output(
-                runtime,
-                agent_name=spec.name,
-                agent_vs_name=spec.vector_store_name,
+            lambda: revise_week_plan(
+                lambda name: multi_runtime_for(name),
                 athlete_id=athlete_id,
-                tasks=[AgentTask.CREATE_WEEK_PLAN],
-                user_input=user_input,
+                year=year,
+                week=week,
+                message=message,
                 run_id=run_id,
-                model_override=SETTINGS.model_for_agent(spec.name),
-                temperature_override=SETTINGS.temperature_for_agent(spec.name),
+                model_resolver=SETTINGS.model_for_agent,
+                temperature_resolver=SETTINGS.temperature_for_agent,
                 force_file_search=True,
                 max_num_results=SETTINGS.file_search_max_results,
             ),

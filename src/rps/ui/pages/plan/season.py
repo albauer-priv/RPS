@@ -5,10 +5,11 @@ import json
 import streamlit as st
 from jinja2 import BaseLoader, Environment
 
-from rps.agents.multi_output_runner import run_agent_multi_output
-from rps.agents.registry import AGENTS
-from rps.agents.tasks import AgentTask
-from rps.orchestrator.plan_week import _build_injection_block
+from rps.orchestrator.season_flow import (
+    create_season_plan,
+    create_season_scenarios,
+    select_season_scenario,
+)
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -83,16 +84,6 @@ def _format_agent_result(result: object | None, fallback: str) -> str:
 
 
 def _action_scenarios() -> str:
-    runtime = multi_runtime_for("season_scenario")
-    spec = AGENTS["season_scenario"]
-    injected_block = _build_injection_block("season_scenario", mode="scenario")
-    user_input = (
-        "Mode A. Generate the pre-decision scenarios. "
-        f"Target ISO week: {year}-{week:02d}. "
-        "Use workspace_get_input for Season Brief and Events. "
-        f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
-    )
     run_id = make_ui_run_id(f"season_scenarios_{year}_{week:02d}")
     set_status(
         status_state="running",
@@ -102,16 +93,14 @@ def _action_scenarios() -> str:
         last_run_id=run_id,
     )
     result, output = capture_output(
-        lambda: run_agent_multi_output(
-            runtime,
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
+        lambda: create_season_scenarios(
+            lambda name: multi_runtime_for(name),
             athlete_id=athlete_id,
-            tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
-            user_input=user_input,
+            year=year,
+            week=week,
             run_id=run_id,
-            model_override=SETTINGS.model_for_agent(spec.name),
-            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
             force_file_search=True,
             max_num_results=SETTINGS.file_search_max_results,
         ),
@@ -128,17 +117,6 @@ def _action_scenarios() -> str:
 
 
 def _action_select_scenario(selected: str, rationale: str | None) -> str:
-    runtime = multi_runtime_for("season_scenario")
-    spec = AGENTS["season_scenario"]
-    injected_block = _build_injection_block("season_scenario", mode="scenario")
-    rationale_line = f"Rationale: {rationale.strip()}. " if rationale else ""
-    user_input = (
-        f"Select Scenario {selected.upper()} for ISO week {year}-{week:02d}. "
-        "Use the latest SEASON_SCENARIOS as context. "
-        f"{rationale_line}"
-        f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_SCENARIO_SELECTION."
-    )
     run_id = make_ui_run_id(f"season_scenario_selection_{year}_{week:02d}")
     set_status(
         status_state="running",
@@ -148,16 +126,16 @@ def _action_select_scenario(selected: str, rationale: str | None) -> str:
         last_run_id=run_id,
     )
     result, output = capture_output(
-        lambda: run_agent_multi_output(
-            runtime,
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
+        lambda: select_season_scenario(
+            lambda name: multi_runtime_for(name),
             athlete_id=athlete_id,
-            tasks=[AgentTask.CREATE_SEASON_SCENARIO_SELECTION],
-            user_input=user_input,
+            year=year,
+            week=week,
             run_id=run_id,
-            model_override=SETTINGS.model_for_agent(spec.name),
-            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            selected=selected,
+            rationale=rationale,
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
             force_file_search=True,
             max_num_results=SETTINGS.file_search_max_results,
         ),
@@ -174,16 +152,6 @@ def _action_select_scenario(selected: str, rationale: str | None) -> str:
 
 
 def _action_season_plan(selected: str) -> str:
-    runtime = multi_runtime_for("season_planner")
-    spec = AGENTS["season_planner"]
-    injected_block = _build_injection_block("season_planner", mode="season_plan")
-    user_input = (
-        f"Scenario {selected.upper()}. Mode A. Create the SEASON_PLAN. "
-        f"Target ISO week: {year}-{week:02d}. "
-        "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
-        f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_PLAN."
-    )
     run_id = make_ui_run_id(f"season_plan_{year}_{week:02d}")
     set_status(
         status_state="running",
@@ -193,16 +161,15 @@ def _action_season_plan(selected: str) -> str:
         last_run_id=run_id,
     )
     result, output = capture_output(
-        lambda: run_agent_multi_output(
-            runtime,
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
+        lambda: create_season_plan(
+            lambda name: multi_runtime_for(name),
             athlete_id=athlete_id,
-            tasks=[AgentTask.CREATE_SEASON_PLAN],
-            user_input=user_input,
+            year=year,
+            week=week,
             run_id=run_id,
-            model_override=SETTINGS.model_for_agent(spec.name),
-            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            selected=selected,
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
             force_file_search=True,
             max_num_results=SETTINGS.file_search_max_results,
         ),

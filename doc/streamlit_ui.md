@@ -80,6 +80,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Run planning panel (mode, scope, run id, validate-only, post-to-intervals toggle).
 - Run execution table (steps, status, outputs, events).
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
+- Reset/Delete actions remove latest artefacts; delete also clears scenarios + selection while reset keeps them.
 
 #### Plan -> Season
 
