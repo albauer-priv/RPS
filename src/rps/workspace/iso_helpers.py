@@ -64,7 +64,8 @@ def parse_iso_week(value: Any) -> IsoWeek | None:
     if isinstance(value, dict) and "year" in value and "week" in value:
         return IsoWeek(int(value["year"]), int(value["week"]))
     if isinstance(value, str):
-        parts = value.strip().split("-")
+        key = value.strip().split("__", 1)[0]
+        parts = key.split("-")
         if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
             return IsoWeek(int(parts[0]), int(parts[1]))
     return None

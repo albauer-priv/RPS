@@ -113,7 +113,8 @@ def parse_iso_week(value: str | None) -> dict[str, int] | None:
     if not value:
         return None
     try:
-        year_str, week_str = value.split("-", 1)
+        key = value.split("__", 1)[0]
+        year_str, week_str = key.split("-", 1)
         return {"year": int(year_str), "week": int(week_str)}
     except (ValueError, TypeError):
         return None

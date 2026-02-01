@@ -49,18 +49,18 @@ class LocalStoreTests(unittest.TestCase):
             store.save_version(
                 athlete_id=athlete_id,
                 artifact_type=ArtifactType.WEEK_PLAN,
-                version_key="2026-06",
+                version_key="2026-06__20260201_120000",
                 payload={"foo": "bar"},
             )
             store.save_version(
                 athlete_id=athlete_id,
                 artifact_type=ArtifactType.WEEK_PLAN,
-                version_key="2026-04",
+                version_key="2026-04__20260201_090000",
                 payload={"foo": "baz"},
             )
 
             versions = store.list_versions(athlete_id, ArtifactType.WEEK_PLAN)
-            self.assertEqual(versions, ["2026-04", "2026-06"])
+            self.assertEqual(versions, ["2026-04__20260201_090000", "2026-06__20260201_120000"])
 
     def test_exists_and_latest_version_key(self) -> None:
         """Verify existence checks and latest version key lookup."""
@@ -73,12 +73,15 @@ class LocalStoreTests(unittest.TestCase):
             store.save_version(
                 athlete_id=athlete_id,
                 artifact_type=ArtifactType.WEEK_PLAN,
-                version_key="2026-06",
+                version_key="2026-06__20260201_120000",
                 payload={"foo": "bar"},
             )
             self.assertTrue(store.latest_exists(athlete_id, ArtifactType.WEEK_PLAN))
             self.assertTrue(store.exists(athlete_id, ArtifactType.WEEK_PLAN, "2026-06"))
-            self.assertEqual(store.get_latest_version_key(athlete_id, ArtifactType.WEEK_PLAN), "2026-06")
+            self.assertEqual(
+                store.get_latest_version_key(athlete_id, ArtifactType.WEEK_PLAN),
+                "2026-06__20260201_120000",
+            )
 
 
 class GuardTests(unittest.TestCase):
@@ -90,7 +93,7 @@ class GuardTests(unittest.TestCase):
             with self.assertRaises(MissingDependenciesError):
                 ws.guard_put(
                     ArtifactType.WEEK_PLAN,
-                    version_key="2026-06",
+                    version_key="2026-06__20260201_120000",
                     payload={"week": "2026-06"},
                     producer_agent="week_planner",
                     run_id="run_2026-06_week_001",

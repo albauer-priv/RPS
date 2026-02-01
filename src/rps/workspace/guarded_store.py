@@ -18,7 +18,7 @@ from rps.workspace.iso_helpers import envelope_week_range
 from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.types import ArtifactType
-from rps.workspace.versioning import derive_version_key_from_envelope
+from rps.workspace.versioning import derive_version_key_from_envelope, normalize_week_version_key
 from rps.workspace.local_store import LocalArtifactStore
 from rps.rendering.auto_render import render_sidecar
 
@@ -494,7 +494,7 @@ class GuardedValidatedStore:
                     document["meta"]["data_confidence"] = "UNKNOWN"
                 document = self._apply_rounding(document, schema)
                 validate_or_raise(validator, document)
-                version_key = derive_version_key_from_envelope(document)
+                version_key = derive_version_key_from_envelope(document, target)
             else:
                 document = self._apply_rounding(document, schema)
                 validate_or_raise(validator, document)
@@ -590,7 +590,8 @@ class GuardedValidatedStore:
         if not dates:
             return "raw"
         iso = min(dates).isocalendar()
-        return f"{iso.year:04d}-{iso.week:02d}"
+        week_key = f"{iso.year:04d}-{iso.week:02d}"
+        return normalize_week_version_key(week_key, artifact_type=ArtifactType.INTERVALS_WORKOUTS)
 
     def _log_store_attempt(
         self,

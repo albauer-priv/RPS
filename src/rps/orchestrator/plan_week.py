@@ -653,8 +653,9 @@ def plan_week(
 
     week_tasks: list[AgentTask] = []
     version_key = target_label
-    version_exists = store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key)
-    plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, version_key) if version_exists else None
+    resolved_key = store.resolve_week_version_key(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+    version_exists = resolved_key is not None
+    plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, resolved_key) if resolved_key else None
     plan_mtime = _mtime(plan_path)
     needs_week_plan = not version_exists
     if season_plan_mtime and plan_mtime and season_plan_mtime > plan_mtime:

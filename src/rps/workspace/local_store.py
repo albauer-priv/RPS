@@ -6,12 +6,14 @@ import json
 import os
 import shutil
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
 from .index_manager import WorkspaceIndexManager
 from .paths import ARTIFACT_PATHS, ensure_dir
 from .types import ArtifactMeta, ArtifactType, Authority
+from .versioning import normalize_week_version_key, split_week_version_key, WEEK_SCOPED_ARTIFACTS
 
 
 def utc_iso_now() -> str:
@@ -136,13 +138,22 @@ class LocalArtifactStore:
 
     def exists(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> bool:
         """Return True if the given version exists on disk."""
-        path = self.versioned_path(athlete_id, artifact_type, version_key)
+        resolved = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
+        path = self.versioned_path(athlete_id, artifact_type, resolved)
         return path.exists()
 
     def latest_exists(self, athlete_id: str, artifact_type: ArtifactType) -> bool:
         """Return True if a latest artifact exists on disk."""
         path = self.latest_path(athlete_id, artifact_type)
         return path.exists()
+
+    def resolve_week_version_key(
+        self, athlete_id: str, artifact_type: ArtifactType, week_key: str
+    ) -> str | None:
+        """Return the newest week-scoped version key for a base week key, if it exists."""
+        resolved = self._resolve_week_version_key(athlete_id, artifact_type, week_key)
+        path = self.versioned_path(athlete_id, artifact_type, resolved)
+        return resolved if path.exists() else None
 
     def get_latest_version_key(self, athlete_id: str, artifact_type: ArtifactType) -> str:
         """Return the version_key for the latest artifact, if available."""
@@ -194,6 +205,7 @@ class LocalArtifactStore:
 
     def _path_for_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Path:
         """Return the path for a recorded version, falling back to the canonical layout."""
+        version_key = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
         root = self.athlete_root(athlete_id)
         index = self._index_manager(athlete_id).load()
         artefacts = index.get("artefacts", {})
@@ -206,6 +218,28 @@ class LocalArtifactStore:
                 if candidate.exists():
                     return candidate
         return self.versioned_path(athlete_id, artifact_type, version_key)
+
+    def _resolve_week_version_key(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> str:
+        """Return the newest week-scoped version key for a base week key."""
+        if artifact_type not in WEEK_SCOPED_ARTIFACTS:
+            return version_key
+        base_week, suffix = split_week_version_key(version_key)
+        if not base_week or suffix:
+            return version_key
+        entry = self._index_manager(athlete_id).load().get("artefacts", {}).get(artifact_type.value) or {}
+        versions = entry.get("versions", {}) if isinstance(entry, dict) else {}
+        candidates: list[tuple[datetime, str, str]] = []
+        for key, record in versions.items():
+            cand_base, cand_suffix = split_week_version_key(key)
+            if cand_base != base_week:
+                continue
+            created_raw = record.get("created_at") if isinstance(record, dict) else None
+            created_dt = _parse_created_at(created_raw)
+            candidates.append((created_dt, cand_suffix or "", key))
+        if candidates:
+            candidates.sort()
+            return candidates[-1][2]
+        return version_key
 
     def save_version(
         self,
@@ -224,10 +258,11 @@ class LocalArtifactStore:
         """Write a schema-style {meta,data} envelope to disk."""
         self.ensure_workspace(athlete_id)
 
+        normalized_key = normalize_week_version_key(version_key, artifact_type=artifact_type)
         meta = ArtifactMeta(
             artifact_type=artifact_type,
             athlete_id=athlete_id,
-            version_key=version_key,
+            version_key=normalized_key,
             authority=authority,
             producer_agent=producer_agent,
             run_id=run_id,
@@ -250,7 +285,11 @@ class LocalArtifactStore:
         }
 
         if "version_key" in payload_meta or not payload_meta:
-            meta_doc["version_key"] = payload_meta.get("version_key", meta.version_key)
+            meta_doc["version_key"] = normalize_week_version_key(
+                payload_meta.get("version_key", meta.version_key),
+                meta_doc.get("created_at"),
+                artifact_type=artifact_type,
+            )
 
         for key, value in payload_meta.items():
             if key in meta_doc or value is None:
@@ -259,7 +298,7 @@ class LocalArtifactStore:
 
         doc = {"meta": meta_doc, "data": payload}
 
-        version_path = self.versioned_path(athlete_id, artifact_type, version_key)
+        version_path = self.versioned_path(athlete_id, artifact_type, meta.version_key)
         ensure_dir(version_path.parent)
 
         self._atomic_write_json(version_path, doc)
@@ -273,7 +312,7 @@ class LocalArtifactStore:
         self._record_index_write(
             athlete_id=athlete_id,
             artifact_type=artifact_type,
-            version_key=version_key,
+            version_key=meta.version_key,
             version_path=version_path,
             run_id=meta.run_id,
             producer_agent=meta.producer_agent,
@@ -296,7 +335,19 @@ class LocalArtifactStore:
         """Write a validated document (envelope or raw) to disk."""
         self.ensure_workspace(athlete_id)
 
-        version_path = self.versioned_path(athlete_id, artifact_type, version_key)
+        normalized_key = normalize_week_version_key(version_key, artifact_type=artifact_type)
+        meta_doc = None
+        if isinstance(document, dict):
+            candidate = document.get("meta")
+            if isinstance(candidate, dict):
+                meta_doc = candidate
+                if "version_key" in meta_doc:
+                    meta_doc["version_key"] = normalize_week_version_key(
+                        str(meta_doc.get("version_key")),
+                        meta_doc.get("created_at"),
+                        artifact_type=artifact_type,
+                    )
+        version_path = self.versioned_path(athlete_id, artifact_type, normalized_key)
         ensure_dir(version_path.parent)
         self._atomic_write_json(version_path, document)
 
@@ -305,16 +356,10 @@ class LocalArtifactStore:
             ensure_dir(latest_path.parent)
             self._atomic_write_json(latest_path, document)
 
-        meta_doc = None
-        if isinstance(document, dict):
-            candidate = document.get("meta")
-            if isinstance(candidate, dict):
-                meta_doc = candidate
-
         self._append_log_simple(
             athlete_id=athlete_id,
             artifact_type=artifact_type.value,
-            version_key=version_key,
+            version_key=normalized_key,
             producer_agent=producer_agent,
             run_id=run_id,
             path=str(version_path),
@@ -323,7 +368,7 @@ class LocalArtifactStore:
         self._record_index_write(
             athlete_id=athlete_id,
             artifact_type=artifact_type,
-            version_key=version_key,
+            version_key=normalized_key,
             version_path=version_path,
             run_id=run_id,
             producer_agent=producer_agent,
@@ -383,6 +428,18 @@ class LocalArtifactStore:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
+def _parse_created_at(value: str | None) -> datetime:
+    """Parse an ISO-8601 timestamp, falling back to epoch."""
+    if not value:
+        return datetime.min
+    try:
+        if value.endswith("Z"):
+            value = value.replace("Z", "+00:00")
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return datetime.min
+
+
 def _version_sort_key(version_key: str) -> tuple:
     """Sort version keys with week-like keys first."""
     try:
@@ -390,6 +447,10 @@ def _version_sort_key(version_key: str) -> tuple:
             start = version_key.split("--", 1)[0]
             year, week = start.split("-")
             return (0, int(year), int(week), version_key)
+        base_week, suffix = split_week_version_key(version_key)
+        if base_week:
+            year, week = base_week.split("-")
+            return (0, int(year), int(week), suffix or "", version_key)
         year, week = version_key.split("-")
         return (0, int(year), int(week), version_key)
     except Exception:
