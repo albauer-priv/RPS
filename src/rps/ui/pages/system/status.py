@@ -15,7 +15,7 @@ from rps.ui.shared import (
 )
 from rps.agents.multi_output_runner import AgentRuntime
 from rps.openai.client import get_client
-from rps.openai.vectorstores import VectorStoreResolver
+from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_runs
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
