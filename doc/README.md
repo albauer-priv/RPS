@@ -5,6 +5,7 @@ This directory contains system-level documentation for the platform.
 ## Contents
 
 - `system_architecture.md`: component overview and design principles.
+- `adr/README.md`: Architecture Decision Records (ADR) index.
 - `vectorstores.md`: knowledge sync and runtime attachment workflow.
 - `how_to_plan.md`: step-by-step planning workflow and cadence (includes planner responsibilities).
 - `artefact_flow_overview_and_detail.md`: end-to-end artefact flow with detail diagrams.

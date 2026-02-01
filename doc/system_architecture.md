@@ -19,6 +19,7 @@ It covers:
 - runtime storage and traceability
 
 It is a system document, not a coaching manual.
+See `doc/adr/README.md` for architecture decisions.
 
 ---
 

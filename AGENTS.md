@@ -113,6 +113,14 @@ Streamlit reruns scripts top-to-bottom. To avoid duplicated side effects and fla
 * Keep page scripts small; move logic into helpers/services.
 * UI pages must not call agents directly; delegate to orchestrator/service helpers (Plan Hub is UI, not controller).
 
+### ADR process (automated)
+
+* ADRs are stored as separate files in `doc/adr/` and indexed in `doc/adr/README.md`.
+* Always evaluate changes for ADR-worthiness (architecture, flow orchestration, data/state lifecycle).
+* If a change conflicts with an existing ADR, **pause and warn**.
+* If an exception is required, add it to the relevant ADR with rationale.
+* Keep ADRs updated automatically as part of change delivery.
+
 ---
 
 ## 4) Streamlit UI standards (design + structure)
@@ -284,60 +292,7 @@ Functions with side effects, IO, or non-trivial logic must have docstrings inclu
 
 ## Architecture Decision Log
 
-### ADR-001: UI Pages Delegate to Orchestrators
-
-**Status:** Accepted  
-**Date:** 2026-02-01  
-**Context:** UI pages were mixing presentation and controller logic (agent calls, worker loops). This made reuse from other pages (e.g., System → Status) harder and duplicated flow logic.  
-**Decision:** UI pages must remain UI-only. All run execution, worker loops, and agent calls live in orchestrator/service helpers. UI pages call a single helper per action and read status from shared helpers.  
-**Consequences:**  
-- Plan Hub is UI-only; background worker lives in `rps.orchestrator.plan_hub_worker`.  
-- System/Status can show planning worker status via shared helper.  
-- Future actions should be added to orchestrator modules, not UI pages.
-
-### ADR-002: Run Store is the Source of Truth for Planning Status
-
-**Status:** Accepted  
-**Date:** 2026-02-01  
-**Context:** Multiple pages need consistent, real-time planning status. Spreading status logic across pages risks divergence.  
-**Decision:** Run status is persisted in the run store (`runs/<run_id>/*`) and is the single source of truth. UI pages read status via helpers (e.g., `get_planning_run_status`).  
-**Consequences:**  
-- System → Status and Plan Hub always reflect the same run state.  
-- Worker logic updates status in one place; UI only reads.
-
-### ADR-003: Posting Workouts is a Separate Flow
-
-**Status:** Accepted  
-**Date:** 2026-02-01  
-**Context:** Planning completion should not be coupled to external posting. Auto-posting mixes concerns and can block planning UX.  
-**Decision:** Planning flow ends after workout export. Posting to Intervals is a separate “Post Workouts” flow initiated from the Workouts page.  
-**Consequences:**  
-- Planning is considered complete when exports are current.  
-- Posting can be retried independently without re-running planning.
-
-### ADR-004: Latest Artefact Reset/Delete Semantics
-
-**Status:** Accepted  
-**Date:** 2026-02-01  
-**Context:** Athletes need a safe reset vs a full delete. Ambiguous behavior can cause accidental loss of scenario work.  
-**Decision:**  
-- **Reset** removes latest Season Plan, Phase artefacts, Week Plan, and Workouts exports.  
-- **Delete** removes the same plus Season Scenarios and Scenario Selection.  
-**Consequences:**  
-- Reset keeps scenario work intact.  
-- Delete clears planning context for a clean restart.
-
-### ADR-005: Run Store + Queue + Scheduler Separation
-
-**Status:** Accepted  
-**Date:** 2026-02-01  
-**Context:** Run Store currently holds state, but scheduling and execution were embedded in page-level workers. This limited reuse and made orchestration harder to scale.  
-**Decision:** Keep Run Store as state only. Add a file-based queue + scheduler that decides run eligibility and delegates to workers.  
-**Consequences:**  
-- UI pages enqueue runs instead of running them directly.  
-- Worker(s) consume queue items and update Run Store.  
-- System/Status can display queue states consistently.
-- Scheduler lifecycle is managed via `st.cache_resource` (one per process).
+ADR log is maintained as external files under `doc/adr/` (see `doc/adr/README.md` for index). Keep this section short and point to the ADR folder.
 
 ---
 

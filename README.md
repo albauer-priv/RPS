@@ -17,6 +17,7 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 ## Documentation
 
 - `doc/README.md`: entry point and index for system docs.
+- `doc/adr/README.md`: Architecture Decision Records (ADR) index.
 - `doc/system_architecture.md`: system overview and design principles.
 - `doc/vectorstores.md`: vector store setup and sync workflow.
 - `doc/how_to_plan.md`: planner roles, artifacts, and flow.
