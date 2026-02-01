@@ -873,11 +873,7 @@ st.session_state["plan_hub_running"] = run_state
 scope_lock = run_state
 
 if run_state:
-    last_refresh = st.session_state.get("plan_hub_autorefresh_ts", 0.0)
-    now = time.time()
-    if now - last_refresh >= 2.0:
-        st.session_state["plan_hub_autorefresh_ts"] = now
-        st.rerun()
+    st.session_state["plan_hub_autorefresh_ts"] = time.time()
 
 if active_run_id:
     _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id, allow_delete=bool(active_run.get("delete_removed_intervals")), process_subtype=active_run.get("process_subtype"))
@@ -1400,3 +1396,7 @@ if active_run:
 else:
     st.info("No active run. Start planning to see execution steps.")
 logger = logging.getLogger(__name__)
+
+if run_state:
+    time.sleep(2)
+    st.rerun()
