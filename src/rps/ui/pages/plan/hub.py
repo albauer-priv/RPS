@@ -1074,6 +1074,11 @@ with run_col:
     summary_text = scope_summary.get(scope, scope_summary[None])
     run_actions = st.container()
     with run_actions:
+        st.markdown("**Run actions**")
+        st.caption(
+            "Run orchestrated executes the full plan cascade. Run scoped only reruns the selected scope "
+            "and dependent outputs."
+        )
         col_orchestrated, col_scoped = st.columns(2)
         run_orchestrated = col_orchestrated.button(
             "Run orchestrated",

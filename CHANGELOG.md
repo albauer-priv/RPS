@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - KPI Profile is now explicitly called out as a readiness prerequisite for planning/feed-forward flows, and scenario selection requires a KPI segment choice.
 - Plan Hub run IDs now include a timestamp suffix to support multiple runs per day.
 - Plan Hub run actions now render as bottom-aligned buttons for both orchestrated and scoped runs.
+- Plan Hub now groups run actions into a dedicated box with a short explanation of each run mode.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

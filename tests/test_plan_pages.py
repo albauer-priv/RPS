@@ -41,6 +41,8 @@ def test_plan_hub_season_actions_expander(tmp_path):
     button_labels = [button.label for button in at.button]
     assert "Run orchestrated" in button_labels
     assert "Run scoped" in button_labels
+    captions = [caption.value for caption in at.caption]
+    assert any("Run orchestrated executes the full plan cascade." in value for value in captions)
 
 
 def test_plan_hub_reset_delete_latest(tmp_path):
