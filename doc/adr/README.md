@@ -16,6 +16,11 @@ This folder contains the ADR log for RPS.
 - ADR-011: Error Handling (Retry vs Fail-Fast)
 - ADR-012: Run Cancellation (cancel_requested)
 - ADR-013: Data Ownership (Source of Truth vs Derived)
+- ADR-014: Plan Hub vs. Separate Plan Subpages
+- ADR-015: Readiness Visualization
+- ADR-016: Staleness Policy for Wellness / Zone Model
+- ADR-017: Intervals Posting Policy
+- ADR-018: Schema Versioning Policy
 
 ## Process (Short)
 

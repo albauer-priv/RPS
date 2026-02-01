@@ -1174,27 +1174,13 @@ if active_run:
         st.session_state["plan_hub_active_run_id"] = None
         st.rerun()
     if st.button("Cancel run"):
-        steps = active_run.get("steps") or []
-        cancelled = False
-        for step in steps:
-            if step.get("Status") == "RUNNING" and step.get("response_id"):
-                cancelled = _cancel_response(step["response_id"])
-                step["Status"] = "FAILED"
-                step["Details"] = "Cancelled by user"
-                step["Ended"] = datetime.now(timezone.utc).isoformat()
-                _set_duration(step)
-                break
         update_run(
             SETTINGS.workspace_root,
             hub_scope["athlete_id"],
             active_run.get("run_id") or "",
-            {"status": "FAILED" if cancelled else active_run.get("status"), "steps": steps},
+            {"cancel_requested": True},
         )
-        worker = st.session_state.get("plan_hub_worker")
-        if worker and worker.get("stop"):
-            worker["stop"].set()
-        st.session_state["plan_hub_running"] = False
-        st.session_state["plan_hub_active_run_id"] = None
+        st.info("Cancel requested. The worker will stop after the current step.")
         st.rerun()
 else:
     st.info("No active run. Start planning to see execution steps.")

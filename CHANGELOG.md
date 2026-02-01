@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub worker loop now lives in the orchestrator (UI delegates), and System → Status shows planning worker status.
 - Added file-based queue + scheduler for planning runs; UI enqueues runs and System → Status shows queue counts.
 - Queue scheduler is now managed via `st.cache_resource` to keep it alive per process.
+- Added ADRs 014–018 (Plan Hub vs subpages, readiness visualization, staleness policy, posting policy, schema versioning).
+- Plan Hub cancel now uses `cancel_requested`; workers stop safely and mark runs as CANCELLED.
 - Consolidated `doc/planners.md` into `doc/how_to_plan.md` and updated planning/system docs to reflect Plan Hub and commit steps.
 - Renamed Plan WoW page to Workouts and added posting, delete, coach revision, and history views.
 - Integrated artefact renderer into `rps.rendering.renderer`, removed the standalone script, and moved templates under `src/rps/rendering/templates/`.

@@ -180,6 +180,25 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             status = active.get("status")
             if status in {"DONE", "FAILED", "CANCELLED"}:
                 break
+            if active.get("cancel_requested"):
+                update_run(
+                    config.root,
+                    config.athlete_id,
+                    config.run_id,
+                    {
+                        "status": "CANCELLED",
+                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                        "summary": _run_summary(active.get("steps") or []),
+                        "current_step": None,
+                    },
+                )
+                append_event(
+                    config.root,
+                    config.athlete_id,
+                    config.run_id,
+                    {"type": "RUN_CANCELLED", "reason": "cancel_requested"},
+                )
+                break
             steps = active.get("steps") or []
             index = _load_index(config.root, config.athlete_id)
             running_found = any(step.get("Status") == "RUNNING" for step in steps)
