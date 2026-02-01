@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System Status now loads `.env` before starting the worker so OPENAI_API_KEY is available.
 - Plan hub worker now logs to the run log_ref and records exceptions in events.jsonl.
 - Plan Hub now exposes a cancel button for active runs even when planning is blocked.
+- System Status now lets you select running/queued runs and cancel them from the table.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

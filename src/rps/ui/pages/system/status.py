@@ -19,7 +19,7 @@ from rps.agents.multi_output_runner import AgentRuntime
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
-from rps.ui.run_store import load_runs
+from rps.ui.run_store import load_runs, update_run
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
 from rps.workspace.index_manager import WorkspaceIndexManager
@@ -150,6 +150,7 @@ if filtered_runs:
     for run in filtered_runs:
         rows.append(
             {
+                "Select": False,
                 "Run ID": run.get("run_id"),
                 "Status": run.get("status"),
                 "Type": run.get("process_type") or "Unspecified",
@@ -160,7 +161,31 @@ if filtered_runs:
                 "Current Step": run.get("current_step") or "—",
             }
         )
-    st.dataframe(rows, width="stretch")
+    edited = st.data_editor(
+        rows,
+        width="stretch",
+        hide_index=True,
+        column_config={"Select": st.column_config.CheckboxColumn("Select")},
+        key="status_runs_editor",
+    )
+    selected_run_ids = [
+        row.get("Run ID")
+        for row in edited
+        if row.get("Select") and row.get("Status") in {"QUEUED", "RUNNING"}
+    ]
+    if selected_run_ids:
+        st.caption(f"Selected runs: {', '.join(selected_run_ids)}")
+    cancel_disabled = not selected_run_ids
+    if st.button("Cancel selected runs", disabled=cancel_disabled):
+        queue_paths = ensure_queue_dirs(SETTINGS.workspace_root)
+        for run_id in selected_run_ids:
+            update_run(SETTINGS.workspace_root, athlete_id, run_id, {"cancel_requested": True})
+            for folder in (queue_paths.pending, queue_paths.active):
+                path = folder / f"{run_id}.json"
+                if path.exists():
+                    path.unlink()
+        st.info("Cancel requested. Active workers will stop after the current step.")
+        st.rerun()
 else:
     st.info("No matching runs.")
 
