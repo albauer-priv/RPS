@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub now lists blocking dependencies when run planning is unavailable.
 - Plan Hub now includes the blocking list inside the blue readiness hint.
 - Plan Hub labels the workout export step as "Build Workouts."
+- Plan Hub "Create Scenarios" now enqueues a scoped season-scenarios run.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

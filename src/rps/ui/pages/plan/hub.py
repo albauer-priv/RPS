@@ -833,6 +833,59 @@ def _ensure_worker(
     )
 
 
+def _enqueue_scoped_run(
+    athlete_id: str,
+    *,
+    iso_year: int,
+    iso_week: int,
+    phase_label: str | None,
+    scope: str,
+    override_text: str | None = None,
+    run_id: str | None = None,
+) -> None:
+    """Queue a scoped planning run for a single scope."""
+    desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
+    block_reason = _planning_block_reason(SETTINGS.workspace_root, athlete_id, desired_subtype)
+    if block_reason:
+        st.warning(block_reason)
+        st.stop()
+    readiness = _compute_readiness(athlete_id, iso_year, iso_week)
+    steps = _build_execution_steps(readiness, "Scoped", scope)
+    log_ref = ensure_logging(athlete_id)
+    for step in steps:
+        step["Log"] = log_ref
+    resolved_run_id = run_id or f"ui_{desired_subtype}_{iso_year:04d}W{iso_week:02d}_{time.strftime('%Y%m%d_%H%M%S')}"
+    record = {
+        "run_id": resolved_run_id,
+        "athlete_id": athlete_id,
+        "iso_year": iso_year,
+        "iso_week": iso_week,
+        "phase_label": phase_label,
+        "mode": "Scoped",
+        "process_type": "planning",
+        "process_subtype": desired_subtype,
+        "scope": scope,
+        "status": "QUEUED",
+        "steps": steps,
+        "log_ref": log_ref,
+        "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+        "current_step": None,
+        "override_text": (override_text or "").strip() or None,
+    }
+    append_run(SETTINGS.workspace_root, athlete_id, record)
+    st.session_state["plan_hub_running"] = True
+    st.session_state["plan_hub_active_run_id"] = resolved_run_id
+    _ensure_worker(
+        SETTINGS.workspace_root,
+        athlete_id,
+        resolved_run_id,
+        allow_delete=False,
+        process_subtype=desired_subtype,
+    )
+    st.info("Run requested (placeholder).")
+    st.rerun()
+
+
 def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_run_id: str) -> None:
     """Mark previous runs as superseded."""
     for old_run_id in run_ids:
@@ -940,7 +993,18 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                     st.caption(f"Run id: {step.run_id}")
                 if step.fix_label:
                     allow_fix = step.key == "season_scenarios" and readiness_map.get("inputs", step).status == "ready"
-                    st.button(step.fix_label, key=f"fix_{step.key}", disabled=not allow_fix)
+                    clicked = st.button(step.fix_label, key=f"fix_{step.key}", disabled=not allow_fix)
+                    if clicked:
+                        if not allow_fix:
+                            st.warning("Resolve required inputs before running this step.")
+                            st.stop()
+                        _enqueue_scoped_run(
+                            hub_scope["athlete_id"],
+                            iso_year=hub_scope["iso_year"],
+                            iso_week=hub_scope["iso_week"],
+                            phase_label=hub_scope.get("phase_label"),
+                            scope="Season Scenarios",
+                        )
 
 with st.expander("Season Plan: Delete or Reset", expanded=False):
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
