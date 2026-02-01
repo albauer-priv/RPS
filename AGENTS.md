@@ -92,6 +92,11 @@ This file is the **README for coding agents** working in this repository. It con
 
 * Mermaid diagram labels should wrap text in quotes, e.g. `["Label"]` or `{"Decision?"}`, to ensure consistent rendering.
 * Avoid `\\n` in Mermaid labels; use `<br>` or a single space instead.
+* For UI flow diagrams, use layered styling with a legend:
+  - **Page (UI)** nodes in yellow
+  - **Orchestrator** nodes in blue
+  - **Agent** nodes in green
+  - **Flow Step** nodes in neutral gray
 
 ### Script/layout discipline (Streamlit-aware)
 
@@ -111,6 +116,22 @@ Streamlit reruns scripts top-to-bottom. To avoid duplicated side effects and fla
 * No expensive operations at module import time.
 * No `st.*` calls inside worker threads.
 * Keep page scripts small; move logic into helpers/services.
+
+---
+
+## 3.1) Planning principles (implementation rule)
+
+These rules must be applied when implementing planning flows, pickers, and selectors.
+
+* Planning a week targets **current or next ISO week only** (one-week horizon).
+* Planning can run **only if the week is within the current Season Plan ISO range**.
+* Planning can run **only if higher-level artefacts exist** (`season_plan`, `phase_*`).
+* **Performance Report** is **past-only** (Intervals activity data); never future weeks.
+* **Feed Forward** runs for a **completed week** once Intervals data is complete.
+* When Intervals data is newer, **create a new Performance Report** before Feed Forward.
+* "Sunday" in rules/labels maps to **Wochenanker** in docs and UI copy.
+* **Scoped planning** means the athlete provides an override for a selected level (Season/Phase/Week/Workouts) **only when modifying existing artefacts**. When planning a new week with no existing artefacts, override input is optional. The orchestrator/agent must receive the scope and (if provided) the override, and re-planning must apply to the selected scope and all lower levels.
+* **Plan Week (default):** Plan Hub should prefer a scoped Week Plan run. Preselect **Plan Next Week** when the current week is fully ready; otherwise **Plan Week** (current week).
 * UI pages must not call agents directly; delegate to orchestrator/service helpers (Plan Hub is UI, not controller).
 
 ### ADR process (automated)

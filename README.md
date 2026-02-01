@@ -26,6 +26,7 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 - `doc/artefact_renderer.md`: JSON-to-Markdown sidecar rendering.
 - `doc/validation.md`: validate pipeline outputs against schemas.
 - `doc/data_pipeline.md`: pipeline entrypoints, outputs, and defaults.
+- `doc/planning_principles.md`: planning guardrails for scope, timing, and reports.
 - `doc/workspace.md`: local workspace layout and rules.
 - `doc/schema_versioning.md`: schema change policy and compatibility.
 - `doc/deployment.md`: environment setup and deployment notes.

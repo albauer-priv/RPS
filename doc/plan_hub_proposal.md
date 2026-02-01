@@ -62,7 +62,6 @@ This follows the current UI contract: global sidebar + always-visible status ban
 7. **Phase Preview** (`phase_preview`) *(optional / informational)*
 8. **Week Plan** (`week_plan`)
 9. Export (Intervals) (`workouts_yyyy-ww.json`)
-10. Performance Report (`des_analysis_report`)
 
 **Pro Step anzeigen:**
 
@@ -79,7 +78,8 @@ This follows the current UI contract: global sidebar + always-visible status ban
 - `st.subheader("Run Planning")`
 - `st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])`
 - Wenn Scoped:
-  - `st.selectbox("Scope", ["Season Scenarios", "Scenario Selection", "Season Plan", "Phase (Guardrails + Structure)", "Week Plan", "Export Workouts", "Performance Report"])`
+  - `st.selectbox("Scope", ["Season Scenarios", "Scenario Selection", "Season Plan", "Phase (Guardrails + Structure)", "Week Plan", "Export Workouts"])`
+  - `st.text_area("Override", ...)`
 - `st.text_input("Run ID", value=auto_run_id())`
 - `st.checkbox("Validate only (no write)", value=False)` → mapped auf `validate_outputs.py`
 - `st.button("Run")`
@@ -140,7 +140,7 @@ Pipeline mit harten Dependencies (Binding) → deterministische UI‑Prüfung:
 - Phase artefacts require: Season Plan
 - Season Plan requires: scenario selection (oder latest selection) + inputs
 - Export requires: Week Plan
-- Performance Report requires: activities_actual + activities_trend (+ planning context)
+ 
 
 **Optional (soft)**
 
@@ -235,12 +235,6 @@ Mindestens eines:
 - **blocked**: week plan missing
 - **stale**: workouts_plan newer als export
 
-#### Step 10: Performance Report (des_analysis_report)
-
-- **blocked**: `activities_actual` oder `activities_trend` missing
-- **stale**: activities newer als report
-- *(optional)* advisory freshness: planning artefacts newer als report → “out of date”
-
 ---
 
 ## 3) Pseudocode (Streamlit)
@@ -269,14 +263,16 @@ with right:
     st.subheader("Run Planning")
     mode = st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])
     scope = None
+    override_text = None
     if mode == "Scoped":
         scope = st.selectbox("Scope", SCOPES)
+        override_text = st.text_area("Override")
 
     run_id = st.text_input("Run ID", value=auto_run_id(ctx))
     validate_only = st.checkbox("Validate only (no write)", value=False)
 
     st.info(run_scope_summary(ctx, mode, scope))
-    st.button("Run", on_click=run_planning, args=[ctx, mode, scope, run_id, validate_only])
+    st.button("Run", on_click=run_planning, args=[ctx, mode, scope, override_text, run_id, validate_only])
 
     st.subheader("Latest outputs")
     cards = get_latest_cards(ctx)

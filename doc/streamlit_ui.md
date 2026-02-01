@@ -72,12 +72,13 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 **Header**
 
 - Scope panel (athlete, ISO year/week, phase) + primary CTA (Plan this Week).
+- CTA preselects **Plan Next Week** if the current week is fully ready; otherwise **Plan Week**.
 - Status banner summarizing readiness/run state.
 
 **Body**
 
 - Readiness checklist with reasons + fix CTAs (planning-only; performance report readiness is on Performance pages).
-- Run planning panel (mode, scope, run id, validate-only, post-to-intervals toggle).
+- Run planning panel (mode, scope, run id, validate-only, scoped override input).
 - Run execution table (steps, status, outputs, events).
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
 - Reset/Delete actions remove latest artefacts; delete also clears scenarios + selection while reset keeps them.
@@ -113,7 +114,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 **Action panel**
 
 - Form: Plan Week (submit)
-- Optional secondary action: Create Report
+ 
 
 **Main content**
 
@@ -143,6 +144,10 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 #### Performance -> Report
 - Performance Report readiness (DES analysis availability for selected week)
 - Report creation action + reasoning log
+
+#### Performance -> Data & Metrics
+- Manual "Refresh Intervals Data" action (background pipeline run)
+- Charts + tables based on activities/trends
 
 ### System pages
 

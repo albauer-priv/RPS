@@ -12,6 +12,7 @@ def _env_setup(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setenv("ATHLETE_ID", "test_athlete")
     monkeypatch.setenv("ATHLETE_WORKSPACE_ROOT", str(tmp_path))
+    monkeypatch.setenv("RPS_DISABLE_INTERVALS_REFRESH", "1")
 
 
 def test_season_page_renders():
@@ -107,3 +108,11 @@ def test_performance_report_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/performance/report.py")
     at.run()
     assert len(at.error) == 0
+
+
+def test_data_metrics_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/performance/data_metrics.py")
+    at.run()
+    assert len(at.error) == 0
+    labels = [button.label for button in at.button]
+    assert "Refresh Intervals Data" in labels

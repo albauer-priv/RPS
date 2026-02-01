@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -113,6 +114,11 @@ def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key
 
 
 def ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, str]:
+    """Ensure Intervals data is fresh or schedule a background refresh."""
+    if os.getenv("RPS_DISABLE_INTERVALS_REFRESH") == "1":
+        return True, "Intervals refresh disabled by config."
+
+    logger = logging.getLogger("rps.ui.performance")
     latest_dir = SETTINGS.workspace_root / athlete_id / "latest"
     actual_path = latest_dir / "activities_actual.json"
     trend_path = latest_dir / "activities_trend.json"
@@ -121,7 +127,7 @@ def ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, 
         return True, "Intervals data is fresh."
 
     job_key = _intervals_job_key(athlete_id)
-    logger = logging.getLogger("rps.ui.performance")
+    logger.info("Intervals data stale; scheduling refresh for athlete=%s", athlete_id)
     job = st.session_state.get(job_key)
 
     if job:
@@ -136,3 +142,22 @@ def ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, 
             return False, job.get("message")
     job = _schedule_intervals_refresh(athlete_id, logger, job_key)
     return False, job.get("message")
+
+
+def request_intervals_refresh(athlete_id: str) -> tuple[str, str | None, str | None]:
+    """Force a background Intervals refresh regardless of staleness."""
+    if os.getenv("RPS_DISABLE_INTERVALS_REFRESH") == "1":
+        return "done", "Intervals refresh disabled by config.", None
+
+    logger = logging.getLogger("rps.ui.performance")
+    job_key = _intervals_job_key(athlete_id)
+    job = _schedule_intervals_refresh(athlete_id, logger, job_key)
+    status = job.get("status", "running")
+    message = job.get("message")
+    run_id = job.get("run_id")
+
+    if status in {"queued", "running"}:
+        return "running", message, run_id
+    if status == "failed":
+        return "error", message, run_id
+    return "done", message, run_id

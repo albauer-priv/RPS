@@ -180,14 +180,14 @@ If receipts are lost:
 
 ---
 
-## 9) Plan Hub UX
+## 9) Workouts Page UX
 
 Execution steps:
 1) Export Workouts (build)
 2) Post to Intervals (commit)
 
-Plan Hub should surface:
-- Post toggle
+Workouts page should surface:
+- Post action
 - Delete-removed toggle (optional)
 - Counts (create/update/delete)
 - Link to Week page for posting status

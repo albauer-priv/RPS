@@ -10,7 +10,7 @@ from pathlib import Path
 import altair as alt
 import streamlit as st
 
-from rps.ui.intervals_refresh import ensure_intervals_data
+from rps.ui.intervals_refresh import ensure_intervals_data, request_intervals_refresh
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -205,14 +205,33 @@ latest_dir = ROOT / athlete_id / "latest"
 actual_path = latest_dir / "activities_actual.json"
 trend_path = latest_dir / "activities_trend.json"
 
+with st.container():
+    refresh_col, info_col = st.columns([1, 3])
+    with refresh_col:
+        refresh_clicked = st.button("Refresh Intervals Data")
+    with info_col:
+        st.caption("Runs the Intervals pipeline in the background.")
+
+    if refresh_clicked:
+        status_state, status_message, run_id = request_intervals_refresh(athlete_id)
+        set_status(
+            status_state=status_state,
+            title="Data & Metrics",
+            message=status_message or "Intervals refresh queued.",
+            last_action="Intervals refresh",
+            last_run_id=run_id,
+        )
+
 max_age_hours = float(os.getenv("RPS_INTERVALS_MAX_AGE_HOURS", "2"))
-ok, message = ensure_intervals_data(athlete_id, max_age_hours)
-if not ok:
-    set_status(status_state="error", title="Data & Metrics", message=message or "Intervals refresh failed.")
-elif message:
-    set_status(status_state="done", title="Data & Metrics", message=message)
-else:
-    set_status(status_state="done", title="Data & Metrics", message="Intervals data ready.")
+if not refresh_clicked:
+    ok, message = ensure_intervals_data(athlete_id, max_age_hours)
+    if not ok:
+        status_state = "running" if message and any(word in message.lower() for word in ("running", "queued")) else "error"
+        set_status(status_state=status_state, title="Data & Metrics", message=message or "Intervals refresh failed.")
+    elif message:
+        set_status(status_state="done", title="Data & Metrics", message=message)
+    else:
+        set_status(status_state="done", title="Data & Metrics", message="Intervals data ready.")
 weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(trend_path)
 
 render_status_panel()

@@ -97,6 +97,24 @@ flowchart TD
 
 ---
 
+## C4 Diagrams
+
+This section provides system-level C4 views. UI flows are documented separately in `doc/ui_spec.md`.
+
+### C4: Container View (Simplified)
+
+```mermaid
+flowchart TB
+  UI["Streamlit UI"] --> ORCH["Orchestrators / Workers"]
+  ORCH --> STORE["Run Store + Workspace"]
+  ORCH --> OPENAI["OpenAI Responses API"]
+  ORCH --> VS["Vector Stores"]
+  PIPE["Data Pipeline"] --> STORE
+  UI --> STORE
+```
+
+---
+
 ## 3. Agent Roles & Responsibilities
 
 ### 3.1 Performance-Analyst

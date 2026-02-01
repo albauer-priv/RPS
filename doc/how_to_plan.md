@@ -19,8 +19,8 @@ Last-Updated: 2026-01-30
 5) Run **Season Scenarios** if missing.
 6) Select a scenario on **Plan -> Season** (manual decision).
 7) Run **Plan this Week** from Plan Hub (or run scoped steps).
-8) Optional: **Post to Intervals** (commit step) after Export.
-9) Optional: **Performance Report** (advisory) once activities are available.
+8) Optional: **Post to Intervals** from **Plan → Workouts** (commit step) after Export.
+9) Optional: **Performance Report** on Performance pages once activities are available.
 
 Plan Hub is the default orchestration surface. Season/Phase/Week pages remain
 available for manual, step-by-step runs.
@@ -36,10 +36,10 @@ available for manual, step-by-step runs.
 ### Plan Hub (primary orchestration)
 - Scope panel in header (athlete, ISO year/week, phase).
 - Readiness checklist with reasons + fix CTAs.
-- Run Planning with Orchestrated or Scoped runs.
+- Run Planning with Orchestrated or Scoped runs (Scoped requires an override input).
 - Run Execution table (steps, statuses, outputs, events).
 - Latest Outputs + Run History.
-- Optional **Post to Intervals after export** toggle.
+- Orchestrates planning only (posting happens on Workouts page).
 
 ### Plan -> Season
 - Create scenarios (agent).
@@ -52,12 +52,12 @@ available for manual, step-by-step runs.
 
 ### Plan -> Week
 - Weekly agenda + per-day expanders.
-- Actions: Plan Week, Create Report, Post to Intervals.
-- Posting status (unposted/conflicts) + conflict resolution.
+- Actions: Plan Week.
+ 
 
 ### Plan -> Workouts
 - Intervals export view (per-day expanders, descriptions).
-- Posting actions (post/delete), unposted/conflict status.
+- Posting actions (post/delete), revise week plan, unposted/conflict status.
 - History grouped by month → week → workouts.
 
 ### System
@@ -118,8 +118,6 @@ stale, SKIPPED if fresh, and BLOCKED when upstream fails.
 
 ### Optional chain
 - Phase Preview (optional)
-- Performance Report (advisory)
-- Post to Intervals (commit step; optional toggle)
 
 Scenario selection is always manual; Plan Hub will stop and require user action
 if selection is missing.
@@ -153,7 +151,7 @@ Behavior:
 - If hash changed -> conflict (manual resolution)
 
 Week page shows unposted count + conflicts and provides a manual resolution
-button. Plan Hub offers a toggle to post after export.
+button. Post/commit runs from the Workouts page.
 
 ---
 
