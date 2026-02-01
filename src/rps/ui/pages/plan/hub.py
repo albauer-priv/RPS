@@ -1015,6 +1015,17 @@ if has_blockers:
         info_lines.append("")
         info_lines.extend([f"- {msg}" for msg in blocked_messages])
     st.info("\n".join(info_lines))
+    if active_run and active_run.get("status") in {"QUEUED", "RUNNING"}:
+        st.warning(f"Active run: {active_run.get('run_id')}")
+        if st.button("Cancel active run"):
+            update_run(
+                SETTINGS.workspace_root,
+                hub_scope["athlete_id"],
+                active_run.get("run_id") or "",
+                {"cancel_requested": True},
+            )
+            st.info("Cancel requested. The worker will stop after the current step.")
+            st.rerun()
 else:
     scope_col, run_col = st.columns([1, 1])
 
