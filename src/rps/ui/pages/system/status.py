@@ -179,8 +179,17 @@ if filtered_runs:
     if st.button("Cancel selected runs", disabled=cancel_disabled):
         queue_paths = ensure_queue_dirs(SETTINGS.workspace_root)
         for run_id in selected_run_ids:
-            update_run(SETTINGS.workspace_root, athlete_id, run_id, {"cancel_requested": True})
-            for folder in (queue_paths.pending, queue_paths.active):
+            update_run(
+                SETTINGS.workspace_root,
+                athlete_id,
+                run_id,
+                {
+                    "cancel_requested": True,
+                    "status": "CANCELLED",
+                    "finished_at": datetime.now().isoformat(),
+                },
+            )
+            for folder in (queue_paths.pending, queue_paths.active, queue_paths.failed):
                 path = folder / f"{run_id}.json"
                 if path.exists():
                     path.unlink()

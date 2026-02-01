@@ -1396,30 +1396,7 @@ if active_run:
                     }
                 )
             st.dataframe(pd.DataFrame(event_rows), width="stretch")
-    cols = st.columns(2)
-    if cols[0].button("Mark run done"):
-        update_run(
-            SETTINGS.workspace_root,
-            hub_scope["athlete_id"],
-            active_run.get("run_id") or "",
-            {"status": "DONE"},
-        )
-        st.session_state["plan_hub_running"] = False
-        st.session_state["plan_hub_active_run_id"] = None
-        st.rerun()
-    if cols[1].button("Clear run state"):
-        st.session_state["plan_hub_running"] = False
-        st.session_state["plan_hub_active_run_id"] = None
-        st.rerun()
-    if st.button("Cancel run"):
-        update_run(
-            SETTINGS.workspace_root,
-            hub_scope["athlete_id"],
-            active_run.get("run_id") or "",
-            {"cancel_requested": True},
-        )
-        st.info("Cancel requested. The worker will stop after the current step.")
-        st.rerun()
+    st.caption("Process controls are managed from System → Status.")
 else:
     st.info("No active run. Start planning to see execution steps.")
 logger = logging.getLogger(__name__)
