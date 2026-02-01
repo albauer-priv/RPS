@@ -250,6 +250,7 @@ def run_agent_multi_output(
 
     mandatory_by_schema = {
         "season_scenarios.schema.json": "mandatory_output_season_scenarios.md",
+        "season_scenario_selection.schema.json": "mandatory_output_season_scenario_selection.md",
         "season_plan.schema.json": "mandatory_output_season_plan.md",
         "season_phase_feed_forward.schema.json": "mandatory_output_season_phase_feed_forward.md",
         "phase_guardrails.schema.json": "mandatory_output_phase_guardrails.md",
