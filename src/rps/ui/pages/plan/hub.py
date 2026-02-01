@@ -575,6 +575,15 @@ def _clear_latest_artifacts(
             logger.info("Deleted latest artefact %s", path)
         except OSError as exc:
             logger.warning("Failed to delete latest artefact %s: %s", path, exc)
+    if removed:
+        mgr = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id)
+        summary = mgr.prune_missing()
+        logger.info(
+            "Pruned index after delete athlete=%s removed_versions=%s removed_types=%s",
+            athlete_id,
+            summary.get("removed_versions"),
+            summary.get("removed_types"),
+        )
     return removed
 
 
