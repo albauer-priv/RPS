@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -120,6 +121,23 @@ def _artifact_records_for_run(index: dict, artifact_type: ArtifactType, run_id: 
     return outputs
 
 
+def _attach_run_logger(log_ref: str | None) -> logging.Handler | None:
+    """Attach a file handler for this run's log_ref if provided."""
+    if not log_ref:
+        return None
+    try:
+        path = Path(log_ref)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        handler = logging.FileHandler(path, encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        return handler
+    except OSError:
+        return None
+
+
 def _is_blocked(step_id: str, failed_step_id: str, deps: dict[str, list[str]], visited: set[str]) -> bool:
     if step_id in visited:
         return False
@@ -148,6 +166,17 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
     """Background worker to update run steps based on artifacts or response status."""
     logger.info("Plan hub worker started run_id=%s athlete=%s", config.run_id, config.athlete_id)
     store = LocalArtifactStore(root=config.root)
+    handler: logging.Handler | None = None
+    run_log_ref = None
+    try:
+        active = next(
+            (r for r in load_runs(config.root, config.athlete_id, limit=50) if r.get("run_id") == config.run_id),
+            None,
+        )
+        run_log_ref = (active or {}).get("log_ref")
+    except Exception:
+        run_log_ref = None
+    handler = _attach_run_logger(run_log_ref)
     acquired_lock = acquire_athlete_lock(config.root, config.athlete_id, config.run_id)
     if not acquired_lock:
         records = load_runs(config.root, config.athlete_id, limit=50)
@@ -396,8 +425,42 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                 break
 
             time.sleep(2)
+    except Exception as exc:
+        logger.exception("Plan hub worker failed run_id=%s athlete=%s: %s", config.run_id, config.athlete_id, exc)
+        records = load_runs(config.root, config.athlete_id, limit=50)
+        active = next((r for r in records if r.get("run_id") == config.run_id), None)
+        steps = (active or {}).get("steps") or []
+        for step in steps:
+            if step.get("Status") == "RUNNING":
+                step["Status"] = "FAILED"
+                step["Details"] = str(exc)
+                step["Ended"] = datetime.now(timezone.utc).isoformat()
+                _set_duration(step)
+                _mark_blocked(steps, step)
+                append_event(
+                    config.root,
+                    config.athlete_id,
+                    config.run_id,
+                    {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")},
+                )
+                break
+        update_run(
+            config.root,
+            config.athlete_id,
+            config.run_id,
+            {
+                "status": "FAILED",
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "summary": _run_summary(steps),
+                "steps": steps,
+            },
+        )
+        append_event(config.root, config.athlete_id, config.run_id, {"type": "RUN_FAILED", "reason": str(exc)})
     finally:
         release_athlete_lock(config.root, config.athlete_id)
+        if handler:
+            logger.removeHandler(handler)
+            handler.close()
 
     logger.info("Plan hub worker stopped run_id=%s athlete=%s", config.run_id, config.athlete_id)
 
