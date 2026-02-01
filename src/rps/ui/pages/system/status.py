@@ -9,11 +9,14 @@ from rps.ui.shared import (
     announce_log_file,
     get_athlete_id,
     init_ui_state,
-    multi_runtime_for,
     render_global_sidebar,
     render_status_panel,
     set_status,
 )
+from rps.agents.multi_output_runner import AgentRuntime
+from rps.openai.client import get_client
+from rps.openai.vectorstores import VectorStoreResolver
+from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_runs
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
@@ -61,11 +64,25 @@ st.subheader("Queue Status")
 st.table([queue_counts])
 
 if queue_counts["Pending"] and not queue_counts["Active"]:
+    def _runtime_for_agent(agent_name: str) -> AgentRuntime:
+        client = get_client()
+        return AgentRuntime(
+            client=client,
+            model=SETTINGS.openai_model,
+            temperature=SETTINGS.openai_temperature,
+            reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
+            reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
+            prompt_loader=PromptLoader(SETTINGS.prompts_dir),
+            vs_resolver=VectorStoreResolver(SETTINGS.vs_state_path),
+            schema_dir=SETTINGS.schema_dir,
+            workspace_root=SETTINGS.workspace_root,
+        )
+
     @st.cache_resource
     def _get_scheduler() -> dict:
         return start_queue_scheduler(
             root=SETTINGS.workspace_root,
-            runtime_for_agent=multi_runtime_for,
+            runtime_for_agent=_runtime_for_agent,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
             reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,

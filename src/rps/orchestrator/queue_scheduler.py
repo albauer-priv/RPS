@@ -81,10 +81,18 @@ def _read_queue_item(path: Path) -> dict[str, Any]:
 def _eligible(root: Path, item: dict[str, Any]) -> bool:
     """Return True if no other active run for the same athlete."""
     athlete_id = item.get("athlete_id")
+    run_id = item.get("run_id")
     if not athlete_id:
         return False
     active_runs = load_runs(root, athlete_id, limit=20)
-    return not any(run.get("status") in {"QUEUED", "RUNNING"} for run in active_runs)
+    for run in active_runs:
+        if run.get("status") not in {"QUEUED", "RUNNING"}:
+            continue
+        # Ignore the queued run that matches this queue item.
+        if run_id and run.get("run_id") == run_id:
+            continue
+        return False
+    return True
 
 
 def _move(path: Path, dest_dir: Path) -> Path:
