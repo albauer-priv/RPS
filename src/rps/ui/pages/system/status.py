@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
+from rps.core.config import load_env_file
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -25,6 +27,10 @@ from rps.workspace.types import ArtifactType
 
 
 st.title("Status")
+
+# Ensure .env values are loaded for worker threads started from this page.
+ROOT = Path(__file__).resolve().parents[3]
+load_env_file(ROOT / ".env")
 
 # CHECKLIST (System -> Status)
 # - Show running processes with filters (status, athlete).
