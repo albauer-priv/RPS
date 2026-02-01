@@ -9,13 +9,14 @@ from rps.ui.shared import (
     announce_log_file,
     get_athlete_id,
     init_ui_state,
+    multi_runtime_for,
     render_global_sidebar,
     render_status_panel,
     set_status,
 )
 from rps.ui.run_store import load_runs
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
-from rps.orchestrator.queue_scheduler import ensure_queue_dirs
+from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 
@@ -58,6 +59,26 @@ queue_counts = {
 }
 st.subheader("Queue Status")
 st.table([queue_counts])
+
+if queue_counts["Pending"] and not queue_counts["Active"]:
+    @st.cache_resource
+    def _get_scheduler() -> dict:
+        return start_queue_scheduler(
+            root=SETTINGS.workspace_root,
+            runtime_for_agent=multi_runtime_for,
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
+            reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
+            reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
+            force_file_search=True,
+            max_num_results=SETTINGS.file_search_max_results,
+        )
+
+    scheduler = _get_scheduler()
+    if not scheduler.get("thread") or not scheduler["thread"].is_alive():
+        _get_scheduler.clear()
+        _get_scheduler()
+    st.caption("Queue worker started to drain pending runs.")
 
 runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=100)
 status_filter = st.selectbox(
