@@ -911,12 +911,8 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                 if step.run_id:
                     st.caption(f"Run id: {step.run_id}")
                 if step.fix_label:
-                    cols = st.columns(2)
-                    with cols[0]:
-                        allow_fix = step.key == "season_scenarios" and readiness_map.get("inputs", step).status == "ready"
-                        st.button(step.fix_label, key=f"fix_{step.key}", disabled=not allow_fix)
-                    with cols[1]:
-                        st.button("View dependency", key=f"dep_{step.key}")
+                    allow_fix = step.key == "season_scenarios" and readiness_map.get("inputs", step).status == "ready"
+                    st.button(step.fix_label, key=f"fix_{step.key}", disabled=not allow_fix)
 
 with st.expander("Season Plan: Delete or Reset", expanded=False):
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
