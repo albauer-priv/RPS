@@ -1054,7 +1054,13 @@ with run_col:
         )
         if override_required and not (override_text or "").strip():
             st.warning("Override required when modifying existing artifacts.")
-    run_id = st.text_input("Run ID", value=f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}")
+    default_run_id = (
+        f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_"
+        f"{time.strftime('%Y%m%d_%H%M%S')}"
+    )
+    if not st.session_state.get("plan_hub_run_id"):
+        st.session_state["plan_hub_run_id"] = default_run_id
+    run_id = st.text_input("Run ID", key="plan_hub_run_id")
     validate_only = st.checkbox("Validate only (no write)", value=False)
     scope_summary = {
         None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Export Workouts",

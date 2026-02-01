@@ -1,4 +1,5 @@
 import json
+import re
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -34,6 +35,9 @@ def test_plan_hub_season_actions_expander(tmp_path):
     labels = [expander.label for expander in at.expander]
     assert "Season Plan: Delete or Reset" in labels
     assert all("Was wird alles erstellt:" not in info.value for info in at.info)
+    run_id_inputs = [field for field in at.text_input if field.label == "Run ID"]
+    assert run_id_inputs
+    assert re.match(r"^plan_hub_\d{4}W\d{2}_\d{8}_\d{6}$", run_id_inputs[0].value)
 
 
 def test_plan_hub_reset_delete_latest(tmp_path):
