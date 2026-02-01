@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
@@ -11,6 +12,7 @@ from typing import Callable
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
+from rps.data_pipeline.season_brief_availability import load_season_brief
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import (
     IsoWeek,
@@ -46,6 +48,75 @@ def _format_screen_text(text: str) -> str:
 
 def _log(message: str, level: int = logging.INFO) -> None:
     log_and_print(logger, _format_screen_text(message), level)
+
+
+def _extract_season_brief_user_data(season_text: str) -> dict[str, object]:
+    """Extract optional Season Brief inputs for prompt injection."""
+    anchor_match = re.search(
+        r"^\s*endurance-anchor-w\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*w\s*$",
+        season_text,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    range_match = re.search(
+        r"^\s*ambition-if-range\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*-\s*([0-9]+(?:\.[0-9]+)?)\s*$",
+        season_text,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    anchor = float(anchor_match.group(1)) if anchor_match else None
+    ambition = None
+    if range_match:
+        ambition = (float(range_match.group(1)), float(range_match.group(2)))
+    return {"endurance_anchor_w": anchor, "ambition_if_range": ambition}
+
+
+def _format_user_data_block(user_data: dict[str, object]) -> str:
+    """Format user-provided data for prompt injection."""
+    anchor = user_data.get("endurance_anchor_w")
+    ambition = user_data.get("ambition_if_range")
+    lines = ["**User Provided Data**"]
+    if isinstance(anchor, (int, float)):
+        lines.append(f"endurance_anchor_w: {anchor} W")
+    else:
+        lines.append("endurance_anchor_w: n/a")
+    if isinstance(ambition, tuple) and len(ambition) == 2:
+        lines.append(f"ambition_if_range: [{ambition[0]}, {ambition[1]}]")
+    else:
+        lines.append("ambition_if_range: n/a")
+    lines.append("kpi_profile: xxx")
+    return "\n".join(lines) + "\n"
+
+
+def _build_user_data_block(runtime_for: Callable[[str], AgentRuntime], athlete_id: str, year: int) -> str:
+    """Load Season Brief and format user data for prompt injection."""
+    try:
+        athlete_root = runtime_for("season_planner").workspace_root / athlete_id
+        _season_path, season_text = load_season_brief(athlete_root, year, None)
+        user_data = _extract_season_brief_user_data(season_text)
+        return _format_user_data_block(user_data)
+    except Exception:
+        return _format_user_data_block({})
+
+
+def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athlete_id: str) -> str:
+    """Format selected KPI guidance (segment + bounds) for prompt injection."""
+    try:
+        store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
+        selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        kpi_sel = (selection.get("data") or {}).get("kpi_moving_time_rate_guidance_selection")
+        if isinstance(kpi_sel, dict):
+            segment = kpi_sel.get("segment")
+            w_per_kg = kpi_sel.get("w_per_kg") or {}
+            kj_per_kg = kpi_sel.get("kj_per_kg_per_hour") or {}
+            if segment and w_per_kg and kj_per_kg:
+                return (
+                    "Selected KPI guidance: "
+                    f"kpi_rate_band_selector {segment} "
+                    f"(w_per_kg {w_per_kg.get('min')} - {w_per_kg.get('max')}, "
+                    f"kj_per_kg_per_hour {kj_per_kg.get('min')} - {kj_per_kg.get('max')}). "
+                )
+    except Exception:
+        return ""
+    return ""
 
 
 def _extract_general_and_phase(spec_text: str) -> str:
@@ -379,6 +450,9 @@ def plan_week(
             reasoning_summary=reasoning_summary_resolver(agent_name) if reasoning_summary_resolver else runtime.reasoning_summary,
         )
 
+    user_data_block = _build_user_data_block(runtime_for, athlete_id, year)
+    kpi_block = _build_kpi_selection_block(runtime_for, athlete_id)
+
     if not workspace.latest_exists(ArtifactType.SEASON_PLAN):
         message = "Season Plan NOT FOUND. Run season planning first."
         _log(message, logging.ERROR)
@@ -545,6 +619,8 @@ def plan_week(
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
                     "Use this phase range as the iso_week_range for the artefact. "
                     "Read season_plan and use workspace_get_latest to pull required inputs. "
+                    f"{user_data_block}"
+                    f"{kpi_block}"
                     f"{override_line}"
                     f"{injected_block}"
                 ),
@@ -626,6 +702,8 @@ def plan_week(
                 f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
+                f"{user_data_block}"
+                f"{kpi_block}"
                 f"{override_line}"
                 f"{injected_block}"
             ),

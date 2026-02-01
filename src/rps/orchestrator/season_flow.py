@@ -195,7 +195,7 @@ def create_season_plan(
             if segment and w_per_kg and kj_per_kg:
                 kpi_block = (
                     "Selected KPI guidance: "
-                    f"{segment} "
+                    f"kpi_rate_band_selector {segment} "
                     f"(w_per_kg {w_per_kg.get('min')} - {w_per_kg.get('max')}, "
                     f"kj_per_kg_per_hour {kj_per_kg.get('min')} - {kj_per_kg.get('max')}). "
                 )

@@ -76,7 +76,7 @@ This spec is **strictly about planning load corridors**. It must not be used to 
 
 * `endurance_anchor_w` (watts) — athlete sustainable endurance anchor (if present in Season Brief input)
 * `ambition_if_range = [low, high]` — QUALITY intent envelope (policy input only, if present)
-* If Season Brief has no schema, these fields MUST be passed as **User Provided Data** in the planner prompt when present.
+* If Season Brief has no schema, these fields MUST be passed as **User Provided Data** in the Phase-Architect and Week-Planner prompts when present.
 
 ### 2.3 Availability (required for weekly bands)
 
