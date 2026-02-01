@@ -992,7 +992,63 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                             )
                             st.info("Run requested (placeholder).")
                             st.rerun()
-                    elif step.key in {"scenario_selection", "season_plan"}:
+                    elif step.key == "season_plan":
+                        if st.button(step.fix_label, key=f"fix_{step.key}"):
+                            desired_subtype = PLANNING_SCOPE_SUBTYPE["Season Plan"]
+                            block_reason = _planning_block_reason(
+                                SETTINGS.workspace_root,
+                                hub_scope["athlete_id"],
+                                desired_subtype,
+                            )
+                            if block_reason:
+                                st.warning(block_reason)
+                                st.stop()
+                            if not _is_week_in_scope(IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"])):
+                                st.warning("Planning scope is limited to the current or next ISO week.")
+                                st.stop()
+                            readiness_snapshot = _compute_readiness(
+                                hub_scope["athlete_id"],
+                                hub_scope["iso_year"],
+                                hub_scope["iso_week"],
+                            )
+                            steps = _build_execution_steps(readiness_snapshot, "Scoped", "Season Plan")
+                            log_ref = ensure_logging(hub_scope["athlete_id"])
+                            for step_row in steps:
+                                step_row["Log"] = log_ref
+                            run_id = (
+                                f"ui_season_plan_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_"
+                                f"{time.strftime('%Y%m%d_%H%M%S')}"
+                            )
+                            record = {
+                                "run_id": run_id,
+                                "athlete_id": hub_scope["athlete_id"],
+                                "iso_year": hub_scope["iso_year"],
+                                "iso_week": hub_scope["iso_week"],
+                                "phase_label": hub_scope.get("phase_label"),
+                                "mode": "Scoped",
+                                "process_type": "planning",
+                                "process_subtype": desired_subtype,
+                                "scope": "Season Plan",
+                                "status": "QUEUED",
+                                "steps": steps,
+                                "log_ref": log_ref,
+                                "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+                                "current_step": None,
+                                "override_text": None,
+                            }
+                            append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
+                            st.session_state["plan_hub_running"] = True
+                            st.session_state["plan_hub_active_run_id"] = run_id
+                            _ensure_worker(
+                                SETTINGS.workspace_root,
+                                hub_scope["athlete_id"],
+                                run_id,
+                                allow_delete=False,
+                                process_subtype=desired_subtype,
+                            )
+                            st.info("Run requested (placeholder).")
+                            st.rerun()
+                    elif step.key == "scenario_selection":
                         if st.button(step.fix_label, key=f"fix_{step.key}"):
                             st.switch_page("pages/plan/season.py")
 
