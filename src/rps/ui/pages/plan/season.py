@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import json
+from datetime import date, datetime, timezone
 
 import streamlit as st
 from jinja2 import BaseLoader, Environment
 
-from rps.orchestrator.season_flow import (
-    create_season_plan,
-    create_season_scenarios,
-    select_season_scenario,
-)
+from rps.orchestrator.season_flow import create_season_plan, create_season_scenarios
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -29,6 +26,8 @@ from rps.ui.shared import (
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
+
+ISO_WEEK_RANGE_FALLBACK = "N/A"
 
 st.title("Season")
 
@@ -125,22 +124,115 @@ def _action_select_scenario(selected: str, rationale: str | None, kpi_selection:
         last_action="Select Scenario",
         last_run_id=run_id,
     )
-    result, output = capture_output(
-        lambda: select_season_scenario(
-            lambda name: multi_runtime_for(name),
-            athlete_id=athlete_id,
-            year=year,
-            week=week,
-            run_id=run_id,
-            selected=selected,
-            rationale=rationale,
-            kpi_selection=kpi_selection,
-            model_resolver=SETTINGS.model_for_agent,
-            temperature_resolver=SETTINGS.temperature_for_agent,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
-        ),
-        loggers=CAPTURE_LOGGERS,
+
+    scenarios_doc = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+    if not isinstance(scenarios_doc, dict):
+        set_status(
+            status_state="error",
+            title="Season",
+            message="Missing Season Scenarios.",
+            last_action="Select Scenario",
+            last_run_id=run_id,
+        )
+        return "Missing SEASON_SCENARIOS."
+
+    kpi_doc = store.load_latest(athlete_id, ArtifactType.KPI_PROFILE)
+    if not isinstance(kpi_doc, dict):
+        set_status(
+            status_state="error",
+            title="Season",
+            message="Missing KPI Profile.",
+            last_action="Select Scenario",
+            last_run_id=run_id,
+        )
+        return "Missing KPI_PROFILE."
+
+    availability_doc = store.load_latest(athlete_id, ArtifactType.AVAILABILITY)
+    if not isinstance(availability_doc, dict):
+        set_status(
+            status_state="error",
+            title="Season",
+            message="Missing Availability.",
+            last_action="Select Scenario",
+            last_run_id=run_id,
+        )
+        return "Missing AVAILABILITY."
+
+    scenarios_meta = scenarios_doc.get("meta") or {}
+    kpi_meta = kpi_doc.get("meta") or {}
+    availability_meta = availability_doc.get("meta") or {}
+    iso_week_range = scenarios_meta.get("iso_week_range") or f"{year:04d}-{week:02d}--{year:04d}-{week:02d}"
+    temporal_scope = scenarios_meta.get("temporal_scope")
+    if not isinstance(temporal_scope, dict):
+        start = date.fromisocalendar(year, week, 1)
+        end = date.fromisocalendar(year, week, 7)
+        temporal_scope = {"from": start.isoformat(), "to": end.isoformat()}
+
+    notes = [f"Selected scenario {selected.upper()} via Season UI."]
+    selection_rationale = rationale.strip() if rationale else ""
+    selection_source = "user"
+    kpi_value = None
+    if isinstance(kpi_selection, dict):
+        segment = kpi_selection.get("segment")
+        w_per_kg = kpi_selection.get("w_per_kg") or {}
+        kj_per_kg = kpi_selection.get("kj_per_kg_per_hour") or {}
+        if segment and w_per_kg and kj_per_kg:
+            kpi_value = {
+                "segment": segment,
+                "w_per_kg": {"min": w_per_kg.get("min"), "max": w_per_kg.get("max")},
+                "kj_per_kg_per_hour": {"min": kj_per_kg.get("min"), "max": kj_per_kg.get("max")},
+            }
+
+    meta = {
+        "artifact_type": ArtifactType.SEASON_SCENARIO_SELECTION.value,
+        "schema_id": "SeasonScenarioSelectionInterface",
+        "schema_version": "1.1",
+        "version": "1.0",
+        "authority": "Informational",
+        "owner_agent": "Season-Scenario-Agent",
+        "run_id": run_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "scope": "Season",
+        "iso_week": f"{year:04d}-{week:02d}",
+        "iso_week_range": iso_week_range,
+        "temporal_scope": temporal_scope,
+        "trace_upstream": [
+            {
+                "artifact": "SEASON_SCENARIOS",
+                "version": scenarios_meta.get("version_key"),
+                "run_id": scenarios_meta.get("run_id"),
+            },
+            {
+                "artifact": "KPI_PROFILE",
+                "version": kpi_meta.get("version_key"),
+                "run_id": kpi_meta.get("run_id"),
+            },
+            {
+                "artifact": "AVAILABILITY",
+                "version": availability_meta.get("version_key"),
+                "run_id": availability_meta.get("run_id"),
+            },
+        ],
+        "trace_data": [],
+        "trace_events": [],
+        "notes": "Scenario selection recorded from UI inputs.",
+    }
+    data = {
+        "season_scenarios_ref": scenarios_meta.get("run_id") or scenarios_meta.get("version_key") or ISO_WEEK_RANGE_FALLBACK,
+        "selected_scenario_id": selected.upper(),
+        "selection_source": selection_source,
+        "selection_rationale": selection_rationale,
+        "notes": notes,
+        "kpi_moving_time_rate_guidance_selection": kpi_value,
+    }
+    document = {"meta": meta, "data": data}
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        f"{year:04d}-{week:02d}",
+        document,
+        producer_agent="season_scenario",
+        run_id=run_id,
     )
     set_status(
         status_state="done",
@@ -149,7 +241,7 @@ def _action_select_scenario(selected: str, rationale: str | None, kpi_selection:
         last_action="Select Scenario",
         last_run_id=run_id,
     )
-    return output or _format_agent_result(result, f"Scenario {selected.upper()} selected.")
+    return f"Scenario {selected.upper()} selected and saved."
 
 
 def _action_season_plan(selected: str) -> str:
