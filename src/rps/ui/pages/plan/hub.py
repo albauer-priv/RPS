@@ -979,55 +979,6 @@ with run_col:
     target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
     cta_label = "Plan Next Week" if plan_next else "Plan Week"
     cta_disabled = scope_lock or not _is_week_in_scope(target_week)
-    if st.button(cta_label, disabled=cta_disabled):
-        if not _is_week_in_scope(target_week):
-            st.warning("Planning scope is limited to the current or next ISO week.")
-            st.stop()
-        if _override_required("Week Plan", target_readiness):
-            st.warning("This week already has planning artifacts. Use a scoped run with an override.")
-            st.stop()
-        desired_subtype = PLANNING_SCOPE_SUBTYPE["Week Plan"]
-        block_reason = _planning_block_reason(
-            SETTINGS.workspace_root,
-            athlete_id,
-            desired_subtype,
-        )
-        if block_reason:
-            st.warning(block_reason)
-            st.stop()
-        run_id = f"plan_week_{target_week.year:04d}W{target_week.week:02d}"
-        steps = _build_execution_steps(target_readiness, "Scoped", "Week Plan")
-        log_ref = ensure_logging(athlete_id)
-        for step in steps:
-            step["Log"] = log_ref
-        record = {
-            "run_id": run_id,
-            "athlete_id": athlete_id,
-            "iso_year": target_week.year,
-            "iso_week": target_week.week,
-            "phase_label": phase_label,
-            "mode": "Scoped",
-            "process_type": "planning",
-            "process_subtype": desired_subtype,
-            "scope": "Week Plan",
-            "status": "QUEUED",
-            "steps": steps,
-            "log_ref": log_ref,
-            "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
-            "current_step": None,
-            "override_text": None,
-        }
-        append_run(SETTINGS.workspace_root, athlete_id, record)
-        st.session_state["plan_hub_running"] = True
-        st.session_state["plan_hub_active_run_id"] = run_id
-        _ensure_worker(
-            SETTINGS.workspace_root,
-            athlete_id,
-            run_id,
-            allow_delete=False,
-            process_subtype=desired_subtype,
-        )
-        st.info("Run requested (placeholder).")
 
     run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
     scope = None
@@ -1076,10 +1027,12 @@ with run_col:
     with run_actions:
         st.markdown("**Run actions**")
         st.caption(
+            "Plan Week runs a scoped week plan for the current/next ISO week. "
             "Run orchestrated executes the full plan cascade. Run scoped only reruns the selected scope "
             "and dependent outputs."
         )
-        col_orchestrated, col_scoped = st.columns(2)
+        col_week, col_orchestrated, col_scoped = st.columns(3)
+        run_week = col_week.button(cta_label, disabled=cta_disabled)
         run_orchestrated = col_orchestrated.button(
             "Run orchestrated",
             disabled=scope_lock or run_mode != "Orchestrated",
@@ -1088,6 +1041,56 @@ with run_col:
             "Run scoped",
             disabled=run_mode != "Scoped",
         )
+
+    if run_week:
+        if not _is_week_in_scope(target_week):
+            st.warning("Planning scope is limited to the current or next ISO week.")
+            st.stop()
+        if _override_required("Week Plan", target_readiness):
+            st.warning("This week already has planning artifacts. Use a scoped run with an override.")
+            st.stop()
+        desired_subtype = PLANNING_SCOPE_SUBTYPE["Week Plan"]
+        block_reason = _planning_block_reason(
+            SETTINGS.workspace_root,
+            athlete_id,
+            desired_subtype,
+        )
+        if block_reason:
+            st.warning(block_reason)
+            st.stop()
+        run_id = f"plan_week_{target_week.year:04d}W{target_week.week:02d}"
+        steps = _build_execution_steps(target_readiness, "Scoped", "Week Plan")
+        log_ref = ensure_logging(athlete_id)
+        for step in steps:
+            step["Log"] = log_ref
+        record = {
+            "run_id": run_id,
+            "athlete_id": athlete_id,
+            "iso_year": target_week.year,
+            "iso_week": target_week.week,
+            "phase_label": phase_label,
+            "mode": "Scoped",
+            "process_type": "planning",
+            "process_subtype": desired_subtype,
+            "scope": "Week Plan",
+            "status": "QUEUED",
+            "steps": steps,
+            "log_ref": log_ref,
+            "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+            "current_step": None,
+            "override_text": None,
+        }
+        append_run(SETTINGS.workspace_root, athlete_id, record)
+        st.session_state["plan_hub_running"] = True
+        st.session_state["plan_hub_active_run_id"] = run_id
+        _ensure_worker(
+            SETTINGS.workspace_root,
+            athlete_id,
+            run_id,
+            allow_delete=False,
+            process_subtype=desired_subtype,
+        )
+        st.info("Run requested (placeholder).")
 
     if run_orchestrated:
         if not _is_week_in_scope(base_week):
