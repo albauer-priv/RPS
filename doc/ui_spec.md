@@ -148,13 +148,14 @@ For each UI action, document:
   - Otherwise: **Plan Week** (current week)
 
 ### 2) Input auto-check
-- The system checks for Season Brief, Events, KPI profile, Availability, Zone Model, and Wellness.
+- The system checks for Season Brief, Events, KPI Profile, Availability, Zone Model, and Wellness.
 - If any are missing, the UI shows a short inline form or link to the relevant input page.
 - Once completed, the app returns to the planning flow without the athlete needing to navigate.
 
 ### 3) Scenario creation + selection
 - If scenarios are missing, run the scenario generator automatically.
 - Present a compact A/B/C summary and prompt for selection if none exists.
+- Require a KPI guidance segment selection (from KPI Profile) as part of scenario selection.
 - If selection is already present, skip this step entirely.
 
 ### 4) Planning cascade (Season → Phase → Week → Workouts)
@@ -186,7 +187,7 @@ For each UI action, document:
 ### Flow: Plan (Orchestrated)
 
 - **Entry:** Plan Hub → “Plan this Week”
-- **Preconditions:** readiness not blocked
+- **Preconditions:** readiness not blocked (includes KPI Profile present)
 - **Steps:** Scenarios → Selection → Season Plan → Phase → Week → Export
 - **Orchestrator:** queue scheduler (planning run)
 - **Outputs:** `season_scenarios`, `season_scenario_selection`, `season_plan`, `phase_guardrails`, `phase_structure`, `phase_preview`, `week_plan`, `workouts_yyyy-ww.json`
@@ -249,7 +250,7 @@ flowchart TD
 ### Flow: Plan (Scoped)
 
 - **Entry:** Plan Hub → “Run scoped”
-- **Preconditions:** readiness not blocked
+- **Preconditions:** readiness not blocked (includes KPI Profile present)
 - **Steps:** select scope → optional override (only when modifying existing artefacts) → re-plan selected scope + all lower levels
 - **Orchestrator:** queue scheduler (planning run)
 - **Outputs:** scope-level artefacts + lower-level artefacts
@@ -433,6 +434,7 @@ flowchart TD
 ### Flow: Feed Forward
 
 - **Entry:** Analyse → Feed Forward
+- **Preconditions:** KPI Profile present
 - **Steps:** DES Report → Season→Phase feed forward → Phase→Week feed forward
 - **Outputs:** `des_analysis_report`, `season_phase_feed_forward`, `phase_feed_forward`
 - **UI feedback:** status banner + summary table

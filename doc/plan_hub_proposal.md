@@ -9,6 +9,7 @@ This document captures the proposed **Plan Hub** layout and readiness logic, and
 **Implemented**
 
 - Plan Hub page with readiness checklist, run controls, run execution table, latest outputs, and run history.
+- KPI Profile is a readiness prerequisite for planning and feed-forward flows.
 - Run store (`runs/<run_id>/run.json`, `steps.json`, `events.jsonl`) with async worker execution.
 - Manual scenario selection handoff + restart run (superseded runs tracked).
 - Export/post separation with receipts and Intervals commit support.
@@ -139,6 +140,7 @@ Pipeline mit harten Dependencies (Binding) → deterministische UI‑Prüfung:
 - Week Plan requires: Phase Guardrails + Phase Structure (+ availability, zones as info)
 - Phase artefacts require: Season Plan
 - Season Plan requires: scenario selection (oder latest selection) + inputs
+- Scenario selection requires KPI guidance segment selection from the KPI Profile.
 - Export requires: Week Plan
  
 

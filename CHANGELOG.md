@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LoadEstimationSpec is now injected in full for Season/Phase/Week agents (no section filters).
 - Season Planner prompts now inject user-provided Season Brief fields (endurance anchor + ambition IF range) and a KPI profile placeholder block.
 - Phase-Architect and Week-Planner prompts now inject Season Brief fields and selected KPI guidance when available.
+- KPI Profile is now explicitly called out as a readiness prerequisite for planning/feed-forward flows, and scenario selection requires a KPI segment choice.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

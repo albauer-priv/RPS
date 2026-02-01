@@ -78,6 +78,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 **Body**
 
 - Readiness checklist with reasons + fix CTAs (planning-only; performance report readiness is on Performance pages).
+- KPI Profile is a readiness prerequisite for planning and feed-forward flows.
 - Run planning panel (mode, scope, run id, validate-only, scoped override input).
 - Run execution table (steps, status, outputs, events).
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
@@ -88,7 +89,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 **Action panel (forms)**
 
 - Form: Create Scenarios (submit)
-- Form: Scenario Selection (radio + rationale + submit)
+- Form: Scenario Selection (radio + KPI segment selector + rationale + submit)
 - Form: Create Season Plan (submit, only after selection exists)
 - Form: Reset/Delete (confirmation input + submit)
 
