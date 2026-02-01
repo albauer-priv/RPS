@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Season Planner prompt now requires Zone Model (FTP from data.model_metadata.ftp_watts).
 - Season Planner load order now includes Zone Model in the Step 1 artefact list.
 - Phase Guardrails now explicitly requires all planned_event_windows from Season Plan in events_constraints.
+- Plan-week now aborts immediately if Phase-Architect fails to store an artefact.
 - Plan Hub "Create Season Plan" now enqueues a scoped season-plan run instead of linking to Season page.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.

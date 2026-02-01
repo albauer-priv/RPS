@@ -633,6 +633,9 @@ def plan_week(
             steps.append({"agent": "phase_architect", "tasks": [task.value], "result": out})
             if out.get("ok") and out.get("produced"):
                 _log("Done.")
+            elif not out.get("ok"):
+                _log(f"Phase-Architect failed for {task.value}. Aborting remaining phase tasks.", logging.ERROR)
+                return PlanWeekResult(ok=False, steps=steps)
 
     if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not index_query.has_exact_range(
         ArtifactType.PHASE_STRUCTURE.value, phase_range
