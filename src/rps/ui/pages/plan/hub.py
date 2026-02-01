@@ -408,6 +408,8 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
         fix_label: str | None = None,
     ) -> None:
         record = _latest_record(index, artifact_type)
+        if not store.latest_exists(athlete_id, artifact_type):
+            record = None
         created_at = record.get("created_at") if record else None
         latest_ts = _parse_iso_datetime(created_at)
         latest_label = record.get("version_key") if record else None

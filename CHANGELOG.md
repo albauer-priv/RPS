@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Plan Hub reset/delete confirmation now validates on submit instead of disabling the Proceed button.
 - Plan Hub delete/reset now prunes the workspace index so readiness updates immediately.
+- Plan Hub readiness now treats missing latest files as missing even if a versioned record exists.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.
