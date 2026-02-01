@@ -528,7 +528,10 @@ def _show_reset_delete_actions(athlete_id: str) -> None:
     with st.form("plan_hub_season_actions"):
         action = st.selectbox("Action", options=["Reset Season Plan", "Delete Season Plan"])
         confirmation = st.text_input('Type "YES I WANT TO PROCEED" to continue')
-        submitted = st.form_submit_button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED")
+        submitted = st.form_submit_button("Proceed")
+    if submitted and confirmation != "YES I WANT TO PROCEED":
+        st.error('Confirmation must match exactly: "YES I WANT TO PROCEED".')
+        return
     if submitted:
         set_status(
             status_state="running",
