@@ -60,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub "Create Scenarios" now enqueues a scoped season-scenarios run.
 - Plan Hub readiness cards now link to the Season page only for scenario selection and season plan; other actions run via Plan Week/Workouts.
 - Plan Hub restores the Create Scenarios action to enqueue the season scenarios run.
+- Plan Hub replaces `st.autorefresh` with a safe rerun timer for active runs.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.
