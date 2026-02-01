@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 import time
@@ -25,7 +25,7 @@ from rps.ui.shared import (
     set_status,
 )
 from rps.workspace.index_manager import WorkspaceIndexManager
-from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range, range_contains
+from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, parse_iso_week_range, range_contains
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from rps.ui.run_store import (
@@ -36,7 +36,6 @@ from rps.ui.run_store import (
     load_runs,
     update_run,
 )
-from rps.ui.intervals_post import inspect_intervals_receipts
 from rps.openai.client import get_client
 from rps.agents.multi_output_runner import AgentRuntime
 from rps.orchestrator.queue_scheduler import enqueue_run, start_queue_scheduler, ensure_queue_dirs
@@ -125,13 +124,6 @@ STEP_DEFINITIONS = [
         "writes": [ArtifactType.INTERVALS_WORKOUTS],
         "authority": ["Raw"],
     },
-    {
-        "step_id": "POST_INTERVALS",
-        "label": "Post to Intervals",
-        "agent": "Intervals Commit",
-        "writes": [],
-        "authority": ["Commit"],
-    },
 ]
 
 PLANNING_SCOPE_SUBTYPE = {
@@ -141,7 +133,6 @@ PLANNING_SCOPE_SUBTYPE = {
     "Phase (Guardrails + Structure)": "phase",
     "Week Plan": "week_plan",
     "Export Workouts": "export_workouts",
-    "Post to Intervals": "post_intervals",
 }
 
 PLANNING_PRIORITY = {
@@ -152,7 +143,6 @@ PLANNING_PRIORITY = {
     "phase": 2,
     "week_plan": 1,
     "export_workouts": 0,
-    "post_intervals": 0,
 }
 
 
@@ -192,17 +182,15 @@ STEP_DEPS = {
     "PHASE_PREVIEW": ["PHASE_STRUCTURE"],
     "WEEK_PLAN": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
     "EXPORT_WORKOUTS": ["WEEK_PLAN"],
-    "POST_INTERVALS": ["EXPORT_WORKOUTS"],
 }
 
 SCOPE_STEPS = {
     "Season Scenarios": ["SEASON_SCENARIOS"],
     "Selected Scenario": ["SCENARIO_SELECTION"],
-    "Season Plan": ["SEASON_PLAN"],
-    "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
-    "Week Plan": ["WEEK_PLAN"],
+    "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
+    "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
+    "Week Plan": ["WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Export Workouts": ["EXPORT_WORKOUTS"],
-    "Post to Intervals": ["POST_INTERVALS"],
 }
 
 
@@ -298,6 +286,58 @@ def _status_badge(status: str) -> str:
         "missing": "❌",
         "blocked": "🔒",
     }.get(status, "•")
+
+
+def _current_iso_week() -> IsoWeek:
+    """Return the current ISO week based on today's date."""
+    iso_year, iso_week, _ = date.today().isocalendar()
+    return IsoWeek(year=iso_year, week=iso_week)
+
+
+def _is_week_in_scope(target: IsoWeek) -> bool:
+    """Return True if the target week is current or next ISO week."""
+    current = _current_iso_week()
+    return target == current or target == next_iso_week(current)
+
+
+def _is_week_ready(readiness: list[ReadinessStep]) -> bool:
+    """Return True if all required planning artifacts are ready."""
+    required_keys = {
+        "inputs",
+        "season_scenarios",
+        "scenario_selection",
+        "season_plan",
+        "phase_guardrails",
+        "phase_structure",
+        "week_plan",
+        "intervals_workouts",
+    }
+    readiness_map = {step.key: step for step in readiness}
+    for key in required_keys:
+        step = readiness_map.get(key)
+        if not step or step.status != "ready":
+            return False
+    return True
+
+
+def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> bool:
+    """Return True when a scoped override is needed to modify existing artifacts."""
+    if not scope:
+        return False
+    readiness_map = {step.key: step for step in readiness}
+    key_map = {
+        "Season Scenarios": "season_scenarios",
+        "Selected Scenario": "scenario_selection",
+        "Season Plan": "season_plan",
+        "Phase (Guardrails + Structure)": "phase_guardrails",
+        "Week Plan": "week_plan",
+        "Export Workouts": "intervals_workouts",
+    }
+    readiness_key = key_map.get(scope)
+    if not readiness_key:
+        return False
+    step = readiness_map.get(readiness_key)
+    return bool(step and step.status in {"ready", "stale"})
 
 
 def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
@@ -662,16 +702,12 @@ def _build_execution_steps(
     readiness: list[ReadinessStep],
     mode: str,
     scope: str | None,
-    *,
-    include_post_intervals: bool = False,
 ) -> list[dict[str, Any]]:
     """Build execution steps from readiness + scope mapping."""
     readiness_map = {step.key: step for step in readiness}
     selected_steps = [step["step_id"] for step in STEP_DEFINITIONS if step["step_id"] != "INPUTS_CHECK"]
     if mode == "Scoped" and scope in SCOPE_STEPS:
         selected_steps = SCOPE_STEPS[scope]
-    if "POST_INTERVALS" in selected_steps and not include_post_intervals and scope != "Post to Intervals":
-        selected_steps = [step for step in selected_steps if step != "POST_INTERVALS"]
 
     steps: list[dict[str, Any]] = []
     for definition in STEP_DEFINITIONS:
@@ -693,12 +729,15 @@ def _build_execution_steps(
         readiness_step = readiness_map.get(readiness_key, ReadinessStep("", "", "missing", "", ""))
         readiness_status = readiness_step.status
         readiness_reason = readiness_step.reason or "—"
-        if step_id == "POST_INTERVALS":
+        if readiness_status == "blocked":
+            status = "BLOCKED"
+            details = readiness_reason
+        elif readiness_status in {"missing", "stale"}:
             status = "QUEUED"
-            details = "Posting requested."
+            details = readiness_reason
         else:
-            status = "QUEUED" if readiness_status in {"missing", "stale"} else "SKIPPED"
-            details = readiness_reason if status == "QUEUED" else "Already up-to-date."
+            status = "SKIPPED"
+            details = "Already up-to-date."
         writes_detail = []
         for artifact_type, authority in zip(definition["writes"], definition["authority"]):
             writes_detail.append(
@@ -932,69 +971,66 @@ with scope_col:
 summary_text = None
 with run_col:
     st.subheader("Run Planning")
-    if st.button("Plan this Week", disabled=scope_lock is True):
+    run_readiness = _compute_readiness(athlete_id, year, week)
+    base_week = IsoWeek(year=year, week=week)
+    current_week = _current_iso_week()
+    plan_next = base_week == current_week and _is_week_ready(run_readiness)
+    target_week = next_iso_week(base_week) if plan_next else base_week
+    target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
+    cta_label = "Plan Next Week" if plan_next else "Plan Week"
+    cta_disabled = scope_lock or not _is_week_in_scope(target_week)
+    if st.button(cta_label, disabled=cta_disabled):
+        if not _is_week_in_scope(target_week):
+            st.warning("Planning scope is limited to the current or next ISO week.")
+            st.stop()
+        if _override_required("Week Plan", target_readiness):
+            st.warning("This week already has planning artifacts. Use a scoped run with an override.")
+            st.stop()
+        desired_subtype = PLANNING_SCOPE_SUBTYPE["Week Plan"]
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
             athlete_id,
-            "orchestrated",
+            desired_subtype,
         )
         if block_reason:
             st.warning(block_reason)
             st.stop()
-        run_id = f"plan_hub_{year:04d}W{week:02d}"
-        readiness = _compute_readiness(athlete_id, year, week)
-        post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
-        delete_removed = st.session_state.get("plan_hub_delete_intervals", False)
-        steps = _build_execution_steps(readiness, "Orchestrated", None, include_post_intervals=post_to_intervals)
+        run_id = f"plan_week_{target_week.year:04d}W{target_week.week:02d}"
+        steps = _build_execution_steps(target_readiness, "Scoped", "Week Plan")
         log_ref = ensure_logging(athlete_id)
         for step in steps:
             step["Log"] = log_ref
         record = {
             "run_id": run_id,
             "athlete_id": athlete_id,
-            "iso_year": year,
-            "iso_week": week,
+            "iso_year": target_week.year,
+            "iso_week": target_week.week,
             "phase_label": phase_label,
-            "mode": "Orchestrated",
+            "mode": "Scoped",
             "process_type": "planning",
-            "process_subtype": "orchestrated",
-            "scope": None,
+            "process_subtype": desired_subtype,
+            "scope": "Week Plan",
             "status": "QUEUED",
             "steps": steps,
             "log_ref": log_ref,
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
-            "post_to_intervals": post_to_intervals,
-            "delete_removed_intervals": delete_removed,
+            "override_text": None,
         }
         append_run(SETTINGS.workspace_root, athlete_id, record)
         st.session_state["plan_hub_running"] = True
         st.session_state["plan_hub_active_run_id"] = run_id
-        _ensure_worker(SETTINGS.workspace_root, athlete_id, run_id, allow_delete=bool(delete_removed), process_subtype="orchestrated")
+        _ensure_worker(
+            SETTINGS.workspace_root,
+            athlete_id,
+            run_id,
+            allow_delete=False,
+            process_subtype=desired_subtype,
+        )
         st.info("Run requested (placeholder).")
 
-    run_mode = st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])
+    run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
     scope = None
-    post_toggle = st.checkbox("Post to Intervals after export", value=False)
-    delete_toggle = st.checkbox("Delete removed workouts", value=False)
-    st.session_state["plan_hub_post_intervals"] = post_toggle
-    st.session_state["plan_hub_delete_intervals"] = delete_toggle
-    if post_toggle:
-        st.warning("This will post workouts externally. Already-posted workouts will be skipped.")
-    receipt_status = inspect_intervals_receipts(
-        LocalArtifactStore(root=SETTINGS.workspace_root),
-        hub_scope["athlete_id"],
-        year=hub_scope["iso_year"],
-        week=hub_scope["iso_week"],
-    )
-    if receipt_status.error is None:
-        st.caption(
-            f"Intervals: {len(receipt_status.unposted)} unposted · "
-            f"{len(receipt_status.updates)} updates · {len(receipt_status.conflicts)} conflicts"
-        )
-        if st.button("View posting status"):
-            st.session_state["expand_posting_status"] = True
-            st.switch_page("pages/plan/week.py")
     if run_mode == "Scoped":
         scope = st.selectbox(
             "Scope",
@@ -1005,9 +1041,19 @@ with run_col:
                 "Phase (Guardrails + Structure)",
                 "Week Plan",
                 "Export Workouts",
-                "Post to Intervals",
             ],
+            index=4,
         )
+    override_required = _override_required(scope, run_readiness)
+    override_text = None
+    if run_mode == "Scoped":
+        override_text = st.text_area(
+            "Override (optional)",
+            placeholder="Describe what to change at the selected scope.",
+            disabled=not scope,
+        )
+        if override_required and not (override_text or "").strip():
+            st.warning("Override required when modifying existing artifacts.")
     run_id = st.text_input("Run ID", value=f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}")
     validate_only = st.checkbox("Validate only (no write)", value=False)
     scope_summary = {
@@ -1018,11 +1064,53 @@ with run_col:
         "Phase (Guardrails + Structure)": "Will write: Phase Guardrails, Phase Structure",
         "Week Plan": "Will write: Week Plan",
         "Export Workouts": "Will write: Export Workouts",
-        "Post to Intervals": "Will post workouts to Intervals (idempotent receipts).",
     }
     summary_text = scope_summary.get(scope, scope_summary[None])
-    if run_mode != "Scoped" and post_toggle:
-        summary_text = f"{summary_text} + Post to Intervals"
+    if run_mode == "Orchestrated":
+        if st.button("Run orchestrated", disabled=scope_lock):
+            if not _is_week_in_scope(base_week):
+                st.warning("Planning scope is limited to the current or next ISO week.")
+                st.stop()
+            block_reason = _planning_block_reason(
+                SETTINGS.workspace_root,
+                hub_scope["athlete_id"],
+                "orchestrated",
+            )
+            if block_reason:
+                st.warning(block_reason)
+                st.stop()
+            steps = _build_execution_steps(run_readiness, "Orchestrated", None)
+            log_ref = ensure_logging(hub_scope["athlete_id"])
+            for step in steps:
+                step["Log"] = log_ref
+            record = {
+                "run_id": run_id,
+                "athlete_id": hub_scope["athlete_id"],
+                "iso_year": hub_scope["iso_year"],
+                "iso_week": hub_scope["iso_week"],
+                "phase_label": hub_scope.get("phase_label"),
+                "mode": "Orchestrated",
+                "process_type": "planning",
+                "process_subtype": "orchestrated",
+                "scope": None,
+                "status": "QUEUED",
+                "steps": steps,
+                "log_ref": log_ref,
+                "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+                "current_step": None,
+                "override_text": None,
+            }
+            append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
+            st.session_state["plan_hub_running"] = True
+            st.session_state["plan_hub_active_run_id"] = run_id
+            _ensure_worker(
+                SETTINGS.workspace_root,
+                hub_scope["athlete_id"],
+                run_id,
+                allow_delete=False,
+                process_subtype="orchestrated",
+            )
+            st.info("Run requested (placeholder).")
     if run_mode == "Scoped":
         if st.button("Run scoped"):
             desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
@@ -1034,9 +1122,13 @@ with run_col:
             if block_reason:
                 st.warning(block_reason)
                 st.stop()
-            readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
-            include_post = True if scope == "Post to Intervals" else post_toggle
-            steps = _build_execution_steps(readiness, "Scoped", scope, include_post_intervals=include_post)
+            if not _is_week_in_scope(base_week):
+                st.warning("Planning scope is limited to the current or next ISO week.")
+                st.stop()
+            if override_required and not (override_text or "").strip():
+                st.warning("Override required when modifying existing artifacts.")
+                st.stop()
+            steps = _build_execution_steps(run_readiness, "Scoped", scope)
             log_ref = ensure_logging(hub_scope["athlete_id"])
             for step in steps:
                 step["Log"] = log_ref
@@ -1055,13 +1147,12 @@ with run_col:
                 "log_ref": log_ref,
                 "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
                 "current_step": None,
-                "post_to_intervals": post_toggle,
-                "delete_removed_intervals": delete_toggle,
+                "override_text": (override_text or "").strip() or None,
             }
             append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
             st.session_state["plan_hub_running"] = True
             st.session_state["plan_hub_active_run_id"] = run_id
-            _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id, allow_delete=bool(delete_toggle), process_subtype=desired_subtype)
+            _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id, allow_delete=False, process_subtype=desired_subtype)
             st.info("Run requested (placeholder).")
 
 if summary_text:
@@ -1099,9 +1190,7 @@ if active_run:
     if can_restart and st.button("Restart run"):
         new_run_id = f"plan_hub_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_{int(time.time())}"
         readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
-        post_to_intervals = st.session_state.get("plan_hub_post_intervals", False)
-        delete_removed = st.session_state.get("plan_hub_delete_intervals", False)
-        new_steps = _build_execution_steps(readiness, "Orchestrated", None, include_post_intervals=post_to_intervals)
+        new_steps = _build_execution_steps(readiness, "Orchestrated", None)
         log_ref = ensure_logging(hub_scope["athlete_id"])
         for step in new_steps:
             step["Log"] = log_ref
@@ -1118,8 +1207,7 @@ if active_run:
             "log_ref": log_ref,
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
-            "post_to_intervals": post_to_intervals,
-            "delete_removed_intervals": delete_removed,
+            "override_text": None,
         }
         append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
         _mark_runs_superseded(
@@ -1130,7 +1218,13 @@ if active_run:
         )
         st.session_state["plan_hub_running"] = True
         st.session_state["plan_hub_active_run_id"] = new_run_id
-        _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], new_run_id, allow_delete=bool(delete_removed), process_subtype=active_run.get("process_subtype"))
+        _ensure_worker(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            new_run_id,
+            allow_delete=False,
+            process_subtype=active_run.get("process_subtype"),
+        )
         st.rerun()
     st.dataframe(steps, use_container_width=True)
     events = load_events(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run.get("run_id") or "", limit=200)

@@ -51,6 +51,14 @@ def previous_iso_week(week: IsoWeek) -> IsoWeek:
     return IsoWeek(year=iso_year, week=iso_week)
 
 
+def next_iso_week(week: IsoWeek) -> IsoWeek:
+    """Return the ISO week immediately after the given one."""
+    monday = date.fromisocalendar(week.year, week.week, 1)
+    next_monday = monday + timedelta(days=7)
+    iso_year, iso_week, _ = next_monday.isocalendar()
+    return IsoWeek(year=iso_year, week=iso_week)
+
+
 def parse_iso_week(value: Any) -> IsoWeek | None:
     """Parse a string or mapping into an IsoWeek."""
     if isinstance(value, dict) and "year" in value and "week" in value:

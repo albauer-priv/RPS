@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added a manual "Refresh Intervals Data" action on the Data & Metrics page with AppTest coverage.
 - Added planning principles documentation and referenced it from the docs and AGENTS rules.
+- Plan Hub now preselects Plan Next Week vs Plan Week based on readiness and enforces current/next ISO-week scope.
 - Season page now provides Create/Reset/Delete controls, renders scenario overview tables, and reuses the Phase page’s rendering per phase (no JSON dump), aligning it with the Phase card template.
 - Home page marketing copy is now externalized (`static/marketing/home.md`) and rendered with a system state table that summarizes artifact availability, owners, and timestamps.
 - Added Streamlit AppTest coverage for Home and Plan pages.
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
 - Plan Hub and UI docs now reflect that posting to Intervals happens from the Workouts page, not the Hub.
+- Plan Hub scoped runs now support optional overrides (required only when modifying existing artifacts) and pass overrides into orchestrators.
+- Week page now focuses on plan-week only; posting and report actions are moved to their dedicated pages.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

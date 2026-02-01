@@ -32,6 +32,7 @@ def create_intervals_workouts_export(
     injected_block: str,
     plan_mtime: float | None,
     needs_week_plan: bool,
+    override_text: str | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
@@ -51,6 +52,7 @@ def create_intervals_workouts_export(
         injected_block: mandatory knowledge injection block (already built).
         plan_mtime: week plan modified time.
         needs_week_plan: whether week plan was regenerated this run.
+        override_text: optional override text appended to the export prompt.
         force_file_search/max_num_results: agent settings.
         model_resolver/temperature_resolver: optional model overrides.
         log_fn: optional logger callback (message, level).
@@ -92,6 +94,7 @@ def create_intervals_workouts_export(
     message = f"Running Workout-Builder for ISO week {year:04d}-W{week:02d}."
     _log(message)
     spec = AGENTS["workout_builder"]
+    override_line = f"Override: {override_text.strip()}. " if override_text else ""
     out = run_agent_multi_output(
         runtime_for(spec.name),
         agent_name=spec.name,
@@ -101,6 +104,7 @@ def create_intervals_workouts_export(
         user_input=(
             f"Convert week_plan into Intervals.icu workouts JSON for ISO week {year:04d}-W{week:02d}. "
             "Read week_plan from workspace. "
+            f"{override_line}"
             f"{injected_block}"
         ),
         run_id=f"{run_id}_builder",

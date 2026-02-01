@@ -67,8 +67,6 @@ def test_week_page_renders():
     at.run()
     assert len(at.error) == 0
     assert len(at.number_input) >= 2
-    labels = [button.label for button in at.button]
-    assert "Post to Intervals" in labels
 
 
 def test_workouts_page_renders():

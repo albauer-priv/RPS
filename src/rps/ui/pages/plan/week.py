@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 import streamlit as st
 
 from rps.orchestrator.plan_week import plan_week
@@ -21,11 +23,7 @@ from rps.ui.shared import (
     set_status,
     system_log_panel,
 )
-from rps.ui.intervals_post import (
-    inspect_intervals_receipts,
-    post_to_intervals_commit,
-    resolve_receipt_conflict,
-)
+from rps.workspace.iso_helpers import IsoWeek, next_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -114,85 +112,15 @@ st.session_state["iso_year"] = year
 st.session_state["iso_week"] = week
 
 allowed, reason = season_plan_covers_week(athlete_id, year, week)
+current_week = IsoWeek(*date.today().isocalendar()[:2])
+allowed_scope = IsoWeek(year=year, week=week) in {current_week, next_iso_week(current_week)}
+if not allowed_scope:
+    allowed = False
+    reason = "Planning is limited to the current or next ISO week."
 
 with st.expander("Actions", expanded=False):
     with st.form("plan_week_actions"):
         plan_submit = st.form_submit_button("Plan Week", disabled=not allowed)
-        report_submit = st.form_submit_button("Create Report")
-        post_submit = st.form_submit_button("Post to Intervals")
-        delete_removed = st.checkbox("Delete removed workouts", value=False)
-
-if report_submit:
-    st.info("Report creation requested. Following the plan-week run, this will queue the DES analysis report.")
-    set_status(
-        status_state="running",
-        title="Week",
-        message="Report creation requested.",
-        last_action="Create Report",
-    )
-
-expand_posting = st.session_state.pop("expand_posting_status", False)
-receipt_status = inspect_intervals_receipts(LocalArtifactStore(root=SETTINGS.workspace_root), athlete_id, year=year, week=week)
-if receipt_status.error is None:
-    unposted_count = len(receipt_status.unposted)
-    updates_count = len(receipt_status.updates)
-    conflict_count = len(receipt_status.conflicts)
-    st.caption(f"Intervals posting: {unposted_count} unposted · {updates_count} updates · {conflict_count} conflicts")
-    with st.expander("Intervals posting status", expanded=expand_posting):
-        if receipt_status.unposted:
-            st.subheader("Unposted workouts")
-            st.dataframe(receipt_status.unposted, use_container_width=True)
-        if receipt_status.updates:
-            st.subheader("Updates needed")
-            st.dataframe(receipt_status.updates, use_container_width=True)
-        if receipt_status.conflicts:
-            st.subheader("Conflicts (invalid receipts)")
-            st.dataframe(receipt_status.conflicts, use_container_width=True)
-            if st.button("Resolve conflicts (overwrite receipts)"):
-                resolved = 0
-                for item in receipt_status.conflicts:
-                    uid = item.get("uid")
-                    if uid and resolve_receipt_conflict(
-                        LocalArtifactStore(root=SETTINGS.workspace_root),
-                        athlete_id,
-                        year=year,
-                        week=week,
-                        uid=uid,
-                        run_id=f"resolve_intervals_{year:04d}W{week:02d}",
-                    ):
-                        resolved += 1
-                st.success(f"Resolved {resolved} conflicts.")
-        if not receipt_status.unposted and not receipt_status.conflicts:
-            st.info("All workouts already posted.")
-
-if post_submit:
-    store = LocalArtifactStore(root=SETTINGS.workspace_root)
-    result = post_to_intervals_commit(
-        store,
-        athlete_id,
-        year=year,
-        week=week,
-        run_id=f"post_intervals_{year:04d}W{week:02d}",
-        allow_delete=delete_removed,
-    )
-    if result.ok:
-        st.success(
-            f"Posted {result.posted} workouts (skipped {result.skipped}, deleted {result.deleted})."
-        )
-        set_status(
-            status_state="done",
-            title="Week",
-            message="Intervals post complete.",
-            last_action="Post to Intervals",
-        )
-    else:
-        st.error(result.error or "Intervals posting failed.")
-        set_status(
-            status_state="error",
-            title="Week",
-            message="Intervals post failed.",
-            last_action="Post to Intervals",
-        )
 
 if plan_submit:
     run_id = make_ui_run_id(f"plan_week_{year}_{week:02d}")

@@ -20,6 +20,7 @@ def create_season_scenarios(
     year: int,
     week: int,
     run_id: str,
+    override_text: str | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
@@ -28,10 +29,12 @@ def create_season_scenarios(
     """Create season scenarios for the target ISO week."""
     spec = AGENTS["season_scenario"]
     injected_block = _build_injection_block("season_scenario", mode="scenario")
+    override_line = f"Override: {override_text.strip()}. " if override_text else ""
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use workspace_get_input for Season Brief and Events. "
+        f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
     )
@@ -106,6 +109,7 @@ def create_season_plan(
     week: int,
     run_id: str,
     selected: str | None,
+    override_text: str | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
@@ -115,10 +119,12 @@ def create_season_plan(
     spec = AGENTS["season_planner"]
     injected_block = _build_injection_block("season_planner", mode="season_plan")
     scenario_line = f"Scenario {selected.upper()}. " if selected else ""
+    override_line = f"Override: {override_text.strip()}. " if override_text else ""
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
+        f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_PLAN."
     )

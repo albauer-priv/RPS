@@ -340,6 +340,7 @@ def plan_week(
     year: int,
     week: int,
     run_id: str,
+    override_text: str | None = None,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
@@ -347,7 +348,17 @@ def plan_week(
     force_file_search: bool = True,
     max_num_results: int = 20,
 ) -> PlanWeekResult:
-    """Run the Season -> Phase -> Week -> Builder -> Analysis flow if needed."""
+    """Run the Season -> Phase -> Week -> Builder flow if needed.
+
+    Purpose:
+        Generate missing/stale phase, week, and workouts artifacts for a target ISO week.
+    Inputs:
+        override_text: optional override to apply at the selected scope, passed into agent prompts.
+    Outputs:
+        PlanWeekResult with ok flag and step summaries.
+    Side effects:
+        Writes phase/ week/ workouts artifacts to the workspace.
+    """
     workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
     store = LocalArtifactStore(root=runtime.workspace_root)
     target = IsoWeek(year=year, week=week)
@@ -357,6 +368,7 @@ def plan_week(
 
     message = f"Plan-week start for ISO week {target_label} (athlete={athlete_id})."
     _log(message)
+    override_line = f"Override: {override_text.strip()}. " if override_text else ""
 
     def runtime_for(agent_name: str) -> AgentRuntime:
         if not reasoning_effort_resolver and not reasoning_summary_resolver:
@@ -533,6 +545,7 @@ def plan_week(
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
                     "Use this phase range as the iso_week_range for the artefact. "
                     "Read season_plan and use workspace_get_latest to pull required inputs. "
+                    f"{override_line}"
                     f"{injected_block}"
                 ),
                 run_id=f"{run_id}_phase_{task.value.lower()}",
@@ -613,6 +626,7 @@ def plan_week(
                 f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
+                f"{override_line}"
                 f"{injected_block}"
             ),
             run_id=f"{run_id}_week",
@@ -639,6 +653,7 @@ def plan_week(
         injected_block=injected_block,
         plan_mtime=plan_mtime,
         needs_week_plan=needs_week_plan,
+        override_text=override_text,
         force_file_search=force_file_search,
         max_num_results=max_num_results,
         model_resolver=model_resolver,
