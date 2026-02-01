@@ -138,10 +138,11 @@ Load in this order (skip non-applicable items):
 1) `workspace_get_input("events")` (required all modes)
 2) `workspace_get_input("season_brief")` (required Mode A/B)
 3) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` (required Mode A/B; single latest)
-4) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
-5) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
-6) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
-7) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
+4) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
+5) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
+6) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
+7) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
+8) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
 
 If any required artefact is missing: STOP and request it.
 If KPI_PROFILE cannot be resolved as exactly one latest: STOP and request a data/registry fix.
