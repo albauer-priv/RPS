@@ -33,6 +33,7 @@ def test_plan_hub_season_actions_expander(tmp_path):
     assert len(at.error) == 0
     labels = [expander.label for expander in at.expander]
     assert "Season Plan: Delete or Reset" in labels
+    assert any("Build Workouts" in label for label in labels)
     assert all("Was wird alles erstellt:" not in info.value for info in at.info)
     # Run planning UI is hidden when readiness has blockers.
     info_text = "\n".join(info.value for info in at.info)

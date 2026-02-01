@@ -119,7 +119,7 @@ STEP_DEFINITIONS = [
     },
     {
         "step_id": "EXPORT_WORKOUTS",
-        "label": "Export Workouts",
+        "label": "Build Workouts",
         "agent": "Workout Builder",
         "writes": [ArtifactType.INTERVALS_WORKOUTS],
         "authority": ["Raw"],
@@ -132,7 +132,7 @@ PLANNING_SCOPE_SUBTYPE = {
     "Season Plan": "season_plan",
     "Phase (Guardrails + Structure)": "phase",
     "Week Plan": "week_plan",
-    "Export Workouts": "export_workouts",
+    "Build Workouts": "export_workouts",
 }
 
 PLANNING_PRIORITY = {
@@ -201,7 +201,7 @@ SCOPE_STEPS = {
     "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Week Plan": ["WEEK_PLAN", "EXPORT_WORKOUTS"],
-    "Export Workouts": ["EXPORT_WORKOUTS"],
+    "Build Workouts": ["EXPORT_WORKOUTS"],
 }
 
 
@@ -342,7 +342,7 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
         "Season Plan": "season_plan",
         "Phase (Guardrails + Structure)": "phase_guardrails",
         "Week Plan": "week_plan",
-        "Export Workouts": "intervals_workouts",
+        "Build Workouts": "intervals_workouts",
     }
     readiness_key = key_map.get(scope)
     if not readiness_key:
@@ -528,10 +528,10 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     )
     artifact_step(
         key="intervals_workouts",
-        label="Export Workouts",
+        label="Build Workouts",
         artifact_type=ArtifactType.INTERVALS_WORKOUTS,
         required=["week_plan"],
-        fix_label="Export Workouts",
+        fix_label="Build Workouts",
     )
     return steps
 
@@ -609,7 +609,7 @@ def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
         (ArtifactType.PHASE_GUARDRAILS, "Phase Guardrails"),
         (ArtifactType.PHASE_STRUCTURE, "Phase Structure"),
         (ArtifactType.WEEK_PLAN, "Week Plan"),
-        (ArtifactType.INTERVALS_WORKOUTS, "Export Workouts"),
+        (ArtifactType.INTERVALS_WORKOUTS, "Build Workouts"),
     ]
     rows = []
     for artifact_type, label in targets:
@@ -1041,7 +1041,7 @@ if not has_blockers:
                     "Season Plan",
                     "Phase (Guardrails + Structure)",
                     "Week Plan",
-                    "Export Workouts",
+                    "Build Workouts",
                 ],
                 index=4,
             )
@@ -1064,13 +1064,13 @@ if not has_blockers:
         run_id = st.text_input("Run ID", key="plan_hub_run_id")
         validate_only = st.checkbox("Validate only (no write)", value=False)
         scope_summary = {
-            None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Export Workouts",
+            None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Build Workouts",
             "Season Scenarios": "Will write: Season Scenarios",
             "Selected Scenario": "Will write: Selected Scenario",
             "Season Plan": "Will write: Season Plan",
             "Phase (Guardrails + Structure)": "Will write: Phase Guardrails, Phase Structure",
             "Week Plan": "Will write: Week Plan",
-            "Export Workouts": "Will write: Export Workouts",
+            "Build Workouts": "Will write: Build Workouts",
         }
         summary_text = scope_summary.get(scope, scope_summary[None])
         run_actions = st.container()
