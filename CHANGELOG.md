@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub removes per-run control buttons; run control lives in System → Status only.
 - System Status now marks runs as FAILED when their queue item lands in the failed folder.
 - Plan Hub now actively reruns every ~2s while a run is active.
+- Season page now reports scenario selection write failures explicitly.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

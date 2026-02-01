@@ -346,6 +346,10 @@ with st.expander("Actions", expanded=False):
                 output = _action_select_scenario(selected, rationale, kpi_selection)
                 state["season_selection_output"] = output
                 append_system_log("season", f"Scenario {selected} selected.")
+                saved = store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+                state["season_selection_saved"] = saved
+                if not saved:
+                    state["season_selection_error_output"] = output
                 st.rerun()
         if selection_payload:
             with st.form("season_create_plan"):
@@ -404,9 +408,15 @@ if output := state.get("season_selection_output"):
 
 if selection_payload:
     st.subheader("Create Season Plan")
-    st.success("Scenario selection saved.")
+    if state.pop("season_selection_saved", False):
+        st.success("Scenario selection saved.")
     st.page_link("pages/plan/hub.py", label="Back to Plan Hub")
 
 if output := state.get("season_plan_output"):
     with st.expander("Create Season Plan Output", expanded=False):
+        st.code(output)
+
+if output := state.pop("season_selection_error_output", None):
+    st.error("Scenario selection did not write. Check the output below.")
+    with st.expander("Scenario Selection Output", expanded=True):
         st.code(output)

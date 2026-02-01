@@ -1,4 +1,6 @@
 import json
+import os
+from pathlib import Path
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -20,6 +22,13 @@ def test_season_page_renders():
     at.run()
     assert len(at.error) == 0
     assert len(at.text_input) >= 1
+
+
+def test_season_page_handles_selection_error_state():
+    at = AppTest.from_file("src/rps/ui/pages/plan/season.py")
+    at.session_state["rps_state"] = {"season_selection_error_output": "error output"}
+    at.run()
+    assert len(at.error) == 0
 
 
 def test_plan_hub_season_actions_expander(tmp_path):
