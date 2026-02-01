@@ -38,6 +38,9 @@ def test_plan_hub_season_actions_expander(tmp_path):
     run_id_inputs = [field for field in at.text_input if field.label == "Run ID"]
     assert run_id_inputs
     assert re.match(r"^plan_hub_\d{4}W\d{2}_\d{8}_\d{6}$", run_id_inputs[0].value)
+    button_labels = [button.label for button in at.button]
+    assert "Run orchestrated" in button_labels
+    assert "Run scoped" in button_labels
 
 
 def test_plan_hub_reset_delete_latest(tmp_path):

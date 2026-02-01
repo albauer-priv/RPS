@@ -1072,94 +1072,105 @@ with run_col:
         "Export Workouts": "Will write: Export Workouts",
     }
     summary_text = scope_summary.get(scope, scope_summary[None])
-    if run_mode == "Orchestrated":
-        if st.button("Run orchestrated", disabled=scope_lock):
-            if not _is_week_in_scope(base_week):
-                st.warning("Planning scope is limited to the current or next ISO week.")
-                st.stop()
-            block_reason = _planning_block_reason(
-                SETTINGS.workspace_root,
-                hub_scope["athlete_id"],
-                "orchestrated",
-            )
-            if block_reason:
-                st.warning(block_reason)
-                st.stop()
-            steps = _build_execution_steps(run_readiness, "Orchestrated", None)
-            log_ref = ensure_logging(hub_scope["athlete_id"])
-            for step in steps:
-                step["Log"] = log_ref
-            record = {
-                "run_id": run_id,
-                "athlete_id": hub_scope["athlete_id"],
-                "iso_year": hub_scope["iso_year"],
-                "iso_week": hub_scope["iso_week"],
-                "phase_label": hub_scope.get("phase_label"),
-                "mode": "Orchestrated",
-                "process_type": "planning",
-                "process_subtype": "orchestrated",
-                "scope": None,
-                "status": "QUEUED",
-                "steps": steps,
-                "log_ref": log_ref,
-                "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
-                "current_step": None,
-                "override_text": None,
-            }
-            append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
-            st.session_state["plan_hub_running"] = True
-            st.session_state["plan_hub_active_run_id"] = run_id
-            _ensure_worker(
-                SETTINGS.workspace_root,
-                hub_scope["athlete_id"],
-                run_id,
-                allow_delete=False,
-                process_subtype="orchestrated",
-            )
-            st.info("Run requested (placeholder).")
-    if run_mode == "Scoped":
-        if st.button("Run scoped"):
-            desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
-            block_reason = _planning_block_reason(
-                SETTINGS.workspace_root,
-                hub_scope["athlete_id"],
-                desired_subtype,
-            )
-            if block_reason:
-                st.warning(block_reason)
-                st.stop()
-            if not _is_week_in_scope(base_week):
-                st.warning("Planning scope is limited to the current or next ISO week.")
-                st.stop()
-            if override_required and not (override_text or "").strip():
-                st.warning("Override required when modifying existing artifacts.")
-                st.stop()
-            steps = _build_execution_steps(run_readiness, "Scoped", scope)
-            log_ref = ensure_logging(hub_scope["athlete_id"])
-            for step in steps:
-                step["Log"] = log_ref
-            record = {
-                "run_id": run_id,
-                "athlete_id": hub_scope["athlete_id"],
-                "iso_year": hub_scope["iso_year"],
-                "iso_week": hub_scope["iso_week"],
-                "phase_label": hub_scope.get("phase_label"),
-                "mode": "Scoped",
-                "process_type": "planning",
-                "process_subtype": desired_subtype,
-                "scope": scope,
-                "status": "QUEUED",
-                "steps": steps,
-                "log_ref": log_ref,
-                "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
-                "current_step": None,
-                "override_text": (override_text or "").strip() or None,
-            }
-            append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
-            st.session_state["plan_hub_running"] = True
-            st.session_state["plan_hub_active_run_id"] = run_id
-            _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id, allow_delete=False, process_subtype=desired_subtype)
-            st.info("Run requested (placeholder).")
+    run_actions = st.container()
+    with run_actions:
+        col_orchestrated, col_scoped = st.columns(2)
+        run_orchestrated = col_orchestrated.button(
+            "Run orchestrated",
+            disabled=scope_lock or run_mode != "Orchestrated",
+        )
+        run_scoped = col_scoped.button(
+            "Run scoped",
+            disabled=run_mode != "Scoped",
+        )
+
+    if run_orchestrated:
+        if not _is_week_in_scope(base_week):
+            st.warning("Planning scope is limited to the current or next ISO week.")
+            st.stop()
+        block_reason = _planning_block_reason(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            "orchestrated",
+        )
+        if block_reason:
+            st.warning(block_reason)
+            st.stop()
+        steps = _build_execution_steps(run_readiness, "Orchestrated", None)
+        log_ref = ensure_logging(hub_scope["athlete_id"])
+        for step in steps:
+            step["Log"] = log_ref
+        record = {
+            "run_id": run_id,
+            "athlete_id": hub_scope["athlete_id"],
+            "iso_year": hub_scope["iso_year"],
+            "iso_week": hub_scope["iso_week"],
+            "phase_label": hub_scope.get("phase_label"),
+            "mode": "Orchestrated",
+            "process_type": "planning",
+            "process_subtype": "orchestrated",
+            "scope": None,
+            "status": "QUEUED",
+            "steps": steps,
+            "log_ref": log_ref,
+            "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+            "current_step": None,
+            "override_text": None,
+        }
+        append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
+        st.session_state["plan_hub_running"] = True
+        st.session_state["plan_hub_active_run_id"] = run_id
+        _ensure_worker(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            run_id,
+            allow_delete=False,
+            process_subtype="orchestrated",
+        )
+        st.info("Run requested (placeholder).")
+
+    if run_scoped:
+        desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
+        block_reason = _planning_block_reason(
+            SETTINGS.workspace_root,
+            hub_scope["athlete_id"],
+            desired_subtype,
+        )
+        if block_reason:
+            st.warning(block_reason)
+            st.stop()
+        if not _is_week_in_scope(base_week):
+            st.warning("Planning scope is limited to the current or next ISO week.")
+            st.stop()
+        if override_required and not (override_text or "").strip():
+            st.warning("Override required when modifying existing artifacts.")
+            st.stop()
+        steps = _build_execution_steps(run_readiness, "Scoped", scope)
+        log_ref = ensure_logging(hub_scope["athlete_id"])
+        for step in steps:
+            step["Log"] = log_ref
+        record = {
+            "run_id": run_id,
+            "athlete_id": hub_scope["athlete_id"],
+            "iso_year": hub_scope["iso_year"],
+            "iso_week": hub_scope["iso_week"],
+            "phase_label": hub_scope.get("phase_label"),
+            "mode": "Scoped",
+            "process_type": "planning",
+            "process_subtype": desired_subtype,
+            "scope": scope,
+            "status": "QUEUED",
+            "steps": steps,
+            "log_ref": log_ref,
+            "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+            "current_step": None,
+            "override_text": (override_text or "").strip() or None,
+        }
+        append_run(SETTINGS.workspace_root, hub_scope["athlete_id"], record)
+        st.session_state["plan_hub_running"] = True
+        st.session_state["plan_hub_active_run_id"] = run_id
+        _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id, allow_delete=False, process_subtype=desired_subtype)
+        st.info("Run requested (placeholder).")
 
 if summary_text:
     st.info(summary_text)
