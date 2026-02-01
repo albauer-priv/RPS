@@ -69,6 +69,25 @@ queue_counts = {
 st.subheader("Queue Status")
 st.table([queue_counts])
 
+failed_run_ids = {path.stem for path in queue_paths.failed.glob("*.json")}
+if failed_run_ids:
+    for run in runs:
+        run_id = run.get("run_id")
+        if not run_id or run_id not in failed_run_ids:
+            continue
+        if run.get("status") not in {"QUEUED", "RUNNING"}:
+            continue
+        update_run(
+            SETTINGS.workspace_root,
+            athlete_id,
+            run_id,
+            {
+                "status": "FAILED",
+                "finished_at": datetime.now().isoformat(),
+                "current_step": None,
+            },
+        )
+
 if queue_counts["Pending"] and not queue_counts["Active"]:
     def _runtime_for_agent(agent_name: str) -> AgentRuntime:
         client = get_client()
