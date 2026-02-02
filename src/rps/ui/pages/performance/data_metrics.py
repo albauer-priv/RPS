@@ -7,7 +7,10 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-import altair as alt
+try:
+    import plotly.graph_objects as go
+except Exception:  # pragma: no cover - optional dependency
+    go = None
 import streamlit as st
 
 from rps.ui.intervals_refresh import ensure_intervals_data, request_intervals_refresh
@@ -48,23 +51,38 @@ def _axis_domain(series, pad: float = 0.1) -> tuple[float, float] | None:
 
 
 def _build_line_chart(df):
+    if go is None:
+        return None
     ordered = df.sort_values("period_order")
-    long_df = (
-        ordered[["label", "durability_index", "decoupling_percent"]]
-        .rename(columns={"durability_index": "Durability Index", "decoupling_percent": "Decoupling (%)"})
-        .melt(id_vars="label", var_name="metric", value_name="value")
-        .dropna(subset=["value"])
-    )
-    return (
-        alt.Chart(long_df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("label:N", sort=list(ordered["label"]), axis=alt.Axis(title="Week", labelAngle=-45)),
-            y=alt.Y("value:Q", axis=alt.Axis(title="Metric Value")),
-            color=alt.Color("metric:N", scale=alt.Scale(domain=["Durability Index", "Decoupling (%)"], range=["#f15a22", "#2ca02c"])),
-            tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q", format=".2f")],
+    labels = ordered["label"].tolist()
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=labels,
+            y=ordered["durability_index"],
+            mode="lines+markers",
+            name="Durability Index",
+            line=dict(color="#f15a22"),
+            hovertemplate="Week %{x}<br>Durability Index %{y:.2f}<extra></extra>",
         )
     )
+    fig.add_trace(
+        go.Scatter(
+            x=labels,
+            y=ordered["decoupling_percent"],
+            mode="lines+markers",
+            name="Decoupling (%)",
+            line=dict(color="#2ca02c"),
+            hovertemplate="Week %{x}<br>Decoupling %{y:.2f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        xaxis=dict(title="Week", tickangle=-45),
+        yaxis=dict(title="Metric Value"),
+        legend_title_text="Metric",
+        margin=dict(l=40, r=20, t=20, b=60),
+    )
+    return fig
 
 
 def _iter_weeks_in_range(range_spec):
@@ -152,54 +170,49 @@ def _week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> d
 
 
 def _build_load_chart(df, corridor_df):
+    if go is None:
+        return None
     ordered = df.sort_values("period_order")
-    base = alt.Chart(ordered).encode(
-        x=alt.X("label:N", sort=list(ordered["label"]), axis=alt.Axis(title="Week", labelAngle=-45)),
-    )
-    bar = base.mark_bar(color="#0b6bcb").encode(
-        y=alt.Y("weekly_kj:Q", axis=alt.Axis(title="Weekly kJ")),
-        tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("weekly_kj:Q", title="Weekly kJ")],
-    )
-    if corridor_df.empty:
-        return bar
-    line = (
-        alt.Chart(corridor_df)
-        .mark_line()
-        .encode(
-            x=alt.X("label:N", sort=list(ordered["label"])),
-            y=alt.Y("value:Q"),
-            color=alt.Color(
-                "metric:N",
-                scale=alt.Scale(
-                    domain=[
-                        "Season Min",
-                        "Season Max",
-                        "Phase Min",
-                        "Phase Max",
-                        "Week Plan Min",
-                        "Week Plan Max",
-                    ],
-                    range=["#6c757d", "#6c757d", "#8c564b", "#8c564b", "#2ca02c", "#2ca02c"],
-                ),
-            ),
-            strokeDash=alt.StrokeDash(
-                "metric:N",
-                scale=alt.Scale(
-                    domain=[
-                        "Season Min",
-                        "Season Max",
-                        "Phase Min",
-                        "Phase Max",
-                        "Week Plan Min",
-                        "Week Plan Max",
-                    ],
-                    range=[[4, 2], [4, 2], [2, 2], [2, 2], [1, 0], [1, 0]],
-                ),
-            ),
-            tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q")],
+    labels = ordered["label"].tolist()
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=labels,
+            y=ordered["weekly_kj"],
+            name="Weekly kJ",
+            marker_color="#0b6bcb",
+            hovertemplate="Week %{x}<br>Weekly kJ %{y}<extra></extra>",
         )
     )
-    return alt.layer(bar, line).resolve_scale(y="shared")
+    if not corridor_df.empty:
+        metric_styles = {
+            "Season Min": dict(color="#6c757d", dash="dash"),
+            "Season Max": dict(color="#6c757d", dash="dash"),
+            "Phase Min": dict(color="#8c564b", dash="dot"),
+            "Phase Max": dict(color="#8c564b", dash="dot"),
+            "Week Plan Min": dict(color="#2ca02c", dash="solid"),
+            "Week Plan Max": dict(color="#2ca02c", dash="solid"),
+        }
+        for metric, group in corridor_df.groupby("metric"):
+            style = metric_styles.get(metric, {})
+            fig.add_trace(
+                go.Scatter(
+                    x=group["label"],
+                    y=group["value"],
+                    mode="lines",
+                    name=metric,
+                    line=dict(color=style.get("color"), dash=style.get("dash")),
+                    hovertemplate="Week %{x}<br>%{fullData.name} %{y}<extra></extra>",
+                )
+            )
+    fig.update_layout(
+        xaxis=dict(title="Week", tickangle=-45),
+        yaxis=dict(title="Weekly kJ"),
+        barmode="overlay",
+        legend_title_text="Metric",
+        margin=dict(l=40, r=20, t=20, b=60),
+    )
+    return fig
 
 
 def _flatten_weekly_trends(weekly_trends: list[dict]) -> list[dict]:
@@ -458,14 +471,19 @@ with st.container():
                 )
             )
             st.caption("Weekly load (kJ) and raw Durability/Decoupling trends.")
-            st.altair_chart(
-                _build_load_chart(df, corridor_df),
-                width="stretch",
-            )
-            st.altair_chart(
-                _build_line_chart(df),
-                width="stretch",
-            )
+            load_fig = _build_load_chart(df, corridor_df)
+            line_fig = _build_line_chart(df)
+            if load_fig is None or line_fig is None:
+                st.info("Plotly is not available; charts are hidden.")
+            else:
+                st.plotly_chart(
+                    load_fig,
+                    width="stretch",
+                )
+                st.plotly_chart(
+                    line_fig,
+                    width="stretch",
+                )
 
 with st.container():
     st.subheader("Activities Trend")
