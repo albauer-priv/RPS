@@ -151,13 +151,20 @@ for artifact_type, entry in artefacts.items():
         if not isinstance(record, dict):
             continue
         created_at = record.get("created_at") or ""
+        validity = record.get("iso_week_range") or record.get("iso_week") or "—"
+        if isinstance(validity, dict):
+            start = validity.get("start") or validity.get("from") or "—"
+            end = validity.get("end") or validity.get("to") or "—"
+            validity = f"{start}--{end}" if start != "—" or end != "—" else "—"
+        else:
+            validity = str(validity)
         rows.append(
             {
                 "Artefact": artifact_type,
                 "Version": str(version_key),
                 "Run": record.get("run_id") or "—",
                 "Created": created_at or "—",
-                "Validity": record.get("iso_week_range") or record.get("iso_week") or "—",
+                "Validity": validity,
             }
         )
 
