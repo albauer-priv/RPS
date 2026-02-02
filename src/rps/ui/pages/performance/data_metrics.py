@@ -20,6 +20,9 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
+from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, parse_iso_week_range
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
 
 try:
     import pandas as pd
@@ -62,6 +65,141 @@ def _build_line_chart(df):
             tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q", format=".2f")],
         )
     )
+
+
+def _iter_weeks_in_range(range_spec):
+    if not range_spec:
+        return []
+    weeks = []
+    current = range_spec.start
+    while True:
+        weeks.append(current)
+        if current == range_spec.end:
+            break
+        current = next_iso_week(current)
+    return weeks
+
+
+def _season_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
+    if not store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
+        return {}
+    payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    if not isinstance(payload, dict):
+        return {}
+    phases = (payload.get("data") or {}).get("phases", []) or []
+    corridors: dict[str, dict[str, float]] = {}
+    for phase in phases:
+        iso_range = phase.get("iso_week_range")
+        weekly_kj = (phase.get("weekly_load_corridor") or {}).get("weekly_kj") or {}
+        minimum = weekly_kj.get("min")
+        maximum = weekly_kj.get("max")
+        range_spec = parse_iso_week_range(iso_range)
+        if minimum is None or maximum is None or not range_spec:
+            continue
+        for week in _iter_weeks_in_range(range_spec):
+            label = f"{week.year}-W{week.week:02d}"
+            corridors[label] = {"min": minimum, "max": maximum}
+    return corridors
+
+
+def _phase_guardrails_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
+    corridors: dict[str, dict[str, float]] = {}
+    for version in store.list_versions(athlete_id, ArtifactType.PHASE_GUARDRAILS):
+        payload = store.load_version(athlete_id, ArtifactType.PHASE_GUARDRAILS, version)
+        if not isinstance(payload, dict):
+            continue
+        bands = (payload.get("data") or {}).get("load_guardrails", {}).get("weekly_kj_bands", []) or []
+        for band in bands:
+            week = band.get("week")
+            limits = (band.get("band") or {})
+            minimum = limits.get("min")
+            maximum = limits.get("max")
+            if not week or minimum is None or maximum is None:
+                continue
+            label = f"{week}"
+            existing = corridors.get(label)
+            if existing:
+                corridors[label] = {
+                    "min": max(existing.get("min", minimum), minimum),
+                    "max": min(existing.get("max", maximum), maximum),
+                }
+            else:
+                corridors[label] = {"min": minimum, "max": maximum}
+    return corridors
+
+
+def _week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
+    corridors: dict[str, dict[str, float]] = {}
+    for version in store.list_versions(athlete_id, ArtifactType.WEEK_PLAN):
+        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version)
+        if not isinstance(payload, dict):
+            continue
+        meta = payload.get("meta") or {}
+        iso_week = meta.get("iso_week")
+        if not iso_week:
+            continue
+        week = parse_iso_week(iso_week)
+        if not week:
+            continue
+        corridor = (payload.get("data") or {}).get("week_summary", {}).get("weekly_load_corridor_kj") or {}
+        minimum = corridor.get("min")
+        maximum = corridor.get("max")
+        if minimum is None or maximum is None:
+            continue
+        label = f"{week.year}-W{week.week:02d}"
+        corridors[label] = {"min": minimum, "max": maximum}
+    return corridors
+
+
+def _build_load_chart(df, corridor_df):
+    ordered = df.sort_values("period_order")
+    base = alt.Chart(ordered).encode(
+        x=alt.X("label:N", sort=list(ordered["label"]), axis=alt.Axis(title="Week", labelAngle=-45)),
+    )
+    bar = base.mark_bar(color="#0b6bcb").encode(
+        y=alt.Y("weekly_kj:Q", axis=alt.Axis(title="Weekly kJ")),
+        tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("weekly_kj:Q", title="Weekly kJ")],
+    )
+    if corridor_df.empty:
+        return bar
+    line = (
+        alt.Chart(corridor_df)
+        .mark_line()
+        .encode(
+            x=alt.X("label:N", sort=list(ordered["label"])),
+            y=alt.Y("value:Q"),
+            color=alt.Color(
+                "metric:N",
+                scale=alt.Scale(
+                    domain=[
+                        "Season Min",
+                        "Season Max",
+                        "Phase Min",
+                        "Phase Max",
+                        "Week Plan Min",
+                        "Week Plan Max",
+                    ],
+                    range=["#6c757d", "#6c757d", "#8c564b", "#8c564b", "#2ca02c", "#2ca02c"],
+                ),
+            ),
+            strokeDash=alt.StrokeDash(
+                "metric:N",
+                scale=alt.Scale(
+                    domain=[
+                        "Season Min",
+                        "Season Max",
+                        "Phase Min",
+                        "Phase Max",
+                        "Week Plan Min",
+                        "Week Plan Max",
+                    ],
+                    range=[[4, 2], [4, 2], [2, 2], [2, 2], [1, 0], [1, 0]],
+                ),
+            ),
+            tooltip=[alt.Tooltip("label:N", title="Week"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q")],
+        )
+    )
+    return alt.layer(bar, line).resolve_scale(y="shared")
 
 
 def _flatten_weekly_trends(weekly_trends: list[dict]) -> list[dict]:
@@ -233,6 +371,10 @@ if not refresh_clicked:
     else:
         set_status(status_state="done", title="Data & Metrics", message="Intervals data ready.")
 weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(trend_path)
+store = LocalArtifactStore(root=SETTINGS.workspace_root)
+season_corridor = _season_corridor_by_week(store, athlete_id)
+phase_corridor = _phase_guardrails_by_week(store, athlete_id)
+week_corridor = _week_plan_corridor_by_week(store, athlete_id)
 
 render_status_panel()
 
@@ -281,9 +423,45 @@ with st.container():
             df["decoupling_percent"] = pd.to_numeric(df["decoupling_percent"], errors="coerce")
             df["durability_avg"] = df["durability_index"].rolling(window=4, min_periods=1).mean()
             df["decoupling_avg"] = df["decoupling_percent"].rolling(window=4, min_periods=1).mean()
-            load_df = df.set_index("label")[["weekly_kj"]]
+            df["season_min"] = df["label"].map(lambda label: season_corridor.get(label, {}).get("min"))
+            df["season_max"] = df["label"].map(lambda label: season_corridor.get(label, {}).get("max"))
+            df["phase_min"] = df["label"].map(lambda label: phase_corridor.get(label, {}).get("min"))
+            df["phase_max"] = df["label"].map(lambda label: phase_corridor.get(label, {}).get("max"))
+            df["week_min"] = df["label"].map(lambda label: week_corridor.get(label, {}).get("min"))
+            df["week_max"] = df["label"].map(lambda label: week_corridor.get(label, {}).get("max"))
+            corridor_df = (
+                df.melt(
+                    id_vars=["label"],
+                    value_vars=[
+                        "season_min",
+                        "season_max",
+                        "phase_min",
+                        "phase_max",
+                        "week_min",
+                        "week_max",
+                    ],
+                    var_name="metric",
+                    value_name="value",
+                )
+                .dropna(subset=["value"])
+                .assign(
+                    metric=lambda frame: frame["metric"].map(
+                        {
+                            "season_min": "Season Min",
+                            "season_max": "Season Max",
+                            "phase_min": "Phase Min",
+                            "phase_max": "Phase Max",
+                            "week_min": "Week Plan Min",
+                            "week_max": "Week Plan Max",
+                        }
+                    )
+                )
+            )
             st.caption("Weekly load (kJ) and raw Durability/Decoupling trends.")
-            st.bar_chart(load_df)
+            st.altair_chart(
+                _build_load_chart(df, corridor_df),
+                width="stretch",
+            )
             st.altair_chart(
                 _build_line_chart(df),
                 width="stretch",

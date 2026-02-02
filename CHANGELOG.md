@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Phase/Week/Workouts headers now render above captions and status panels.
 - System → Log now shows the live log file tail when UI session logs are sparse.
 - Plan → Week no longer exposes a Plan Week action; planning is initiated from Plan Hub.
+- Weekly load chart now merges phase guardrail corridors across versions to keep min/max lines populated.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
