@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streamlit chart rendering is standardized to `st.plotly_chart` only (no native chart helpers).
 - Data & Metrics charts now render via Plotly, with a graceful fallback message when Plotly is unavailable.
 - Added Plotly to dependencies for chart rendering.
+- Home page no longer shows the System output/logs expander.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.

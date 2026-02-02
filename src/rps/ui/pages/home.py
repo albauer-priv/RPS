@@ -111,4 +111,3 @@ status_rows = _artifact_status_rows(store, athlete_id)
 st.table(status_rows)
 
 athlete_phase_card(athlete_id, year, week)
-system_log_panel(expanded=True)
