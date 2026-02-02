@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 import os
@@ -201,6 +201,59 @@ def append_event(root: Path, athlete_id: str, run_id: str, event: dict[str, Any]
     payload.setdefault("ts", _utc_iso_now())
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
+    """Delete per-run directories older than retention_days; returns count removed."""
+    if retention_days <= 0:
+        return 0
+    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    run_root = _run_store_dir(root, athlete_id)
+    if not run_root.exists():
+        return 0
+    removed = 0
+    for run_path in run_root.iterdir():
+        if not run_path.is_dir():
+            continue
+        run_path_json = run_path / "run.json"
+        try:
+            if run_path_json.exists():
+                record = json.loads(run_path_json.read_text(encoding="utf-8"))
+                created_at = record.get("created_at")
+                if created_at:
+                    created_dt = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+                else:
+                    created_dt = datetime.fromtimestamp(run_path_json.stat().st_mtime, tz=timezone.utc)
+            else:
+                created_dt = datetime.fromtimestamp(run_path.stat().st_mtime, tz=timezone.utc)
+        except Exception:
+            continue
+        if created_dt < cutoff:
+            try:
+                for child in run_path.iterdir():
+                    if child.is_file():
+                        child.unlink()
+                run_path.rmdir()
+                removed += 1
+            except OSError:
+                continue
+    return removed
+
+
+def clear_queue_folders(root: Path) -> int:
+    """Remove all queue items from done/failed; returns count removed."""
+    from rps.orchestrator.queue_scheduler import ensure_queue_dirs
+
+    paths = ensure_queue_dirs(root)
+    removed = 0
+    for folder in (paths.done, paths.failed):
+        for path in folder.glob("*.json"):
+            try:
+                path.unlink()
+                removed += 1
+            except OSError:
+                continue
+    return removed
 
 
 def start_background_run(

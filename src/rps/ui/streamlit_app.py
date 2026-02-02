@@ -7,8 +7,9 @@ from pathlib import Path
 import streamlit as st
 
 from rps.rendering.auto_render import prune_rendered_sidecars
+from rps.core.logging import prune_old_logs
 from rps.ui.intervals_refresh import ensure_intervals_data
-from rps.ui.run_store import find_active_runs, start_background_tracker
+from rps.ui.run_store import clear_queue_folders, find_active_runs, prune_run_history, start_background_tracker
 from rps.ui.shared import SETTINGS, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
 
@@ -45,6 +46,66 @@ def _cleanup_index_background(root: Path) -> None:
             tracker.mark_failed(f"Housekeeping cleanup failed: {exc}")
 
 
+def _cleanup_logs_background(root: Path, retention_days: int) -> None:
+    """Background cleanup for stale log files."""
+    for athlete_dir in root.iterdir():
+        if not athlete_dir.is_dir():
+            continue
+        active = find_active_runs(
+            root,
+            athlete_dir.name,
+            process_type="system_housekeeping",
+            process_subtype="log_cleanup",
+        )
+        if active:
+            continue
+        tracker = start_background_tracker(
+            root,
+            athlete_dir.name,
+            process_type="system_housekeeping",
+            process_subtype="log_cleanup",
+            message=f"Pruning logs older than {retention_days} days.",
+            status="RUNNING",
+        )
+        try:
+            log_dir = root / athlete_dir.name / "logs"
+            removed = prune_old_logs(log_dir, retention_days)
+            tracker.mark_done(f"Log cleanup complete. Removed {removed} files.")
+        except Exception as exc:  # pragma: no cover - background guard
+            tracker.mark_failed(f"Log cleanup failed: {exc}")
+
+
+def _cleanup_runs_background(root: Path, retention_days: int) -> None:
+    """Background cleanup for run history + queue files."""
+    for athlete_dir in root.iterdir():
+        if not athlete_dir.is_dir():
+            continue
+        active = find_active_runs(
+            root,
+            athlete_dir.name,
+            process_type="system_housekeeping",
+            process_subtype="run_cleanup",
+        )
+        if active:
+            continue
+        tracker = start_background_tracker(
+            root,
+            athlete_dir.name,
+            process_type="system_housekeeping",
+            process_subtype="run_cleanup",
+            message=f"Pruning run history older than {retention_days} days and clearing queues.",
+            status="RUNNING",
+        )
+        try:
+            removed_runs = prune_run_history(root, athlete_dir.name, retention_days)
+            removed_queue = clear_queue_folders(root)
+            tracker.mark_done(
+                f"Run cleanup complete. Removed {removed_runs} runs; cleared {removed_queue} queue items."
+            )
+        except Exception as exc:  # pragma: no cover - background guard
+            tracker.mark_failed(f"Run cleanup failed: {exc}")
+
+
 if "index_cleanup_started" not in st.session_state:
     st.session_state["index_cleanup_started"] = True
     cleanup_thread = threading.Thread(
@@ -53,6 +114,32 @@ if "index_cleanup_started" not in st.session_state:
         daemon=True,
     )
     cleanup_thread.start()
+
+if "log_cleanup_started" not in st.session_state:
+    st.session_state["log_cleanup_started"] = True
+    try:
+        retention_days = int(os.getenv("RPS_LOG_RETENTION_DAYS", "7"))
+    except ValueError:
+        retention_days = 7
+    log_cleanup_thread = threading.Thread(
+        target=_cleanup_logs_background,
+        args=(SETTINGS.workspace_root, retention_days),
+        daemon=True,
+    )
+    log_cleanup_thread.start()
+
+if "run_cleanup_started" not in st.session_state:
+    st.session_state["run_cleanup_started"] = True
+    try:
+        retention_days = int(os.getenv("RPS_RUN_RETENTION_DAYS", "7"))
+    except ValueError:
+        retention_days = 7
+    run_cleanup_thread = threading.Thread(
+        target=_cleanup_runs_background,
+        args=(SETTINGS.workspace_root, retention_days),
+        daemon=True,
+    )
+    run_cleanup_thread.start()
 
 home = st.Page("pages/home.py", title="Home", icon=":material/home:", default=True)
 coach = st.Page("pages/coach.py", title="Coach", icon=":material/support_agent:")

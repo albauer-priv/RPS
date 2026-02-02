@@ -69,8 +69,8 @@ Required strings:
 - `derived_from` (array, min 1)
 - `conflict_resolution` (array, min 1)
 - Only these two keys are allowed inside `data.traceability` (no extra fields).
-- `derived_from` MUST include the stored phase structure filename
-  `phase_structure_YYYY-WW.json` (use the artifact version key, not `iso_week_range`).
+- `derived_from` MUST include the phase structure filename
+  `phase_structure_<iso_week_range>.json` (base week-range filename; timestamps are resolved at storage time).
 
 #### 9) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
@@ -85,7 +85,7 @@ Required strings:
 - STOP if no stored PHASE_STRUCTURE exists for the **exact** `meta.iso_week_range`.
 - STOP if `data.traceability` includes any keys beyond `derived_from` and `conflict_resolution`.
 - STOP if `data.traceability.derived_from` does not include
-  `phase_structure_YYYY-WW.json` (version key, not iso_week_range).
+  `phase_structure_<iso_week_range>.json`.
 
 ---
 
@@ -146,7 +146,7 @@ Required strings:
     },
     "deviation_rules": ["If travel occurs, drop optional day without compensation"],
     "traceability": {
-      "derived_from": ["phase_structure_2026-04.json"],
+      "derived_from": ["phase_structure_2026-04--2026-05.json"],
       "conflict_resolution": ["Escalate to Season-Planner if conflicts arise"]
     }
   }

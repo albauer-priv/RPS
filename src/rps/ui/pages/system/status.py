@@ -19,7 +19,9 @@ from rps.agents.multi_output_runner import AgentRuntime
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
-from rps.ui.run_store import load_runs, update_run
+import shutil
+
+from rps.ui.run_store import load_runs, release_athlete_lock, update_run
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
 from rps.workspace.index_manager import WorkspaceIndexManager
@@ -69,6 +71,28 @@ queue_counts = {
 st.subheader("Queue Status")
 st.table([queue_counts])
 
+with st.expander("Reset run system", expanded=False):
+    st.warning(
+        "This clears all run queues and removes run state, locks, and logs for the current athlete.",
+    )
+    confirm_reset = st.text_input('Type "RESET RUNS" to confirm')
+    if st.button("Reset run system", disabled=confirm_reset.strip() != "RESET RUNS"):
+        release_athlete_lock(SETTINGS.workspace_root, athlete_id)
+        lock_dir = SETTINGS.workspace_root / athlete_id / "locks"
+        if lock_dir.exists():
+            shutil.rmtree(lock_dir, ignore_errors=True)
+        for folder in (queue_paths.pending, queue_paths.active, queue_paths.done, queue_paths.failed):
+            for path in folder.glob("*.json"):
+                path.unlink(missing_ok=True)
+        run_root = SETTINGS.workspace_root / athlete_id / "runs"
+        if run_root.exists():
+            shutil.rmtree(run_root, ignore_errors=True)
+        log_root = SETTINGS.workspace_root / athlete_id / "logs"
+        if log_root.exists():
+            shutil.rmtree(log_root, ignore_errors=True)
+        st.success("Run system reset complete.")
+
+runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=100)
 failed_run_ids = {path.stem for path in queue_paths.failed.glob("*.json")}
 if failed_run_ids:
     for run in runs:
@@ -121,8 +145,6 @@ if queue_counts["Pending"] and not queue_counts["Active"]:
         _get_scheduler.clear()
         _get_scheduler()
     st.caption("Queue worker started to drain pending runs.")
-
-runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=100)
 status_filter = st.selectbox(
     "Process status",
     options=["All", "QUEUED", "RUNNING", "DONE", "FAILED", "CANCELLED", "SUPERSEDED"],

@@ -15,12 +15,12 @@ from jinja2 import BaseLoader, Environment
 import streamlit as st
 
 from rps.core.config import load_app_settings, load_env_file
-from rps.core.logging import _normalize_level, setup_logging, timestamped_log_path
+from rps.core.logging import _normalize_level, setup_logging
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.workspace.local_store import LocalArtifactStore
-from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range, range_contains
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
 from rps.workspace.types import ArtifactType
 from rps.workspace.paths import ARTIFACT_PATHS
 
@@ -64,6 +64,65 @@ PHASE_CARD_TEMPLATE = """#### Phase narrative
 |---|---|---|
 | {{ phase.allowed_intensity_domains | join_or_na }} | {{ phase.allowed_load_modalities | join_or_na }} | {{ phase.forbidden_intensity_domains | join_or_na }} |
 """
+
+_DURATION_PATTERN = re.compile(r"(?P<hours>\\d+)h(?P<minutes>\\d+)?m?|(?P<mins_only>\\d+)m")
+
+
+def parse_duration_minutes(value: str) -> int:
+    """Parse a duration string into minutes.
+
+    Supports HH:MM:SS, HH:MM, or hours-only numeric strings.
+    """
+    parts = value.split(":")
+    if len(parts) == 3:
+        hours, minutes, _seconds = parts
+        return int(hours) * 60 + int(minutes)
+    if len(parts) == 2:
+        hours, minutes = parts
+        return int(hours) * 60 + int(minutes)
+    if len(parts) == 1 and parts[0].isdigit():
+        return int(parts[0]) * 60
+    return 0
+
+
+def duration_minutes_from_workout_text(text: str) -> int:
+    """Extract duration minutes from a workout text block."""
+    if not text:
+        return 0
+    total = 0
+    for match in _DURATION_PATTERN.finditer(text):
+        if match.group("mins_only"):
+            total += int(match.group("mins_only"))
+            continue
+        hours = int(match.group("hours") or 0)
+        minutes = int(match.group("minutes") or 0)
+        total += hours * 60 + minutes
+    return total
+
+
+def format_duration_hhmm(total_minutes: int) -> str:
+    """Format minutes into HH:MM."""
+    if total_minutes <= 0:
+        return ""
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def iso_week_date_range(year: int, week: int) -> tuple[date, date]:
+    """Return start/end dates for an ISO week (Mon-Sun)."""
+    start = date.fromisocalendar(year, week, 1)
+    end = date.fromisocalendar(year, week, 7)
+    return start, end
+
+
+def iso_week_range_dates(range_spec: IsoWeekRange | None) -> tuple[date, date] | None:
+    """Return start/end dates for an ISO week range."""
+    if not range_spec:
+        return None
+    start, _ = iso_week_date_range(range_spec.start.year, range_spec.start.week)
+    _, end = iso_week_date_range(range_spec.end.year, range_spec.end.week)
+    return start, end
 
 
 def init_ui_state() -> dict:
@@ -243,7 +302,7 @@ def ensure_logging(athlete_id: str) -> str:
         return str(current)
 
     log_dir = SETTINGS.workspace_root / athlete_id / "logs"
-    log_file = str(timestamped_log_path(log_dir, f"rps_ui_{athlete_id}"))
+    log_file = str(log_dir / "rps.log")
     setup_logging(log_file=log_file)
     state["_ui_log_file"] = log_file
     state["_ui_log_athlete"] = athlete_id

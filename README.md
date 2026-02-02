@@ -70,6 +70,15 @@ Prerequisites:
 6. Run data pipeline: use the current CLI entrypoint for `parse-intervals` (do not use deprecated `rps.main`).
 7. Validate outputs: `python scripts/validate_outputs.py`.
 
+### Logging (env)
+
+Log files are written to `var/athletes/<athlete_id>/logs/rps.log` with rotation.
+
+Optional env vars:
+- `RPS_LOG_ROTATE_MB=50` (rotate when size exceeds MB)
+- `RPS_LOG_RETENTION_DAYS=7` (delete rotated logs older than N days)
+- `RPS_RUN_RETENTION_DAYS=7` (delete run history older than N days; clears done/failed queues)
+
 ## Testing
 
 - UI changes must include Streamlit AppTest coverage in `tests/` (`streamlit.testing.v1.AppTest`).

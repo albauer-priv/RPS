@@ -394,13 +394,6 @@ with st.expander("Actions", expanded=False):
         _show_reset_delete_actions()
         set_status(status_state="done", title="Season", message="Season plan exists.")
     else:
-        with st.form("season_create_scenarios"):
-            create_scenarios = st.form_submit_button("Create Scenarios")
-        if create_scenarios:
-            append_system_log("season", "Create Scenarios started.")
-            output = _action_scenarios()
-            state["season_scenarios_output"] = output
-            append_system_log("season", "Create Scenarios done.")
         if scenario_options:
             with st.form("season_scenario_selection"):
                 selected = st.radio(
@@ -445,6 +438,8 @@ with st.expander("Actions", expanded=False):
                 st.rerun()
         if selection_payload:
             st.info("Season plan creation happens in Plan → Hub.")
+        if not scenario_options:
+            st.info("Create Season Scenarios from Plan → Hub.")
 
 render_status_panel()
 

@@ -28,6 +28,86 @@ def _normalize_level(level: str | int | None) -> int:
 
 
 import os
+from datetime import datetime, timedelta, timezone
+
+
+def _utc_today() -> datetime.date:
+    return datetime.now(timezone.utc).date()
+
+
+def _file_date(path: Path) -> datetime.date | None:
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        return None
+    return datetime.fromtimestamp(mtime, tz=timezone.utc).date()
+
+
+def _parse_rotate_mb(value: str | None, default_mb: int = 50) -> int:
+    if value is None or value == "":
+        return default_mb
+    try:
+        parsed = int(value)
+        return parsed
+    except (TypeError, ValueError):
+        return default_mb
+
+
+class DailySizeRotatingFileHandler(logging.FileHandler):
+    """Rotate logs on day change or max size, keeping rps-YYYYMMDD-NNN.log archives."""
+
+    def __init__(self, path: Path, max_bytes: int) -> None:
+        self._base_path = Path(path)
+        self._max_bytes = max_bytes if max_bytes and max_bytes > 0 else 0
+        self._current_date = _utc_today()
+        if self._base_path.exists():
+            file_date = _file_date(self._base_path)
+            if file_date:
+                self._current_date = file_date
+        super().__init__(self._base_path, encoding="utf-8")
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            if self._should_rotate():
+                self._rotate()
+        except Exception:
+            pass
+        super().emit(record)
+
+    def _should_rotate(self) -> bool:
+        today = _utc_today()
+        if self._current_date != today:
+            return True
+        if self._max_bytes and self._base_path.exists():
+            try:
+                if self._base_path.stat().st_size >= self._max_bytes:
+                    return True
+            except OSError:
+                return False
+        return False
+
+    def _rotate(self) -> None:
+        if self.stream:
+            self.stream.close()
+        date_key = self._current_date.strftime("%Y%m%d")
+        stem = self._base_path.stem
+        log_dir = self._base_path.parent
+        pattern = f"{stem}-{date_key}-*.log"
+        indices = []
+        for path in log_dir.glob(pattern):
+            parts = path.stem.split("-")
+            if len(parts) < 3:
+                continue
+            try:
+                indices.append(int(parts[-1]))
+            except ValueError:
+                continue
+        next_idx = max(indices, default=-1) + 1
+        rotated = log_dir / f"{stem}-{date_key}-{next_idx:03d}.log"
+        if self._base_path.exists():
+            os.replace(self._base_path, rotated)
+        self._current_date = _utc_today()
+        self.stream = self._open()
 
 
 def timestamped_log_path(log_dir: Path, base_name: str) -> Path:
@@ -76,7 +156,8 @@ def setup_logging(
     if log_file:
         path = Path(log_file)
         path.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(path, encoding="utf-8")
+        max_mb = _parse_rotate_mb(os.getenv("RPS_LOG_ROTATE_MB"))
+        file_handler = DailySizeRotatingFileHandler(path, max_mb * 1024 * 1024)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(file_level_value)
         handlers = [*handlers, file_handler]
@@ -99,3 +180,27 @@ def log_and_print(logger: logging.Logger, message: str, level: int = logging.INF
     """Log message and mirror to stdout."""
     logger.log(_normalize_level(level), message)
     print(message)
+
+
+def prune_old_logs(log_dir: Path, retention_days: int) -> int:
+    """Delete log files older than retention_days; returns count removed."""
+    if retention_days <= 0:
+        return 0
+    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    removed = 0
+    if not log_dir.exists():
+        return removed
+    for path in log_dir.glob("*.log"):
+        if path.name == "rps.log":
+            continue
+        try:
+            mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        except OSError:
+            continue
+        if mtime < cutoff:
+            try:
+                path.unlink()
+                removed += 1
+            except OSError:
+                continue
+    return removed

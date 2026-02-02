@@ -66,24 +66,24 @@ Environment variables:
 - APP_LOG_LEVEL: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
 - APP_LOG_STDOUT: if true, also logs to stdout
 - APP_LOG_FILE: overrides default log file location (CLI only)
+- RPS_LOG_ROTATE_MB: rotate `rps.log` when it exceeds this size in MB (default: 50)
+- RPS_LOG_RETENTION_DAYS: delete rotated logs older than this many days (default: 7)
+- RPS_RUN_RETENTION_DAYS: delete run history older than N days (default: 7)
+- RPS_TPM_WAIT_MULTIPLIER: multiplier applied to TPM retry wait time (default: 2)
+- RPS_TPM_RETRY_COUNT: number of TPM retries before failing (default: 1)
 
-## CLI Runs (rps.main)
+## Log Files & Rotation
 
-Each CLI run creates a timestamped log file under:
-
-```
-var/athletes/<athlete_id>/logs/
-```
-
-Example: `agent_run_20260124T153012Z.log`
-
-## Standalone Scripts
-
-All scripts under `scripts/` emit one log file per run into the athlete logs:
+All app/CLI/UI logs write to a single file per athlete:
 
 ```
-var/athletes/<athlete_id>/logs/<script_name>_YYYYMMDDTHHMMSSZ.log
+var/athletes/<athlete_id>/logs/rps.log
 ```
+
+Rotation:
+- On day change, or when `rps.log` exceeds `RPS_LOG_ROTATE_MB`.
+- Rotation writes `rps-YYYYMMDD-NNN.log` where `NNN` is a daily counter (000, 001, ...).
+- A background cleanup deletes rotated logs older than `RPS_LOG_RETENTION_DAYS`.
 
 Standard events:
 - INFO start line includes argv

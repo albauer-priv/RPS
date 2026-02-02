@@ -40,6 +40,9 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Plan Hub reset/delete now deletes latest artefacts (reset keeps scenarios/selection; delete removes them too).
 * **Recent status:** Plan Hub worker loop moved into orchestrator helpers; System → Status now shows planning worker status.
 * **Recent status:** Automatic planning flow document includes Mermaid labels wrapped in triple quotes for rendering.
+* **Recent status:** Logging now writes to a single rps.log with daily/size rotation and run/log retention housekeeping.
+* **Recent status:** Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs remain left of Run Planning.
+* **Recent status:** Phase/Week/Workouts headers include ISO-week date ranges; Workouts page mirrors Week headers and durations.
 
 ### Tech stack & constraints
 

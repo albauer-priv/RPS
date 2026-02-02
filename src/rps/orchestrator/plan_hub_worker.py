@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rps.agents.multi_output_runner import AgentRuntime
+from rps.core.logging import DailySizeRotatingFileHandler
 from rps.openai.client import get_client
 from rps.orchestrator.plan_hub_actions import (
     execute_plan_week,
@@ -128,7 +129,14 @@ def _attach_run_logger(log_ref: str | None) -> logging.Handler | None:
     try:
         path = Path(log_ref)
         path.parent.mkdir(parents=True, exist_ok=True)
-        handler = logging.FileHandler(path, encoding="utf-8")
+        max_mb = os.getenv("RPS_LOG_ROTATE_MB")
+        max_bytes = 50 * 1024 * 1024
+        if max_mb is not None and max_mb != "":
+            try:
+                max_bytes = int(max_mb) * 1024 * 1024
+            except ValueError:
+                max_bytes = 50 * 1024 * 1024
+        handler = DailySizeRotatingFileHandler(path, max_bytes)
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -274,6 +282,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                         step["Status"] = "DONE"
                         step["Ended"] = datetime.now(timezone.utc).isoformat()
                         _set_duration(step)
+                        index = _load_index(config.root, config.athlete_id)
                         outputs = []
                         for artifact_type in step.get("write_types") or []:
                             outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
@@ -363,6 +372,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             step["Status"] = "DONE"
                             step["Ended"] = datetime.now(timezone.utc).isoformat()
                             _set_duration(step)
+                            index = _load_index(config.root, config.athlete_id)
                             outputs = []
                             if exec_result.get("outputs"):
                                 outputs.extend(exec_result.get("outputs") or [])
@@ -373,6 +383,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                 append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
                             append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
                         else:
+                            index = _load_index(config.root, config.athlete_id)
                             for artifact_type in step.get("write_types") or []:
                                 if _artifact_written_for_run(index, ArtifactType(artifact_type), config.run_id):
                                     step["Status"] = "DONE"

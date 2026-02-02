@@ -11,11 +11,15 @@ from rps.ui.shared import (
     announce_log_file,
     append_system_log,
     capture_output,
+    duration_minutes_from_workout_text,
+    format_duration_hhmm,
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
+    iso_week_date_range,
     load_rendered_markdown,
     make_ui_run_id,
+    parse_duration_minutes,
     multi_runtime_for,
     render_global_sidebar,
     render_status_panel,
@@ -26,25 +30,6 @@ from rps.ui.shared import (
 from rps.workspace.iso_helpers import IsoWeek, next_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-
-
-def _parse_minutes(duration: str) -> int:
-    parts = duration.split(":")
-    if len(parts) == 3:
-        hours, minutes, _seconds = parts
-        return int(hours) * 60 + int(minutes)
-    if len(parts) == 2:
-        hours, minutes = parts
-        return int(hours) * 60 + int(minutes)
-    if len(parts) == 1 and parts[0].isdigit():
-        return int(parts[0]) * 60
-    return 0
-
-
-def _format_hhmm(total_minutes: int) -> str:
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-    return f"{hours:02d}:{minutes:02d}"
 
 
 def _agenda_table(agenda: list[dict]) -> str:
@@ -97,8 +82,6 @@ def _intensity_buckets(workout_text: str) -> dict[str, int]:
     return counts
 
 
-st.title("Week")
-
 state = init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
@@ -106,6 +89,8 @@ year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+week_start, week_end = iso_week_date_range(year, week)
+st.title(f"Week · {week_start} to {week_end}")
 state["iso_year"] = year
 state["iso_week"] = week
 st.session_state["iso_year"] = year
@@ -189,7 +174,7 @@ total_activities = sum(1 for row in agenda_rows if row.get("workout_id"))
 total_minutes = 0
 total_kj = 0.0
 for row in agenda_rows:
-    total_minutes += _parse_minutes(str(row.get("planned_duration", "")))
+    total_minutes += parse_duration_minutes(str(row.get("planned_duration", "")))
     try:
         total_kj += float(row.get("planned_kj", 0) or 0)
     except (TypeError, ValueError):
@@ -198,7 +183,7 @@ for row in agenda_rows:
 agenda_title = (
     "Weekly Agenda: "
     f"{total_activities} Act. - "
-    f"{_format_hhmm(total_minutes)} Duration - "
+    f"{format_duration_hhmm(total_minutes)} Duration - "
     f"{int(round(total_kj))} kJ Load"
 )
 
@@ -245,7 +230,11 @@ for row in sorted_agenda:
     focus = title.split(" - ")[-1] if " - " in title else title
     if isinstance(focus, str) and focus.lower().startswith(f"{day}".lower()):
         focus = focus[len(day) :].lstrip()
-    expander_title = f"{day}: {focus} - {duration} Duration - {load_kj} kJ Load"
+    duration_minutes = parse_duration_minutes(str(duration))
+    if not duration_minutes:
+        duration_minutes = duration_minutes_from_workout_text(str(workout.get("workout_text") or ""))
+    duration_label = format_duration_hhmm(duration_minutes) or str(duration)
+    expander_title = f"{day}: {focus} - {duration_label} Duration - {load_kj} kJ Load"
     with st.expander(expander_title, expanded=False):
         st.markdown(f"**{day} · {title}**")
         cols = st.columns([2, 1])
@@ -253,7 +242,7 @@ for row in sorted_agenda:
             st.markdown(f"**Notes:** {notes}")
             st.markdown(f"**Date:** {date}")
         with cols[1]:
-            st.markdown(f"**Duration:** {duration}")
+            st.markdown(f"**Duration:** {duration_label}")
             st.markdown(f"**Load:** {load_kj} kJ")
         workout_text = workout.get("workout_text")
         if workout_text:

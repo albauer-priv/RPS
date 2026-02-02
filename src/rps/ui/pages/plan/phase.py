@@ -12,12 +12,14 @@ from rps.ui.shared import (
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
+    iso_week_range_dates,
     render_global_sidebar,
     render_phase_markdown,
     render_status_panel,
     set_status,
 )
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.iso_helpers import parse_iso_week_range
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
@@ -103,8 +105,6 @@ def _render_week_previews(preview: dict) -> None:
 
 # --- UI ---
 
-st.title("Phase")
-
 init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
@@ -140,6 +140,13 @@ render_status_panel()
 
 phase_name = selected_phase.get("name", "Phase")
 iso_range = selected_phase.get("iso_week_range", "")
+date_range = iso_week_range_dates(parse_iso_week_range(iso_range))
+date_range_label = ""
+if date_range:
+    date_range_label = f"{date_range[0]} to {date_range[1]}"
+    st.title(f"Phase · {date_range_label}")
+else:
+    st.title("Phase")
 header = f"Phase: {phase_name} {iso_range}".strip()
 preview: dict | None = None
 

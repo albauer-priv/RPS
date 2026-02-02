@@ -15,11 +15,15 @@ from rps.ui.shared import (
     announce_log_file,
     append_system_log,
     capture_output,
+    duration_minutes_from_workout_text,
+    format_duration_hhmm,
     get_athlete_id,
     get_iso_year_week,
+    iso_week_date_range,
     init_ui_state,
     make_ui_run_id,
     multi_runtime_for,
+    parse_duration_minutes,
     render_global_sidebar,
     render_status_panel,
     set_status,
@@ -29,14 +33,6 @@ from rps.workspace.types import ArtifactType
 from rps.workspace.iso_helpers import parse_iso_week
 
 
-st.title("Workouts")
-
-# CHECKLIST (Workouts page)
-# - Current week actions: Post to Intervals, Delete posted, Revise via Week Planner message.
-# - Current week workouts list (from workouts_yyyy-ww.json) with description details.
-# - History view: month -> week -> workouts (newest months first).
-# - Show status + errors when no exports are found.
-
 state = init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
@@ -44,6 +40,14 @@ year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+week_start, week_end = iso_week_date_range(year, week)
+st.title(f"Workouts · {week_start} to {week_end}")
+
+# CHECKLIST (Workouts page)
+# - Current week actions: Post to Intervals, Delete posted, Revise via Week Planner message.
+# - Current week workouts list (from workouts_yyyy-ww.json) with description details.
+# - History view: month -> week -> workouts (newest months first).
+# - Show status + errors when no exports are found.
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 version_key = f"{year:04d}-{week:02d}"
@@ -143,21 +147,89 @@ except FileNotFoundError:
 if not intervals_payload:
     st.info("No Intervals workouts found for this week.")
 else:
+    week_plan_payload = None
+    try:
+        week_plan_payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+    except FileNotFoundError:
+        week_plan_payload = None
+    day_lookup: dict[str, list[dict[str, str]]] = {}
+    if isinstance(week_plan_payload, dict):
+        agenda_rows = (week_plan_payload.get("data") or {}).get("agenda") or []
+        workout_rows = (week_plan_payload.get("data") or {}).get("workouts") or []
+        workout_map = {
+            workout.get("workout_id"): workout
+            for workout in workout_rows
+            if workout.get("workout_id")
+        }
+        for row in agenda_rows:
+            workout_id = row.get("workout_id")
+            workout = workout_map.get(workout_id, {})
+            name = workout.get("title") or workout_id or "Workout"
+            date = row.get("date") or ""
+            duration = row.get("planned_duration") or workout.get("duration") or ""
+            load_kj = str(row.get("planned_kj") or "")
+            day = str(row.get("day") or "")
+            if date:
+                day_lookup.setdefault(date, []).append(
+                    {
+                        "name": str(name),
+                        "duration": str(duration),
+                        "load_kj": load_kj,
+                        "day": day,
+                    }
+                )
+
     st.subheader("Current Week Workouts")
     for item in intervals_payload:
         if not isinstance(item, dict):
             continue
         name = item.get("name") or "Workout"
         start = item.get("start_date_local") or ""
+        description = item.get("description") or ""
         date_str = start.split("T")[0] if "T" in start else start
         time_str = start.split("T")[1][:5] if "T" in start else ""
+        duration_source = ""
+        load_kj = ""
+        day = ""
+        if date_str and date_str in day_lookup:
+            candidates = day_lookup[date_str]
+            if len(candidates) == 1:
+                match = candidates[0]
+            else:
+                match = None
+                name_lower = name.lower()
+                for candidate in candidates:
+                    if candidate["name"].lower() in name_lower:
+                        match = candidate
+                        break
+                if match is None:
+                    match = candidates[0]
+            duration_source = match.get("duration", "")
+            load_kj = match.get("load_kj", "")
+            day = match.get("day", "")
+        duration_minutes = parse_duration_minutes(duration_source) if duration_source else 0
+        if not duration_minutes:
+            duration_minutes = duration_minutes_from_workout_text(description)
+        duration_label = format_duration_hhmm(duration_minutes)
         header = name
-        if date_str:
-            header = f"{header} · {date_str}"
-        if time_str:
-            header = f"{header} {time_str}"
+        if day:
+            focus = name.split(" - ")[-1] if " - " in name else name
+            if isinstance(focus, str) and focus.lower().startswith(day.lower()):
+                focus = focus[len(day) :].lstrip()
+            header = f"{day}: {focus}"
+            if duration_label:
+                header = f"{header} - {duration_label} Duration"
+            if load_kj:
+                header = f"{header} - {load_kj} kJ Load"
+        else:
+            if date_str:
+                header = f"{header} · {date_str}"
+            if time_str:
+                header = f"{header} {time_str}"
+            if duration_label:
+                header = f"{header} · {duration_label}"
         with st.expander(header, expanded=False):
-            st.code(item.get("description") or "")
+            st.code(description)
 
 
 st.subheader("Workouts History")

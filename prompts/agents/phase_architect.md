@@ -83,8 +83,11 @@ Optional inputs (load attempt; binding when present):
 - Season→Phase Feed Forward: `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })`
 
 Conditional artefacts (only when required by requested output artefact/mode):
-- Phase Guardrails (exact-range): `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })`
-- Phase Structure (exact-range): `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })`
+- For `PHASE_STRUCTURE`: load exact-range `PHASE_GUARDRAILS` via
+  `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<iso_week_range>" })`
+- For `PHASE_PREVIEW`: load exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE` via
+  `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<iso_week_range>" })`
+  `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<iso_week_range>" })`
 
 Forbidden for binding decisions:
 - Anything not listed above.
@@ -205,11 +208,21 @@ Set G1 = true.
 
 #### Step 2 — Determine conditional artefact dependencies (Gate: G2)
 Based on requested artefact:
-- If output requires an exact-range predecessor (e.g., PREVIEW needs existing EXECUTION_ARCH for same `iso_week_range`):
+- If output requires exact-range predecessors:
+  - `PHASE_STRUCTURE` requires exact-range `PHASE_GUARDRAILS`.
+  - `PHASE_PREVIEW` requires exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE`.
   - Use `workspace_list_versions` + `workspace_get_version` selecting exact `meta.iso_week_range`.
   - Never substitute `workspace_get_latest` for exact-range requirements.
 If required predecessor artefact is missing: STOP and request it.
 Set G2 = true.
+
+#### Step 2a — Per-output load checklist (Binding)
+Before composing output, confirm the exact-range inputs are loaded:
+- For `PHASE_GUARDRAILS`: baseline inputs only (events, season_plan, availability, wellness, zone_model; optional feed-forward).
+- For `PHASE_STRUCTURE`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS`.
+- For `PHASE_PREVIEW`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE`.
+- For `PHASE_FEED_FORWARD`: baseline inputs only (plus optional feed-forward if present).
+If any required exact-range artefact is missing: STOP and request it.
 
 #### Step 3 — Load REQUIRED knowledge files in full (Gate: G3)
 Only after G1 and G2:
@@ -314,8 +327,37 @@ STOP if:
 
 **User:** “Erzeuge PHASE_PREVIEW für 2026-05--2026-08.”
 **Assistant (expected behavior):**
-- Step 0: single artefact = PREVIEW, iso_week_range present.
-- Step 1: load runtime artefacts.
-- Step 2: require exact-range PHASE_STRUCTURE; if missing → STOP and request it.
-- Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
-- Step 6: output exactly one PREVIEW artefact (no extra text).
+ - Step 0: single artefact = PREVIEW, iso_week_range present.
+ - Step 1: load baseline runtime artefacts:
+   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+ - Step 2: load exact-range PHASE_GUARDRAILS + PHASE_STRUCTURE; if missing → STOP and request them.
+ - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
+ - Step 6: output exactly one PREVIEW artefact, strictly shaped per Mandatory Output Chapter (no extra text);
+   `data.traceability.derived_from` MUST include the base `phase_structure_<iso_week_range>.json` filename.
+
+**User:** “Erzeuge PHASE_GUARDRAILS für 2026-05--2026-08.”
+**Assistant (expected behavior):**
+ - Step 0: single artefact = PHASE_GUARDRAILS, iso_week_range present.
+ - Step 1: load baseline runtime artefacts:
+   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+ - Step 2: no exact-range predecessor required.
+ - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
+ - Step 6: output exactly one PHASE_GUARDRAILS artefact, strictly shaped per Mandatory Output Chapter (no extra text).
+
+**User:** “Erzeuge PHASE_STRUCTURE für 2026-05--2026-08.”
+**Assistant (expected behavior):**
+ - Step 0: single artefact = PHASE_STRUCTURE, iso_week_range present.
+ - Step 1: load baseline runtime artefacts:
+   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+ - Step 2: load exact-range PHASE_GUARDRAILS; if missing → STOP and request it.
+ - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
+ - Step 6: output exactly one PHASE_STRUCTURE artefact, strictly shaped per Mandatory Output Chapter (no extra text).
+
+**User:** “Erzeuge PHASE_FEED_FORWARD für 2026-05--2026-08.”
+**Assistant (expected behavior):**
+ - Step 0: single artefact = PHASE_FEED_FORWARD, iso_week_range present.
+ - Step 1: load baseline runtime artefacts:
+   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+ - Step 2: no exact-range predecessor required.
+ - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
+ - Step 6: output exactly one PHASE_FEED_FORWARD artefact, strictly shaped per Mandatory Output Chapter (no extra text).

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 import os
+import re
 import sys
+import time
 
 
 def _get_attr(obj: Any, key: str) -> Any:
@@ -57,12 +59,77 @@ def create_response(
 
     When stream_handlers is provided, deltas are sent to callbacks instead of stdout.
     """
-    if stream_handlers is None and not should_stream():
-        return client.responses.create(**payload)
+    def _parse_retry_seconds(message: str) -> float | None:
+        patterns = [
+            r"try again in ([0-9]+(?:\\.[0-9]+)?)s",
+            r"retry after ([0-9]+(?:\\.[0-9]+)?)s",
+            r"after ([0-9]+(?:\\.[0-9]+)?)s",
+            r"in ([0-9]+(?:\\.[0-9]+)?)s",
+            r"in ([0-9]+(?:\\.[0-9]+)?) seconds",
+            r"in ([0-9]+)ms",
+        ]
+        lowered = message.lower()
+        for pattern in patterns:
+            match = re.search(pattern, lowered)
+            if not match:
+                continue
+            value = float(match.group(1))
+            if "ms" in pattern:
+                return value / 1000.0
+            return value
+        return None
 
-    payload = dict(payload)
-    payload["stream"] = True
-    stream = client.responses.create(**payload)
+    def _should_retry_tpm(exc: Exception) -> float | None:
+        message = str(exc)
+        lowered = message.lower()
+        if "rate limit" not in lowered:
+            return None
+        if "tpm" not in lowered and "tokens per minute" not in lowered:
+            return None
+        return _parse_retry_seconds(message) or 60.0
+
+    def _create_with_retry(stream: bool):
+        attempts = 0
+        retry_count = 1
+        multiplier = 2.0
+        raw_retry = os.getenv("RPS_TPM_RETRY_COUNT")
+        raw_multiplier = os.getenv("RPS_TPM_WAIT_MULTIPLIER")
+        if raw_retry:
+            try:
+                retry_count = max(0, int(raw_retry))
+            except ValueError:
+                retry_count = 1
+        if raw_multiplier:
+            try:
+                multiplier = max(1.0, float(raw_multiplier))
+            except ValueError:
+                multiplier = 2.0
+        while True:
+            attempts += 1
+            try:
+                if not stream:
+                    return client.responses.create(**payload)
+                payload_stream = dict(payload)
+                payload_stream["stream"] = True
+                return client.responses.create(**payload_stream)
+            except Exception as exc:
+                wait_seconds = _should_retry_tpm(exc)
+                if wait_seconds is None or attempts > retry_count + 1:
+                    raise
+                delay = wait_seconds * multiplier
+                if logger is not None:
+                    logger.warning(
+                        "TPM rate limit exceeded. Waiting %.1fs then retrying (attempt %s of %s).",
+                        delay,
+                        attempts,
+                        retry_count + 1,
+                    )
+                time.sleep(delay)
+
+    if stream_handlers is None and not should_stream():
+        return _create_with_retry(stream=False)
+
+    stream = _create_with_retry(stream=True)
 
     handlers = stream_handlers or {}
     on_output = handlers.get("on_output")

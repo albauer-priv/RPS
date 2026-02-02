@@ -16,7 +16,7 @@ if SYS_PATH not in sys.path:
     sys.path.insert(0, SYS_PATH)
 
 from rps.core.config import load_env_file  # noqa: E402
-from rps.core.logging import log_and_print, setup_logging, timestamped_log_path  # noqa: E402
+from rps.core.logging import log_and_print, setup_logging  # noqa: E402
 from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 from rps.rendering.auto_render import render_sidecar  # noqa: E402
 
@@ -38,14 +38,14 @@ def _resolve_workspace_root() -> Path:
 
 
 def configure_logging(script_name: str) -> logging.Logger:
-    """Configure logging to a per-script timestamped log file."""
+    """Configure logging to the shared rotating rps.log."""
     log_level = os.getenv("APP_LOG_LEVEL", "INFO")
     athlete_id = os.getenv("ATHLETE_ID")
     if athlete_id:
         log_dir = _resolve_workspace_root() / athlete_id / "logs"
     else:
         log_dir = ROOT / "logs"
-    log_file = timestamped_log_path(log_dir, script_name)
+    log_file = log_dir / "rps.log"
     setup_logging(log_level, log_file=log_file)
     logger = logging.getLogger(script_name)
     log_and_print(logger, f"Start {script_name} argv={' '.join(sys.argv[1:])}")

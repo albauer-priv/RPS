@@ -321,7 +321,6 @@ def _is_week_ready(readiness: list[ReadinessStep]) -> bool:
         "phase_guardrails",
         "phase_structure",
         "week_plan",
-        "intervals_workouts",
     }
     readiness_map = {step.key: step for step in readiness}
     for key in required_keys:
@@ -353,7 +352,7 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
 
 def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
     """Compute readiness across the planning pipeline."""
-    logger.info("Computing readiness athlete=%s iso=%04d-W%02d", athlete_id, year, week)
+    logger.debug("Computing readiness athlete=%s iso=%04d-W%02d", athlete_id, year, week)
     target_week = IsoWeek(year=year, week=week)
     index = _load_index(athlete_id)
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
@@ -524,9 +523,10 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     )
     artifact_step(
         key="intervals_workouts",
-        label="Build Workouts",
+        label="Build Workouts (optional)",
         artifact_type=ArtifactType.INTERVALS_WORKOUTS,
         required=["week_plan"],
+        optional=True,
     )
     return steps
 
@@ -886,12 +886,12 @@ required_steps = [step for step in readiness if not step.optional]
 total_required = len(required_steps)
 ready_required = sum(1 for step in required_steps if step.status == "ready")
 has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
-has_blockers = any(step.status in {"missing", "blocked"} for step in required_steps)
+missing_blocked_steps = [step for step in required_steps if step.status in {"missing", "blocked"}]
+panel_blockers = [step for step in missing_blocked_steps if step.key not in {"week_plan"}]
+has_blockers = bool(panel_blockers)
 blocked_messages: list[str] = []
-if has_blockers:
-    for step in required_steps:
-        if step.status not in {"missing", "blocked"}:
-            continue
+if missing_blocked_steps:
+    for step in missing_blocked_steps:
         deps = READINESS_DEPENDENCIES.get(step.key, [])
         blocking = []
         for dep_key in deps:
@@ -1061,7 +1061,7 @@ with st.expander("Season Plan: Delete or Reset", expanded=False):
         st.caption("No season plan available for reset/delete actions.")
 
 summary_text = None
-if has_blockers:
+if missing_blocked_steps:
     info_lines = ["Resolve missing inputs/artifacts above before Run Planning is available."]
     if blocked_messages:
         info_lines.append("")
@@ -1078,66 +1078,64 @@ if has_blockers:
             )
             st.info("Cancel requested. The worker will stop after the current step.")
             st.rerun()
-else:
-    scope_col, run_col = st.columns([1, 1])
-
 if not has_blockers:
+    scope_col, run_col = st.columns([1, 1])
     with scope_col:
         st.subheader("Scope")
         st.caption(f"Athlete: {hub_scope['athlete_id']} · ISO {hub_scope['iso_year']}-W{hub_scope['iso_week']:02d}")
-    athlete_id = st.text_input(
-        "Athlete",
-        value=hub_scope["athlete_id"],
-        disabled=scope_lock,
-    )
-    year = int(
-        st.number_input(
-            "ISO Year",
-            min_value=2000,
-            max_value=2100,
-            value=hub_scope["iso_year"],
-            step=1,
+        athlete_id = st.text_input(
+            "Athlete",
+            value=hub_scope["athlete_id"],
             disabled=scope_lock,
         )
-    )
-    week = int(
-        st.number_input(
-            "ISO Week",
-            min_value=1,
-            max_value=53,
-            value=hub_scope["iso_week"],
-            step=1,
-            disabled=scope_lock,
+        year = int(
+            st.number_input(
+                "ISO Year",
+                min_value=2000,
+                max_value=2100,
+                value=hub_scope["iso_year"],
+                step=1,
+                disabled=scope_lock,
+            )
         )
-    )
-    phase_label = hub_scope.get("phase_label")
-    phases = []
-    season_plan = None
-    try:
-        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
-    except FileNotFoundError:
+        week = int(
+            st.number_input(
+                "ISO Week",
+                min_value=1,
+                max_value=53,
+                value=hub_scope["iso_week"],
+                step=1,
+                disabled=scope_lock,
+            )
+        )
+        phase_label = hub_scope.get("phase_label")
+        phases = []
         season_plan = None
-    if isinstance(season_plan, dict):
-        phases = season_plan.get("data", {}).get("phases", []) or []
-    if phases:
-        options, _ = build_phase_options(phases)
-        if phase_label not in options:
-            phase_label = options[0]
-        phase_label = st.selectbox(
-            "Phase",
-            options=options,
-            index=options.index(phase_label),
-            disabled=scope_lock,
-        )
-    hub_scope = {
-        "athlete_id": athlete_id,
-        "iso_year": year,
-        "iso_week": week,
-        "phase_label": phase_label,
-    }
-    st.session_state["hub_scope"] = hub_scope
-    if run_state:
-        st.caption(f"Running for {athlete_id} · {year}-W{week:02d}")
+        try:
+            season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+        except FileNotFoundError:
+            season_plan = None
+        if isinstance(season_plan, dict):
+            phases = season_plan.get("data", {}).get("phases", []) or []
+        if phases:
+            options, _ = build_phase_options(phases)
+            if phase_label not in options:
+                phase_label = options[0]
+            phase_label = st.selectbox(
+                "Phase",
+                options=options,
+                index=options.index(phase_label),
+                disabled=scope_lock,
+            )
+        hub_scope = {
+            "athlete_id": athlete_id,
+            "iso_year": year,
+            "iso_week": week,
+            "phase_label": phase_label,
+        }
+        st.session_state["hub_scope"] = hub_scope
+        if run_state:
+            st.caption(f"Running for {athlete_id} · {year}-W{week:02d}")
 
     with run_col:
         st.subheader("Run Planning")
@@ -1357,6 +1355,19 @@ if summary_text:
 st.subheader("Run Execution")
 if active_run:
     steps = active_run.get("steps") or []
+    for step in steps:
+        if step.get("Duration") or not step.get("Started") or not step.get("Ended"):
+            continue
+        try:
+            start_dt = datetime.fromisoformat(str(step["Started"]).replace("Z", "+00:00"))
+            end_dt = datetime.fromisoformat(str(step["Ended"]).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        seconds = int((end_dt - start_dt).total_seconds())
+        step["Duration"] = f"{max(seconds, 0)}s"
+    for step in steps:
+        outputs = step.get("Outputs") or []
+        step["Outputs Written"] = len(outputs)
     if active_run.get("log_ref"):
         st.caption(f"Log file: {active_run.get('log_ref')}")
     if active_run.get("status") == "FAILED":

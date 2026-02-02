@@ -88,11 +88,11 @@ def create_intervals_workouts_export(
         needs_intervals = True
 
     if not needs_intervals:
-        message = f"Found INTERVALS_WORKOUTS for ISO week {year:04d}-W{week:02d}."
+        message = f"Found INTERVALS_WORKOUTS for ISO week {year:04d}-{week:02d}."
         _log(message)
         return {"ran": False, "ok": True, "produced": False, "result": None, "message": message}
 
-    message = f"Running Workout-Builder for ISO week {year:04d}-W{week:02d}."
+    message = f"Running Workout-Builder for ISO week {year:04d}-{week:02d}."
     _log(message)
     spec = AGENTS["workout_builder"]
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
@@ -103,7 +103,7 @@ def create_intervals_workouts_export(
         athlete_id=athlete_id,
         tasks=[AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT],
         user_input=(
-            f"Convert week_plan into Intervals.icu workouts JSON for ISO week {year:04d}-W{week:02d}. "
+            f"Convert week_plan into Intervals.icu workouts JSON for ISO week {year:04d}-{week:02d}. "
             "Read week_plan from workspace. "
             f"{override_line}"
             f"{injected_block}"

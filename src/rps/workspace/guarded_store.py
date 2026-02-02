@@ -498,10 +498,9 @@ class GuardedValidatedStore:
             else:
                 document = self._apply_rounding(document, schema)
                 validate_or_raise(validator, document)
+                version_key = "raw"
             if target == ArtifactType.INTERVALS_WORKOUTS:
                 version_key = self._derive_intervals_version_key(document)
-            else:
-                version_key = "raw"
             version_key = normalize_version_key(version_key, artifact_type=target)
 
             season_plan_doc: dict[str, Any] | None = None

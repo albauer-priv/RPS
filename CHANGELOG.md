@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Plan Phase/Week/Workouts headers now include the ISO-week date range.
+- Workouts page now reuses Week Plan agenda durations and headers for current week listings.
 - Added a manual "Refresh Intervals Data" action on the Data & Metrics page with AppTest coverage.
 - Added planning principles documentation and referenced it from the docs and AGENTS rules.
 - Plan Hub now preselects Plan Next Week vs Plan Week based on readiness and enforces current/next ISO-week scope.
@@ -31,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System → History now includes an Overview section (latest outputs + run history) and separate Artifact History headers for clarity.
 
 ### Changed
+- Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
+- Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
 - Plan Hub and UI docs now reflect that posting to Intervals happens from the Workouts page, not the Hub.
 - Plan Hub scoped runs now support optional overrides (required only when modifying existing artifacts) and pass overrides into orchestrators.
@@ -74,10 +78,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Mandatory Output chapter for SEASON_SCENARIO_SELECTION (schema_version 1.1) and inject it into prompts.
 - Season Scenario Selection now writes locally from UI inputs (no LLM).
 - Season page no longer creates Season Plans; it directs to Plan Hub for planning.
+- System Status now loads runs before checking failed queue entries (fixes NameError).
+- System Status now includes a reset control that clears queues, locks, runs, and logs for the athlete.
 - Season Planner prompt now requires Zone Model (FTP from data.model_metadata.ftp_watts).
 - Season Planner load order now includes Zone Model in the Step 1 artefact list.
 - Phase Guardrails now explicitly requires all planned_event_windows from Season Plan in events_constraints.
 - Plan Hub "Create Season Plan" now enqueues a scoped season-plan run instead of linking to Season page.
+- Guarded store now preserves derived version keys for envelope artifacts instead of forcing raw.
+- Season page no longer shows a Create Scenarios button; scenarios are initiated from Plan Hub.
+- Range-scoped artifacts now prefer iso_week_range for version keys, ensuring timestamped range versions.
+- Workout-Builder invocation now uses ISO week labels without the "W" prefix to match week_plan version keys.
+- Plan Hub no longer blocks Run Planning when Build Workouts is missing; workouts export is optional for readiness.
+- Plan Hub now labels Build Workouts as optional in readiness.
+- Phase Architect prompt now specifies exact-range dependencies for Phase Structure/Preview and removes obsolete EXECUTION_ARCH reference.
+- Phase Architect prompt now includes a per-output load checklist for required exact-range artefacts.
+- Phase Architect few-shot examples now cover each output type and reinforce baseline inputs + Mandatory Output Chapter conformance.
+- Plan Hub run execution now refreshes the artifact index after step execution and fills missing step durations.
+- Plan Hub run execution table now shows an Outputs Written count per step.
+- Logging now writes to a single per-athlete rps.log with daily/size rotation (rps-YYYYMMDD-NNN.log); added ADR-019.
+- Added background log cleanup with `RPS_LOG_RETENTION_DAYS` (default 7).
+- Added run housekeeping: prune run history older than `RPS_RUN_RETENTION_DAYS` (default 7) and clear done/failed queues (ADR-020).
+- README now documents log rotation and retention env vars.
+- Phase Preview mandatory output now requires derived_from to include the base phase_structure_<iso_week_range>.json filename (timestamps handled internally).
+- TPM rate limit errors now wait twice the suggested retry time and automatically retry once per request.
+- TPM retry behavior is now configurable via RPS_TPM_WAIT_MULTIPLIER and RPS_TPM_RETRY_COUNT.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.
 - Phase page preview layout refactored: preview table in its own expander and weekly previews rendered below.
 - All non-Coach pages now share a centralized global sidebar and a single status banner; plan actions run through `st.form` in collapsed action panels.

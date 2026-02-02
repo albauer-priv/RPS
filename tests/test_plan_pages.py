@@ -22,6 +22,7 @@ def test_season_page_renders():
     at.run()
     assert len(at.error) == 0
     assert len(at.text_input) >= 1
+    assert all(button.label != "Create Scenarios" for button in at.button)
 
 
 def test_season_page_handles_selection_error_state():

@@ -21,6 +21,8 @@ This folder contains the ADR log for RPS.
 - ADR-016: Staleness Policy for Wellness / Zone Model
 - ADR-017: Intervals Posting Policy
 - ADR-018: Schema Versioning Policy
+- ADR-019: Single Log File with Rotation
+- ADR-020: Run Housekeeping Retention
 
 ## Process (Short)
 

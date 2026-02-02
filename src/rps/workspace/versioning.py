@@ -159,6 +159,15 @@ def derive_version_key_from_envelope(
     """Derive a version key using known metadata fields."""
     meta = envelope.get("meta", {})
 
+    if artifact_type in RANGE_SCOPED_ARTIFACTS and "iso_week_range" in meta:
+        range_key = _coerce_range(meta["iso_week_range"])
+        if range_key:
+            return normalize_version_key(
+                range_key,
+                meta.get("created_at"),
+                artifact_type=artifact_type,
+            )
+
     if "iso_week" in meta:
         wk_key = _coerce_week(meta["iso_week"])
         if wk_key:

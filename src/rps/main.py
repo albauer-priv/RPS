@@ -484,15 +484,7 @@ def main() -> None:
             raise SystemExit("Missing athlete id. Set ATHLETE_ID in .env or pass --athlete.")
 
         if not args.log_file:
-            timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-            log_filename = {
-                "plan-week": f"plan_week_{timestamp}.log",
-                "run-agent": f"agent_run_{timestamp}.log",
-                "run-task": f"task_run_{timestamp}.log",
-                "parse-intervals": f"parse_intervals_{timestamp}.log",
-                "parse-availability": f"parse_availability_{timestamp}.log",
-            }.get(args.cmd, f"app_{timestamp}.log")
-            args.log_file = str(settings.workspace_root / args.athlete / "logs" / log_filename)
+            args.log_file = str(settings.workspace_root / args.athlete / "logs" / "rps.log")
 
         setup_logging(args.log_level, args.log_file, log_stdout=args.log_stdout)
         logger = logging.getLogger("rps.preflight")
