@@ -39,9 +39,9 @@ athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
-st.caption(f"Athlete: {athlete_id}")
 week_start, week_end = iso_week_date_range(year, week)
 st.title(f"Workouts · {week_start} to {week_end}")
+st.caption(f"Athlete: {athlete_id}")
 
 # CHECKLIST (Workouts page)
 # - Current week actions: Post to Intervals, Delete posted, Revise via Week Planner message.
@@ -51,8 +51,6 @@ st.title(f"Workouts · {week_start} to {week_end}")
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 version_key = f"{year:04d}-{week:02d}"
-
-st.subheader(f"Workouts · {version_key}")
 
 with st.expander("Actions", expanded=False):
     with st.form("workouts_actions"):

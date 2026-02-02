@@ -88,9 +88,9 @@ athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
-st.caption(f"Athlete: {athlete_id}")
 week_start, week_end = iso_week_date_range(year, week)
 st.title(f"Week · {week_start} to {week_end}")
+st.caption(f"Athlete: {athlete_id}")
 state["iso_year"] = year
 state["iso_week"] = week
 st.session_state["iso_year"] = year

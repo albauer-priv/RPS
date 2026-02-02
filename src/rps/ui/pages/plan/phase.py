@@ -111,8 +111,6 @@ athlete_id = get_athlete_id()
 get_iso_year_week()
 announce_log_file(athlete_id)
 
-st.caption(f"Athlete: {athlete_id}")
-
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 season_plan = _load_season_plan(store, athlete_id)
 if not season_plan:
@@ -130,6 +128,14 @@ selected_label = st.session_state.get("selected_phase_label")
 if selected_label not in phase_map:
     selected_label = options[0]
 selected_phase = phase_map[selected_label]
+phase_name = selected_phase.get("name", "Phase")
+iso_range = selected_phase.get("iso_week_range", "")
+date_range = iso_week_range_dates(parse_iso_week_range(iso_range))
+if date_range:
+    st.title(f"Phase · {date_range[0]} to {date_range[1]}")
+else:
+    st.title("Phase")
+st.caption(f"Athlete: {athlete_id}")
 set_status(
     status_state="done",
     title="Phase",
@@ -137,16 +143,6 @@ set_status(
     last_action="View Phase",
 )
 render_status_panel()
-
-phase_name = selected_phase.get("name", "Phase")
-iso_range = selected_phase.get("iso_week_range", "")
-date_range = iso_week_range_dates(parse_iso_week_range(iso_range))
-date_range_label = ""
-if date_range:
-    date_range_label = f"{date_range[0]} to {date_range[1]}"
-    st.title(f"Phase · {date_range_label}")
-else:
-    st.title("Phase")
 header = f"Phase: {phase_name} {iso_range}".strip()
 preview: dict | None = None
 

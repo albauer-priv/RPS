@@ -16,6 +16,7 @@ from rps.ui.shared import (
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
+    iso_week_range_dates,
     load_rendered_markdown,
     make_ui_run_id,
     multi_runtime_for,
@@ -25,11 +26,10 @@ from rps.ui.shared import (
     set_status,
 )
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.iso_helpers import parse_iso_week_range
 from rps.workspace.types import ArtifactType
 
 ISO_WEEK_RANGE_FALLBACK = "N/A"
-
-st.title("Season")
 
 state = init_ui_state()
 render_global_sidebar()
@@ -37,10 +37,20 @@ athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
-st.caption(f"Athlete: {athlete_id}")
-
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 has_plan = store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN)
+season_plan_payload = None
+if has_plan:
+    season_plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+iso_range = ""
+if isinstance(season_plan_payload, dict):
+    iso_range = season_plan_payload.get("meta", {}).get("iso_week_range", "")
+date_range = iso_week_range_dates(parse_iso_week_range(iso_range))
+if date_range:
+    st.title(f"Season · {date_range[0]} to {date_range[1]}")
+else:
+    st.title("Season")
+st.caption(f"Athlete: {athlete_id}")
 
 SCENARIO_TEMPLATE = """
 ### Metadata
