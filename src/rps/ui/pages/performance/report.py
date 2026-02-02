@@ -278,17 +278,83 @@ render_status_panel()
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 version_key = f"{year:04d}-{week:02d}"
 
+def _render_narrative_report(payload: dict) -> None:
+    narrative = (payload.get("data") or {}).get("narrative_report")
+    if not narrative:
+        return
+    st.subheader("Narrative Report")
+    if isinstance(narrative, str):
+        st.markdown(narrative)
+        return
+    if isinstance(narrative, dict):
+        for key, value in narrative.items():
+            title = key.replace("_", " ").title()
+            st.markdown(f"**{title}**")
+            if value:
+                st.markdown(str(value))
+        return
+    st.markdown(str(narrative))
+
+
+def _render_kpi_summary(payload: dict) -> None:
+    summary = (payload.get("data") or {}).get("kpi_summary")
+    if not summary:
+        return
+    with st.expander("KPI Summary", expanded=True):
+        if isinstance(summary, dict):
+            for key, value in summary.items():
+                label = key.replace("_", " ").title()
+                st.markdown(f"**{label}**")
+                if isinstance(value, dict):
+                    delta = value.get("delta_vs_baseline")
+                    if delta:
+                        st.markdown(str(delta))
+                    else:
+                        st.caption("No delta vs baseline available.")
+                else:
+                    st.markdown(str(value))
+        else:
+            st.markdown(str(summary))
+
+
+def _render_trend_analysis(payload: dict) -> None:
+    trend = (payload.get("data") or {}).get("trend_analysis")
+    if not trend:
+        return
+    with st.expander("Trend Analysis", expanded=True):
+        observations = trend.get("observations") if isinstance(trend, dict) else None
+        if isinstance(observations, list) and observations:
+            for obs in observations:
+                if not isinstance(obs, dict):
+                    continue
+                metric = obs.get("metric") or "Metric"
+                label = str(metric).replace("_", " ").title()
+                st.markdown(f"**{label}**")
+                interpretation = obs.get("interpretation")
+                if interpretation:
+                    st.markdown(str(interpretation))
+                else:
+                    st.caption("No interpretation available.")
+        else:
+            st.caption("No trend analysis observations available.")
+
+
 rendered = load_rendered_markdown(
     athlete_id,
     ArtifactType.DES_ANALYSIS_REPORT,
     version_key=version_key,
 )
+try:
+    report = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, version_key)
+except FileNotFoundError:
+    report = None
+
+if isinstance(report, dict):
+    _render_narrative_report(report)
+    _render_kpi_summary(report)
+    _render_trend_analysis(report)
+
 if rendered:
     st.markdown(rendered, unsafe_allow_html=True)
-else:
-    try:
-        report = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, version_key)
-    except FileNotFoundError:
-        st.info(f"No des_analysis_report found for {version_key}.")
-    else:
-        st.json(report)
+elif report is None:
+    st.info(f"No des_analysis_report found for {version_key}.")

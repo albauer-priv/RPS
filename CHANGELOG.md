@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Plan Season now shows a date-range header derived from the Season Plan iso_week_range.
+- Report page now shows Narrative/KPI Summary/Trend Analysis expanders above the rendered report content.
 - Plan Phase/Week/Workouts headers now include the ISO-week date range.
 - Workouts page now reuses Week Plan agenda durations and headers for current week listings.
 - Added a manual "Refresh Intervals Data" action on the Data & Metrics page with AppTest coverage.
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System → Log now shows the live log file tail when UI session logs are sparse.
 - Plan → Week no longer exposes a Plan Week action; planning is initiated from Plan Hub.
 - Weekly load chart now merges phase guardrail corridors across versions to keep min/max lines populated.
+- Report page no longer renders the raw report JSON.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
