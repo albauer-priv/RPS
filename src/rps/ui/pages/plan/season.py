@@ -340,22 +340,6 @@ def _render_phase_panels(plan_payload: dict | None) -> None:
             st.markdown(render_phase_markdown(phase), unsafe_allow_html=True)
 
 
-def _show_reset_delete_actions() -> None:
-    with st.form("season_plan_actions"):
-        action = st.selectbox("Action", options=["Reset Season Plan", "Delete Season Plan"])
-        confirmation = st.text_input('Type "YES I WANT TO PROCEED" to continue')
-        submitted = st.form_submit_button("Proceed", disabled=confirmation != "YES I WANT TO PROCEED")
-    if submitted:
-        append_system_log("season", f"{action} requested.")
-        st.info(f"{action} flow will trigger (TODO).")
-        set_status(
-            status_state="running",
-            title="Season",
-            message=f"{action} requested.",
-            last_action=action,
-        )
-
-
 scenarios_payload = None
 if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIOS):
     scenarios_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
@@ -401,7 +385,7 @@ if isinstance(kpi_profile, dict):
 
 with st.expander("Actions", expanded=False):
     if has_plan:
-        _show_reset_delete_actions()
+        st.info("Season plan exists. Reset/delete actions live in Plan → Hub.")
         set_status(status_state="done", title="Season", message="Season plan exists.")
     else:
         if scenario_options:
@@ -457,7 +441,10 @@ if has_plan:
     rendered = load_rendered_markdown(athlete_id, ArtifactType.SEASON_PLAN)
     plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
     if rendered:
-        st.markdown(rendered)
+        marker = "### Metadata"
+        start = rendered.find(marker)
+        if start != -1:
+            st.markdown(rendered[start:])
     scenario_intro = _render_selected_scenario_markdown(store, athlete_id)
     if scenario_intro:
         with st.container():
