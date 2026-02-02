@@ -7,6 +7,7 @@ import logging
 import os
 import re
 from contextlib import redirect_stdout
+from collections import deque
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -348,15 +349,31 @@ def system_log_panel(expanded: bool = True) -> None:
     with st.expander("System output / logs", expanded=expanded):
         if not logs:
             st.caption("No system output yet.")
-            return
-        last = logs[-1]
-        st.caption(f"{last['ts']} · {last['source']}")
-        st.code(last["content"])
-        if len(logs) > 1:
-            with st.expander("History", expanded=False):
-                for entry in reversed(logs[:-1]):
-                    st.caption(f"{entry['ts']} · {entry['source']}")
-                    st.code(entry["content"])
+        else:
+            last = logs[-1]
+            st.caption(f"{last['ts']} · {last['source']}")
+            st.code(last["content"])
+            if len(logs) > 1:
+                with st.expander("History", expanded=False):
+                    for entry in reversed(logs[:-1]):
+                        st.caption(f"{entry['ts']} · {entry['source']}")
+                        st.code(entry["content"])
+
+        log_file = st.session_state["rps_state"].get("_ui_log_file")
+        if not log_file:
+            athlete_id = get_athlete_id()
+            log_file = ensure_logging(athlete_id)
+        path = Path(log_file) if log_file else None
+        if path and path.exists():
+            tail = deque(maxlen=200)
+            with path.open("r", encoding="utf-8", errors="replace") as handle:
+                for line in handle:
+                    tail.append(line.rstrip("\n"))
+            if tail:
+                st.caption("Log file tail")
+                st.code("\n".join(tail))
+            else:
+                st.caption("Log file is empty.")
 
 
 def base_runtime() -> dict:
