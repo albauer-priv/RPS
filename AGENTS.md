@@ -155,6 +155,11 @@ These rules must be applied when implementing planning flows, pickers, and selec
 * Keep each page script focused: input → render → delegate logic.
 * Shared UI patterns belong in `/src/rps/ui` helpers.
 
+### Charts (UI)
+
+* Charts must use `st.plotly_chart(...)` exclusively.
+* Do not use `st.line_chart`, `st.bar_chart`, `st.area_chart`, `st.altair_chart`, etc.
+
 ### Layout conventions
 
 * One clear page hierarchy: **Title → primary controls → main content → details/debug**.

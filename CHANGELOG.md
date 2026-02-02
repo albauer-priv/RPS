@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a background run tracker helper to standardize status updates for async jobs.
 - Scheduling guards prevent overlapping runs of the same process type/subtype and block lower-priority planning runs when higher-priority ones are active.
 - System → History now includes an Overview section (latest outputs + run history) and separate Artifact History headers for clarity.
+- Added ADR-021 to enforce Plotly-only chart rendering in Streamlit UI.
 
 ### Changed
 - Plan Phase/Week/Workouts headers now render above captions and status panels.
@@ -43,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation refreshed to reflect current Plan Hub orchestration, report rendering, log/run handling, and corridor overlays.
 - System → History latest outputs no longer show Open/Diff/Versions action buttons.
 - System → History now normalizes Validity to strings to avoid Arrow serialization errors.
+- Streamlit chart rendering is standardized to `st.plotly_chart` only (no native chart helpers).
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.

@@ -23,6 +23,7 @@ This folder contains the ADR log for RPS.
 - ADR-018: Schema Versioning Policy
 - ADR-019: Single Log File with Rotation
 - ADR-020: Run Housekeeping Retention
+- ADR-021: Use st.plotly_chart for Charts
 
 ## Process (Short)
 
