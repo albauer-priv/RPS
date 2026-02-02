@@ -94,6 +94,7 @@ flowchart TD
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
    - Multi-page UI with Plan Hub, Plan subpages, Analyse, Athlete Profile, and System tooling.
    - Performance readiness (DES analysis / performance report) is surfaced on Performance pages (Feed Forward + Report), not in Plan Hub planning readiness.
+   - Planning runs are initiated from Plan Hub; Plan → Week is read-only, Plan → Season only handles scenario selection.
 
 ---
 

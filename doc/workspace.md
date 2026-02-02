@@ -29,6 +29,8 @@ var/athletes/<athlete_id>/
   latest/
   index.json
   logs/
+  runs/
+    queue/{pending,active,done,failed}/
 ```
 
 ---
@@ -72,7 +74,8 @@ Templates are available under:
 | `data/exports/` | Workout-Builder | `workouts_*` |
 | `data/YYYY/WW/` | Data Pipeline | `activities_actual_*`, `activities_trend_*`, `availability_*`, `wellness_*` (+ CSV mirrors) |
 | `latest/` | System | Latest copy of each artefact type (mirrors versioned writes) |
-| `logs/` | System | Per-run logs from scripts and agents |
+| `logs/` | System | Single `rps.log` (rotated) + log sidecars |
+| `runs/` | System | Run records (`run.json`, `steps.json`, `events.jsonl`) + queue state |
 | `rendered/` | renderer | Markdown sidecars derived from JSON artefacts |
 
 ---

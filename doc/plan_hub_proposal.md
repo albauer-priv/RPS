@@ -62,7 +62,7 @@ This follows the current UI contract: global sidebar + always-visible status ban
 6. **Phase Structure** (`phase_structure`)
 7. **Phase Preview** (`phase_preview`) *(optional / informational)*
 8. **Week Plan** (`week_plan`)
-9. Export (Intervals) (`workouts_yyyy-ww.json`)
+9. Build Workouts (Intervals export) (`workouts_yyyy-ww.json`) *(optional)*
 
 **Pro Step anzeigen:**
 
@@ -79,11 +79,11 @@ This follows the current UI contract: global sidebar + always-visible status ban
 - `st.subheader("Run Planning")`
 - `st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])`
 - Wenn Scoped:
-  - `st.selectbox("Scope", ["Season Scenarios", "Scenario Selection", "Season Plan", "Phase (Guardrails + Structure)", "Week Plan", "Export Workouts"])`
+  - `st.selectbox("Scope", ["Season Scenarios", "Scenario Selection", "Season Plan", "Phase (Guardrails + Structure)", "Week Plan", "Build Workouts"])`
   - `st.text_area("Override", ...)`
 - `st.text_input("Run ID", value=auto_run_id())`
 - `st.checkbox("Validate only (no write)", value=False)` → mapped auf `validate_outputs.py`
-- `st.button("Run")`
+- `st.button("Run")` (run control + cancellation are handled from System → Status)
 
 **Run Scope Summary (read-only)**
 

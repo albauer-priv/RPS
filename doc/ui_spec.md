@@ -39,21 +39,22 @@ See `doc/system_architecture.md` for C4 diagrams and system-level context.
 - Actions enqueue runs only (no direct agent calls)
 
 ### Plan → Season
-- Actions: create scenarios, select scenario, create season plan
+- Actions: select scenario + KPI segment
+- Create Scenarios + Create Season Plan are initiated from Plan Hub
 - Reset/Delete handled in Plan Hub
 
 ### Plan → Phase
 - Phase read-only view (details + preview)
 
 ### Plan → Week
-- Plan week action, agenda summary, workouts list
+- Read-only agenda summary + workouts list (planning runs in Plan Hub)
 
 ### Plan → Workouts
 - Workouts export view, posting actions, history
 - Revision requests for week plan
 
 ### Analyse
-- Data & Metrics, Report, Feed Forward
+- Data & Metrics (weekly load + corridor overlays), Report (Narrative/KPI/Trend sections), Feed Forward
 
 ### Athlete Profile
 - About You, Season Brief, Availability, KPI Profile, Logistics, Zones
@@ -89,11 +90,7 @@ For each UI action, document:
 - **Agents:** subset depending on scope
 
 ### Plan → Season — Create Scenarios
-- **Preconditions:** inputs present
-- **Orchestrator call:** `create_season_scenarios(...)`
-- **Writes:** `season_scenarios`
-- **UI feedback:** output expander + status banner
-- **Agent:** season_scenario
+Handled by **Plan Hub — Scoped Run** (scope: Season Scenarios). The Season page no longer triggers this action.
 
 ### Plan → Season — Select Scenario
 - **Preconditions:** scenarios exist
@@ -103,18 +100,10 @@ For each UI action, document:
 - **Agent:** season_scenario
 
 ### Plan → Season — Create Season Plan
-- **Preconditions:** scenario selection exists
-- **Orchestrator call:** `create_season_plan(...)`
-- **Writes:** `season_plan`
-- **UI feedback:** output expander + rerun
-- **Agent:** season_planner
+Handled by **Plan Hub — Scoped Run** (scope: Season Plan). The Season page no longer triggers this action.
 
 ### Plan → Week — Plan Week
-- **Preconditions:** season plan covers target week
-- **Orchestrator call:** `plan_week(...)`
-- **Writes:** `phase_guardrails`, `phase_structure`, `phase_preview`, `week_plan`, `workouts_yyyy-ww.json`
-- **UI feedback:** status banner + output expander
-- **Agents:** phase_architect, week_planner, workout_builder
+Handled by **Plan Hub — Orchestrated Run** (or Scoped: Week Plan). The Week page is view-only.
 
 ### Plan → Workouts — Post to Intervals
 - **Preconditions:** workouts export exists

@@ -88,15 +88,14 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 **Action panel (forms)**
 
-- Form: Create Scenarios (submit)
 - Form: Scenario Selection (radio + KPI segment selector + rationale + submit)
-- Form: Create Season Plan (submit, only after selection exists)
-- Form: Reset/Delete (confirmation input + submit)
+- Season Plan creation + Reset/Delete are executed from Plan Hub.
+- Create Scenarios is initiated from Plan Hub.
 
 **Main content**
 
-- If Season Plan exists: render plan + scenario summary + phase expanders.
-- Else: show scenarios list -> selection -> create plan flow.
+- If Season Plan exists: render plan + scenario summary + phase expanders (metadata onward).
+- Else: show scenarios list -> selection flow + handoff message to Plan Hub.
 
 #### Plan -> Phase
 
@@ -112,14 +111,9 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 #### Plan -> Week
 
-**Action panel**
-
-- Form: Plan Week (submit)
- 
-
 **Main content**
 
-- Plan Week output expander
+- Weekly agenda + workout cards
 - System logs expander
 
 #### Plan -> Workouts
@@ -144,10 +138,12 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 #### Performance -> Report
 - Performance Report readiness (DES analysis availability for selected week)
-- Report creation action + reasoning log
+- Report creation action
+- Narrative Report + KPI Summary + Trend Analysis expanders (no raw JSON)
 
 #### Performance -> Data & Metrics
 - Manual "Refresh Intervals Data" action (background pipeline run)
+- Weekly load chart includes season/phase/week corridor min/max overlays
 - Charts + tables based on activities/trends
 
 ### System pages
@@ -155,6 +151,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 #### System -> Status
 - Running processes with filters (status/type/subtype)
 - Latest artefacts list (latest per type)
+- Cancel selected runs + reset controls (queues/locks/logs) live here
 
 #### System -> History
 - Latest outputs table (with diff/versions)
@@ -163,6 +160,7 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 #### System -> Log
 - System log output + log level selector (persist to .env)
+- Live log file tail (rps.log) displayed in the log panel
 
 ### Notes
 

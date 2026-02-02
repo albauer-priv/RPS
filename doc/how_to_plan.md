@@ -16,9 +16,9 @@ Last-Updated: 2026-01-30
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
    `python -m rps.main parse-intervals` or UI auto-refresh.
 4) Open the **Plan Hub** and confirm Scope (athlete, ISO year/week, phase).
-5) Run **Season Scenarios** if missing.
+5) Run **Season Scenarios** from Plan Hub if missing.
 6) Select a scenario on **Plan -> Season** (manual decision).
-7) Run **Plan this Week** from Plan Hub (or run scoped steps).
+7) Run **Plan Week** from Plan Hub (or run scoped steps).
 8) Optional: **Post to Intervals** from **Plan → Workouts** (commit step) after Export.
 9) Optional: **Performance Report** on Performance pages once activities are available.
 
@@ -42,9 +42,8 @@ available for manual, step-by-step runs.
 - Orchestrates planning only (posting happens on Workouts page).
 
 ### Plan -> Season
-- Create scenarios (agent).
 - Manual scenario selection (user decision).
-- Create Season Plan.
+- Season Plan creation happens in Plan Hub (Season page only selects scenario + KPI segment).
   - Mode A scenario generation + selection are already integrated here (no separate script needed).
 
 ### Plan -> Phase
@@ -52,7 +51,7 @@ available for manual, step-by-step runs.
 
 ### Plan -> Week
 - Weekly agenda + per-day expanders.
-- Actions: Plan Week.
+ - No planning actions; week planning is initiated from Plan Hub.
  
 
 ### Plan -> Workouts
@@ -63,7 +62,7 @@ available for manual, step-by-step runs.
 ### System
 - Status (running processes + latest artefacts).
 - History (artefacts grouped by time with validity).
-- Log (log output + log level selector persisted to `.env`).
+- Log (log output + log level selector persisted to `.env`, plus live log tail).
 
 ---
 
@@ -114,10 +113,11 @@ stale, SKIPPED if fresh, and BLOCKED when upstream fails.
 - Season Scenarios -> Selected Scenario -> Season Plan
 - Season Plan -> Phase Guardrails + Phase Structure
 - Phase Guardrails/Structure -> Week Plan
-- Week Plan -> Export Workouts
+- Week Plan -> Build Workouts (optional)
 
 ### Optional chain
 - Phase Preview (optional)
+- Workouts posting (commit step) from Plan → Workouts
 
 Scenario selection is always manual; Plan Hub will stop and require user action
 if selection is missing.

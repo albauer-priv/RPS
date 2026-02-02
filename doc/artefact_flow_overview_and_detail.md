@@ -283,6 +283,7 @@ flowchart LR
 **Processing (Conceptual)**
 - Deterministic conversion into Intervals.icu JSON payload.
 - Optional commit step writes receipts (idempotency) and posts to Intervals.icu.
+- Workouts export is optional in readiness (planning can complete without it).
 
 **Outputs**
 - `workouts_yyyy-ww.json`
