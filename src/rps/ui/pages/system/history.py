@@ -174,13 +174,12 @@ st.caption("Latest outputs and run history (planning + data).")
 
 st.subheader("Latest Outputs")
 latest_rows = _latest_outputs(athlete_id)
-table_header = st.columns([2, 1, 1, 1, 1, 1.5])
+table_header = st.columns([2, 1, 1, 1, 1])
 table_header[0].markdown("**Artefact**")
 table_header[1].markdown("**Authority**")
 table_header[2].markdown("**Version**")
 table_header[3].markdown("**Run**")
 table_header[4].markdown("**Updated**")
-table_header[5].markdown("**Actions**")
 
 authority_map = {
     ArtifactType.SEASON_PLAN.value: "Binding",
@@ -190,77 +189,13 @@ authority_map = {
     ArtifactType.INTERVALS_WORKOUTS.value: "Raw",
     ArtifactType.DES_ANALYSIS_REPORT.value: "Advisory",
 }
-open_pages = {
-    ArtifactType.SEASON_PLAN.value: "pages/plan/season.py",
-    ArtifactType.PHASE_GUARDRAILS.value: "pages/plan/phase.py",
-    ArtifactType.PHASE_STRUCTURE.value: "pages/plan/phase.py",
-    ArtifactType.WEEK_PLAN.value: "pages/plan/week.py",
-    ArtifactType.INTERVALS_WORKOUTS.value: "pages/plan/workouts.py",
-    ArtifactType.DES_ANALYSIS_REPORT.value: "pages/performance/report.py",
-}
-
 for row in latest_rows:
-    cols = st.columns([2, 1, 1, 1, 1, 1.5])
+    cols = st.columns([2, 1, 1, 1, 1])
     cols[0].write(row["Title"])
     cols[1].write(authority_map.get(row["Type"], "—"))
     cols[2].write(row["Version"])
     cols[3].write(row["Run"])
     cols[4].write(row["Updated"])
-    with cols[5]:
-        action_cols = st.columns(3)
-        page_path = open_pages.get(row["Type"])
-        if page_path:
-            action_cols[0].page_link(page_path, label="Open")
-        else:
-            action_cols[0].button("Open", key=f"open_{row['Type']}", disabled=True)
-        if action_cols[1].button("Diff", key=f"diff_{row['Type']}"):
-            st.session_state["system_history_diff_type"] = row["Type"]
-        if action_cols[2].button("Versions", key=f"versions_{row['Type']}"):
-            st.session_state["system_history_versions_type"] = row["Type"]
-
-versions_type = st.session_state.get("system_history_versions_type")
-diff_type = st.session_state.get("system_history_diff_type")
-
-if versions_type:
-    try:
-        artifact_type = ArtifactType(versions_type)
-    except ValueError:
-        artifact_type = None
-    if artifact_type:
-        st.subheader(f"Versions · {artifact_type.value}")
-        records = _version_records(artifact_type)
-        if not records:
-            st.info("No versions found.")
-        else:
-            for record in records[:10]:
-                label = f"{record.get('version_key')} · {record.get('created_at') or '—'}"
-                with st.expander(label, expanded=False):
-                    st.caption(f"Run: {record.get('run_id') or '—'}")
-                    st.caption(f"Producer: {record.get('producer_agent') or '—'}")
-                    payload = _load_artifact_json(record)
-                    if payload is None:
-                        st.info("No payload found.")
-                    else:
-                        st.json(payload)
-        if st.button("Close Versions"):
-            st.session_state["system_history_versions_type"] = None
-
-if diff_type:
-    try:
-        artifact_type = ArtifactType(diff_type)
-    except ValueError:
-        artifact_type = None
-    if artifact_type:
-        st.subheader(f"Diff · {artifact_type.value}")
-        records = _version_records(artifact_type)
-        if len(records) < 2:
-            st.info("Need at least two versions to diff.")
-        else:
-            a = _load_artifact_json(records[1])
-            b = _load_artifact_json(records[0])
-            st.code(_diff_json(a, b))
-        if st.button("Close Diff"):
-            st.session_state["system_history_diff_type"] = None
 
 st.subheader("Run History")
 planning_types = {

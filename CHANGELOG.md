@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Weekly load chart now merges phase guardrail corridors across versions to keep min/max lines populated.
 - Report page no longer renders the raw report JSON.
 - Documentation refreshed to reflect current Plan Hub orchestration, report rendering, log/run handling, and corridor overlays.
+- System → History latest outputs no longer show Open/Diff/Versions action buttons.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
