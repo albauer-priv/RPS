@@ -18,6 +18,7 @@ from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
     get_athlete_id,
+    get_iso_year_week,
     init_ui_state,
     render_global_sidebar,
     render_status_panel,
@@ -112,6 +113,12 @@ def _season_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict
         minimum = weekly_kj.get("min")
         maximum = weekly_kj.get("max")
         range_spec = parse_iso_week_range(iso_range)
+        if not range_spec and iso_range and "--" in iso_range:
+            start, end = iso_range.split("--", maxsplit=1)
+            start_label = _normalize_iso_label(start.strip())
+            end_label = _normalize_iso_label(end.strip())
+            if start_label and end_label:
+                range_spec = parse_iso_week_range(f"{start_label}--{end_label}")
         if minimum is None or maximum is None or not range_spec:
             continue
         for week in _iter_weeks_in_range(range_spec):
@@ -169,6 +176,27 @@ def _week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> d
     return corridors
 
 
+def _planned_weekly_kj_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, float]:
+    planned: dict[str, float] = {}
+    for version in store.list_versions(athlete_id, ArtifactType.WEEK_PLAN):
+        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version)
+        if not isinstance(payload, dict):
+            continue
+        meta = payload.get("meta") or {}
+        iso_week = meta.get("iso_week")
+        if not iso_week:
+            continue
+        normalized = _normalize_iso_label(iso_week)
+        if not normalized:
+            continue
+        summary = (payload.get("data") or {}).get("week_summary") or {}
+        value = summary.get("planned_weekly_load_kj")
+        if value is None:
+            continue
+        planned[normalized] = float(value)
+    return planned
+
+
 def _build_load_chart(df, corridor_df):
     if go is None:
         return None
@@ -210,6 +238,138 @@ def _build_load_chart(df, corridor_df):
         yaxis=dict(title="Weekly kJ"),
         barmode="overlay",
         legend_title_text="Metric",
+        margin=dict(l=40, r=20, t=20, b=60),
+    )
+    return fig
+
+
+def _normalize_iso_label(label: str) -> str | None:
+    if not label:
+        return None
+    candidate = label
+    if "-W" in candidate:
+        candidate = candidate.replace("-W", "-")
+    week = parse_iso_week(candidate)
+    if not week:
+        return None
+    return f"{week.year}-W{week.week:02d}"
+
+
+def _normalize_corridor(corridor: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
+    normalized: dict[str, dict[str, float]] = {}
+    for key, value in corridor.items():
+        label = _normalize_iso_label(str(key))
+        if not label:
+            continue
+        normalized[label] = value
+    return normalized
+
+
+def _sorted_labels(*corridors: dict[str, dict[str, float]]) -> list[str]:
+    labels: set[str] = set()
+    for corridor in corridors:
+        labels.update(_normalize_corridor(corridor).keys())
+    return sorted(
+        labels,
+        key=lambda label: (
+            int(label.split("-W")[0]),
+            int(label.split("-W")[1]),
+        ),
+    )
+
+
+def _label_order(label: str) -> tuple[int, int] | None:
+    normalized = _normalize_iso_label(label)
+    if not normalized:
+        return None
+    year_str, week_str = normalized.split("-W")
+    return int(year_str), int(week_str)
+
+
+def _build_corridor_overview_chart(
+    season_corridor: dict[str, dict[str, float]],
+    phase_corridor: dict[str, dict[str, float]],
+    week_corridor: dict[str, dict[str, float]],
+    actual_weekly_kj: dict[str, float],
+    planned_weekly_kj: dict[str, float],
+):
+    if go is None:
+        return None
+    season_corridor = _normalize_corridor(season_corridor)
+    phase_corridor = _normalize_corridor(phase_corridor)
+    week_corridor = _normalize_corridor(week_corridor)
+    labels = _sorted_labels(season_corridor)
+    if not labels:
+        return None
+
+    def corridor_values(corridor: dict[str, dict[str, float]], key: str) -> list[float | None]:
+        values: list[float | None] = []
+        for label in labels:
+            value = corridor.get(label, {}).get(key)
+            values.append(float(value) if value is not None else None)
+        return values
+
+    fig = go.Figure()
+    corridors = [
+        ("Season", season_corridor, "#6c757d"),
+        ("Phase", phase_corridor, "#8c564b"),
+        ("Week Plan", week_corridor, "#2ca02c"),
+    ]
+    for name, corridor, color in corridors:
+        min_vals = corridor_values(corridor, "min")
+        max_vals = corridor_values(corridor, "max")
+        if all(value is None for value in min_vals + max_vals):
+            continue
+        fig.add_trace(
+            go.Scatter(
+                x=labels,
+                y=min_vals,
+                mode="lines",
+                name=f"{name} Min",
+                line=dict(color=color, dash="dot"),
+                hovertemplate="Week %{x}<br>%{fullData.name} %{y}<extra></extra>",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=labels,
+                y=max_vals,
+                mode="lines",
+                name=f"{name} Max",
+                line=dict(color=color),
+                fill="tonexty",
+                fillcolor=f"rgba{tuple(int(color[i:i+2], 16) for i in (1, 3, 5)) + (0.12,)}",
+                hovertemplate="Week %{x}<br>%{fullData.name} %{y}<extra></extra>",
+            )
+        )
+    if actual_weekly_kj:
+        actual_vals = [actual_weekly_kj.get(label) for label in labels]
+        fig.add_trace(
+            go.Scatter(
+                x=labels,
+                y=actual_vals,
+                mode="lines+markers",
+                name="Actual Weekly kJ",
+                line=dict(color="#0b6bcb", dash="solid"),
+                hovertemplate="Week %{x}<br>Actual kJ %{y}<extra></extra>",
+            )
+        )
+    if planned_weekly_kj:
+        planned_vals = [planned_weekly_kj.get(label) for label in labels]
+        fig.add_trace(
+            go.Scatter(
+                x=labels,
+                y=planned_vals,
+                mode="lines+markers",
+                name="Planned Weekly kJ",
+                line=dict(color="#1f77b4", dash="dash"),
+                hovertemplate="Week %{x}<br>Planned kJ %{y}<extra></extra>",
+            )
+        )
+    fig.update_layout(
+        xaxis=dict(title="Week", tickangle=-45),
+        yaxis=dict(title="kJ Corridor"),
+        legend_title_text="Corridor",
         margin=dict(l=40, r=20, t=20, b=60),
     )
     return fig
@@ -388,8 +548,50 @@ store = LocalArtifactStore(root=SETTINGS.workspace_root)
 season_corridor = _season_corridor_by_week(store, athlete_id)
 phase_corridor = _phase_guardrails_by_week(store, athlete_id)
 week_corridor = _week_plan_corridor_by_week(store, athlete_id)
+planned_weekly_kj = _planned_weekly_kj_by_week(store, athlete_id)
+current_year, current_week = get_iso_year_week()
 
 render_status_panel()
+
+with st.container():
+    st.subheader("Planning Load Corridors")
+    if not pd:
+        st.info("Charts require pandas; showing data tables below.")
+    else:
+        if go is None:
+            st.info("Plotly is not available; charts are hidden.")
+        else:
+            actual_weekly_kj: dict[str, float] = {}
+            for entry in weekly_trends:
+                year = entry.get("year")
+                iso_week = entry.get("iso_week")
+                if not year or iso_week is None:
+                    continue
+                if (int(year), int(iso_week)) > (current_year, current_week):
+                    continue
+                label = _normalize_iso_label(f"{int(year)}-{int(iso_week):02d}")
+                if not label:
+                    continue
+                weekly_kj = (entry.get("weekly_aggregates") or {}).get("work_kj")
+                if weekly_kj is None:
+                    continue
+                actual_weekly_kj[label] = float(weekly_kj)
+            planned_weekly_kj = {
+                label: value
+                for label, value in planned_weekly_kj.items()
+                if (_label_order(label) or (9999, 99)) <= (current_year, current_week)
+            }
+            corridor_fig = _build_corridor_overview_chart(
+                season_corridor,
+                phase_corridor,
+                week_corridor,
+                actual_weekly_kj,
+                planned_weekly_kj,
+            )
+            if corridor_fig is None:
+                st.info("No corridor data available yet.")
+            else:
+                st.plotly_chart(corridor_fig, width="stretch")
 
 with st.container():
     st.subheader("Weekly Load and Durability Metrics")
@@ -446,12 +648,8 @@ with st.container():
                 df.melt(
                     id_vars=["label"],
                     value_vars=[
-                        "season_min",
-                        "season_max",
                         "phase_min",
                         "phase_max",
-                        "week_min",
-                        "week_max",
                     ],
                     var_name="metric",
                     value_name="value",
@@ -460,12 +658,8 @@ with st.container():
                 .assign(
                     metric=lambda frame: frame["metric"].map(
                         {
-                            "season_min": "Season Min",
-                            "season_max": "Season Max",
                             "phase_min": "Phase Min",
                             "phase_max": "Phase Max",
-                            "week_min": "Week Plan Min",
-                            "week_max": "Week Plan Max",
                         }
                     )
                 )
@@ -484,7 +678,6 @@ with st.container():
                     line_fig,
                     width="stretch",
                 )
-
 with st.container():
     st.subheader("Activities Trend")
     if trend_path.exists():

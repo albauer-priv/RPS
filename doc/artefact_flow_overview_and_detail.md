@@ -2,7 +2,7 @@
 
 Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-01-30  
+Last-Updated: 2026-02-02  
 Format: GitHub-renderable Markdown + Mermaid
 
 ---
@@ -23,7 +23,7 @@ flowchart TD
   EXP[parse-intervals]:::script
   AVP[rps.main parse-availability]:::script
   VAL[validate_outputs.py]:::script
-  POST[post_to_intervals (commit)]:::script
+  POST["post_to_intervals (commit)"]:::script
   RCPT[post_receipts_yyyy-ww.json]:::artefact
 
   %% Artefacts
@@ -293,8 +293,8 @@ flowchart LR
 ```mermaid
 flowchart LR
   WP[week_plan_yyyy-ww.json]:::artefact --> WB[Workout-Builder]:::agent
-  WB --> WJ[workouts_yyyy-ww.json]:::artefact --> POST[post_to_intervals (commit)]:::script
-  POST --> RCPT[post_receipts_yyyy-ww.json]:::artefact --> CAL[Planned Activities<br/>in Calendar]:::artefact --> I[Intervals.icu]:::external
+  WB --> WJ[workouts_yyyy-ww.json]:::artefact --> POST["post_to_intervals (commit)"]:::script
+  POST --> RCPT[post_receipts_yyyy-ww.json]:::artefact --> CAL["Planned Activities<br/>in Calendar"]:::artefact --> I[Intervals.icu]:::external
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef external fill:#fff3e6,stroke:#a35b00,stroke-width:1px;

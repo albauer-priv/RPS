@@ -2,7 +2,7 @@
 
 Version: 2.3
 Status: Updated
-Last-Updated: 2026-01-30
+Last-Updated: 2026-02-02
 
 ---
 
@@ -52,7 +52,7 @@ available for manual, step-by-step runs.
 ### Plan -> Week
 - Weekly agenda + per-day expanders.
  - No planning actions; week planning is initiated from Plan Hub.
- 
+
 
 ### Plan -> Workouts
 - Intervals export view (per-day expanders, descriptions).
@@ -91,7 +91,7 @@ flowchart TD
   WEEK --> WP[week_plan]
   WP --> WB[Workout-Builder]
   WB --> WJ[workouts_yyyy-ww.json]
-  WJ --> POST[post_to_intervals (commit)]
+  WJ --> POST["post_to_intervals (commit)"]
 
   DP[parse-intervals] --> AA[activities_actual]
   DP --> AT[activities_trend]
