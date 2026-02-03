@@ -1,6 +1,6 @@
 [project]
 name = "my-openai-platform"
-version = "0.10.1"
+version = "0.10.2"
 description = "Scaffold for OpenAI hosted vector stores with versioned knowledge."
 readme = "README.md"
 requires-python = ">=3.10"
