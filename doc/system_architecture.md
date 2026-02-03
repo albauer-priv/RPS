@@ -178,7 +178,7 @@ Knowledge sources live under `knowledge/_shared/` and are listed in
 
 ```mermaid
 flowchart LR
-  SRC[knowledge/all_agents/manifest.yaml] --> SYNC[sync_vectorstores.py]
+  SRC[knowledge/all_agents/manifest.yaml] --> SYNC[sync_vectorstores.py (deprecated; UI background sync)]
   SYNC --> VS[(OpenAI Vector Stores)]
   VS --> FS[file_search tool]
   FS --> AG[Agent Runtime]
@@ -189,7 +189,7 @@ flowchart LR
 The repo uses a single sync entrypoint to manage stores:
 
 ```bash
-python scripts/sync_vectorstores.py
+python scripts/sync_vectorstores.py  # Deprecated; UI runs background sync
 ```
 
 Internally, the flow is:
@@ -338,7 +338,7 @@ Modes are chosen by the orchestrator/runner based on the task
 
 - Keep single files reasonably small (split large PDFs into chapters).
 - Prefer fewer, higher-signal sources over many redundant files.
-- Avoid frequent full resyncs; use delta upload in `sync_vectorstores.py`.
+- Avoid frequent full resyncs; use delta upload in `sync_vectorstores.py` when running manual recovery.
 - Remember that chunking and embeddings are managed by OpenAI (remote state).
 
 #### 4.1.5 Data Sensitivity
@@ -351,7 +351,7 @@ Modes are chosen by the orchestrator/runner based on the task
 
 If a store gets out of sync or corrupted:
 
-1. Re-run `python scripts/sync_vectorstores.py` (default is safe, delta-based).
+1. Re-run `python scripts/sync_vectorstores.py` (deprecated; use only for manual recovery).
 2. If needed, use `--prune` to remove remote files missing locally.
 3. If a store must be rebuilt:
    - Create a new store name.
@@ -488,7 +488,7 @@ Use this checklist to initialize a fresh environment:
    (depending on how you set up the repo).
 3. Add knowledge sources under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
-5. Sync vector stores: `python scripts/sync_vectorstores.py`.
+5. (Deprecated) Sync vector stores: `python scripts/sync_vectorstores.py` (UI background sync runs automatically).
 6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
 7. Run data pipeline: `python -m rps.main parse-intervals`.
 8. Validate outputs: `python scripts/validate_outputs.py`.

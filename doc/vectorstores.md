@@ -58,7 +58,7 @@ Paths are relative to the manifest directory.
 Use the repo helper to keep OpenAI stores in sync:
 
 ```bash
-python3 scripts/sync_vectorstores.py
+python3 scripts/sync_vectorstores.py  # Deprecated; UI runs background sync
 ```
 
 Useful flags:

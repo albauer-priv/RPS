@@ -27,7 +27,7 @@ Default policy:
 CLI helper (legacy-compatible):
 
 ```bash
-PYTHONPATH=src python3 scripts/data_pipeline/post_workout.py \
+PYTHONPATH=src python3 scripts/data_pipeline/post_workout.py \  # Deprecated; prefer Plan → Workouts UI
   --json var/athletes/<athlete_id>/latest/workouts.json
 ```
 
