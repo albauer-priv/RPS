@@ -207,3 +207,67 @@ def restore_backup_bundle(
 
     LOGGER.info("Restored backup for athlete=%s mode=%s files=%d", athlete_id, mode, len(restored_paths))
     return restored_paths
+
+
+def validate_backup_bundle(
+    athlete_id: str,
+    workspace_root: Path,
+    archive_bytes: bytes,
+    mode: str = "full",
+) -> int:
+    """Validate a backup archive without writing to disk.
+
+    Inputs:
+        athlete_id: Athlete identifier to validate against.
+        workspace_root: Root path for athlete workspaces (used for temp extraction).
+        archive_bytes: Raw archive bytes.
+        mode: Partial restore mode (see PARTIAL_RESTORE_MODES).
+
+    Returns:
+        Count of files that would be restored.
+    """
+
+    if mode not in PARTIAL_RESTORE_MODES:
+        raise ValueError(f"Unsupported restore mode: {mode}")
+
+    with tempfile.TemporaryDirectory(prefix="rps_restore_", dir=str(workspace_root)) as temp_dir:
+        temp_path = Path(temp_dir)
+        archive_path = temp_path / "bundle"
+        archive_path.write_bytes(archive_bytes)
+        extract_root = temp_path / "extracted"
+        extract_root.mkdir(parents=True, exist_ok=True)
+
+        if zipfile.is_zipfile(archive_path):
+            with zipfile.ZipFile(archive_path) as archive:
+                archive.extractall(extract_root)
+        elif tarfile.is_tarfile(archive_path):
+            with tarfile.open(archive_path) as archive:
+                archive.extractall(extract_root)
+        else:
+            raise ValueError("Unsupported archive format")
+
+        bundle_root = extract_root / BACKUP_ROOT / athlete_id
+        manifest_path = bundle_root / "manifest.json"
+        checksums_path = bundle_root / "checksums.sha256"
+        if not manifest_path.exists() or not checksums_path.exists():
+            raise ValueError("Missing manifest or checksums in backup bundle")
+
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("athlete_id") != athlete_id:
+            raise ValueError("Backup athlete_id does not match restore target")
+
+        checksums = json.loads(checksums_path.read_text(encoding="utf-8"))
+        allowed_prefixes = PARTIAL_RESTORE_MODES[mode]
+        matched = 0
+        for rel_str, digest in checksums.items():
+            rel_path = Path(rel_str)
+            if not any(rel_path.as_posix().startswith(prefix) for prefix in allowed_prefixes):
+                continue
+            source_path = bundle_root / rel_path
+            if not source_path.exists():
+                raise ValueError(f"Missing file in bundle: {rel_str}")
+            if _hash_file(source_path) != digest:
+                raise ValueError(f"Checksum mismatch for {rel_str}")
+            matched += 1
+
+    return matched

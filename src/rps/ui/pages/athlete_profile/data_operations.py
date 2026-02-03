@@ -14,6 +14,7 @@ from rps.workspace.backup_restore import (
     PARTIAL_RESTORE_MODES,
     create_backup_bundle,
     restore_backup_bundle,
+    validate_backup_bundle,
 )
 
 
@@ -65,7 +66,17 @@ with st.expander("Backup (Export)", expanded=False):
                     file_name=bundle.filename,
                     mime="application/zip",
                 )
+                st.session_state["last_backup_bundle"] = bundle
                 set_status(status_state="done", title="Data Operations", message="Backup created.")
+
+    last_bundle = st.session_state.get("last_backup_bundle")
+    if last_bundle:
+        st.download_button(
+            "Download Last Backup",
+            data=last_bundle.data,
+            file_name=last_bundle.filename,
+            mime="application/zip",
+        )
     st.info("Backups exclude logs and run history; see the backup/restore doc for scope.")
 
 with st.expander("Restore (Import)", expanded=False):
@@ -79,6 +90,22 @@ with st.expander("Restore (Import)", expanded=False):
     archive = st.file_uploader("Backup archive (.zip or .tar.gz)", type=["zip", "tar", "gz"])
     confirm = st.text_input('Type "RESTORE" to confirm', value="")
     force = st.checkbox("Force restore into non-empty workspace", value=False)
+    if st.button("Validate Backup", width="content", disabled=archive is None):
+        with st.spinner("Validating backup..."):
+            try:
+                count = validate_backup_bundle(
+                    athlete_id=athlete_id,
+                    workspace_root=SETTINGS.workspace_root,
+                    archive_bytes=archive.getvalue() if archive else b"",
+                    mode=restore_mode,
+                )
+            except Exception as exc:  # pragma: no cover - UI error path
+                st.error(f"Validation failed: {exc}")
+                set_status(status_state="error", title="Data Operations", message="Backup validation failed.")
+            else:
+                st.success(f"Validation OK ({count} files in scope).")
+                set_status(status_state="done", title="Data Operations", message="Backup validated.")
+
     if st.button("Restore Backup", width="content", disabled=archive is None):
         if confirm.strip() != "RESTORE":
             st.error("Confirmation missing. Type RESTORE to proceed.")

@@ -81,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Marked `scripts/sync_vectorstores.py` as deprecated in favor of the UI background sync.
 - Marked `scripts/data_pipeline/post_workout.py` as deprecated in favor of UI/intervals_post helper.
 - Athlete Profile → Data Operations now supports backup/restore with partial restore modes.
+- Data Operations now supports backup validation (dry-run) and a cached “Download Last Backup”.
 - Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Plan Hub reset/delete confirmation now validates on submit instead of disabling the Proceed button.
 - Plan Hub delete/reset now prunes the workspace index so readiness updates immediately.

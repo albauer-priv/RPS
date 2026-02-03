@@ -89,6 +89,15 @@ Contains:
 
 ---
 
+## UI behavior (Data Operations page)
+
+- **Create Backup** generates an archive for the selected scope and provides a download link.
+- **Download Last Backup** reuses the most recent bundle in the UI session.
+- **Validate Backup** runs checksum validation and reports how many files are in scope (no writes).
+- **Restore Backup** requires a typed confirmation and optional force‑restore into a non‑empty workspace.
+
+---
+
 ## Safety & validation rules
 
 - Restore must **reject** if checksums fail.
