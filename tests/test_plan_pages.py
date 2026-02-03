@@ -221,3 +221,11 @@ def test_data_metrics_page_renders():
     assert "Refresh Intervals Data" in labels
     slider_labels = [slider.label for slider in at.slider]
     assert "Show last N weeks (including current)" in slider_labels
+
+
+def test_availability_page_renders():
+    at = AppTest.from_file("src/rps/ui/pages/athlete_profile/availability.py")
+    at.run()
+    assert len(at.error) == 0
+    labels = [button.label for button in at.button]
+    assert "Parse Availability from Season Brief" in labels

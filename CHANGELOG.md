@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workouts page now reuses Week Plan agenda durations and headers for current week listings.
 - Added a manual "Refresh Intervals Data" action on the Data & Metrics page with AppTest coverage.
 - Daily Durability scatter now includes a week-range slider to filter recent activity points.
+- Athlete Profile → Availability now includes a "Parse Availability from Season Brief" action.
 - Added planning principles documentation and referenced it from the docs and AGENTS rules.
 - Plan Hub now preselects Plan Next Week vs Plan Week based on readiness and enforces current/next ISO-week scope.
 - Season scenario selection now captures KPI moving_time_rate_guidance selections and schema version bumped to 1.1.
