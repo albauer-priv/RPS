@@ -78,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub now groups run actions into a dedicated box with a short explanation of each run mode.
 - Plan Hub run actions now include the Plan Week CTA inside the actions box.
 - Plan Week CTA now includes the target ISO week in its label.
+- Marked `scripts/sync_vectorstores.py` as deprecated in favor of the UI background sync.
+- Marked `scripts/data_pipeline/post_workout.py` as deprecated in favor of UI/intervals_post helper.
 - Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Plan Hub reset/delete confirmation now validates on submit instead of disabling the Proceed button.
 - Plan Hub delete/reset now prunes the workspace index so readiness updates immediately.

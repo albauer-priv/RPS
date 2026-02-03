@@ -1,4 +1,8 @@
-"""Sync local manifests to OpenAI hosted vector stores."""
+"""Sync local manifests to OpenAI hosted vector stores.
+
+Deprecated: Vector store sync now runs automatically in the Streamlit UI
+(background task). Use this CLI only for manual recovery or headless ops.
+"""
 
 from __future__ import annotations
 

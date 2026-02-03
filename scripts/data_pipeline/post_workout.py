@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Send planned workouts to Intervals.icu via the Events Bulk API."""
+"""Send planned workouts to Intervals.icu via the Events Bulk API.
+
+Deprecated: use the Plan → Workouts UI (rps.ui.intervals_post) or
+the `rps.data_pipeline.intervals_post` module directly.
+"""
 
 from __future__ import annotations
 
