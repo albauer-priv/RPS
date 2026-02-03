@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Phase/Week/Workouts headers now include the ISO-week date range.
 - Workouts page now reuses Week Plan agenda durations and headers for current week listings.
 - Added a manual "Refresh Intervals Data" action on the Data & Metrics page with AppTest coverage.
+- Daily Durability scatter now includes a week-range slider to filter recent activity points.
 - Added planning principles documentation and referenced it from the docs and AGENTS rules.
 - Plan Hub now preselects Plan Next Week vs Plan Week based on readiness and enforces current/next ISO-week scope.
 - Season scenario selection now captures KPI moving_time_rate_guidance selections and schema version bumped to 1.1.
@@ -38,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Plan Phase/Week/Workouts headers now render above captions and status panels.
 - System → Log now shows the live log file tail when UI session logs are sparse.
+- Daily Durability scatter now aggregates all activities_actual files under data/<year>/<week> for fuller coverage.
+- Activity-based chart scans now limit to the most recent 52 weeks for faster rendering.
 - Plan → Week no longer exposes a Plan Week action; planning is initiated from Plan Hub.
 - Weekly load chart now merges phase guardrail corridors across versions to keep min/max lines populated.
 - Report page no longer renders the raw report JSON.
@@ -54,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data & Metrics now includes a decoupling-only chart (weekly trend + per-activity decoupling).
 - Weekly decoupling now reads from intensity_load_metrics to ensure the weekly line is visible.
 - Planning corridor chart now renders Actual Weekly kJ as bars.
+- Data & Metrics now includes weekly dose→outcome and daily durability scatter charts with interpretive captions.
+- Weekly dose→outcome chart now auto-ranges the right axis to keep DI and decoupling readable.
+- Weekly dose→outcome chart now uses separate right-side axes for DI and decoupling.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.

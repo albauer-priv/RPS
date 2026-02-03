@@ -215,7 +215,9 @@ def test_performance_report_page_renders():
 
 def test_data_metrics_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/performance/data_metrics.py")
-    at.run()
+    at.run(timeout=10)
     assert len(at.error) == 0
     labels = [button.label for button in at.button]
     assert "Refresh Intervals Data" in labels
+    slider_labels = [slider.label for slider in at.slider]
+    assert "Show last N weeks (including current)" in slider_labels

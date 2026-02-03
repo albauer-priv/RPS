@@ -11,6 +11,10 @@ try:
     import plotly.graph_objects as go
 except Exception:  # pragma: no cover - optional dependency
     go = None
+try:
+    from plotly.subplots import make_subplots
+except Exception:  # pragma: no cover - optional dependency
+    make_subplots = None
 import streamlit as st
 
 from rps.ui.intervals_refresh import ensure_intervals_data, request_intervals_refresh
@@ -24,7 +28,7 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, parse_iso_week_range
+from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, parse_iso_week_range, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -36,6 +40,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 ROOT = SETTINGS.workspace_root
 _INTERVALS_JOB_PREFIX = "intervals_refresh_job"
+_ACTIVITY_WINDOW_WEEKS = 52
 
 
 
@@ -97,6 +102,16 @@ def _iter_weeks_in_range(range_spec):
             break
         current = next_iso_week(current)
     return weeks
+
+
+def _last_n_weeks(current: IsoWeek, count: int) -> list[IsoWeek]:
+    if count <= 0:
+        return []
+    weeks = [current]
+    while len(weeks) < count:
+        current = previous_iso_week(current)
+        weeks.append(current)
+    return list(reversed(weeks))
 
 
 def _season_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
@@ -475,45 +490,50 @@ def _flatten_activities_actual(activities: list[dict]) -> list[dict]:
     return rows
 
 
-def _load_activity_decoupling_points(data_root: Path) -> list[dict[str, object]]:
+def _load_activity_decoupling_points(
+    data_root: Path,
+    weeks: list[IsoWeek],
+) -> list[dict[str, object]]:
     points: list[dict[str, object]] = []
-    for path in sorted(data_root.glob("*/**/activities_actual_*.json")):
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            continue
-        activities = (payload.get("data", {}) or {}).get("activities") or []
-        for activity in activities:
-            metrics = activity.get("metrics") or {}
-            decoupling = metrics.get("decoupling")
-            if decoupling is None:
+    for week in weeks:
+        week_dir = data_root / f"{week.year}" / f"{week.week:02d}"
+        for path in sorted(week_dir.glob("activities_actual_*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
                 continue
-            start_time = activity.get("start_time_local")
-            iso_year = activity.get("iso_year")
-            iso_week = activity.get("iso_week")
-            day_of_week = activity.get("day_of_week")
-            activity_date = None
-            if start_time:
-                try:
-                    activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-                except ValueError:
-                    activity_date = None
-            if activity_date is None and iso_year and iso_week and day_of_week:
-                try:
-                    activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
-                except ValueError:
-                    activity_date = None
-            label = None
-            if iso_year and iso_week:
-                label = f"{iso_year}-W{int(iso_week):02d}"
-            points.append(
-                {
-                    "label": label or start_time or "Unknown",
-                    "decoupling": float(decoupling),
-                    "start_time_local": start_time,
-                    "activity_date": activity_date,
-                }
-            )
+            activities = (payload.get("data", {}) or {}).get("activities") or []
+            for activity in activities:
+                metrics = activity.get("metrics") or {}
+                decoupling = metrics.get("decoupling")
+                if decoupling is None:
+                    continue
+                start_time = activity.get("start_time_local")
+                iso_year = activity.get("iso_year")
+                iso_week = activity.get("iso_week")
+                day_of_week = activity.get("day_of_week")
+                activity_date = None
+                if start_time:
+                    try:
+                        activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                    except ValueError:
+                        activity_date = None
+                if activity_date is None and iso_year and iso_week and day_of_week:
+                    try:
+                        activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
+                    except ValueError:
+                        activity_date = None
+                label = None
+                if iso_year and iso_week:
+                    label = f"{iso_year}-W{int(iso_week):02d}"
+                points.append(
+                    {
+                        "label": label or start_time or "Unknown",
+                        "decoupling": float(decoupling),
+                        "start_time_local": start_time,
+                        "activity_date": activity_date,
+                    }
+                )
     return points
 
 
@@ -554,6 +574,165 @@ def _build_decoupling_chart(weekly_df, activity_points: list[dict[str, object]])
         xaxis=dict(title="Week / Activity", type="date"),
         yaxis=dict(title="Decoupling"),
         legend_title_text="Series",
+        margin=dict(l=40, r=20, t=20, b=60),
+    )
+    return fig
+
+
+def _load_activity_durability_points(
+    data_root: Path,
+    weeks: list[IsoWeek],
+) -> list[dict[str, object]]:
+    points: list[dict[str, object]] = []
+    for week in weeks:
+        week_dir = data_root / f"{week.year}" / f"{week.week:02d}"
+        for path in sorted(week_dir.glob("activities_actual_*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            activities = (payload.get("data", {}) or {}).get("activities") or []
+            for activity in activities:
+                metrics = activity.get("metrics") or {}
+                flags = activity.get("flags") or {}
+                decoupling = metrics.get("decoupling")
+                durability_index = metrics.get("durability_index_di")
+                work_kj = activity.get("work_kj")
+                if decoupling is None or durability_index is None or work_kj is None:
+                    continue
+                start_time = activity.get("start_time_local")
+                iso_year = activity.get("iso_year")
+                iso_week = activity.get("iso_week")
+                day_of_week = activity.get("day_of_week")
+                activity_date = None
+                if start_time:
+                    try:
+                        activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                    except ValueError:
+                        activity_date = None
+                if activity_date is None and iso_year and iso_week and day_of_week:
+                    try:
+                        activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
+                    except ValueError:
+                        activity_date = None
+                points.append(
+                    {
+                        "work_kj": float(work_kj),
+                        "durability_index": float(durability_index),
+                        "decoupling": float(decoupling),
+                        "day": activity.get("day"),
+                        "type": activity.get("type"),
+                        "moving_time": activity.get("moving_time"),
+                        "intensity_factor": activity.get("intensity_factor"),
+                        "start_time_local": activity.get("start_time_local"),
+                        "activity_date": activity_date,
+                        "flags": flags,
+                    }
+                )
+    return points
+
+
+def _build_weekly_dose_outcome_chart(weekly_df):
+    if go is None or make_subplots is None:
+        return None
+    if weekly_df is None or weekly_df.empty:
+        return None
+    ordered = weekly_df.sort_values("period_order")
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Bar(
+            x=ordered["label"],
+            y=ordered["weekly_kj"],
+            name="Work (kJ)",
+            marker_color="#0b6bcb",
+            opacity=0.6,
+            hovertemplate="Week %{x}<br>Work %{y} kJ<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=ordered["label"],
+            y=ordered["durability_index"],
+            mode="lines+markers",
+            name="Durability Index",
+            line=dict(color="#f15a22"),
+            hovertemplate="Week %{x}<br>DI %{y:.2f}<extra></extra>",
+            yaxis="y2",
+        ),
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=ordered["label"],
+            y=ordered["decoupling_percent"],
+            mode="lines+markers",
+            name="Decoupling (%)",
+            line=dict(color="#2ca02c", dash="dot"),
+            hovertemplate="Week %{x}<br>Decoupling %{y:.2f}%<extra></extra>",
+            yaxis="y3",
+        ),
+    )
+    fig.update_layout(
+        xaxis=dict(title="Week", tickangle=-45),
+        legend_title_text="Series",
+        yaxis=dict(title="Work (kJ)"),
+        yaxis2=dict(
+            title="Durability Index",
+            overlaying="y",
+            side="right",
+        ),
+        yaxis3=dict(
+            title="Decoupling (%)",
+            overlaying="y",
+            side="right",
+            position=0.98,
+        ),
+        margin=dict(l=40, r=70, t=20, b=60),
+    )
+    return fig
+
+
+def _build_daily_durability_scatter(points: list[dict[str, object]]):
+    if go is None:
+        return None
+    if not points:
+        return None
+    fig = go.Figure()
+    filtered = [
+        point
+        for point in points
+        if (point.get("flags") or {}).get("flag_drift_valid_z2_90min_bool")
+    ]
+    if not filtered:
+        return None
+    fig.add_trace(
+        go.Scatter(
+            x=[p["work_kj"] for p in filtered],
+            y=[p["durability_index"] for p in filtered],
+            mode="markers",
+            name="Activity",
+            marker=dict(
+                size=10,
+                color=[p["decoupling"] for p in filtered],
+                colorscale="RdYlGn_r",
+                colorbar=dict(title="Decoupling"),
+                showscale=True,
+            ),
+            hovertemplate=(
+                "Work %{x} kJ<br>"
+                "DI %{y:.2f}<br>"
+                "Decoupling %{marker.color:.2f}%<br>"
+                "%{text}<extra></extra>"
+            ),
+            text=[
+                f"{p.get('day')} {p.get('type')} · {p.get('moving_time')} · IF {p.get('intensity_factor')}"
+                for p in filtered
+            ],
+        )
+    )
+    fig.update_layout(
+        xaxis=dict(title="Work (kJ)"),
+        yaxis=dict(title="Durability Index"),
         margin=dict(l=40, r=20, t=20, b=60),
     )
     return fig
@@ -635,7 +814,11 @@ phase_corridor = _phase_guardrails_by_week(store, athlete_id)
 week_corridor = _week_plan_corridor_by_week(store, athlete_id)
 planned_weekly_kj = _planned_weekly_kj_by_week(store, athlete_id)
 current_year, current_week = get_iso_year_week()
-activity_decoupling_points = _load_activity_decoupling_points(ROOT / athlete_id / "data")
+recent_activity_weeks = _last_n_weeks(IsoWeek(current_year, current_week), _ACTIVITY_WINDOW_WEEKS)
+activity_decoupling_points = _load_activity_decoupling_points(
+    ROOT / athlete_id / "data",
+    recent_activity_weeks,
+)
 
 render_status_panel()
 
@@ -713,12 +896,21 @@ with st.container():
                     "decoupling_percent": decoupling_percent,
                 }
             )
-        df = (
-            pd.DataFrame(rows)
-            .dropna(subset=["label"])
-            .sort_values(["year", "iso_week"])
+        df = pd.DataFrame(
+            rows,
+            columns=[
+                "year",
+                "iso_week",
+                "label",
+                "weekly_kj",
+                "durability_index",
+                "decoupling_percent",
+            ],
         )
-        if not df.empty:
+        df = df.dropna(subset=["label"]).sort_values(["year", "iso_week"])
+        if df.empty:
+            st.info("No weekly trend data available yet.")
+        else:
             df["period_order"] = df["year"] * 100 + df["iso_week"]
             df["durability_index"] = pd.to_numeric(df["durability_index"], errors="coerce")
             df["decoupling_percent"] = pd.to_numeric(df["decoupling_percent"], errors="coerce")
@@ -750,6 +942,61 @@ with st.container():
                     )
                 )
             )
+            st.subheader("Weekly Dose → Outcome")
+            st.caption(
+                "Interpretation: Higher work (kJ) should be accompanied by stable or rising DI and stable or falling "
+                "decoupling. Judge outcomes relative to dose, not in isolation. DI and decoupling now use separate "
+                "right-side axes."
+            )
+            dose_fig = _build_weekly_dose_outcome_chart(df)
+            if dose_fig is None:
+                st.info("Plotly is not available; charts are hidden.")
+            else:
+                st.plotly_chart(dose_fig, width="stretch")
+
+        st.subheader("Daily Durability Scatter")
+        st.caption(
+            "Interpretation: At similar work (kJ), higher DI with lower decoupling is a good signal. "
+            "Points are filtered to drift-valid sessions (Z2 ≥ 90 min)."
+        )
+        st.markdown(
+            "**Legend**: x = Work (kJ), y = Durability Index (DI), color = Decoupling (%). "
+            "Good signal = high DI with low decoupling at similar kJ."
+        )
+        drift_only = st.checkbox(
+            "Filter: Drift Valid (Z2 ≥ 90 min)",
+            value=True,
+        )
+        long_ride_only = st.checkbox(
+            "Filter: Long Ride ≥ 180 min",
+            value=False,
+        )
+        weeks_back = st.slider(
+            "Show last N weeks (including current)",
+            min_value=1,
+            max_value=26,
+            value=12,
+        )
+        recent_weeks = _last_n_weeks(IsoWeek(current_year, current_week), weeks_back)
+        activity_durability_points = _load_activity_durability_points(
+            ROOT / athlete_id / "data",
+            recent_weeks,
+        )
+        filtered_points = []
+        for point in activity_durability_points:
+            flags = point.get("flags") or {}
+            if drift_only and not flags.get("flag_drift_valid_z2_90min_bool"):
+                continue
+            if long_ride_only and not flags.get("flag_long_ride_180min_bool"):
+                continue
+            filtered_points.append(point)
+        scatter_fig = _build_daily_durability_scatter(filtered_points)
+        if scatter_fig is None:
+            st.info("No drift-valid activities available yet.")
+        else:
+            st.plotly_chart(scatter_fig, width="stretch")
+
+        if not df.empty:
             st.caption("Weekly load (kJ) and raw Durability/Decoupling trends.")
             load_fig = _build_load_chart(df, corridor_df)
             line_fig = _build_line_chart(df)
@@ -783,7 +1030,7 @@ with st.container():
         if trend_notes:
             st.write(trend_notes)
     else:
-        st.error("No activities_trend.json found for this athlete.")
+        st.info("No activities_trend.json found for this athlete.")
 
 with st.container():
     st.subheader("Activities Actual")
@@ -799,4 +1046,4 @@ with st.container():
         if notes:
             st.write(notes)
     else:
-        st.error("No activities_actual.json found for this athlete.")
+        st.info("No activities_actual.json found for this athlete.")
