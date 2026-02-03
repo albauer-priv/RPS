@@ -13,6 +13,7 @@ from rps.ui.shared import (
 from rps.workspace.backup_restore import (
     PARTIAL_RESTORE_MODES,
     create_backup_bundle,
+    list_backup_files,
     restore_backup_bundle,
     validate_backup_bundle,
 )
@@ -90,6 +91,21 @@ with st.expander("Restore (Import)", expanded=False):
     archive = st.file_uploader("Backup archive (.zip or .tar.gz)", type=["zip", "tar", "gz"])
     confirm = st.text_input('Type "RESTORE" to confirm', value="")
     force = st.checkbox("Force restore into non-empty workspace", value=False)
+    show_files = st.checkbox("Show files to restore", value=False)
+    if archive is not None and show_files:
+        with st.spinner("Listing files..."):
+            try:
+                files = list_backup_files(
+                    athlete_id=athlete_id,
+                    workspace_root=SETTINGS.workspace_root,
+                    archive_bytes=archive.getvalue(),
+                    mode=restore_mode,
+                )
+            except Exception as exc:  # pragma: no cover - UI error path
+                st.error(f"Could not list files: {exc}")
+            else:
+                st.caption(f"{len(files)} files in restore scope.")
+                st.dataframe(files, width="stretch", hide_index=True)
     if st.button("Validate Backup", width="content", disabled=archive is None):
         with st.spinner("Validating backup..."):
             try:

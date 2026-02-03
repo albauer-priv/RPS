@@ -4,7 +4,7 @@ import io
 import zipfile
 from pathlib import Path
 
-from rps.workspace.backup_restore import create_backup_bundle, restore_backup_bundle
+from rps.workspace.backup_restore import create_backup_bundle, list_backup_files, restore_backup_bundle
 
 
 def _write_file(path: Path, content: str = "data") -> None:
@@ -51,3 +51,20 @@ def test_restore_inputs_only(tmp_path):
 
     assert (target_root / athlete_id / "inputs" / "events_2026.md").exists()
     assert not (target_root / athlete_id / "latest" / "season_plan.json").exists()
+
+
+def test_list_backup_files_respects_mode(tmp_path):
+    athlete_id = "ath_003"
+    source_root = tmp_path / "source"
+    _write_file(source_root / athlete_id / "inputs" / "season_brief_2026.md", "brief")
+    _write_file(source_root / athlete_id / "latest" / "season_plan.json", "{}")
+    bundle = create_backup_bundle(athlete_id, source_root, mode="full")
+
+    files = list_backup_files(
+        athlete_id=athlete_id,
+        workspace_root=source_root.parent,
+        archive_bytes=bundle.data,
+        mode="inputs",
+    )
+    assert any(path.endswith("inputs/season_brief_2026.md") for path in files)
+    assert not any(path.endswith("latest/season_plan.json") for path in files)
