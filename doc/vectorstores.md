@@ -72,6 +72,28 @@ The sync writes `.cache/vectorstores_state.json`, which maps store names to IDs.
 
 ---
 
+## 3.1 Background Sync (Streamlit)
+
+Streamlit startup runs a background check to keep vector stores current:
+
+- Computes a deterministic manifest hash (manifest + source file hashes).
+- Compares to the last synced hash stored in `.cache/vectorstores_state.json`.
+- If the hash differs, performs a **reset + full sync**.
+
+The check runs on a configurable interval:
+
+```
+RPS_VECTORSTORE_SYNC_INTERVAL_MINUTES=60
+```
+
+Disable the background sync (for manual control):
+
+```
+RPS_DISABLE_VECTORSTORE_SYNC=1
+```
+
+---
+
 ## 4. Vector Store IDs
 
 IDs are environment-specific. You can set them explicitly to override lookup:

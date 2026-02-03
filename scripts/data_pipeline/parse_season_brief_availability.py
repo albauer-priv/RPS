@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Deprecated: use `python -m rps.main parse-availability` instead."""
+"""Deprecated: use `python -m rps.main parse-availability` instead.
+
+This helper is retained for compatibility. Prefer the UI action on
+Athlete Profile → Availability or the CLI entrypoint.
+"""
 
 from __future__ import annotations
 

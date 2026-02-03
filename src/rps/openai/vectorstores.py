@@ -134,6 +134,21 @@ def compute_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def compute_manifest_hash(manifest_path: Path) -> str:
+    """Return a deterministic hash for a manifest + its source files."""
+    manifest = load_manifest(manifest_path)
+    entries: list[str] = [f"manifest:{compute_sha256(manifest_path)}"]
+    for source in manifest.sources:
+        source_path = (manifest.root / source.path).resolve()
+        if source_path.exists():
+            entries.append(f"{source.path}:{compute_sha256(source_path)}")
+        else:
+            entries.append(f"{source.path}:missing")
+    digest = hashlib.sha256()
+    digest.update("\n".join(sorted(entries)).encode("utf-8"))
+    return digest.hexdigest()
+
+
 def _extract_front_matter(text: str) -> dict[str, Any] | None:
     lines = text.splitlines()
     if not lines:

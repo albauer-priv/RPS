@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import os
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 
 import streamlit as st
 
 from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.core.logging import prune_old_logs
+from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, load_state, write_state
+from rps.openai.vectorstores import compute_manifest_hash, load_manifest, sync_manifest
 from rps.ui.intervals_refresh import ensure_intervals_data
 from rps.ui.run_store import clear_queue_folders, find_active_runs, prune_run_history, start_background_tracker
 from rps.ui.shared import SETTINGS, get_athlete_id
@@ -106,6 +109,79 @@ def _cleanup_runs_background(root: Path, retention_days: int) -> None:
             tracker.mark_failed(f"Run cleanup failed: {exc}")
 
 
+def _vectorstore_sync_background(root: Path, athlete_id: str, interval_minutes: int) -> None:
+    """Background sync for vector stores based on manifest hash."""
+    if os.getenv("RPS_DISABLE_VECTORSTORE_SYNC") == "1":
+        return
+    manifest_path = Path("knowledge/all_agents/manifest.yaml")
+    if not manifest_path.exists():
+        return
+    try:
+        manifest = load_manifest(manifest_path)
+    except Exception:
+        return
+
+    state = load_state(DEFAULT_STATE_PATH)
+    store_entry = state.setdefault("vectorstores", {}).setdefault(manifest.vector_store_name, {})
+    last_check_at = store_entry.get("last_check_at")
+    if last_check_at:
+        try:
+            last_check_dt = datetime.fromisoformat(last_check_at)
+        except ValueError:
+            last_check_dt = None
+        else:
+            elapsed = datetime.now(timezone.utc) - last_check_dt
+            if elapsed.total_seconds() < interval_minutes * 60:
+                return
+
+    active = find_active_runs(
+        root,
+        athlete_id,
+        process_type="system_housekeeping",
+        process_subtype="vectorstore_sync",
+    )
+    if active:
+        return
+
+    tracker = start_background_tracker(
+        root,
+        athlete_id,
+        process_type="system_housekeeping",
+        process_subtype="vectorstore_sync",
+        message="Checking vector store sync state.",
+        status="RUNNING",
+    )
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        manifest_hash = compute_manifest_hash(manifest_path)
+        store_entry["last_check_at"] = now_iso
+        if store_entry.get("manifest_hash") == manifest_hash and store_entry.get("vector_store_id"):
+            write_state(DEFAULT_STATE_PATH, state)
+            tracker.mark_done("Vector store is up to date.")
+            return
+
+        tracker.mark_running("Vector store out of date; resetting and syncing.")
+        stats = sync_manifest(
+            manifest_path=manifest_path,
+            delete_removed=True,
+            reset=True,
+            progress=False,
+            state=state,
+        )
+        store_entry["manifest_hash"] = manifest_hash
+        store_entry["last_sync_at"] = now_iso
+        store_entry["last_sync_status"] = "reset"
+        write_state(DEFAULT_STATE_PATH, state)
+        tracker.mark_done(
+            f"Vector store reset complete. added={stats['added']} "
+            f"updated={stats['updated']} removed={stats['removed']} skipped={stats['skipped']}."
+        )
+    except Exception as exc:  # pragma: no cover - background guard
+        store_entry["last_check_at"] = now_iso
+        write_state(DEFAULT_STATE_PATH, state)
+        tracker.mark_failed(f"Vector store sync failed: {exc}")
+
+
 if "index_cleanup_started" not in st.session_state:
     st.session_state["index_cleanup_started"] = True
     cleanup_thread = threading.Thread(
@@ -140,6 +216,19 @@ if "run_cleanup_started" not in st.session_state:
         daemon=True,
     )
     run_cleanup_thread.start()
+
+if "vectorstore_sync_started" not in st.session_state:
+    st.session_state["vectorstore_sync_started"] = True
+    try:
+        interval_minutes = int(os.getenv("RPS_VECTORSTORE_SYNC_INTERVAL_MINUTES", "60"))
+    except ValueError:
+        interval_minutes = 60
+    vectorstore_thread = threading.Thread(
+        target=_vectorstore_sync_background,
+        args=(SETTINGS.workspace_root, get_athlete_id(), interval_minutes),
+        daemon=True,
+    )
+    vectorstore_thread.start()
 
 home = st.Page("pages/home.py", title="Home", icon=":material/home:", default=True)
 coach = st.Page("pages/coach.py", title="Coach", icon=":material/support_agent:")

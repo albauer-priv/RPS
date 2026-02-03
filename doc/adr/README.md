@@ -24,6 +24,7 @@ This folder contains the ADR log for RPS.
 - ADR-019: Single Log File with Rotation
 - ADR-020: Run Housekeeping Retention
 - ADR-021: Use st.plotly_chart for Charts
+- ADR-022: Vector Store Sync Policy
 
 ## Process (Short)
 

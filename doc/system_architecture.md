@@ -198,6 +198,21 @@ Internally, the flow is:
 2. Upload changed files (hash-based delta).
 3. Optionally prune remote files that no longer exist locally.
 
+#### 4.1.3 Background Sync (Streamlit)
+
+Streamlit startup performs a background sync check using a deterministic
+manifest hash (manifest + source file hashes). If the hash differs from the
+last synced hash stored in `.cache/vectorstores_state.json`, the store is reset
+and fully re-synced. This is tracked as a background run with
+`process_type=system_housekeeping` and `process_subtype=vectorstore_sync`.
+
+Environment controls:
+
+```
+RPS_VECTORSTORE_SYNC_INTERVAL_MINUTES=60
+RPS_DISABLE_VECTORSTORE_SYNC=1
+```
+
 Example (minimal, direct API usage):
 
 ```python
