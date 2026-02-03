@@ -345,12 +345,12 @@ def _build_corridor_overview_chart(
     if actual_weekly_kj:
         actual_vals = [actual_weekly_kj.get(label) for label in labels]
         fig.add_trace(
-            go.Scatter(
+            go.Bar(
                 x=labels,
                 y=actual_vals,
-                mode="lines+markers",
                 name="Actual Weekly kJ",
-                line=dict(color="#0b6bcb", dash="solid"),
+                marker_color="#0b6bcb",
+                opacity=0.35,
                 hovertemplate="Week %{x}<br>Actual kJ %{y}<extra></extra>",
             )
         )
@@ -370,6 +370,7 @@ def _build_corridor_overview_chart(
         xaxis=dict(title="Week", tickangle=-45),
         yaxis=dict(title="kJ Corridor"),
         legend_title_text="Corridor",
+        barmode="overlay",
         margin=dict(l=40, r=20, t=20, b=60),
     )
     return fig

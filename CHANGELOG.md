@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Planning corridor overview now limits the x-axis to the Season Plan horizon (phase weeks only).
 - Data & Metrics now includes a decoupling-only chart (weekly trend + per-activity decoupling).
 - Weekly decoupling now reads from intensity_load_metrics to ensure the weekly line is visible.
+- Planning corridor chart now renders Actual Weekly kJ as bars.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
