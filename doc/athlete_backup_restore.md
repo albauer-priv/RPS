@@ -101,7 +101,7 @@ Contains:
 
 ## UI / CLI entrypoints (future)
 
-- **UI (Athlete Profile → Backup & Restore)**
+- **UI (Athlete Profile → Data Operations)**
   - Export button → generates archive
   - Import button → validates + restores
 

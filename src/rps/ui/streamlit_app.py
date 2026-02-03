@@ -305,6 +305,11 @@ zones = st.Page(
     title="Zones",
     icon=":material/straighten:",
 )
+data_operations = st.Page(
+    "pages/athlete_profile/data_operations.py",
+    title="Data Operations",
+    icon=":material/cloud_download:",
+)
 
 system_status = st.Page(
     "pages/system/status.py",
@@ -328,7 +333,15 @@ pg = st.navigation(
             "Coach": [coach],
         "Analyse": [performance_data, performance_report, performance_feed_forward],
         "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_workouts],
-        "Athlete Profile": [about_you, season_brief, availability, kpi_profile, logistics, zones],
+        "Athlete Profile": [
+            about_you,
+            season_brief,
+            availability,
+            kpi_profile,
+            logistics,
+            zones,
+            data_operations,
+        ],
         "System": [system_status, system_history, system_log],
     }
 )

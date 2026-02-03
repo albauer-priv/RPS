@@ -25,6 +25,7 @@ This folder contains the ADR log for RPS.
 - ADR-020: Run Housekeeping Retention
 - ADR-021: Use st.plotly_chart for Charts
 - ADR-022: Vector Store Sync Policy
+- ADR-023: Athlete Data Operations Page
 
 ## Process (Short)
 
