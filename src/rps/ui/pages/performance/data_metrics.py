@@ -474,6 +474,90 @@ def _flatten_activities_actual(activities: list[dict]) -> list[dict]:
     return rows
 
 
+def _load_activity_decoupling_points(data_root: Path) -> list[dict[str, object]]:
+    points: list[dict[str, object]] = []
+    for path in sorted(data_root.glob("*/**/activities_actual_*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        activities = (payload.get("data", {}) or {}).get("activities") or []
+        for activity in activities:
+            metrics = activity.get("metrics") or {}
+            decoupling = metrics.get("decoupling")
+            if decoupling is None:
+                continue
+            start_time = activity.get("start_time_local")
+            iso_year = activity.get("iso_year")
+            iso_week = activity.get("iso_week")
+            day_of_week = activity.get("day_of_week")
+            activity_date = None
+            if start_time:
+                try:
+                    activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                except ValueError:
+                    activity_date = None
+            if activity_date is None and iso_year and iso_week and day_of_week:
+                try:
+                    activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
+                except ValueError:
+                    activity_date = None
+            label = None
+            if iso_year and iso_week:
+                label = f"{iso_year}-W{int(iso_week):02d}"
+            points.append(
+                {
+                    "label": label or start_time or "Unknown",
+                    "decoupling": float(decoupling),
+                    "start_time_local": start_time,
+                    "activity_date": activity_date,
+                }
+            )
+    return points
+
+
+def _build_decoupling_chart(weekly_df, activity_points: list[dict[str, object]]):
+    if go is None:
+        return None
+    fig = go.Figure()
+    if weekly_df is not None and not weekly_df.empty:
+        ordered = weekly_df.sort_values("period_order")
+        week_dates = [
+            datetime.fromisocalendar(int(label.split("-W")[0]), int(label.split("-W")[1]), 1)
+            for label in ordered["label"]
+        ]
+        fig.add_trace(
+            go.Scatter(
+                x=week_dates,
+                y=ordered["decoupling_percent"],
+                mode="lines+markers",
+                name="Weekly Decoupling (%)",
+                line=dict(color="#f15a22"),
+                hovertemplate="Week %{x|%Y-%m-%d}<br>Weekly decoupling %{y:.2f}<extra></extra>",
+            )
+        )
+    if activity_points:
+        activity_points = [p for p in activity_points if p.get("decoupling") is not None]
+        activity_points.sort(key=lambda p: p.get("activity_date") or p.get("start_time_local") or "")
+        fig.add_trace(
+            go.Scatter(
+                x=[p["activity_date"] or p["start_time_local"] or p["label"] for p in activity_points],
+                y=[p["decoupling"] for p in activity_points],
+                mode="lines+markers",
+                name="Activity Decoupling",
+                line=dict(color="#2ca02c", dash="dot"),
+                hovertemplate="%{x|%Y-%m-%d %H:%M}<br>Activity decoupling %{y:.2f}<extra></extra>",
+            )
+        )
+    fig.update_layout(
+        xaxis=dict(title="Week / Activity", type="date"),
+        yaxis=dict(title="Decoupling"),
+        legend_title_text="Series",
+        margin=dict(l=40, r=20, t=20, b=60),
+    )
+    return fig
+
+
 def _load_weekly_trends_cached(trend_path: Path) -> tuple[list[dict], str | None, bool]:
     """Read weekly trend data, fall back to last cached payload while updates are in-flight."""
     cached_trends = st.session_state.get("cached_weekly_trends") or []
@@ -550,6 +634,7 @@ phase_corridor = _phase_guardrails_by_week(store, athlete_id)
 week_corridor = _week_plan_corridor_by_week(store, athlete_id)
 planned_weekly_kj = _planned_weekly_kj_by_week(store, athlete_id)
 current_year, current_week = get_iso_year_week()
+activity_decoupling_points = _load_activity_decoupling_points(ROOT / athlete_id / "data")
 
 render_status_panel()
 
@@ -616,7 +701,7 @@ with st.container():
             label = f"{year}-W{int(iso_week):02d}"
             weekly_kj = (entry.get("weekly_aggregates") or {}).get("work_kj")
             durability_index = (entry.get("intensity_load_metrics") or {}).get("durability_index")
-            decoupling_percent = (entry.get("metrics") or {}).get("decoupling_percent")
+            decoupling_percent = (entry.get("intensity_load_metrics") or {}).get("decoupling_percent")
             rows.append(
                 {
                     "year": year,
@@ -676,6 +761,14 @@ with st.container():
                 )
                 st.plotly_chart(
                     line_fig,
+                    width="stretch",
+                )
+            decoupling_fig = _build_decoupling_chart(df, activity_decoupling_points)
+            if decoupling_fig is None:
+                st.info("Plotly is not available; charts are hidden.")
+            else:
+                st.plotly_chart(
+                    decoupling_fig,
                     width="stretch",
                 )
 with st.container():

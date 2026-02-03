@@ -44,6 +44,7 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs remain left of Run Planning.
 * **Recent status:** Phase/Week/Workouts headers include ISO-week date ranges and render above captions; Season now shows the plan date range in the header.
 * **Recent status:** Report page now surfaces Narrative/KPI Summary/Trend Analysis sections and hides raw JSON.
+* **Recent status:** Data & Metrics decoupling chart shows weekly trend plus per-activity values.
 
 ### Tech stack & constraints
 
