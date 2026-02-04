@@ -24,9 +24,9 @@ feature spec (`doc/specs/features/FEAT_<slug>.md`) before implementation.
 - [ ] FEAT_docker_deploy — Docker image build, registry publish, and deployment workflow.
 - [ ] FEAT_plan_adjustments — Adjust existing Season/Phase plans when constraints change; preserve past phases.
 - [ ] FEAT_backup_restore_cli — CLI data ops for backups and restores.
-- [ ] FEAT_vectorstore_monitor — background monitor + reset behavior.
+- [~] FEAT_vectorstore_monitor — background monitor + reset behavior. (Implemented)
 - [ ] FEAT_run_scheduler_resilience — stuck-run detection and recovery.
-- [ ] FEAT_posting_receipts_review — receipts diff + conflict UX.
+- [~] FEAT_posting_receipts_review — receipts diff + conflict UX. (Receipt inspection exists; UX diff pending)
 
 ## Deferred / Ideas
 
