@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a feature backlog doc to track upcoming specs.
 - Added a Parquet cache feature spec and ADR for Intervals pipeline outputs.
 - Plan Season now shows a date-range header derived from the Season Plan iso_week_range.
 - Report page now shows Narrative/KPI Summary/Trend Analysis expanders above the rendered report content.
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Data & Metrics now prefers the Parquet cache for activities_trend and activities_actual with JSON fallback.
+- Parquet cache writes now log when a retry succeeds, and metrics parsing fixes a missing date import.
 - Intervals pipeline now writes Parquet cache mirrors for activities_actual and activities_trend (best-effort).
 - Added pyarrow dependency to support Parquet cache writes.
 - Plan Phase/Week/Workouts headers now render above captions and status panels.
