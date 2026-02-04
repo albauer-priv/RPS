@@ -1459,6 +1459,7 @@ def write_parquet_cache(df: pd.DataFrame, out_file: Path, logger: logging.Logger
                     else:
                         fixed[col] = fixed[col].astype("string")
             fixed.to_parquet(out_file, index=False)
+            logger.info("Parquet cache write succeeded after dtype cleanup path=%s", out_file)
         except Exception as retry_exc:
             logger.warning(
                 "Parquet cache write failed path=%s error=%s retry_error=%s",

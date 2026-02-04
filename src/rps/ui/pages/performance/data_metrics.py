@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from pathlib import Path
 
 try:
