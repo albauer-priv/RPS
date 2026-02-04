@@ -3,6 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from rps.ui.shared import (
+    SETTINGS,
     announce_log_file,
     get_athlete_id,
     init_ui_state,
