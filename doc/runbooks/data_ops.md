@@ -116,22 +116,21 @@ Contains:
 
 ---
 
-## UI / CLI entrypoints (future)
+## UI / CLI entrypoints
 
-- **UI (Athlete Profile → Data Operations)**
+- **UI (Athlete Profile → Data Operations)** (implemented)
   - Export button → generates archive
   - Import button → validates + restores
 
-- **CLI (for ops):**
-  - `python -m rps.tools.backup_athlete --athlete <id>`
-  - `python -m rps.tools.restore_athlete --archive <file>`
+- **CLI (for ops)** (planned)
+  - Not implemented yet; use UI for now.
 
 ---
 
 ## Open decisions
 
 - Encryption at rest for exported bundles (opt-in?).
-- Whether to allow partial restores (inputs only, plans only).
+- (none)
 
 ---
 

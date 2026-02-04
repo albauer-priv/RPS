@@ -63,7 +63,7 @@ See `doc/architecture/system_architecture.md` for C4 diagrams and system-level c
 - Data & Metrics (weekly load + corridor overlays), Report (Narrative/KPI/Trend sections), Feed Forward
 
 ### Athlete Profile
-- About You, Season Brief, Availability, KPI Profile, Logistics, Zones
+- About You, Season Brief, Availability, KPI Profile, Logistics, Zones, Data Operations
 
 ### System
 - Status (running processes + latest artefacts)
@@ -125,6 +125,39 @@ Handled by **Plan Hub — Orchestrated Run** (or Scoped: Week Plan). The Week pa
 - **UI feedback:** output expander + status banner
 - **Agent:** week_planner
 - **Prompt requirement:** include user input text in the prompt
+
+### Athlete Profile — Data Operations — Create Backup
+- **Preconditions:** athlete workspace exists
+- **Orchestrator call:** none (local archive creation)
+- **Writes/side-effects:** creates an in-memory archive for download
+- **UI feedback:** success banner + download button
+
+### Athlete Profile — Data Operations — Validate Backup (Dry-Run)
+- **Preconditions:** archive uploaded
+- **Orchestrator call:** none (local validation)
+- **Writes/side-effects:** none
+- **UI feedback:** validation status + file count in scope
+
+### Athlete Profile — Data Operations — Restore Backup
+- **Preconditions:** archive uploaded + user confirmation; target workspace empty unless force
+- **Orchestrator call:** none (local restore)
+- **Writes/side-effects:** writes files into `var/athletes/<athlete_id>/` per scope
+- **UI feedback:** success/error banner + count of restored files
+
+#### Flow: Data Operations (Backup & Restore)
+
+```mermaid
+flowchart TD
+    A["Open Data Operations Page"] --> B["Select Scope (Full/Partial)"]
+    B --> C["Create Backup"]
+    C --> D["Download Backup"]
+    B --> E["Upload Backup Archive"]
+    E --> F["Validate Backup (Dry-Run)"]
+    F --> G{"Confirmation Provided?"}
+    G -- "No" --> H["Show Error"]
+    G -- "Yes" --> I["Restore Backup"]
+    I --> J["Show Restore Summary"]
+```
 
 ## Explanation
 

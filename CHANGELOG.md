@@ -85,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data Operations now lists files that would be restored before confirming.
 - Data Operations now shows a per-folder restore summary for quick review.
 - Documentation restructured into overview/architecture/ui/specs/runbooks/proposals with required headers.
+- Data ops runbook updated to reflect implemented UI and planned CLI tooling.
 - Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Plan Hub reset/delete confirmation now validates on submit instead of disabling the Proceed button.
 - Plan Hub delete/reset now prunes the workspace index so readiness updates immediately.

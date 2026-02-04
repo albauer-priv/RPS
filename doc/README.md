@@ -6,12 +6,18 @@ Owner: Documentation
 ---
 # System Documentation
 
-This directory contains system-level documentation for the platform.
+This directory contains the canonical documentation for the platform. It is a navigation hub and does not duplicate content.
 
-## Contents
+## Where to start
 
-### Overview (orientation)
-- `overview/system_overview.md` (to be added)
+- `overview/system_overview.md`
+- `architecture/system_architecture.md`
+- `ui/ui_spec.md`
+
+## Documentation index
+
+### Overview (explanation)
+- `overview/system_overview.md`
 - `overview/how_to_plan.md`
 - `overview/planning_principles.md`
 - `overview/artefact_flow.md`
@@ -46,7 +52,7 @@ This directory contains system-level documentation for the platform.
 ### Proposals
 - `proposals/queue_scheduler.md` (superseded proposal)
 
-## Conventions
+## Conventions (short)
 
-- Use clear filenames that mirror the subsystem (e.g. `workspace.md`, `vectorstores.md`).
-- Prefer short, actionable docs that link to code references.
+- Doc-writing rules live in `AGENTS.md`.
+- Every doc must have Version/Status/Last-Updated/Owner header.
