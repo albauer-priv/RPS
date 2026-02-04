@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data ops runbook updated to reflect implemented UI and planned CLI tooling.
 - Added UI page deep-dive docs and linked them from the UI spec and doc index.
 - Added canonical agent registry doc and linked it from architecture/overview docs.
+- Added Coach to the agent registry.
 - Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Plan Hub reset/delete confirmation now validates on submit instead of disabling the Proceed button.
 - Plan Hub delete/reset now prunes the workspace index so readiness updates immediately.

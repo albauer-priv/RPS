@@ -18,6 +18,7 @@ This document is the canonical registry of agents, their roles, modes, and artif
 | Week‑Planner | Produce a week plan within phase guardrails. | CREATE_WEEK_PLAN, REVISE_WEEK_PLAN | phase_guardrails, phase_structure, availability, wellness, zone_model, week_plan (optional) | week_plan | Revised week plan includes coach input. |
 | Workout‑Builder | Build Intervals export from week plan. | EXPORT_WORKOUTS | week_plan | intervals_workouts | Export only; posting happens in UI. |
 | Performance‑Analyst | Create performance report and feed‑forward inputs. | CREATE_REPORT, FEED_FORWARD | activities_actual, activities_trend, wellness, season_plan (optional) | des_analysis_report, season_phase_feed_forward | Report is past-only. |
+| Coach | Conversational coaching and guidance. | COACH_CHAT | chat history, athlete context | none (chat only) | UI chat surface; no artefact writes. |
 
 ## Mode Notes
 
