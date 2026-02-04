@@ -39,35 +39,44 @@ See `doc/architecture/system_architecture.md` for C4 diagrams and system-level c
 ### Home
 - Marketing text (markdown) from `static/marketing/home.md`
 - System state table: artifact availability, owner, description, ISO validity
+- See `doc/ui/pages/home.md`.
 
 ### Plan → Plan Hub
 - Orchestration layer: readiness checklist, run planning, execution status
 - Actions enqueue runs only (no direct agent calls)
+- See `doc/ui/pages/plan_hub.md`.
 
 ### Plan → Season
 - Actions: select scenario + KPI segment
 - Create Scenarios + Create Season Plan are initiated from Plan Hub
 - Reset/Delete handled in Plan Hub
+- See `doc/ui/pages/plan_season.md`.
 
 ### Plan → Phase
 - Phase read-only view (details + preview)
+- See `doc/ui/pages/plan_phase.md`.
 
 ### Plan → Week
 - Read-only agenda summary + workouts list (planning runs in Plan Hub)
+- See `doc/ui/pages/plan_week.md`.
 
 ### Plan → Workouts
 - Workouts export view, posting actions, history
 - Revision requests for week plan
+- See `doc/ui/pages/plan_workouts.md`.
 
 ### Analyse
 - Data & Metrics (weekly load + corridor overlays), Report (Narrative/KPI/Trend sections), Feed Forward
+- See `doc/ui/pages/performance_data_metrics.md`, `doc/ui/pages/performance_report.md`, `doc/ui/pages/performance_feed_forward.md`.
 
 ### Athlete Profile
 - About You, Season Brief, Availability, KPI Profile, Logistics, Zones, Data Operations
+- See `doc/ui/pages/athlete_profile.md`.
 
 ### System
 - Status (running processes + latest artefacts)
 - History, Log
+- See `doc/ui/pages/system_status.md`, `doc/ui/pages/system_history.md`, `doc/ui/pages/system_log.md`.
 
 ## Action Specification Template
 

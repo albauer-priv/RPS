@@ -37,6 +37,19 @@ This directory contains the canonical documentation for the platform. It is a na
 - `ui/ui_spec.md`
 - `ui/streamlit_contract.md`
 - `ui/pages/plan_hub.md`
+- `ui/pages/home.md`
+- `ui/pages/coach.md`
+- `ui/pages/plan_season.md`
+- `ui/pages/plan_phase.md`
+- `ui/pages/plan_week.md`
+- `ui/pages/plan_workouts.md`
+- `ui/pages/performance_data_metrics.md`
+- `ui/pages/performance_report.md`
+- `ui/pages/performance_feed_forward.md`
+- `ui/pages/system_status.md`
+- `ui/pages/system_history.md`
+- `ui/pages/system_log.md`
+- `ui/pages/athlete_profile.md`
 
 ### Specs (normative contracts)
 - `specs/contracts/logging_policy.md`
