@@ -1453,8 +1453,8 @@ def write_parquet_cache(df: pd.DataFrame, out_file: Path, logger: logging.Logger
             fixed = df.copy()
             for col in fixed.columns:
                 if fixed[col].dtype == object:
-                    converted = pd.to_numeric(fixed[col], errors="ignore")
-                    if converted.dtype != object:
+                    converted = pd.to_numeric(fixed[col], errors="coerce")
+                    if converted.notna().any():
                         fixed[col] = converted
                     else:
                         fixed[col] = fixed[col].astype("string")
