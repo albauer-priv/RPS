@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added ADR-021 to enforce Plotly-only chart rendering in Streamlit UI.
 
 ### Changed
-- Data & Metrics now prefers the Parquet cache for activities_trend with JSON fallback.
+- Data & Metrics now prefers the Parquet cache for activities_trend and activities_actual with JSON fallback.
 - Intervals pipeline now writes Parquet cache mirrors for activities_actual and activities_trend (best-effort).
 - Added pyarrow dependency to support Parquet cache writes.
 - Plan Phase/Week/Workouts headers now render above captions and status panels.

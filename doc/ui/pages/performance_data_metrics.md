@@ -18,6 +18,7 @@ Owner: UI
 
 ## Data Sources
 - Prefers `latest/activities_trend.parquet` when present; falls back to `latest/activities_trend.json`.
+- Prefers `latest/activities_actual.parquet` when present; falls back to `latest/activities_actual.json`.
 
 ## Actions
 - Refresh Intervals Data

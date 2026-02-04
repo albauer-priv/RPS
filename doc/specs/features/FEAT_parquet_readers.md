@@ -18,7 +18,7 @@ Owner: UI Analytics
 
 **Current behavior**
 
-* Data & Metrics reads activities_trend from JSON only.
+* Data & Metrics reads activities_trend and activities_actual from JSON only.
 
 **Problem**
 
@@ -36,6 +36,7 @@ Owner: UI Analytics
 **Goals**
 
 * [ ] Prefer Parquet cache for activities_trend when available.
+* [ ] Prefer Parquet cache for activities_actual when available.
 * [ ] Fall back to JSON on missing/failed Parquet reads.
 
 **Non-Goals**
@@ -68,6 +69,7 @@ Owner: UI Analytics
 **Data flow**
 
 * Inputs: `latest/activities_trend.parquet` or `latest/activities_trend.json`.
+* Inputs: `latest/activities_actual.parquet` or `latest/activities_actual.json`.
 * Outputs: unchanged charts and tables.
 
 **Schema / Artefacts**
@@ -111,7 +113,7 @@ Owner: UI Analytics
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Data & Metrics uses Parquet when available.
+* [ ] Data & Metrics uses Parquet when available for trend and actual data.
 * [ ] JSON fallback remains functional.
 * [ ] No regressions in charts or tables.
 
@@ -148,4 +150,3 @@ Owner: UI Analytics
 * UI: `doc/ui/pages/performance_data_metrics.md`
 * Architecture: `doc/architecture/subsystems/data_pipeline.md`
 * Feature cache: `doc/specs/features/FEAT_parquet_cache.md`
-

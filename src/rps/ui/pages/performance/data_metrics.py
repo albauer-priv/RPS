@@ -490,6 +490,115 @@ def _flatten_activities_actual(activities: list[dict]) -> list[dict]:
     return rows
 
 
+def _coerce_bool(value: object) -> bool | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(int(value))
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+        if cleaned in {"true", "t", "yes", "y", "1"}:
+            return True
+        if cleaned in {"false", "f", "no", "n", "0"}:
+            return False
+    return None
+
+
+def _format_date_value(value: object) -> str | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    if isinstance(value, (datetime, date)):
+        return value.date().isoformat() if isinstance(value, datetime) else value.isoformat()
+    return str(value)
+
+
+def _format_datetime_value(value: object) -> str | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return str(value)
+
+
+def _read_activities_actual_from_parquet(path: Path) -> list[dict]:
+    df = pd.read_parquet(path)
+    activities: list[dict] = []
+    for row in df.to_dict(orient="records"):
+        flags = {
+            "flag_long_ride_150min_bool": _coerce_bool(row.get("Flag Long Ride >=150min (bool)")),
+            "flag_long_ride_180min_bool": _coerce_bool(row.get("Flag Long Ride >=180min (bool)")),
+            "flag_long_ride_240min_bool": _coerce_bool(row.get("Flag Long Ride >=240min (bool)")),
+            "flag_if_0_75_bool": _coerce_bool(row.get("Flag IF <= 0.75 (bool)")),
+            "flag_if_0_80_bool": _coerce_bool(row.get("Flag IF <= 0.80 (bool)")),
+            "flag_z2_share_60_bool": _coerce_bool(row.get("Flag Z2 Share >= 60% (bool)")),
+            "flag_z2_share_70_bool": _coerce_bool(row.get("Flag Z2 Share >= 70% (bool)")),
+            "flag_drift_valid_z2_90min_bool": _coerce_bool(
+                row.get("Flag Drift Valid (Z2 >= 90min) (bool)")
+            ),
+            "flag_des_long_base_candidate_bool": _coerce_bool(
+                row.get("Flag DES Long Base Candidate (bool)")
+            ),
+            "flag_des_long_build_candidate_bool": _coerce_bool(
+                row.get("Flag DES Long Build Candidate (bool)")
+            ),
+            "flag_brevet_long_candidate_bool": _coerce_bool(
+                row.get("Flag Brevet Long Candidate (bool)")
+            ),
+        }
+        metrics = {
+            "decoupling": row.get("Decoupling (%)"),
+            "durability_index_di": row.get("Durability Index (DI)"),
+        }
+        activities.append(
+            {
+                "iso_year": row.get("ISO Year"),
+                "iso_week": row.get("ISO Week"),
+                "day": _format_date_value(row.get("Day")),
+                "day_of_week": row.get("Day of Week"),
+                "activity_id": row.get("Activity ID"),
+                "start_time_local": _format_datetime_value(row.get("Start Time (Local)")),
+                "type": row.get("Type"),
+                "moving_time": row.get("Moving Time (hh:mm:ss)"),
+                "distance_km": row.get("Distance (km)"),
+                "work_kj": row.get("Work (kJ)"),
+                "load_tss": row.get("Load (TSS)"),
+                "normalized_power_w": row.get("NP (W)"),
+                "intensity_factor": row.get("Intensity Factor (IF)"),
+                "avg_hr_bpm": row.get("Avg HR (bpm)"),
+                "max_hr_bpm": row.get("Max HR (bpm)"),
+                "flags": flags,
+                "metrics": metrics,
+            }
+        )
+    return activities
+
+
+def _read_activities_actual_from_json(path: Path) -> list[dict]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    return (payload.get("data", {}) or {}).get("activities") or []
+
+
+def _read_activities_actual(path: Path) -> list[dict]:
+    if path.suffix == ".parquet":
+        return _read_activities_actual_from_parquet(path)
+    return _read_activities_actual_from_json(path)
+
+
+def _load_week_activities_actual(week_dir: Path) -> list[dict]:
+    parquet_files = sorted(week_dir.glob("activities_actual_*.parquet"))
+    json_files = sorted(week_dir.glob("activities_actual_*.json"))
+    paths = parquet_files or json_files
+    activities: list[dict] = []
+    for path in paths:
+        activities.extend(_read_activities_actual(path))
+    return activities
+
+
 def _load_activity_decoupling_points(
     data_root: Path,
     weeks: list[IsoWeek],
@@ -497,43 +606,38 @@ def _load_activity_decoupling_points(
     points: list[dict[str, object]] = []
     for week in weeks:
         week_dir = data_root / f"{week.year}" / f"{week.week:02d}"
-        for path in sorted(week_dir.glob("activities_actual_*.json")):
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+        activities = _load_week_activities_actual(week_dir)
+        for activity in activities:
+            metrics = activity.get("metrics") or {}
+            decoupling = metrics.get("decoupling")
+            if decoupling is None:
                 continue
-            activities = (payload.get("data", {}) or {}).get("activities") or []
-            for activity in activities:
-                metrics = activity.get("metrics") or {}
-                decoupling = metrics.get("decoupling")
-                if decoupling is None:
-                    continue
-                start_time = activity.get("start_time_local")
-                iso_year = activity.get("iso_year")
-                iso_week = activity.get("iso_week")
-                day_of_week = activity.get("day_of_week")
-                activity_date = None
-                if start_time:
-                    try:
-                        activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-                    except ValueError:
-                        activity_date = None
-                if activity_date is None and iso_year and iso_week and day_of_week:
-                    try:
-                        activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
-                    except ValueError:
-                        activity_date = None
-                label = None
-                if iso_year and iso_week:
-                    label = f"{iso_year}-W{int(iso_week):02d}"
-                points.append(
-                    {
-                        "label": label or start_time or "Unknown",
-                        "decoupling": float(decoupling),
-                        "start_time_local": start_time,
-                        "activity_date": activity_date,
-                    }
-                )
+            start_time = activity.get("start_time_local")
+            iso_year = activity.get("iso_year")
+            iso_week = activity.get("iso_week")
+            day_of_week = activity.get("day_of_week")
+            activity_date = None
+            if start_time:
+                try:
+                    activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                except ValueError:
+                    activity_date = None
+            if activity_date is None and iso_year and iso_week and day_of_week:
+                try:
+                    activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
+                except ValueError:
+                    activity_date = None
+            label = None
+            if iso_year and iso_week:
+                label = f"{iso_year}-W{int(iso_week):02d}"
+            points.append(
+                {
+                    "label": label or start_time or "Unknown",
+                    "decoupling": float(decoupling),
+                    "start_time_local": start_time,
+                    "activity_date": activity_date,
+                }
+            )
     return points
 
 
@@ -586,49 +690,44 @@ def _load_activity_durability_points(
     points: list[dict[str, object]] = []
     for week in weeks:
         week_dir = data_root / f"{week.year}" / f"{week.week:02d}"
-        for path in sorted(week_dir.glob("activities_actual_*.json")):
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+        activities = _load_week_activities_actual(week_dir)
+        for activity in activities:
+            metrics = activity.get("metrics") or {}
+            flags = activity.get("flags") or {}
+            decoupling = metrics.get("decoupling")
+            durability_index = metrics.get("durability_index_di")
+            work_kj = activity.get("work_kj")
+            if decoupling is None or durability_index is None or work_kj is None:
                 continue
-            activities = (payload.get("data", {}) or {}).get("activities") or []
-            for activity in activities:
-                metrics = activity.get("metrics") or {}
-                flags = activity.get("flags") or {}
-                decoupling = metrics.get("decoupling")
-                durability_index = metrics.get("durability_index_di")
-                work_kj = activity.get("work_kj")
-                if decoupling is None or durability_index is None or work_kj is None:
-                    continue
-                start_time = activity.get("start_time_local")
-                iso_year = activity.get("iso_year")
-                iso_week = activity.get("iso_week")
-                day_of_week = activity.get("day_of_week")
-                activity_date = None
-                if start_time:
-                    try:
-                        activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-                    except ValueError:
-                        activity_date = None
-                if activity_date is None and iso_year and iso_week and day_of_week:
-                    try:
-                        activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
-                    except ValueError:
-                        activity_date = None
-                points.append(
-                    {
-                        "work_kj": float(work_kj),
-                        "durability_index": float(durability_index),
-                        "decoupling": float(decoupling),
-                        "day": activity.get("day"),
-                        "type": activity.get("type"),
-                        "moving_time": activity.get("moving_time"),
-                        "intensity_factor": activity.get("intensity_factor"),
-                        "start_time_local": activity.get("start_time_local"),
-                        "activity_date": activity_date,
-                        "flags": flags,
-                    }
-                )
+            start_time = activity.get("start_time_local")
+            iso_year = activity.get("iso_year")
+            iso_week = activity.get("iso_week")
+            day_of_week = activity.get("day_of_week")
+            activity_date = None
+            if start_time:
+                try:
+                    activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                except ValueError:
+                    activity_date = None
+            if activity_date is None and iso_year and iso_week and day_of_week:
+                try:
+                    activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
+                except ValueError:
+                    activity_date = None
+            points.append(
+                {
+                    "work_kj": float(work_kj),
+                    "durability_index": float(durability_index),
+                    "decoupling": float(decoupling),
+                    "day": activity.get("day"),
+                    "type": activity.get("type"),
+                    "moving_time": activity.get("moving_time"),
+                    "intensity_factor": activity.get("intensity_factor"),
+                    "start_time_local": activity.get("start_time_local"),
+                    "activity_date": activity_date,
+                    "flags": flags,
+                }
+            )
     return points
 
 
@@ -838,6 +937,7 @@ st.caption(f"Athlete: {athlete_id}")
 
 latest_dir = ROOT / athlete_id / "latest"
 actual_path = latest_dir / "activities_actual.json"
+actual_parquet_path = latest_dir / "activities_actual.parquet"
 trend_path = latest_dir / "activities_trend.json"
 trend_parquet_path = latest_dir / "activities_trend.parquet"
 
@@ -1098,16 +1198,20 @@ with st.container():
 
 with st.container():
     st.subheader("Activities Actual")
-    if actual_path.exists():
-        actual_payload = json.loads(actual_path.read_text(encoding="utf-8"))
-        activities = actual_payload.get("data", {}).get("activities") or []
+    if actual_parquet_path.exists() or actual_path.exists():
+        if actual_parquet_path.exists():
+            activities = _read_activities_actual_from_parquet(actual_parquet_path)
+            notes = None
+        else:
+            actual_payload = json.loads(actual_path.read_text(encoding="utf-8"))
+            activities = actual_payload.get("data", {}).get("activities") or []
+            notes = actual_payload.get("data", {}).get("notes")
         st.data_editor(
             _flatten_activities_actual(activities),
             num_rows="dynamic",
             width="stretch",
         )
-        notes = actual_payload.get("data", {}).get("notes")
         if notes:
             st.write(notes)
     else:
-        st.info("No activities_actual.json found for this athlete.")
+        st.info("No activities_actual data found for this athlete.")
