@@ -205,6 +205,8 @@ def test_data_operations_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/athlete_profile/data_operations.py")
     at.run()
     assert len(at.error) == 0
+    labels = [button.label for button in at.button]
+    assert "Create Backup" in labels
 
 
 def test_feed_forward_page_renders():
