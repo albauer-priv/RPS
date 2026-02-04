@@ -1,0 +1,15 @@
+---
+Version: 1.0
+Status: Updated
+Last-Updated: 2026-02-03
+Owner: Specs
+---
+# PHASE_PREVIEW Validation
+
+## Schema & meta
+- [ ] Validates against `phase_preview.schema.json`.
+- [ ] `data.traceability.derived_from` references the `phase_structure` it summarizes.
+
+## Content
+- [ ] Preview is agenda-style and derived only from phase structure.
+- [ ] No workouts, intervals, zones, or kJ prescriptions.

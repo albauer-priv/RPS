@@ -1,3 +1,9 @@
+---
+Version: 1.0
+Status: Updated
+Last-Updated: 2026-02-03
+Owner: ADR
+---
 # ADR-013: Data Ownership (Source of Truth vs Derived)
 
 **Status:** Accepted  

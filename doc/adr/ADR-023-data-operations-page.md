@@ -1,3 +1,9 @@
+---
+Version: 1.0
+Status: Updated
+Last-Updated: 2026-02-03
+Owner: ADR
+---
 # ADR-023 — Athlete Data Operations Page
 
 - **Status:** Accepted

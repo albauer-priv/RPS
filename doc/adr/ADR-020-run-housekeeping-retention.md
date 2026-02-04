@@ -1,3 +1,9 @@
+---
+Version: 1.0
+Status: Updated
+Last-Updated: 2026-02-03
+Owner: ADR
+---
 # ADR-020: Run Housekeeping Retention
 
 **Status:** Accepted  

@@ -1,3 +1,9 @@
+---
+Version: 1.0
+Status: Updated
+Last-Updated: 2026-02-03
+Owner: ADR
+---
 # ADR-003: Posting Workouts is a Separate Flow
 
 **Status:** Accepted  

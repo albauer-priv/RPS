@@ -73,12 +73,12 @@ This file is the **README for coding agents** working in this repository. It con
 
 ### Key docs & config
 
-* `doc/system_architecture.md`: System overview + UI/agent flows.
-* `doc/artefact_flow_overview_and_detail.md`: Artifact flows & dependencies.
-* `doc/how_to_plan.md`: Plan-week / Season / Phase / Week process.
-* `doc/how_to_plan.md`: Planner roles & responsibilities and end-to-end flow.
-* `doc/intervals_posting.md`: Intervals posting semantics, receipts, and external_id strategy.
-* `doc/plan_hub_proposal.md`: Plan Hub proposal with readiness rules and layout.
+* `doc/architecture/system_architecture.md`: System overview + UI/agent flows.
+* `doc/overview/artefact_flow.md`: Artifact flows & dependencies.
+* `doc/overview/how_to_plan.md`: Plan-week / Season / Phase / Week process.
+* `doc/overview/how_to_plan.md`: Planner roles & responsibilities and end-to-end flow.
+* `doc/architecture/subsystems/intervals_posting.md`: Intervals posting semantics, receipts, and external_id strategy.
+* `doc/ui/pages/plan_hub.md`: Plan Hub proposal with readiness rules and layout.
 * `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
 * `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).
 * `schemas/**`: JSON schemas (esp. artifact interfaces).
@@ -92,6 +92,41 @@ This file is the **README for coding agents** working in this repository. It con
 * Variables / functions: `snake_case`
 * Classes: `PascalCase`
 * Constants: `UPPER_SNAKE_CASE`
+
+### Documentation Rule (Single Source of Truth + Placement)
+
+When adding or changing documentation, follow this rule:
+
+1) Classify the doc by intent (choose exactly one):
+   - OVERVIEW: orientation/explanation for humans (why / what)
+   - SPEC: normative requirements (must/shall), feature behavior, contracts
+   - ARCH: how the system is built (components, boundaries, data model, runtime)
+   - UI: user-facing flows + action semantics; Streamlit-specific details are "UI Contract"
+   - RUNBOOK: operational procedures (how to run/validate/recover)
+   - ADR: a decision record (context → decision → alternatives → consequences)
+
+2) Place the file in exactly one canonical location:
+   - doc/overview/…
+   - doc/specs/… (features/ or contracts/)
+   - doc/architecture/… (and architecture/subsystems/…)
+   - doc/ui/… (ui_spec + streamlit_contract + page deep-dives)
+   - doc/runbooks/…
+   - doc/adr/…
+
+3) Avoid duplication:
+   - If content overlaps, pick ONE canonical doc and replace the other with a short link.
+   - README.md must remain a navigation hub (index) and must not become the canonical source.
+
+4) Promotion path for proposals:
+   - New ideas start as doc/proposals/<name>.md (optional).
+   - Once accepted, convert to either:
+     a) an ADR (decision), and/or
+     b) an Architecture doc (implementation), and/or
+     c) a Spec (normative behavior).
+   - Mark the original as Superseded and link to the canonical doc(s).
+
+5) Every doc must have a header:
+   Version, Status (Draft/Updated/Deprecated/Superseded), Last-Updated (YYYY-MM-DD), and a single "Owner" or "Area".
 
 ### Documentation (Mermaid)
 

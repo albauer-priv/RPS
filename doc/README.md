@@ -1,25 +1,50 @@
+---
+Version: 1.0
+Status: Updated
+Last-Updated: 2026-02-03
+Owner: Documentation
+---
 # System Documentation
 
 This directory contains system-level documentation for the platform.
 
 ## Contents
 
-- `system_architecture.md`: component overview and design principles.
-- `ui_spec.md`: UI flows and action specifications.
-- `planning_principles.md`: weekly planning guardrails (scope, timing, reports, feed forward).
-- `adr/README.md`: Architecture Decision Records (ADR) index.
-- `vectorstores.md`: knowledge sync and runtime attachment workflow.
-- `how_to_plan.md`: step-by-step planning workflow and cadence (includes planner responsibilities).
-- `artefact_flow_overview_and_detail.md`: end-to-end artefact flow with detail diagrams.
-- `plan_hub_proposal.md`: Plan Hub layout and readiness rules.
-- `artefact_renderer.md`: JSON-to-Markdown rendering for human review.
-- `validation.md`: how to validate pipeline outputs against schemas.
-- `data_pipeline.md`: pipeline entrypoints, outputs, and defaults.
-- `intervals_posting.md`: Intervals posting semantics, receipts, and external_id strategy.
-- `workspace.md`: local workspace layout and rules.
-- `schema_versioning.md`: schema change policy and compatibility.
-- `deployment.md`: environment setup and deployment notes.
-- `recommended_models.md`: model selection guidance for cost-optimized runs.
+### Overview (orientation)
+- `overview/system_overview.md` (to be added)
+- `overview/how_to_plan.md`
+- `overview/planning_principles.md`
+- `overview/artefact_flow.md`
+- `overview/recommended_models.md`
+
+### Architecture (system design)
+- `architecture/system_architecture.md`
+- `architecture/workspace.md`
+- `architecture/schema_versioning.md`
+- `architecture/deployment.md`
+- `architecture/vectorstores.md`
+- `architecture/renderer.md`
+- `architecture/subsystems/data_pipeline.md`
+- `architecture/subsystems/intervals_posting.md`
+
+### UI (flows + Streamlit contract)
+- `ui/ui_spec.md`
+- `ui/streamlit_contract.md`
+- `ui/pages/plan_hub.md`
+
+### Specs (normative contracts)
+- `specs/contracts/logging_policy.md`
+- `specs/contracts/validation/` (artifact validation references)
+
+### Runbooks (ops)
+- `runbooks/validation.md`
+- `runbooks/data_ops.md`
+
+### ADRs
+- `adr/README.md`
+
+### Proposals
+- `proposals/queue_scheduler.md` (superseded proposal)
 
 ## Conventions
 

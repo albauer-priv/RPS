@@ -18,19 +18,19 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 
 - `doc/README.md`: entry point and index for system docs.
 - `doc/adr/README.md`: Architecture Decision Records (ADR) index.
-- `doc/system_architecture.md`: system overview and design principles.
-- `doc/vectorstores.md`: vector store setup and sync workflow.
-- `doc/how_to_plan.md`: planner roles, artifacts, and flow.
-- `doc/how_to_plan.md`: step-by-step planning workflow and cadence.
-- `doc/artefact_flow_overview_and_detail.md`: end-to-end artefact flow with detail diagrams.
-- `doc/artefact_renderer.md`: JSON-to-Markdown sidecar rendering.
-- `doc/validation.md`: validate pipeline outputs against schemas.
-- `doc/data_pipeline.md`: pipeline entrypoints, outputs, and defaults.
-- `doc/planning_principles.md`: planning guardrails for scope, timing, and reports.
-- `doc/workspace.md`: local workspace layout and rules.
-- `doc/schema_versioning.md`: schema change policy and compatibility.
-- `doc/deployment.md`: environment setup and deployment notes.
-- `doc/recommended_models.md`: model selection guidance for cost-optimized runs.
+- `doc/architecture/system_architecture.md`: system overview and design principles.
+- `doc/architecture/vectorstores.md`: vector store setup and sync workflow.
+- `doc/overview/how_to_plan.md`: planner roles, artifacts, and flow.
+- `doc/overview/how_to_plan.md`: step-by-step planning workflow and cadence.
+- `doc/overview/artefact_flow.md`: end-to-end artefact flow with detail diagrams.
+- `doc/architecture/renderer.md`: JSON-to-Markdown sidecar rendering.
+- `doc/runbooks/validation.md`: validate pipeline outputs against schemas.
+- `doc/architecture/subsystems/data_pipeline.md`: pipeline entrypoints, outputs, and defaults.
+- `doc/overview/planning_principles.md`: planning guardrails for scope, timing, and reports.
+- `doc/architecture/workspace.md`: local workspace layout and rules.
+- `doc/architecture/schema_versioning.md`: schema change policy and compatibility.
+- `doc/architecture/deployment.md`: environment setup and deployment notes.
+- `doc/overview/recommended_models.md`: model selection guidance for cost-optimized runs.
 
 ## Quick start
 
