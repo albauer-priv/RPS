@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 import streamlit as st
 
+from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -168,3 +170,23 @@ with st.expander("Restore (Import)", expanded=False):
                     st.success(f"Restore complete ({len(restored)} files).")
                     set_status(status_state="done", title="Data Operations", message="Restore completed.")
     st.warning("Restores are destructive; target workspace should be empty unless using a partial restore.")
+
+with st.expander("Parse Availability", expanded=False):
+    st.write("Rebuild availability.json from the Season Brief input.")
+    if st.button("Parse Availability from Season Brief", width="content"):
+        logger = logging.getLogger("rps.ui.availability")
+        with st.spinner("Parsing availability from Season Brief..."):
+            try:
+                result = parse_and_store_availability(
+                    athlete_id=athlete_id,
+                    workspace_root=SETTINGS.workspace_root,
+                    schema_dir=SETTINGS.schema_dir,
+                )
+            except Exception as exc:  # pragma: no cover - UI error path
+                logger.exception("Availability parse failed.")
+                st.error(f"Availability parse failed: {exc}")
+                set_status(status_state="error", title="Data Operations", message="Availability parse failed.")
+            else:
+                st.success(f"Wrote {result.output_path.name} to latest/ and versioned storage.")
+                set_status(status_state="done", title="Data Operations", message="Availability parsed.")
+                st.rerun()

@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-04
 Owner: UI
 ---
 # Athlete Profile Pages
@@ -14,7 +14,7 @@ Owner: UI
 
 ## Availability
 - View availability table
-- Action: Parse Availability from Season Brief
+- No actions (parsing moved to Data Operations)
 
 ## KPI Profile
 - Select + view KPI profile
@@ -27,3 +27,4 @@ Owner: UI
 
 ## Data Operations
 - Backup/restore actions (see `runbooks/data_ops.md`)
+- Action: Parse Availability from Season Brief

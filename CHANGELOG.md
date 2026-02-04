@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data & Metrics now prefers the Parquet cache for activities_trend and activities_actual with JSON fallback.
 - Parquet cache writes now log when a retry succeeds, and metrics parsing fixes a missing date import.
 - Parquet cache dtype cleanup now avoids deprecated pandas to_numeric behavior.
+- Moved "Parse Availability from Season Brief" action to Data Operations page.
 - Intervals pipeline now writes Parquet cache mirrors for activities_actual and activities_trend (best-effort).
 - Added pyarrow dependency to support Parquet cache writes.
 - Plan Phase/Week/Workouts headers now render above captions and status panels.
