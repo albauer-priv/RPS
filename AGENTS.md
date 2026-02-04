@@ -200,6 +200,33 @@ During implementation:
 - Update referenced docs as specified.
 - Ensure validators/runbooks are updated when contracts/schemas change.
 
+## Continuation Protocol (handoff between chats)
+
+When starting a new chat or agent session, do this in order:
+
+1) **Read `doc/overview/feature_backlog.md` first.**
+   - Use the ranked list as the default priority.
+   - Check the unlock graph for dependencies.
+
+2) **Check the last 5 commits** to understand recent changes and avoid duplicating work.
+
+3) **Verify current status** before coding:
+   - `git status -sb`
+   - If there are local changes, summarize them and ask whether to keep or revert.
+
+4) **Confirm which backlog item is active** (unless the user explicitly specifies one).
+
+5) **Apply Feature-First workflow**:
+   - Ensure `doc/specs/features/FEAT_<slug>.md` exists (using the template).
+   - Ensure ADR is created/updated if the change touches architecture, persistence, or cross-cutting contracts.
+
+6) **Implementation loop**:
+   - Code changes → tests → docs → changelog → commit/push.
+
+7) **Always record outcomes**:
+   - Update `CHANGELOG.md`.
+   - Update relevant docs + backlog status when a feature is completed or partially done.
+
 ### Documentation (Mermaid)
 
 * Mermaid diagram labels should wrap text in quotes, e.g. `["Label"]` or `{"Decision?"}`, to ensure consistent rendering.
