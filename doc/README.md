@@ -25,6 +25,7 @@ This directory contains the canonical documentation for the platform. It is a na
 
 ### Architecture (system design)
 - `architecture/system_architecture.md`
+- `architecture/agents.md`
 - `architecture/workspace.md`
 - `architecture/schema_versioning.md`
 - `architecture/deployment.md`

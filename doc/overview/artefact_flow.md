@@ -408,6 +408,8 @@ flowchart LR
 - `kpi_profile_des_*.json`
 
 ### 3.2 Season-Scenario-Agent
+
+See `doc/architecture/agents.md` for the canonical agent registry.
 - `season_scenarios_yyyy-ww--yyyy-ww.json`
 
 ### 3.3 Season-Planner

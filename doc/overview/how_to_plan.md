@@ -174,6 +174,8 @@ PYTHONPATH=src python3 -m rps.main plan-week \
 
 ### Agent tasks
 
+See `doc/architecture/agents.md` for the canonical agent registry (roles, modes, inputs/outputs).
+
 ```bash
 # Season scenarios
 PYTHONPATH=src python3 -m rps.main run-agent \

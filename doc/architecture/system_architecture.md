@@ -124,6 +124,8 @@ flowchart TB
 
 ## 3. Agent Roles & Responsibilities
 
+See `doc/architecture/agents.md` for the canonical registry of agents, modes, and IO.
+
 ### 3.1 Performance-Analyst
 - Diagnostic only, advisory output.
 - Consumes factual data + planning context.
