@@ -1449,7 +1449,23 @@ def write_parquet_cache(df: pd.DataFrame, out_file: Path, logger: logging.Logger
     try:
         df.to_parquet(out_file, index=False)
     except Exception as exc:
-        logger.warning("Parquet cache write failed path=%s error=%s", out_file, exc)
+        try:
+            fixed = df.copy()
+            for col in fixed.columns:
+                if fixed[col].dtype == object:
+                    converted = pd.to_numeric(fixed[col], errors="ignore")
+                    if converted.dtype != object:
+                        fixed[col] = converted
+                    else:
+                        fixed[col] = fixed[col].astype("string")
+            fixed.to_parquet(out_file, index=False)
+        except Exception as retry_exc:
+            logger.warning(
+                "Parquet cache write failed path=%s error=%s retry_error=%s",
+                out_file,
+                exc,
+                retry_exc,
+            )
 
 
 def compile_activities_actual(
