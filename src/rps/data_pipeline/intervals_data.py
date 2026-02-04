@@ -1444,6 +1444,14 @@ def ensure_keys(label: str, actual_keys: set[str], expected_keys: set[str], cont
     raise ValueError(f"{label} keys mismatch ({context}): {detail_text}")
 
 
+def write_parquet_cache(df: pd.DataFrame, out_file: Path, logger: logging.Logger) -> None:
+    """Best-effort Parquet cache write for analytics workloads."""
+    try:
+        df.to_parquet(out_file, index=False)
+    except Exception as exc:
+        logger.warning("Parquet cache write failed path=%s error=%s", out_file, exc)
+
+
 def compile_activities_actual(
     *,
     athlete_id: str,
@@ -1617,8 +1625,10 @@ def compile_activities_actual(
     data_dir = athlete_data_dir(athlete_id)
     latest_dir = athlete_latest_dir(athlete_id)
 
+    logger = logging.getLogger(__name__)
     last_out_file: Path | None = None
     last_out_json_file: Path | None = None
+    last_out_parquet_file: Path | None = None
     for (yr, wk), g in groups:
         g = g.sort_values(dt_col)
         out_df = g[output_cols]
@@ -1626,6 +1636,7 @@ def compile_activities_actual(
         iso_week = f"{int(wk):02d}"
         out_file = data_dir / f"{int(yr):04d}" / iso_week / f"activities_actual_{int(yr)}-{iso_week}.csv"
         out_json_file = out_file.with_suffix(".json")
+        out_parquet_file = out_file.with_suffix(".parquet")
         out_file.parent.mkdir(parents=True, exist_ok=True)
 
         out_df.to_csv(
@@ -1639,6 +1650,7 @@ def compile_activities_actual(
             lineterminator="\n",
             na_rep="",
         )
+        write_parquet_cache(out_df, out_parquet_file, logger)
 
         required_columns_set = set(required_field_map.values())
         metric_columns = [
@@ -1789,6 +1801,7 @@ def compile_activities_actual(
 
         last_out_file = out_file
         last_out_json_file = out_json_file
+        last_out_parquet_file = out_parquet_file
 
         record_index_write(
             athlete_id=athlete_id,
@@ -1809,6 +1822,9 @@ def compile_activities_actual(
         latest_json = latest_dir / "activities_actual.json"
         latest_csv.write_bytes(last_out_file.read_bytes())
         latest_json.write_bytes(last_out_json_file.read_bytes())
+        if last_out_parquet_file and last_out_parquet_file.exists():
+            latest_parquet = latest_dir / "activities_actual.parquet"
+            latest_parquet.write_bytes(last_out_parquet_file.read_bytes())
 
 
 # === Activities Trend helpers ===
@@ -2276,8 +2292,10 @@ def compile_activities_trend(
     data_dir = athlete_data_dir(athlete_id)
     latest_dir = athlete_latest_dir(athlete_id)
 
+    logger = logging.getLogger(__name__)
     out_file = data_dir / f"{year:04d}" / iso_week / f"activities_trend_{year}-{iso_week}.csv"
     out_json_file = out_file.with_suffix(".json")
+    out_parquet_file = out_file.with_suffix(".parquet")
     out_file.parent.mkdir(parents=True, exist_ok=True)
     latest_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2292,6 +2310,7 @@ def compile_activities_trend(
         lineterminator="\n",
         na_rep="",
     )
+    write_parquet_cache(out, out_parquet_file, logger)
 
     schema_dir = resolve_schema_dir()
     validator = SchemaRegistry(schema_dir).validator_for("activities_trend.schema.json")
@@ -2360,6 +2379,9 @@ def compile_activities_trend(
     latest_json = latest_dir / "activities_trend.json"
     latest_csv.write_bytes(out_file.read_bytes())
     latest_json.write_bytes(out_json_file.read_bytes())
+    if out_parquet_file.exists():
+        latest_parquet = latest_dir / "activities_trend.parquet"
+        latest_parquet.write_bytes(out_parquet_file.read_bytes())
 
     record_index_write(
         athlete_id=athlete_id,

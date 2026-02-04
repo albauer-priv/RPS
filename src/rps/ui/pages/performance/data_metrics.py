@@ -738,14 +738,74 @@ def _build_daily_durability_scatter(points: list[dict[str, object]]):
     return fig
 
 
-def _load_weekly_trends_cached(trend_path: Path) -> tuple[list[dict], str | None, bool]:
-    """Read weekly trend data, fall back to last cached payload while updates are in-flight."""
+def _weekly_trends_from_dataframe(df: pd.DataFrame) -> list[dict]:
+    rows = []
+    for _, row in df.iterrows():
+        year = row.get("Year")
+        iso_week = row.get("ISO Week")
+        if pd.isna(year) or pd.isna(iso_week):
+            continue
+        rows.append(
+            {
+                "year": int(year),
+                "iso_week": int(iso_week),
+                "weekly_aggregates": {
+                    "work_kj": row.get("Work (kJ)"),
+                },
+                "intensity_load_metrics": {
+                    "durability_index": row.get("Durability Index (DI)"),
+                    "decoupling_percent": row.get("Decoupling (%)"),
+                    "intensity_factor": row.get("Intensity Factor (IF)"),
+                    "normalized_power_w": row.get("Normalized Power (NP) (W)"),
+                    "efficiency_factor": row.get("Efficiency Factor (EF)"),
+                    "functional_intensity_ratio": row.get(
+                        "Functional Intensity Ratio (FIR) (MMP 5'/ MMP 20')"
+                    ),
+                    "ftp_estimated_w": row.get("FTP Estimated (W)"),
+                    "vo2_ftp": row.get("VO2/FTP (MMP 300s (W) / FTP Estimated (W))"),
+                },
+                "metrics": {
+                    "tsb_today": row.get("TSB (today)"),
+                    "weekly_moving_time_total_min": row.get("Weekly Moving Time Total (min)"),
+                    "weekly_z2_time_total_min": row.get("Weekly Z2 Time Total (min)"),
+                    "weekly_z2_share": row.get("Weekly Z2 Share (%)"),
+                    "weekly_moving_time_max_min": row.get("Weekly Moving Time Max (min)"),
+                    "weekly_z2_time_max_min": row.get("Weekly Z2 Time Max (min)"),
+                },
+                "period": {
+                    "label": row.get("Period"),
+                },
+            }
+        )
+    return rows
+
+
+def _load_weekly_trends_cached(
+    trend_path: Path,
+    trend_parquet_path: Path,
+) -> tuple[list[dict], str | None, bool]:
+    """Read weekly trend data (prefer parquet), fall back to cached payload while updates are in-flight."""
     cached_trends = st.session_state.get("cached_weekly_trends") or []
     cached_notes = st.session_state.get("cached_weekly_trend_notes")
     used_cache = False
     weekly_trends: list[dict] = []
     notes: str | None = None
-    if trend_path.exists():
+    if trend_parquet_path.exists():
+        try:
+            df = pd.read_parquet(trend_parquet_path)
+            weekly_trends = _weekly_trends_from_dataframe(df)
+            if weekly_trends:
+                st.session_state.cached_weekly_trends = weekly_trends
+                st.session_state.cached_weekly_trend_notes = notes
+            else:
+                used_cache = True
+                weekly_trends = cached_trends
+                notes = cached_notes
+        except Exception:
+            used_cache = True
+            weekly_trends = cached_trends
+            notes = cached_notes
+    elif trend_path.exists():
         try:
             payload = json.loads(trend_path.read_text(encoding="utf-8"))
             weekly_trends = payload.get("data", {}).get("weekly_trends") or []
@@ -779,6 +839,7 @@ st.caption(f"Athlete: {athlete_id}")
 latest_dir = ROOT / athlete_id / "latest"
 actual_path = latest_dir / "activities_actual.json"
 trend_path = latest_dir / "activities_trend.json"
+trend_parquet_path = latest_dir / "activities_trend.parquet"
 
 with st.container():
     refresh_col, info_col = st.columns([1, 3])
@@ -807,7 +868,10 @@ if not refresh_clicked:
         set_status(status_state="done", title="Data & Metrics", message=message)
     else:
         set_status(status_state="done", title="Data & Metrics", message="Intervals data ready.")
-weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(trend_path)
+weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(
+    trend_path,
+    trend_parquet_path,
+)
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 season_corridor = _season_corridor_by_week(store, athlete_id)
 phase_corridor = _phase_guardrails_by_week(store, athlete_id)
@@ -1021,7 +1085,7 @@ with st.container():
                 )
 with st.container():
     st.subheader("Activities Trend")
-    if trend_path.exists():
+    if trend_path.exists() or trend_parquet_path.exists():
         st.data_editor(
             _flatten_weekly_trends(weekly_trends),
             num_rows="dynamic",

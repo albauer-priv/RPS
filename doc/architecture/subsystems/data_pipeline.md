@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-04
 Owner: Architecture
 ---
 # Data Pipeline
@@ -23,6 +23,8 @@ Outputs are stored under:
 
 - `var/athletes/<athlete_id>/data/`
 - mirrored into `var/athletes/<athlete_id>/latest/`
+
+Parquet caches are written alongside CSV/JSON outputs and are **non-canonical**.
 
 ---
 
@@ -78,6 +80,7 @@ Per ISO week:
 
 - `activities_actual_yyyy-ww.json` + `.csv`
 - `activities_trend_yyyy-ww.json` + `.csv`
+- `.parquet` cache mirrors for both artefacts
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-04
 Owner: ADR
 ---
 # Architecture Decision Records (ADR)
@@ -32,6 +32,7 @@ This folder contains the ADR log for RPS.
 - ADR-021: Use st.plotly_chart for Charts
 - ADR-022: Vector Store Sync Policy
 - ADR-023: Athlete Data Operations Page
+- ADR-024: Parquet Cache for Intervals Pipeline Outputs
 
 ## Process (Short)
 

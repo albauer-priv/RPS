@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-04
 Owner: UI
 ---
 # Analyse → Data & Metrics
@@ -15,6 +15,9 @@ Owner: UI
 - Weekly load + durability metrics
 - Weekly dose → outcome
 - Daily durability scatter
+
+## Data Sources
+- Prefers `latest/activities_trend.parquet` when present; falls back to `latest/activities_trend.json`.
 
 ## Actions
 - Refresh Intervals Data
