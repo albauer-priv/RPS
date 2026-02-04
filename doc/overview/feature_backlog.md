@@ -9,24 +9,48 @@ Owner: Product
 This backlog tracks upcoming features and refactors. Each item should link to a
 feature spec (`doc/specs/features/FEAT_<slug>.md`) before implementation.
 
-## Next Up
+## Ranked Backlog (with dependencies)
 
-- [ ] FEAT_parquet_cache — Parquet cache writes in data pipeline.
-- [ ] FEAT_parquet_readers — Parquet-first reads in Data & Metrics.
+1) **FEAT_user_inputs_modular** — split core profile/goals, race events, availability.  
+   Depends on: none
+2) **FEAT_user_data_editors** — UI editors for availability, events, logistics.  
+   Depends on: FEAT_user_inputs_modular
+3) **FEAT_user_inputs_io** — upload/download inputs (Season Brief, events.md).  
+   Depends on: FEAT_user_inputs_modular
+4) **FEAT_user_input_examples** — example Season Brief + Logistics inputs.  
+   Depends on: FEAT_user_inputs_modular
+5) **FEAT_plan_adjustments** — adjust Season/Phase plans when constraints change.  
+   Depends on: FEAT_user_inputs_modular, FEAT_user_data_editors
+6) **FEAT_backup_restore_cli** — CLI for backup/restore.  
+   Depends on: FEAT_user_inputs_modular
+7) **FEAT_run_scheduler_resilience** — stuck-run detection and recovery.  
+   Depends on: none
+8) **FEAT_user_management** — auth/login + per-user API keys and athlete ID.  
+   Depends on: none (but changes deployment + config)
+9) **FEAT_docker_deploy** — image build + registry + deployment workflow.  
+   Depends on: none (better after user_management for env clarity)
+10) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
+    Depends on: FEAT_posting_receipts_inspection
 
-## Planned
+## Implemented / In-Progress
 
-- [ ] FEAT_user_inputs_io — Upload/Download user inputs (Season Brief, events.md) for editing and re-ingestion.
-- [ ] FEAT_user_inputs_modular — Split user inputs into core profile/goals, race events, availability for independent updates.
-- [ ] FEAT_user_data_editors — UI editors for availability, events, logistics, and related inputs.
-- [ ] FEAT_user_management — Auth/login with per-user Intervals + OpenAI API keys and athlete ID.
-- [ ] FEAT_user_input_examples — Provide example Season Brief and Logistics (events.md) inputs.
-- [ ] FEAT_docker_deploy — Docker image build, registry publish, and deployment workflow.
-- [ ] FEAT_plan_adjustments — Adjust existing Season/Phase plans when constraints change; preserve past phases.
-- [ ] FEAT_backup_restore_cli — CLI data ops for backups and restores.
-- [~] FEAT_vectorstore_monitor — background monitor + reset behavior. (Implemented)
-- [ ] FEAT_run_scheduler_resilience — stuck-run detection and recovery.
-- [~] FEAT_posting_receipts_review — receipts diff + conflict UX. (Receipt inspection exists; UX diff pending)
+- [x] FEAT_parquet_cache — Parquet cache writes in data pipeline.
+- [x] FEAT_parquet_readers — Parquet-first reads in Data & Metrics.
+- [x] FEAT_vectorstore_monitor — background monitor + reset behavior.
+- [~] FEAT_posting_receipts_inspection — receipt inspection + status (implemented; UX polish ongoing).
+
+## Unlock Graph (dependencies)
+
+```mermaid
+flowchart TD
+  A["FEAT_user_inputs_modular"] --> B["FEAT_user_data_editors"]
+  A --> C["FEAT_user_inputs_io"]
+  A --> D["FEAT_user_input_examples"]
+  A --> E["FEAT_plan_adjustments"]
+  B --> E
+  A --> F["FEAT_backup_restore_cli"]
+  G["FEAT_posting_receipts_inspection"] --> H["FEAT_posting_receipts_conflict_ux"]
+```
 
 ## Deferred / Ideas
 
