@@ -128,6 +128,78 @@ When adding or changing documentation, follow this rule:
 5) Every doc must have a header:
    Version, Status (Draft/Updated/Deprecated/Superseded), Last-Updated (YYYY-MM-DD), and a single "Owner" or "Area".
 
+## Agent Rule: Feature-First Workflow (Docs → Decision → Implementation)
+
+For any change that affects behavior (feature, refactor with user impact, schema/contract change):
+
+### 1) Create a Feature Doc FIRST
+Create `doc/specs/features/FEAT_<slug>.md` before coding. **Use the required template at `doc/specs/features/FEAT_TEMPLATE.md`.** It must contain:
+
+1. **Context / Problem**
+   - Why change is needed; current behavior; constraints.
+
+2. **Goals & Non-Goals**
+   - Goals (must be true after release)
+   - Non-Goals (explicit exclusions)
+
+3. **Proposed Behavior**
+   - New behavior description from user/system perspective.
+   - If UI is affected: include a UI flow diagram (Mermaid).
+   - If no UI: describe impacted components and contracts.
+
+4. **Implementation Analysis**
+   - How it can be implemented: components/modules, data flow, artefacts, schemas.
+
+5. **Impact Analysis (complete)**
+   - Conflicts with ADRs/principles?
+   - Breaking changes? Compatibility?
+   - What must be adjusted (UI, pipeline, renderer, validators, workspace, run store).
+   - Required refactoring (explicit list).
+
+6. **Options & Recommendation**
+   - At least one alternative (if reasonable).
+   - Tradeoffs, risks, and a recommended option.
+
+7. **Acceptance Criteria (DoD)**
+   - Testable bullets (validation passes, UI states, artefact outputs, performance guardrails).
+
+8. **Migration / Rollout**
+   - Backward compatibility strategy (schema versions, defaults, fallbacks).
+   - Rollout gating (feature flag/config) if needed.
+
+9. **Risks & Failure Modes**
+   - What can go wrong, how it is detected, and expected safe behavior.
+
+10. **Observability / Logging**
+   - New/changed log events and diagnostics needed.
+   - Link to logging policy doc.
+
+11. **Documentation Updates**
+   - List docs to update and intended changes (links + bullets).
+
+12. **Link Map (required, no copy/paste)**
+   - Links to relevant canonical docs (UI spec, architecture, workspace, schema versioning, logging policy, etc.)
+   - The feature doc must not duplicate canonical content; it references it.
+
+### 2) Optional but recommended sections (keep lightweight)
+- **Open Questions** (max 5 bullets): unresolved decisions or unknowns.
+- **Out of Scope / Deferred**: explicit exclusions and future follow-ups.
+
+### 3) ADR Trigger (mandatory when applicable)
+Create/update an ADR (`doc/adr/`) when the feature:
+- changes architecture boundaries,
+- introduces a new subsystem/component,
+- changes persistence or schema strategy,
+- modifies cross-cutting contracts (artefacts, run-store, workspace),
+- or deviates from existing ADRs/principles.
+
+### 4) Implementation After Approval
+Only implement after the feature doc is reviewed/approved.
+During implementation:
+- Keep the feature doc in sync if scope changes.
+- Update referenced docs as specified.
+- Ensure validators/runbooks are updated when contracts/schemas change.
+
 ### Documentation (Mermaid)
 
 * Mermaid diagram labels should wrap text in quotes, e.g. `["Label"]` or `{"Decision?"}`, to ensure consistent rendering.
