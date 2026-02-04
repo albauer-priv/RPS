@@ -22,6 +22,7 @@ This directory contains the canonical documentation for the platform. It is a na
 - `overview/planning_principles.md`
 - `overview/artefact_flow.md`
 - `overview/recommended_models.md`
+- `overview/feature_backlog.md`
 
 ### Architecture (system design)
 - `architecture/system_architecture.md`
