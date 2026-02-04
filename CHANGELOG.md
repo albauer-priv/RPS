@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Weekly dose→outcome chart now uses separate right-side axes for DI and decoupling.
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
-- Centralized UI flow spec (`doc/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
+- Centralized UI flow spec (`doc/ui/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
 - Plan Hub and UI docs now reflect that posting to Intervals happens from the Workouts page, not the Hub.
 - Plan Hub scoped runs now support optional overrides (required only when modifying existing artifacts) and pass overrides into orchestrators.
 - Week page now focuses on plan-week only; posting and report actions are moved to their dedicated pages.
@@ -153,7 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Queue scheduler is now managed via `st.cache_resource` to keep it alive per process.
 - Added ADRs 014–018 (Plan Hub vs subpages, readiness visualization, staleness policy, posting policy, schema versioning).
 - Plan Hub cancel now uses `cancel_requested`; workers stop safely and mark runs as CANCELLED.
-- Consolidated `doc/planners.md` into `doc/how_to_plan.md` and updated planning/system docs to reflect Plan Hub and commit steps.
+- Consolidated `doc/planners.md` into `doc/overview/how_to_plan.md` and updated planning/system docs to reflect Plan Hub and commit steps.
 - Renamed Plan WoW page to Workouts and added posting, delete, coach revision, and history views.
 - Integrated artefact renderer into `rps.rendering.renderer`, removed the standalone script, and moved templates under `src/rps/rendering/templates/`.
 - Auto-render now calls the integrated renderer directly (no subprocess).
@@ -245,9 +245,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Added a minimal Streamlit UI at `src/rps/ui/streamlit_app.py` with a simple state machine and chat-style commands.
-- Documented Streamlit usage in `doc/streamlit_ui.md` and referenced it from `doc/system_architecture.md`.
+- Documented Streamlit usage in `doc/ui/streamlit_contract.md` and referenced it from `doc/architecture/system_architecture.md`.
 - Added `streamlit` to `pyproject.toml` dependencies.
-- Documented the base+mode knowledge injection model in `doc/system_architecture.md`.
+- Documented the base+mode knowledge injection model in `doc/architecture/system_architecture.md`.
 - Added a header comment to `config/agent_knowledge_injection.yaml` clarifying base vs mode bundles.
 - Integrated the Intervals.icu pipeline into `rps` with `python -m rps.main parse-intervals`.
 - Deprecated `scripts/data_pipeline/get_intervals_data.py` in favor of the new CLI entrypoint.
@@ -622,7 +622,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local workspace docs and validation guide under `doc/`.
 - Data pipeline validator script: `scripts/validate_outputs.py`.
 - Artefact flow overview with updated Mermaid diagrams.
-- Vector store operations and incident guidance in `doc/system_architecture.md`.
+- Vector store operations and incident guidance in `doc/architecture/system_architecture.md`.
 
 ### Changed
 - Data pipeline docs updated to reference `get_intervals_data.py`.
