@@ -95,6 +95,7 @@ Contains:
 - **Download Last Backup** reuses the most recent bundle in the UI session.
 - **Validate Backup** runs checksum validation and reports how many files are in scope (no writes).
 - **Show files to restore** lists all files that would be written for the selected scope.
+- **Summary** shows file counts per top‑level folder (inputs/latest/data/receipts/rendered).
 - **Restore Backup** requires a typed confirmation and optional force‑restore into a non‑empty workspace.
 
 ---

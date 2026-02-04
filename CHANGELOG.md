@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Athlete Profile → Data Operations now supports backup/restore with partial restore modes.
 - Data Operations now supports backup validation (dry-run) and a cached “Download Last Backup”.
 - Data Operations now lists files that would be restored before confirming.
+- Data Operations now shows a per-folder restore summary for quick review.
 - Replaced deprecated `use_container_width` with `width="stretch"` for dataframes.
 - Plan Hub reset/delete confirmation now validates on submit instead of disabling the Proceed button.
 - Plan Hub delete/reset now prunes the workspace index so readiness updates immediately.

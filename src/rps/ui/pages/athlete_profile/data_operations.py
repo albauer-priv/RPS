@@ -105,6 +105,31 @@ with st.expander("Restore (Import)", expanded=False):
                 st.error(f"Could not list files: {exc}")
             else:
                 st.caption(f"{len(files)} files in restore scope.")
+                summary = {
+                    "inputs/": 0,
+                    "latest/": 0,
+                    "data/": 0,
+                    "receipts/": 0,
+                    "rendered/": 0,
+                    "other": 0,
+                }
+                for path in files:
+                    if path.startswith("inputs/"):
+                        summary["inputs/"] += 1
+                    elif path.startswith("latest/"):
+                        summary["latest/"] += 1
+                    elif path.startswith("data/"):
+                        summary["data/"] += 1
+                    elif path.startswith("receipts/"):
+                        summary["receipts/"] += 1
+                    elif path.startswith("rendered/"):
+                        summary["rendered/"] += 1
+                    else:
+                        summary["other"] += 1
+                st.write(
+                    "Summary: "
+                    + ", ".join(f"{key}{value}" for key, value in summary.items() if value > 0)
+                )
                 st.dataframe(files, width="stretch", hide_index=True)
     if st.button("Validate Backup", width="content", disabled=archive is None):
         with st.spinner("Validating backup..."):
