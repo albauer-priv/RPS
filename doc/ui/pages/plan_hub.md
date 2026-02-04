@@ -129,11 +129,11 @@ Authority labels come directly from the artefact model.
 
 Pipeline with hard dependencies (Binding) → deterministic UI checks:
 
-**Macro → Meso → Micro → Builder → Analysis**
+**Season → Phase → Week → Builder → Analysis**
 
-- Macro outputs: `season_plan`
-- Meso outputs: `phase_guardrails`, `phase_structure` (+ optional preview)
-- Micro outputs: `week_plan`
+- Season outputs: `season_plan`
+- Phase outputs: `phase_guardrails`, `phase_structure` (+ optional preview)
+- Week outputs: `week_plan`
 - Builder outputs: `workouts_yyyy-ww.json`
 - Analysis outputs: `des_analysis_report`
 
@@ -151,7 +151,7 @@ Pipeline with hard dependencies (Binding) → deterministic UI checks:
 
 **Optional (soft)**
 
-- Season Scenarios optional, but recommended when Macro changes
+- Season Scenarios optional, but recommended when Season changes
 - Phase Preview optional/informational
 - `macro_meso_feed_forward` / `block_feed_forward` optional scoped override
 
