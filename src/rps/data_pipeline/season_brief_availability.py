@@ -321,9 +321,6 @@ def build_availability_payload(
             "indoor_possible": _parse_bool(row["indoor"]),
             "travel_risk": _parse_travel_risk(row["travel"]),
             "locked": locked,
-            "source_hours_text": row["hours"],
-            "source_indoor_text": row["indoor"],
-            "source_travel_text": row["travel"],
         }
         entries.append(entry)
 

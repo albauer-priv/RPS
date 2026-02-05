@@ -51,9 +51,7 @@ Each entry MUST include:
 - `indoor_possible` (boolean)
 - `travel_risk` (`low|med|high`)
 - `locked` (boolean; true for fixed rest days)
-- `source_hours_text` (string; raw cell text or empty if manual)
-- `source_indoor_text` (string; raw cell text or empty if manual)
-- `source_travel_text` (string; raw cell text or empty if manual)
+Note: raw Season Brief source fields are no longer stored in the availability table.
 
 ### 3.2 Weekly Hours (Binding)
 `weekly_hours` MUST be the sum of daily entries:

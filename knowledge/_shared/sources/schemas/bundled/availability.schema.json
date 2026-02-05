@@ -49,10 +49,7 @@
         "hours_max",
         "indoor_possible",
         "travel_risk",
-        "locked",
-        "source_hours_text",
-        "source_indoor_text",
-        "source_travel_text"
+        "locked"
       ],
       "properties": {
         "weekday": {
@@ -92,15 +89,6 @@
         },
         "locked": {
           "type": "boolean"
-        },
-        "source_hours_text": {
-          "type": "string"
-        },
-        "source_indoor_text": {
-          "type": "string"
-        },
-        "source_travel_text": {
-          "type": "string"
         }
       }
     },
@@ -140,10 +128,7 @@
               "hours_max",
               "indoor_possible",
               "travel_risk",
-              "locked",
-              "source_hours_text",
-              "source_indoor_text",
-              "source_travel_text"
+              "locked"
             ],
             "properties": {
               "weekday": {
@@ -183,15 +168,6 @@
               },
               "locked": {
                 "type": "boolean"
-              },
-              "source_hours_text": {
-                "type": "string"
-              },
-              "source_indoor_text": {
-                "type": "string"
-              },
-              "source_travel_text": {
-                "type": "string"
               }
             }
           }
@@ -503,10 +479,7 @@
               "hours_max",
               "indoor_possible",
               "travel_risk",
-              "locked",
-              "source_hours_text",
-              "source_indoor_text",
-              "source_travel_text"
+              "locked"
             ],
             "properties": {
               "weekday": {
@@ -546,15 +519,6 @@
               },
               "locked": {
                 "type": "boolean"
-              },
-              "source_hours_text": {
-                "type": "string"
-              },
-              "source_indoor_text": {
-                "type": "string"
-              },
-              "source_travel_text": {
-                "type": "string"
               }
             }
           }
