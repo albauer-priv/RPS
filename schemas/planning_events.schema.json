@@ -88,25 +88,31 @@
             "type": "object",
             "additionalProperties": false,
             "required": [
-              "priority",
-              "event_name",
-              "date",
-              "event_type",
-              "goal",
-              "distance_km",
+            "type",
+            "priority_rank",
+            "event_name",
+            "date",
+            "event_type",
+            "goal",
+            "distance_km",
               "elevation_m",
               "expected_duration",
               "time_limit",
               "objective"
             ],
             "properties": {
-              "priority": {
+              "type": {
                 "type": "string",
                 "enum": [
                   "A",
                   "B",
                   "C"
                 ]
+              },
+              "priority_rank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
               },
               "event_name": {
                 "type": "string",

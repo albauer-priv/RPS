@@ -2,7 +2,7 @@
 Type: InterfaceSpecification
 Interface-For: PLANNING_EVENTS
 Interface-ID: PlanningEventsInterface
-Version: 1.0
+Version: 1.1
 
 Scope: Shared
 Authority: Binding
@@ -32,7 +32,8 @@ season and phase planning.
 
 ## 2) Required Fields (Binding)
 Each event MUST include:
-- `priority` (A/B/C)
+- `type` (A/B/C)
+- `priority_rank` (1-3)
 - `event_name`
 - `date` (YYYY-MM-DD)
 - `event_type`

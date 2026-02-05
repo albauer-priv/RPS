@@ -14,6 +14,7 @@ Owner: Specs
 - [ ] Validates against `planning_events.schema.json`.
 - [ ] `meta.schema_id` = `PlanningEventsInterface` and `meta.schema_version` is current.
 - [ ] `data.events` contains A/B/C events with required fields populated.
+- [ ] `data.events[].type` is one of A/B/C and `priority_rank` is 1-3.
 - [ ] Event `date` values are valid ISO dates (`YYYY-MM-DD`).
 
 ## Notes

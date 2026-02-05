@@ -13,7 +13,8 @@ Owner: UI
 - Editable weekly availability table and hours
 
 ## Events
-- Planning events (A/B/C) used for season planning
+- Planning events used for season planning (Type A/B/C + Priority rank, event type, time limits)
+- A-events must be spaced at least 12 weeks apart
 
 ## Logistics
 - Context events (travel, work constraints, non-A/B/C events)
