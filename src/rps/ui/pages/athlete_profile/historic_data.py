@@ -71,6 +71,10 @@ announce_log_file(athlete_id)
 
 st.title("Historic Data")
 st.caption(f"Athlete: {athlete_id}")
+st.info(
+    "Historic baseline metrics are computed from Intervals data. "
+    "Use Refresh to recompute after new activities are imported."
+)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)

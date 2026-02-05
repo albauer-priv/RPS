@@ -25,6 +25,10 @@ announce_log_file(athlete_id)
 
 st.title("Logistics")
 st.caption(f"Athlete: {athlete_id}")
+st.info(
+    "Capture context events (travel, work, life constraints) that affect training availability "
+    "but are not A/B/C planning events."
+)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -44,6 +48,8 @@ data = payload.get("data", {}) if isinstance(payload, dict) else {}
 events = data.get("events") or []
 
 st.subheader("Context Events")
+if not events:
+    events = [{"date": "", "event": "", "notes": ""}]
 events = st.data_editor(events, num_rows="dynamic", width="stretch", key="logistics_events_editor")
 
 if st.button("Save Logistics", width="content"):

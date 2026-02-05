@@ -25,6 +25,10 @@ announce_log_file(athlete_id)
 
 st.title("Availability")
 st.caption(f"Athlete: {athlete_id}")
+st.info(
+    "Describe typical weekly hours plus any fixed rest days. "
+    "This is used to bound feasible weekly load corridors."
+)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -56,6 +60,10 @@ with col_max:
     weekly_max = st.number_input("Max hours", min_value=0.0, value=float(weekly_hours.get("max", 0.0)))
 
 st.subheader("Availability Table")
+if not availability_table:
+    availability_table = [
+        {"day": "Mon", "hours": 0.0, "notes": ""}
+    ]
 availability_table = st.data_editor(
     availability_table,
     num_rows="dynamic",

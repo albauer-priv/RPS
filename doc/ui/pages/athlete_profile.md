@@ -5,6 +5,7 @@ Last-Updated: 2026-02-05
 Owner: UI
 ---
 # Athlete Profile Pages
+All input guidance is provided on the pages themselves; templates are not used.
 
 ## About You & Goals
 - Athlete profile, goals, and constraints (authoritative input)

@@ -25,6 +25,10 @@ announce_log_file(athlete_id)
 
 st.title("About You & Goals")
 st.caption(f"Athlete: {athlete_id}")
+st.info(
+    "Capture your core profile, goals, and constraints here. "
+    "These values inform season planning and load estimation."
+)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)

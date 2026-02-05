@@ -35,6 +35,10 @@ announce_log_file(athlete_id)
 
 st.title("Events")
 st.caption(f"Athlete: {athlete_id}")
+st.info(
+    "Add your A/B/C planning events. Type is A/B/C; Priority ranks events within the type "
+    "(e.g. B1/B2/B3). A-events must be spaced at least 12 weeks apart."
+)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -133,6 +137,11 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
 
 st.subheader("Planning Events (A/B/C)")
 events = [_normalize_event(row) for row in events if isinstance(row, dict)]
+if not events:
+    events = [_normalize_event({})]
+st.caption(
+    "Add A/B/C events with a priority rank (1-3). Event Type defaults to the KPI profile when available."
+)
 events = st.data_editor(
     events,
     num_rows="dynamic",
@@ -153,7 +162,7 @@ events = st.data_editor(
             help="Priority within the same type (e.g. B1/B2/B3).",
         ),
         "event_name": st.column_config.TextColumn("Event Name"),
-        "date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
+        "date": st.column_config.TextColumn("Date (YYYY-MM-DD)"),
         "event_type": st.column_config.SelectboxColumn(
             "Event Type",
             options=event_type_options,
