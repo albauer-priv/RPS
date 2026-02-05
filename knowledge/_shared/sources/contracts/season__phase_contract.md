@@ -41,7 +41,7 @@ structural architecture without introducing week- or workout-level planning.
 - OWNS phase intent and seasonal priorities.
 - OWNS season weekly kJ corridors (kJ-first).
 - OWNS high-level allowed/forbidden intensity domains and non-negotiables.
-- MUST derive availability assumptions from the Season Brief weekday availability table
+- MUST derive availability assumptions from the Availability artefact
   (Mon-Sun hours, indoor possible, travel risk) and fixed rest days, and include them in
   `season_plan.data.global_constraints.availability_assumptions` and
   `season_plan.data.global_constraints.recovery_protection`.

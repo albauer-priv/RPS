@@ -24,11 +24,11 @@ Dependencies:
 # Contract: Data-Pipeline -> Season-Scenario-Agent (v1.0)
 
 ## 1) Purpose (Binding)
-Provide normalized availability data derived from the Season Brief.
+Provide normalized availability data from user-managed Availability inputs.
 
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `availability_yyyy-ww.json` validated against `availability.schema.json`
-  when the Season Brief availability table exists.
+  when Availability inputs exist (legacy Season Brief parsing is deprecated).
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.
 - MUST STOP on schema validation failure.
 

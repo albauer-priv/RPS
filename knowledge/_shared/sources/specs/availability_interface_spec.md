@@ -8,7 +8,8 @@ Scope: Shared
 Authority: Binding
 
 Inputs-From:
-  - SeasonBriefInterface
+  - AthleteProfileInterface
+  - (Legacy) SeasonBriefInterface (deprecated)
 Outputs-To:
   - Season-Scenario-Agent
   - Season-Planner
@@ -19,8 +20,9 @@ Outputs-To:
 # Availability Interface Specification
 
 ## 1) Purpose (Binding)
-Normalize the Season Brief weekday availability table into a machine-readable
-artefact that planners can use for load plausibility checks and daily constraints.
+Provide a user-managed availability artefact that planners can use for
+load plausibility checks and daily constraints. Legacy Season Brief parsing
+is supported only for backward compatibility.
 
 ## 2) Required Meta (Binding)
 The artefact MUST include a valid `meta` envelope (`artefact_meta.schema.json`) with:
@@ -33,7 +35,8 @@ The artefact MUST include a valid `meta` envelope (`artefact_meta.schema.json`) 
 
 ## 3) Required Data Fields (Binding)
 `data` MUST include:
-- `season_brief_ref` (legacy field; populate with Athlete Profile run_id/version key)
+- `source_type` (`manual|imported|season_brief`)
+- `source_ref` (string; may be a UI run_id or legacy Season Brief ref)
 - `availability_table` (array of 7 entries; one per weekday)
 - `weekly_hours` (object: `min`, `typical`, `max`)
 - `fixed_rest_days` (array of weekday enums)
@@ -48,9 +51,9 @@ Each entry MUST include:
 - `indoor_possible` (boolean)
 - `travel_risk` (`low|med|high`)
 - `locked` (boolean; true for fixed rest days)
-- `source_hours_text` (string; raw cell text)
-- `source_indoor_text` (string; raw cell text)
-- `source_travel_text` (string; raw cell text)
+- `source_hours_text` (string; raw cell text or empty if manual)
+- `source_indoor_text` (string; raw cell text or empty if manual)
+- `source_travel_text` (string; raw cell text or empty if manual)
 
 ### 3.2 Weekly Hours (Binding)
 `weekly_hours` MUST be the sum of daily entries:
@@ -58,14 +61,11 @@ Each entry MUST include:
 - `typical` = sum of `hours_typical`
 - `max` = sum of `hours_max`
 
-## 4) Parsing Rules (Binding)
-- The availability table MUST be parsed from the Season Brief table
-  “Weekly availability table”.
-- Fixed rest days MUST be marked as `0 h / locked` in the Season Brief and
-  mapped to `locked=true` in the artefact.
-- `temporal_scope.from` SHOULD default to the generation date if the Season Brief
-  validity range is missing or in the past; `temporal_scope.to` SHOULD default to
-  the end of the season year.
+## 4) Authoring / Parsing Rules (Binding)
+- Manual entries MUST be provided by the user via the Availability UI.
+- If `source_type=season_brief`, the availability table MUST be parsed from the
+  Season Brief “Weekly availability table”.
+- Fixed rest days MUST be marked as `0 h / locked` and mapped to `locked=true`.
 - If any day is missing or cannot be parsed, the parser MUST STOP.
 
 ## 5) Forbidden (Binding)
@@ -74,6 +74,7 @@ Each entry MUST include:
 - Do NOT smooth or adjust values beyond numeric parsing of the provided table.
 
 ## 6) Traceability (Binding)
-`trace_upstream` MUST reference the Season Brief source.
+- If `source_type=season_brief`, `trace_upstream` MUST reference the Season Brief.
+- Otherwise, `trace_upstream` MAY be empty.
 
 ## End of Availability Interface Specification v1.0

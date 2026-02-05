@@ -45,7 +45,7 @@ and Week-Planner weekly execution.
 - MUST validate all input JSON before use and STOP on invalid artefacts.
 - MUST execute strictly within governance.
 - MUST respect weekly kJ corridors.
-- MUST respect phase-level non-negotiables, including fixed rest days derived from the Season Brief availability table.
+- MUST respect phase-level non-negotiables, including fixed rest days from the Availability artefact.
 - MUST NOT compensate missed load.
 - MUST NOT introduce progression or deload logic.
 - MUST NOT reinterpret intent or objectives.

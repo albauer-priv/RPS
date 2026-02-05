@@ -24,8 +24,8 @@ Season-Planner retains binding decision authority.
 ### Season-Scenario-Agent
 - Produce exactly one `SEASON_SCENARIOS` artefact per run.
 - When a scenario label is provided, also produce one `SEASON_SCENARIO_SELECTION` artefact.
-- Use the Season Brief and KPI Profile as primary inputs.
-- Use the AVAILABILITY artefact (derived from the Season Brief) and fixed rest days
+- Use the Athlete Profile and KPI Profile as primary inputs.
+- Use the AVAILABILITY artefact (user-managed input) and fixed rest days.
   in scenario guidance (constraints summary and phase shaping).
 - Provide three scenarios (A/B/C) with clear trade-offs.
 - Do not create season plans or governance decisions.
@@ -63,7 +63,7 @@ The `SEASON_SCENARIO_SELECTION` artefact MUST include:
 
 ## 5) Handoff Rules
 - Season-Planner may request clarification if scenario content conflicts with
-  Season Brief constraints or KPI Profile gates.
+  Athlete Profile constraints or KPI Profile gates.
 - If `SEASON_SCENARIOS` is missing, Season-Planner may proceed using its own
   scenario generation rules.
 - Scenario guidance (phase suggestions, deload cadence) is advisory and may be

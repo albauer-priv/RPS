@@ -35,14 +35,14 @@ required schema, field sources, and a minimal valid example.
 - `iso_week`: ISO week string `YYYY-WW`
 - `iso_week_range`: `YYYY-WW--YYYY-WW` (string, inclusive)
 - `temporal_scope`: `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
-- `trace_upstream`: include Season Brief + KPI_PROFILE + AVAILABILITY (if loaded)
+- `trace_upstream`: include ATHLETE_PROFILE + PLANNING_EVENTS + LOGISTICS + KPI_PROFILE + AVAILABILITY (if loaded)
 - `trace_data`, `trace_events`: include inputs if used
 - `notes`: non‑empty string
 
 #### 3) `data` (required fields)
 - `season_brief_ref`: legacy field; populate with Athlete Profile run_id or version key
 - `kpi_profile_ref`: loaded KPI Profile id (exact string)
-- `athlete_profile_ref`: Season Brief ref or profile id
+- `athlete_profile_ref`: Athlete Profile run_id or profile id
 - `planning_horizon_weeks`: integer (>=1)
 - `scenarios`: **array of exactly three scenarios** (`A`, `B`, `C`)
 - `notes`: array of non‑empty strings (at least 1)

@@ -42,7 +42,8 @@ If an artefact has no upstream (e.g., Data-Pipeline raw outputs), it MUST includ
 
 ## 4. Upstream Trace Rules
 ### Season outputs
-- MUST reference Season Brief (if present) or equivalent upstream input identifier in `trace_upstream`.
+- MUST reference Athlete Profile and Planning Events (and Logistics when used) in `trace_upstream`.
+- If legacy Season Brief was used, it MAY be referenced as a deprecated upstream input.
 
 ### Phase outputs (Phase-Architect)
 - MUST reference exactly one `season_plan_yyyy-ww--yyyy-ww.json` in `trace_upstream`.

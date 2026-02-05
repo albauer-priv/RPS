@@ -153,7 +153,7 @@ Pipeline with hard dependencies (Binding) → deterministic UI checks:
 
 - Season Scenarios optional, but recommended when Season changes
 - Phase Preview optional/informational
-- `macro_meso_feed_forward` / `block_feed_forward` optional scoped override
+- `season_phase_feed_forward` optional scoped override
 
 ---
 
@@ -221,12 +221,12 @@ At least one of:
 #### Step 4: Season Plan (`season_plan`)
 
 - **blocked**: selection missing (when required)
-- **stale**: selection newer than macro_overview, or inputs newer (athlete_profile / wellness)
+- **stale**: selection newer than season overview, or inputs newer (athlete_profile / wellness)
 
 #### Step 5/6: Phase Guardrails + Phase Structure
 
-- **blocked**: macro_overview missing or does not cover target week
-- **stale**: macro_overview newer or zone_model newer (when relevant)
+- **blocked**: season overview missing or does not cover target week
+- **stale**: season overview newer or zone_model newer (when relevant)
 
 #### Step 7: Phase Preview (optional)
 

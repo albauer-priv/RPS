@@ -15,7 +15,7 @@ Multiple artefacts represent planning and analysis data. Without clear ownership
 
 ## Decision
 
-- **Source of truth**: inputs (Season Brief, Events, KPI, Availability) and raw pipeline outputs (activities_actual, activities_trend, zone_model, wellness).
+- **Source of truth**: inputs (Athlete Profile, Planning Events, Logistics, KPI Profile, Availability) and raw pipeline outputs (activities_actual, activities_trend, zone_model, wellness).
 - **Derived**: season/phase/week plans, previews, exports, and reports.
 - Derived artefacts must reference their source context via meta headers.
 

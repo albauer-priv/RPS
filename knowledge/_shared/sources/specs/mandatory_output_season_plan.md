@@ -36,7 +36,7 @@ required schema, field sources, and a minimal valid example.
 - `iso_week_range`: `YYYY-WW--YYYY-WW` (string, inclusive)
 - `temporal_scope`: `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
   - Must align to `iso_week_range` (no month inference).
-- `trace_upstream`: list of upstream artefacts (Season Brief, KPI_PROFILE, SEASON_SCENARIOS or SEASON_SCENARIO_SELECTION, AVAILABILITY, WELLNESS, ACTIVITIES_TREND when used).
+- `trace_upstream`: list of upstream artefacts (ATHLETE_PROFILE, PLANNING_EVENTS, LOGISTICS, KPI_PROFILE, SEASON_SCENARIOS or SEASON_SCENARIO_SELECTION, AVAILABILITY, WELLNESS, ACTIVITIES_TREND when used).
 - `trace_data`, `trace_events`: include inputs (planning_events must be in `trace_events`, logistics in `trace_data`).
 - `notes`: non‑empty string.
 
@@ -50,8 +50,8 @@ Required:
   - `w_per_kg` `{ "min": number, "max": number }`
   - `kj_per_kg_per_hour` `{ "min": number, "max": number }`
   - `notes` (string)
-- `athlete_profile_ref` (Season Brief ref or profile id)
-- `body_mass_kg` (number, from WELLNESS or Season Brief fallback)
+- `athlete_profile_ref` (Athlete Profile run_id or profile id)
+- `body_mass_kg` (number, from WELLNESS or Athlete Profile fallback)
 Notes:
 - If the caller specifies a moving_time_rate_band, `moving_time_rate_guidance.segment` MUST match it.
 
@@ -105,7 +105,7 @@ Each phase MUST include:
   and the selected cadence (`deload_cadence` / `phase_length_weeks`); do not invent
   alternate cadence logic.
 - No extra keys at phase level.
-- Events: every Season Brief A/B/C event must appear in exactly one phase’s `events_constraints`.
+- Events: every Planning Events A/B/C event must appear in exactly one phase’s `events_constraints`.
 
 #### 6) `data.global_constraints`
 Required:

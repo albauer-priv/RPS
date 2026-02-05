@@ -14,16 +14,17 @@ Last-Updated: 2026-01-23
 
 ## Purpose
 
-The data pipeline writes factual artefacts (`activities_actual`, `activities_trend`, `availability`)
-into the athlete workspace. This document explains how to validate those outputs
+The data pipeline writes factual artefacts (`activities_actual`, `activities_trend`, `wellness`)
+into the athlete workspace. Availability is a user-managed input and is validated
+alongside pipeline outputs. This document explains how to validate those artefacts
 against the local JSON schemas before they are consumed by planners.
 
 ```mermaid
 flowchart TD
   DP[Data Pipeline\nparse-intervals] --> AA[activities_actual.json]
   DP --> AT[activities_trend.json]
-  DP --> AV[availability.json]
   DP --> WL[wellness.json]
+  UI[User Input] --> AV[availability.json]
   AA --> VA[validate_outputs.py]
   AT --> VA
   AV --> VA

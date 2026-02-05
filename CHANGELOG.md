@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub Run Planning panel stays visible when only Week Plan is missing; scope inputs render in the left column again.
 - Shared duration parsing/formatting helpers now back both Week and Workouts pages for consistent display.
 - Historical baseline now reports kJ per activity (not per day), and Historic Data UI reflects the new metric.
+- Documentation/specs now reference Athlete Profile, Planning Events, and Logistics as primary inputs (Season Brief legacy noted).
 - Centralized UI flow spec (`doc/ui/ui_spec.md`) now includes updated and unified diagrams, scoped override rules, plan-week scoped flow, and replace-latest semantics.
 - Plan Hub and UI docs now reflect that posting to Intervals happens from the Workouts page, not the Hub.
 - Plan Hub scoped runs now support optional overrides (required only when modifying existing artifacts) and pass overrides into orchestrators.

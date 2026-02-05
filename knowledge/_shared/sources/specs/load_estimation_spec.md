@@ -72,11 +72,11 @@ This spec is **strictly about planning load corridors**. It must not be used to 
 * `meta.schema_version` + `data.model_metadata.filename` (version identifiers)
 * Zone/domain typical IF values when available (`data.zones[].typical_if`)
 
-### 2.2 Season Brief (optional but preferred)
+### 2.2 Athlete Profile (optional but preferred)
 
-* `endurance_anchor_w` (watts) — athlete sustainable endurance anchor (if present in Season Brief input)
+* `endurance_anchor_w` (watts) — athlete sustainable endurance anchor (if present in Athlete Profile input)
 * `ambition_if_range = [low, high]` — QUALITY intent envelope (policy input only, if present)
-* If Season Brief has no schema, these fields MUST be passed as **User Provided Data** in the Phase-Architect and Week-Planner prompts when present.
+* If Athlete Profile fields are missing in the artefact, these values MUST be passed as **User Provided Data** in Phase-Architect and Week-Planner prompts when present.
 
 ### 2.3 Availability (required for weekly bands)
 
@@ -143,13 +143,13 @@ Clamps:
 
 `IF_ref_load` MUST be resolved deterministically:
 
-1. **Season Brief anchor** (preferred):
+1. **Athlete Profile anchor** (preferred):
 
 * If `endurance_anchor_w` is present and `ftp_watts > 0`:
 
   * `IF_anchor = endurance_anchor_w / ftp_watts`
   * `IF_ref_load = clamp(IF_anchor, 0.55, 0.80)`
-  * `IF_ref_load_source = SEASON_BRIEF_ANCHOR`
+  * `IF_ref_load_source = ATHLETE_PROFILE_ANCHOR`
 
 2. **Zone Model endurance typical** (fallback):
 

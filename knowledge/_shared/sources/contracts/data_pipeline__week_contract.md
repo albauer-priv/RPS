@@ -37,7 +37,8 @@ Provide validated factual artefacts (activities, wellness, zone model) to the We
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `activities_actual_yyyy-ww.json` validated against `activities_actual.schema.json`.
 - MUST emit `activities_trend_yyyy-ww.json` validated against `activities_trend.schema.json`.
-- MUST emit `availability_yyyy-ww.json` validated against `availability.schema.json` when Season Brief availability exists.
+- MUST emit `availability_yyyy-ww.json` validated against `availability.schema.json` when availability inputs exist.
+- Legacy Season Brief parsing (deprecated) MAY emit availability if invoked.
 - MUST emit `wellness_yyyy-ww.json` validated against `wellness.schema.json` when data exists.
 - MUST emit `zone_model_power_<FTP>W.json` validated against `zone_model.schema.json` when sport settings allow.
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.

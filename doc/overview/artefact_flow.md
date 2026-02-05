@@ -264,7 +264,7 @@ flowchart LR
 - `phase_structure_yyyy-ww--yyyy-ww.json`
 - `phase_feed_forward_yyyy-ww.json` (optional)
 - `zone_model_power_<FTP>W.json` (informational, from Data-Pipeline)
-- `availability_yyyy-ww.json` (informational, from Data-Pipeline)
+- `availability_yyyy-ww.json` (informational, user-managed input)
 - `wellness_yyyy-ww.json` (informational, from Data-Pipeline)
 - `planning_events_*.json` (informational)
 - `logistics_*.json` (informational)
