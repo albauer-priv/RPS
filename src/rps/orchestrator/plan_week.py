@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
@@ -12,7 +11,6 @@ from typing import Callable
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
-from rps.data_pipeline.season_brief_availability import load_season_brief
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import (
     IsoWeek,
@@ -50,22 +48,14 @@ def _log(message: str, level: int = logging.INFO) -> None:
     log_and_print(logger, _format_screen_text(message), level)
 
 
-def _extract_season_brief_user_data(season_text: str) -> dict[str, object]:
-    """Extract optional Season Brief inputs for prompt injection."""
-    anchor_match = re.search(
-        r"^\s*endurance-anchor-w\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*w\s*$",
-        season_text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    )
-    range_match = re.search(
-        r"^\s*ambition-if-range\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*-\s*([0-9]+(?:\.[0-9]+)?)\s*$",
-        season_text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    )
-    anchor = float(anchor_match.group(1)) if anchor_match else None
-    ambition = None
-    if range_match:
-        ambition = (float(range_match.group(1)), float(range_match.group(2)))
+def _extract_profile_user_data(profile_payload: dict | None) -> dict[str, object]:
+    """Extract optional Athlete Profile inputs for prompt injection."""
+    if not isinstance(profile_payload, dict):
+        return {"endurance_anchor_w": None, "ambition_if_range": None}
+    data = profile_payload.get("data") or {}
+    profile = data.get("profile") or {}
+    anchor = profile.get("endurance_anchor_w")
+    ambition = profile.get("ambition_if_range")
     return {"endurance_anchor_w": anchor, "ambition_if_range": ambition}
 
 
@@ -86,12 +76,12 @@ def _format_user_data_block(user_data: dict[str, object]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _build_user_data_block(runtime_for: Callable[[str], AgentRuntime], athlete_id: str, year: int) -> str:
-    """Load Season Brief and format user data for prompt injection."""
+def _build_user_data_block(runtime_for: Callable[[str], AgentRuntime], athlete_id: str) -> str:
+    """Load Athlete Profile and format user data for prompt injection."""
     try:
-        athlete_root = runtime_for("season_planner").workspace_root / athlete_id
-        _season_path, season_text = load_season_brief(athlete_root, year, None)
-        user_data = _extract_season_brief_user_data(season_text)
+        store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
+        profile_payload = store.load_latest(athlete_id, ArtifactType.ATHLETE_PROFILE)
+        user_data = _extract_profile_user_data(profile_payload)
         return _format_user_data_block(user_data)
     except Exception:
         return _format_user_data_block({})
@@ -450,7 +440,7 @@ def plan_week(
             reasoning_summary=reasoning_summary_resolver(agent_name) if reasoning_summary_resolver else runtime.reasoning_summary,
         )
 
-    user_data_block = _build_user_data_block(runtime_for, athlete_id, year)
+    user_data_block = _build_user_data_block(runtime_for, athlete_id)
     kpi_block = _build_kpi_selection_block(runtime_for, athlete_id)
 
     if not workspace.latest_exists(ArtifactType.SEASON_PLAN):

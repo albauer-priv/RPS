@@ -37,13 +37,13 @@ required schema, field sources, and a minimal valid example.
 - `temporal_scope`: `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
   - Must align to `iso_week_range` (no month inference).
 - `trace_upstream`: list of upstream artefacts (Season Brief, KPI_PROFILE, SEASON_SCENARIOS or SEASON_SCENARIO_SELECTION, AVAILABILITY, WELLNESS, ACTIVITIES_TREND when used).
-- `trace_data`, `trace_events`: include inputs (events.md must be in `trace_events`).
+- `trace_data`, `trace_events`: include inputs (planning_events must be in `trace_events`, logistics in `trace_data`).
 - `notes`: non‑empty string.
 
 #### 3) `data.body_metadata`
 Required:
 - `planning_horizon_weeks` (integer, **8–32**)
-- `season_brief_ref` (Season Brief run_id or version key)
+- `season_brief_ref` (legacy field; populate with Athlete Profile run_id or version key)
 - `kpi_profile_ref` (KPI_PROFILE id)
 - `moving_time_rate_guidance`:
   - `segment` (string label used, e.g., `"fast_competitive"`)
@@ -214,7 +214,9 @@ All required booleans must be present. Set to `true` only if valid:
     "iso_week_range": "2026-04--2026-11",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-03-15" },
     "trace_upstream": [
-      { "artifact": "season_brief", "version": "1.0", "run_id": "season_brief_2026" },
+      { "artifact": "athlete_profile", "version": "1.0", "run_id": "athlete_profile_2026" },
+      { "artifact": "logistics", "version": "1.0", "run_id": "logistics_2026" },
+      { "artifact": "planning_events", "version": "1.0", "run_id": "planning_events_2026" },
       { "artifact": "KPI_PROFILE", "version": "1.0", "run_id": "KPI_Profile_Example" },
       { "artifact": "AVAILABILITY", "version": "1.0", "run_id": "availability_2026-04" }
     ],
@@ -225,7 +227,7 @@ All required booleans must be present. Set to `true` only if valid:
   "data": {
     "body_metadata": {
       "planning_horizon_weeks": 8,
-      "season_brief_ref": "season_brief_2026",
+      "season_brief_ref": "athlete_profile_2026",
       "kpi_profile_ref": "KPI_Profile_Example",
       "moving_time_rate_guidance": {
         "segment": "fast_competitive",
@@ -233,7 +235,7 @@ All required booleans must be present. Set to `true` only if valid:
         "kj_per_kg_per_hour": { "min": 7.9, "max": 10.1 },
         "notes": "Example guidance band."
       },
-      "athlete_profile_ref": "season_brief_2026",
+      "athlete_profile_ref": "athlete_profile_2026",
       "body_mass_kg": 90.0
     },
     "season_intent_principles": {

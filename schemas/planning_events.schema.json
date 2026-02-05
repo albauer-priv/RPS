@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planning_events.schema.json",
+  "title": "PlanningEvents",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "scope",
+        "data_confidence",
+        "trace_upstream",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "const": "PLANNING_EVENTS"
+        },
+        "schema_id": {
+          "type": "string",
+          "const": "PlanningEventsInterface"
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_agent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_confidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace_upstream": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "events"
+      ],
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "priority",
+              "event_name",
+              "date",
+              "event_type",
+              "goal",
+              "distance_km",
+              "elevation_m",
+              "expected_duration",
+              "time_limit",
+              "objective"
+            ],
+            "properties": {
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              "event_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "date": {
+                "type": "string",
+                "minLength": 1
+              },
+              "event_type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "goal": {
+                "type": "string",
+                "minLength": 1
+              },
+              "distance_km": {
+                "type": "number",
+                "minimum": 0
+              },
+              "elevation_m": {
+                "type": "number",
+                "minimum": 0
+              },
+              "expected_duration": {
+                "type": "string",
+                "minLength": 1
+              },
+              "time_limit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "objective": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

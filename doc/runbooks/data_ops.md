@@ -20,7 +20,7 @@ This design covers **per‑athlete data** stored under `var/athletes/<athlete_id
 
 ### Required (restore must include)
 - `var/athletes/<athlete_id>/inputs/`  
-  Season Brief, Availability, Events, KPI Profile, Logistics, etc.
+  Athlete Profile, Availability, Planning Events, Logistics, KPI Profile, etc.
 - `var/athletes/<athlete_id>/latest/`  
   Latest pointers for all artifact types.
 - `var/athletes/<athlete_id>/data/`  

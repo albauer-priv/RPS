@@ -3,6 +3,9 @@ Type: InterfaceSpecification
 Interface-For: SEASON_BRIEF
 Interface-ID: SeasonBriefInterface
 Version: 1.0
+Status: Deprecated
+Last-Updated: 2026-02-05
+Owner: Specs
 
 Scope: Shared
 Authority: Binding
@@ -18,10 +21,9 @@ Binding-Specs:
     Version: 1.0
 
 Notes: >
-  Canonical interface for season briefs. A season brief captures athlete-specific
-  context, constraints, priorities, and event intent for a season/year. It is an
-  input document only; it must not contain planning decisions, load corridors,
-  governance, or workout prescriptions.
+  Deprecated. Season Brief has been replaced by modular inputs: ATHLETE_PROFILE,
+  PLANNING_EVENTS, LOGISTICS, and AVAILABILITY. This legacy interface remains for
+  historical reference only.
 ---
 
 # Season Brief Interface Specification

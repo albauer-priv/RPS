@@ -14,8 +14,9 @@ agents:
     - path: knowledge/_shared/sources/contracts/season__phase_contract.md
     - path: knowledge/_shared/sources/contracts/data_pipeline__season_contract.md
     - path: knowledge/_shared/sources/contracts/scenario__season_contract.md
-    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
     - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
@@ -54,8 +55,9 @@ agents:
     - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
     - path: knowledge/_shared/sources/contracts/data_pipeline__scenario_contract.md
     - path: knowledge/_shared/sources/contracts/scenario__season_contract.md
-    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
     - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
@@ -79,10 +81,11 @@ agents:
     - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
     - path: knowledge/_shared/sources/evidence/durability_bibliography.md
     - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-#    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-#    - path: knowledge/_shared/sources/specs/events_interface_spec.md
-#    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
-#    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
     modes:
       coach:
         bundle_id: coach_coach
@@ -105,8 +108,8 @@ agents:
     - path: knowledge/_shared/sources/specs/traceability_spec.md
     - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
     - path: knowledge/_shared/sources/specs/season_cycle_enum_spec.md
-    - path: knowledge/_shared/sources/specs/season_brief_interface_spec.md
-    - path: knowledge/_shared/sources/specs/events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
     - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
@@ -155,6 +158,8 @@ agents:
     - path: knowledge/_shared/sources/specs/workouts/workout_json_spec.md
     - path: knowledge/_shared/sources/specs/file_naming_spec.md
     - path: knowledge/_shared/sources/specs/traceability_spec.md
+    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: knowledge/_shared/sources/contracts/phase__week_contract.md
     - path: knowledge/_shared/sources/contracts/week__builder_contract.md
     - path: knowledge/_shared/sources/specs/mandatory_output_week_plan.md
@@ -192,6 +197,8 @@ agents:
     - path: knowledge/_shared/sources/specs/file_naming_spec.md
     - path: knowledge/_shared/sources/contracts/analyst__season_contract.md
     - path: knowledge/_shared/sources/contracts/data_pipeline__analyst_contract.md
+    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: knowledge/_shared/sources/specs/mandatory_output_des_analysis_report.md
     - path: knowledge/_shared/sources/schemas/bundled/des_analysis_report.schema.json
     - path: knowledge/_shared/sources/schemas/bundled/activities_actual.schema.json

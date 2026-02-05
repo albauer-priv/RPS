@@ -35,17 +35,22 @@ def _load_marketing_text(path: Path) -> str:
 def _latest_input(inputs_dir: Path, prefix: str) -> Path | None:
     if not inputs_dir.exists():
         return None
-    matches = sorted(inputs_dir.glob(f"{prefix}*.md"), key=lambda p: p.stat().st_mtime)
+    matches = sorted(
+        list(inputs_dir.glob(f"{prefix}*.json")) + list(inputs_dir.glob(f"{prefix}*.md")),
+        key=lambda p: p.stat().st_mtime,
+    )
     return matches[-1] if matches else None
 
 
 def _artifact_status_rows(store: LocalArtifactStore, athlete_id: str) -> list[dict[str, str]]:
     inputs_dir = SETTINGS.workspace_root / athlete_id / "inputs"
     items = [
-        ("Season Brief", "User", "Goals, constraints, season intent.", "input:season_brief"),
-        ("Events", "User", "Key events, dates, targets.", "input:events"),
-        ("KPI Profile", "User", "Performance KPIs and targets.", ArtifactType.KPI_PROFILE),
+        ("About You & Goals", "User", "Profile, goals, constraints.", ArtifactType.ATHLETE_PROFILE),
         ("Availability", "User", "Weekly availability table.", ArtifactType.AVAILABILITY),
+        ("Events", "User", "A/B/C planning events.", ArtifactType.PLANNING_EVENTS),
+        ("Logistics", "User", "Context events (travel/work/weather).", ArtifactType.LOGISTICS),
+        ("Historic Data", "System", "Intervals-aggregated baseline.", ArtifactType.HISTORICAL_BASELINE),
+        ("KPI Profile", "User", "Performance KPIs and targets.", ArtifactType.KPI_PROFILE),
         ("Season Scenarios", "Agent", "Alternative season strategies.", ArtifactType.SEASON_SCENARIOS),
         ("Scenario Selection", "User", "Chosen scenario + rationale.", ArtifactType.SEASON_SCENARIO_SELECTION),
         ("Season Plan", "Agent", "Phase-level season plan.", ArtifactType.SEASON_PLAN),

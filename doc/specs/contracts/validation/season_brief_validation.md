@@ -1,17 +1,14 @@
 ---
 Version: 1.0
-Status: Updated
-Last-Updated: 2026-02-03
+Status: Deprecated
+Last-Updated: 2026-02-05
 Owner: Specs
 ---
 # SEASON_BRIEF Validation
 
-## Location
-- [ ] File lives in `var/athletes/<athlete_id>/inputs/season_brief_yyyy.md`.
-- [ ] Content matches the `season_brief_interface_spec.md` template sections.
+Deprecated. Season Brief inputs are replaced by modular inputs:
+`athlete_profile`, `planning_events`, and `logistics`.
 
-## Required content
-- [ ] Season identity, athlete profile, goals, events table, and constraints are present.
-- [ ] Constraints include the weekday availability table (Mon-Sun hours, indoor possible, travel risk),
-      recovery considerations, and non-negotiables if known.
-- [ ] Dates and priorities are consistent with `events.md`.
+## Notes
+- Deprecated input; do not validate in runtime.
+- Use `athlete_profile_validation.md`, `planning_events_validation.md`, and `logistics_validation.md`.

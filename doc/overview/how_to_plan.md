@@ -14,9 +14,11 @@ Last-Updated: 2026-02-02
 
 ## Quickstart (UI-first)
 
-1) Add inputs in `var/athletes/<athlete_id>/inputs/`:
-   - `season_brief_yyyy.md`
-   - `events.md`
+1) Add inputs in Athlete Profile pages (stored under `var/athletes/<athlete_id>/inputs/`):
+   - `athlete_profile_*.json`
+   - `planning_events_*.json`
+   - `logistics_*.json`
+   - `availability_*.json`
 2) Select a KPI profile (UI: Athlete Profile → KPI Profile) to copy it into
    `var/athletes/<athlete_id>/latest/kpi_profile.json` and `inputs/kpi_profile.json`.
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
@@ -76,12 +78,14 @@ available for manual, step-by-step runs.
 
 ```mermaid
 flowchart TD
-  SB[season_brief_yyyy.md] --> SS[Season-Scenario-Agent]
+  AP[athlete_profile_*.json] --> SS[Season-Scenario-Agent]
   KP[kpi_profile.json] --> SS
   SS --> SC[season_scenarios]
   SC -. advisory .-> SEASON[Season-Planner]
-  EV[events.md] -. info .-> SS
-  EV -. info .-> SEASON
+  PE[planning_events_*.json] -. info .-> SS
+  PE -. info .-> SEASON
+  LG[logistics_*.json] -. info .-> SS
+  LG -. info .-> SEASON
 
   SEASON --> SP[season_plan]
   SEASON -. optional .-> SPFF[season_phase_feed_forward]

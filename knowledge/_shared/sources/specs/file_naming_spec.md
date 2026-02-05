@@ -37,8 +37,10 @@ Define consistent filenames for all artefacts to support:
 ## 3. Required Filename Patterns (Normative)
 
 ### User / Context (Human Input)
-- `season_brief_yyyy.md`
-- `events.md`
+- `athlete_profile_yyyymmdd_HHMMSS.json`
+- `planning_events_yyyymmdd_HHMMSS.json`
+- `logistics_yyyymmdd_HHMMSS.json`
+- `availability_yyyymmdd_HHMMSS.json`
 
 ### User / Context (Structured JSON)
 - `kpi_profile_des_<event>_<distance_or_duration>_<athlete_class>.json`
@@ -46,7 +48,6 @@ Define consistent filenames for all artefacts to support:
 ### Data Pipeline
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
-- `availability_yyyy-ww.json`
 - `wellness_yyyy-ww.json`
 
 ### Season-Planner

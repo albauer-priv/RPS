@@ -73,7 +73,8 @@ Supplemental (informational only; MUST NOT override governance):
 
 #### Runtime artefacts (workspace; load via tools) — Binding unless stated otherwise
 Required baseline inputs (load every run):
-- Events (logistics only): `workspace_get_input("events")`
+- Planning Events (A/B/C): `workspace_get_input("planning_events")`
+- Logistics (context only): `workspace_get_input("logistics")`
 - Season Plan: `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
 - Availability: `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 - Wellness: `workspace_get_latest({ "artifact_type": "WELLNESS" })`
@@ -192,7 +193,8 @@ Set G0 = true.
 
 #### Step 1 — Load runtime workspace artefacts FIRST (Gate: G1)
 Load in this exact order:
-1) `workspace_get_input("events")`
+1) `workspace_get_input("planning_events")`
+2) `workspace_get_input("logistics")`
 2) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
 3) `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })` (optional attempt)
 4) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
@@ -218,7 +220,7 @@ Set G2 = true.
 
 #### Step 2a — Per-output load checklist (Binding)
 Before composing output, confirm the exact-range inputs are loaded:
-- For `PHASE_GUARDRAILS`: baseline inputs only (events, season_plan, availability, wellness, zone_model; optional feed-forward).
+- For `PHASE_GUARDRAILS`: baseline inputs only (planning_events, logistics, season_plan, availability, wellness, zone_model; optional feed-forward).
 - For `PHASE_STRUCTURE`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS`.
 - For `PHASE_PREVIEW`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE`.
 - For `PHASE_FEED_FORWARD`: baseline inputs only (plus optional feed-forward if present).
@@ -329,7 +331,7 @@ STOP if:
 **Assistant (expected behavior):**
  - Step 0: single artefact = PREVIEW, iso_week_range present.
  - Step 1: load baseline runtime artefacts:
-   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+   planning_events, logistics, season_plan, availability, wellness, zone_model (optional feed-forward if present).
  - Step 2: load exact-range PHASE_GUARDRAILS + PHASE_STRUCTURE; if missing → STOP and request them.
  - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
  - Step 6: output exactly one PREVIEW artefact, strictly shaped per Mandatory Output Chapter (no extra text);
@@ -339,7 +341,7 @@ STOP if:
 **Assistant (expected behavior):**
  - Step 0: single artefact = PHASE_GUARDRAILS, iso_week_range present.
  - Step 1: load baseline runtime artefacts:
-   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+   planning_events, logistics, season_plan, availability, wellness, zone_model (optional feed-forward if present).
  - Step 2: no exact-range predecessor required.
  - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
  - Step 6: output exactly one PHASE_GUARDRAILS artefact, strictly shaped per Mandatory Output Chapter (no extra text).
@@ -348,7 +350,7 @@ STOP if:
 **Assistant (expected behavior):**
  - Step 0: single artefact = PHASE_STRUCTURE, iso_week_range present.
  - Step 1: load baseline runtime artefacts:
-   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+   planning_events, logistics, season_plan, availability, wellness, zone_model (optional feed-forward if present).
  - Step 2: load exact-range PHASE_GUARDRAILS; if missing → STOP and request it.
  - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
  - Step 6: output exactly one PHASE_STRUCTURE artefact, strictly shaped per Mandatory Output Chapter (no extra text).
@@ -357,7 +359,7 @@ STOP if:
 **Assistant (expected behavior):**
  - Step 0: single artefact = PHASE_FEED_FORWARD, iso_week_range present.
  - Step 1: load baseline runtime artefacts:
-   events, season_plan, availability, wellness, zone_model (optional feed-forward if present).
+   planning_events, logistics, season_plan, availability, wellness, zone_model (optional feed-forward if present).
  - Step 2: no exact-range predecessor required.
  - Step 3–5: load knowledge + validate per injected Mandatory Output Chapter.
  - Step 6: output exactly one PHASE_FEED_FORWARD artefact, strictly shaped per Mandatory Output Chapter (no extra text).

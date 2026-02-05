@@ -11,7 +11,6 @@ from pathlib import Path
 import shutil
 import sys
 import time
-import re
 
 from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime, run_agent_multi_output
 from rps.agents.runner import AgentRuntime, run_agent
@@ -20,12 +19,7 @@ from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings, load_env_file
 from rps.core.logging import setup_logging
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
-from rps.data_pipeline.season_brief_availability import (
-    load_season_brief,
-    parse_and_store_availability,
-    validate_events_text,
-    validate_season_brief_text,
-)
+from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
@@ -75,39 +69,60 @@ def _parse_iso_datetime(value: str) -> datetime | None:
     return parsed
 
 
-def _parse_date_label(text: str, label: str) -> date | None:
-    """Parse a YYYY-MM-DD date following a label like 'Valid-From:'."""
-    pattern = rf"{re.escape(label)}\s*:\s*(\d{{4}}-\d{{2}}-\d{{2}})"
-    match = re.search(pattern, text, flags=re.IGNORECASE)
-    if not match:
-        return None
-    try:
-        return date.fromisoformat(match.group(1))
-    except ValueError:
-        return None
-
-
 def _iso_week_str_from_date(day: date) -> str:
     year, week, _ = day.isocalendar()
     return f"{year:04d}-{week:02d}"
 
 
+def _find_input_json(
+    inputs_dir: Path,
+    latest_dir: Path,
+    prefix: str,
+) -> Path | None:
+    latest_path = latest_dir / f"{prefix}.json"
+    if latest_path.exists():
+        return latest_path
+    candidates = sorted(inputs_dir.glob(f"{prefix}_*.json"))
+    return candidates[-1] if candidates else None
+
+
+def _event_date_bounds(events_payload: dict) -> tuple[date | None, date | None]:
+    events = events_payload.get("data", {}).get("events") if isinstance(events_payload, dict) else None
+    if not isinstance(events, list):
+        return None, None
+    dates: list[date] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        date_str = event.get("date")
+        if not isinstance(date_str, str):
+            continue
+        try:
+            dates.append(date.fromisoformat(date_str))
+        except ValueError:
+            continue
+    if not dates:
+        return None, None
+    return min(dates), max(dates)
+
+
 def _normalize_kpi_profile_payload(
     payload: dict,
     *,
-    season_text: str,
-    year: int | None,
+    season_year: int | None,
     week: int | None,
+    planning_events_payload: dict | None,
     logger: logging.Logger,
 ) -> dict:
     """Leniently normalize KPI profile payload to satisfy strict schemas."""
     meta = payload.setdefault("meta", {})
     data = payload.setdefault("data", {})
 
-    # --- Derive temporal anchors from Season Brief when possible ---
-    valid_from = _parse_date_label(season_text, "Valid-From")
-    valid_to = _parse_date_label(season_text, "Valid-To")
-    season_year = year or (valid_from.year if valid_from else None) or datetime.now(timezone.utc).year
+    # --- Derive temporal anchors from planning events or season year ---
+    valid_from, valid_to = (None, None)
+    if planning_events_payload is not None:
+        valid_from, valid_to = _event_date_bounds(planning_events_payload)
+    season_year = season_year or (valid_from.year if valid_from else None) or datetime.now(timezone.utc).year
     if valid_from is None:
         valid_from = date(season_year, 1, 1)
     if valid_to is None:
@@ -178,27 +193,36 @@ def _preflight(
     inputs_dir = athlete_root / "inputs"
     latest_dir = athlete_root / "latest"
 
+    athlete_profile_path = _find_input_json(inputs_dir, latest_dir, "athlete_profile")
+    if not athlete_profile_path:
+        raise SystemExit("Missing athlete_profile input. Create athlete_profile_*.json in inputs/ or latest/.")
+    notes.append(f"Athlete Profile: {athlete_profile_path.name}")
+
+    planning_events_path = _find_input_json(inputs_dir, latest_dir, "planning_events")
+    if not planning_events_path:
+        raise SystemExit("Missing planning_events input. Create planning_events_*.json in inputs/ or latest/.")
+    notes.append(f"Planning Events: {planning_events_path.name}")
+
+    logistics_path = _find_input_json(inputs_dir, latest_dir, "logistics")
+    if not logistics_path:
+        raise SystemExit("Missing logistics input. Create logistics_*.json in inputs/ or latest/.")
+    notes.append(f"Logistics: {logistics_path.name}")
+
     try:
-        season_path, season_text = load_season_brief(athlete_root, year, None)
-    except FileNotFoundError as exc:
-        raise SystemExit("Missing Season Brief. Place season_brief_*.md in inputs/ or latest/.") from exc
-    notes.append(f"Season Brief: {season_path.name}")
+        athlete_profile_payload = json.loads(athlete_profile_path.read_text(encoding="utf-8"))
+        planning_events_payload = json.loads(planning_events_path.read_text(encoding="utf-8"))
+        logistics_payload = json.loads(logistics_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Input JSON invalid: {exc}") from exc
 
-    events_path = _find_first([inputs_dir / "events.md", latest_dir / "events.md"])
-    if not events_path:
-        raise SystemExit("Missing events.md. Place events.md in inputs/ or latest/.")
-    events_text = events_path.read_text(encoding="utf-8")
-    notes.append(f"Events: {events_path.name}")
-
-    season_errors = validate_season_brief_text(season_text, source=season_path.name)
-    if season_errors:
-        details = "\n".join(f"- {err}" for err in season_errors)
-        raise SystemExit(f"Season Brief validation failed:\n{details}")
-
-    events_errors = validate_events_text(events_text, source=events_path.name)
-    if events_errors:
-        details = "\n".join(f"- {err}" for err in events_errors)
-        raise SystemExit(f"Events validation failed:\n{details}")
+    registry = SchemaRegistry(schema_dir)
+    try:
+        validate_or_raise(registry.validator_for("athlete_profile.schema.json"), athlete_profile_payload)
+        validate_or_raise(registry.validator_for("planning_events.schema.json"), planning_events_payload)
+        validate_or_raise(registry.validator_for("logistics.schema.json"), logistics_payload)
+    except SchemaValidationError as exc:
+        details = "\n".join(f"- {err}" for err in exc.errors)
+        raise SystemExit(f"Input schema validation failed:\n{details}") from exc
 
     selected_env = os.getenv("KPI_PROFILE_SELECTED")
     selected_name = kpi_profile or selected_env
@@ -215,12 +239,13 @@ def _preflight(
     # Lenient preflight: normalize missing required meta/notes/context fields.
     kpi_payload = _normalize_kpi_profile_payload(
         kpi_payload,
-        season_text=season_text,
-        year=year,
+        season_year=int((athlete_profile_payload.get("data", {}).get("profile") or {}).get("year") or year or 0)
+        or None,
         week=week,
+        planning_events_payload=planning_events_payload,
         logger=logger,
     )
-    validator = SchemaRegistry(schema_dir).validator_for("kpi_profile.schema.json")
+    validator = registry.validator_for("kpi_profile.schema.json")
     try:
         validate_or_raise(validator, kpi_payload)
     except SchemaValidationError as exc:
@@ -245,16 +270,7 @@ def _preflight(
             logger.info("Availability already present: %s", latest_availability)
             notes.append("Availability: already present.")
         else:
-            logger.info("Parsing availability from Season Brief.")
-            parse_and_store_availability(
-                athlete_id=athlete_id,
-                workspace_root=workspace_root,
-                schema_dir=schema_dir,
-                year=year,
-                season_brief_path=season_path,
-                skip_validate=False,
-            )
-            notes.append("Availability: parsed from Season Brief.")
+            raise SystemExit("Missing availability input. Create availability_*.json in inputs/ or latest/.")
     else:
         notes.append("Availability: skipped.")
 

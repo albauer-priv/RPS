@@ -1,0 +1,43 @@
+---
+Type: InterfaceSpecification
+Interface-For: LOGISTICS
+Interface-ID: LogisticsInterface
+Version: 1.0
+
+Scope: Shared
+Authority: Binding
+
+Applies-To:
+  - Season-Scenario-Agent
+  - Season-Planner
+  - Phase-Architect
+  - Week-Planner
+  - Performance-Analyst
+  - Coach
+
+Binding-Specs:
+  - Specification-ID: TraceabilitySpec
+    Version: 1.0
+  - Specification-ID: FileNamingSpec
+    Version: 1.0
+
+Notes: >
+  Canonical interface for non‑training logistics/events that affect availability,
+  travel, and planning context. Input‑only.
+---
+
+# Logistics Interface Specification
+
+## 1) Purpose (Binding)
+**LOGISTICS** captures non‑training constraints (travel/work/weather/etc.) that
+provide planning context but do not directly change governance corridors.
+
+## 2) Required Fields (Binding)
+Each logistics entry MUST include:
+- `start_date`
+- `end_date`
+- `summary`
+- `impact` (availability/modality/recovery/data_quality)
+
+## 3) Forbidden Content (Binding)
+- Planning outputs, load corridors, or workout prescriptions.

@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scheduling guards prevent overlapping runs of the same process type/subtype and block lower-priority planning runs when higher-priority ones are active.
 - System → History now includes an Overview section (latest outputs + run history) and separate Artifact History headers for clarity.
 - Added ADR-021 to enforce Plotly-only chart rendering in Streamlit UI.
+- Added modular Athlete Profile inputs and pages: About You & Goals, Events, Logistics, and Historic Data.
+- Added new input schemas for athlete_profile, planning_events, logistics, and historical_baseline.
 
 ### Changed
 - Data & Metrics now prefers the Parquet cache for activities_trend and activities_actual with JSON fallback.
@@ -168,6 +170,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed Plan WoW page to Workouts and added posting, delete, coach revision, and history views.
 - Integrated artefact renderer into `rps.rendering.renderer`, removed the standalone script, and moved templates under `src/rps/rendering/templates/`.
 - Auto-render now calls the integrated renderer directly (no subprocess).
+- Hard cut-over to modular inputs (athlete_profile, planning_events, logistics, availability); Season Brief/events.md are deprecated.
+- Agent knowledge manifest and mandatory-output specs updated to reference modular inputs and legacy season_brief_ref behavior.
 
 ## [0.10.1] - 2026-01-29
 

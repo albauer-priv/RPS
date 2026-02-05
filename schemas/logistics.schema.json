@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "logistics.schema.json",
+  "title": "Logistics",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "scope",
+        "data_confidence",
+        "trace_upstream",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "const": "LOGISTICS"
+        },
+        "schema_id": {
+          "type": "string",
+          "const": "LogisticsInterface"
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_agent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_confidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace_upstream": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "events"
+      ],
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "date",
+              "event_id",
+              "event_type",
+              "status",
+              "impact",
+              "description"
+            ],
+            "properties": {
+              "date": {
+                "type": "string",
+                "minLength": 1
+              },
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "event_type": {
+                "type": "string",
+                "enum": [
+                  "TRAVEL",
+                  "WORK",
+                  "WEATHER",
+                  "HEALTH",
+                  "FAMILY",
+                  "EQUIPMENT",
+                  "OTHER"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "planned",
+                  "occurred",
+                  "cancelled"
+                ]
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "availability",
+                  "missed_session",
+                  "modality",
+                  "recovery",
+                  "data_quality",
+                  "none",
+                  "other"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

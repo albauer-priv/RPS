@@ -34,13 +34,14 @@ def _find_input_file(
     year: int | None = None,
 ) -> Path:
     patterns: list[str] = []
-    if input_type == "season_brief":
-        if year is not None:
-            patterns.append(f"season_brief_{year}.md")
-        patterns.append("season_brief_*.md")
-    elif input_type == "events":
-        patterns.append("events.md")
-        patterns.append("events_*.md")
+    if input_type == "athlete_profile":
+        patterns.append("athlete_profile*.json")
+    elif input_type == "availability":
+        patterns.append("availability*.json")
+    elif input_type == "logistics":
+        patterns.append("logistics*.json")
+    elif input_type == "planning_events":
+        patterns.append("planning_events*.json")
     else:
         raise ValueError(f"Unsupported input_type: {input_type}")
 
@@ -170,11 +171,19 @@ def read_tool_defs() -> list[dict[str, Any]]:
         {
             "type": "function",
             "name": "workspace_get_input",
-            "description": "Load athlete-specific Markdown inputs like season brief or events.",
+            "description": "Load athlete-specific inputs (athlete_profile, planning_events, logistics, availability) from inputs/ or latest/.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "input_type": {"type": "string", "enum": ["season_brief", "events"]},
+                    "input_type": {
+                        "type": "string",
+                        "enum": [
+                            "athlete_profile",
+                            "availability",
+                            "logistics",
+                            "planning_events",
+                        ],
+                    },
                     "year": {"type": "integer"},
                 },
                 "required": ["input_type"],
@@ -232,22 +241,6 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
     def workspace_get_latest(args: dict[str, Any]) -> Any:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
-        if artifact_type in {ArtifactType.SEASON_BRIEF, ArtifactType.EVENTS}:
-            input_type = "season_brief" if artifact_type == ArtifactType.SEASON_BRIEF else "events"
-            try:
-                path = _find_input_file(
-                    workspace.store.athlete_root(workspace.athlete_id),
-                    input_type,
-                )
-            except FileNotFoundError as exc:
-                return {"ok": False, "error": str(exc)}
-            return {
-                "ok": True,
-                "artifact_type": artifact_type.value,
-                "input_type": input_type,
-                "path": str(path),
-                "content": path.read_text(encoding="utf-8"),
-            }
         return workspace.get_latest(artifact_type)
 
     def workspace_get_version(args: dict[str, Any]) -> Any:

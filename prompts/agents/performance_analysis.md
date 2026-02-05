@@ -72,7 +72,8 @@ Schemas:
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | KPI thresholds |
 | Season Plan | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` | Optional; planning context |
 | Phase Context | `workspace_get_phase_context({ "year": YYYY, "week": WW })` | Optional; may include phase context |
-| Events | `workspace_get_input("events")` | Required; logistics only |
+| Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events |
+| Logistics | `workspace_get_input("logistics")` | Required; context only |
 
 Forbidden for binding decisions:
 - Any artefact not listed above.
@@ -110,7 +111,7 @@ KPIs are diagnostic instruments, not control levers.
 3) `des_analysis_report.schema.json` + envelope/meta schemas
 4) `des_evaluation_policy.md` (how to interpret diagnostically)
 5) Workspace artefacts (Actual/Trend/KPI Profile) as factual inputs
-6) Optional context (Season Plan, Phase Context, Events logistics)
+6) Optional context (Season Plan, Phase Context, Planning Events, Logistics)
 
 ### Conflict handling (Binding)
 - If required facts cannot be derived without guessing: STOP.
@@ -128,7 +129,7 @@ If missing: STOP and request it.
 - `ACTIVITIES_ACTUAL` covering the target week
 - `ACTIVITIES_TREND` covering the target week
 - latest `KPI_PROFILE` (thresholds)
-- `events` (logistics only)
+- `planning_events` (A/B/C priorities) and `logistics` (travel + constraints)
 
 If any required input missing/invalid for target week: STOP.
 
@@ -163,7 +164,8 @@ Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
 Load in this exact order:
-1) `workspace_get_input("events")`
+1) `workspace_get_input("planning_events")`
+2) `workspace_get_input("logistics")`
 2) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
 3) `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
 4) `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
@@ -273,7 +275,7 @@ If STOP is required, output MUST contain ONLY:
 ### Immediate STOP conditions (HARD)
 STOP if:
 - target iso_week missing/ambiguous
-- required workspace artefacts missing or not covering target week (Actual/Trend/KPI Profile/Events)
+- required workspace artefacts missing or not covering target week (Actual/Trend/KPI Profile/Planning Events/Logistics)
 - required binding knowledge explicitly missing or contradictory
 - any required field would be empty or unknown
 - schema validation fails

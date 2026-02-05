@@ -60,7 +60,7 @@ This follows the current UI contract: global sidebar + always-visible status ban
 
 **Steps (athlete-facing names | internal keys):**
 
-1. Inputs (Season Brief, Events, KPI, Availability, Zones, Wellness)
+1. Inputs (Athlete Profile, Planning Events, Logistics, KPI, Availability, Zones, Wellness)
 2. Season Scenarios (`season_scenarios`)
 3. Scenario Selection (`season_scenario_selection`)
 4. **Season Plan** (`season_plan`)
@@ -195,8 +195,9 @@ At least one of:
 
 **Required inputs (pragmatic):**
 
-- `season_brief_yyyy.md`
-- `events.md`
+- `athlete_profile_*.json`
+- `planning_events_*.json`
+- `logistics_*.json`
 - `latest/kpi_profile.json`
 - `availability_yyyy-ww.json` (for target year)
 - `zone_model` (latest)
@@ -210,7 +211,7 @@ At least one of:
 #### Step 2: Season Scenarios
 
 - **missing**: no `season_scenarios_yyyy-ww--yyyy-ww`
-- **stale**: season_brief/events/kpi_profile newer than scenarios
+- **stale**: athlete_profile/planning_events/logistics/kpi_profile newer than scenarios
 
 #### Step 3: Scenario Selection
 
@@ -220,7 +221,7 @@ At least one of:
 #### Step 4: Season Plan (`season_plan`)
 
 - **blocked**: selection missing (when required)
-- **stale**: selection newer than macro_overview, or inputs newer (season_brief / wellness)
+- **stale**: selection newer than macro_overview, or inputs newer (athlete_profile / wellness)
 
 #### Step 5/6: Phase Guardrails + Phase Structure
 

@@ -73,7 +73,8 @@ operational control or progression authority.
 - `des_analysis_report_yyyy-ww.json` -> `des_analysis_report.schema.json`
 
 ### Informational Inputs (no schema)
-- `events.md`
+- `planning_events` (A/B/C planning events)
+- `logistics` (context-only events)
 
 ## 5) Constraints / Forbidden (Binding)
 - Outputs are advisory only and MUST NOT be treated as operational control.

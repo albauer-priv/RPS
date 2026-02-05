@@ -9,6 +9,13 @@ Authority: Binding
 
 Owner-Agent: Season-Planner
 
+Notes: >
+  Deprecated template. Use modular inputs: athlete_profile, planning_events, logistics.
+  Human-centered season brief template capturing the athlete's context,
+  goals, constraints, and event priorities for one season. This template
+  is input only and does not define training logic, KPI thresholds, or
+  execution rules.
+
 Dependencies:
   - Specification-ID: DurabilityFirstPrinciples
     Version: 1.0
@@ -18,14 +25,6 @@ Dependencies:
     Version: 1.0
   - Specification-ID: FileNamingSpec
     Version: 1.0
-
-Notes: >
-  Human-centered season brief template capturing the athlete's context,
-  goals, constraints, and event priorities for one season.
-  This template is input only and does not define training logic,
-  KPI thresholds, or execution rules. Planning decisions derived
-  from this brief must be justified via the Principles Paper and
-  validated by the KPI / DES system.
 
 Implements:
   Interface-ID: SeasonBriefInterface

@@ -42,8 +42,9 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 #### Runtime artefacts (workspace; load via tools) — Required
 | Artifact | Tool | Notes |
 |---|---|---|
-| Season Brief | `workspace_get_input("season_brief")` | Required |
-| Events | `workspace_get_input("events")` | Required (logistics only) |
+| Athlete Profile | `workspace_get_input("athlete_profile")` | Required |
+| Planning Events | `workspace_get_input("planning_events")` | Required (A/B/C events) |
+| Logistics | `workspace_get_input("logistics")` | Required (context only) |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one latest required |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required |
 
@@ -58,8 +59,8 @@ Your job is to produce the `SEASON_SCENARIOS` artefact (pre-decision scenarios A
 ### Scope (MUST)
 - Produce exactly three scenarios: A, B, C.
 - Each scenario provides high-level phase cadence guidance and intent (not phase guardrails, not weeks).
-- Use Season Brief + KPI Profile + Availability to frame feasibility and scenario differences.
-- Reflect Events for logistics/constraints only (no A/B/C event priority selection).
+- Use Athlete Profile + KPI Profile + Availability to frame feasibility and scenario differences.
+- Reflect Planning Events for A/B/C priorities and timing. Use Logistics for context only.
 
 ### Non-Scope (MUST NOT)
 - Do NOT produce `SEASON_PLAN` or any season/phase/week artefacts.
@@ -79,7 +80,7 @@ This instruction set + the injected Mandatory Output Chapter are the sole author
 1) Injected Mandatory Output Chapter for `SEASON_SCENARIOS`
 2) This prompt
 3) `season_scenarios.schema.json`
-4) Workspace inputs (Season Brief, Events, KPI Profile, Availability) as factual constraints
+4) Workspace inputs (Athlete Profile, Planning Events, Logistics, KPI Profile, Availability) as factual constraints
 5) `progressive_overload_policy.md` (informational only)
 
 ### Constraint rule
@@ -90,7 +91,7 @@ This instruction set + the injected Mandatory Output Chapter are the sole author
 ## SECTION: Input/Output Contract (Binding)
 
 ### Required inputs (must exist or STOP)
-- `season_brief`, `events`, latest `KPI_PROFILE` (single), latest `AVAILABILITY`
+- `athlete_profile`, `planning_events`, `logistics`, latest `KPI_PROFILE` (single), latest `AVAILABILITY`
 
 ### Output contract (HARD)
 - Produce a single top-level object with only `{ "meta": ..., "data": ... }`.
@@ -107,13 +108,13 @@ This instruction set + the injected Mandatory Output Chapter are the sole author
   - iso_week (YYYY-WW)
   - iso_week_range (YYYY-WW--YYYY-WW, inclusive)
   - temporal_scope { from: YYYY-MM-DD, to: YYYY-MM-DD }
-  - trace_upstream includes Season Brief + KPI_PROFILE + AVAILABILITY (if loaded)
+  - trace_upstream includes Athlete Profile + Planning Events + KPI_PROFILE + AVAILABILITY (if loaded)
   - trace_data, trace_events include inputs if used
   - notes (non-empty string)
 - `data` MUST include:
-  - season_brief_ref (Season Brief run_id or version key)
+  - season_brief_ref (legacy field name; use Athlete Profile run_id or version key)
+  - athlete_profile_ref (Athlete Profile run_id or version key)
   - kpi_profile_ref (exact loaded KPI Profile id string)
-  - athlete_profile_ref (Season Brief ref or profile id)
   - planning_horizon_weeks (int >= 1)
   - scenarios (array of exactly 3 scenarios: A, B, C)
   - notes (array of non-empty strings, at least 1)
@@ -139,10 +140,11 @@ Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
 Load in order:
-1) `workspace_get_input("season_brief")`
-2) `workspace_get_input("events")`
-3) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
-4) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+1) `workspace_get_input("athlete_profile")`
+2) `workspace_get_input("planning_events")`
+3) `workspace_get_input("logistics")`
+4) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+5) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 
 If any required artefact is missing: STOP and request it.
 If KPI_PROFILE cannot be resolved as a single latest artefact: STOP and request a data/registry fix.
@@ -162,7 +164,7 @@ Set G2 = true.
 #### Pass 1 — Draft A/B/C (Gate: P1)
 - Create exactly three scenarios A/B/C with clear differentiation.
 - Keep guidance at phase-cadence / intent level only.
-- Ensure feasibility under Availability; reflect Events logistics constraints.
+- Ensure feasibility under Availability; reflect Planning Events timing and Logistics constraints.
 - No weekly_kJ, no blocks, no workouts, no selection of final scenario.
 Set P1 = true.
 
@@ -183,8 +185,8 @@ Verify:
   - If `planning_horizon_weeks` is missing, derive it from `meta.iso_week_range`.
 - `phase_plan_summary` is present and coherent (full phases + shortened phases summary).
 - Do NOT include per‑phase recommendations or date ranges.
-- Planning horizon ends at the ISO week containing the last A/B/C event in the Season Brief.
-  If the Season Brief has no A/B/C events: STOP and request them.
+- Planning horizon ends at the ISO week containing the last A/B/C event in Planning Events.
+  If Planning Events has no A/B/C events: STOP and request them.
 - Trace fields populated per Mandatory Output Chapter.
 If any check fails: STOP.
 Set P2 = true.

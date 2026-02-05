@@ -99,14 +99,23 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "season_brief_ref",
+        "source_type",
+        "source_ref",
         "availability_table",
         "weekly_hours",
         "fixed_rest_days",
         "notes"
       ],
       "properties": {
-        "season_brief_ref": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "season_brief",
+            "imported"
+          ]
+        },
+        "source_ref": {
           "type": "string",
           "minLength": 1
         },

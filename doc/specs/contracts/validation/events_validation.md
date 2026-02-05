@@ -1,15 +1,13 @@
 ---
 Version: 1.0
-Status: Updated
-Last-Updated: 2026-02-03
+Status: Deprecated
+Last-Updated: 2026-02-05
 Owner: Specs
 ---
 # EVENTS Validation
 
-## Location
-- [ ] File lives in `var/athletes/<athlete_id>/inputs/events.md`.
-- [ ] Content matches the `events_interface_spec.md` template sections.
+Deprecated. Use `planning_events_validation.md` and `logistics_validation.md` for modular inputs.
 
-## Required content
-- [ ] Each event has a date, priority, and type.
-- [ ] Event windows align with the season brief and season plan.
+## Notes
+- Deprecated input; do not validate in runtime.
+- Use `planning_events_validation.md` and `logistics_validation.md`.

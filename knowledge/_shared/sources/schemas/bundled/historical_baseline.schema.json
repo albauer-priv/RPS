@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "historical_baseline.schema.json",
+  "title": "HistoricalBaseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "scope",
+        "data_confidence",
+        "trace_upstream",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "const": "HISTORICAL_BASELINE"
+        },
+        "schema_id": {
+          "type": "string",
+          "const": "HistoricalBaselineInterface"
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_agent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_confidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace_upstream": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metrics",
+        "source"
+      ],
+      "properties": {
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kj_per_year",
+            "kj_per_day",
+            "kj_per_hour",
+            "long_ride_tolerance_kj"
+          ],
+          "properties": {
+            "kj_per_year": {
+              "type": "number",
+              "minimum": 0
+            },
+            "kj_per_day": {
+              "type": "number",
+              "minimum": 0
+            },
+            "kj_per_hour": {
+              "type": "number",
+              "minimum": 0
+            },
+            "long_ride_tolerance_kj": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "source_type",
+            "range"
+          ],
+          "properties": {
+            "source_type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "range": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -250,10 +250,13 @@ def _parse_iso_datetime(value: str | None) -> datetime | None:
 
 
 def _latest_input(inputs_dir: Path, prefix: str) -> Path | None:
-    """Return the latest markdown input file matching the prefix."""
+    """Return the latest input file matching the prefix."""
     if not inputs_dir.exists():
         return None
-    matches = sorted(inputs_dir.glob(f"{prefix}*.md"), key=lambda p: p.stat().st_mtime)
+    matches = sorted(
+        list(inputs_dir.glob(f"{prefix}*.json")) + list(inputs_dir.glob(f"{prefix}*.md")),
+        key=lambda p: p.stat().st_mtime,
+    )
     return matches[-1] if matches else None
 
 
@@ -356,8 +359,6 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     target_week = IsoWeek(year=year, week=week)
     index = _load_index(athlete_id)
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
-    inputs_dir = SETTINGS.workspace_root / athlete_id / "inputs"
-
     steps: list[ReadinessStep] = []
     status_map: dict[str, ReadinessStep] = {}
 
@@ -366,18 +367,13 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
         status_map[step.key] = step
 
     # Step 1: Inputs
-    inputs_required = [
-        ("season_brief", "Season Brief"),
-        ("events", "Events"),
-    ]
-    inputs_missing = [
-        label
-        for prefix, label in inputs_required
-        if _latest_input(inputs_dir, prefix) is None
-    ]
+    inputs_missing: list[str] = []
     input_artifacts = [
-        (ArtifactType.KPI_PROFILE, "KPI Profile"),
+        (ArtifactType.ATHLETE_PROFILE, "About You & Goals"),
         (ArtifactType.AVAILABILITY, "Availability"),
+        (ArtifactType.PLANNING_EVENTS, "Events"),
+        (ArtifactType.LOGISTICS, "Logistics"),
+        (ArtifactType.KPI_PROFILE, "KPI Profile"),
         (ArtifactType.ZONE_MODEL, "Zones"),
         (ArtifactType.WELLNESS, "Wellness"),
     ]

@@ -38,13 +38,15 @@ Agents communicate via validated artifacts and never share implicit state.
 
 ```mermaid
 flowchart TD
-  SB[season_brief] --> SS[Season-Scenario-Agent]
+  AP[athlete_profile] --> SS[Season-Scenario-Agent]
   KP[kpi_profile] --> SS
   SS --> SC[season_scenarios]
   SC -. advisory .-> MA[Season-Planner]
   KP --> MA
-  EV[events] -. info .-> SS
-  EV -. info .-> MA
+  PE[planning_events] -. info .-> SS
+  LG[logistics] -. info .-> SS
+  PE -. info .-> MA
+  LG -. info .-> MA
   MA --> MO[season_plan]
   MA -. optional .-> SPFF[season_phase_feed_forward]
 
@@ -134,22 +136,23 @@ See `doc/architecture/agents.md` for the canonical registry of agents, modes, an
 ### 3.1.1 Data Pipeline (Assumed)
 
 - Deterministic scripts ingest external activity data.
-- Writes `activities_actual`, `activities_trend`, `zone_model`, `wellness`, and `availability` into the athlete workspace.
+- Writes `activities_actual`, `activities_trend`, `zone_model`, and `wellness` into the athlete workspace.
+- `availability` is a user-managed input (manual edits + optional legacy import).
 - Updates `latest/` so planners and the Plan Hub always read the freshest factual data.
 - Pipeline entrypoint: `python -m rps.main parse-intervals`.
-- Season Brief availability parser: `python -m rps.main parse-availability` (module: `rps.data_pipeline.season_brief_availability`).
+- Legacy Season Brief availability parser: `python -m rps.main parse-availability` (deprecated).
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
 
 ### 3.2 Season-Scenario-Agent
 - Produces `season_scenarios` (informational).
-- Uses Season Brief (incl. weekday availability table) + KPI Profile to propose A/B/C options.
+- Uses Athlete Profile + Planning Events + Logistics + KPI Profile + Availability to propose A/B/C options.
 - No planning decisions; Season-Planner remains binding authority.
 
 ### 3.3 Season-Planner
 - Defines long-term intent (8–32 weeks).
 - Produces `season_plan` and optional `season_phase_feed_forward`.
-- Uses wellness `body_mass_kg` + Season Brief availability to anchor kJ corridor math.
+- Uses wellness `body_mass_kg` + Availability to anchor kJ corridor math.
 - **Important:** Season phases define ISO week ranges, but MUST NOT define phase-artefact outputs.
 
 ### 3.4 Phase-Architect
@@ -266,8 +269,8 @@ Common attributes:
 
 Example filters:
 - Specs/policies/principles: `type=Specification` + `specification_for=WORKOUT_POLICY`
-- Interfaces: `type=InterfaceSpecification` + `interface_for=SEASON_BRIEF`
-- Templates: `type=Template` + `template_for=SEASON_BRIEF`
+- Interfaces: `type=InterfaceSpecification` + `interface_for=ATHLETE_PROFILE`
+- Templates: `type=Template` + `template_for=ATHLETE_PROFILE`
 - Schemas: `doc_type=JsonSchema` + `schema_id=week_plan.schema.json`
 
 `file_search` is for static knowledge sources only. Runtime athlete artifacts
@@ -280,22 +283,22 @@ queried via `file_search` with attribute filters; athlete artefacts come from
 workspace tools.
 
 Season-Planner
-- Mode A: Season brief via `workspace_get_input("season_brief")`, KPI via `workspace_get_latest(KPI_PROFILE)`, optional events via `workspace_get_input("events")`.
-- Mode B: Season brief, KPI, existing season plan via `workspace_get_latest(SEASON_PLAN)`, optional events.
-- Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)`, optional events.
+- Mode A: Athlete profile + planning events + logistics via `workspace_get_input`, KPI via `workspace_get_latest(KPI_PROFILE)`.
+- Mode B: Athlete profile + planning events + logistics, KPI, existing season plan via `workspace_get_latest(SEASON_PLAN)`.
+- Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)` plus planning events/logistics (optional context).
 
 Phase-Architect
-- Mode A (new phase): `workspace_get_phase_context(year, week)` and optional `offset_phases=1`; optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_TREND`, `events`.
-- Mode B (update): `workspace_get_phase_context`, optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, `events`.
-- Mode C (no-change): `workspace_get_phase_context`, optional `events`.
+- Mode A (new phase): `workspace_get_phase_context(year, week)` and optional `offset_phases=1`; optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_TREND`, planning events/logistics.
+- Mode B (update): `workspace_get_phase_context`, optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, planning events/logistics.
+- Mode C (no-change): `workspace_get_phase_context`, optional planning events/logistics.
 
 Week-Planner
-- Mode A/B: `workspace_get_phase_context`, optional `events`.
-- Mode C: `workspace_get_phase_context`, optional `PHASE_FEED_FORWARD`, `events`.
+- Mode A/B: `workspace_get_phase_context`, optional planning events/logistics.
+- Mode C: `workspace_get_phase_context`, optional `PHASE_FEED_FORWARD`, planning events/logistics.
 
 Performance-Analyst
 - Required: `ACTIVITIES_ACTUAL`, `ACTIVITIES_TREND`, `KPI_PROFILE` via `workspace_get_latest`.
-- Optional: `SEASON_PLAN`, `workspace_get_phase_context`, `events`.
+- Optional: `SEASON_PLAN`, `workspace_get_phase_context`, planning events/logistics.
 
 Workout-Builder
 - Required: `WEEK_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
@@ -314,7 +317,7 @@ Tools available to agents:
   - `workspace_get_version`
   - `workspace_list_versions`
   - `workspace_get_phase_context`
-  - `workspace_get_input` (season brief, events)
+  - `workspace_get_input` (athlete_profile, planning_events, logistics)
 - Strict store tools (one per output artefact, schema-bound)
 
 These tool sets are wired by the runtime and are consistent across agents.

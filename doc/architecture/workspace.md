@@ -47,12 +47,13 @@ var/athletes/<athlete_id>/
 - `latest/` holds the most recent version per artefact type.
 - `index.json` tracks version metadata for routing and lookups.
 - No edits in place; new versions are appended.
-- User inputs (season brief, events) live under `inputs/` and are read via `workspace_get_input`.
+- User inputs (athlete_profile, planning_events, logistics, availability) live under `inputs/` and are read via `workspace_get_input`.
 
 Templates are available under:
 
-- `knowledge/_shared/sources/templates/season_brief_yyyy_template.md`
-- `knowledge/_shared/sources/templates/events_template.md`
+- `knowledge/_shared/sources/templates/athlete_profile_template.md`
+- `knowledge/_shared/sources/templates/planning_events_template.md`
+- `knowledge/_shared/sources/templates/logistics_template.md`
 
 ---
 
@@ -72,7 +73,7 @@ Templates are available under:
 
 | Directory | Owner | Typical artefacts |
 | --- | --- | --- |
-| `inputs/` | User / operator | `season_brief_*.md`, `events.md`, `kpi_profile_*.json` |
+| `inputs/` | User / operator | `athlete_profile_*.json`, `planning_events_*.json`, `logistics_*.json`, `availability_*.json`, `kpi_profile_*.json` |
 | `data/plans/season/` | Season-Scenario-Agent, Season-Planner | `season_scenarios_*`, `season_scenario_selection_*`, `season_plan_*`, `season_phase_feed_forward_*` |
 | `data/plans/phase/` | Phase-Architect (plus Data-Pipeline for `zone_model_*`) | `phase_guardrails_*`, `phase_structure_*`, `phase_preview_*`, `phase_feed_forward_*`, `zone_model_*` |
 | `data/plans/week/` | Week-Planner | `week_plan_*` |

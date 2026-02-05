@@ -60,7 +60,7 @@ and Week-Planner weekly execution.
 - `phase_structure_*` -> `phase_structure.schema.json` (read-only)
 - `activities_actual_*` -> `activities_actual.schema.json` (informational)
 - `activities_trend_*` -> `activities_trend.schema.json` (informational)
-- `events.md` (informational, no schema)
+- `logistics` (context only; no training authority)
 
 ### Outputs (Week-Planner produces)
 - `week_plan_yyyy-ww.json` -> `week_plan.schema.json`
@@ -81,7 +81,7 @@ Conflicts are resolved in this order:
 - Conflicts -> STOP and escalate.
 
 ## 7) Constraints / Forbidden (Binding)
-- `events.md` MAY explain deviations but MUST NOT mandate load changes.
+- `logistics` MAY explain deviations but MUST NOT mandate load changes.
 - Informational inputs NEVER mandate action.
 - The Week-Planner MUST NOT create, modify, or extend:
   - `phase_guardrails_*`

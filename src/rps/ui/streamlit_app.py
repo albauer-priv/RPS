@@ -277,18 +277,18 @@ plan_workouts = st.Page(
 
 about_you = st.Page(
     "pages/athlete_profile/about_you.py",
-    title="About You",
+    title="About You & Goals",
     icon=":material/person:",
-)
-season_brief = st.Page(
-    "pages/athlete_profile/season_brief.py",
-    title="Season Brief",
-    icon=":material/article:",
 )
 availability = st.Page(
     "pages/athlete_profile/availability.py",
     title="Availability",
     icon=":material/event_available:",
+)
+events = st.Page(
+    "pages/athlete_profile/events.py",
+    title="Events",
+    icon=":material/emoji_events:",
 )
 kpi_profile = st.Page(
     "pages/athlete_profile/kpi_profile.py",
@@ -299,6 +299,11 @@ logistics = st.Page(
     "pages/athlete_profile/logistics.py",
     title="Logistics",
     icon=":material/local_shipping:",
+)
+historic_data = st.Page(
+    "pages/athlete_profile/historic_data.py",
+    title="Historic Data",
+    icon=":material/timeline:",
 )
 zones = st.Page(
     "pages/athlete_profile/zones.py",
@@ -335,11 +340,12 @@ pg = st.navigation(
         "Plan": [plan_hub, plan_season, plan_phase, plan_week, plan_workouts],
         "Athlete Profile": [
             about_you,
-            season_brief,
             availability,
-            kpi_profile,
+            events,
             logistics,
+            historic_data,
             zones,
+            kpi_profile,
             data_operations,
         ],
         "System": [system_status, system_history, system_log],

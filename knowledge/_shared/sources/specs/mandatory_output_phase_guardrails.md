@@ -80,7 +80,7 @@ Mapping (must include, do not omit):
   using the A/B/C types already defined in `season_plan.data.phases[].events_constraints`.
   Include **all** entries from `season_plan.data.global_constraints.planned_event_windows`
   (even if they fall outside the phase range).
-  Do NOT source A/B/C event types from `events.md` (events.md is non-training logistics only).
+  Do NOT source A/B/C event types from logistics (logistics is context-only). Use planning_events.
   Also add a single summary line to `phase_summary.non_negotiables`:
   `"Planned A/B/C windows included in events_constraints (from season_plan)."`
 - Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).

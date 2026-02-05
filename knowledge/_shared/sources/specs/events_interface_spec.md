@@ -3,6 +3,9 @@ Type: InterfaceSpecification
 Interface-For: EVENTS
 Interface-ID: EventInterface
 Version: 1.0
+Status: Deprecated
+Last-Updated: 2026-02-05
+Owner: Specs
 
 Scope: Context
 Authority: Informational
@@ -22,10 +25,9 @@ Binding-Specs:
     Version: 1.0
 
 Notes: >
-  Defines the canonical structure for non-training events that provide
-  contextual information only. Events may inform planning considerations
-  but never prescribe actions, override governance, or trigger decisions
-  automatically.
+  Deprecated. Events has been replaced by LOGISTICS (context events) and
+  PLANNING_EVENTS (A/B/C planning events). This legacy interface remains for
+  historical reference only.
 ---
 
 # 📅 Events — Interface Template v1.0

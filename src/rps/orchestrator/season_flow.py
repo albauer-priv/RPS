@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Callable
 
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
-from rps.data_pipeline.season_brief_availability import load_season_brief
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from rps.orchestrator.plan_week import _build_injection_block
@@ -17,22 +15,14 @@ from rps.orchestrator.plan_week import _build_injection_block
 logger = logging.getLogger(__name__)
 
 
-def _extract_season_brief_user_data(season_text: str) -> dict[str, object]:
-    """Extract optional user-provided planning fields from Season Brief text."""
-    anchor_match = re.search(
-        r"^-\\s*Endurance-Anchor-W\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)",
-        season_text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    )
-    range_match = re.search(
-        r"^-\\s*Ambition-IF-Range\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)\\s*,\\s*([0-9]+(?:\\.[0-9]+)?)",
-        season_text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    )
-    anchor = float(anchor_match.group(1)) if anchor_match else None
-    ambition = None
-    if range_match:
-        ambition = (float(range_match.group(1)), float(range_match.group(2)))
+def _extract_profile_user_data(profile_payload: dict | None) -> dict[str, object]:
+    """Extract optional user-provided planning fields from Athlete Profile."""
+    if not isinstance(profile_payload, dict):
+        return {"endurance_anchor_w": None, "ambition_if_range": None}
+    data = profile_payload.get("data") or {}
+    profile = data.get("profile") or {}
+    anchor = profile.get("endurance_anchor_w")
+    ambition = profile.get("ambition_if_range")
     return {"endurance_anchor_w": anchor, "ambition_if_range": ambition}
 
 
@@ -73,7 +63,8 @@ def create_season_scenarios(
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
-        "Use workspace_get_input for Season Brief and Events. "
+        "Use workspace_get_input for Athlete Profile, Planning Events, and Logistics. "
+        "Use workspace_get_latest for Availability, KPI Profile, and Wellness. "
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
@@ -177,9 +168,9 @@ def create_season_plan(
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
     user_data_block = ""
     try:
-        athlete_root = runtime_for(spec.name).workspace_root / athlete_id
-        _season_path, season_text = load_season_brief(athlete_root, year, None)
-        user_data = _extract_season_brief_user_data(season_text)
+        store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
+        profile_payload = store.load_latest(athlete_id, ArtifactType.ATHLETE_PROFILE)
+        user_data = _extract_profile_user_data(profile_payload)
         user_data_block = _format_user_data_block(user_data)
     except Exception:
         user_data_block = _format_user_data_block({})

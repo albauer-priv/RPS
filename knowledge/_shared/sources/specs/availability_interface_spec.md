@@ -33,7 +33,7 @@ The artefact MUST include a valid `meta` envelope (`artefact_meta.schema.json`) 
 
 ## 3) Required Data Fields (Binding)
 `data` MUST include:
-- `season_brief_ref` (string; source Season Brief filename or ID)
+- `season_brief_ref` (legacy field; populate with Athlete Profile run_id/version key)
 - `availability_table` (array of 7 entries; one per weekday)
 - `weekly_hours` (object: `min`, `typical`, `max`)
 - `fixed_rest_days` (array of weekday enums)

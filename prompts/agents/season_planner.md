@@ -50,8 +50,9 @@ Required knowledge files (must read in full):
 Runtime artefacts (workspace; load via tools):
 | Artifact | Tool | Notes |
 |---|---|---|
-| Season Brief | `workspace_get_input("season_brief")` | Required (Mode A/B) |
-| Events | `workspace_get_input("events")` | Required (all modes; logistics only) |
+| Athlete Profile | `workspace_get_input("athlete_profile")` | Required (Mode A/B) |
+| Planning Events | `workspace_get_input("planning_events")` | Required (all modes; A/B/C events) |
+| Logistics | `workspace_get_input("logistics")` | Required (all modes; context only) |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one required (Mode A/B) |
 | Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required (Mode A/B) |
@@ -72,8 +73,8 @@ You produce the season-level artefact for the requested mode:
 ### Scope (MUST)
 - Operate at strategic season level (8–32 weeks).
 - Define phases, phase objectives, and phase-level weekly load corridors (kJ min–max) when producing `SEASON_PLAN`.
-- Respect Season Brief constraints and event priorities from Season Brief (A/B/C).
-- Use Events input as logistics-only constraints (travel, non-race constraints).
+- Respect Athlete Profile constraints and event priorities from Planning Events (A/B/C).
+- Use Logistics input as context-only constraints (travel, non-race constraints).
 
 ### Non-Scope (MUST NOT)
 - Do NOT design phase-level plans.
@@ -90,7 +91,7 @@ You produce the season-level artefact for the requested mode:
 2) This prompt
 3) `load_estimation_spec.md` (Season section) for corridor derivation rules
 4) `progressive_overload_policy.md` for progression/deload/re-entry shaping
-5) Workspace inputs (Season Brief, Availability, Wellness, KPI Profile) as factual constraints
+5) Workspace inputs (Athlete Profile, Planning Events, Logistics, Availability, Wellness, KPI Profile) as factual constraints
 6) Season Scenarios / Selection (advisory; binding only where Mandatory Output Chapter says so)
 
 ### Conflict handling (Binding)
@@ -103,10 +104,12 @@ You produce the season-level artefact for the requested mode:
 
 ### Required inputs (must exist or STOP)
 Mode A/B:
-- Season Brief, Events, KPI Profile (single latest), Availability, Wellness (body_mass_kg)
+- Athlete Profile, Planning Events, Logistics, KPI Profile (single latest), Availability, Wellness (body_mass_kg)
 Mode C:
 - Required inputs are defined by the injected Mandatory Output Chapter for `SEASON_PHASE_FEED_FORWARD`.
-- Events is always required (logistics only).
+- Planning Events and Logistics are always required.
+Note:
+- `season_brief_ref` is a legacy field name in the Season Plan schema. Populate it with the Athlete Profile run_id/version key.
 
 ### Output contract (HARD)
 - Produce exactly one output allowed by the active mode.
@@ -135,14 +138,15 @@ Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
 Load in this order (skip non-applicable items):
-1) `workspace_get_input("events")` (required all modes)
-2) `workspace_get_input("season_brief")` (required Mode A/B)
-3) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` (required Mode A/B; single latest)
-4) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
-5) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
-6) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
-7) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
-8) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
+1) `workspace_get_input("planning_events")` (required all modes)
+2) `workspace_get_input("athlete_profile")` (required Mode A/B)
+3) `workspace_get_input("logistics")` (required all modes)
+4) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` (required Mode A/B; single latest)
+5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
+6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
+7) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
+8) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
+9) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
 
 If any required artefact is missing: STOP and request it.
 If KPI_PROFILE cannot be resolved as exactly one latest: STOP and request a data/registry fix.

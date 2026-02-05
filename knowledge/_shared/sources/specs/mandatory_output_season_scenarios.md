@@ -40,7 +40,7 @@ required schema, field sources, and a minimal valid example.
 - `notes`: non‑empty string
 
 #### 3) `data` (required fields)
-- `season_brief_ref`: Season Brief run_id or version key
+- `season_brief_ref`: legacy field; populate with Athlete Profile run_id or version key
 - `kpi_profile_ref`: loaded KPI Profile id (exact string)
 - `athlete_profile_ref`: Season Brief ref or profile id
 - `planning_horizon_weeks`: integer (>=1)
@@ -102,7 +102,8 @@ Notes:
     "iso_week_range": "2026-04--2026-19",
     "temporal_scope": { "from": "2026-01-19", "to": "2026-05-17" },
     "trace_upstream": [
-      { "artifact": "season_brief", "version": "1.0", "run_id": "season_brief_2026" },
+      { "artifact": "athlete_profile", "version": "1.0", "run_id": "athlete_profile_2026" },
+      { "artifact": "planning_events", "version": "1.0", "run_id": "planning_events_2026" },
       { "artifact": "KPI_PROFILE", "version": "1.0", "run_id": "KPI_Profile_Example" },
       { "artifact": "AVAILABILITY", "version": "1.0", "run_id": "availability_2026-04" }
     ],
@@ -111,9 +112,9 @@ Notes:
     "notes": "Example only. Replace with real trace references."
   },
   "data": {
-    "season_brief_ref": "season_brief_2026",
+    "season_brief_ref": "athlete_profile_2026",
     "kpi_profile_ref": "KPI_Profile_Example",
-    "athlete_profile_ref": "season_brief_2026",
+    "athlete_profile_ref": "athlete_profile_2026",
     "planning_horizon_weeks": 16,
     "scenarios": [
       {

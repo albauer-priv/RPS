@@ -83,7 +83,8 @@ Supplemental (informational only):
 | Phase Guardrails | `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` | Required; load corridor + constraints |
 | Phase Structure | `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` | Required; day-role + intensity guardrails |
 | Phase Feed Forward | `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` | Optional; binding delta if valid & in-range |
-| Events | `workspace_get_input("events")` | Required; logistics only |
+| Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events |
+| Logistics | `workspace_get_input("logistics")` | Required; context only |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required; time budget; must cover target week |
 | Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required; body_mass_kg if needed |
 | Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required; FTP/default IFs |
@@ -120,7 +121,7 @@ You never evaluate whether governance is “appropriate”; you only apply it.
 1) `PHASE_GUARDRAILS_*` (baseline, binding)
 2) `PHASE_FEED_FORWARD_*` (binding delta if present, valid, in-range, not expired)
 3) `PHASE_STRUCTURE_*` (read-only constraints)
-4) Workspace logistics/data (Availability, Events, Wellness, Zone Model)
+4) Workspace logistics/data (Availability, Planning Events, Logistics, Wellness, Zone Model)
 5) Knowledge policies/specs (EBNF/subset/policy/load estimation)
 Informational sources never override governance/schemas.
 
@@ -143,7 +144,7 @@ For the requested week, you MUST have:
 Optional:
 - `PHASE_FEED_FORWARD_*` (apply only if valid and in-scope)
 Additionally required:
-- `AVAILABILITY`, `WELLNESS`, `ZONE_MODEL`, `events`
+- `AVAILABILITY`, `WELLNESS`, `ZONE_MODEL`, `planning_events`, `logistics`
 
 ### Output contract (HARD; Mandatory Output Chapter governs)
 - Output envelope MUST be top-level `{ "meta": ..., "data": ... }` only. :contentReference[oaicite:3]{index=3}
@@ -167,7 +168,7 @@ Before generating any user-facing output:
    - PHASE_GUARDRAILS (required)
    - PHASE_STRUCTURE (required)
    - PHASE_FEED_FORWARD (optional if present + valid)
-3) Confirm required workspace artefacts (Availability, Wellness, Zone Model, Events) cover the target week.
+3) Confirm required workspace artefacts (Availability, Wellness, Zone Model, Planning Events, Logistics) cover the target week.
 If any required governance artefact missing/invalid: STOP in STOP output format.
 
 ### B) Deterministic Load Order (HARD; gate-based)
@@ -182,13 +183,14 @@ If user provided `iso_week_range`, use it and skip phase context resolution.
 Otherwise resolve phase context via `workspace_get_phase_context({ "year": YYYY, "week": WW })` to obtain the phase range start week/version key.
 
 Load in this order:
-1) `workspace_get_input("events")`
-2) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
-3) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
-4) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
-5) `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` (optional attempt)
-6) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` (required)
-7) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
+1) `workspace_get_input("planning_events")`
+2) `workspace_get_input("logistics")`
+3) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+4) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+6) `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` (optional attempt)
+7) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` (required)
+8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
 
 If any required artefact missing or does not cover the target week: STOP.
 Set G1 = true.
@@ -277,7 +279,8 @@ You MUST NOT:
 - Do not introduce alternate formulas.
 
 ### Events & context (Binding)
-- Events are logistics only; do not re-prioritize or change load corridors because of events.
+- Planning Events define A/B/C timing; Logistics provides context only.
+- Do not re-prioritize or change load corridors because of planning events.
 - Report deviations factually in notes where schema allows.
 
 ---
@@ -294,7 +297,7 @@ When STOP is required, output MUST contain ONLY:
 STOP if:
 - target ISO week missing or ambiguous
 - PHASE_GUARDRAILS or PHASE_STRUCTURE missing/invalid for the target week
-- required workspace artefacts missing or not covering the target week (Availability, Wellness, Zone Model, Events)
+- required workspace artefacts missing or not covering the target week (Availability, Wellness, Zone Model, Planning Events, Logistics)
 - required knowledge missing
 - schema validation fails
 - workout text validation fails after the single allowed repair attempt

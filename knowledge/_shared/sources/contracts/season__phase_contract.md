@@ -71,7 +71,8 @@ structural architecture without introducing week- or workout-level planning.
 - `season_phase_feed_forward_yyyy-ww.json` -> `season_phase_feed_forward.schema.json` (binding if present)
 
 ### Informational Inputs (no schema)
-- `events.md`
+- `planning_events` (A/B/C planning events)
+- `logistics` (context events)
 
 ### Informational JSON Inputs (schemas required)
 - `activities_actual_yyyy-ww.json` -> `activities_actual.schema.json`

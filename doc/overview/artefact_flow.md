@@ -27,15 +27,15 @@ flowchart TD
   PA[Performance-Analyst]:::agent
   I[Intervals.icu]:::external
   EXP[parse-intervals]:::script
-  AVP[rps.main parse-availability]:::script
   VAL[validate_outputs.py]:::script
   POST["post_to_intervals (commit)"]:::script
   RCPT[post_receipts_yyyy-ww.json]:::artefact
 
   %% Artefacts
-  SB[season_brief_yyyy.md]:::artefact
+  AP[athlete_profile_*.json]:::artefact
   KP[kpi_profile_des_*.json]:::artefact
-  EV[events.md]:::artefact
+  PE[planning_events_*.json]:::artefact
+  LG[logistics_*.json]:::artefact
   AV[availability_yyyy-ww.json]:::artefact
   SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
   MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact
@@ -54,14 +54,17 @@ flowchart TD
   DR[des_analysis_report_yyyy-ww.json]:::artefact
 
   %% Planning chain
-  U --> SB --> AVP --> AV
+  U --> AP
+  U --> AV
   AV --> SS
   U --> KP --> SS
   SS --> SC --> MA
   KP --> MA
   KP --> PA
-  U --> EV --> MA
-  EV -. info .-> SS
+  U --> PE --> MA
+  U --> LG --> MA
+  PE -. info .-> SS
+  LG -. info .-> SS
   AV --> MA
 
   MA --> MO --> ME
@@ -101,10 +104,14 @@ flowchart TD
   PA --> DR --> MA
 
   %% Events can be used by multiple agents (informational)
-  EV -. info .-> MA
-  EV -. info .-> ME
-  EV -. info .-> MI
-  EV -. info .-> PA
+  PE -. info .-> MA
+  PE -. info .-> ME
+  PE -. info .-> MI
+  PE -. info .-> PA
+  LG -. info .-> MA
+  LG -. info .-> ME
+  LG -. info .-> MI
+  LG -. info .-> PA
 
   %% Styling
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
@@ -122,10 +129,11 @@ flowchart TD
 ### 2.1 Season-Scenario Detail Flow
 
 **Inputs (Artefacts)**
-- `season_brief_yyyy.md` (user-authored; includes weekday availability table)
-- `availability_yyyy-ww.json` (derived from Season Brief)
+- `athlete_profile_*.json` (user-authored profile + goals)
+- `availability_*.json` (user-managed availability)
 - `kpi_profile_des_*.json`
-- `events.md` (contextual)
+- `planning_events_*.json` (A/B/C events)
+- `logistics_*.json` (contextual)
 
 **Processing (Conceptual)**
 - Extract season goals, constraints, and event priorities.
@@ -137,9 +145,11 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> AVP[rps.main parse-availability]:::script --> AV[availability_yyyy-ww.json]:::artefact --> SS[Season-Scenario-Agent]:::agent
+  U[User]:::actor --> AP[athlete_profile_*.json]:::artefact --> SS[Season-Scenario-Agent]:::agent
+  U --> AV[availability_*.json]:::artefact --> SS
   U --> KP[kpi_profile_des_*.json]:::artefact --> SS
-  U --> EV[events.md]:::artefact --> SS
+  U --> PE[planning_events_*.json]:::artefact --> SS
+  U --> LG[logistics_*.json]:::artefact --> SS
   SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
@@ -150,10 +160,11 @@ flowchart LR
 ### 2.2 Season-Planner Detail Flow
 
 **Inputs (Artefacts)**
-- `season_brief_yyyy.md` (user-authored; includes weekday availability table)
-- `availability_yyyy-ww.json` (derived from Season Brief)
+- `athlete_profile_*.json` (user-authored profile + goals)
+- `availability_*.json` (user-managed availability)
 - `kpi_profile_des_*.json`
-- `events.md` (contextual)
+- `planning_events_*.json` (A/B/C events)
+- `logistics_*.json` (contextual)
 - `season_scenarios_yyyy-ww--yyyy-ww.json` (advisory, if available)
 - `des_analysis_report_yyyy-ww.json` (advisory)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational, if available)
@@ -174,9 +185,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> SB[season_brief_yyyy.md]:::artefact --> MA[Season-Planner]:::agent
+  U[User]:::actor --> AP[athlete_profile_*.json]:::artefact --> MA[Season-Planner]:::agent
+  U --> AV[availability_*.json]:::artefact --> MA
   U --> KP[kpi_profile_des_*.json]:::artefact --> MA
-  U --> EV[events.md]:::artefact --> MA
+  U --> PE[planning_events_*.json]:::artefact --> MA
+  U --> LG[logistics_*.json]:::artefact --> MA
   SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact -. advisory .-> MA
   DR[des_analysis_report_yyyy-ww.json]:::artefact -. advisory .-> MA
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MA
@@ -203,7 +216,8 @@ flowchart LR
 **Inputs (Artefacts)**
 - `season_plan_yyyy-ww--yyyy-ww.json` (binding)
 - `season_phase_feed_forward_yyyy-ww.json` (optional, binding if present)
-- `events.md` (informational)
+- `planning_events_*.json` (informational)
+- `logistics_*.json` (informational)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational)
 - `availability_yyyy-ww.json` (informational)
 - `wellness_yyyy-ww.json` (informational)
@@ -224,7 +238,8 @@ flowchart LR
 flowchart LR
   MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact --> ME[Phase-Architect]:::agent
   SPFF[season_phase_feed_forward_yyyy-ww.json]:::artefact -. optional .-> ME
-  EV[events.md]:::artefact -. info .-> ME
+  PE[planning_events_*.json]:::artefact -. info .-> ME
+  LG[logistics_*.json]:::artefact -. info .-> ME
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> ME
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> ME
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> ME
@@ -251,7 +266,8 @@ flowchart LR
 - `zone_model_power_<FTP>W.json` (informational, from Data-Pipeline)
 - `availability_yyyy-ww.json` (informational, from Data-Pipeline)
 - `wellness_yyyy-ww.json` (informational, from Data-Pipeline)
-- `events.md` (informational)
+- `planning_events_*.json` (informational)
+- `logistics_*.json` (informational)
 - Optional factual data for context
 
 **Processing (Conceptual)**
@@ -269,7 +285,8 @@ flowchart LR
   ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> MI
   AV[availability_yyyy-ww.json]:::artefact -. info .-> MI
   WL[wellness_yyyy-ww.json]:::artefact -. info .-> MI
-  EV[events.md]:::artefact -. info .-> MI
+  PE[planning_events_*.json]:::artefact -. info .-> MI
+  LG[logistics_*.json]:::artefact -. info .-> MI
   AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MI
   AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MI
 
@@ -315,11 +332,10 @@ flowchart LR
 **Inputs**
 - Intervals.icu API data (executed activities and related metrics)
 - Intervals.icu calendar state (planned + executed)
-- `season_brief_yyyy.md` (weekday availability table)
+- `availability_*.json` (user-managed input, validated alongside outputs)
 
 **Processing (Conceptual)**
 - `parse-intervals`: fetch raw activity data, compile `activities_actual` and `activities_trend`
-- `rps.main parse-availability`: normalize Season Brief availability table into `availability`
 - `validate_outputs.py`: validate JSON outputs against schemas
 
 **Outputs (Artefacts)**
@@ -332,13 +348,12 @@ flowchart LR
   I[Intervals.icu]:::external --> EXP[parse-intervals]:::script
   EXP --> AA[activities_actual_yyyy-ww.json]:::artefact
   EXP --> AT[activities_trend_yyyy-ww.json]:::artefact
-  SB[season_brief_yyyy.md]:::artefact --> AVP[rps.main parse-availability]:::script --> AV[availability_yyyy-ww.json]:::artefact
+  AVI[availability_yyyy-ww.json]:::artefact --> VAL
   AA --> VAL[validate_outputs.py]:::script
   AT --> VAL
-  AV --> VAL
   VAL -. checks .-> AA
   VAL -. checks .-> AT
-  VAL -. checks .-> AV
+  VAL -. checks .-> AVI
 
   classDef external fill:#fff3e6,stroke:#a35b00,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
@@ -370,7 +385,8 @@ flowchart LR
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
 - `kpi_profile_des_*.json`
-- `events.md` (informational)
+- `planning_events_*.json` (informational)
+- `logistics_*.json` (informational)
 - `season_plan_yyyy-ww--yyyy-ww.json`
 - `phase_guardrails_yyyy-ww--yyyy-ww.json`
 - `phase_structure_yyyy-ww--yyyy-ww.json`
@@ -390,7 +406,8 @@ flowchart LR
   BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact --> PA
   BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact --> PA
   MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact --> PA
-  EV[events.md]:::artefact -. info .-> PA
+  PE[planning_events_*.json]:::artefact -. info .-> PA
+  LG[logistics_*.json]:::artefact -. info .-> PA
 
   PA --> DR[des_analysis_report_yyyy-ww.json]:::artefact
 
@@ -403,8 +420,10 @@ flowchart LR
 ## 3. Artefact Index (Quick Reference)
 
 ### 3.1 User-Maintained
-- `season_brief_yyyy.md`
-- `events.md`
+- `athlete_profile_yyyy.json`
+- `planning_events_yyyy.json`
+- `logistics_yyyy.json`
+- `availability_yyyy-ww.json`
 - `kpi_profile_des_*.json`
 
 ### 3.2 Season-Scenario-Agent

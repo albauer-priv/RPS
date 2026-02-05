@@ -58,7 +58,9 @@ If any required item is missing, **STOP** and request exactly what’s missing (
 
 **Required**
 
-* `season_brief` (year-specific)
+* `athlete_profile`
+* `planning_events`
+* `logistics`
 * `availability`
 * (`activities_trend` OR `activities_actual`) at least one
 * (`season_plan` OR `phase_preview`) at least one
@@ -66,14 +68,13 @@ If any required item is missing, **STOP** and request exactly what’s missing (
 
 **When stopping**
 
-* Use the injected **Season Brief Year** (from the system prompt) for `season_brief` loading.
-* Only ask the user for the year if the injected year is missing or invalid.
+* If any input is missing, ask the user to populate it in Athlete Profile pages.
 * Tell the user precisely what to provide / where it should exist in the workspace.
 
 ### Staleness & conflict rule (binding)
 
 * If an artefact is clearly outdated relative to the week being discussed, state that explicitly under **Unknowns & Assumptions**.
-* If data conflicts (e.g., `season_brief` vs `availability`), flag the conflict and default to **low-risk guidance** until resolved.
+* If data conflicts (e.g., `athlete_profile` vs `availability`), flag the conflict and default to **low-risk guidance** until resolved.
 
 ### When Preflight is required
 
@@ -92,23 +93,22 @@ Load-order rule:
 
 Load in this exact order:
 
-1. `workspace_get_input({ "input_type": "season_brief", "year": SEASON_BRIEF_YEAR })`
-2. `workspace_get_input({ "input_type": "events" })`
-
-   * Events are **logistics only** (timing/travel). Not training A/B/C types.
-3. `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
-4. `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
-5. `workspace_get_latest({ "artifact_type": "WELLNESS" })`
-6. `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
-7. `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`
-8. `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`
-9. `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`
-10. `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
-11. `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
-12. `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`
-13. `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
-14. `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })` (optional attempt)
-15. `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+1. `workspace_get_input({ "input_type": "athlete_profile" })`
+2. `workspace_get_input({ "input_type": "planning_events" })`
+3. `workspace_get_input({ "input_type": "logistics" })`
+4. `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+5. `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+6. `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+7. `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
+8. `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`
+9. `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`
+10. `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`
+11. `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
+12. `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
+13. `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`
+14. `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
+15. `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })` (optional attempt)
+16. `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
 
 Phase-range resolution:
 
@@ -125,19 +125,20 @@ Use this checklist to ensure you didn’t miss essential context:
 
 | Priority | What to load        | How to call it                                                        | Why it matters                                           |
 | -------- | ------------------- | --------------------------------------------------------------------- | -------------------------------------------------------- |
-| 1        | Season Brief        | `workspace_get_input({ "input_type": "season_brief", "year": SEASON_BRIEF_YEAR })` | Primary goals, A/B/C events, constraints. Year required. |
-| 2        | Events (logistics)  | `workspace_get_input({ "input_type": "events" })`                     | Travel & timing; schedule conflicts.                     |
-| 3        | KPI Profile         | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`            | Thresholds/guardrails; KPI bands.                        |
-| 4        | Availability        | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`           | Weekly capacity + constraints.                           |
-| 5        | Wellness            | `workspace_get_latest({ "artifact_type": "WELLNESS" })`               | Readiness flags.                                         |
-| 6        | Season Plan         | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`            | Phase intent; event alignment.                           |
-| 7        | Phase Guardrails    | `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`       | Phase-level limits and constraints.                      |
-| 8        | Phase Structure     | `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`        | Planned weekly structure.                                |
-| 9        | Phase Preview       | `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`          | Execution snapshot for the phase.                        |
-| 10       | Activities Trend    | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`       | Recent workload trends & durability indicators.          |
-| 11       | Activities Actual   | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`      | Most recent week actuals.                                |
-| 12       | Week Plan           | `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`              | Current week plan (if present).                          |
-| 13       | DES Analysis Report | `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`    | Latest durability/efficiency summary.                    |
+| 1        | Athlete Profile     | `workspace_get_input({ "input_type": "athlete_profile" })`            | Goals, constraints, profile context.                     |
+| 2        | Planning Events     | `workspace_get_input({ "input_type": "planning_events" })`            | A/B/C events and priorities.                             |
+| 3        | Logistics           | `workspace_get_input({ "input_type": "logistics" })`                  | Travel & timing context.                                 |
+| 4        | KPI Profile         | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`            | Thresholds/guardrails; KPI bands.                        |
+| 5        | Availability        | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`           | Weekly capacity + constraints.                           |
+| 6        | Wellness            | `workspace_get_latest({ "artifact_type": "WELLNESS" })`               | Readiness flags.                                         |
+| 7        | Season Plan         | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`            | Phase intent; event alignment.                           |
+| 8        | Phase Guardrails    | `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`       | Phase-level limits and constraints.                      |
+| 9        | Phase Structure     | `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`        | Planned weekly structure.                                |
+| 10       | Phase Preview       | `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`          | Execution snapshot for the phase.                        |
+| 11       | Activities Trend    | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`       | Recent workload trends & durability indicators.          |
+| 12       | Activities Actual   | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`      | Most recent week actuals.                                |
+| 13       | Week Plan           | `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`              | Current week plan (if present).                          |
+| 14       | DES Analysis Report | `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`    | Latest durability/efficiency summary.                    |
 
 ---
 
@@ -161,7 +162,7 @@ Only after those sections may you provide:
 
 Include (as applicable):
 
-* Athlete goals + A/B/C focus (Season Brief)
+* Athlete goals + A/B/C focus (Athlete Profile + Planning Events)
 * Key constraints (time, travel, injuries/limits if present)
 * Current phase + week context (Season Plan / Phase Preview / Week Plan)
 * Availability hours + key blocked days
@@ -211,8 +212,8 @@ Include (as applicable):
 **Assistant (expected):**
 I can’t answer athlete-specifically yet because required workspace context is missing:
 
-* Missing: `season_brief (year)`, `availability`
-  Please provide the year for the season brief and ensure the Availability artefact exists in the workspace. Then I’ll run a context briefing and advise.
+* Missing: `athlete_profile`, `planning_events`, `logistics`, `availability`
+  Please populate Athlete Profile inputs and ensure Availability exists in the workspace. Then I’ll run a context briefing and advise.
 
 ---
 

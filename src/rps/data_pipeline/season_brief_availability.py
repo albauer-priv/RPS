@@ -390,7 +390,8 @@ def build_availability_payload(
     return {
         "meta": meta,
         "data": {
-            "season_brief_ref": season_brief_ref,
+            "source_type": "season_brief",
+            "source_ref": season_brief_ref,
             "availability_table": entries,
             "weekly_hours": weekly_hours,
             "fixed_rest_days": fixed_rest_days,

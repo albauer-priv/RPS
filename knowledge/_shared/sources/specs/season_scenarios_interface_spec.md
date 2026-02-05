@@ -29,12 +29,12 @@ Must include:
 
 ### data
 Required fields:
-- `season_brief_ref` (string)
+- `season_brief_ref` (legacy; populate with Athlete Profile run_id/version key)
 - `kpi_profile_ref` (string)
 - `scenarios` (array of exactly three scenario objects)
 
 Optional fields:
-- `athlete_profile_ref` (string)
+- `athlete_profile_ref` (string; preferred canonical reference)
 - `planning_horizon_weeks` (integer)
 - `notes` (array of strings)
 

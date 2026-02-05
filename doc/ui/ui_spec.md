@@ -70,7 +70,7 @@ See `doc/architecture/system_architecture.md` for C4 diagrams and system-level c
 - See `doc/ui/pages/performance_data_metrics.md`, `doc/ui/pages/performance_report.md`, `doc/ui/pages/performance_feed_forward.md`.
 
 ### Athlete Profile
-- About You, Season Brief, Availability, KPI Profile, Logistics, Zones, Data Operations
+- About You & Goals, Availability, Events, Logistics, Historic Data, Zones, KPI Profile, Data Operations
 - See `doc/ui/pages/athlete_profile.md`.
 
 ### System
@@ -185,7 +185,7 @@ flowchart TD
   - Otherwise: **Plan Week** (current week)
 
 ### 2) Input auto-check
-- The system checks for Season Brief, Events, KPI Profile, Availability, Zone Model, and Wellness.
+- The system checks for Athlete Profile, Planning Events, Logistics, KPI Profile, Availability, Zone Model, and Wellness.
 - If any are missing, the UI shows a short inline form or link to the relevant input page.
 - Once completed, the app returns to the planning flow without the athlete needing to navigate.
 
@@ -578,7 +578,7 @@ flowchart TD
 
 ### Flow: Inputs Update
 
-- **Entry:** Athlete Profile pages (Season Brief, Events, KPI, Availability)
+- **Entry:** Athlete Profile pages (About You & Goals, Planning Events, Logistics, KPI, Availability)
 - **Outputs:** input artefacts in `latest/`
 - **Writes:** replace `latest/` input artefacts
 - **UI feedback:** readiness reflects staleness in Plan Hub

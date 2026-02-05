@@ -87,11 +87,12 @@ python scripts/validate_outputs.py \
 
 ## Per-Artifact Checklists
 
-Manual validation checklists live under `doc/validation/`:
+Manual validation checklists live under `doc/specs/contracts/validation/`:
 
-- `doc/specs/contracts/validation/season_brief_validation.md`
+- `doc/specs/contracts/validation/athlete_profile_validation.md`
+- `doc/specs/contracts/validation/planning_events_validation.md`
+- `doc/specs/contracts/validation/logistics_validation.md`
 - `doc/specs/contracts/validation/season_scenarios_validation.md`
-- `doc/specs/contracts/validation/events_validation.md`
 - `doc/specs/contracts/validation/kpi_profile_validation.md`
 - `doc/specs/contracts/validation/season_plan_validation.md`
 - `doc/specs/contracts/validation/season_phase_feed_forward_validation.md`

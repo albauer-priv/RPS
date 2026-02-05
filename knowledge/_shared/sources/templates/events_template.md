@@ -18,9 +18,8 @@ Dependencies:
     Version: 1.0
 
 Notes: >
-  Template for non-training events that provide context only (availability,
-  logistics, recovery, data quality). Events must never prescribe actions
-  or override governance.
+  Deprecated template. Use modular inputs: planning_events (A/B/C) and logistics
+  (context events).
 ---
 
 # Events - Template
