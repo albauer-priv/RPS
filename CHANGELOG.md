@@ -642,6 +642,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Historic Data now reads yearly summaries from the `historical_baseline` artifact and refreshes via the Intervals pipeline.
 - Historical baseline schema now includes `yearly_summary` payloads.
 - Availability inputs now enforce 0.5h increments with 1-decimal precision, and travel risk values are normalized to uppercase (`LOW|MED|HIGH`) across UI, schema, and parser.
+- Historic Data removes the baseline metrics block and rounds yearly summary kJ/km values to integers.
 
 ## [0.1.0] - 2026-01-20
 

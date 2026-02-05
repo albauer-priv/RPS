@@ -52,17 +52,7 @@ else:
 render_status_panel()
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
-metrics = data.get("metrics") or {}
 yearly_summary = data.get("yearly_summary") or []
-
-st.subheader("Baseline Metrics")
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("kJ / year", metrics.get("kj_per_year", "—"))
-with col2:
-    st.metric("kJ / activity", metrics.get("kj_per_activity", "—"))
-with col3:
-    st.metric("kJ / hour", metrics.get("kj_per_hour", "—"))
 
 st.subheader("Yearly Activity Summary")
 if yearly_summary:
@@ -71,15 +61,19 @@ if yearly_summary:
         if not isinstance(item, dict):
             continue
         moving_time_seconds = float(item.get("moving_time_seconds") or 0.0)
+        km = item.get("distance_km")
+        kj_year = item.get("work_kj")
+        kj_activity = item.get("kj_per_activity")
+        kj_hour = item.get("kj_per_hour")
         summary_rows.append(
             {
                 "year": item.get("year"),
                 "activities": item.get("activities"),
                 "moving_time": _format_hh_mm(moving_time_seconds),
-                "km": item.get("distance_km"),
-                "kj_year": item.get("work_kj"),
-                "kj_activity": item.get("kj_per_activity"),
-                "kj_hour": item.get("kj_per_hour"),
+                "km": int(round(km)) if km is not None else None,
+                "kj_year": int(round(kj_year)) if kj_year is not None else None,
+                "kj_activity": int(round(kj_activity)) if kj_activity is not None else None,
+                "kj_hour": int(round(kj_hour)) if kj_hour is not None else None,
             }
         )
     st.dataframe(
@@ -90,10 +84,10 @@ if yearly_summary:
             "year": st.column_config.NumberColumn("Year", format="%d"),
             "activities": st.column_config.NumberColumn("Activities", format="%d"),
             "moving_time": st.column_config.TextColumn("Moving Time (hh:mm)"),
-            "km": st.column_config.NumberColumn("km", format="%.1f"),
-            "kj_year": st.column_config.NumberColumn("kJ / year", format="%.1f"),
-            "kj_activity": st.column_config.NumberColumn("kJ / activity", format="%.1f"),
-            "kj_hour": st.column_config.NumberColumn("kJ / hour", format="%.1f"),
+            "km": st.column_config.NumberColumn("km", format="%d"),
+            "kj_year": st.column_config.NumberColumn("kJ / year", format="%d"),
+            "kj_activity": st.column_config.NumberColumn("kJ / activity", format="%d"),
+            "kj_hour": st.column_config.NumberColumn("kJ / hour", format="%d"),
         },
     )
 else:
