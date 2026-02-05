@@ -171,30 +171,3 @@ with st.expander("Restore (Import)", expanded=False):
                     st.success(f"Restore complete ({len(restored)} files).")
                     set_status(status_state="done", title="Data Operations", message="Restore completed.")
     st.warning("Restores are destructive; target workspace should be empty unless using a partial restore.")
-
-with st.expander("Availability Import (Deprecated)", expanded=False):
-    st.write("Legacy Season Brief parsing is deprecated after the modular input cut-over.")
-    iso_year, _iso_week = get_iso_year_week()
-    season_year = st.number_input(
-        "Season year (optional)",
-        min_value=2000,
-        max_value=2100,
-        value=int(iso_year),
-        step=1,
-        help="Used only for parsing legacy Season Brief availability tables.",
-    )
-    if st.button("Parse Availability from Season Brief", width="content"):
-        with st.spinner("Parsing Season Brief availability..."):
-            try:
-                result = parse_and_store_availability(
-                    athlete_id=athlete_id,
-                    workspace_root=SETTINGS.workspace_root,
-                    schema_dir=SETTINGS.schema_dir,
-                    year=int(season_year),
-                )
-            except Exception as exc:  # pragma: no cover - UI error path
-                st.error(f"Parse failed: {exc}")
-                set_status(status_state="error", title="Data Operations", message="Availability parse failed.")
-            else:
-                st.success(f"Availability updated: {result.output_path.name}")
-                set_status(status_state="done", title="Data Operations", message="Availability parsed.")
