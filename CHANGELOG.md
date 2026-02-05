@@ -644,6 +644,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Availability inputs now enforce 0.5h increments with 1-decimal precision, and travel risk values are normalized to uppercase (`LOW|MED|HIGH`) across UI, schema, and parser.
 - Historic Data removes the baseline metrics block and rounds yearly summary kJ/km values to integers.
 - Data Operations no longer surfaces the deprecated availability import expander.
+- Athlete Profile docs updated to reflect the current Historic Data behavior.
 
 ## [0.1.0] - 2026-01-20
 

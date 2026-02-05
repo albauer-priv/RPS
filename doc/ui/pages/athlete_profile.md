@@ -21,9 +21,9 @@ All input guidance is provided on the pages themselves; templates are not used.
 - Context events (travel, work constraints, non-A/B/C events)
 
 ## Historic Data
-- Baseline metrics derived from full-year Intervals data
-- Refresh triggers the Intervals pipeline to recompute baseline and yearly summary
- - Yearly activity summary table (activities, moving time, km, kJ/year, kJ/activity, kJ/hour)
+- Yearly activity summary derived from full-year Intervals data
+- Refresh triggers the Intervals pipeline to recompute the yearly summary
+- Yearly activity summary table (activities, moving time, km, kJ/year, kJ/activity, kJ/hour)
 
 ## Zones
 - Zone model view
@@ -33,4 +33,3 @@ All input guidance is provided on the pages themselves; templates are not used.
 
 ## Data Operations
 - Backup/restore actions (see `doc/runbooks/data_ops.md`)
-- Legacy: parse availability from Season Brief (deprecated)
