@@ -149,12 +149,12 @@ events = st.data_editor(
     key="planning_events_editor",
     column_config={
         "type": st.column_config.SelectboxColumn(
-            "Type",
+            "Priority",
             options=["A", "B", "C"],
             help="Event tier used in planning (A/B/C).",
         ),
         "priority_rank": st.column_config.NumberColumn(
-            "Priority",
+            "Rank",
             min_value=1,
             max_value=3,
             step=1,
@@ -175,6 +175,19 @@ events = st.data_editor(
         "time_limit": st.column_config.TextColumn("Time Limit"),
         "objective": st.column_config.TextColumn("Objective"),
     },
+    column_order=[
+        "type",
+        "priority_rank",
+        "event_name",
+        "date",
+        "event_type",
+        "goal",
+        "distance_km",
+        "elevation_m",
+        "expected_duration",
+        "time_limit",
+        "objective",
+    ],
 )
 
 if st.button("Save Events", width="content"):
