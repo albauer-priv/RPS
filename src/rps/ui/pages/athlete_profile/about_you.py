@@ -59,19 +59,29 @@ with col_left:
     )
     training_age_years = st.number_input(
         "Training age (years)",
-        min_value=0.0,
-        value=float(profile.get("training_age_years") or 0.0),
+        min_value=0,
+        step=1,
+        value=int(profile.get("training_age_years") or 0),
+        format="%d",
     )
 with col_right:
     year = st.number_input("Season year", min_value=1900, value=int(profile.get("year") or datetime.now().year))
     age = st.number_input("Age", min_value=0, value=int(profile.get("age") or 0))
-    body_mass_kg = st.number_input("Body mass (kg)", min_value=0.0, value=float(profile.get("body_mass_kg") or 0.0))
+    body_mass_kg = st.number_input(
+        "Body mass (kg)",
+        min_value=0.0,
+        step=0.1,
+        value=round(float(profile.get("body_mass_kg") or 0.0), 1),
+        format="%.1f",
+    )
     sex = st.text_input("Sex (optional)", value=profile.get("sex", ""))
     age_group = st.text_input("Age group", value=profile.get("age_group", ""))
     endurance_anchor_w = st.number_input(
         "Endurance anchor (W)",
-        min_value=0.0,
-        value=float(profile.get("endurance_anchor_w") or 0.0),
+        min_value=0,
+        step=1,
+        value=int(profile.get("endurance_anchor_w") or 0),
+        format="%d",
     )
     ambition_low = st.number_input(
         "Ambition IF (low)",
@@ -155,12 +165,12 @@ if st.button("Save Profile & Goals", width="content"):
             "athlete_story": athlete_story,
             "location_time_zone": location_tz,
             "primary_disciplines": _lines_to_list(primary_disciplines.replace(",", "\n")),
-            "training_age_years": training_age_years,
+            "training_age_years": int(training_age_years),
             "age": int(age),
-            "body_mass_kg": body_mass_kg,
+            "body_mass_kg": round(float(body_mass_kg), 1),
             "sex": sex,
             "age_group": age_group,
-            "endurance_anchor_w": endurance_anchor_w,
+            "endurance_anchor_w": int(endurance_anchor_w),
             "ambition_if_range": [ambition_low, ambition_high],
         },
         "objectives": {
