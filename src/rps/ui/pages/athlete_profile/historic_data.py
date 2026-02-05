@@ -60,7 +60,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("kJ / year", metrics.get("kj_per_year", "—"))
 with col2:
-    st.metric("kJ / day", metrics.get("kj_per_day", "—"))
+    st.metric("kJ / activity", metrics.get("kj_per_activity", "—"))
 with col3:
     st.metric("kJ / hour", metrics.get("kj_per_hour", "—"))
 
@@ -78,7 +78,7 @@ if yearly_summary:
                 "moving_time": _format_hh_mm(moving_time_seconds),
                 "km": item.get("distance_km"),
                 "kj_year": item.get("work_kj"),
-                "kj_day": item.get("kj_per_day"),
+                "kj_activity": item.get("kj_per_activity"),
                 "kj_hour": item.get("kj_per_hour"),
             }
         )
@@ -92,7 +92,7 @@ if yearly_summary:
             "moving_time": st.column_config.TextColumn("Moving Time (hh:mm)"),
             "km": st.column_config.NumberColumn("km", format="%.1f"),
             "kj_year": st.column_config.NumberColumn("kJ / year", format="%.1f"),
-            "kj_day": st.column_config.NumberColumn("kJ / day", format="%.1f"),
+            "kj_activity": st.column_config.NumberColumn("kJ / activity", format="%.1f"),
             "kj_hour": st.column_config.NumberColumn("kJ / hour", format="%.1f"),
         },
     )

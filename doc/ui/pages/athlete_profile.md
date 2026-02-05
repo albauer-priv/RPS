@@ -23,7 +23,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 ## Historic Data
 - Baseline metrics derived from full-year Intervals data
 - Refresh triggers the Intervals pipeline to recompute baseline and yearly summary
-- Yearly activity summary table (activities, moving time, km, kJ/year, kJ/day, kJ/hour)
+ - Yearly activity summary table (activities, moving time, km, kJ/year, kJ/activity, kJ/hour)
 
 ## Zones
 - Zone model view

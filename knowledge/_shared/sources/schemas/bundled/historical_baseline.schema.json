@@ -89,7 +89,7 @@
           "additionalProperties": false,
           "required": [
             "kj_per_year",
-            "kj_per_day",
+            "kj_per_activity",
             "kj_per_hour",
             "long_ride_tolerance_kj"
           ],
@@ -98,7 +98,7 @@
               "type": "number",
               "minimum": 0
             },
-            "kj_per_day": {
+            "kj_per_activity": {
               "type": "number",
               "minimum": 0
             },
@@ -123,7 +123,7 @@
               "moving_time_seconds",
               "distance_km",
               "work_kj",
-              "kj_per_day",
+              "kj_per_activity",
               "kj_per_hour"
             ],
             "properties": {
@@ -147,7 +147,7 @@
                 "type": "number",
                 "minimum": 0
               },
-              "kj_per_day": {
+              "kj_per_activity": {
                 "type": "number",
                 "minimum": 0
               },

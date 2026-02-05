@@ -2464,6 +2464,7 @@ def compile_historical_baseline(
     yearly_summary = []
     total_kj = 0.0
     total_seconds = 0.0
+    total_activities = 0
     for year in years:
         summary = _aggregate_yearly_activity_summary(
             athlete_id=athlete_id,
@@ -2474,6 +2475,7 @@ def compile_historical_baseline(
             continue
         total_kj += summary["work_kj"]
         total_seconds += summary["moving_time_seconds"]
+        total_activities += int(summary["activities"])
         yearly_summary.append(
             {
                 "year": year,
@@ -2481,7 +2483,11 @@ def compile_historical_baseline(
                 "moving_time_seconds": summary["moving_time_seconds"],
                 "distance_km": round(summary["distance_km"], 1),
                 "work_kj": round(summary["work_kj"], 1),
-                "kj_per_day": round(summary["work_kj"] / 365.0, 1),
+                "kj_per_activity": round(
+                    summary["work_kj"] / summary["activities"], 1
+                )
+                if summary["activities"] > 0
+                else 0.0,
                 "kj_per_hour": round(
                     summary["work_kj"] / (summary["moving_time_seconds"] / 3600.0), 1
                 )
@@ -2494,7 +2500,7 @@ def compile_historical_baseline(
         raise ValueError("No yearly activities found for historical baseline.")
 
     avg_kj_year = total_kj / len(yearly_summary)
-    avg_kj_day = avg_kj_year / 365.0
+    avg_kj_activity = total_kj / total_activities if total_activities > 0 else 0.0
     avg_kj_hour = total_kj / (total_seconds / 3600.0) if total_seconds > 0 else 0.0
 
     run_ts = datetime.now(timezone.utc)
@@ -2505,8 +2511,8 @@ def compile_historical_baseline(
         "meta": {
             "artifact_type": "HISTORICAL_BASELINE",
             "schema_id": "HistoricalBaselineInterface",
-            "schema_version": "1.1",
-            "version": "1.1",
+            "schema_version": "1.2",
+            "version": "1.2",
             "authority": "Derived",
             "owner_agent": "Intervals-Pipeline",
             "run_id": run_id,
@@ -2525,7 +2531,7 @@ def compile_historical_baseline(
         "data": {
             "metrics": {
                 "kj_per_year": round(avg_kj_year, 2),
-                "kj_per_day": round(avg_kj_day, 2),
+                "kj_per_activity": round(avg_kj_activity, 2),
                 "kj_per_hour": round(avg_kj_hour, 2),
                 "long_ride_tolerance_kj": 0.0,
             },
