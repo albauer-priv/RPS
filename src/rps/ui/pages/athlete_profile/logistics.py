@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import streamlit as st
 
@@ -54,6 +54,47 @@ def _normalize_events(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             }
         )
     return normalized
+
+
+def _parse_event_date(raw: object) -> date | None:
+    if isinstance(raw, date):
+        return raw
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(str(raw))
+    except ValueError:
+        return None
+
+
+def _sort_events(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    def _sort_key(row: dict[str, object]) -> tuple[int, str]:
+        parsed = _parse_event_date(row.get("date"))
+        return (0, parsed.isoformat()) if parsed else (1, "")
+
+    return sorted(rows, key=_sort_key)
+
+
+def _validate_events(rows: list[dict[str, object]]) -> list[str]:
+    errors: list[str] = []
+    seen_dates: set[str] = set()
+    for idx, row in enumerate(rows, start=1):
+        raw_date = row.get("date")
+        parsed = _parse_event_date(raw_date)
+        if not raw_date:
+            errors.append(f"Row {idx}: missing date.")
+        elif parsed is None:
+            errors.append(f"Row {idx}: date must be YYYY-MM-DD.")
+        else:
+            date_key = parsed.isoformat()
+            if date_key in seen_dates:
+                errors.append(f"Row {idx}: duplicate date {date_key}.")
+            else:
+                seen_dates.add(date_key)
+        description = str(row.get("description") or "").strip()
+        if not description:
+            errors.append(f"Row {idx}: description is required.")
+    return errors
 
 
 init_ui_state()
@@ -121,6 +162,16 @@ if not events:
             "description": "",
         }
     ]
+events = _sort_events(events)
+
+status_counts = {"PLANNED": 0, "OCCURRED": 0}
+for row in events:
+    status = str(row.get("status") or "").strip().upper()
+    if status in status_counts:
+        status_counts[status] += 1
+st.caption(
+    f"Planned: {status_counts['PLANNED']} · Occurred: {status_counts['OCCURRED']}"
+)
 events = st.data_editor(
     events,
     num_rows="dynamic",
@@ -140,7 +191,11 @@ events = st.data_editor(
 if st.button("Save Logistics", width="content"):
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
-    events = _normalize_events(events)
+    validation_errors = _validate_events(events)
+    if validation_errors:
+        st.error("\n".join(validation_errors))
+        st.stop()
+    events = _sort_events(_normalize_events(events))
     payload = {"events": events}
     store.save_version(
         athlete_id,

@@ -13,3 +13,9 @@ def test_athlete_profile_pages_render():
         at = AppTest.from_file(page)
         at.run()
         assert len(at.error) == 0
+        if page.endswith("events.py"):
+            assert any(button.label == "Save Events" for button in at.button)
+        if page.endswith("logistics.py"):
+            assert any(button.label == "Save Logistics" for button in at.button)
+        if page.endswith("historic_data.py"):
+            assert any(button.label == "Refresh Historical Baseline" for button in at.button)

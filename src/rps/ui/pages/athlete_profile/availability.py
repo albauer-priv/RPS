@@ -165,6 +165,19 @@ availability_table = st.data_editor(
     key="availability_table_editor_v2",
 )
 
+table_hours_min = round(sum(row.get("hours_min", 0.0) for row in availability_table), 1)
+table_hours_typ = round(sum(row.get("hours_typical", 0.0) for row in availability_table), 1)
+table_hours_max = round(sum(row.get("hours_max", 0.0) for row in availability_table), 1)
+if (
+    abs(table_hours_min - weekly_min) > 0.1
+    or abs(table_hours_typ - weekly_typ) > 0.1
+    or abs(table_hours_max - weekly_max) > 0.1
+):
+    st.warning(
+        "Weekly hours do not match table totals. "
+        f"Table totals: min {table_hours_min:.1f}h, typical {table_hours_typ:.1f}h, max {table_hours_max:.1f}h."
+    )
+
 fixed_rest_days = st.multiselect(
     "Fixed rest days",
     ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -180,6 +193,13 @@ if st.button("Save Availability", width="content"):
         _normalize_entry(row if isinstance(row, dict) else None, day)
         for day, row in zip(WEEKDAYS, availability_table)
     ]
+    fixed_rest_days_set = {day for day in fixed_rest_days}
+    for row in normalized_table:
+        if row["weekday"] in fixed_rest_days_set:
+            row["locked"] = True
+            row["hours_min"] = 0.0
+            row["hours_typical"] = 0.0
+            row["hours_max"] = 0.0
     payload = {
         "source_type": "manual",
         "source_ref": "ui_manual",

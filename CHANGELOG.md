@@ -648,6 +648,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Planning Events UI now uses explicit Priority (A/B/C) and Rank (1-3) fields while preserving the stored schema mapping.
 - Logistics events now auto-generate Event IDs on save and document uppercase status/impact enums.
 - Availability UI now includes guidance for 0.5h increments and uppercase travel risk.
+- Planning Events validation now enforces date format, rank uniqueness, and A-event spacing with clearer errors.
+- Logistics events now require date/description, prevent duplicate dates, and sort entries by date with a status summary.
+- Historic Data now shows the last refresh timestamp from baseline metadata.
 
 ## [0.1.0] - 2026-01-20
 

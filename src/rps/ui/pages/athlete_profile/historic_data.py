@@ -52,6 +52,10 @@ else:
 render_status_panel()
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
+meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
+created_at = meta.get("created_at") if isinstance(meta, dict) else None
+if created_at:
+    st.caption(f"Last refresh: {created_at}")
 yearly_summary = data.get("yearly_summary") or []
 
 st.subheader("Yearly Activity Summary")

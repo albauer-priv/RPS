@@ -155,12 +155,33 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
             value = row.get(field)
             if value is None or value == "":
                 missing_errors.append(f"Row {idx}: missing {field}.")
-    a_dates = [
-        _parse_event_date(row.get("date"))
-        for row in rows
-        if str(row.get("priority", "")).upper() == "A"
-    ]
-    a_dates = sorted([d for d in a_dates if d is not None])
+    priority_rank_map: dict[str, set[int]] = {}
+    a_dates: list[date] = []
+    for idx, row in enumerate(rows, start=1):
+        priority = str(row.get("priority") or "").upper()
+        if priority not in {"A", "B", "C"}:
+            missing_errors.append(f"Row {idx}: priority must be A, B, or C.")
+        rank_val = row.get("rank")
+        try:
+            rank = int(rank_val)
+        except (TypeError, ValueError):
+            missing_errors.append(f"Row {idx}: rank must be an integer 1-3.")
+            continue
+        if rank < 1 or rank > 3:
+            missing_errors.append(f"Row {idx}: rank must be between 1 and 3.")
+        rank_set = priority_rank_map.setdefault(priority, set())
+        if rank in rank_set:
+            missing_errors.append(
+                f"Row {idx}: duplicate rank {rank} within priority {priority}."
+            )
+        else:
+            rank_set.add(rank)
+        parsed_date = _parse_event_date(row.get("date"))
+        if row.get("date") and parsed_date is None:
+            missing_errors.append(f"Row {idx}: date must be YYYY-MM-DD.")
+        if priority == "A" and parsed_date:
+            a_dates.append(parsed_date)
+    a_dates = sorted(a_dates)
     for prev, current in zip(a_dates, a_dates[1:]):
         if (current - prev).days < 84:
             missing_errors.append(
@@ -169,10 +190,19 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
             break
     return missing_errors
 
+
+def _sort_events(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    def _sort_key(row: dict[str, object]) -> tuple[int, str]:
+        parsed = _parse_event_date(row.get("date"))
+        return (0, parsed.isoformat()) if parsed else (1, "")
+
+    return sorted(rows, key=_sort_key)
+
 st.subheader("Planning Events (A/B/C)")
 events = [_normalize_event(row) for row in events if isinstance(row, dict)]
 if not events:
     events = [_normalize_event({})]
+events = _sort_events(events)
 st.caption(
     "Add A/B/C events with a priority rank (1-3). Event Type defaults to the KPI profile when available."
 )
@@ -207,7 +237,10 @@ events_df = st.data_editor(
         "distance_km": st.column_config.NumberColumn("Distance (km)", min_value=0, step=1),
         "elevation_m": st.column_config.NumberColumn("Elevation (m)", min_value=0, step=50),
         "expected_duration": st.column_config.TextColumn("Expected Duration"),
-        "time_limit": st.column_config.TextColumn("Time Limit"),
+        "time_limit": st.column_config.TextColumn(
+            "Time Limit",
+            help="Use HH:MM or a clear text limit (e.g. 24:00, TBD).",
+        ),
         "objective": st.column_config.TextColumn("Objective"),
     },
     column_order=EVENT_COLUMNS,
@@ -219,8 +252,9 @@ if st.button("Save Events", width="content"):
     ui_events = events_df.to_dict(orient="records")
     validation_errors = _validate_events(ui_events)
     if validation_errors:
-        st.error(" ".join(validation_errors))
+        st.error("\n".join(validation_errors))
         st.stop()
+    ui_events = _sort_events(ui_events)
     events = [_to_storage_event(event) for event in ui_events]
     payload = {"events": events}
     store.save_version(
