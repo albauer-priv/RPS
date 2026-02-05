@@ -11,17 +11,19 @@ feature spec (`doc/specs/features/FEAT_<slug>.md`) before implementation.
 
 ## Ranked Backlog (with dependencies)
 
-1) **FEAT_user_inputs_io** — upload/download inputs (new modular inputs).  
-   Depends on: FEAT_user_inputs_modular
-2) **FEAT_plan_adjustments** — adjust Season/Phase plans when constraints change.  
+1) **BUG_user_inputs_polish** — fix Events/Logistics/Availability UX and validation gaps.  
    Depends on: FEAT_user_inputs_modular, FEAT_user_data_editors
-3) **FEAT_run_scheduler_resilience** — stuck-run detection and recovery.  
+2) **FEAT_user_inputs_io** — upload/download inputs (new modular inputs).  
+   Depends on: FEAT_user_inputs_modular
+3) **FEAT_plan_adjustments** — adjust Season/Phase plans when constraints change.  
+   Depends on: FEAT_user_inputs_modular, FEAT_user_data_editors
+4) **FEAT_run_scheduler_resilience** — stuck-run detection and recovery.  
    Depends on: none
-4) **FEAT_user_management** — auth/login + per-user API keys and athlete ID.  
+5) **FEAT_user_management** — auth/login + per-user API keys and athlete ID.  
    Depends on: none (but changes deployment + config)
-5) **FEAT_docker_deploy** — image build + registry + deployment workflow.  
+6) **FEAT_docker_deploy** — image build + registry + deployment workflow.  
    Depends on: none (better after user_management for env clarity)
-6) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
+7) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
    Depends on: FEAT_posting_receipts_inspection
 
 ## Implemented / In-Progress
@@ -35,6 +37,7 @@ feature spec (`doc/specs/features/FEAT_<slug>.md`) before implementation.
 - [x] FEAT_historical_baseline_refresh — refresh baseline from Intervals via UI.
 - [x] FEAT_user_input_examples — example Profile/Goals + Logistics + Events inputs.
 - [x] FEAT_backup_restore_cli — backup/restore tooling (UI + helper).
+- [~] BUG_user_inputs_polish — Events columns/rank/priority, Logistics enums, Availability rounding, guidance.
 
 ## Unlock Graph (dependencies)
 

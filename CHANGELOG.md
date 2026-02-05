@@ -645,6 +645,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Historic Data removes the baseline metrics block and rounds yearly summary kJ/km values to integers.
 - Data Operations no longer surfaces the deprecated availability import expander.
 - Athlete Profile docs updated to reflect the current Historic Data behavior.
+- Planning Events UI now uses explicit Priority (A/B/C) and Rank (1-3) fields while preserving the stored schema mapping.
 
 ## [0.1.0] - 2026-01-20
 

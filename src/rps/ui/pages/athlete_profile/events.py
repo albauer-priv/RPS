@@ -74,8 +74,8 @@ if profile_path.exists():
 
 
 EVENT_COLUMNS = [
-    "type",
-    "priority_rank",
+    "priority",
+    "rank",
     "event_name",
     "date",
     "event_type",
@@ -90,14 +90,12 @@ EVENT_COLUMNS = [
 
 def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
     normalized = dict(entry)
-    if "type" not in normalized and "priority" in normalized:
-        normalized["type"] = normalized.get("priority")
-    if "priority" in normalized and "type" not in normalized:
-        normalized["type"] = normalized.get("priority")
-    if "priority_rank" not in normalized:
-        normalized["priority_rank"] = 1
-    if not normalized.get("type"):
-        normalized["type"] = "A"
+    if "priority" not in normalized:
+        normalized["priority"] = normalized.get("type") or normalized.get("priority")
+    if "rank" not in normalized:
+        normalized["rank"] = normalized.get("priority_rank", 1)
+    if not normalized.get("priority"):
+        normalized["priority"] = "A"
     normalized.setdefault("event_name", "")
     normalized.setdefault("date", "")
     normalized.setdefault("event_type", event_type_options[0] if event_type_options else "")
@@ -108,6 +106,22 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
     normalized.setdefault("time_limit", "TBD")
     normalized.setdefault("objective", "")
     return normalized
+
+
+def _to_storage_event(entry: dict[str, object]) -> dict[str, object]:
+    return {
+        "type": str(entry.get("priority") or "A").upper(),
+        "priority_rank": int(entry.get("rank") or 1),
+        "event_name": str(entry.get("event_name") or "").strip(),
+        "date": str(entry.get("date") or "").strip(),
+        "event_type": str(entry.get("event_type") or "").strip(),
+        "goal": str(entry.get("goal") or "").strip(),
+        "distance_km": entry.get("distance_km") or 0,
+        "elevation_m": entry.get("elevation_m") or 0,
+        "expected_duration": str(entry.get("expected_duration") or "").strip(),
+        "time_limit": str(entry.get("time_limit") or "").strip(),
+        "objective": str(entry.get("objective") or "").strip(),
+    }
 
 
 def _parse_event_date(raw: object) -> date | None:
@@ -124,8 +138,8 @@ def _parse_event_date(raw: object) -> date | None:
 def _validate_events(rows: list[dict[str, object]]) -> list[str]:
     missing_errors: list[str] = []
     required_fields = [
-        "type",
-        "priority_rank",
+        "priority",
+        "rank",
         "event_name",
         "date",
         "event_type",
@@ -144,7 +158,7 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
     a_dates = [
         _parse_event_date(row.get("date"))
         for row in rows
-        if str(row.get("type", "")).upper() == "A"
+        if str(row.get("priority", "")).upper() == "A"
     ]
     a_dates = sorted([d for d in a_dates if d is not None])
     for prev, current in zip(a_dates, a_dates[1:]):
@@ -169,12 +183,12 @@ events_df = st.data_editor(
     width="stretch",
     key="planning_events_editor",
     column_config={
-        "type": st.column_config.SelectboxColumn(
+        "priority": st.column_config.SelectboxColumn(
             "Priority",
             options=["A", "B", "C"],
             help="Event tier used in planning (A/B/C).",
         ),
-        "priority_rank": st.column_config.NumberColumn(
+        "rank": st.column_config.NumberColumn(
             "Rank",
             min_value=1,
             max_value=3,
@@ -202,11 +216,12 @@ events_df = st.data_editor(
 if st.button("Save Events", width="content"):
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
-    events = events_df.to_dict(orient="records")
-    validation_errors = _validate_events(events)
+    ui_events = events_df.to_dict(orient="records")
+    validation_errors = _validate_events(ui_events)
     if validation_errors:
         st.error(" ".join(validation_errors))
         st.stop()
+    events = [_to_storage_event(event) for event in ui_events]
     payload = {"events": events}
     store.save_version(
         athlete_id,
