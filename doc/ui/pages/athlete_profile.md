@@ -19,6 +19,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 
 ## Logistics
 - Context events (travel, work constraints, non-A/B/C events)
+- Event IDs are generated on save; status/impact use uppercase enums.
 
 ## Historic Data
 - Yearly activity summary derived from full-year Intervals data

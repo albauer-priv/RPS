@@ -106,6 +106,10 @@ IMPACT_OPTIONS = [
 ]
 
 st.subheader("Context Events")
+st.caption(
+    "Event IDs are generated automatically on save. "
+    "Status and impact use uppercase enum values."
+)
 if not events:
     events = [
         {
@@ -124,7 +128,7 @@ events = st.data_editor(
     key="logistics_events_editor",
     column_config={
         "date": st.column_config.TextColumn("Date (YYYY-MM-DD)"),
-        "event_id": st.column_config.TextColumn("Event ID"),
+        "event_id": st.column_config.TextColumn("Event ID (auto)", disabled=True),
         "event_type": st.column_config.SelectboxColumn("Event Type", options=EVENT_TYPE_OPTIONS),
         "status": st.column_config.SelectboxColumn("Status", options=STATUS_OPTIONS),
         "impact": st.column_config.SelectboxColumn("Impact", options=IMPACT_OPTIONS),
