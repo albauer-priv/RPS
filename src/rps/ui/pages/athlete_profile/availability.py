@@ -124,6 +124,9 @@ with col_max:
     )
 
 st.subheader("Availability Table")
+st.caption(
+    "Hours must be in 0.5h increments. Travel risk uses uppercase enums (LOW/MED/HIGH)."
+)
 availability_by_day: dict[str, dict[str, object]] = {}
 for row in availability_table:
     if not isinstance(row, dict):

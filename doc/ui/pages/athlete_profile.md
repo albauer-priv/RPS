@@ -12,6 +12,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 
 ## Availability
 - Editable weekly availability table and hours
+- Hours use 0.5h increments; travel risk uses uppercase enums (LOW/MED/HIGH).
 
 ## Events
 - Planning events used for season planning (Type A/B/C + Priority rank, event type, time limits)
