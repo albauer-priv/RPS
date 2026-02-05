@@ -119,21 +119,21 @@
               "status": {
                 "type": "string",
                 "enum": [
-                  "planned",
-                  "occurred",
-                  "cancelled"
+                  "PLANNED",
+                  "OCCURRED",
+                  "CANCELLED"
                 ]
               },
               "impact": {
                 "type": "string",
                 "enum": [
-                  "availability",
-                  "missed_session",
-                  "modality",
-                  "recovery",
-                  "data_quality",
-                  "none",
-                  "other"
+                  "AVAILABILITY",
+                  "MISSED_SESSION",
+                  "MODALITY",
+                  "RECOVERY",
+                  "DATA_QUALITY",
+                  "NONE",
+                  "OTHER"
                 ]
               },
               "description": {

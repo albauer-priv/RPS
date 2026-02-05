@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Planning Events editor now splits A/B/C type from priority rank, adds time limit, and enforces 12-week spacing between A events.
 - Athlete Profile input guidance now lives in UI pages; input templates were removed.
+- Logistics editor now aligns to event list columns (date/id/type/status/impact/description) with enums.
+- Logistics now auto-generates event IDs and saves status/impact in uppercase enums.
 - Data & Metrics now prefers the Parquet cache for activities_trend and activities_actual with JSON fallback.
 - Parquet cache writes now log when a retry succeeds, and metrics parsing fixes a missing date import.
 - Parquet cache dtype cleanup now avoids deprecated pandas to_numeric behavior.

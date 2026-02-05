@@ -18,6 +18,44 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType, Authority
 
 
+def _next_event_id(existing_ids: set[str]) -> str:
+    numbers = []
+    for event_id in existing_ids:
+        if event_id.startswith("EVT-"):
+            suffix = event_id.split("-", 1)[-1]
+            if suffix.isdigit():
+                numbers.append(int(suffix))
+    next_num = max(numbers, default=0) + 1
+    return f"EVT-{next_num:03d}"
+
+
+def _normalize_events(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    existing_ids = set()
+    for row in rows:
+        event_id = str(row.get("event_id") or "").strip()
+        if event_id:
+            existing_ids.add(event_id)
+    next_id = _next_event_id(existing_ids)
+    normalized: list[dict[str, object]] = []
+    for row in rows:
+        event_id = str(row.get("event_id") or "").strip()
+        if not event_id:
+            event_id = next_id
+            existing_ids.add(event_id)
+            next_id = _next_event_id(existing_ids)
+        normalized.append(
+            {
+                "date": str(row.get("date") or "").strip(),
+                "event_id": event_id,
+                "event_type": str(row.get("event_type") or "").strip().upper(),
+                "status": str(row.get("status") or "").strip().upper(),
+                "impact": str(row.get("impact") or "").strip().upper(),
+                "description": str(row.get("description") or "").strip(),
+            }
+        )
+    return normalized
+
+
 init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
@@ -47,14 +85,58 @@ render_status_panel()
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 events = data.get("events") or []
 
+EVENT_TYPE_OPTIONS = [
+    "TRAVEL",
+    "WORK",
+    "WEATHER",
+    "HEALTH",
+    "FAMILY",
+    "EQUIPMENT",
+    "OTHER",
+]
+STATUS_OPTIONS = ["PLANNED", "OCCURRED", "CANCELLED"]
+IMPACT_OPTIONS = [
+    "AVAILABILITY",
+    "MISSED_SESSION",
+    "MODALITY",
+    "RECOVERY",
+    "DATA_QUALITY",
+    "NONE",
+    "OTHER",
+]
+
 st.subheader("Context Events")
 if not events:
-    events = [{"date": "", "event": "", "notes": ""}]
-events = st.data_editor(events, num_rows="dynamic", width="stretch", key="logistics_events_editor")
+    events = [
+        {
+            "date": "",
+            "event_id": "",
+            "event_type": EVENT_TYPE_OPTIONS[0],
+            "status": STATUS_OPTIONS[0],
+            "impact": IMPACT_OPTIONS[0],
+            "description": "",
+        }
+    ]
+events = st.data_editor(
+    events,
+    num_rows="dynamic",
+    width="stretch",
+    key="logistics_events_editor",
+    column_config={
+        "date": st.column_config.TextColumn("Date (YYYY-MM-DD)"),
+        "event_id": st.column_config.TextColumn("Event ID"),
+        "event_type": st.column_config.SelectboxColumn("Event Type", options=EVENT_TYPE_OPTIONS),
+        "status": st.column_config.SelectboxColumn("Status", options=STATUS_OPTIONS),
+        "impact": st.column_config.SelectboxColumn("Impact", options=IMPACT_OPTIONS),
+        "description": st.column_config.TextColumn("Description"),
+    },
+    column_order=["date", "event_id", "event_type", "status", "impact", "description"],
+)
 
 if st.button("Save Logistics", width="content"):
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
+    events = _normalize_events(events)
     payload = {"events": events}
     store.save_version(
         athlete_id,

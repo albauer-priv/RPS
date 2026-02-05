@@ -34,10 +34,12 @@ provide planning context but do not directly change governance corridors.
 
 ## 2) Required Fields (Binding)
 Each logistics entry MUST include:
-- `start_date`
-- `end_date`
-- `summary`
-- `impact` (availability/modality/recovery/data_quality)
+- `date` (YYYY-MM-DD)
+- `event_id`
+- `event_type` (TRAVEL/WORK/WEATHER/HEALTH/FAMILY/EQUIPMENT/OTHER)
+- `status` (PLANNED/OCCURRED/CANCELLED)
+- `impact` (AVAILABILITY/MISSED_SESSION/MODALITY/RECOVERY/DATA_QUALITY/NONE/OTHER)
+- `description`
 
 ## 3) Forbidden Content (Binding)
 - Planning outputs, load corridors, or workout prescriptions.
