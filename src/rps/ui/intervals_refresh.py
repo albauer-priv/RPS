@@ -66,6 +66,7 @@ def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key
             "exception": None,
             "run_id": run_id,
         }
+    historical_years = int(os.getenv("RPS_HISTORICAL_YEARS", "3"))
     args = argparse.Namespace(
         year=None,
         week=None,
@@ -73,6 +74,7 @@ def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key
         to_date=None,
         athlete=athlete_id,
         skip_validate=False,
+        historical_years=historical_years,
     )
     tracker = start_background_tracker(
         SETTINGS.workspace_root,

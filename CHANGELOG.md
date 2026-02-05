@@ -176,6 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-render now calls the integrated renderer directly (no subprocess).
 - Hard cut-over to modular inputs (athlete_profile, planning_events, logistics, availability); Season Brief/events.md are deprecated.
 - Agent knowledge manifest and mandatory-output specs updated to reference modular inputs and legacy season_brief_ref behavior.
+- Intervals pipeline now compiles Historical Baseline from full-year fetches and stores yearly summaries; Historic Data reads the artifact and refreshes via the pipeline.
 
 ## [0.10.1] - 2026-01-29
 
@@ -631,6 +632,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Athlete Profile now exposes a `Zones` page that renders the latest `zone_model.json` as a tabular overview (FTP ranges, watts, IF, intent) and appears in the navigation menu next to Availability and Logistics.
 - Added an agents TODO reminding us to reconcile the Phase page preview helpers before reapplying the custom UI/templating work.
+- Intervals data pipeline now compiles `historical_baseline` yearly summaries from full-year activity fetches.
+
+### Changed
+- Historic Data now reads yearly summaries from the `historical_baseline` artifact and refreshes via the Intervals pipeline.
+- Historical baseline schema now includes `yearly_summary` payloads.
 
 ## [0.1.0] - 2026-01-20
 

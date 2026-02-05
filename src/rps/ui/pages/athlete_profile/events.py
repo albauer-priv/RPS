@@ -4,6 +4,7 @@ import json
 from datetime import date, datetime, timezone
 
 import streamlit as st
+import pandas as pd
 
 from rps.ui.shared import (
     SETTINGS,
@@ -72,12 +73,31 @@ if profile_path.exists():
     event_type_options = sorted(set(event_type_options))
 
 
+EVENT_COLUMNS = [
+    "type",
+    "priority_rank",
+    "event_name",
+    "date",
+    "event_type",
+    "goal",
+    "distance_km",
+    "elevation_m",
+    "expected_duration",
+    "time_limit",
+    "objective",
+]
+
+
 def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
     normalized = dict(entry)
     if "type" not in normalized and "priority" in normalized:
         normalized["type"] = normalized.get("priority")
+    if "priority" in normalized and "type" not in normalized:
+        normalized["type"] = normalized.get("priority")
     if "priority_rank" not in normalized:
         normalized["priority_rank"] = 1
+    if not normalized.get("type"):
+        normalized["type"] = "A"
     normalized.setdefault("event_name", "")
     normalized.setdefault("date", "")
     normalized.setdefault("event_type", event_type_options[0] if event_type_options else "")
@@ -142,8 +162,9 @@ if not events:
 st.caption(
     "Add A/B/C events with a priority rank (1-3). Event Type defaults to the KPI profile when available."
 )
-events = st.data_editor(
-    events,
+events_df = pd.DataFrame(events, columns=EVENT_COLUMNS)
+events_df = st.data_editor(
+    events_df,
     num_rows="dynamic",
     width="stretch",
     key="planning_events_editor",
@@ -175,24 +196,13 @@ events = st.data_editor(
         "time_limit": st.column_config.TextColumn("Time Limit"),
         "objective": st.column_config.TextColumn("Objective"),
     },
-    column_order=[
-        "type",
-        "priority_rank",
-        "event_name",
-        "date",
-        "event_type",
-        "goal",
-        "distance_km",
-        "elevation_m",
-        "expected_duration",
-        "time_limit",
-        "objective",
-    ],
+    column_order=EVENT_COLUMNS,
 )
 
 if st.button("Save Events", width="content"):
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
+    events = events_df.to_dict(orient="records")
     validation_errors = _validate_events(events)
     if validation_errors:
         st.error(" ".join(validation_errors))

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 
 import streamlit as st
 
+from rps.ui.intervals_refresh import request_intervals_refresh
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -15,53 +15,15 @@ from rps.ui.shared import (
     set_status,
 )
 from rps.workspace.local_store import LocalArtifactStore
-from rps.workspace.types import ArtifactType, Authority
+from rps.workspace.types import ArtifactType
 
 
-def _parse_duration_to_hours(value: str | None) -> float:
-    if not value:
-        return 0.0
-    parts = value.split(":")
-    try:
-        if len(parts) == 2:
-            hours, minutes = parts
-            return float(hours) + float(minutes) / 60.0
-        if len(parts) == 3:
-            hours, minutes, seconds = parts
-            return float(hours) + float(minutes) / 60.0 + float(seconds) / 3600.0
-    except ValueError:
-        return 0.0
-    return 0.0
-
-
-def _compute_baseline(trend_doc: dict[str, object]) -> dict[str, object]:
-    data = trend_doc.get("data", {}) if isinstance(trend_doc, dict) else {}
-    weekly = data.get("weekly_trends") or []
-    total_kj = 0.0
-    total_hours = 0.0
-    for item in weekly:
-        if not isinstance(item, dict):
-            continue
-        aggregates = item.get("weekly_aggregates") or {}
-        work_kj = aggregates.get("work_kj") or 0.0
-        total_kj += float(work_kj or 0.0)
-        total_hours += _parse_duration_to_hours(aggregates.get("moving_time"))
-    weeks = max(len(weekly), 1)
-    avg_weekly_kj = total_kj / weeks
-    kj_per_year = avg_weekly_kj * 52.0
-    kj_per_day = total_kj / (weeks * 7.0)
-    kj_per_hour = total_kj / total_hours if total_hours > 0 else 0.0
-    return {
-        "metrics": {
-            "kj_per_year": round(kj_per_year, 2),
-            "kj_per_day": round(kj_per_day, 2),
-            "kj_per_hour": round(kj_per_hour, 2),
-        },
-        "source": {
-            "source_type": "intervals",
-            "range": f"{weeks} weeks",
-        },
-    }
+def _format_hh_mm(total_seconds: float) -> str:
+    if total_seconds <= 0:
+        return "00:00"
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    return f"{hours:02d}:{minutes:02d}"
 
 
 init_ui_state()
@@ -72,7 +34,7 @@ announce_log_file(athlete_id)
 st.title("Historic Data")
 st.caption(f"Athlete: {athlete_id}")
 st.info(
-    "Historic baseline metrics are computed from Intervals data. "
+    "Historic baseline metrics are computed from full-year Intervals data. "
     "Use Refresh to recompute after new activities are imported."
 )
 
@@ -91,6 +53,7 @@ render_status_panel()
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 metrics = data.get("metrics") or {}
+yearly_summary = data.get("yearly_summary") or []
 
 st.subheader("Baseline Metrics")
 col1, col2, col3 = st.columns(3)
@@ -101,43 +64,48 @@ with col2:
 with col3:
     st.metric("kJ / hour", metrics.get("kj_per_hour", "—"))
 
-st.info("Baseline is aggregated from Intervals data. Use Refresh to recompute.")
+st.subheader("Yearly Activity Summary")
+if yearly_summary:
+    summary_rows = []
+    for item in yearly_summary:
+        if not isinstance(item, dict):
+            continue
+        moving_time_seconds = float(item.get("moving_time_seconds") or 0.0)
+        summary_rows.append(
+            {
+                "year": item.get("year"),
+                "activities": item.get("activities"),
+                "moving_time": _format_hh_mm(moving_time_seconds),
+                "km": item.get("distance_km"),
+                "kj_year": item.get("work_kj"),
+                "kj_day": item.get("kj_per_day"),
+                "kj_hour": item.get("kj_per_hour"),
+            }
+        )
+    st.dataframe(
+        summary_rows,
+        width="stretch",
+        hide_index=True,
+        column_config={
+            "year": st.column_config.NumberColumn("Year", format="%d"),
+            "activities": st.column_config.NumberColumn("Activities", format="%d"),
+            "moving_time": st.column_config.TextColumn("Moving Time (hh:mm)"),
+            "km": st.column_config.NumberColumn("km", format="%.1f"),
+            "kj_year": st.column_config.NumberColumn("kJ / year", format="%.1f"),
+            "kj_day": st.column_config.NumberColumn("kJ / day", format="%.1f"),
+            "kj_hour": st.column_config.NumberColumn("kJ / hour", format="%.1f"),
+        },
+    )
+else:
+    st.info("No historical baseline summary found yet. Run the Intervals pipeline to generate it.")
 
 if st.button("Refresh Historical Baseline", width="content"):
-    trend_path = store.latest_path(athlete_id, ArtifactType.ACTIVITIES_TREND)
-    if not trend_path.exists():
-        st.error("activities_trend.json not found. Run the Intervals data pipeline first.")
+    status, message, run_id = request_intervals_refresh(athlete_id)
+    if status == "running":
+        st.info(message or "Intervals pipeline running.")
+    elif status == "error":
+        st.error(message or "Intervals pipeline failed.")
     else:
-        trend_doc = json.loads(trend_path.read_text(encoding="utf-8"))
-        baseline_data = _compute_baseline(trend_doc)
-        run_ts = datetime.now(timezone.utc)
-        version_key = run_ts.strftime("%Y%m%d_%H%M%S")
-        store.save_version(
-            athlete_id,
-            ArtifactType.HISTORICAL_BASELINE,
-            version_key,
-            baseline_data,
-            payload_meta={
-                "schema_id": "HistoricalBaselineInterface",
-                "schema_version": "1.0",
-                "version": "1.0",
-                "authority": Authority.DERIVED.value,
-                "owner_agent": "Data-Pipeline",
-                "scope": "Shared",
-                "data_confidence": "MEDIUM",
-                "created_at": run_ts.isoformat(),
-                "notes": "",
-                "trace_upstream": [
-                    {
-                        "artifact": "ACTIVITIES_TREND",
-                        "version": "1.0",
-                    }
-                ],
-            },
-            authority=Authority.DERIVED,
-            producer_agent="ui_historical_baseline",
-            run_id=f"ui_historical_baseline_{run_ts.strftime('%Y%m%dT%H%M%SZ')}",
-            update_latest=True,
-        )
-        st.success("Historical baseline refreshed.")
-        set_status(status_state="done", title="Historic Data", message="Baseline refreshed.")
+        st.success(message or "Intervals data refreshed.")
+    if run_id:
+        st.caption(f"Run ID: {run_id}")

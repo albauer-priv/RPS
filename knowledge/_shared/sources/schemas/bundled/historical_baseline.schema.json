@@ -80,6 +80,7 @@
       "additionalProperties": false,
       "required": [
         "metrics",
+        "yearly_summary",
         "source"
       ],
       "properties": {
@@ -108,6 +109,52 @@
             "long_ride_tolerance_kj": {
               "type": "number",
               "minimum": 0
+            }
+          }
+        },
+        "yearly_summary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "year",
+              "activities",
+              "moving_time_seconds",
+              "distance_km",
+              "work_kj",
+              "kj_per_day",
+              "kj_per_hour"
+            ],
+            "properties": {
+              "year": {
+                "type": "integer",
+                "minimum": 2000
+              },
+              "activities": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "moving_time_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "distance_km": {
+                "type": "number",
+                "minimum": 0
+              },
+              "work_kj": {
+                "type": "number",
+                "minimum": 0
+              },
+              "kj_per_day": {
+                "type": "number",
+                "minimum": 0
+              },
+              "kj_per_hour": {
+                "type": "number",
+                "minimum": 0
+              }
             }
           }
         },

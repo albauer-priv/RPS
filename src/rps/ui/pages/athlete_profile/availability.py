@@ -64,11 +64,21 @@ if not availability_table:
     availability_table = [
         {"day": "Mon", "hours": 0.0, "notes": ""}
     ]
+else:
+    availability_table = [
+        {
+            key: value
+            for key, value in row.items()
+            if not key.startswith("source_")
+        }
+        for row in availability_table
+        if isinstance(row, dict)
+    ]
 availability_table = st.data_editor(
     availability_table,
     num_rows="dynamic",
     width="stretch",
-    key="availability_table_editor",
+    key="availability_table_editor_v2",
 )
 
 fixed_rest_days = st.multiselect(

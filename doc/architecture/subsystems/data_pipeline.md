@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-04
+Last-Updated: 2026-02-05
 Owner: Architecture
 ---
 # Data Pipeline
@@ -18,6 +18,7 @@ The data pipeline fetches factual activity data from Intervals.icu and produces:
 
 - `activities_actual_yyyy-ww.json`
 - `activities_trend_yyyy-ww.json`
+- `historical_baseline_yyyymmdd_hhmmss.json` (yearly activity summary + baseline metrics)
 
 Outputs are stored under:
 
@@ -65,6 +66,12 @@ If no range is provided, the pipeline exports the **last 24 complete weeks**
 ending at the most recent completed week. If the export day is Sunday, the
 current week is treated as complete.
 
+The pipeline also compiles historical baseline summaries for the most recent
+N years (default 3, configurable via `--historical-years`).
+
+Historical baseline aggregation uses the most recent N calendar years
+(default 3, configurable via `--historical-years` or `RPS_HISTORICAL_YEARS`).
+
 ---
 
 ## Inputs
@@ -81,6 +88,10 @@ Per ISO week:
 - `activities_actual_yyyy-ww.json` + `.csv`
 - `activities_trend_yyyy-ww.json` + `.csv`
 - `.parquet` cache mirrors for both artefacts
+
+Per run:
+
+- `historical_baseline_yyyymmdd_hhmmss.json` in `data/analysis/`
 
 ---
 
