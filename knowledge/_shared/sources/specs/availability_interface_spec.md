@@ -49,7 +49,7 @@ Each entry MUST include:
 - `hours_typical` (number >= 0)
 - `hours_max` (number >= 0)
 - `indoor_possible` (boolean)
-- `travel_risk` (`low|med|high`)
+- `travel_risk` (`LOW|MED|HIGH`)
 - `locked` (boolean; true for fixed rest days)
 Note: raw Season Brief source fields are no longer stored in the availability table.
 

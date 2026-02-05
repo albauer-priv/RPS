@@ -147,11 +147,11 @@ def _parse_bool(text: str) -> bool:
 def _parse_travel_risk(text: str) -> str:
     value = text.strip().lower()
     if value in {"low", "medium", "high"}:
-        return "med" if value == "medium" else value
+        return "MED" if value == "medium" else value.upper()
     if value in {"med", "mid"}:
-        return "med"
+        return "MED"
     if value in {"n/a", "none"}:
-        return "low"
+        return "LOW"
     raise ValueError(f"Invalid travel risk value: {text}")
 
 
@@ -181,6 +181,10 @@ def _parse_hours(text: str) -> tuple[float, float, float, bool]:
     if len(parts) != 3:
         raise ValueError(f"Invalid hours format: {text}")
     return float(parts[0]), float(parts[1]), float(parts[2]), locked
+
+
+def _snap_half(value: float) -> float:
+    return round(round(value * 2) / 2, 1)
 
 
 def _extract_availability_table(text: str) -> list[dict[str, str]]:
@@ -313,6 +317,9 @@ def build_availability_payload(
         seen_days.add(weekday)
 
         hours_min, hours_typical, hours_max, locked = _parse_hours(row["hours"])
+        hours_min = _snap_half(hours_min)
+        hours_typical = _snap_half(hours_typical)
+        hours_max = _snap_half(hours_max)
         entry = {
             "weekday": weekday,
             "hours_min": hours_min,
@@ -332,9 +339,9 @@ def build_availability_payload(
 
     entries.sort(key=lambda item: DAY_ORDER.index(item["weekday"]))
     weekly_hours = {
-        "min": round(sum(item["hours_min"] for item in entries), 2),
-        "typical": round(sum(item["hours_typical"] for item in entries), 2),
-        "max": round(sum(item["hours_max"] for item in entries), 2),
+        "min": round(sum(item["hours_min"] for item in entries), 1),
+        "typical": round(sum(item["hours_typical"] for item in entries), 1),
+        "max": round(sum(item["hours_max"] for item in entries), 1),
     }
     fixed_rest_days = [item["weekday"] for item in entries if item["locked"]]
 

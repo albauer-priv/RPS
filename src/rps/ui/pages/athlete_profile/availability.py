@@ -30,6 +30,52 @@ st.info(
     "This is used to bound feasible weekly load corridors."
 )
 
+WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+TRAVEL_RISK_OPTIONS = ["LOW", "MED", "HIGH"]
+
+
+def _snap_half(value: float) -> float:
+    return round(round(float(value) * 2) / 2, 1)
+
+
+def _normalize_weekday(value: str | None) -> str | None:
+    if not value:
+        return None
+    value = value.strip()
+    for day in WEEKDAYS:
+        if value.lower() == day.lower():
+            return day
+    return None
+
+
+def _normalize_travel_risk(value: object) -> str:
+    if value is None:
+        return "LOW"
+    text = str(value).strip().upper()
+    if text in {"MEDIUM", "MID"}:
+        return "MED"
+    if text in TRAVEL_RISK_OPTIONS:
+        return text
+    return "LOW"
+
+
+def _normalize_entry(row: dict[str, object] | None, weekday: str) -> dict[str, object]:
+    row = row or {}
+    hours = row.get("hours", 0.0)
+    hours_min = row.get("hours_min", hours)
+    hours_typical = row.get("hours_typical", hours)
+    hours_max = row.get("hours_max", hours)
+    return {
+        "weekday": weekday,
+        "hours_min": _snap_half(hours_min),
+        "hours_typical": _snap_half(hours_typical),
+        "hours_max": _snap_half(hours_max),
+        "indoor_possible": bool(row.get("indoor_possible", row.get("indoor", False))),
+        "travel_risk": _normalize_travel_risk(row.get("travel_risk")),
+        "locked": bool(row.get("locked", False)),
+    }
+
+
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
 availability_path = store.latest_path(athlete_id, ArtifactType.AVAILABILITY)
@@ -53,30 +99,65 @@ notes = data.get("notes") or ""
 st.subheader("Weekly Hours")
 col_min, col_typ, col_max = st.columns(3)
 with col_min:
-    weekly_min = st.number_input("Min hours", min_value=0.0, value=float(weekly_hours.get("min", 0.0)))
+    weekly_min = st.number_input(
+        "Min hours",
+        min_value=0.0,
+        step=0.5,
+        format="%.1f",
+        value=_snap_half(weekly_hours.get("min", 0.0)),
+    )
 with col_typ:
-    weekly_typ = st.number_input("Typical hours", min_value=0.0, value=float(weekly_hours.get("typical", 0.0)))
+    weekly_typ = st.number_input(
+        "Typical hours",
+        min_value=0.0,
+        step=0.5,
+        format="%.1f",
+        value=_snap_half(weekly_hours.get("typical", 0.0)),
+    )
 with col_max:
-    weekly_max = st.number_input("Max hours", min_value=0.0, value=float(weekly_hours.get("max", 0.0)))
+    weekly_max = st.number_input(
+        "Max hours",
+        min_value=0.0,
+        step=0.5,
+        format="%.1f",
+        value=_snap_half(weekly_hours.get("max", 0.0)),
+    )
 
 st.subheader("Availability Table")
-if not availability_table:
-    availability_table = [
-        {"day": "Mon", "hours": 0.0, "notes": ""}
-    ]
-else:
-    availability_table = [
-        {
-            key: value
-            for key, value in row.items()
-            if not key.startswith("source_")
-        }
-        for row in availability_table
-        if isinstance(row, dict)
-    ]
+availability_by_day: dict[str, dict[str, object]] = {}
+for row in availability_table:
+    if not isinstance(row, dict):
+        continue
+    row = {key: value for key, value in row.items() if not key.startswith("source_")}
+    day_key = _normalize_weekday(row.get("weekday")) or _normalize_weekday(row.get("day"))
+    if not day_key:
+        continue
+    availability_by_day[day_key] = row
+
+availability_table = [
+    _normalize_entry(availability_by_day.get(day), day) for day in WEEKDAYS
+]
 availability_table = st.data_editor(
     availability_table,
-    num_rows="dynamic",
+    num_rows="fixed",
+    column_order=[
+        "weekday",
+        "hours_min",
+        "hours_typical",
+        "hours_max",
+        "indoor_possible",
+        "travel_risk",
+        "locked",
+    ],
+    column_config={
+        "weekday": st.column_config.SelectboxColumn("weekday", options=WEEKDAYS, required=True),
+        "hours_min": st.column_config.NumberColumn("hours_min", min_value=0.0, step=0.5, format="%.1f"),
+        "hours_typical": st.column_config.NumberColumn("hours_typical", min_value=0.0, step=0.5, format="%.1f"),
+        "hours_max": st.column_config.NumberColumn("hours_max", min_value=0.0, step=0.5, format="%.1f"),
+        "indoor_possible": st.column_config.CheckboxColumn("indoor_possible"),
+        "travel_risk": st.column_config.SelectboxColumn("travel_risk", options=TRAVEL_RISK_OPTIONS),
+        "locked": st.column_config.CheckboxColumn("locked"),
+    },
     width="stretch",
     key="availability_table_editor_v2",
 )
@@ -92,14 +173,18 @@ notes = st.text_area("Notes", value=notes, height=120)
 if st.button("Save Availability", width="content"):
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
+    normalized_table = [
+        _normalize_entry(row if isinstance(row, dict) else None, day)
+        for day, row in zip(WEEKDAYS, availability_table)
+    ]
     payload = {
         "source_type": "manual",
         "source_ref": "ui_manual",
-        "availability_table": availability_table,
+        "availability_table": normalized_table,
         "weekly_hours": {
-            "min": weekly_min,
-            "typical": weekly_typ,
-            "max": weekly_max,
+            "min": _snap_half(weekly_min),
+            "typical": _snap_half(weekly_typ),
+            "max": _snap_half(weekly_max),
         },
         "fixed_rest_days": fixed_rest_days,
         "notes": notes,

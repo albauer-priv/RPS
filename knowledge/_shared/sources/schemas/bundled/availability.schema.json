@@ -82,9 +82,9 @@
         "travel_risk": {
           "type": "string",
           "enum": [
-            "low",
-            "med",
-            "high"
+            "LOW",
+            "MED",
+            "HIGH"
           ]
         },
         "locked": {
@@ -161,9 +161,9 @@
               "travel_risk": {
                 "type": "string",
                 "enum": [
-                  "low",
-                  "med",
-                  "high"
+                  "LOW",
+                  "MED",
+                  "HIGH"
                 ]
               },
               "locked": {
@@ -512,9 +512,9 @@
               "travel_risk": {
                 "type": "string",
                 "enum": [
-                  "low",
-                  "med",
-                  "high"
+                  "LOW",
+                  "MED",
+                  "HIGH"
                 ]
               },
               "locked": {
