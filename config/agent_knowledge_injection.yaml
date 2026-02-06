@@ -86,6 +86,7 @@ agents:
     - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
     modes:
       coach:
         bundle_id: coach_coach
@@ -191,6 +192,11 @@ agents:
         inject:
   performance_analysis:
     inject:
+    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
     - path: knowledge/_shared/sources/policies/des_evaluation_policy.md
     - path: knowledge/_shared/sources/specs/data_confidence_spec.md
     - path: knowledge/_shared/sources/specs/traceability_spec.md
