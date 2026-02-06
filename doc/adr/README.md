@@ -33,6 +33,7 @@ This folder contains the ADR log for RPS.
 - ADR-022: Vector Store Sync Policy
 - ADR-023: Athlete Data Operations Page
 - ADR-024: Parquet Cache for Intervals Pipeline Outputs
+- ADR-025: Multi-provider LLM Runtime + Local Vectorstore
 
 ## Process (Short)
 
