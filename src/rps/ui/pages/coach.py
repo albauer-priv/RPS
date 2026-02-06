@@ -36,7 +36,7 @@ try:
     base = base_runtime()
 except RuntimeError as exc:
     st.error(str(exc))
-    st.info("Set OPENAI_API_KEY in your environment or .env, then restart the app.")
+    st.info("Set RPS_LLM_API_KEY in your environment or .env, then restart the app.")
     st.stop()
 vs_id = None
 try:
@@ -78,17 +78,17 @@ if injected:
     instructions = f"{base_prompt}\n\n{injected}"
 
 allow_web_search = False
-if os.getenv("OPENAI_ENABLE_WEB_SEARCH", "").lower() in {"1", "true", "yes"}:
+if os.getenv("RPS_LLM_ENABLE_WEB_SEARCH", "").lower() in {"1", "true", "yes"}:
     agents = {
         a.strip().lower()
-        for a in os.getenv("OPENAI_WEB_SEARCH_AGENTS", "").split(",")
+        for a in os.getenv("RPS_LLM_WEB_SEARCH_AGENTS", "").split(",")
         if a.strip()
     }
     allow_web_search = "coach" in agents
 
-model = os.getenv("OPENAI_MODEL_COACH", "gpt-5-mini")
-use_background = os.getenv("OPENAI_COACH_BACKGROUND", "").lower() in {"1", "true", "yes"}
-poll_interval = os.getenv("OPENAI_COACH_POLL_INTERVAL_SEC")
+model = os.getenv("RPS_LLM_MODEL_COACH", "gpt-5-mini")
+use_background = os.getenv("RPS_LLM_COACH_BACKGROUND", "").lower() in {"1", "true", "yes"}
+poll_interval = os.getenv("RPS_LLM_COACH_POLL_INTERVAL_SEC")
 chat = st.session_state.get("coach_chat")
 if chat and not isinstance(chat, Chat):
     st.session_state.pop("coach_chat", None)
@@ -108,16 +108,16 @@ if "coach_chat" not in st.session_state:
         "placeholder": "Ask the coach…",
         "auto_compact_turns": 3,
     }
-    compact_turns = os.getenv("OPENAI_COACH_COMPACT_TURNS")
+    compact_turns = os.getenv("RPS_LLM_COACH_COMPACT_TURNS")
     if compact_turns:
         try:
             chat_kwargs["auto_compact_turns"] = int(compact_turns)
         except ValueError:
             pass
-    compact_model = os.getenv("OPENAI_COACH_COMPACT_MODEL")
+    compact_model = os.getenv("RPS_LLM_COACH_COMPACT_MODEL")
     if compact_model:
         chat_kwargs["compact_model"] = compact_model
-    temperature = os.getenv("OPENAI_TEMPERATURE_COACH")
+    temperature = os.getenv("RPS_LLM_TEMPERATURE_COACH")
     if temperature and not model.startswith("gpt-5"):
         chat_kwargs["temperature"] = float(temperature)
     st.session_state.coach_chat = Chat(**chat_kwargs)

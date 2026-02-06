@@ -4,7 +4,7 @@ from streamlit.testing.v1 import AppTest
 
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch, tmp_path):
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
     monkeypatch.setenv("ATHLETE_ID", "test_athlete")
     monkeypatch.setenv("ATHLETE_WORKSPACE_ROOT", str(tmp_path))
     monkeypatch.setenv("RPS_DISABLE_VECTORSTORE_SYNC", "1")

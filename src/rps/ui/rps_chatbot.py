@@ -153,8 +153,8 @@ class Chat():
         Initializes a Chat instance.
 
         Args:
-            api_key (str): API key for OpenAI. If not provided, fetched from environment variable `OPENAI_API_KEY`.
-            model (str): The OpenAI model to use (default: "gpt-4o").
+            api_key (str): API key for the LLM provider. If not provided, fetched from environment variable `RPS_LLM_API_KEY`.
+            model (str): The model ID to use (default: "gpt-4o").
             instructions (str): Instructions for the assistant.
             temperature (float): Sampling temperature for the model (default: 1.0).
             accept_file (bool or str): Whether the chat input should accept files (True, False, or "multiple") (default: "multiple").
@@ -173,7 +173,7 @@ class Chat():
             allow_web_search (bool): Whether to allow web search functionality (default: True).
             allow_image_generation (bool): Whether to allow image generation functionality (default: True).
         """
-        self.api_key = os.getenv("OPENAI_API_KEY") if api_key is None else api_key
+        self.api_key = os.getenv("RPS_LLM_API_KEY") if api_key is None else api_key
         self.model = model
         self.instructions = "" if instructions is None else instructions
         self.temperature = temperature
@@ -291,8 +291,8 @@ class Chat():
                 })
             sections.append(s)
         if sections:
-            summary_model = os.getenv("OPENAI_MODEL_COACH_SUMMARY") or os.getenv(
-                "OPENAI_MODEL_SUMMARY", "gpt-5-nano"
+            summary_model = os.getenv("RPS_LLM_MODEL_COACH_SUMMARY") or os.getenv(
+                "RPS_LLM_MODEL_SUMMARY", "gpt-5-nano"
             )
             response = self._client.responses.create(
                 model=summary_model,

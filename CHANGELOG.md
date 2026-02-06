@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Events page now offers an upgrade action for legacy planning events payloads to restore all columns.
+- Renamed LLM environment variables from `OPENAI_*` to `RPS_LLM_*` (no backward compatibility) and grouped per-agent overrides in `.env.example`.
 
 ## [0.10.3] - 2026-02-06
 
@@ -130,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan Hub replaces `st.autorefresh` with a safe rerun timer for active runs.
 - System Status now starts the queue worker when pending runs are detected.
 - Queue scheduler now ignores the queued run’s own QUEUED status so pending items can be claimed.
-- System Status now loads `.env` before starting the worker so OPENAI_API_KEY is available.
+- System Status now loads `.env` before starting the worker so RPS_LLM_API_KEY is available.
 - Plan hub worker now logs to the run log_ref and records exceptions in events.jsonl.
 - Plan Hub now exposes a cancel button for active runs even when planning is blocked.
 - System Status now lets you select running/queued runs and cancel them from the table.
@@ -264,10 +265,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a Coach agent (`prompts/agents/coach.md`) and wired coach mode into Streamlit with persistent Responses context via `previous_response_id`.
 - Coach status is shown in the sidebar and a Coach action button is available.
 - Knowledge injection now truly applies `base + bundle (+ mode)` with de-duplication.
-- Added optional Responses `web_search` tool wiring, gated by `.env` (`OPENAI_ENABLE_WEB_SEARCH`, `OPENAI_WEB_SEARCH_AGENTS`).
+- Added optional Responses `web_search` tool wiring, gated by `.env` (`RPS_LLM_ENABLE_WEB_SEARCH`, `RPS_LLM_WEB_SEARCH_AGENTS`).
 - Coach prompt now enforces workspace-first loading order and references the DES analysis report.
 - Coach knowledge injection now always includes durability bibliography, season plan/phase/week plan mandatory output specs.
-- Coach now uses per-agent model/reasoning overrides via `.env` (OPENAI_MODEL_COACH / OPENAI_REASONING_EFFORT_COACH).
+- Coach now uses per-agent model/reasoning overrides via `.env` (RPS_LLM_MODEL_COACH / RPS_LLM_REASONING_EFFORT_COACH).
 - Streamlit system log widget now defaults to collapsed.
 
 ## [0.6.24] - 2026-01-26
@@ -349,7 +350,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The root Streamlit app now triggers the background-threaded Intervals pipeline refresh (tracked in `st.session_state`) so stale data starts refreshing before any page needs it, and the Data & Metrics page can simply surface the status without blocking.
 - Local workspace reads now respect the actual recorded paths for archived artifacts (e.g., `ACTIVITIES_ACTUAL` per ISO week) when loading specific versions, instead of assuming a single `data/analysis` folder.
 - Vector store sync now retries transient API errors with backoff instead of failing immediately.
-- Streaming output supports optional italic rendering of reasoning via `OPENAI_STREAM_ITALICS`.
+- Streaming output supports optional italic rendering of reasoning via `RPS_LLM_STREAM_ITALICS`.
 - Consolidated all agent knowledge into a single vector store (`vs_rps_all_agents`) with a unified `knowledge/all_agents/manifest.yaml`.
 - Consolidated season/phase load policies into `load_estimation_spec.md` (General/Season/Phase sections) and removed the standalone policy docs.
 - LoadEstimationSpec tightened: deterministic Season utilization/body-mass fallback, KPI band selector, domain aliasing, and clarified Season/Phase responsibilities.
@@ -408,8 +409,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-01-25
 
 ### Added
-- Streaming helper for Responses API with live reasoning/output/usage via `OPENAI_STREAM*`.
-- Reasoning log toggle (`OPENAI_STREAM_LOG_REASONING`) for log capture on completion.
+- Streaming helper for Responses API with live reasoning/output/usage via `RPS_LLM_STREAM*`.
+- Reasoning log toggle (`RPS_LLM_STREAM_LOG_REASONING`) for log capture on completion.
 - Load distribution policy doc (`load_distribution_policy.md`) and manifest entry (advisory day-weighting).
 
 ### Changed
@@ -437,7 +438,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Season load corridor policy updated to use planned_Load_kJ conversions.
 - Agent prompts updated to prefer strict store tool calls and avoid JSON-in-chat output rules that conflict with tooling.
 - Artefact renderer now skips JSON list artefacts (e.g., intervals_workouts) with a clear log message instead of crashing.
-- Agent runners now support streaming Responses output with optional reasoning summary and token usage reporting (configurable via `OPENAI_STREAM*` env vars).
+- Agent runners now support streaming Responses output with optional reasoning summary and token usage reporting (configurable via `RPS_LLM_STREAM*` env vars).
 - Reasoning payloads now treat `gpt-5*` models as reasoning-capable.
 - plan-week now runs Performance-Analyst for the previous ISO week (week-1), and skips analysis if that report week is outside the season plan range.
 - Week-Planner now explicitly limits WEEK_PLAN output to the requested ISO week even when the phase range spans multiple weeks.
@@ -478,10 +479,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Season scenarios schema now includes advisory guidance (cadence, phase recommendations, risks, constraints, intensity guidance).
 - Season scenario selection artefact + schema (`SEASON_SCENARIO_SELECTION`) with deterministic CLI write.
 - New validation checklist for `SEASON_SCENARIOS`.
-- Per-agent reasoning overrides via `OPENAI_REASONING_EFFORT_<AGENT>` and `OPENAI_REASONING_SUMMARY_<AGENT>`.
+- Per-agent reasoning overrides via `RPS_LLM_REASONING_EFFORT_<AGENT>` and `RPS_LLM_REASONING_SUMMARY_<AGENT>`.
 - CLI logging switches (`--log-level`, `--log-file`) with structured log output.
 - Tool-call debug logging for agent runners.
-- Responses API reasoning settings via `OPENAI_REASONING_EFFORT` / `OPENAI_REASONING_SUMMARY`.
+- Responses API reasoning settings via `RPS_LLM_REASONING_EFFORT` / `RPS_LLM_REASONING_SUMMARY`.
 - Reasoning summaries (when returned) are logged to CLI and log files.
 - Phase-Architect prompt now specifies workspace_put_validated usage and phase guardrails schema requirements.
 - Added a PHASE_GUARDRAILS template for Phase-Architect with fill markers.
@@ -593,8 +594,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-01-22
 
 ### Added
-- Per-agent model overrides via `OPENAI_MODEL_<AGENT>` and CLI plumbing to honor them.
-- Per-agent temperature overrides via `OPENAI_TEMPERATURE_<AGENT>` (plus global `OPENAI_TEMPERATURE`).
+- Per-agent model overrides via `RPS_LLM_MODEL_<AGENT>` and CLI plumbing to honor them.
+- Per-agent temperature overrides via `RPS_LLM_TEMPERATURE_<AGENT>` (plus global `RPS_LLM_TEMPERATURE`).
 - `workspace_get_input` tool for athlete-specific markdown inputs (season brief, events).
 - Vector store sync progress output and `--reset` to reinitialize stores.
 - Vector store sync now attaches header/schema-derived attributes for filtered file_search.

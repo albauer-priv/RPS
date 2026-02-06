@@ -34,7 +34,7 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 
 ## Quick start
 
-1. Copy `.env.example` to `.env` and fill in `OPENAI_API_KEY` and `ATHLETE_ID` (Intervals.icu).
+1. Copy `.env.example` to `.env` and fill in `RPS_LLM_API_KEY` and `ATHLETE_ID` (Intervals.icu).
 2. Add documents under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
 3. Run `python scripts/bundle_schemas.py` (build bundled schemas for retrieval).
 4. (Deprecated) `python scripts/sync_vectorstores.py` — use the UI background sync (or run only for manual recovery).
@@ -42,9 +42,9 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 Per-agent model overrides (optional):
 
 ```
-OPENAI_MODEL=gpt-4.1
-OPENAI_MODEL_WEEK_PLANNER=gpt-4.1-mini
-OPENAI_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
+RPS_LLM_MODEL=gpt-4.1
+RPS_LLM_MODEL_WEEK_PLANNER=gpt-4.1-mini
+RPS_LLM_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
 ```
 
 ## Streamlit coach experiment

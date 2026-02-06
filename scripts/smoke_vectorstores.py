@@ -22,7 +22,7 @@ from script_logging import configure_logging  # noqa: E402
 
 
 def _default_max_results() -> int:
-    raw = os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS", "").strip()
+    raw = os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS", "").strip()
     if not raw:
         return 3
     try:

@@ -4,7 +4,7 @@ from streamlit.testing.v1 import AppTest
 
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch):
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
 
 
 def test_coach_summary_above_input(monkeypatch):

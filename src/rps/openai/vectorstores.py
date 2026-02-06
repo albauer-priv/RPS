@@ -352,7 +352,7 @@ def env_key_for_agent(agent: str) -> str:
     """Return the env var name used for a given agent's vector store ID."""
     agent_key = agent.strip().lstrip("_")
     agent_key = re.sub(r"[^A-Za-z0-9]+", "_", agent_key).upper()
-    return f"OPENAI_VECTORSTORE_{agent_key}_ID"
+    return f"RPS_LLM_VECTORSTORE_{agent_key}_ID"
 
 
 def list_vector_stores(client) -> Iterable:

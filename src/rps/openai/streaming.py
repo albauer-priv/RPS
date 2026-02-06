@@ -16,12 +16,12 @@ def _get_attr(obj: Any, key: str) -> Any:
 
 
 def should_stream() -> bool:
-    raw = os.getenv("OPENAI_STREAM", "1").strip().lower()
+    raw = os.getenv("RPS_LLM_STREAM", "1").strip().lower()
     return raw not in ("0", "false", "no", "off")
 
 
 def stream_reasoning_mode() -> str:
-    raw = os.getenv("OPENAI_STREAM_REASONING", "full").strip().lower()
+    raw = os.getenv("RPS_LLM_STREAM_REASONING", "full").strip().lower()
     if raw in ("none", "off", "0", "false", "no"):
         return "none"
     if raw in ("full", "reasoning"):
@@ -30,22 +30,22 @@ def stream_reasoning_mode() -> str:
 
 
 def stream_show_output() -> bool:
-    raw = os.getenv("OPENAI_STREAM_TEXT", "1").strip().lower()
+    raw = os.getenv("RPS_LLM_STREAM_TEXT", "1").strip().lower()
     return raw not in ("0", "false", "no", "off")
 
 
 def stream_show_usage() -> bool:
-    raw = os.getenv("OPENAI_STREAM_USAGE", "1").strip().lower()
+    raw = os.getenv("RPS_LLM_STREAM_USAGE", "1").strip().lower()
     return raw not in ("0", "false", "no", "off")
 
 
 def stream_log_reasoning() -> bool:
-    raw = os.getenv("OPENAI_STREAM_LOG_REASONING", "1").strip().lower()
+    raw = os.getenv("RPS_LLM_STREAM_LOG_REASONING", "1").strip().lower()
     return raw not in ("0", "false", "no", "off")
 
 
 def stream_reasoning_italics() -> bool:
-    raw = os.getenv("OPENAI_STREAM_ITALICS", "0").strip().lower()
+    raw = os.getenv("RPS_LLM_STREAM_ITALICS", "0").strip().lower()
     return raw not in ("0", "false", "no", "off")
 
 
@@ -147,18 +147,18 @@ def create_response(
     final_response = None
     saw_full_reasoning = False
     reasoning_chunks: list[str] = []
-    debug_events = os.getenv("OPENAI_STREAM_DEBUG", "0").strip().lower() in (
+    debug_events = os.getenv("RPS_LLM_STREAM_DEBUG", "0").strip().lower() in (
         "1",
         "true",
         "yes",
         "on",
     )
-    debug_file_search = os.getenv("OPENAI_DEBUG_FILE_SEARCH", "0").strip().lower() in (
+    debug_file_search = os.getenv("RPS_LLM_DEBUG_FILE_SEARCH", "0").strip().lower() in (
         "1",
         "true",
         "yes",
         "on",
-    ) or os.getenv("OPENAI_FILE_SEARCH_DEBUG", "0").strip().lower() in (
+    ) or os.getenv("RPS_LLM_FILE_SEARCH_DEBUG", "0").strip().lower() in (
         "1",
         "true",
         "yes",

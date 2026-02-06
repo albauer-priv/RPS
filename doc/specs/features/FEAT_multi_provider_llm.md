@@ -26,6 +26,7 @@ Owner: Architecture
 * The system is locked to one provider path and cannot switch models/providers.
 * Vectorstore persistence is remote-only; offline/local usage is not supported.
 * Orchestration evolution (CrewAI) cannot be cleanly layered without abstraction.
+* Provider credentials are global-only; per-agent API keys/base URLs are not supported.
 
 **Constraints**
 
@@ -47,6 +48,7 @@ Owner: Architecture
 * [ ] Provide a clear migration path and rollback strategy.
 * [ ] Define phase-2 integration path for CrewAI orchestration.
 * [ ] Implement custom compaction for non-OpenAI providers in Coach flows.
+* [ ] Support per-agent provider config (API key, base URL, model) with clear precedence rules.
 
 **Non-Goals**
 
@@ -65,6 +67,17 @@ Owner: Architecture
 * Vectorstore uses local embedded Chroma; optional server mode is a later switch.
 * Existing UI pages and agents are unchanged from a user perspective.
 * Coach uses a custom compaction strategy when non-OpenAI providers are selected.
+* Each agent can optionally override provider config (API key, base URL, model) without affecting others.
+* Per-agent overrides are supplied via environment variables (container-friendly); changing them requires redeploy.
+
+**Env var naming + precedence (Option 2)**
+
+* Keep existing `RPS_LLM_*` env var family as the canonical config surface in phase-1 (provider-agnostic usage via LiteLLM).
+* Per-agent override pattern: `RPS_LLM_<FIELD>_<AGENT>` where `<AGENT>` is normalized (same rules as current `RPS_LLM_MODEL_<AGENT>`).
+* Global defaults: `RPS_LLM_API_KEY`, `RPS_LLM_BASE_URL`, `RPS_LLM_MODEL`, `RPS_LLM_TEMPERATURE`, `RPS_LLM_REASONING_EFFORT`, `RPS_LLM_REASONING_SUMMARY`, `RPS_LLM_ORG_ID`, `RPS_LLM_PROJECT_ID`.
+* Per-agent overrides: `RPS_LLM_API_KEY_<AGENT>`, `RPS_LLM_BASE_URL_<AGENT>`, `RPS_LLM_MODEL_<AGENT>`, `RPS_LLM_TEMPERATURE_<AGENT>`, `RPS_LLM_REASONING_EFFORT_<AGENT>`, `RPS_LLM_REASONING_SUMMARY_<AGENT>`, `RPS_LLM_ORG_ID_<AGENT>`, `RPS_LLM_PROJECT_ID_<AGENT>`.
+* Precedence: per-agent override -> global default -> built-in fallback (model only).
+* Backward compatibility: none for `OPENAI_*` env vars (full rename to `RPS_LLM_*`).
 
 **UI impact**
 
@@ -85,6 +98,8 @@ Owner: Architecture
   * Replace provider-specific client with LiteLLM adapter.
   * Preserve streaming and tool-call parsing interfaces used by UI.
   * Add custom compaction strategy for Coach when provider != OpenAI.
+  * Resolve per-agent provider config with explicit precedence (agent override -> global defaults).
+  * Read per-agent overrides from env vars (Option 2).
 * `src/rps/openai/vectorstores.py`:
   * Swap to Chroma embedded backend.
   * Keep manifest hash + reset semantics.
@@ -110,9 +125,10 @@ Owner: Architecture
 **Compatibility**
 
 * Backward compatible: Yes (feature flag not required per decision; LiteLLM is the only path).
-* Breaking changes: Provider-specific config and environment variables.
+* Breaking changes: environment variable namespace renamed from `OPENAI_*` to `RPS_LLM_*` (no backward compatibility).
 * Fallback behavior: If LiteLLM fails, surface explicit error and halt runs.
 * Compaction fallback: for non-OpenAI providers, use custom Coach compaction strategy.
+* Config precedence: agent overrides must not mutate or mask global defaults for other agents.
 
 **Conflicts with ADRs / Principles**
 
@@ -127,11 +143,13 @@ Owner: Architecture
 * Workspace/run-store: logs include provider/model metadata.
 * Validation/tooling: update smoke tests to use LiteLLM adapter.
 * Deployment/config: new env vars for LiteLLM providers + Chroma storage path.
+* Agent config: optional per-agent provider config (API key/base URL/model).
 
 **Required refactoring**
 
 * Introduce a provider-agnostic LLM client interface.
 * Replace OpenAI vectorstore resolver with Chroma-backed resolver.
+* Add a per-agent provider config resolver with explicit precedence and safe redaction in logs.
 
 ---
 
@@ -173,8 +191,9 @@ Owner: Architecture
 
 ### Recommendation
 
-* Choose: Option A.
-* Rationale: user requested single runtime path; keeps architecture clean.
+* Choose: Option A + Option B combined, with **Option 2 (env-based per-agent overrides)** as the initial configuration mechanism.
+* Rationale: keep runtime path single (LiteLLM-only) while enabling per-agent overrides via container-friendly env vars; accept redeploy requirement for now.
+* Follow-up: reevaluate a file-backed or hybrid config if admin editability without redeploy becomes a requirement.
 
 ---
 
@@ -184,6 +203,7 @@ Owner: Architecture
 * [ ] Embedded Chroma index replaces OpenAI vectorstore usage.
 * [ ] Agent tool calls/streaming still pass existing UI and tests.
 * [ ] Vectorstore sync/manifest reset behaves as before.
+* [ ] Per-agent API key/base URL/model overrides work and do not leak into other agents.
 * [ ] Validation passes: `python -m py_compile ...` + relevant smoke run.
 
 ---
@@ -194,6 +214,7 @@ Owner: Architecture
 
 * Phase-1: introduce LiteLLM adapter + Chroma embedded.
 * Rebuild vectorstore from knowledge manifest on first run.
+* Per-agent overrides are supplied via env vars; changes require container redeploy.
 
 **Rollout / gating**
 
@@ -227,6 +248,7 @@ Owner: Architecture
 
 * `llm.request`: provider, model, latency, tokens.
 * `vectorstore.sync`: backend=chroma, manifest_hash, reset=true/false.
+* `llm.config.resolve`: agent_id, provider, model, base_url (redacted), override_used=true/false.
 
 **Diagnostics**
 
@@ -262,6 +284,8 @@ Update these docs as part of implementation:
 
 * Which LiteLLM providers/models are first-class supported?
 * Should Chroma data live under `var/athletes/<id>/vectorstore/` or global?
+* Where should per-agent provider overrides live (config file vs. env vars vs. workspace settings)?
+* What triggers a switch from env-only overrides to file-backed or hybrid config (admin editability without redeploy)?
 
 ---
 

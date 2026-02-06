@@ -23,8 +23,8 @@ def _load_coach_prompt() -> str:
 
 
 def _load_env_if_needed() -> None:
-    """Load .env into process env if OPENAI_API_KEY is missing."""
-    if os.getenv("OPENAI_API_KEY"):
+    """Load .env into process env if RPS_LLM_API_KEY is missing."""
+    if os.getenv("RPS_LLM_API_KEY"):
         return
     try:
         from rps.core.config import load_env_file
@@ -38,11 +38,11 @@ def render_coach_experiment() -> None:
     """Render the coach experiment chat using the in-repo Chat."""
     _load_env_if_needed()
 
-    model = os.getenv("OPENAI_MODEL_COACH", "gpt-5-mini")
-    temperature = os.getenv("OPENAI_TEMPERATURE_COACH")
-    api_key = os.getenv("OPENAI_API_KEY")
+    model = os.getenv("RPS_LLM_MODEL_COACH", "gpt-5-mini")
+    temperature = os.getenv("RPS_LLM_TEMPERATURE_COACH")
+    api_key = os.getenv("RPS_LLM_API_KEY")
     if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key
+        os.environ["RPS_LLM_API_KEY"] = api_key
 
     instructions = _load_coach_prompt()
     if "coach_chat" not in st.session_state:

@@ -125,17 +125,17 @@ def run_agent(
     """Run a simple Responses API request with file_search attached."""
     if model is None:
         key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
-        model = os.getenv(f"OPENAI_MODEL_{key}") or os.getenv("OPENAI_MODEL", "gpt-4.1")
+        model = os.getenv(f"RPS_LLM_MODEL_{key}") or os.getenv("RPS_LLM_MODEL", "gpt-4.1")
     if temperature is None:
         key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
         temperature = _parse_float(
-            os.getenv(f"OPENAI_TEMPERATURE_{key}") or os.getenv("OPENAI_TEMPERATURE")
+            os.getenv(f"RPS_LLM_TEMPERATURE_{key}") or os.getenv("RPS_LLM_TEMPERATURE")
         )
     key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
-    reasoning_effort = os.getenv(f"OPENAI_REASONING_EFFORT_{key}") or os.getenv("OPENAI_REASONING_EFFORT")
-    reasoning_summary = os.getenv(f"OPENAI_REASONING_SUMMARY_{key}") or os.getenv("OPENAI_REASONING_SUMMARY")
+    reasoning_effort = os.getenv(f"RPS_LLM_REASONING_EFFORT_{key}") or os.getenv("RPS_LLM_REASONING_EFFORT")
+    reasoning_summary = os.getenv(f"RPS_LLM_REASONING_SUMMARY_{key}") or os.getenv("RPS_LLM_REASONING_SUMMARY")
     if max_num_results is None:
-        max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 5
+        max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 5
     client = get_client()
     system_prompt = agent_system_prompt(agent_name, prompts_dir=prompts_dir)
     tool = build_file_search_tool(

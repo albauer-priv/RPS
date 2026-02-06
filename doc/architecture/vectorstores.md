@@ -105,7 +105,7 @@ RPS_DISABLE_VECTORSTORE_SYNC=1
 IDs are environment-specific. You can set them explicitly to override lookup:
 
 ```
-OPENAI_VECTORSTORE_ALL_AGENTS_ID=vs_xxx
+RPS_LLM_VECTORSTORE_ALL_AGENTS_ID=vs_xxx
 ```
 
 If no env ID is set, the sync script creates or finds a store by name and writes

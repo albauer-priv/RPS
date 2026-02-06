@@ -75,14 +75,14 @@ def _web_search_tool() -> dict[str, Any]:
         },
     }
     allowed_domains = [
-        dom for dom in os.getenv("OPENAI_WEB_SEARCH_ALLOWED_DOMAINS", "").split(",") if dom.strip()
+        dom for dom in os.getenv("RPS_LLM_WEB_SEARCH_ALLOWED_DOMAINS", "").split(",") if dom.strip()
     ]
     if allowed_domains:
         tool["filters"] = {"allowed_domains": [dom.strip() for dom in allowed_domains]}
-    context_size = os.getenv("OPENAI_WEB_SEARCH_CONTEXT_SIZE", "").strip().lower()
+    context_size = os.getenv("RPS_LLM_WEB_SEARCH_CONTEXT_SIZE", "").strip().lower()
     if context_size in {"low", "medium", "high"}:
         tool.setdefault("filters", {})["search_context_size"] = context_size
-    external_access_raw = os.getenv("OPENAI_WEB_SEARCH_EXTERNAL_ACCESS")
+    external_access_raw = os.getenv("RPS_LLM_WEB_SEARCH_EXTERNAL_ACCESS")
     if external_access_raw is not None:
         tool["external_web_access"] = external_access_raw.strip().lower() in {
             "1",
@@ -94,9 +94,9 @@ def _web_search_tool() -> dict[str, Any]:
 
 
 def _web_search_enabled(agent_name: str) -> bool:
-    if not _env_flag("OPENAI_ENABLE_WEB_SEARCH"):
+    if not _env_flag("RPS_LLM_ENABLE_WEB_SEARCH"):
         return False
-    agents = _parse_csv_env("OPENAI_WEB_SEARCH_AGENTS")
+    agents = _parse_csv_env("RPS_LLM_WEB_SEARCH_AGENTS")
     if agents and agent_name.lower() not in agents:
         return False
     return True
@@ -300,11 +300,11 @@ def run_agent_multi_output(
     )
 
     if max_num_results is None:
-        max_num_results = _parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20
+        max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 20
     debug_file_search = (
         include_debug_file_search
-        or _env_flag("OPENAI_DEBUG_FILE_SEARCH")
-        or _env_flag("OPENAI_FILE_SEARCH_DEBUG")
+        or _env_flag("RPS_LLM_DEBUG_FILE_SEARCH")
+        or _env_flag("RPS_LLM_FILE_SEARCH_DEBUG")
         or logger.isEnabledFor(logging.DEBUG)
     )
 

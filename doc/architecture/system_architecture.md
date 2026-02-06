@@ -493,7 +493,7 @@ Routing uses:
 
 Use this checklist to initialize a fresh environment:
 
-1. Copy `.env.example` to `.env` and set `OPENAI_API_KEY`, `ATHLETE_ID`,
+1. Copy `.env.example` to `.env` and set `RPS_LLM_API_KEY`, `ATHLETE_ID`,
    `API_KEY`, and `BASE_URL`.
 2. Install dependencies: `pip install -r requirements.txt` or `pip install -e .`
    (depending on how you set up the repo).

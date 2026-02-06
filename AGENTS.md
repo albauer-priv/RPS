@@ -464,12 +464,12 @@ ADR log is maintained as external files under `doc/adr/` (see `doc/adr/README.md
 
 ## 11) Runtime/env variables (do not hardcode)
 
-* `OPENAI_API_KEY`
-* `OPENAI_MODEL*`, `OPENAI_TEMPERATURE*`, `OPENAI_REASONING_EFFORT*`
-* `OPENAI_ENABLE_WEB_SEARCH`, `OPENAI_WEB_SEARCH_AGENTS`
-* `OPENAI_STREAM*`
+* `RPS_LLM_API_KEY`
+* `RPS_LLM_MODEL*`, `RPS_LLM_TEMPERATURE*`, `RPS_LLM_REASONING_EFFORT*`
+* `RPS_LLM_ENABLE_WEB_SEARCH`, `RPS_LLM_WEB_SEARCH_AGENTS`
+* `RPS_LLM_STREAM*`
 * `RPS_LOG_LEVEL_FILE`, `RPS_LOG_LEVEL_CONSOLE`, `RPS_LOG_LEVEL_UI`
-* `OPENAI_FILE_SEARCH_MAX_RESULTS`
+* `RPS_LLM_FILE_SEARCH_MAX_RESULTS`
 
 Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored.
 

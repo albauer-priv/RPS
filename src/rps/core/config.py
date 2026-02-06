@@ -10,7 +10,7 @@ import re
 
 @dataclass(frozen=True)
 class Settings:
-    """OpenAI connection settings sourced from the environment."""
+    """LLM connection settings sourced from the environment."""
 
     openai_api_key: str
     openai_org_id: str | None
@@ -112,16 +112,16 @@ def load_env_file(path: str | Path) -> None:
 
 
 def load_settings() -> Settings:
-    """Return OpenAI connection settings, raising if required values are missing."""
-    api_key = os.getenv("OPENAI_API_KEY")
+    """Return LLM connection settings, raising if required values are missing."""
+    api_key = os.getenv("RPS_LLM_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is required")
+        raise RuntimeError("RPS_LLM_API_KEY is required")
 
     return Settings(
         openai_api_key=api_key,
-        openai_org_id=os.getenv("OPENAI_ORG_ID"),
-        openai_project_id=os.getenv("OPENAI_PROJECT_ID"),
-        openai_base_url=os.getenv("OPENAI_BASE_URL"),
+        openai_org_id=os.getenv("RPS_LLM_ORG_ID"),
+        openai_project_id=os.getenv("RPS_LLM_PROJECT_ID"),
+        openai_base_url=os.getenv("RPS_LLM_BASE_URL"),
     )
 
 
@@ -129,57 +129,57 @@ def load_app_settings() -> AppSettings:
     """Return application runtime settings with sensible defaults."""
     overrides: dict[str, str] = {}
     for key, value in os.environ.items():
-        if not key.startswith("OPENAI_MODEL_") or key == "OPENAI_MODEL":
+        if not key.startswith("RPS_LLM_MODEL_") or key == "RPS_LLM_MODEL":
             continue
         if not value:
             continue
-        agent_key = normalize_agent_name(key[len("OPENAI_MODEL_"):])
+        agent_key = normalize_agent_name(key[len("RPS_LLM_MODEL_"):])
         if agent_key:
             overrides[agent_key] = value
 
     temp_overrides: dict[str, float] = {}
     for key, value in os.environ.items():
-        if not key.startswith("OPENAI_TEMPERATURE_") or key == "OPENAI_TEMPERATURE":
+        if not key.startswith("RPS_LLM_TEMPERATURE_") or key == "RPS_LLM_TEMPERATURE":
             continue
         parsed = _parse_float(value)
         if parsed is None:
             continue
-        agent_key = normalize_agent_name(key[len("OPENAI_TEMPERATURE_"):])
+        agent_key = normalize_agent_name(key[len("RPS_LLM_TEMPERATURE_"):])
         if agent_key:
             temp_overrides[agent_key] = parsed
 
     reasoning_effort_overrides: dict[str, str] = {}
     for key, value in os.environ.items():
-        if not key.startswith("OPENAI_REASONING_EFFORT_") or key == "OPENAI_REASONING_EFFORT":
+        if not key.startswith("RPS_LLM_REASONING_EFFORT_") or key == "RPS_LLM_REASONING_EFFORT":
             continue
         if not value:
             continue
-        agent_key = normalize_agent_name(key[len("OPENAI_REASONING_EFFORT_"):])
+        agent_key = normalize_agent_name(key[len("RPS_LLM_REASONING_EFFORT_"):])
         if agent_key:
             reasoning_effort_overrides[agent_key] = value
 
     reasoning_summary_overrides: dict[str, str] = {}
     for key, value in os.environ.items():
-        if not key.startswith("OPENAI_REASONING_SUMMARY_") or key == "OPENAI_REASONING_SUMMARY":
+        if not key.startswith("RPS_LLM_REASONING_SUMMARY_") or key == "RPS_LLM_REASONING_SUMMARY":
             continue
         if not value:
             continue
-        agent_key = normalize_agent_name(key[len("OPENAI_REASONING_SUMMARY_"):])
+        agent_key = normalize_agent_name(key[len("RPS_LLM_REASONING_SUMMARY_"):])
         if agent_key:
             reasoning_summary_overrides[agent_key] = value
 
     return AppSettings(
-        openai_model=os.getenv("OPENAI_MODEL", "gpt-4.1"),
+        openai_model=os.getenv("RPS_LLM_MODEL", "gpt-4.1"),
         openai_model_overrides=overrides,
-        openai_temperature=_parse_float(os.getenv("OPENAI_TEMPERATURE")),
+        openai_temperature=_parse_float(os.getenv("RPS_LLM_TEMPERATURE")),
         openai_temperature_overrides=temp_overrides,
-        openai_reasoning_effort=os.getenv("OPENAI_REASONING_EFFORT"),
-        openai_reasoning_summary=os.getenv("OPENAI_REASONING_SUMMARY"),
+        openai_reasoning_effort=os.getenv("RPS_LLM_REASONING_EFFORT"),
+        openai_reasoning_summary=os.getenv("RPS_LLM_REASONING_SUMMARY"),
         openai_reasoning_effort_overrides=reasoning_effort_overrides,
         openai_reasoning_summary_overrides=reasoning_summary_overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),
         vs_state_path=Path(os.getenv("VECTORSTORE_STATE_PATH", ".cache/vectorstores_state.json")),
-        file_search_max_results=_parse_int(os.getenv("OPENAI_FILE_SEARCH_MAX_RESULTS")) or 20,
+        file_search_max_results=_parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 20,
     )

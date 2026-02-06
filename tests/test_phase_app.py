@@ -9,7 +9,7 @@ from rps.workspace.types import ArtifactType
 
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch):
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
     monkeypatch.setenv("ATHLETE_ID", "test_athlete")
 
 
