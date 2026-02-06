@@ -1208,8 +1208,16 @@ with st.container():
 with st.container():
     st.subheader("Activities Trend")
     if trend_path.exists() or trend_parquet_path.exists():
+        newest_first = st.toggle(
+            "Newest first",
+            value=True,
+            key="trend_table_newest_first",
+        )
+        trend_rows = _flatten_weekly_trends(weekly_trends)
+        if not newest_first:
+            trend_rows = list(reversed(trend_rows))
         st.data_editor(
-            _flatten_weekly_trends(weekly_trends),
+            trend_rows,
             num_rows="dynamic",
             width="stretch",
         )
@@ -1228,8 +1236,16 @@ with st.container():
             actual_payload = json.loads(actual_path.read_text(encoding="utf-8"))
             activities = actual_payload.get("data", {}).get("activities") or []
             notes = actual_payload.get("data", {}).get("notes")
+        newest_first = st.toggle(
+            "Newest first",
+            value=True,
+            key="actual_table_newest_first",
+        )
+        actual_rows = _flatten_activities_actual(activities)
+        if not newest_first:
+            actual_rows = list(reversed(actual_rows))
         st.data_editor(
-            _flatten_activities_actual(activities),
+            actual_rows,
             num_rows="dynamic",
             width="stretch",
         )

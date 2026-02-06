@@ -653,6 +653,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Historic Data now shows the last refresh timestamp from baseline metadata.
 - Athlete Profile tables now sort newest-first (events, logistics, yearly summary).
 - Activities Trend table now populates period and weekly aggregate fields from parquet cache.
+- Data & Metrics tables now include a newest-first toggle for trend/actual rows.
 
 ## [0.1.0] - 2026-01-20
 
