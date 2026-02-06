@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-02-06
+
 ### Added
 - Added a feature backlog doc to track upcoming specs.
 - Added a Parquet cache feature spec and ADR for Intervals pipeline outputs.
