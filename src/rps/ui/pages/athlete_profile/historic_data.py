@@ -57,6 +57,11 @@ created_at = meta.get("created_at") if isinstance(meta, dict) else None
 if created_at:
     st.caption(f"Last refresh: {created_at}")
 yearly_summary = data.get("yearly_summary") or []
+yearly_summary = sorted(
+    yearly_summary,
+    key=lambda entry: entry.get("year") or 0,
+    reverse=True,
+)
 
 st.subheader("Yearly Activity Summary")
 if yearly_summary:

@@ -196,7 +196,7 @@ def _sort_events(rows: list[dict[str, object]]) -> list[dict[str, object]]:
         parsed = _parse_event_date(row.get("date"))
         return (0, parsed.isoformat()) if parsed else (1, "")
 
-    return sorted(rows, key=_sort_key)
+    return sorted(rows, key=_sort_key, reverse=True)
 
 st.subheader("Planning Events (A/B/C)")
 events = [_normalize_event(row) for row in events if isinstance(row, dict)]

@@ -19,6 +19,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 - Planning events used for season planning (Type A/B/C + Priority rank, event type, time limits)
 - A-events must be spaced at least 12 weeks apart
 - Date must be YYYY-MM-DD; ranks must be unique within each priority (1–3)
+- Events are sorted newest-first in the table and storage.
 
 ## Logistics
 - Context events (travel, work constraints, non-A/B/C events)
@@ -31,6 +32,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 - Refresh triggers the Intervals pipeline to recompute the yearly summary
 - Yearly activity summary table (activities, moving time, km, kJ/year, kJ/activity, kJ/hour)
 - Last refresh timestamp shown from baseline metadata
+- Yearly summary rows are sorted newest-first.
 
 ## Zones
 - Zone model view
