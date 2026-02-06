@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Events page now offers an upgrade action for legacy planning events payloads to restore all columns.
+
 ## [0.10.3] - 2026-02-06
 
 ### Added

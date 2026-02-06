@@ -108,6 +108,17 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
     return normalized
 
 
+def _needs_upgrade(rows: list[dict[str, object]]) -> bool:
+    if not rows:
+        return False
+    for row in rows:
+        if not isinstance(row, dict):
+            return True
+        if "priority" not in row or "rank" not in row:
+            return True
+    return False
+
+
 def _to_storage_event(entry: dict[str, object]) -> dict[str, object]:
     return {
         "type": str(entry.get("priority") or "A").upper(),
@@ -198,7 +209,41 @@ def _sort_events(rows: list[dict[str, object]]) -> list[dict[str, object]]:
 
     return sorted(rows, key=_sort_key, reverse=True)
 
+
+def _save_events_payload(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    ui_events: list[dict[str, object]],
+) -> None:
+    run_ts = datetime.now(timezone.utc)
+    version_key = run_ts.strftime("%Y%m%d_%H%M%S")
+    storage_events = [_to_storage_event(event) for event in _sort_events(ui_events)]
+    payload = {"events": storage_events}
+    store.save_version(
+        athlete_id,
+        ArtifactType.PLANNING_EVENTS,
+        version_key,
+        payload,
+        payload_meta={
+            "schema_id": "PlanningEventsInterface",
+            "schema_version": "1.1",
+            "version": "1.0",
+            "authority": Authority.BINDING.value,
+            "owner_agent": "User",
+            "scope": "Shared",
+            "data_confidence": "USER",
+            "created_at": run_ts.isoformat(),
+            "notes": "",
+        },
+        authority=Authority.BINDING,
+        producer_agent="ui_planning_events",
+        run_id=f"ui_planning_events_{run_ts.strftime('%Y%m%dT%H%M%SZ')}",
+        update_latest=True,
+    )
+
+
 st.subheader("Planning Events (A/B/C)")
+legacy_upgrade_needed = _needs_upgrade([row for row in events if isinstance(row, dict)])
 events = [_normalize_event(row) for row in events if isinstance(row, dict)]
 if not events:
     events = [_normalize_event({})]
@@ -206,6 +251,13 @@ events = _sort_events(events)
 st.caption(
     "Add A/B/C events with a priority rank (1-3). Event Type defaults to the KPI profile when available."
 )
+if legacy_upgrade_needed:
+    st.warning("Legacy planning events detected. Upgrade to the latest schema to unlock all fields.")
+    if st.button("Upgrade legacy events", width="content"):
+        _save_events_payload(store, athlete_id, events)
+        st.success("Planning events upgraded.")
+        set_status(status_state="done", title="Events", message="Upgraded planning events input.")
+        st.rerun()
 events_df = pd.DataFrame(events, columns=EVENT_COLUMNS)
 events_df = st.data_editor(
     events_df,
@@ -247,36 +299,11 @@ events_df = st.data_editor(
 )
 
 if st.button("Save Events", width="content"):
-    run_ts = datetime.now(timezone.utc)
-    version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     ui_events = events_df.to_dict(orient="records")
     validation_errors = _validate_events(ui_events)
     if validation_errors:
         st.error("\n".join(validation_errors))
         st.stop()
-    ui_events = _sort_events(ui_events)
-    events = [_to_storage_event(event) for event in ui_events]
-    payload = {"events": events}
-    store.save_version(
-        athlete_id,
-        ArtifactType.PLANNING_EVENTS,
-        version_key,
-        payload,
-        payload_meta={
-            "schema_id": "PlanningEventsInterface",
-            "schema_version": "1.1",
-            "version": "1.0",
-            "authority": Authority.BINDING.value,
-            "owner_agent": "User",
-            "scope": "Shared",
-            "data_confidence": "USER",
-            "created_at": run_ts.isoformat(),
-            "notes": "",
-        },
-        authority=Authority.BINDING,
-        producer_agent="ui_planning_events",
-        run_id=f"ui_planning_events_{run_ts.strftime('%Y%m%dT%H%M%SZ')}",
-        update_latest=True,
-    )
+    _save_events_payload(store, athlete_id, ui_events)
     st.success("Planning events saved.")
     set_status(status_state="done", title="Events", message="Saved planning events input.")
