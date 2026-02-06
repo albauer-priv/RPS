@@ -652,6 +652,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logistics events now require date/description, prevent duplicate dates, and sort entries by date with a status summary.
 - Historic Data now shows the last refresh timestamp from baseline metadata.
 - Athlete Profile tables now sort newest-first (events, logistics, yearly summary).
+- Activities Trend table now populates period and weekly aggregate fields from parquet cache.
 
 ## [0.1.0] - 2026-01-20
 

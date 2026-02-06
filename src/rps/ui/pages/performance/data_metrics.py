@@ -838,17 +838,37 @@ def _build_daily_durability_scatter(points: list[dict[str, object]]):
 
 
 def _weekly_trends_from_dataframe(df: pd.DataFrame) -> list[dict]:
+    def _split_period(raw: object) -> tuple[str | None, str | None]:
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            return None, None
+        text = str(raw)
+        if "-" in text and len(text) >= 21:
+            parts = text.split("-")
+            if len(parts) >= 6:
+                start = "-".join(parts[:3])
+                end = "-".join(parts[3:6])
+                return start, end
+        if " to " in text:
+            start, end = text.split(" to ", 1)
+            return start.strip(), end.strip()
+        return None, None
+
     rows = []
     for _, row in df.iterrows():
         year = row.get("Year")
         iso_week = row.get("ISO Week")
         if pd.isna(year) or pd.isna(iso_week):
             continue
+        period_from, period_to = _split_period(row.get("Period"))
         rows.append(
             {
                 "year": int(year),
                 "iso_week": int(iso_week),
                 "weekly_aggregates": {
+                    "activity_count": row.get("# Activities"),
+                    "moving_time": row.get("Moving Time (h:mm)"),
+                    "distance_km": row.get("Distance (km)"),
+                    "load_tss": row.get("Load (TSS)"),
                     "work_kj": row.get("Work (kJ)"),
                 },
                 "intensity_load_metrics": {
@@ -872,6 +892,8 @@ def _weekly_trends_from_dataframe(df: pd.DataFrame) -> list[dict]:
                     "weekly_z2_time_max_min": row.get("Weekly Z2 Time Max (min)"),
                 },
                 "period": {
+                    "from": period_from,
+                    "to": period_to,
                     "label": row.get("Period"),
                 },
             }
