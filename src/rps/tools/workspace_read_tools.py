@@ -12,6 +12,7 @@ from rps.workspace.phase_resolution import add_weeks
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan, resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
+from rps.tools.knowledge_search import search_knowledge
 
 
 def _parse_artifact_type(value: str) -> ArtifactType:
@@ -190,6 +191,21 @@ def read_tool_defs() -> list[dict[str, Any]]:
                 "additionalProperties": False,
             },
         },
+        {
+            "type": "function",
+            "name": "knowledge_search",
+            "description": "Search the local knowledge vectorstore for relevant context.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "max_results": {"type": "integer", "default": 5},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+        },
     ]
 
 
@@ -198,6 +214,7 @@ class ReadToolContext:
     """Context object for workspace read tools."""
     athlete_id: str
     workspace_root: Any
+    agent_name: str = "coach"
 
     def workspace(self) -> Workspace:
         """Construct a Workspace for this tool context."""
@@ -371,6 +388,13 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             "content": path.read_text(encoding="utf-8"),
         }
 
+    def knowledge_search(args: dict[str, Any]) -> Any:
+        query = str(args.get("query", "")).strip()
+        max_results = args.get("max_results", 5)
+        tags = args.get("tags")
+        results = search_knowledge(ctx.agent_name, query, max_results=max_results, tags=tags)
+        return {"ok": True, "results": results}
+
     return {
         "workspace_get_latest": workspace_get_latest,
         "workspace_get_version": workspace_get_version,
@@ -380,4 +404,5 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         "workspace_find_best_phase_artefact": workspace_find_best_phase_artefact,
         "workspace_get_phase_context": workspace_get_phase_context,
         "workspace_get_input": workspace_get_input,
+        "knowledge_search": knowledge_search,
     }

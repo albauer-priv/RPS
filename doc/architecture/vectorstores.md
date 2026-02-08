@@ -1,21 +1,21 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-06
 Owner: Architecture
 ---
 # Vector Store Workflow
 
 Version: 2.0  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-02-06
 
 ---
 
 ## 1. Overview
 
-This system uses **OpenAI hosted vector stores** as remote knowledge state.
-Only **sources + manifests** live in the repo; embeddings never do.
+This system uses a **local embedded Qdrant** vector store for knowledge state.
+Sources + manifests live in the repo; embeddings are built locally at sync time.
 
 ```
 knowledge/
@@ -61,20 +61,15 @@ Paths are relative to the manifest directory.
 
 ## 3. Sync Script
 
-Use the repo helper to keep OpenAI stores in sync:
+Vector stores are synced locally via the background job (Streamlit). The helper
+script is retained for manual validation and troubleshooting:
 
 ```bash
-python3 scripts/sync_vectorstores.py  # Deprecated; UI runs background sync
+python3 scripts/smoke_vectorstores.py
 ```
 
-Useful flags:
-
-- `--manifest <path>`: sync one manifest
-- `--delete-removed` / `--prune`: remove remote files missing locally
-- `--reset`: delete all remote files before syncing (reinitialize)
-- `--dry-run`: preview changes
-
-The sync writes `.cache/vectorstores_state.json`, which maps store names to IDs.
+The sync writes `.cache/vectorstores_state.json`, which maps store names to
+local collection IDs.
 
 ---
 
@@ -98,29 +93,32 @@ Disable the background sync (for manual control):
 RPS_DISABLE_VECTORSTORE_SYNC=1
 ```
 
+Local storage settings:
+
+```
+RPS_LLM_VECTORSTORE_PATH=.cache/qdrant
+RPS_LLM_EMBEDDING_MODEL=text-embedding-3-small
+RPS_LLM_EMBEDDING_BATCH_SIZE=32
+```
+
 ---
 
 ## 4. Vector Store IDs
 
-IDs are environment-specific. You can set them explicitly to override lookup:
-
-```
-RPS_LLM_VECTORSTORE_ALL_AGENTS_ID=vs_xxx
-```
-
-If no env ID is set, the sync script creates or finds a store by name and writes
-its ID to `.cache/vectorstores_state.json`.
+IDs map to local Qdrant collection names. The sync writes them to
+`.cache/vectorstores_state.json` for runtime lookup.
 
 ---
 
 ## 5. Runtime Attachment
 
-At runtime, the Responses API attaches the shared store via `file_search`:
+At runtime, agents call the `knowledge_search` function tool, which queries the
+local Qdrant collection:
 
 ```python
-from rps.openai.runtime import build_file_search_tool
+from rps.tools.knowledge_search import search_knowledge
 
-tool = build_file_search_tool("week_planner")  # resolves vs_rps_all_agents
+results = search_knowledge("week_planner", "What is the Week Plan schema?")
 ```
 
 Or directly via state resolver:

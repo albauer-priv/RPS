@@ -5,24 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import hashlib
-import json
 import os
-import random
-import re
-import sys
-import time
-from typing import Any, Callable, Iterable
+import uuid
+from typing import Any
 
 import yaml
+from qdrant_client.models import Distance, PointStruct, VectorParams
 
-from rps.openai.client import get_client
 from rps.openai.vectorstore_state import update_state_for_store
+from rps.vectorstores.qdrant_local import embed_texts, get_qdrant_client, resolve_embedding_config
 
 MANAGED_BY = "sync_vectorstores"
-_RETRY_ATTEMPTS = 5
-_RETRY_BASE_SECONDS = 0.5
-_RETRY_MAX_SECONDS = 6.0
-_TRANSIENT_STATUS = {429, 500, 502, 503, 504}
 _MAX_ATTRIBUTE_KEYS = 16
 _ATTRIBUTE_ALLOWLIST = [
     "managed_by",
@@ -36,39 +29,10 @@ _ATTRIBUTE_ALLOWLIST = [
 ]
 
 
-def _is_transient_error(exc: Exception) -> bool:
-    status = getattr(exc, "status_code", None)
-    if status in _TRANSIENT_STATUS:
-        return True
-    code = getattr(exc, "code", None)
-    if code in {"server_error", "rate_limit_exceeded", "timeout"}:
-        return True
-    message = str(exc).lower()
-    if "server error" in message or "rate limit" in message or "timeout" in message:
-        return True
-    return False
-
-
-def _call_with_retry(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    for attempt in range(1, _RETRY_ATTEMPTS + 1):
-        try:
-            return func(*args, **kwargs)
-        except Exception as exc:
-            if not _is_transient_error(exc) or attempt >= _RETRY_ATTEMPTS:
-                raise
-            delay = min(_RETRY_MAX_SECONDS, _RETRY_BASE_SECONDS * (2 ** (attempt - 1)))
-            delay += random.uniform(0, min(0.25, delay / 2))
-            print(
-                f"Vector store API error (attempt {attempt}/{_RETRY_ATTEMPTS}): {exc}. "
-                f"Retrying in {delay:.1f}s...",
-                file=sys.stderr,
-            )
-            time.sleep(delay)
-
-
 @dataclass(frozen=True)
 class SourceSpec:
     """Local source definition loaded from a knowledge manifest."""
+
     path: str
     tags: list[str]
 
@@ -76,6 +40,7 @@ class SourceSpec:
 @dataclass(frozen=True)
 class Manifest:
     """Parsed manifest describing an agent's vector store sources."""
+
     agent: str
     vector_store_name: str
     description: str
@@ -238,428 +203,188 @@ def _flatten_header_attributes(header: dict[str, Any]) -> dict[str, str]:
     add_list("related_evidence", header.get("Related-Evidence"))
 
     implements = header.get("Implements")
-    if isinstance(implements, dict):
-        add("implements_interface_id", implements.get("Interface-ID"))
-        add("implements_interface_version", implements.get("Version"))
-
-    dependencies = header.get("Dependencies")
-    if isinstance(dependencies, list):
-        dep_values = [_format_dependency(item) for item in dependencies]
-        dep_values = [item for item in dep_values if item]
-        add_list("dependencies_ids", dep_values)
-
-    binding_specs = header.get("Binding-Specs")
-    if isinstance(binding_specs, list):
-        spec_values = [_format_dependency(item) for item in binding_specs]
-        spec_values = [item for item in spec_values if item]
-        add_list("binding_specs_ids", spec_values)
-
-    temporal_scope = header.get("Temporal-Scope")
-    if isinstance(temporal_scope, dict):
-        add("temporal_scope_from", temporal_scope.get("From"))
-        add("temporal_scope_to", temporal_scope.get("To"))
-
-    id_value = (
-        header.get("Specification-ID")
-        or header.get("Policy-ID")
-        or header.get("Contract-Name")
-        or header.get("Interface-ID")
-        or header.get("Template-ID")
-    )
-    add("id", id_value)
+    if implements:
+        if isinstance(implements, list):
+            formatted = [
+                item for item in (_format_dependency(entry) for entry in implements) if item
+            ]
+            if formatted:
+                attrs["implements"] = "|".join(formatted)
+        else:
+            value = _format_dependency(implements)
+            if value:
+                attrs["implements"] = value
 
     return attrs
 
 
-def _extract_markdown_attributes(source_path: Path) -> dict[str, str]:
-    try:
-        text = source_path.read_text(encoding="utf-8")
-    except Exception:
-        return {}
-    header = _extract_front_matter(text)
-    if not header:
-        return {}
-    return _flatten_header_attributes(header)
-
-
-def _extract_json_attributes(source_path: Path) -> dict[str, str]:
-    try:
-        data = json.loads(source_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    if not isinstance(data, dict):
-        return {}
-
-    meta = data.get("meta")
-    if isinstance(meta, dict) and "artifact_type" in meta:
-        attrs: dict[str, str] = {"doc_type": "ArtifactJson"}
-        for key in (
-            "artifact_type",
-            "schema_id",
-            "schema_version",
-            "version",
-            "authority",
-            "owner_agent",
-            "run_id",
-            "iso_week",
-            "iso_week_range",
-            "scope",
-        ):
-            value = meta.get(key)
-            if value:
-                attrs[key] = str(value)
+def _trim_attributes(attrs: dict[str, Any]) -> dict[str, Any]:
+    if len(attrs) <= _MAX_ATTRIBUTE_KEYS:
         return attrs
-
-    schema_id = data.get("$id")
-    if schema_id:
-        attrs = {"doc_type": "JsonSchema", "schema_id": str(schema_id), "id": str(schema_id)}
-        title = data.get("title")
-        if title:
-            attrs["schema_title"] = str(title)
-        if isinstance(schema_id, str) and schema_id.endswith(".schema.json"):
-            attrs["schema_for"] = schema_id[: -len(".schema.json")]
-        return attrs
-
-    return {}
-
-
-def build_source_attributes(source_path: Path) -> dict[str, str]:
-    if source_path.suffix.lower() == ".md":
-        return _extract_markdown_attributes(source_path)
-    if source_path.suffix.lower() == ".json":
-        return _extract_json_attributes(source_path)
-    return {}
-
-
-def _filter_attributes(attributes: dict[str, Any]) -> dict[str, Any]:
-    """Limit attributes to a stable allowlist to satisfy API key count caps."""
-    if not attributes:
-        return {}
-    filtered: dict[str, Any] = {}
+    trimmed: dict[str, Any] = {}
     for key in _ATTRIBUTE_ALLOWLIST:
-        value = attributes.get(key)
-        if value is None:
+        if key in attrs:
+            trimmed[key] = attrs[key]
+    return trimmed
+
+
+def _chunk_text(text: str, max_chars: int = 1200, overlap: int = 200) -> list[str]:
+    """Chunk text into overlapping segments."""
+    raw = text.strip()
+    if not raw:
+        return []
+    paragraphs = [p.strip() for p in raw.split("\n\n") if p.strip()]
+    chunks: list[str] = []
+    current = ""
+    for para in paragraphs:
+        if len(current) + len(para) + 2 <= max_chars:
+            current = f"{current}\n\n{para}".strip()
             continue
-        if isinstance(value, str) and not value.strip():
+        if current:
+            chunks.append(current)
+        if len(para) <= max_chars:
+            current = para
+        else:
+            start = 0
+            while start < len(para):
+                end = min(len(para), start + max_chars)
+                chunks.append(para[start:end])
+                start = end - overlap if end < len(para) else end
+            current = ""
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def _build_local_index(
+    manifest: Manifest,
+    reset: bool,
+    client: Any | None = None,
+) -> tuple[str, dict[str, dict[str, Any]], dict[str, int]]:
+    """(Re)build a local Qdrant collection for a manifest."""
+    client = client or get_qdrant_client()
+    config = resolve_embedding_config()
+    collection = manifest.vector_store_name
+
+    chunks: list[dict[str, Any]] = []
+    remote_index: dict[str, dict[str, Any]] = {}
+    stats = {"added": 0, "updated": 0, "removed": 0, "skipped": 0}
+
+    for source in manifest.sources:
+        local_path = (manifest.root / source.path).resolve()
+        if not local_path.exists():
+            stats["skipped"] += 1
             continue
-        filtered[key] = value
-        if len(filtered) >= _MAX_ATTRIBUTE_KEYS:
-            break
-    return filtered
+        text = local_path.read_text(encoding="utf-8")
+        sha256 = compute_sha256(local_path)
+        header = _extract_front_matter(text)
+        attrs = _flatten_header_attributes(header) if header else {}
+        if source.tags:
+            attrs["tags"] = "|".join(source.tags)
+        attrs["source_path"] = source.path
+        attrs["sha256"] = sha256
+        attrs["managed_by"] = MANAGED_BY
+        attrs = _trim_attributes(attrs)
 
-
-def env_key_for_agent(agent: str) -> str:
-    """Return the env var name used for a given agent's vector store ID."""
-    agent_key = agent.strip().lstrip("_")
-    agent_key = re.sub(r"[^A-Za-z0-9]+", "_", agent_key).upper()
-    return f"RPS_LLM_VECTORSTORE_{agent_key}_ID"
-
-
-def list_vector_stores(client) -> Iterable:
-    """Yield all vector stores via pagination."""
-    after = None
-    while True:
-        page = _call_with_retry(client.vector_stores.list, limit=100, after=after)
-        for entry in page.data:
-            yield entry
-        if not getattr(page, "has_more", False):
-            break
-        after = page.data[-1].id
-
-
-def list_files(client) -> Iterable:
-    """Yield all files via pagination."""
-    after = None
-    while True:
-        page = _call_with_retry(client.files.list, limit=100, after=after)
-        for entry in page.data:
-            yield entry
-        if not getattr(page, "has_more", False):
-            break
-        after = page.data[-1].id
-
-
-def list_vector_store_files(client, vector_store_id: str) -> list:
-    """List all files attached to a vector store."""
-    entries = []
-    after = None
-    while True:
-        page = _call_with_retry(
-            client.vector_stores.files.list,
-            vector_store_id=vector_store_id,
-            limit=100,
-            after=after,
-        )
-        entries.extend(page.data)
-        if not getattr(page, "has_more", False):
-            break
-        after = page.data[-1].id
-    return entries
-
-
-def _format_progress(index: int, total: int) -> str:
-    if total:
-        return f"[{index}/{total}]"
-    return "[0/0]"
-
-
-def clear_vector_store_files(
-    client,
-    vector_store_id: str,
-    *,
-    dry_run: bool = False,
-    progress: bool = False,
-) -> int:
-    """Detach all files from a vector store."""
-    entries = list_vector_store_files(client, vector_store_id)
-    total = len(entries)
-    removed = 0
-
-    for index, entry in enumerate(entries, start=1):
-        file_id = getattr(entry, "file_id", None) or getattr(entry, "id", None)
-        if progress:
-            label = file_id or "unknown"
-            print(f"{_format_progress(index, total)} reset: {label}")
-        if not file_id:
-            continue
-        if not dry_run:
-            _call_with_retry(
-                client.vector_stores.files.delete,
-                vector_store_id=vector_store_id,
-                file_id=file_id,
+        parts = _chunk_text(text)
+        for idx, chunk in enumerate(parts):
+            chunks.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": chunk,
+                    "payload": {
+                        "text": chunk,
+                        "source_path": source.path,
+                        "sha256": sha256,
+                        "tags": source.tags,
+                        "attributes": attrs,
+                        "chunk_index": idx,
+                    },
+                }
             )
-        removed += 1
-    return removed
-
-
-def ensure_vector_store_id(client, manifest: Manifest) -> str:
-    """Return a vector store ID, creating the store if needed."""
-    env_key = env_key_for_agent(manifest.agent)
-    env_value = os.getenv(env_key)
-    if env_value:
-        return env_value
-
-    for entry in list_vector_stores(client):
-        if entry.name == manifest.vector_store_name:
-            return entry.id
-
-    created = _call_with_retry(
-        client.vector_stores.create,
-        name=manifest.vector_store_name,
-        metadata={"agent": manifest.agent},
-    )
-    return created.id
-
-
-def build_remote_index(client, vector_store_id: str) -> dict[str, dict]:
-    """Build a remote index keyed by source path for delta syncing."""
-    index: dict[str, dict] = {}
-    for vs_file in list_vector_store_files(client, vector_store_id):
-        attributes = getattr(vs_file, "attributes", {}) or {}
-        file_id = getattr(vs_file, "file_id", None)
-        vs_file_id = getattr(vs_file, "id", None)
-        file_obj = None
-        metadata: dict[str, Any] = {}
-        if file_id:
-            file_obj = _call_with_retry(client.files.retrieve, file_id)
-            metadata = (getattr(file_obj, "metadata", {}) or {})
-        source_path = (
-            attributes.get("source_path")
-            or attributes.get("path")
-            or metadata.get("source_path")
-            or metadata.get("path")
-        )
-        if not source_path and file_obj is not None:
-            source_path = file_obj.filename
-        if not source_path:
-            continue
-        tags_value = attributes.get("tags") or metadata.get("tags")
-        tags: list[str] = []
-        if isinstance(tags_value, str):
-            tags = [item for item in tags_value.split(",") if item]
-        elif isinstance(tags_value, list):
-            tags = [str(item) for item in tags_value]
-        index[source_path] = {
-            "file_id": file_id,
-            "vs_file_id": vs_file_id,
-            "sha256": attributes.get("sha256") or metadata.get("sha256"),
-            "managed": (
-                attributes.get("managed_by") == MANAGED_BY
-                or metadata.get("managed_by") == MANAGED_BY
-            ),
-            "tags": tags,
+        remote_index[source.path] = {
+            "file_id": None,
+            "sha256": sha256,
+            "tags": source.tags,
+            "managed": True,
         }
-    return index
+        stats["added"] += 1
 
-
-def _attach_file(
-    client,
-    vector_store_id: str,
-    file_id: str,
-    attributes: dict[str, Any],
-) -> None:
-    """Attach a file to a vector store, using file_batches when available."""
-    if hasattr(client.vector_stores, "file_batches"):
+    if reset:
         try:
-            _call_with_retry(
-                client.vector_stores.file_batches.create_and_poll,
-                vector_store_id=vector_store_id,
-                files=[{"file_id": file_id, "attributes": attributes}],
-            )
-            return
+            client.delete_collection(collection, timeout=30, wait=True)
+        except (TypeError, AssertionError):
+            client.delete_collection(collection, timeout=30)
+
+    if not chunks:
+        return collection, remote_index, stats
+
+    batch_size = int(os.getenv("RPS_LLM_EMBEDDING_BATCH_SIZE", "32"))
+    if batch_size < 1:
+        batch_size = 32
+
+    first_batch = chunks[:batch_size]
+    first_vectors = embed_texts([item["text"] for item in first_batch], config)
+    if not first_vectors:
+        raise RuntimeError("Embedding model returned no vectors.")
+
+    vector_size = len(first_vectors[0])
+    if reset:
+        client.create_collection(
+            collection_name=collection,
+            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+        )
+    else:
+        try:
+            existing = client.get_collection(collection)
         except Exception:
-            pass
-
-    _call_with_retry(
-        client.vector_stores.files.create,
-        vector_store_id=vector_store_id,
-        file_id=file_id,
-        attributes=attributes,
-    )
-
-
-def upload_source(
-    client,
-    vector_store_id: str,
-    source: SourceSpec,
-    source_path: Path,
-) -> tuple[str, str]:
-    """Upload a source file and attach it to the vector store."""
-    sha256 = compute_sha256(source_path)
-
-    def _create_file():
-        with source_path.open("rb") as handle:
-            return client.files.create(
-                file=handle,
-                purpose="assistants",
+            existing = None
+        if existing:
+            current_size = existing.config.params.vectors.size
+            if current_size != vector_size:
+                client.recreate_collection(
+                    collection_name=collection,
+                    vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+                )
+        else:
+            client.create_collection(
+                collection_name=collection,
+                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
 
-    file_obj = _call_with_retry(_create_file)
+    def _upsert(batch: list[dict[str, Any]], vectors: list[list[float]]) -> None:
+        points = [
+            PointStruct(id=item["id"], vector=vector, payload=item["payload"])
+            for item, vector in zip(batch, vectors)
+        ]
+        client.upsert(collection_name=collection, points=points, wait=True)
 
-    attributes = {
-        "managed_by": MANAGED_BY,
-        "sha256": sha256,
-        "tags": ",".join(source.tags) if source.tags else "",
-    }
-    attributes.update(build_source_attributes(source_path))
-    attributes = _filter_attributes(attributes)
-    _attach_file(client, vector_store_id, file_obj.id, attributes)
-    return file_obj.id, sha256
+    _upsert(first_batch, first_vectors)
+    for idx in range(batch_size, len(chunks), batch_size):
+        batch = chunks[idx : idx + batch_size]
+        vectors = embed_texts([item["text"] for item in batch], config)
+        _upsert(batch, vectors)
+
+    return collection, remote_index, stats
 
 
 def sync_manifest(
     manifest_path: Path,
-    delete_removed: bool = False,
-    dry_run: bool = False,
+    delete_removed: bool = True,
     reset: bool = False,
     progress: bool = False,
     state: dict[str, Any] | None = None,
+    client: Any | None = None,
 ) -> dict[str, int]:
-    """Sync one manifest against OpenAI-hosted vector store files."""
-    client = get_client()
+    """Sync a manifest to a local Qdrant collection."""
     manifest = load_manifest(manifest_path)
-    vector_store_id = ensure_vector_store_id(client, manifest)
-
-    stats = {"added": 0, "updated": 0, "removed": 0, "skipped": 0}
-    if progress:
-        print(f"Syncing store: {manifest.vector_store_name}")
-
-    if reset:
-        if progress:
-            print(f"Clearing vector store: {vector_store_id}")
-        stats["removed"] += clear_vector_store_files(
-            client,
-            vector_store_id,
-            dry_run=dry_run,
-            progress=progress,
-        )
-        remote_index: dict[str, dict] = {}
-    else:
-        remote_index = build_remote_index(client, vector_store_id)
-    desired_paths = {source.path for source in manifest.sources}
-    total_sources = len(manifest.sources)
-
-    for index, source in enumerate(manifest.sources, start=1):
-        local_path = (manifest.root / source.path).resolve()
-        if not local_path.exists():
-            if progress:
-                print(f"{_format_progress(index, total_sources)} missing: {source.path}")
-            else:
-                print(f"Missing source: {local_path}")
-            stats["skipped"] += 1
-            continue
-
-        local_sha = compute_sha256(local_path)
-        remote = remote_index.get(source.path)
-        if remote and remote.get("sha256") == local_sha:
-            if progress:
-                print(f"{_format_progress(index, total_sources)} ok: {source.path}")
-            continue
-
-        if remote and not remote.get("managed"):
-            if progress:
-                print(f"{_format_progress(index, total_sources)} skip unmanaged: {source.path}")
-            else:
-                print(f"Skipping unmanaged remote file for {source.path}")
-            stats["skipped"] += 1
-            continue
-
-        action = "update" if remote else "add"
-        if dry_run:
-            if progress:
-                print(f"{_format_progress(index, total_sources)} would {action}: {source.path}")
-            else:
-                print(f"Would {action}: {source.path}")
-        else:
-            file_id, sha256 = upload_source(client, vector_store_id, source, local_path)
-            if remote:
-                delete_id = remote.get("vs_file_id") or remote.get("file_id")
-                if delete_id:
-                    _call_with_retry(
-                        client.vector_stores.files.delete,
-                        vector_store_id=vector_store_id,
-                        file_id=delete_id,
-                    )
-            remote_index[source.path] = {
-                "file_id": file_id,
-                "vs_file_id": None,
-                "sha256": sha256,
-                "managed": True,
-                "tags": source.tags,
-            }
-            if progress:
-                print(f"{_format_progress(index, total_sources)} {action}: {source.path}")
-        stats["updated" if remote else "added"] += 1
-
-    if delete_removed:
-        removals = [
-            (source_path, remote)
-            for source_path, remote in remote_index.items()
-            if source_path not in desired_paths and remote.get("managed")
-        ]
-        total_removals = len(removals)
-        for index, (source_path, remote) in enumerate(removals, start=1):
-            if dry_run:
-                if progress:
-                    print(
-                        f"{_format_progress(index, total_removals)} would remove: {source_path}"
-                    )
-                else:
-                    print(f"Would remove: {source_path}")
-            else:
-                delete_id = remote.get("vs_file_id") or remote.get("file_id")
-                if delete_id:
-                    _call_with_retry(
-                        client.vector_stores.files.delete,
-                        vector_store_id=vector_store_id,
-                        file_id=delete_id,
-                    )
-                if progress:
-                    print(f"{_format_progress(index, total_removals)} removed: {source_path}")
-            remote_index.pop(source_path, None)
-            stats["removed"] += 1
+    collection, remote_index, stats = _build_local_index(
+        manifest,
+        reset=reset,
+        client=client,
+    )
 
     if state is not None:
-        update_state_for_store(state, manifest.vector_store_name, vector_store_id, remote_index)
+        update_state_for_store(state, manifest.vector_store_name, collection, remote_index)
 
     return stats

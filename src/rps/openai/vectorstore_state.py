@@ -68,7 +68,7 @@ class VectorStoreResolver:
         if not self.state_path.exists():
             raise FileNotFoundError(
                 f"Vectorstore state file not found: {self.state_path}\n"
-                f"Run: python scripts/sync_vectorstores.py"
+                f"Run the Streamlit app or sync via scripts/smoke_vectorstores.py"
             )
         return json.loads(self.state_path.read_text(encoding="utf-8"))
 

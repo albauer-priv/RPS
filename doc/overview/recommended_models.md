@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-06
 Owner: Overview
 ---
 # Recommended Models
 
 Version: 2.0  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-02-06
 
 ---
 
@@ -60,6 +60,7 @@ Lower values reduce creative variance for schema-heavy outputs.
 - Per-agent overrides are optional; unset values fall back to `RPS_LLM_MODEL` / `RPS_LLM_TEMPERATURE`.
 - Keep heavier models for Season/Phase/Analysis if schema errors rise.
 - For Season Mode A scenarios, keep `--max-num-results 1` to limit token throughput.
+- Set `RPS_LLM_EMBEDDING_MODEL` to match your provider’s embedding model for vectorstore sync.
 
 ---
 

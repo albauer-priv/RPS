@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-06
 Owner: Architecture
 ---
 # System Architecture
 
 Version: 2.3  
 Status: Updated  
-Last-Updated: 2026-02-01
+Last-Updated: 2026-02-06
 
 ---
 
@@ -81,10 +81,10 @@ flowchart TD
 
 **Core components**
 
-1. **OpenAI Responses Runtime**
-   - Tool-calling loop (file_search + function tools).
-2. **Hosted Vector Stores**
-   - Remote knowledge base (sources only in repo; embeddings remote).
+1. **LLM Responses Runtime**
+   - Tool-calling loop (knowledge_search + function tools).
+2. **Local Vector Stores**
+   - Local knowledge base (sources in repo; embeddings built locally).
 3. **Prompt Loader**
    - Shared system prompt + per-agent prompt from `prompts/`.
 4. **Workspace Storage**
@@ -172,8 +172,8 @@ See `doc/architecture/agents.md` for the canonical registry of agents, modes, an
 ## 4. Knowledge Delivery
 
 - **Prompts** live in `prompts/` and are loaded at runtime.
-- **Knowledge sources** live in `knowledge/` and are synced to OpenAI hosted vector stores.
-- At runtime, the Responses API attaches the **agent vector store** via file_search.
+- **Knowledge sources** live in `knowledge/` and are synced to a local Qdrant vector store.
+- At runtime, agents use the `knowledge_search` function tool for retrieval.
 
 ### 4.1 Vector Stores
 
@@ -185,29 +185,20 @@ The system uses a single shared store for all agents:
   policies, schemas, and prompts used across agents.
 
 Knowledge sources live under `knowledge/_shared/` and are listed in
-`knowledge/all_agents/manifest.yaml`. The vector store itself is remote state.
+`knowledge/all_agents/manifest.yaml`. The vector store itself is local state.
 
 ```mermaid
 flowchart LR
-  SRC[knowledge/all_agents/manifest.yaml] --> SYNC[sync_vectorstores.py (deprecated; UI background sync)]
-  SYNC --> VS[(OpenAI Vector Stores)]
-  VS --> FS[file_search tool]
+  SRC[knowledge/all_agents/manifest.yaml] --> SYNC[background sync (Streamlit)]
+  SYNC --> VS[(Qdrant Local)]
+  VS --> FS[knowledge_search tool]
   FS --> AG[Agent Runtime]
 ```
 
 #### 4.1.2 Handling (Init / Update / Delete)
 
-The repo uses a single sync entrypoint to manage stores:
-
-```bash
-python scripts/sync_vectorstores.py  # Deprecated; UI runs background sync
-```
-
-Internally, the flow is:
-
-1. Create or resolve the vector store by name.
-2. Upload changed files (hash-based delta).
-3. Optionally prune remote files that no longer exist locally.
+Vector stores are rebuilt locally during background sync when the manifest hash changes.
+Manual verification uses `python scripts/smoke_vectorstores.py`.
 
 #### 4.1.3 Background Sync (Streamlit)
 
@@ -224,38 +215,19 @@ RPS_VECTORSTORE_SYNC_INTERVAL_MINUTES=60
 RPS_DISABLE_VECTORSTORE_SYNC=1
 ```
 
-Example (minimal, direct API usage):
+Example:
 
-```python
-from openai import OpenAI
-
-client = OpenAI()
-
-# 1) Ensure store
-store = client.vector_stores.create(name="vs_rps_all_agents")
-
-# 2) Upload file and attach
-file_obj = client.files.create(file=open("knowledge/_shared/sources/specs/load_estimation_spec.md", "rb"),
-                               purpose="assistants")
-client.vector_stores.file_batches.create_and_poll(
-    vector_store_id=store.id,
-    files=[{"file_id": file_obj.id, "attributes": {"path": "rules.md"}}],
-)
-
-# 3) Remove a file from a store (detach)
-client.vector_stores.files.delete(vector_store_id=store.id, file_id=file_obj.id)
-```
+Local Qdrant collections are rebuilt during sync from the manifest and source files.
 
 Notes:
-- The sync script writes `.cache/vectorstores_state.json` to map store names to IDs.
-- IDs can be overridden via `.env` when needed.
-- Deleting a file from the Files API is global; prefer detaching from the store.
+- The sync writes `.cache/vectorstores_state.json` to map store names to local collection IDs.
+- Collections are rebuilt locally when the manifest hash changes.
 
 #### 4.1.3 Vector Store Attributes and Filters
 
 During sync, each source file is annotated with attributes derived from its
 YAML header (Markdown) or schema/meta fields (JSON). These attributes are used
-to filter `file_search` results.
+to filter `knowledge_search` results.
 
 Common attributes:
 - `type`, `specification_for`, `specification_id`
@@ -273,13 +245,13 @@ Example filters:
 - Templates: `type=Template` + `template_for=ATHLETE_PROFILE`
 - Schemas: `doc_type=JsonSchema` + `schema_id=week_plan.schema.json`
 
-`file_search` is for static knowledge sources only. Runtime athlete artifacts
+`knowledge_search` is for static knowledge sources only. Runtime athlete artifacts
 are fetched via workspace tools.
 
 #### 4.1.4 Agent Access Hints (Summary)
 
 These are runtime access expectations per agent/mode. Knowledge sources should be
-queried via `file_search` with attribute filters; athlete artefacts come from
+queried via `knowledge_search` with attribute filters; athlete artefacts come from
 workspace tools.
 
 Season-Planner
@@ -311,7 +283,7 @@ Each agent attaches a single store at runtime:
 
 Tools available to agents:
 
-- `file_search` (with `vector_store_ids=[agent]`)
+- `knowledge_search` (with `vector_store_ids=[agent]`)
 - Workspace read tools:
   - `workspace_get_latest`
   - `workspace_get_version`
@@ -325,7 +297,7 @@ File search is forced by default; use `--no-file-search` if you need to disable 
 
 ### 4.2 Runtime Knowledge Injection (Base + Mode Bundles)
 
-In addition to `file_search`, the runtime injects selected knowledge files
+In addition to `knowledge_search`, the runtime injects selected knowledge files
 directly into the system prompt.
 
 Configuration:
@@ -499,8 +471,8 @@ Use this checklist to initialize a fresh environment:
    (depending on how you set up the repo).
 3. Add knowledge sources under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
-5. (Deprecated) Sync vector stores: `python scripts/sync_vectorstores.py` (UI background sync runs automatically).
-6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
+5. Vector store sync runs in the UI background (auto-rebuild on manifest changes).
+6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.
 7. Run data pipeline: `python -m rps.main parse-intervals`.
 8. Validate outputs: `python scripts/validate_outputs.py`.
 

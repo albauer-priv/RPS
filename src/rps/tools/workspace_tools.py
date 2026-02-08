@@ -16,6 +16,7 @@ from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.rendering.auto_render import render_sidecar
 from rps.workspace.types import ArtifactType
+from rps.tools.knowledge_search import search_knowledge
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,21 @@ def get_tool_defs() -> list[dict[str, Any]]:
                     "update_latest": {"type": "boolean"},
                 },
                 "required": ["artifact_type", "version_key", "payload"],
+            },
+        },
+        {
+            "type": "function",
+            "name": "knowledge_search",
+            "description": "Search the local knowledge vectorstore for relevant context.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "max_results": {"type": "integer", "default": 5},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["query"],
+                "additionalProperties": False,
             },
         },
     ]
@@ -302,10 +318,19 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             logger.exception("Auto-render failed for %s", path)
         return {"ok": True, "path": path}
 
+    def knowledge_search(args: dict[str, Any]) -> Any:
+        """Search the local knowledge vectorstore."""
+        query = str(args.get("query", "")).strip()
+        max_results = args.get("max_results", 5)
+        tags = args.get("tags")
+        results = search_knowledge(ctx.agent_name, query, max_results=max_results, tags=tags)
+        return {"ok": True, "results": results}
+
     return {
         "workspace_get_latest": workspace_get_latest,
         "workspace_get": workspace_get,
         "workspace_list_versions": workspace_list_versions,
         "workspace_get_phase_context": workspace_get_phase_context,
         "workspace_put_validated": workspace_put_validated,
+        "knowledge_search": knowledge_search,
     }

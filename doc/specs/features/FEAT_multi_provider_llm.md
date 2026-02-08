@@ -43,7 +43,7 @@ Owner: Architecture
 **Goals**
 
 * [ ] Replace OpenAI-specific runtime with LiteLLM as the only LLM runtime path.
-* [ ] Add embedded ChromaDB as the primary vectorstore (local-first).
+* [ ] Add embedded Qdrant as the primary vectorstore (local-first).
 * [ ] Preserve current agent UX, tool contracts, and prompt injection behavior.
 * [ ] Provide a clear migration path and rollback strategy.
 * [ ] Define phase-2 integration path for CrewAI orchestration.
@@ -64,11 +64,12 @@ Owner: Architecture
 **User/System behavior**
 
 * Runtime calls route through LiteLLM (single code path).
-* Vectorstore uses local embedded Chroma; optional server mode is a later switch.
+* Vectorstore uses local embedded Qdrant; optional server mode is a later switch.
 * Existing UI pages and agents are unchanged from a user perspective.
 * Coach uses a custom compaction strategy when non-OpenAI providers are selected.
 * Each agent can optionally override provider config (API key, base URL, model) without affecting others.
 * Per-agent overrides are supplied via environment variables (container-friendly); changing them requires redeploy.
+* `file_search` is replaced by a local `knowledge_search` function tool backed by Qdrant.
 
 **Env var naming + precedence (Option 2)**
 
@@ -100,8 +101,10 @@ Owner: Architecture
   * Add custom compaction strategy for Coach when provider != OpenAI.
   * Resolve per-agent provider config with explicit precedence (agent override -> global defaults).
   * Read per-agent overrides from env vars (Option 2).
+* `src/rps/tools/`:
+  * Add `knowledge_search` tool (Qdrant-backed) and remove Responses `file_search` reliance.
 * `src/rps/openai/vectorstores.py`:
-  * Swap to Chroma embedded backend.
+  * Swap to Qdrant embedded backend.
   * Keep manifest hash + reset semantics.
 * `src/rps/ui/`:
   * No functional changes; only instrumentation/logging adjustments if needed.
@@ -138,28 +141,28 @@ Owner: Architecture
 **Impacted areas**
 
 * UI: none (behavior preserved).
-* Pipeline/data: vectorstore sync hooks reimplemented for Chroma.
+* Pipeline/data: vectorstore sync hooks reimplemented for Qdrant.
 * Renderer: none.
 * Workspace/run-store: logs include provider/model metadata.
 * Validation/tooling: update smoke tests to use LiteLLM adapter.
-* Deployment/config: new env vars for LiteLLM providers + Chroma storage path.
+* Deployment/config: new env vars for LiteLLM providers + Qdrant storage path.
 * Agent config: optional per-agent provider config (API key/base URL/model).
 
 **Required refactoring**
 
 * Introduce a provider-agnostic LLM client interface.
-* Replace OpenAI vectorstore resolver with Chroma-backed resolver.
+* Replace OpenAI vectorstore resolver with Qdrant-backed resolver.
 * Add a per-agent provider config resolver with explicit precedence and safe redaction in logs.
 
 ---
 
 ## 6) Options & Recommendation
 
-### Option A (recommended) — LiteLLM-only runtime + embedded Chroma
+### Option A (recommended) — LiteLLM-only runtime + embedded Qdrant
 
 **Summary**
 
-* Replace OpenAI runtime with LiteLLM as the single path; use embedded Chroma.
+* Replace OpenAI runtime with LiteLLM as the single path; use embedded Qdrant.
 
 **Pros**
 
@@ -192,15 +195,21 @@ Owner: Architecture
 ### Recommendation
 
 * Choose: Option A + Option B combined, with **Option 2 (env-based per-agent overrides)** as the initial configuration mechanism.
+* Rollout order: implement **LiteLLM runtime + embedded Qdrant together** (bundled cut) to avoid mixed runtime/storage states.
 * Rationale: keep runtime path single (LiteLLM-only) while enabling per-agent overrides via container-friendly env vars; accept redeploy requirement for now.
 * Follow-up: reevaluate a file-backed or hybrid config if admin editability without redeploy becomes a requirement.
+
+**If a staged rollout is required (alternative)**
+
+1. LiteLLM runtime first (keep OpenAI vectorstore) to isolate runtime risks.
+2. Qdrant embedded backend second to isolate vectorstore/storage risks.
 
 ---
 
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [ ] All LLM calls route through LiteLLM.
-* [ ] Embedded Chroma index replaces OpenAI vectorstore usage.
+* [ ] Embedded Qdrant index replaces OpenAI vectorstore usage.
 * [ ] Agent tool calls/streaming still pass existing UI and tests.
 * [ ] Vectorstore sync/manifest reset behaves as before.
 * [ ] Per-agent API key/base URL/model overrides work and do not leak into other agents.
@@ -212,7 +221,7 @@ Owner: Architecture
 
 **Migration strategy**
 
-* Phase-1: introduce LiteLLM adapter + Chroma embedded.
+* Phase-1: introduce LiteLLM adapter + Qdrant embedded.
 * Rebuild vectorstore from knowledge manifest on first run.
 * Per-agent overrides are supplied via env vars; changes require container redeploy.
 
@@ -230,7 +239,7 @@ Owner: Architecture
   * Safe behavior: fail-fast with clear error in run logs.
   * Recovery: revert runtime or adjust adapter.
 
-* Failure mode: Chroma index out of sync with manifest.
+* Failure mode: Qdrant index out of sync with manifest.
   * Detection: manifest hash mismatch.
   * Safe behavior: reset/rebuild index.
   * Recovery: rerun sync.
@@ -247,7 +256,7 @@ Owner: Architecture
 **New/changed events**
 
 * `llm.request`: provider, model, latency, tokens.
-* `vectorstore.sync`: backend=chroma, manifest_hash, reset=true/false.
+* `vectorstore.sync`: backend=qdrant_local, manifest_hash, reset=true/false.
 * `llm.config.resolve`: agent_id, provider, model, base_url (redacted), override_used=true/false.
 
 **Diagnostics**
@@ -261,7 +270,7 @@ Owner: Architecture
 Update these docs as part of implementation:
 
 * [ ] `doc/architecture/system_architecture.md` — runtime/provider abstraction.
-* [ ] `doc/architecture/vectorstores.md` — Chroma embedded + sync rules.
+* [ ] `doc/architecture/vectorstores.md` — Qdrant embedded + sync rules.
 * [ ] `doc/runbooks/validation.md` — smoke checks for LiteLLM path.
 * [ ] `doc/overview/feature_backlog.md` — backlog item status.
 
@@ -283,7 +292,7 @@ Update these docs as part of implementation:
 ## Open Questions (max 5) — optional
 
 * Which LiteLLM providers/models are first-class supported?
-* Should Chroma data live under `var/athletes/<id>/vectorstore/` or global?
+* Should Qdrant data live under `var/athletes/<id>/vectorstore/` or global?
 * Where should per-agent provider overrides live (config file vs. env vars vs. workspace settings)?
 * What triggers a switch from env-only overrides to file-backed or hybrid config (admin editability without redeploy)?
 

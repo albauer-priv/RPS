@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Events page now offers an upgrade action for legacy planning events payloads to restore all columns.
 - Renamed LLM environment variables from `OPENAI_*` to `RPS_LLM_*` (no backward compatibility) and grouped per-agent overrides in `.env.example`.
+- Replaced OpenAI file_search vectorstores with embedded Qdrant and a `knowledge_search` tool for local retrieval.
+
+### Fixed
+- `smoke_vectorstores` now syncs missing local collections using an existing Qdrant client and tolerates older Qdrant delete signatures.
 
 ## [0.10.3] - 2026-02-06
 

@@ -14,12 +14,13 @@ from openai import OpenAI
 from rps.agents.tasks import AgentTask, OUTPUT_SPECS
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.reasoning import build_reasoning_payload
-from rps.openai.response_utils import extract_reasoning_summaries, extract_file_search_results
+from rps.openai.response_utils import extract_reasoning_summaries
 from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.schemas.bundler import SchemaBundler
 from rps.tools.store_output_tools import build_strict_store_tool
+from rps.tools.knowledge_search import search_knowledge
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.guarded_store import GuardedValidatedStore
 
@@ -39,12 +40,22 @@ class AgentRuntime:
     workspace_root: Path
 
 
-def _file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
-    """Build a file_search tool payload for Responses API."""
+def _knowledge_search_tool() -> dict[str, Any]:
+    """Build a knowledge_search tool payload for Responses API."""
     return {
-        "type": "file_search",
-        "vector_store_ids": [agent_vs_id],
-        "max_num_results": max_num_results,
+        "type": "function",
+        "name": "knowledge_search",
+        "description": "Search the local knowledge vectorstore for relevant context.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "max_results": {"type": "integer", "default": 5},
+                "tags": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
     }
 
 
@@ -67,20 +78,16 @@ def _env_flag(name: str) -> bool:
     value = raw.strip().lower()
     return value in {"1", "true", "yes", "on"}
 
-def _log_file_search_results(response: Any) -> None:
-    results = extract_file_search_results(response)
-    if not results:
-        logger.info("file_search results: none")
+def _log_knowledge_search(response: Any) -> None:
+    items = getattr(response, "output", []) or []
+    calls = [
+        item for item in items
+        if getattr(item, "type", None) == "function_call" and getattr(item, "name", None) == "knowledge_search"
+    ]
+    if not calls:
+        logger.info("knowledge_search calls: none")
         return
-    logger.info("file_search results: %d", len(results))
-    for idx, result in enumerate(results, start=1):
-        logger.info(
-            "file_search[%d] file=%s score=%s attrs=%s",
-            idx,
-            result.get("filename"),
-            result.get("score"),
-            result.get("attributes"),
-        )
+    logger.info("knowledge_search calls: %d", len(calls))
 
 def run_agent_task_strict(
     runtime: AgentRuntime,
@@ -117,15 +124,14 @@ def run_agent_task_strict(
     )
 
     tools = [
-        _file_search_tool(agent_vs_id, max_num_results),
+        _knowledge_search_tool(),
         store_tool,
     ]
     logger.info(
-        "file_search tool: agent=%s stores=%s max_results=%s include_results=%s",
+        "knowledge_search tool: agent=%s stores=%s max_results=%s",
         agent_name,
         [agent_vs_id],
         max_num_results,
-        debug_file_search,
     )
 
     guarded = GuardedValidatedStore(
@@ -152,10 +158,8 @@ def run_agent_task_strict(
         )
         if reasoning:
             payload["reasoning"] = reasoning
-        if debug_file_search:
-            payload["include"] = ["file_search_call.results"]
         if force_search_flag:
-            payload["tool_choice"] = {"type": "file_search"}
+            payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
         return create_response(runtime.client, payload, logger)
@@ -164,7 +168,7 @@ def run_agent_task_strict(
     seen_summaries: set[str] = set()
     response = _create_response(force_search)
     if debug_file_search:
-        _log_file_search_results(response)
+        _log_knowledge_search(response)
     for summary in extract_reasoning_summaries(response):
         if summary in seen_summaries:
             continue
@@ -186,10 +190,33 @@ def run_agent_task_strict(
                 "error": "Model did not call store tool. Output:\n" + response.output_text,
             }
 
+        handled_any = False
         for call in function_calls:
+            if call.name == "knowledge_search":
+                try:
+                    args = json.loads(call.arguments or "{}")
+                except json.JSONDecodeError:
+                    args = {}
+                results = search_knowledge(
+                    agent_name,
+                    str(args.get("query", "")),
+                    max_results=args.get("max_results", 5),
+                    tags=args.get("tags"),
+                )
+                input_list.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": call.call_id,
+                        "output": json.dumps({"ok": True, "results": results}, ensure_ascii=False),
+                    }
+                )
+                handled_any = True
+                continue
+
             if call.name != output_spec.tool_name:
                 continue
 
+            handled_any = True
             args = json.loads(call.arguments or "{}")
             document = args if output_spec.envelope else args.get("workouts")
             logger.debug("Tool call %s args=%s", call.name, args)
@@ -248,6 +275,12 @@ def run_agent_task_strict(
             )
 
             return result
+
+        if not handled_any:
+            return {
+                "ok": False,
+                "error": "Model did not call knowledge_search or store tool. Output:\n" + response.output_text,
+            }
 
         response = _create_response(force_search)
         for summary in extract_reasoning_summaries(response):

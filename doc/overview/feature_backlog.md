@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-05
+Last-Updated: 2026-02-08
 Owner: Product
 ---
 # Feature Backlog
@@ -11,7 +11,7 @@ feature spec (`doc/specs/features/FEAT_<slug>.md`) before implementation.
 
 ## Ranked Backlog (with dependencies)
 
-1) **FEAT_multi_provider_llm** — LiteLLM-only runtime + embedded Chroma (CrewAI phase-2).  
+1) **FEAT_multi_provider_llm** — LiteLLM-only runtime + embedded Qdrant (CrewAI phase-2, in progress).  
    Depends on: none
 2) **FEAT_user_inputs_io** — upload/download inputs (new modular inputs).  
    Depends on: FEAT_user_inputs_modular
@@ -32,6 +32,7 @@ feature spec (`doc/specs/features/FEAT_<slug>.md`) before implementation.
 - [x] FEAT_parquet_readers — Parquet-first reads in Data & Metrics.
 - [x] FEAT_vectorstore_monitor — background monitor + reset behavior.
 - [~] FEAT_posting_receipts_inspection — receipt inspection + status (implemented; UX polish ongoing).
+- [~] FEAT_multi_provider_llm — LiteLLM runtime + embedded Qdrant (Docs + infra in progress).
 - [x] FEAT_user_inputs_modular — hard cut-over to modular inputs and new pages.
 - [x] FEAT_user_data_editors — editors for profile/goals, availability, events, logistics.
 - [x] FEAT_historical_baseline_refresh — refresh baseline from Intervals via UI.

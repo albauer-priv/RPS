@@ -14,11 +14,7 @@ from openai import OpenAI
 
 from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
-from rps.openai.response_utils import (
-    extract_file_search_results,
-    extract_reasoning_summaries,
-    extract_text_output,
-)
+from rps.openai.response_utils import extract_reasoning_summaries, extract_text_output
 from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
@@ -38,15 +34,6 @@ class AgentRuntime:
     reasoning_summary: str | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
-
-
-def _build_file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
-    """Build a file_search tool payload for Responses API."""
-    return {
-        "type": "file_search",
-        "vector_store_ids": [agent_vs_id],
-        "max_num_results": max_num_results,
-    }
 
 
 def _parse_csv_env(name: str) -> set[str]:
@@ -108,38 +95,22 @@ def _item_field(item: Any, name: str) -> Any:
     return getattr(item, name, None)
 
 
-def _log_file_search_results(response: Any) -> None:
-    """Log file_search results for debugging."""
-    results = extract_file_search_results(response)
-    if not results:
-        logger.info("file_search results: none")
-        return
-    logger.info("file_search results: %d", len(results))
-    for idx, result in enumerate(results, start=1):
-        logger.info(
-            "file_search[%d] file=%s score=%s attrs=%s",
-            idx,
-            result.get("filename"),
-            result.get("score"),
-            result.get("attributes"),
-        )
-
-def _log_file_search_calls(response: Any) -> None:
-    """Log file_search call details when available."""
+def _log_knowledge_search(response: Any) -> None:
+    """Log knowledge_search calls when available."""
     items = getattr(response, "output", []) or []
-    calls = [item for item in items if _item_type(item) == "file_search_call"]
+    calls = [
+        item
+        for item in items
+        if _item_type(item) == "function_call" and _item_field(item, "name") == "knowledge_search"
+    ]
     if not calls:
-        logger.info("file_search calls: none")
+        logger.info("knowledge_search calls: none")
         return
     for idx, item in enumerate(calls, start=1):
-        payload = _item_field(item, "queries") or _item_field(item, "query") or None
-        filters = _item_field(item, "filters") or _item_field(item, "filter") or None
         logger.info(
-            "file_search_call[%d] queries=%s filters=%s keys=%s",
+            "knowledge_search[%d] args=%s",
             idx,
-            payload,
-            filters,
-            list(item.keys()) if isinstance(item, dict) else None,
+            _item_field(item, "arguments"),
         )
 
 
@@ -267,25 +238,21 @@ def run_agent_session(
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 20
     tools: list[dict[str, Any]] = []
-    if agent_name != "coach":
-        tools.append(_build_file_search_tool(agent_vs_id, max_num_results))
     web_search_enabled = _web_search_enabled(agent_name)
     if web_search_enabled:
         tools.append(_build_web_search_tool())
     tools += tool_defs
-    debug_file_search = (
+    debug_knowledge_search = (
         include_debug_file_search
         or _env_flag("RPS_LLM_DEBUG_FILE_SEARCH")
         or _env_flag("RPS_LLM_FILE_SEARCH_DEBUG")
         or logger.isEnabledFor(logging.DEBUG)
     )
-    include = ["file_search_call.results"] if debug_file_search and agent_name != "coach" else None
     logger.info(
-        "tools: agent=%s stores=%s max_results=%s include_results=%s web_search=%s",
+        "tools: agent=%s stores=%s max_results=%s web_search=%s",
         agent_name,
         [agent_vs_id],
         max_num_results,
-        debug_file_search,
         web_search_enabled,
     )
 
@@ -312,17 +279,14 @@ def run_agent_session(
         )
         if reasoning:
             payload["reasoning"] = reasoning
-        if include is not None:
-            payload["include"] = include
         if force_search_flag:
-            payload["tool_choice"] = {"type": "file_search"}
+            payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
-        if debug_file_search:
+        if debug_knowledge_search:
             logger.info(
-                "responses.create: tool_choice=%s include=%s tools=%d",
+                "responses.create: tool_choice=%s tools=%d",
                 payload.get("tool_choice"),
-                payload.get("include"),
                 len(payload.get("tools") or []),
             )
         return create_response(runtime.client, payload, logger, stream_handlers=stream_handlers)
@@ -331,9 +295,8 @@ def run_agent_session(
     response = _create_response(force_search)
     previous_id_for_request = None
     last_text = response.output_text or extract_text_output(response) or ""
-    if debug_file_search:
-        _log_file_search_calls(response)
-        _log_file_search_results(response)
+    if debug_knowledge_search:
+        _log_knowledge_search(response)
     for summary in extract_reasoning_summaries(response):
         if summary in seen_summaries:
             continue
@@ -391,9 +354,8 @@ def run_agent_session(
             text_out = extract_text_output(response)
             if text_out:
                 last_text = text_out
-        if debug_file_search:
-            _log_file_search_calls(response)
-            _log_file_search_results(response)
+        if debug_knowledge_search:
+            _log_knowledge_search(response)
         for summary in extract_reasoning_summaries(response):
             if summary in seen_summaries:
                 continue

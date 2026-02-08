@@ -18,7 +18,7 @@ and a clean path to orchestration frameworks (CrewAI).
 ## Decision
 
 Adopt LiteLLM as the sole runtime path for LLM calls and move vector search to an
-embedded ChromaDB backend. For non-OpenAI providers, implement a **custom Coach
+embedded Qdrant backend. For non-OpenAI providers, implement a **custom Coach
 compaction strategy** to replace `/responses/compact` (OpenAI-only). Server mode
 and CrewAI orchestration are deferred to a second phase once parity with current
 behaviors (streaming, tool calls, prompt injection) is verified.

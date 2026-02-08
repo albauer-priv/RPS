@@ -70,16 +70,26 @@ def build_file_search_tool(
     state_path: Path = DEFAULT_STATE_PATH,
     max_num_results: int = 5,
 ) -> dict[str, Any]:
-    """Build a file_search tool payload for the Responses API."""
-    vector_store_ids = resolve_vectorstore_ids(
+    """Build a knowledge_search tool payload for the Responses API."""
+    resolve_vectorstore_ids(
         agent_name,
         knowledge_root=knowledge_root,
         state_path=state_path,
     )
     return {
-        "type": "file_search",
-        "vector_store_ids": vector_store_ids,
-        "max_num_results": max_num_results,
+        "type": "function",
+        "name": "knowledge_search",
+        "description": "Search the local knowledge vectorstore for relevant context.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "max_results": {"type": "integer", "default": max_num_results},
+                "tags": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
     }
 
 
@@ -154,9 +164,7 @@ def run_agent(
         "tools": [tool],
     }
     if force_file_search:
-        payload["tool_choice"] = {"type": "file_search"}
-    if include_results:
-        payload["include"] = ["file_search_call.results"]
+        payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
     if temperature is not None and supports_temperature(model):
         payload["temperature"] = temperature
     reasoning = build_reasoning_payload(model, reasoning_effort, reasoning_summary)

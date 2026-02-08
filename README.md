@@ -1,6 +1,6 @@
 # my-openai-platform
 
-Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge base.
+Scaffold for local vector stores with a unified, versioned knowledge base.
 
 ## Layout
 
@@ -37,7 +37,7 @@ Scaffold for OpenAI hosted vector stores with a unified, versioned knowledge bas
 1. Copy `.env.example` to `.env` and fill in `RPS_LLM_API_KEY` and `ATHLETE_ID` (Intervals.icu).
 2. Add documents under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
 3. Run `python scripts/bundle_schemas.py` (build bundled schemas for retrieval).
-4. (Deprecated) `python scripts/sync_vectorstores.py` — use the UI background sync (or run only for manual recovery).
+4. Vector store sync runs in the UI background; use `python scripts/smoke_vectorstores.py` for manual verification.
 
 Per-agent model overrides (optional):
 
@@ -65,8 +65,8 @@ Prerequisites:
 1. Copy `.env.example` to `.env` and set required keys.
 2. Install dependencies (`pip install -r requirements.txt` or `pip install -e .`).
 3. Build bundled schemas: `python scripts/bundle_schemas.py`.
-4. (Deprecated) Sync vector stores: `python scripts/sync_vectorstores.py` — UI now runs background sync; use CLI only for manual recovery.
-5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents --force-tool`.
+4. Vector store sync runs in the UI background; use `python scripts/smoke_vectorstores.py` for manual verification.
+5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.
 6. Run data pipeline: use the current CLI entrypoint for `parse-intervals` (do not use deprecated `rps.main`).
 7. Validate outputs: `python scripts/validate_outputs.py`.
 
@@ -195,7 +195,7 @@ PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer
 
 ## Vector store runtime
 
-- (Deprecated) `scripts/sync_vectorstores.py` writes `.cache/vectorstores_state.json` with store IDs (UI background sync maintains this state now).
+- The UI background sync writes `.cache/vectorstores_state.json` with collection IDs (use `scripts/smoke_vectorstores.py` to verify).
 - Use `rps.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
 - Load prompts from disk with `rps.prompts.loader.agent_system_prompt(...)`.
 

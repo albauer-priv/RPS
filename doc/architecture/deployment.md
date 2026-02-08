@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-06
 Owner: Architecture
 ---
 # Deployment
 
 Version: 1.0  
 Status: Draft  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-02-06
 
 ---
 
@@ -24,6 +24,7 @@ Core variables:
 
 - `RPS_LLM_API_KEY`
 - `RPS_LLM_MODEL` (optional)
+- `RPS_LLM_EMBEDDING_MODEL`
 - `ATHLETE_ID`
 - `API_KEY` (Intervals.icu)
 - `BASE_URL` (Intervals.icu)
@@ -35,6 +36,8 @@ Optional:
 - `RPS_LLM_MODEL_WEEK_PLANNER`
 - `RPS_LLM_MODEL_WORKOUT_BUILDER`
 - `RPS_LLM_MODEL_PERFORMANCE_ANALYSIS`
+- `RPS_LLM_VECTORSTORE_PATH`
+- `RPS_LLM_EMBEDDING_BATCH_SIZE`
 - `ATHLETE_WORKSPACE_ROOT`
 - `SCHEMA_DIR`
 - `PROMPTS_DIR`
