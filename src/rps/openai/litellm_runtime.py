@@ -290,8 +290,9 @@ class LiteLLMResponses:
             "api_key": self._config.api_key,
             "api_base": self._config.base_url,
             "organization": self._config.org_id,
-            "project": self._config.project_id,
         }
+        if self._config.project_id:
+            kwargs["extra_body"] = {"project": self._config.project_id}
         if temperature is not None:
             kwargs["temperature"] = temperature
         if tools:
@@ -358,14 +359,16 @@ class LiteLLMResponses:
             {"role": "system", "content": compact_prompt},
             {"role": "user", "content": json.dumps(input_items, ensure_ascii=False)},
         ]
-        response = litellm.completion(
-            model=model,
-            messages=messages,
-            api_key=self._config.api_key,
-            api_base=self._config.base_url,
-            organization=self._config.org_id,
-            project=self._config.project_id,
-        )
+        compact_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "api_key": self._config.api_key,
+            "api_base": self._config.base_url,
+            "organization": self._config.org_id,
+        }
+        if self._config.project_id:
+            compact_kwargs["extra_body"] = {"project": self._config.project_id}
+        response = litellm.completion(**compact_kwargs)
         choice = _extract_choice(response)
         message = _choice_message(choice) if choice else None
         text = message.get("content") if isinstance(message, dict) else getattr(message, "content", None)
