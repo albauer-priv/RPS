@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 
 import streamlit as st
@@ -76,6 +77,44 @@ injected = _build_injection_block("coach", mode="coach")
 instructions = base_prompt
 if injected:
     instructions = f"{base_prompt}\n\n{injected}"
+
+preload_enabled = os.getenv("RPS_COACH_PRELOAD_ARTIFACTS", "1").lower() in {"1", "true", "yes"}
+if preload_enabled:
+    per_artifact_max = int(os.getenv("RPS_COACH_PRELOAD_MAX_CHARS", "12000"))
+    context_chunks: list[str] = []
+
+    def _stringify(value: object) -> str:
+        text = json.dumps(value, ensure_ascii=False)
+        if len(text) > per_artifact_max:
+            return text[:per_artifact_max] + "...(truncated)"
+        return text
+
+    def _append_context(label: str, fn, args: dict[str, object]) -> None:
+        try:
+            result = fn(args)
+        except Exception as exc:
+            result = {"ok": False, "error": str(exc)}
+        context_chunks.append(f"{label}:\n{_stringify(result)}")
+
+    _append_context("athlete_profile", handlers["workspace_get_input"], {"input_type": "athlete_profile"})
+    _append_context("planning_events", handlers["workspace_get_input"], {"input_type": "planning_events"})
+    _append_context("logistics", handlers["workspace_get_input"], {"input_type": "logistics"})
+    _append_context("availability", handlers["workspace_get_input"], {"input_type": "availability"})
+    _append_context("activities_trend", handlers["workspace_get_latest"], {"artifact_type": "ACTIVITIES_TREND"})
+    _append_context("activities_actual", handlers["workspace_get_latest"], {"artifact_type": "ACTIVITIES_ACTUAL"})
+    _append_context("season_plan", handlers["workspace_get_latest"], {"artifact_type": "SEASON_PLAN"})
+    _append_context("phase_preview", handlers["workspace_get_latest"], {"artifact_type": "PHASE_PREVIEW"})
+    _append_context("phase_guardrails", handlers["workspace_get_latest"], {"artifact_type": "PHASE_GUARDRAILS"})
+    _append_context("kpi_profile", handlers["workspace_get_latest"], {"artifact_type": "KPI_PROFILE"})
+    _append_context("zone_model", handlers["workspace_get_latest"], {"artifact_type": "ZONE_MODEL"})
+    _append_context("wellness", handlers["workspace_get_latest"], {"artifact_type": "WELLNESS"})
+
+    if context_chunks:
+        instructions = (
+            f"{instructions}\n\n"
+            "Workspace artifacts (auto-loaded). Use these instead of asking for missing artifacts:\n"
+            + "\n\n".join(context_chunks)
+        )
 
 allow_web_search = False
 if os.getenv("RPS_LLM_ENABLE_WEB_SEARCH", "").lower() in {"1", "true", "yes"}:
