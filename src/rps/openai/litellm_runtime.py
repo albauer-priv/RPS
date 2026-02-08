@@ -283,13 +283,6 @@ class LiteLLMResponses:
         tool_choice = _tool_choice_from_payload(payload.get("tool_choice"))
         temperature = payload.get("temperature")
         stream = bool(payload.get("stream"))
-        provider_override = None
-        if (
-            self._config.base_url
-            and "api.groq.com" in self._config.base_url
-            and str(model).startswith("openai/")
-        ):
-            provider_override = "groq"
         kwargs: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -298,8 +291,6 @@ class LiteLLMResponses:
             "api_base": self._config.base_url,
             "organization": self._config.org_id,
         }
-        if provider_override:
-            kwargs["custom_llm_provider"] = provider_override
         if self._config.project_id:
             kwargs["extra_body"] = {"project": self._config.project_id}
         if temperature is not None:
@@ -359,13 +350,6 @@ class LiteLLMResponses:
         instructions = payload.get("instructions") or ""
         if not model:
             raise RuntimeError("LiteLLM compact requires model")
-        provider_override = None
-        if (
-            self._config.base_url
-            and "api.groq.com" in self._config.base_url
-            and str(model).startswith("openai/")
-        ):
-            provider_override = "groq"
         compact_prompt = (
             "Summarize the following conversation for future context. "
             "Keep key facts, decisions, and open questions. "
@@ -382,8 +366,6 @@ class LiteLLMResponses:
             "api_base": self._config.base_url,
             "organization": self._config.org_id,
         }
-        if provider_override:
-            compact_kwargs["custom_llm_provider"] = provider_override
         if self._config.project_id:
             compact_kwargs["extra_body"] = {"project": self._config.project_id}
         response = litellm.completion(**compact_kwargs)
