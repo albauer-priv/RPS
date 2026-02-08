@@ -98,12 +98,17 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
         if isinstance(item, dict) and item.get("type") == "function_call_output":
             name = item.get("name")
             if not name:
-                LOGGER.warning("LiteLLM tool output missing name; tool_call_id=%s", item.get("call_id"))
+                name = item.get("call_id") or "tool"
+                LOGGER.warning(
+                    "LiteLLM tool output missing name; using fallback name=%s tool_call_id=%s",
+                    name,
+                    item.get("call_id"),
+                )
             messages.append(
                 {
                     "role": "tool",
                     "tool_call_id": item.get("call_id"),
-                    **({"name": name} if name else {}),
+                    "name": name,
                     "content": _coerce_content(item.get("output")),
                 }
             )
