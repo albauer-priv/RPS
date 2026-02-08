@@ -92,16 +92,26 @@ def _coerce_content(content: Any) -> str:
 
 def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -> list[dict[str, Any]]:
     messages: list[dict[str, Any]] = []
+    call_name_by_id: dict[str, str] = {}
     if instructions:
         messages.append({"role": "system", "content": instructions})
     for item in input_items:
         if isinstance(item, dict) and "role" in item:
             messages.append({"role": item["role"], "content": _coerce_content(item.get("content"))})
             continue
+        if isinstance(item, dict) and item.get("type") == "function_call":
+            call_id = item.get("call_id")
+            name = item.get("name")
+            if call_id and name:
+                call_name_by_id[call_id] = name
+            continue
         if isinstance(item, dict) and item.get("type") == "function_call_output":
             name = item.get("name")
             if not name:
-                name = item.get("call_id") or "tool"
+                call_id = item.get("call_id")
+                name = call_name_by_id.get(call_id) if call_id else None
+                if not name:
+                    name = "tool"
                 LOGGER.warning(
                     "LiteLLM tool output missing name; using fallback name=%s tool_call_id=%s",
                     name,

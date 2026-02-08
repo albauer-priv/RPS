@@ -126,6 +126,13 @@ def setup_logging(
     console_level: str | int | None = None,
 ) -> None:
     """Configure root logging with optional file output."""
+    class _DropLiteLLMDebugFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            if record.levelno > logging.DEBUG:
+                return True
+            name = record.name
+            return not (name.startswith("litellm") or name.startswith("LiteLLM"))
+
     root = logging.getLogger()
     root.handlers.clear()
     env_file_level = os.getenv("RPS_LOG_LEVEL_FILE")
@@ -151,6 +158,7 @@ def setup_logging(
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(console_level_value)
+        stream_handler.addFilter(_DropLiteLLMDebugFilter())
         handlers = [stream_handler]
 
     if log_file:
@@ -166,6 +174,7 @@ def setup_logging(
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(console_level_value)
+        stream_handler.addFilter(_DropLiteLLMDebugFilter())
         handlers = [stream_handler]
 
     for handler in handlers:

@@ -747,7 +747,10 @@ def run_agent_multi_output(
     def _create_response(force_search_flag: bool, forced_tool_name: str | None = None):
         if forced_tool_name:
             selected_tool = store_tools_by_name.get(forced_tool_name)
-            tools_for_call = [selected_tool] if selected_tool else tools_all
+            if selected_tool:
+                tools_for_call = [*tools_read, selected_tool]
+            else:
+                tools_for_call = tools_all
         elif force_search_flag:
             tools_for_call = tools_read
         else:
