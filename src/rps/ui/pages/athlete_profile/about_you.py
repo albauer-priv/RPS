@@ -97,16 +97,22 @@ with col_right:
     )
 
 st.subheader("Goals")
+st.markdown("**Primary objective**")
+st.caption("Describe the single most important outcome for the season. Example: Finish 400 km brevet, top 20% age group, steady pacing.")
 primary_objective = st.text_area(
     "Primary objective",
     value=objectives.get("primary", ""),
     height=80,
 )
+st.markdown("**Secondary objectives**")
+st.caption("List supporting goals, one per line. Example: Complete two 300 km events; Improve endurance anchor to 240 W.")
 secondary_objectives = st.text_area(
     "Secondary objectives (one per line)",
     value="\n".join(objectives.get("secondary") or []),
     height=120,
 )
+st.markdown("**Goal priority order**")
+st.caption("Rank goals from most to least important, one per line. Example: Finish 400 km; Complete 300 km; Maintain 70 kg.")
 priority_order = st.text_area(
     "Goal priority order (one per line)",
     value="\n".join(objectives.get("priority_order") or []),
@@ -114,16 +120,22 @@ priority_order = st.text_area(
 )
 
 st.subheader("Constraints")
+st.markdown("**Time constraints**")
+st.caption("Training availability and limits. Example: Max 8h/week; no training Tue/Thu evenings.")
 time_constraints = st.text_area(
     "Time constraints",
     value=constraints.get("time_constraints", ""),
     height=80,
 )
+st.markdown("**Environmental constraints**")
+st.caption("Weather, terrain, travel, or facility limits. Example: Winter indoor only; no MTB trails.")
 environmental_constraints = st.text_area(
     "Environmental constraints",
     value=constraints.get("environmental_constraints", ""),
     height=80,
 )
+st.markdown("**Injury history**")
+st.caption("Relevant injuries and current limitations. Example: Left knee pain in 2024, avoid high-impact running.")
 injury_history = st.text_area(
     "Injury history",
     value=constraints.get("injury_history", ""),

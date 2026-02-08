@@ -11,8 +11,10 @@ def test_athlete_profile_pages_render():
     ]
     for page in pages:
         at = AppTest.from_file(page)
-        at.run()
+        at.run(timeout=10)
         assert len(at.error) == 0
+        if page.endswith("about_you.py"):
+            assert any(button.label == "Save Profile & Goals" for button in at.button)
         if page.endswith("events.py"):
             assert any(button.label == "Save Events" for button in at.button)
         if page.endswith("logistics.py"):
