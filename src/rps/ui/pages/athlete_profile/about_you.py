@@ -150,21 +150,25 @@ strengths = st.text_area(
     value="\n".join(data.get("strengths") or []),
     height=120,
 )
+st.caption("List performance strengths. Example: High durability base; Strong long-distance pacing.")
 limitations = st.text_area(
     "Limitations (one per line)",
     value="\n".join(data.get("limitations") or []),
     height=120,
 )
+st.caption("List limiting factors to address. Example: Weak climbing; low cadence efficiency.")
 risk_flags = st.text_area(
     "Risk flags (one per line)",
     value="\n".join(data.get("risk_flags") or []),
     height=120,
 )
+st.caption("List risk factors that need monitoring. Example: Masters athlete (50+); history of knee pain.")
 success_criteria = st.text_area(
     "Success criteria (one per line)",
     value="\n".join(data.get("success_criteria") or []),
     height=120,
 )
+st.caption("Define how success is measured. Example: Finish 400 km within time limit; steady power without bonk.")
 
 if st.button("Save Profile & Goals", width="content"):
     run_ts = datetime.now(timezone.utc)
