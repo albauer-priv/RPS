@@ -665,6 +665,11 @@ class Chat():
                         if fn.name == item.name:
                             handler = fn
                             break
+                LOGGER.info(
+                    "Coach tool call name=%s args_len=%d",
+                    item.name,
+                    len(item.arguments or ""),
+                )
                 try:
                     if handler is None:
                         raise ValueError(f"No handler for tool '{item.name}'")
@@ -672,6 +677,11 @@ class Chat():
                     output = str(result)
                 except Exception as exc:
                     output = f"Tool error: {exc}"
+                LOGGER.info(
+                    "Coach tool output name=%s output_len=%d",
+                    item.name,
+                    len(output),
+                )
                 self._input.append({
                     "type": "function_call_output",
                     "call_id": item.call_id,
