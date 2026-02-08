@@ -299,6 +299,27 @@ class LiteLLMResponses:
         messages = _messages_from_input(input_items, instructions)
         tools = _tools_from_payload(payload.get("tools"))
         tool_choice = _tool_choice_from_payload(payload.get("tool_choice"))
+        if tools:
+            valid_names = {
+                tool["function"]["name"]
+                for tool in tools
+                if tool.get("function") and tool["function"].get("name")
+            }
+            if tool_choice and isinstance(tool_choice, dict):
+                choice_name = (
+                    tool_choice.get("function", {}).get("name")
+                    if isinstance(tool_choice.get("function"), dict)
+                    else None
+                )
+                if choice_name and choice_name not in valid_names:
+                    LOGGER.warning(
+                        "LiteLLM tool_choice dropped: name not in tools name=%s",
+                        choice_name,
+                    )
+                    tool_choice = None
+        elif tool_choice:
+            LOGGER.warning("LiteLLM tool_choice dropped: no tools available")
+            tool_choice = None
         temperature = payload.get("temperature")
         stream = bool(payload.get("stream"))
         kwargs: dict[str, Any] = {
