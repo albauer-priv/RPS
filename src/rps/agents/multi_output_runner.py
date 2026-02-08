@@ -241,6 +241,11 @@ def run_agent_multi_output(
     temperature = temperature_override if temperature_override is not None else runtime.temperature
     agent_vs_id = runtime.vs_resolver.id_for_store_name(agent_vs_name)
     system_prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
+    client_config = getattr(runtime.client, "config", None)
+    base_url = getattr(client_config, "base_url", None) if client_config else None
+    is_groq = bool(str(model).startswith("groq/")) or (
+        isinstance(base_url, str) and "api.groq.com" in base_url
+    )
 
     def _load_load_estimation_spec_season() -> str | None:
         root = Path(__file__).resolve().parents[3]
@@ -860,17 +865,32 @@ def run_agent_multi_output(
                     ArtifactType.SEASON_PLAN,
                     ArtifactType.DES_ANALYSIS_REPORT,
                 }:
-                    attempted_forced_store = True
-                    input_list.append(
-                        {
-                            "role": "user",
-                            "content": (
-                                "Return only a schema-compliant JSON envelope and call the "
-                                f"{spec.tool_name} tool. Do not include any other text."
-                            ),
-                        }
-                    )
-                    response = _create_response(False, forced_tool_name=spec.tool_name)
+                    if is_groq:
+                        logger.info(
+                            "Groq detected: requesting JSON-only output before fallback store.",
+                        )
+                        input_list.append(
+                            {
+                                "role": "user",
+                                "content": (
+                                    "Return only a schema-compliant JSON envelope. "
+                                    "Do not include any other text."
+                                ),
+                            }
+                        )
+                        response = _create_response(False, forced_tool_name=None)
+                    else:
+                        attempted_forced_store = True
+                        input_list.append(
+                            {
+                                "role": "user",
+                                "content": (
+                                    "Return only a schema-compliant JSON envelope and call the "
+                                    f"{spec.tool_name} tool. Do not include any other text."
+                                ),
+                            }
+                        )
+                        response = _create_response(False, forced_tool_name=spec.tool_name)
                     if response.output_text:
                         last_text = response.output_text
                     else:
