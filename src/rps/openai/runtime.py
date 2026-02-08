@@ -146,7 +146,7 @@ def run_agent(
     reasoning_summary = os.getenv(f"RPS_LLM_REASONING_SUMMARY_{key}") or os.getenv("RPS_LLM_REASONING_SUMMARY")
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 5
-    client = get_client()
+    client = get_client(agent_name)
     system_prompt = agent_system_prompt(agent_name, prompts_dir=prompts_dir)
     tool = build_file_search_tool(
         agent_name,

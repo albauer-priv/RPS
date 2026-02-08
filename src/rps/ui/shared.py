@@ -398,9 +398,9 @@ def multi_runtime_for(agent_name: str):
 
     base = base_runtime()
     return MultiRuntime(
-        client=base["client"],
-        model=SETTINGS.openai_model,
-        temperature=SETTINGS.openai_temperature,
+        client=get_client(agent_name),
+        model=SETTINGS.model_for_agent(agent_name),
+        temperature=SETTINGS.temperature_for_agent(agent_name),
         reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
         reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
         prompt_loader=base["prompt_loader"],

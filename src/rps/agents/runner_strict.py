@@ -9,8 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from openai import OpenAI
-
 from rps.agents.tasks import AgentTask, OUTPUT_SPECS
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.reasoning import build_reasoning_payload
@@ -29,7 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class AgentRuntime:
     """Runtime dependencies for strict agent runs."""
-    client: OpenAI
+    client: Any
     model: str
     temperature: float | None
     reasoning_effort: str | None

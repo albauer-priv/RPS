@@ -10,8 +10,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from openai import OpenAI
-
 from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.response_utils import extract_reasoning_summaries, extract_text_output
@@ -27,7 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class AgentRuntime:
     """Runtime dependencies for running an agent."""
-    client: OpenAI
+    client: Any
     model: str
     temperature: float | None
     reasoning_effort: str | None

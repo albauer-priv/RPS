@@ -50,6 +50,7 @@ def render_coach_experiment() -> None:
             "model": model,
             "instructions": instructions,
             "api_key": api_key,
+            "agent_name": "coach",
         }
         if temperature and not model.startswith("gpt-5"):
             chat_kwargs["temperature"] = float(temperature)

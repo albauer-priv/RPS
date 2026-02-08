@@ -21,6 +21,7 @@ except Exception:  # pragma: no cover - optional dependency
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from rps.openai.response_utils import extract_text_output
+from rps.openai.client import get_client
 CHAT_HISTORY_INSTRUCTIONS = """
 - This conversation was loaded from a chat history file.
 - All input files uploaded so far were actually provided previously, so you should not treat them as new uploads.
@@ -148,6 +149,7 @@ class Chat():
         allow_image_generation: Optional[bool] = True,
         auto_compact_turns: Optional[int] = None,
         compact_model: Optional[str] = None,
+        agent_name: Optional[str] = None,
     ) -> None:
         """
         Initializes a Chat instance.
@@ -172,6 +174,7 @@ class Chat():
             allow_file_search (bool): Whether to allow file search functionality (default: True).
             allow_web_search (bool): Whether to allow web search functionality (default: True).
             allow_image_generation (bool): Whether to allow image generation functionality (default: True).
+            agent_name (str): Optional agent identifier for per-agent LLM config overrides.
         """
         self.api_key = os.getenv("RPS_LLM_API_KEY") if api_key is None else api_key
         self.model = model
@@ -197,7 +200,9 @@ class Chat():
         self.summary = "New Chat"
         self.input_tokens = 0
         self.output_tokens = 0
-        self._client = openai.OpenAI(api_key=self.api_key)
+        if api_key:
+            os.environ["RPS_LLM_API_KEY"] = api_key
+        self._client = get_client(agent_name)
         self._temp_dir = tempfile.TemporaryDirectory()
         self._selected_example = None
         self._input = []

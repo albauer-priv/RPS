@@ -381,9 +381,9 @@ def main() -> None:
 
         def runtime_for_agent(agent_name: str) -> AgentRuntime:
             return AgentRuntime(
-                client=base_runtime.client,
-                model=base_runtime.model,
-                temperature=base_runtime.temperature,
+                client=get_client(agent_name),
+                model=settings.model_for_agent(agent_name),
+                temperature=settings.temperature_for_agent(agent_name),
                 reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
                 reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
                 prompt_loader=base_runtime.prompt_loader,
@@ -392,9 +392,9 @@ def main() -> None:
 
         def multi_runtime_for_agent(agent_name: str) -> MultiRuntime:
             return MultiRuntime(
-                client=base_runtime.client,
-                model=base_runtime.model,
-                temperature=base_runtime.temperature,
+                client=get_client(agent_name),
+                model=settings.model_for_agent(agent_name),
+                temperature=settings.temperature_for_agent(agent_name),
                 reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
                 reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
                 prompt_loader=base_runtime.prompt_loader,

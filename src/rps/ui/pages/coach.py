@@ -107,6 +107,7 @@ if "coach_chat" not in st.session_state:
         "allow_image_generation": False,
         "placeholder": "Ask the coach…",
         "auto_compact_turns": 3,
+        "agent_name": "coach",
     }
     compact_turns = os.getenv("RPS_LLM_COACH_COMPACT_TURNS")
     if compact_turns:

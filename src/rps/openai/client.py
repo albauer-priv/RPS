@@ -1,20 +1,11 @@
-"""OpenAI client helpers."""
+"""LLM client helpers."""
 
 from __future__ import annotations
 
-from openai import OpenAI
-
-from rps.core.config import load_settings
+from rps.openai.litellm_runtime import LiteLLMClient, resolve_provider_config
 
 
-def get_client() -> OpenAI:
-    """Create an OpenAI client configured from environment settings."""
-    settings = load_settings()
-    kwargs: dict[str, str] = {}
-    if settings.openai_base_url:
-        kwargs["base_url"] = settings.openai_base_url
-    if settings.openai_org_id:
-        kwargs["organization"] = settings.openai_org_id
-    if settings.openai_project_id:
-        kwargs["project"] = settings.openai_project_id
-    return OpenAI(api_key=settings.openai_api_key, **kwargs)
+def get_client(agent_name: str | None = None) -> LiteLLMClient:
+    """Create a LiteLLM client configured from environment settings."""
+    config = resolve_provider_config(agent_name)
+    return LiteLLMClient(config)
