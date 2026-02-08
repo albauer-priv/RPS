@@ -42,4 +42,18 @@ class SchemaBundler:
                 return dict(obj)
             raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
-        return json.loads(json.dumps(bundled, default=_to_builtin))
+        resolved = json.loads(json.dumps(bundled, default=_to_builtin))
+        return self._strip_schema_ids(resolved, keep_root_id=True)
+
+    def _strip_schema_ids(self, schema: Any, *, keep_root_id: bool) -> Any:
+        """Remove nested $id values to avoid duplicate canonical URIs in bundled schemas."""
+        if isinstance(schema, dict):
+            result = {}
+            for key, value in schema.items():
+                if key == "$id" and not keep_root_id:
+                    continue
+                result[key] = self._strip_schema_ids(value, keep_root_id=False)
+            return result
+        if isinstance(schema, list):
+            return [self._strip_schema_ids(item, keep_root_id=False) for item in schema]
+        return schema

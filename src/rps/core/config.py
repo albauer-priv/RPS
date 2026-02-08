@@ -30,6 +30,8 @@ class AppSettings:
     openai_reasoning_summary: str | None
     openai_reasoning_effort_overrides: dict[str, str]
     openai_reasoning_summary_overrides: dict[str, str]
+    openai_max_completion_tokens: int | None
+    openai_max_completion_tokens_overrides: dict[str, int]
     workspace_root: Path
     schema_dir: Path
     prompts_dir: Path
@@ -55,6 +57,11 @@ class AppSettings:
         """Return the reasoning summary override for an agent, or the default."""
         key = normalize_agent_name(agent_name)
         return self.openai_reasoning_summary_overrides.get(key, self.openai_reasoning_summary)
+
+    def max_completion_tokens_for_agent(self, agent_name: str) -> int | None:
+        """Return max completion tokens override for an agent, or the default."""
+        key = normalize_agent_name(agent_name)
+        return self.openai_max_completion_tokens_overrides.get(key, self.openai_max_completion_tokens)
 
 
 def normalize_agent_name(value: str) -> str:
@@ -168,8 +175,31 @@ def load_app_settings() -> AppSettings:
         if agent_key:
             reasoning_summary_overrides[agent_key] = value
 
+    max_completion_overrides: dict[str, int] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("RPS_LLM_MAX_COMPLETION_TOKENS_") or key == "RPS_LLM_MAX_COMPLETION_TOKENS":
+            continue
+        parsed = _parse_int(value)
+        if parsed is None:
+            continue
+        agent_key = normalize_agent_name(key[len("RPS_LLM_MAX_COMPLETION_TOKENS_"):])
+        if agent_key:
+            max_completion_overrides[agent_key] = parsed
+
+    base_url = os.getenv("RPS_LLM_BASE_URL")
+    default_model = os.getenv("RPS_LLM_MODEL")
+    if not default_model:
+        if base_url and "api.groq.com" in base_url:
+            default_model = "groq/openai/gpt-oss-20b"
+        else:
+            default_model = "gpt-4.1"
+
+    default_max_completion = _parse_int(os.getenv("RPS_LLM_MAX_COMPLETION_TOKENS"))
+    if default_max_completion is None and base_url and "api.groq.com" in base_url:
+        default_max_completion = 2048
+
     return AppSettings(
-        openai_model=os.getenv("RPS_LLM_MODEL", "gpt-4.1"),
+        openai_model=default_model,
         openai_model_overrides=overrides,
         openai_temperature=_parse_float(os.getenv("RPS_LLM_TEMPERATURE")),
         openai_temperature_overrides=temp_overrides,
@@ -177,6 +207,8 @@ def load_app_settings() -> AppSettings:
         openai_reasoning_summary=os.getenv("RPS_LLM_REASONING_SUMMARY"),
         openai_reasoning_effort_overrides=reasoning_effort_overrides,
         openai_reasoning_summary_overrides=reasoning_summary_overrides,
+        openai_max_completion_tokens=default_max_completion,
+        openai_max_completion_tokens_overrides=max_completion_overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),

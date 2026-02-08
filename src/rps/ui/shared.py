@@ -403,6 +403,7 @@ def multi_runtime_for(agent_name: str):
         temperature=SETTINGS.temperature_for_agent(agent_name),
         reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
         reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
+        max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),
         prompt_loader=base["prompt_loader"],
         vs_resolver=base["vs_resolver"],
         schema_dir=SETTINGS.schema_dir,

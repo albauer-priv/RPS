@@ -142,6 +142,11 @@ def run_agent(
             os.getenv(f"RPS_LLM_TEMPERATURE_{key}") or os.getenv("RPS_LLM_TEMPERATURE")
         )
     key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
+    max_completion_tokens = _parse_int(
+        os.getenv(f"RPS_LLM_MAX_COMPLETION_TOKENS_{key}")
+        or os.getenv("RPS_LLM_MAX_COMPLETION_TOKENS")
+    )
+    key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
     reasoning_effort = os.getenv(f"RPS_LLM_REASONING_EFFORT_{key}") or os.getenv("RPS_LLM_REASONING_EFFORT")
     reasoning_summary = os.getenv(f"RPS_LLM_REASONING_SUMMARY_{key}") or os.getenv("RPS_LLM_REASONING_SUMMARY")
     if max_num_results is None:
@@ -167,6 +172,8 @@ def run_agent(
         payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
     if temperature is not None and supports_temperature(model):
         payload["temperature"] = temperature
+    if max_completion_tokens is not None:
+        payload["max_completion_tokens"] = max_completion_tokens
     reasoning = build_reasoning_payload(model, reasoning_effort, reasoning_summary)
     if reasoning:
         payload["reasoning"] = reasoning

@@ -46,6 +46,10 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Report page now surfaces Narrative/KPI Summary/Trend Analysis sections and hides raw JSON.
 * **Recent status:** Data & Metrics decoupling chart shows weekly trend plus per-activity values.
 * **Recent status:** Events page can upgrade legacy planning events payloads to restore all columns.
+* **Recent status:** Schema bundler strips nested `$id` values to prevent duplicate canonical-uri errors (Groq tool schema compile).
+* **Recent status:** Multi-output runner stages tools (read/search first, store-only second) to reduce token usage.
+* **Recent status:** LiteLLM Groq requests set `tool_choice=auto` and retry on TPM limits using `RPS_TPM_*` env.
+* **Recent status:** Added `RPS_LLM_MAX_COMPLETION_TOKENS` (and per-agent overrides) plus Groq default model fallback.
 
 ### Tech stack & constraints
 

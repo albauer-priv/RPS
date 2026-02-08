@@ -663,6 +663,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Athlete Profile now exposes a `Zones` page that renders the latest `zone_model.json` as a tabular overview (FTP ranges, watts, IF, intent) and appears in the navigation menu next to Availability and Logistics.
 - Added an agents TODO reminding us to reconcile the Phase page preview helpers before reapplying the custom UI/templating work.
 - Intervals data pipeline now compiles `historical_baseline` yearly summaries from full-year activity fetches.
+- `RPS_LLM_MAX_COMPLETION_TOKENS` with per-agent overrides via `RPS_LLM_MAX_COMPLETION_TOKENS_<AGENT>`.
 
 ### Changed
 - Historic Data now reads yearly summaries from the `historical_baseline` artifact and refreshes via the Intervals pipeline.
@@ -680,6 +681,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Athlete Profile tables now sort newest-first (events, logistics, yearly summary).
 - Activities Trend table now populates period and weekly aggregate fields from parquet cache.
 - Data & Metrics tables now include a newest-first toggle for trend/actual rows.
+- Schema bundler strips nested `$id` values to avoid duplicate canonical-uri errors for strict tool validation.
+- Multi-output runner stages tools (read/search first, store-only on forced tool calls) to reduce token load.
+- Groq LiteLLM requests use `tool_choice=auto` when tools are present and retry TPM limits via `RPS_TPM_*`.
+- Groq default model now falls back to `groq/openai/gpt-oss-20b` when `RPS_LLM_BASE_URL` points to Groq.
 
 ## [0.1.0] - 2026-01-20
 

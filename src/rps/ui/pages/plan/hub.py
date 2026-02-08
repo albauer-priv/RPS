@@ -214,6 +214,7 @@ def _runtime_for_agent(agent_name: str) -> AgentRuntime:
         temperature=SETTINGS.openai_temperature,
         reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
         reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
+        max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),
         prompt_loader=PromptLoader(SETTINGS.prompts_dir),
         vs_resolver=VectorStoreResolver(SETTINGS.vs_state_path),
         schema_dir=SETTINGS.schema_dir,

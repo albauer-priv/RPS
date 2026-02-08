@@ -375,6 +375,7 @@ def main() -> None:
             temperature=settings.openai_temperature,
             reasoning_effort=settings.openai_reasoning_effort,
             reasoning_summary=settings.openai_reasoning_summary,
+            max_completion_tokens=settings.openai_max_completion_tokens,
             prompt_loader=PromptLoader(settings.prompts_dir),
             vs_resolver=VectorStoreResolver(settings.vs_state_path),
         )
@@ -386,6 +387,7 @@ def main() -> None:
                 temperature=settings.temperature_for_agent(agent_name),
                 reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
                 reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
+                max_completion_tokens=settings.max_completion_tokens_for_agent(agent_name),
                 prompt_loader=base_runtime.prompt_loader,
                 vs_resolver=base_runtime.vs_resolver,
             )
@@ -397,6 +399,7 @@ def main() -> None:
                 temperature=settings.temperature_for_agent(agent_name),
                 reasoning_effort=settings.reasoning_effort_for_agent(agent_name),
                 reasoning_summary=settings.reasoning_summary_for_agent(agent_name),
+                max_completion_tokens=settings.max_completion_tokens_for_agent(agent_name),
                 prompt_loader=base_runtime.prompt_loader,
                 vs_resolver=base_runtime.vs_resolver,
                 schema_dir=settings.schema_dir,

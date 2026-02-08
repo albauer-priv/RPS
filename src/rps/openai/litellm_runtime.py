@@ -4,19 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable, TypeVar
 import json
 import logging
 import os
 import re
+import time
 import uuid
 
 import litellm
+from litellm import exceptions as litellm_exceptions
 
 from rps.core.config import normalize_agent_name
 
 
 LOGGER = logging.getLogger(__name__)
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True)
@@ -155,6 +158,48 @@ def _tool_choice_from_payload(tool_choice: dict[str, Any] | str | None) -> dict[
     if tool_choice.get("type") == "function" and tool_choice.get("name"):
         return {"type": "function", "function": {"name": tool_choice["name"]}}
     return tool_choice
+
+
+def _is_groq_model(model: str | None, api_base: str | None) -> bool:
+    if model and model.lower().startswith("groq/"):
+        return True
+    if api_base and "api.groq.com" in api_base:
+        return True
+    return False
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    if isinstance(exc, litellm_exceptions.RateLimitError):
+        return True
+    message = str(exc).lower()
+    return "rate limit" in message or "rate_limit" in message or "429" in message
+
+
+def _with_retry(fn: Callable[[], _T], *, label: str) -> _T:
+    max_retries = int(os.getenv("RPS_TPM_RETRY_COUNT", "2") or "2")
+    base_delay = float(os.getenv("RPS_TPM_WAIT_MULTIPLIER", "2") or "2")
+    attempt = 0
+    while True:
+        try:
+            return fn()
+        except Exception as exc:  # noqa: BLE001 - retry wrapper
+            if not _is_rate_limit_error(exc) or attempt >= max_retries:
+                raise
+            delay = base_delay * (2 ** attempt)
+            LOGGER.warning(
+                "LiteLLM rate limit (%s). Retrying in %.2fs (attempt %d/%d).",
+                label,
+                delay,
+                attempt + 1,
+                max_retries,
+            )
+            LOGGER.info(
+                "Retry env: RPS_TPM_RETRY_COUNT=%s RPS_TPM_WAIT_MULTIPLIER=%s",
+                os.getenv("RPS_TPM_RETRY_COUNT"),
+                os.getenv("RPS_TPM_WAIT_MULTIPLIER"),
+            )
+            time.sleep(delay)
+            attempt += 1
 
 
 def _usage_from_response(response: Any) -> Any:
@@ -337,10 +382,18 @@ class LiteLLMResponses:
                         choice_name,
                     )
                     tool_choice = None
+            if tool_choice and _is_groq_model(model, self._config.base_url):
+                LOGGER.warning(
+                    "LiteLLM tool_choice dropped for Groq: choice=%s tools=%s",
+                    tool_choice,
+                    sorted(valid_names),
+                )
+                tool_choice = None
         elif tool_choice:
             LOGGER.warning("LiteLLM tool_choice dropped: no tools available")
             tool_choice = None
         temperature = payload.get("temperature")
+        max_completion_tokens = payload.get("max_completion_tokens")
         stream = bool(payload.get("stream"))
         kwargs: dict[str, Any] = {
             "model": model,
@@ -354,13 +407,21 @@ class LiteLLMResponses:
             kwargs["extra_body"] = {"project": self._config.project_id}
         if temperature is not None:
             kwargs["temperature"] = temperature
+        if max_completion_tokens is not None:
+            kwargs["max_completion_tokens"] = max_completion_tokens
         if tools:
             kwargs["tools"] = tools
         if tool_choice:
             kwargs["tool_choice"] = tool_choice
+        if tools and _is_groq_model(model, self._config.base_url):
+            # Groq examples expect explicit tool_choice; keep it non-forcing.
+            kwargs["tool_choice"] = "auto"
 
         if not stream:
-            response = litellm.completion(**kwargs)
+            response = _with_retry(
+                lambda: litellm.completion(**kwargs),
+                label=f"{model}:completion",
+            )
             choice = _extract_choice(response)
             message = _choice_message(choice) if choice else None
             text = None
@@ -376,7 +437,10 @@ class LiteLLMResponses:
             )
 
         def _event_stream():
-            stream_resp = litellm.completion(**kwargs)
+            stream_resp = _with_retry(
+                lambda: litellm.completion(**kwargs),
+                label=f"{model}:stream",
+            )
             collected_text = ""
             collected_calls: list[dict[str, Any]] = []
             for text_delta, tool_calls in _iter_stream_chunks(stream_resp):

@@ -36,6 +36,7 @@ class AgentRuntime:
     temperature: float | None
     reasoning_effort: str | None
     reasoning_summary: str | None
+    max_completion_tokens: int | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
     schema_dir: Path
@@ -303,6 +304,11 @@ def run_agent_multi_output(
 
     bundler = SchemaBundler(runtime.schema_dir)
     store_tools = [build_strict_store_tool(bundler, spec) for spec in output_specs]
+    store_tools_by_name = {}
+    for tool in store_tools:
+        name = tool.get("name") or tool.get("function", {}).get("name")
+        if name:
+            store_tools_by_name[name] = tool
 
     read_ctx = ReadToolContext(athlete_id=athlete_id, workspace_root=runtime.workspace_root, agent_name=agent_name)
     read_defs = read_tool_defs()
@@ -323,11 +329,12 @@ def run_agent_multi_output(
         or logger.isEnabledFor(logging.DEBUG)
     )
 
-    tools: list[dict[str, Any]] = []
+    tools_read: list[dict[str, Any]] = []
     web_search_enabled = _web_search_enabled(agent_name)
     if web_search_enabled:
-        tools.append(_web_search_tool())
-    tools += [*read_defs, *store_tools]
+        tools_read.append(_web_search_tool())
+    tools_read += [*read_defs]
+    tools_all = [*tools_read, *store_tools]
     logger.info(
         "tools: agent=%s stores=%s max_results=%s web_search=%s",
         agent_name,
@@ -738,9 +745,16 @@ def run_agent_multi_output(
         logger.warning("No-tool-call summary: %s", json.dumps(summary, ensure_ascii=False))
 
     def _create_response(force_search_flag: bool, forced_tool_name: str | None = None):
+        if forced_tool_name:
+            selected_tool = store_tools_by_name.get(forced_tool_name)
+            tools_for_call = [selected_tool] if selected_tool else tools_all
+        elif force_search_flag:
+            tools_for_call = tools_read
+        else:
+            tools_for_call = tools_all
         payload: dict[str, Any] = {
             "model": model,
-            "tools": tools,
+            "tools": tools_for_call,
             "input": input_list,
         }
         reasoning = build_reasoning_payload(
@@ -758,10 +772,12 @@ def run_agent_multi_output(
             logger.info(
                 "responses.create payload: tool_choice=%s tools=%s",
                 payload.get("tool_choice"),
-                [tool.get("type") for tool in tools],
+                [tool.get("type") for tool in tools_for_call],
             )
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
+        if runtime.max_completion_tokens is not None:
+            payload["max_completion_tokens"] = runtime.max_completion_tokens
         start = time.perf_counter()
         response = create_response(runtime.client, payload, logger, stream_handlers=stream_handlers)
         elapsed = time.perf_counter() - start

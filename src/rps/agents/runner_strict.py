@@ -32,6 +32,7 @@ class AgentRuntime:
     temperature: float | None
     reasoning_effort: str | None
     reasoning_summary: str | None
+    max_completion_tokens: int | None
     prompt_loader: PromptLoader
     vs_resolver: VectorStoreResolver
     schema_dir: Path
@@ -160,6 +161,8 @@ def run_agent_task_strict(
             payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
         if temperature is not None and supports_temperature(model):
             payload["temperature"] = temperature
+        if runtime.max_completion_tokens is not None:
+            payload["max_completion_tokens"] = runtime.max_completion_tokens
         return create_response(runtime.client, payload, logger)
 
     force_search = force_file_search
