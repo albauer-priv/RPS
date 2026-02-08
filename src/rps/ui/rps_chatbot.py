@@ -296,8 +296,10 @@ class Chat():
                 })
             sections.append(s)
         if sections:
-            summary_model = os.getenv("RPS_LLM_MODEL_COACH_SUMMARY") or os.getenv(
-                "RPS_LLM_MODEL_SUMMARY", "gpt-5-nano"
+            summary_model = (
+                os.getenv("RPS_LLM_MODEL_COACH_SUMMARY")
+                or os.getenv("RPS_LLM_MODEL_SUMMARY")
+                or self.model
             )
             response = self._client.responses.create(
                 model=summary_model,
