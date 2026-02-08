@@ -395,6 +395,12 @@ class LiteLLMResponses:
         messages = _messages_from_input(input_items, instructions)
         tools = _tools_from_payload(payload.get("tools"))
         tool_choice = _tool_choice_from_payload(payload.get("tool_choice"))
+        force_tool_choice = os.getenv("RPS_LLM_GROQ_FORCE_TOOL_CHOICE", "0").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
         if tools:
             tool_names = [
                 tool["function"]["name"]
@@ -424,7 +430,7 @@ class LiteLLMResponses:
                         choice_name,
                     )
                     tool_choice = None
-            if tool_choice and _is_groq_model(model, self._config.base_url):
+            if tool_choice and _is_groq_model(model, self._config.base_url) and not force_tool_choice:
                 LOGGER.warning(
                     "LiteLLM tool_choice dropped for Groq: choice=%s tools=%s",
                     tool_choice,
@@ -455,7 +461,7 @@ class LiteLLMResponses:
             kwargs["tools"] = tools
         if tool_choice:
             kwargs["tool_choice"] = tool_choice
-        if tools and _is_groq_model(model, self._config.base_url):
+        if tools and _is_groq_model(model, self._config.base_url) and not force_tool_choice:
             # Groq examples expect explicit tool_choice; keep it non-forcing.
             kwargs["tool_choice"] = "auto"
         debug_tools = os.getenv("RPS_LLM_DEBUG_TOOLS", "0").strip().lower() in (
