@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, datetime, timezone
 
 import streamlit as st
@@ -18,6 +19,7 @@ from rps.ui.shared import (
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType, Authority
 
+logger = logging.getLogger(__name__)
 DEFAULT_EVENT_TYPES = [
     "BREVET",
     "GRAVEL",
@@ -84,7 +86,6 @@ EVENT_COLUMNS = [
     "elevation_m",
     "expected_duration",
     "time_limit",
-    "objective",
 ]
 
 
@@ -96,6 +97,8 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
         normalized["rank"] = normalized.get("priority_rank", 1)
     if not normalized.get("priority"):
         normalized["priority"] = "A"
+    if not normalized.get("goal") and normalized.get("objective"):
+        normalized["goal"] = normalized.get("objective")
     normalized.setdefault("event_name", "")
     normalized.setdefault("date", "")
     normalized.setdefault("event_type", event_type_options[0] if event_type_options else "")
@@ -104,7 +107,7 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
     normalized.setdefault("elevation_m", 0)
     normalized.setdefault("expected_duration", "TBD")
     normalized.setdefault("time_limit", "TBD")
-    normalized.setdefault("objective", "")
+    normalized.pop("objective", None)
     return normalized
 
 
@@ -131,7 +134,6 @@ def _to_storage_event(entry: dict[str, object]) -> dict[str, object]:
         "elevation_m": entry.get("elevation_m") or 0,
         "expected_duration": str(entry.get("expected_duration") or "").strip(),
         "time_limit": str(entry.get("time_limit") or "").strip(),
-        "objective": str(entry.get("objective") or "").strip(),
     }
 
 
@@ -159,7 +161,6 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
         "elevation_m",
         "expected_duration",
         "time_limit",
-        "objective",
     ]
     for idx, row in enumerate(rows, start=1):
         for field in required_fields:
@@ -218,6 +219,13 @@ def _save_events_payload(
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     storage_events = [_to_storage_event(event) for event in _sort_events(ui_events)]
+    replaced = sum(
+        1
+        for event in ui_events
+        if not event.get("goal") and event.get("objective")
+    )
+    if replaced:
+        logger.info("Events upgrade mapped objective->goal rows=%d", replaced)
     payload = {"events": storage_events}
     store.save_version(
         athlete_id,
@@ -226,7 +234,7 @@ def _save_events_payload(
         payload,
         payload_meta={
             "schema_id": "PlanningEventsInterface",
-            "schema_version": "1.1",
+            "schema_version": "1.2",
             "version": "1.0",
             "authority": Authority.BINDING.value,
             "owner_agent": "User",
@@ -293,7 +301,6 @@ events_df = st.data_editor(
             "Time Limit",
             help="Use HH:MM or a clear text limit (e.g. 24:00, TBD).",
         ),
-        "objective": st.column_config.TextColumn("Objective"),
     },
     column_order=EVENT_COLUMNS,
 )

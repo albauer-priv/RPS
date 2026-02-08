@@ -82,7 +82,7 @@ Owner: Data Model / UI
 * **Logistics (context events)**
   - Non‑training events (travel/work/weather/etc.) with impact (availability/modality/recovery/data_quality)
 * **Planning Events**
-  - A/B/C events for planning with rich fields (distance, elevation, expected duration, objective, time limit)
+  - A/B/C events for planning with rich fields (distance, elevation, expected duration, time limit)
 * **Historical Baseline (new artefact)**
   - Aggregated from Intervals (kJ/year, kJ/day, kJ/hour, long‑ride tolerance, etc.)
   - Updated on demand via UI action
@@ -135,7 +135,7 @@ flowchart TD
   - `athlete_profile.schema.json` (goals + profile)
   - `availability.schema.json` (editable input artefact)
   - `logistics.schema.json` (context formerly in events.md)
-  - `planning_events.schema.json` (A/B/C with fields like distance, time limit, elevation, objective)
+  - `planning_events.schema.json` (A/B/C with fields like distance, time limit, elevation)
   - `historical_baseline.schema.json` (Intervals‑aggregated metrics)
   - (Optional) `goals.schema.json` if we want strict separation from profile
 * Existing:

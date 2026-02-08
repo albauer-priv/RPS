@@ -2,7 +2,7 @@
 Type: InterfaceSpecification
 Interface-For: PLANNING_EVENTS
 Interface-ID: PlanningEventsInterface
-Version: 1.1
+Version: 1.2
 
 Scope: Shared
 Authority: Binding
@@ -42,7 +42,6 @@ Each event MUST include:
 - `elevation_m`
 - `expected_duration`
 - `time_limit`
-- `objective`
 
 ## 3) Forbidden Content (Binding)
 - Planning outputs, load corridors, or workout prescriptions.

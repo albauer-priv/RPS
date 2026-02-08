@@ -7,3 +7,5 @@ def test_events_page_renders():
     assert len(at.error) == 0
     labels = {button.label for button in at.button}
     assert "Save Events" in labels
+    assert at.dataframe, "Expected planning events data editor"
+    assert "objective" not in at.dataframe[0].value.columns
