@@ -89,6 +89,7 @@ if os.getenv("RPS_LLM_ENABLE_WEB_SEARCH", "").lower() in {"1", "true", "yes"}:
 model = os.getenv("RPS_LLM_MODEL_COACH", "gpt-5-mini")
 use_background = os.getenv("RPS_LLM_COACH_BACKGROUND", "").lower() in {"1", "true", "yes"}
 poll_interval = os.getenv("RPS_LLM_COACH_POLL_INTERVAL_SEC")
+base_url = os.getenv("RPS_LLM_BASE_URL_COACH") or os.getenv("RPS_LLM_BASE_URL")
 chat = st.session_state.get("coach_chat")
 if chat and not isinstance(chat, Chat):
     st.session_state.pop("coach_chat", None)
@@ -123,7 +124,7 @@ if "coach_chat" not in st.session_state:
         chat_kwargs["temperature"] = float(temperature)
     st.session_state.coach_chat = Chat(**chat_kwargs)
 
-ui_log(f"Coach initialized with model={model}")
+ui_log(f"Coach initialized with model={model} base_url={base_url or 'default'}")
 
 st.session_state.coach_chat.use_background = use_background
 if poll_interval:

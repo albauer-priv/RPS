@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Planning Events no longer include an `objective` field; legacy values are mapped into `goal` on load with schema bumped to 1.2.
 - Events page now auto-upgrades legacy planning events on load instead of prompting.
 - About You page now includes guidance headings and examples for goals, constraints, and assessment fields.
+- Coach page now logs the effective model and base URL on initialization.
 - Renamed LLM environment variables from `OPENAI_*` to `RPS_LLM_*` (no backward compatibility) and grouped per-agent overrides in `.env.example`.
 - Replaced OpenAI file_search vectorstores with embedded Qdrant and a `knowledge_search` tool for local retrieval.
 - Routed Responses-style agent/runtime calls through a LiteLLM adapter with per-agent config overrides.
