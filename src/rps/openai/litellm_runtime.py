@@ -451,29 +451,29 @@ class LiteLLMResponses:
             kwargs["temperature"] = temperature
         if max_completion_tokens is not None:
             kwargs["max_completion_tokens"] = max_completion_tokens
-    if tools:
-        kwargs["tools"] = tools
-    if tool_choice:
-        kwargs["tool_choice"] = tool_choice
-    if tools and _is_groq_model(model, self._config.base_url):
-        # Groq examples expect explicit tool_choice; keep it non-forcing.
-        kwargs["tool_choice"] = "auto"
-    debug_tools = os.getenv("RPS_LLM_DEBUG_TOOLS", "0").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-        "on",
-    )
-    if debug_tools:
-        LOGGER.info(
-            "LiteLLM request meta model=%s base_url=%s stream=%s tools=%s tool_choice=%s messages=%s",
-            model,
-            self._config.base_url,
-            stream,
-            [tool.get(\"function\", {}).get(\"name\") for tool in tools] if tools else [],
-            tool_choice,
-            _summarize_messages(messages),
+        if tools:
+            kwargs["tools"] = tools
+        if tool_choice:
+            kwargs["tool_choice"] = tool_choice
+        if tools and _is_groq_model(model, self._config.base_url):
+            # Groq examples expect explicit tool_choice; keep it non-forcing.
+            kwargs["tool_choice"] = "auto"
+        debug_tools = os.getenv("RPS_LLM_DEBUG_TOOLS", "0").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
         )
+        if debug_tools:
+            LOGGER.info(
+                "LiteLLM request meta model=%s base_url=%s stream=%s tools=%s tool_choice=%s messages=%s",
+                model,
+                self._config.base_url,
+                stream,
+                [tool.get("function", {}).get("name") for tool in tools] if tools else [],
+                tool_choice,
+                _summarize_messages(messages),
+            )
 
         if not stream:
             response = _with_retry(
