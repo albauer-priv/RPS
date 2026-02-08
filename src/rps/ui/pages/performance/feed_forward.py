@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import date, datetime
 
 import streamlit as st
 
 from rps.agents.multi_output_runner import run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
-from rps.orchestrator.plan_week import _build_injection_block, _mode_for_task
-from rps.ui.run_store import load_runs
+from rps.orchestrator.plan_week import _build_injection_block, _mode_for_task, create_performance_report
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -45,36 +44,78 @@ year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 
-last_week = previous_iso_week(IsoWeek(year=year, week=week))
-last_week_key = f"{last_week.year:04d}-{last_week.week:02d}"
+def _load_trend_week_options(athlete_id: str) -> list[dict[str, int]]:
+    trend_path = SETTINGS.workspace_root / athlete_id / "latest" / "activities_trend.json"
+    if not trend_path.exists():
+        return []
+    with trend_path.open(encoding="utf-8") as fp:
+        payload = json.load(fp)
+    weeks = payload.get("data", {}).get("weekly_trends") or []
+    options = []
+    seen = set()
+    for entry in sorted(weeks, key=lambda e: ((e.get("year") or 0), (e.get("iso_week") or 0)), reverse=True):
+        year = entry.get("year")
+        iso_week = entry.get("iso_week")
+        if year is None or iso_week is None:
+            continue
+        key = (int(year), int(iso_week))
+        if key in seen:
+            continue
+        seen.add(key)
+        options.append({"year": int(year), "week": int(iso_week)})
+    return options
 
-report_payload = None
-try:
-    report_payload = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, last_week_key)
-except FileNotFoundError:
-    try:
-        report_payload = store.load_latest(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
-    except FileNotFoundError:
-        report_payload = None
-
-st.subheader(f"Last Week Analysis · {last_week_key}")
-if not report_payload:
-    st.info("No DES analysis report found for last week.")
+trend_options = _load_trend_week_options(athlete_id)
+selection = None
+if trend_options:
+    labels = [f"{opt['year']:04d}-W{opt['week']:02d}" for opt in trend_options]
+    default_index = next(
+        (idx for idx, opt in enumerate(trend_options) if opt["year"] == year and opt["week"] == week),
+        0,
+    )
+    selection_idx = st.selectbox(
+        "Select Feed Forward Week",
+        range(len(labels)),
+        format_func=lambda idx: labels[idx],
+        index=default_index,
+    )
+    selection = trend_options[selection_idx]
+    week = selection["week"]
+    year = selection["year"]
 else:
-    recommendation = (report_payload.get("data") or {}).get("recommendation") or {}
-    st.markdown("**Recommendation for Season Planner**")
-    st.markdown("- " + "\n- ".join(recommendation.get("suggested_considerations") or ["N/A"]))
-    st.caption("Rationale: " + "; ".join(recommendation.get("rationale") or ["N/A"]))
+    col_week, col_year = st.columns(2)
+    week = int(
+        col_week.number_input(
+            "ISO Week",
+            min_value=1,
+            max_value=53,
+            value=week,
+            step=1,
+        )
+    )
+    year = int(
+        col_year.number_input(
+            "ISO Year",
+            min_value=2000,
+            max_value=2100,
+            value=year,
+            step=1,
+        )
+    )
+
+selected_week = IsoWeek(year=year, week=week)
+selected_week_key = f"{selected_week.year:04d}-{selected_week.week:02d}"
 
 st.subheader("Feed Forward Readiness")
-report_for_last_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, last_week_key)
+report_for_selected_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
 report_latest = store.latest_exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
-if report_for_last_week:
+if report_for_selected_week:
     report_status = "Ready"
-    report_detail = f"Last week report available ({last_week_key})."
+    report_detail = f"Report available ({selected_week_key})."
 elif report_latest:
     report_status = "Stale"
     report_detail = "Latest DES report is from another week."
@@ -91,97 +132,153 @@ st.table(
     ]
 )
 
-st.subheader("Trigger Feed Forward")
-run_cols = st.columns(2)
-if run_cols[0].button("Run Season → Phase Feed Forward"):
-    runtime = multi_runtime_for("season_planner")
-    spec = AGENTS["season_planner"]
-    injected_block = _build_injection_block("season_planner", mode=_mode_for_task(AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD))
-    run_id = make_ui_run_id(f"season_phase_feed_forward_{year}_{week:02d}")
+run_cols = st.columns(1)
+current_week = IsoWeek(*date.today().isocalendar()[:2])
+allowed_scope = selected_week in {current_week, previous_iso_week(current_week)}
+if not allowed_scope:
+    st.caption("Feed Forward can only run for the current or previous ISO week.")
+
+run_label = f"Run Feed Forward (Report → Season → Phase → Week) · {selected_week_key}"
+if run_cols[0].button(run_label, disabled=not allowed_scope):
+    report_run_id = make_ui_run_id(f"feed_forward_report_{year}_{week:02d}")
     set_status(
         status_state="running",
         title="Feed Forward",
-        message="Creating Season → Phase feed forward...",
-        last_action="Season → Phase Feed Forward",
-        last_run_id=run_id,
+        message="Creating DES analysis report...",
+        last_action="DES Analysis Report",
+        last_run_id=report_run_id,
     )
-    result, output = capture_output(
-        lambda: run_agent_multi_output(
-            runtime,
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
+    report_result, report_output = capture_output(
+        lambda: create_performance_report(
+            multi_runtime_for,
             athlete_id=athlete_id,
-            tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
-            user_input=(
-                f"Target ISO week: {year}-{week:02d}. "
-                "Use latest DES analysis report to produce SEASON_PHASE_FEED_FORWARD. "
-                f"{injected_block}"
-            ),
-            run_id=run_id,
-            model_override=SETTINGS.model_for_agent(spec.name),
-            temperature_override=SETTINGS.temperature_for_agent(spec.name),
+            report_week=selected_week,
+            run_id_prefix=report_run_id,
             force_file_search=True,
             max_num_results=SETTINGS.file_search_max_results,
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
         ),
         loggers=CAPTURE_LOGGERS,
     )
-    status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
-    set_status(
-        status_state=status,
-        title="Feed Forward",
-        message="Season → Phase feed forward complete.",
-        last_action="Season → Phase Feed Forward",
-        last_run_id=run_id,
-    )
-    if output:
-        with st.expander("Output", expanded=False):
-            st.code(output)
-
-if run_cols[1].button("Run Phase → Week Feed Forward"):
-    runtime = multi_runtime_for("phase_architect")
-    spec = AGENTS["phase_architect"]
-    injected_block = _build_injection_block("phase_architect", mode=_mode_for_task(AgentTask.CREATE_PHASE_FEED_FORWARD))
-    run_id = make_ui_run_id(f"phase_feed_forward_{year}_{week:02d}")
-    set_status(
-        status_state="running",
-        title="Feed Forward",
-        message="Creating Phase → Week feed forward...",
-        last_action="Phase → Week Feed Forward",
-        last_run_id=run_id,
-    )
-    result, output = capture_output(
-        lambda: run_agent_multi_output(
-            runtime,
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
-            athlete_id=athlete_id,
-            tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
-            user_input=(
-                f"Target ISO week: {year}-{week:02d}. "
-                "Use latest SEASON_PHASE_FEED_FORWARD and DES analysis report to produce PHASE_FEED_FORWARD. "
-                f"{injected_block}"
+    if not (isinstance(report_result, dict) and report_result.get("ok")):
+        message = report_result.get("message") if isinstance(report_result, dict) else "DES analysis report failed."
+        set_status(
+            status_state="error",
+            title="Feed Forward",
+            message=message,
+            last_action="DES Analysis Report",
+            last_run_id=report_run_id,
+        )
+        st.error(message)
+    else:
+        runtime = multi_runtime_for("season_planner")
+        spec = AGENTS["season_planner"]
+        injected_block = _build_injection_block("season_planner", mode=_mode_for_task(AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD))
+        run_id = make_ui_run_id(f"season_phase_feed_forward_{year}_{week:02d}")
+        set_status(
+            status_state="running",
+            title="Feed Forward",
+            message="Creating Season → Phase feed forward...",
+            last_action="Season → Phase Feed Forward",
+            last_run_id=run_id,
+        )
+        result, output = capture_output(
+            lambda: run_agent_multi_output(
+                runtime,
+                agent_name=spec.name,
+                agent_vs_name=spec.vector_store_name,
+                athlete_id=athlete_id,
+                tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
+                user_input=(
+                    f"Target ISO week: {year}-{week:02d}. "
+                    "Use latest DES analysis report to produce SEASON_PHASE_FEED_FORWARD. "
+                    f"{injected_block}"
+                ),
+                run_id=run_id,
+                model_override=SETTINGS.model_for_agent(spec.name),
+                temperature_override=SETTINGS.temperature_for_agent(spec.name),
+                force_file_search=True,
+                max_num_results=SETTINGS.file_search_max_results,
             ),
-            run_id=run_id,
-            model_override=SETTINGS.model_for_agent(spec.name),
-            temperature_override=SETTINGS.temperature_for_agent(spec.name),
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
-        ),
-        loggers=CAPTURE_LOGGERS,
-    )
-    status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
-    set_status(
-        status_state=status,
-        title="Feed Forward",
-        message="Phase → Week feed forward complete.",
-        last_action="Phase → Week Feed Forward",
-        last_run_id=run_id,
-    )
-    if output:
-        with st.expander("Output", expanded=False):
-            st.code(output)
+            loggers=CAPTURE_LOGGERS,
+        )
+        status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
+        set_status(
+            status_state=status,
+            title="Feed Forward",
+            message="Season → Phase feed forward complete.",
+            last_action="Season → Phase Feed Forward",
+            last_run_id=run_id,
+        )
+        if status == "done":
+            runtime = multi_runtime_for("phase_architect")
+            spec = AGENTS["phase_architect"]
+            injected_block = _build_injection_block("phase_architect", mode=_mode_for_task(AgentTask.CREATE_PHASE_FEED_FORWARD))
+            run_id = make_ui_run_id(f"phase_feed_forward_{year}_{week:02d}")
+            set_status(
+                status_state="running",
+                title="Feed Forward",
+                message="Creating Phase → Week feed forward...",
+                last_action="Phase → Week Feed Forward",
+                last_run_id=run_id,
+            )
+            result, output = capture_output(
+                lambda: run_agent_multi_output(
+                    runtime,
+                    agent_name=spec.name,
+                    agent_vs_name=spec.vector_store_name,
+                    athlete_id=athlete_id,
+                    tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
+                    user_input=(
+                        f"Target ISO week: {year}-{week:02d}. "
+                        "Use latest SEASON_PHASE_FEED_FORWARD and DES analysis report to produce PHASE_FEED_FORWARD. "
+                        f"{injected_block}"
+                    ),
+                    run_id=run_id,
+                    model_override=SETTINGS.model_for_agent(spec.name),
+                    temperature_override=SETTINGS.temperature_for_agent(spec.name),
+                    force_file_search=True,
+                    max_num_results=SETTINGS.file_search_max_results,
+                ),
+                loggers=CAPTURE_LOGGERS,
+            )
+            status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
+            set_status(
+                status_state=status,
+                title="Feed Forward",
+                message="Phase → Week feed forward complete.",
+                last_action="Phase → Week Feed Forward",
+                last_run_id=run_id,
+            )
 
-render_status_panel()
+report_payload = None
+try:
+    report_payload = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
+except FileNotFoundError:
+    try:
+        report_payload = store.load_latest(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
+    except FileNotFoundError:
+        report_payload = None
+
+st.subheader(f"Week Analysis · {selected_week_key}")
+summary_text = "N/A"
+if store.latest_exists(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD):
+    payload = store.load_latest(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD)
+    decision = (payload.get("data") or {}).get("decision_summary") or {}
+    summary_text = decision.get("conclusion") or "N/A"
+elif store.latest_exists(athlete_id, ArtifactType.PHASE_FEED_FORWARD):
+    payload = store.load_latest(athlete_id, ArtifactType.PHASE_FEED_FORWARD)
+    reason = (payload.get("data") or {}).get("reason_context") or {}
+    summary_text = reason.get("intent_of_adjustment") or "N/A"
+st.markdown(f"**Summary:** {summary_text}")
+if not report_payload:
+    st.info("No DES analysis report found for the selected week.")
+else:
+    recommendation = (report_payload.get("data") or {}).get("recommendation") or {}
+    st.markdown("**Recommendation for Season Planner**")
+    st.markdown("- " + "\n- ".join(recommendation.get("suggested_considerations") or ["N/A"]))
+    st.caption("Rationale: " + "; ".join(recommendation.get("rationale") or ["N/A"]))
 
 st.subheader("Feed Forward Summaries")
 latest_ff = []
@@ -205,24 +302,6 @@ if latest_ff:
     st.table(latest_ff)
 else:
     st.info("No feed forward artefacts found.")
-
-st.subheader("Process Status")
-runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=25)
-if runs:
-    status_rows = []
-    for run in runs:
-        status_rows.append(
-            {
-                "Run ID": run.get("run_id"),
-                "Status": run.get("status"),
-                "Mode": run.get("mode") or "—",
-                "Scope": run.get("scope") or "—",
-                "Created": run.get("created_at") or "—",
-            }
-        )
-    st.dataframe(status_rows, width="stretch")
-else:
-    st.info("No runs found.")
 
 st.subheader("Feed Forward Artefacts")
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()

@@ -140,6 +140,7 @@ announce_log_file(athlete_id)
 
 st.title("Report")
 st.caption(f"Athlete: {athlete_id}")
+render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 
@@ -235,17 +236,6 @@ if create_button:
         )
 
 if job:
-    with st.expander("Model reasoning", expanded=True):
-        reasoning_text = "".join(job["reasonings"])
-        if reasoning_text:
-            st.text(reasoning_text)
-        else:
-            st.caption("Waiting for reasoning text...")
-        logs = job.get("logs") or []
-        if logs:
-            st.caption("Agent log:")
-            for entry in logs[-10:]:
-                st.code(entry)
     st.info(job["message"])
     status_state = "running" if job["status"] == "running" else "done"
     if job["status"] == "failed":
@@ -272,8 +262,6 @@ elif not trend_options:
         title="Report",
         message="Select a week covered by activities_trend.",
     )
-
-render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 version_key = f"{year:04d}-{week:02d}"

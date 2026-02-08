@@ -56,40 +56,6 @@ def _axis_domain(series, pad: float = 0.1) -> tuple[float, float] | None:
     return (min(0.0, lower), upper)
 
 
-def _build_line_chart(df):
-    if go is None:
-        return None
-    ordered = df.sort_values("period_order")
-    labels = ordered["label"].tolist()
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=labels,
-            y=ordered["durability_index"],
-            mode="lines+markers",
-            name="Durability Index",
-            line=dict(color="#f15a22"),
-            hovertemplate="Week %{x}<br>Durability Index %{y:.2f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=labels,
-            y=ordered["decoupling_percent"],
-            mode="lines+markers",
-            name="Decoupling (%)",
-            line=dict(color="#2ca02c"),
-            hovertemplate="Week %{x}<br>Decoupling %{y:.2f}<extra></extra>",
-        )
-    )
-    fig.update_layout(
-        xaxis=dict(title="Week", tickangle=-45),
-        yaxis=dict(title="Metric Value"),
-        legend_title_text="Metric",
-        margin=dict(l=40, r=20, t=20, b=60),
-    )
-    return fig
-
 
 def _iter_weeks_in_range(range_spec):
     if not range_spec:
@@ -211,51 +177,6 @@ def _planned_weekly_kj_by_week(store: LocalArtifactStore, athlete_id: str) -> di
         planned[normalized] = float(value)
     return planned
 
-
-def _build_load_chart(df, corridor_df):
-    if go is None:
-        return None
-    ordered = df.sort_values("period_order")
-    labels = ordered["label"].tolist()
-    fig = go.Figure()
-    fig.add_trace(
-        go.Bar(
-            x=labels,
-            y=ordered["weekly_kj"],
-            name="Weekly kJ",
-            marker_color="#0b6bcb",
-            hovertemplate="Week %{x}<br>Weekly kJ %{y}<extra></extra>",
-        )
-    )
-    if not corridor_df.empty:
-        metric_styles = {
-            "Season Min": dict(color="#6c757d", dash="dash"),
-            "Season Max": dict(color="#6c757d", dash="dash"),
-            "Phase Min": dict(color="#8c564b", dash="dot"),
-            "Phase Max": dict(color="#8c564b", dash="dot"),
-            "Week Plan Min": dict(color="#2ca02c", dash="solid"),
-            "Week Plan Max": dict(color="#2ca02c", dash="solid"),
-        }
-        for metric, group in corridor_df.groupby("metric"):
-            style = metric_styles.get(metric, {})
-            fig.add_trace(
-                go.Scatter(
-                    x=group["label"],
-                    y=group["value"],
-                    mode="lines",
-                    name=metric,
-                    line=dict(color=style.get("color"), dash=style.get("dash")),
-                    hovertemplate="Week %{x}<br>%{fullData.name} %{y}<extra></extra>",
-                )
-            )
-    fig.update_layout(
-        xaxis=dict(title="Week", tickangle=-45),
-        yaxis=dict(title="Weekly kJ"),
-        barmode="overlay",
-        legend_title_text="Metric",
-        margin=dict(l=40, r=20, t=20, b=60),
-    )
-    return fig
 
 
 def _normalize_iso_label(label: str) -> str | None:
@@ -599,89 +520,6 @@ def _load_week_activities_actual(week_dir: Path) -> list[dict]:
     return activities
 
 
-def _load_activity_decoupling_points(
-    data_root: Path,
-    weeks: list[IsoWeek],
-) -> list[dict[str, object]]:
-    points: list[dict[str, object]] = []
-    for week in weeks:
-        week_dir = data_root / f"{week.year}" / f"{week.week:02d}"
-        activities = _load_week_activities_actual(week_dir)
-        for activity in activities:
-            metrics = activity.get("metrics") or {}
-            decoupling = metrics.get("decoupling")
-            if decoupling is None:
-                continue
-            start_time = activity.get("start_time_local")
-            iso_year = activity.get("iso_year")
-            iso_week = activity.get("iso_week")
-            day_of_week = activity.get("day_of_week")
-            activity_date = None
-            if start_time:
-                try:
-                    activity_date = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-                except ValueError:
-                    activity_date = None
-            if activity_date is None and iso_year and iso_week and day_of_week:
-                try:
-                    activity_date = datetime.fromisocalendar(int(iso_year), int(iso_week), int(day_of_week))
-                except ValueError:
-                    activity_date = None
-            label = None
-            if iso_year and iso_week:
-                label = f"{iso_year}-W{int(iso_week):02d}"
-            points.append(
-                {
-                    "label": label or start_time or "Unknown",
-                    "decoupling": float(decoupling),
-                    "start_time_local": start_time,
-                    "activity_date": activity_date,
-                }
-            )
-    return points
-
-
-def _build_decoupling_chart(weekly_df, activity_points: list[dict[str, object]]):
-    if go is None:
-        return None
-    fig = go.Figure()
-    if weekly_df is not None and not weekly_df.empty:
-        ordered = weekly_df.sort_values("period_order")
-        week_dates = [
-            datetime.fromisocalendar(int(label.split("-W")[0]), int(label.split("-W")[1]), 1)
-            for label in ordered["label"]
-        ]
-        fig.add_trace(
-            go.Scatter(
-                x=week_dates,
-                y=ordered["decoupling_percent"],
-                mode="lines+markers",
-                name="Weekly Decoupling (%)",
-                line=dict(color="#f15a22"),
-                hovertemplate="Week %{x|%Y-%m-%d}<br>Weekly decoupling %{y:.2f}<extra></extra>",
-            )
-        )
-    if activity_points:
-        activity_points = [p for p in activity_points if p.get("decoupling") is not None]
-        activity_points.sort(key=lambda p: p.get("activity_date") or p.get("start_time_local") or "")
-        fig.add_trace(
-            go.Scatter(
-                x=[p["activity_date"] or p["start_time_local"] or p["label"] for p in activity_points],
-                y=[p["decoupling"] for p in activity_points],
-                mode="lines+markers",
-                name="Activity Decoupling",
-                line=dict(color="#2ca02c", dash="dot"),
-                hovertemplate="%{x|%Y-%m-%d %H:%M}<br>Activity decoupling %{y:.2f}<extra></extra>",
-            )
-        )
-    fig.update_layout(
-        xaxis=dict(title="Week / Activity", type="date"),
-        yaxis=dict(title="Decoupling"),
-        legend_title_text="Series",
-        margin=dict(l=40, r=20, t=20, b=60),
-    )
-    return fig
-
 
 def _load_activity_durability_points(
     data_root: Path,
@@ -1001,10 +839,6 @@ week_corridor = _week_plan_corridor_by_week(store, athlete_id)
 planned_weekly_kj = _planned_weekly_kj_by_week(store, athlete_id)
 current_year, current_week = get_iso_year_week()
 recent_activity_weeks = _last_n_weeks(IsoWeek(current_year, current_week), _ACTIVITY_WINDOW_WEEKS)
-activity_decoupling_points = _load_activity_decoupling_points(
-    ROOT / athlete_id / "data",
-    recent_activity_weeks,
-)
 
 render_status_panel()
 
@@ -1182,29 +1016,6 @@ with st.container():
         else:
             st.plotly_chart(scatter_fig, width="stretch")
 
-        if not df.empty:
-            st.caption("Weekly load (kJ) and raw Durability/Decoupling trends.")
-            load_fig = _build_load_chart(df, corridor_df)
-            line_fig = _build_line_chart(df)
-            if load_fig is None or line_fig is None:
-                st.info("Plotly is not available; charts are hidden.")
-            else:
-                st.plotly_chart(
-                    load_fig,
-                    width="stretch",
-                )
-                st.plotly_chart(
-                    line_fig,
-                    width="stretch",
-                )
-            decoupling_fig = _build_decoupling_chart(df, activity_decoupling_points)
-            if decoupling_fig is None:
-                st.info("Plotly is not available; charts are hidden.")
-            else:
-                st.plotly_chart(
-                    decoupling_fig,
-                    width="stretch",
-                )
 with st.container():
     st.subheader("Activities Trend")
     if trend_path.exists() or trend_parquet_path.exists():

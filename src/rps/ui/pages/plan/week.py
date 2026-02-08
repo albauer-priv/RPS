@@ -18,7 +18,6 @@ from rps.ui.shared import (
     render_status_panel,
     season_plan_covers_week,
     set_status,
-    system_log_panel,
 )
 from rps.workspace.iso_helpers import IsoWeek, next_iso_week
 from rps.workspace.local_store import LocalArtifactStore
@@ -193,5 +192,3 @@ for row in sorted_agenda:
         workout_text = workout.get("workout_text")
         if workout_text:
             st.code(workout_text)
-
-system_log_panel(expanded=False)

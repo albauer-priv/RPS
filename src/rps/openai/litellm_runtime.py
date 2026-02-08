@@ -95,7 +95,8 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
     call_name_by_id: dict[str, str] = {}
     call_args_by_id: dict[str, str] = {}
     call_output_ids: set[str] = set()
-    for item in input_items:
+    items = list(input_items)
+    for item in items:
         if isinstance(item, dict) and item.get("type") == "function_call":
             call_id = item.get("call_id")
             name = item.get("name")
@@ -111,38 +112,88 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
     if instructions:
         messages.append({"role": "system", "content": instructions})
     included_call_ids: set[str] = set()
-    for item in input_items:
+    idx = 0
+    while idx < len(items):
+        item = items[idx]
         if isinstance(item, dict) and "role" in item:
             messages.append({"role": item["role"], "content": _coerce_content(item.get("content"))})
+            idx += 1
             continue
         if isinstance(item, dict) and item.get("type") == "function_call":
-            call_id = item.get("call_id")
-            name = item.get("name")
-            if call_id and name and call_id in call_output_ids:
-                args_raw = call_args_by_id.get(call_id) or item.get("arguments")
+            batch: list[dict[str, Any]] = []
+            while idx < len(items):
+                candidate = items[idx]
+                if not isinstance(candidate, dict) or candidate.get("type") != "function_call":
+                    break
+                call_id = candidate.get("call_id")
+                name = candidate.get("name")
+                if call_id and name and call_id in call_output_ids:
+                    args_raw = call_args_by_id.get(call_id) or candidate.get("arguments")
+                    batch.append(
+                        {
+                            "id": call_id,
+                            "type": "function",
+                            "function": {
+                                "name": name,
+                                "arguments": args_raw if isinstance(args_raw, str) else "{}",
+                            },
+                        }
+                    )
+                    included_call_ids.add(call_id)
+                elif call_id and name:
+                    LOGGER.warning(
+                        "LiteLLM tool call skipped: missing output for tool_call_id=%s name=%s",
+                        call_id,
+                        name,
+                    )
+                idx += 1
+            if batch:
                 messages.append(
                     {
                         "role": "assistant",
                         "content": None,
-                        "tool_calls": [
-                            {
-                                "id": call_id,
-                                "type": "function",
-                                "function": {
-                                    "name": name,
-                                    "arguments": args_raw if isinstance(args_raw, str) else "{}",
-                                },
-                            }
-                        ],
+                        "tool_calls": batch,
                     }
                 )
-                included_call_ids.add(call_id)
-            elif call_id and name:
-                LOGGER.warning(
-                    "LiteLLM tool call skipped: missing output for tool_call_id=%s name=%s",
-                    call_id,
-                    name,
-                )
+                while idx < len(items):
+                    candidate = items[idx]
+                    if not isinstance(candidate, dict) or candidate.get("type") != "function_call_output":
+                        break
+                    call_id = candidate.get("call_id")
+                    if not call_id:
+                        LOGGER.warning(
+                            "LiteLLM tool output skipped: missing call_id output=%s",
+                            str(candidate.get("output"))[:200],
+                        )
+                        idx += 1
+                        continue
+                    if call_id not in included_call_ids:
+                        LOGGER.warning(
+                            "LiteLLM tool output skipped: no matching tool_call_id=%s",
+                            call_id,
+                        )
+                        idx += 1
+                        continue
+                    name = candidate.get("name") or call_name_by_id.get(call_id)
+                    args_preview = call_args_by_id.get(call_id)
+                    if isinstance(args_preview, str) and len(args_preview) > 500:
+                        args_preview = args_preview[:500] + "…"
+                    if not name:
+                        LOGGER.debug(
+                            "LiteLLM tool output missing name; continuing with tool_call_id=%s args=%s output=%s",
+                            call_id,
+                            args_preview,
+                            _coerce_content(candidate.get("output"))[:200],
+                        )
+                    message: dict[str, Any] = {
+                        "role": "tool",
+                        "tool_call_id": call_id,
+                        "content": _coerce_content(candidate.get("output")),
+                    }
+                    if name:
+                        message["name"] = name
+                    messages.append(message)
+                    idx += 1
             continue
         if isinstance(item, dict) and item.get("type") == "function_call_output":
             call_id = item.get("call_id")
@@ -151,33 +202,37 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
                     "LiteLLM tool output skipped: missing call_id output=%s",
                     str(item.get("output"))[:200],
                 )
+                idx += 1
                 continue
             if call_id not in included_call_ids:
                 LOGGER.warning(
                     "LiteLLM tool output skipped: no matching tool_call_id=%s",
                     call_id,
                 )
+                idx += 1
                 continue
             name = item.get("name") or call_name_by_id.get(call_id)
             args_preview = call_args_by_id.get(call_id)
             if isinstance(args_preview, str) and len(args_preview) > 500:
                 args_preview = args_preview[:500] + "…"
             if not name:
-                LOGGER.warning(
-                    "LiteLLM tool output skipped: no matching tool_call_id name=%s tool_call_id=%s args=%s",
-                    item.get("name"),
+                LOGGER.debug(
+                    "LiteLLM tool output missing name; continuing with tool_call_id=%s args=%s output=%s",
                     call_id,
                     args_preview,
+                    _coerce_content(item.get("output"))[:200],
                 )
-                continue
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": call_id,
-                    "name": name,
-                    "content": _coerce_content(item.get("output")),
-                }
-            )
+            message: dict[str, Any] = {
+                "role": "tool",
+                "tool_call_id": call_id,
+                "content": _coerce_content(item.get("output")),
+            }
+            if name:
+                message["name"] = name
+            messages.append(message)
+            idx += 1
+            continue
+        idx += 1
     return messages
 
 

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Feed Forward now uses the selected ISO week (current or previous only), with a single chained action to create the DES report, Season→Phase feed forward, then Phase→Week feed forward.
+- Feed Forward now shows a week selector, summary line, and uses a single action button label; readiness/trigger controls moved under the selector.
+- Report page status panel now renders under the title and no longer shows a model reasoning expander.
+- Plan → Week no longer shows the System output/logs expander.
+- Analyse → Data & Metrics removes weekly load, durability/decoupling, and weekly decoupling charts.
 - Events page now offers an upgrade action for legacy planning events payloads to restore all columns.
 - Planning Events no longer include an `objective` field; legacy values are mapped into `goal` on load with schema bumped to 1.2.
 - Events page now auto-upgrades legacy planning events on load instead of prompting.
@@ -20,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local artifact writes now emit log entries in `rps.log` for easier debugging from Athlete Profile pages.
 
 ### Fixed
+- LiteLLM message builder now batches tool calls and always emits matching tool responses to satisfy OpenAI tool-call sequencing.
+- Tool output events now carry tool names through the runner to stabilize tool-call matching.
 - `smoke_vectorstores` now syncs missing local collections using an existing Qdrant client and tolerates older Qdrant delete signatures.
 - LiteLLM runtime no longer sends unsupported `project` parameter; it is passed via `extra_body` when set.
 - Coach summary now defaults to the active coach model when no summary override is set.

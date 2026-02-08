@@ -1100,6 +1100,7 @@ def run_agent_multi_output(
                     {
                         "type": "function_call_output",
                         "call_id": call_id,
+                        "name": name,
                         "output": json.dumps(result, ensure_ascii=False),
                     }
                 )
@@ -1112,6 +1113,7 @@ def run_agent_multi_output(
                     {
                         "type": "function_call_output",
                         "call_id": call_id,
+                        "name": name,
                         "output": json.dumps(result, ensure_ascii=False),
                     }
                 )
@@ -1138,6 +1140,7 @@ def run_agent_multi_output(
                     {
                         "type": "function_call_output",
                         "call_id": call_id,
+                        "name": name,
                         "output": json.dumps(result, ensure_ascii=False),
                     }
                 )
@@ -1174,6 +1177,7 @@ def run_agent_multi_output(
                 {
                     "type": "function_call_output",
                     "call_id": call_id,
+                    "name": name,
                     "output": json.dumps(result, ensure_ascii=False),
                 }
             )
