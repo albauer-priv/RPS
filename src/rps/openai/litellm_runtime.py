@@ -96,10 +96,14 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
             messages.append({"role": item["role"], "content": _coerce_content(item.get("content"))})
             continue
         if isinstance(item, dict) and item.get("type") == "function_call_output":
+            name = item.get("name")
+            if not name:
+                LOGGER.warning("LiteLLM tool output missing name; tool_call_id=%s", item.get("call_id"))
             messages.append(
                 {
                     "role": "tool",
                     "tool_call_id": item.get("call_id"),
+                    **({"name": name} if name else {}),
                     "content": _coerce_content(item.get("output")),
                 }
             )

@@ -667,6 +667,7 @@ class Chat():
                 self._input.append({
                     "type": "function_call_output",
                     "call_id": item.call_id,
+                    "name": item.name,
                     "output": output
                 })
             events2 = self._client.responses.create(
