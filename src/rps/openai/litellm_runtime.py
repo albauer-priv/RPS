@@ -107,11 +107,14 @@ def _tools_from_payload(tools: list[dict[str, Any]] | None) -> list[dict[str, An
     for tool in tools or []:
         if tool.get("type") != "function":
             continue
+        name = tool.get("name")
+        if not name:
+            continue
         converted.append(
             {
                 "type": "function",
                 "function": {
-                    "name": tool.get("name"),
+                    "name": name,
                     "description": tool.get("description", ""),
                     "parameters": tool.get("parameters", {}),
                 },
