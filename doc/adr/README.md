@@ -34,6 +34,7 @@ This folder contains the ADR log for RPS.
 - ADR-023: Athlete Data Operations Page
 - ADR-024: Parquet Cache for Intervals Pipeline Outputs
 - ADR-025: Multi-provider LLM Runtime + Local Vectorstore
+- ADR-026: Split Tools vs Structured Output for Groq (LiteLLM)
 
 ## Process (Short)
 
