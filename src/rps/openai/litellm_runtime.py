@@ -93,6 +93,7 @@ def _coerce_content(content: Any) -> str:
 def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -> list[dict[str, Any]]:
     messages: list[dict[str, Any]] = []
     call_name_by_id: dict[str, str] = {}
+    call_args_by_id: dict[str, str] = {}
     if instructions:
         messages.append({"role": "system", "content": instructions})
     for item in input_items:
@@ -104,18 +105,27 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
             name = item.get("name")
             if call_id and name:
                 call_name_by_id[call_id] = name
+                args_raw = item.get("arguments")
+                if isinstance(args_raw, str):
+                    call_args_by_id[call_id] = args_raw
             continue
         if isinstance(item, dict) and item.get("type") == "function_call_output":
             name = item.get("name")
             if not name:
                 call_id = item.get("call_id")
                 name = call_name_by_id.get(call_id) if call_id else None
+                args_preview = None
+                if call_id:
+                    args_preview = call_args_by_id.get(call_id)
+                if isinstance(args_preview, str) and len(args_preview) > 500:
+                    args_preview = args_preview[:500] + "…"
                 if not name:
                     name = "tool"
                 LOGGER.warning(
-                    "LiteLLM tool output missing name; using fallback name=%s tool_call_id=%s",
+                    "LiteLLM tool output missing name; using fallback name=%s tool_call_id=%s args=%s",
                     name,
                     item.get("call_id"),
+                    args_preview,
                 )
             messages.append(
                 {
