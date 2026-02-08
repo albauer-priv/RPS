@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `smoke_vectorstores` now syncs missing local collections using an existing Qdrant client and tolerates older Qdrant delete signatures.
 - LiteLLM runtime no longer sends unsupported `project` parameter; it is passed via `extra_body` when set.
+- LiteLLM runtime forces Groq provider when Groq base URL is used with `openai/` model prefixes.
 
 ## [0.10.3] - 2026-02-06
 
