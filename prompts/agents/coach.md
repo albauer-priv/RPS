@@ -126,7 +126,7 @@ Use this checklist to ensure you didn’t miss essential context:
 | Priority | What to load        | How to call it                                                        | Why it matters                                           |
 | -------- | ------------------- | --------------------------------------------------------------------- | -------------------------------------------------------- |
 | 1        | Athlete Profile     | `workspace_get_input({ "input_type": "athlete_profile" })`            | Goals, constraints, profile context.                     |
-| 2        | Planning Events     | `workspace_get_input({ "input_type": "planning_events" })`            | A/B/C events and priorities.                             |
+| 2        | Planning Events     | `workspace_get_input({ "input_type": "planning_events" })`            | A/B/C events and priorities. Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | 3        | Logistics           | `workspace_get_input({ "input_type": "logistics" })`                  | Travel & timing context.                                 |
 | 4        | KPI Profile         | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`            | Thresholds/guardrails; KPI bands.                        |
 | 5        | Availability        | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`           | Weekly capacity + constraints.                           |

@@ -73,7 +73,7 @@ Supplemental (informational only; MUST NOT override governance):
 
 #### Runtime artefacts (workspace; load via tools) — Binding unless stated otherwise
 Required baseline inputs (load every run):
-- Planning Events (A/B/C): `workspace_get_input("planning_events")`
+- Planning Events (A/B/C): `workspace_get_input("planning_events")` Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed.
 - Logistics (context only): `workspace_get_input("logistics")`
 - Season Plan: `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
 - Availability: `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`

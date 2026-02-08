@@ -51,7 +51,7 @@ Runtime artefacts (workspace; load via tools):
 | Artifact | Tool | Notes |
 |---|---|---|
 | Athlete Profile | `workspace_get_input("athlete_profile")` | Required (Mode A/B) |
-| Planning Events | `workspace_get_input("planning_events")` | Required (all modes; A/B/C events) |
+| Planning Events | `workspace_get_input("planning_events")` | Required (all modes; A/B/C events) Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required (all modes; context only) |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one required (Mode A/B) |
 | Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |

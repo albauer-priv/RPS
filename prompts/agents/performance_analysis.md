@@ -72,7 +72,7 @@ Schemas:
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | KPI thresholds |
 | Season Plan | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` | Optional; planning context |
 | Phase Context | `workspace_get_phase_context({ "year": YYYY, "week": WW })` | Optional; may include phase context |
-| Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events |
+| Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required; context only |
 
 Forbidden for binding decisions:

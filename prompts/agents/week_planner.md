@@ -83,7 +83,7 @@ Supplemental (informational only):
 | Phase Guardrails | `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` | Required; load corridor + constraints |
 | Phase Structure | `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` | Required; day-role + intensity guardrails |
 | Phase Feed Forward | `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` | Optional; binding delta if valid & in-range |
-| Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events |
+| Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required; context only |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required; time budget; must cover target week |
 | Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required; body_mass_kg if needed |

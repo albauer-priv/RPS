@@ -43,7 +43,7 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 | Artifact | Tool | Notes |
 |---|---|---|
 | Athlete Profile | `workspace_get_input("athlete_profile")` | Required |
-| Planning Events | `workspace_get_input("planning_events")` | Required (A/B/C events) |
+| Planning Events | `workspace_get_input("planning_events")` | Required (A/B/C events) Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required (context only) |
 | KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one latest required |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required |
