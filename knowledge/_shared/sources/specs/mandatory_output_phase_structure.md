@@ -58,8 +58,12 @@ Required:
 #### 4.1) Load range source (binding)
 - `load_ranges.weekly_kj_bands` MUST be copied exactly from
   `phase_guardrails.load_guardrails.weekly_kj_bands` (same weeks, min/max, notes).
-- `load_ranges.source` MUST be the stored phase guardrails filename:
-  `phase_guardrails_YYYY-WW.json` (use the artifact version key, not the iso_week_range).
+- `load_ranges.source` MUST be the **stored phase guardrails filename** (not a guessed name).
+  To avoid validation errors, follow this exact procedure:
+  1) Read the **stored** PHASE_GUARDRAILS artefact metadata.
+  2) Use the real filename returned by the store (or latest path in workspace).
+  3) Set `load_ranges.source` to that exact filename string.
+  Do NOT construct the name from `iso_week_range` or `iso_week` if you have the stored path.
 - `load_ranges` MUST NOT include any fields beyond `weekly_kj_bands` and `source`.
 
 #### 5) `data.execution_principles`
@@ -132,6 +136,7 @@ All required booleans must be present and set to `true`:
 #### 11) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).
 - Do NOT include workouts, interval structures, %FTP targets, zones (Z1–Z7), or day‑by‑day kJ targets.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
 - Validate against `phase_structure.schema.json` before calling the store tool.
@@ -143,8 +148,8 @@ All required booleans must be present and set to `true`:
 Additional hard stops (binding):
 - STOP if producing `PHASE_STRUCTURE` and `data.self_check.no_numeric_target_introduced`
   is missing or false.
-- STOP if `load_ranges.source` is not exactly `phase_guardrails_YYYY-WW.json`
-  (artifact version key, not iso_week_range).
+- STOP if `load_ranges.source` does not exactly match the stored PHASE_GUARDRAILS filename
+  (use the file returned by storage/workspace; do not guess).
 - STOP if `week_skeleton_logic.week_roles.week_roles` is missing, empty, or does not
   match the number of ISO weeks in `meta.iso_week_range`.
 

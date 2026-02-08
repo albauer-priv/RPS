@@ -111,11 +111,35 @@ Mode C:
 Note:
 - `season_brief_ref` is a legacy field name in the Season Plan schema. Populate it with the Athlete Profile run_id/version key.
 
+### Mandatory fetch-before-stop rule (HARD)
+- You MUST call the workspace tools to load all required artefacts before deciding they are missing.
+- Do NOT STOP based on assumptions; only STOP after tool calls return missing/None/empty.
+- Required fetch sequence for Mode A/B:
+  1) `workspace_get_input("athlete_profile")`
+  2) `workspace_get_input("planning_events")`
+  3) `workspace_get_input("logistics")`
+  4) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+  5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+  6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+  7) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+  8) Optional: `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
+  9) Optional: `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
+
 ### Output contract (HARD)
 - Produce exactly one output allowed by the active mode.
 - Output MUST follow the injected Mandatory Output Chapter for the requested artefact.
 - JSON artefacts MUST be emitted via the strict store tool call only (no raw JSON in chat).
 - If output is literal `no_change`, output exactly `no_change` and nothing else.
+
+### Schema hotfix checklist (HARD)
+Before calling `store_season_plan`, verify these exact paths and types exist:
+- `meta.data_confidence` (string enum; REQUIRED)
+- `data.principles_scientific_foundation` (object; REQUIRED)
+- `data.explicit_forbidden_content` (array of exactly 6 enum strings; REQUIRED)
+- `data.self_check` (object; REQUIRED, all required keys set to true)
+- `data.global_constraints.recovery_protection.notes` (array of strings; REQUIRED)
+Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).
+Output MUST be the tool call only. Do NOT emit any extra text outside the tool call.
 
 ### Terminology & logging (Binding)
 - **Fueling/Energy** = `planned_kJ` (mechanical energy).

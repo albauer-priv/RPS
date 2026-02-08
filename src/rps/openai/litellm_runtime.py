@@ -94,12 +94,8 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
     messages: list[dict[str, Any]] = []
     call_name_by_id: dict[str, str] = {}
     call_args_by_id: dict[str, str] = {}
-    if instructions:
-        messages.append({"role": "system", "content": instructions})
+    call_output_ids: set[str] = set()
     for item in input_items:
-        if isinstance(item, dict) and "role" in item:
-            messages.append({"role": item["role"], "content": _coerce_content(item.get("content"))})
-            continue
         if isinstance(item, dict) and item.get("type") == "function_call":
             call_id = item.get("call_id")
             name = item.get("name")
@@ -108,29 +104,76 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
                 args_raw = item.get("arguments")
                 if isinstance(args_raw, str):
                     call_args_by_id[call_id] = args_raw
+        elif isinstance(item, dict) and item.get("type") == "function_call_output":
+            call_id = item.get("call_id")
+            if call_id:
+                call_output_ids.add(call_id)
+    if instructions:
+        messages.append({"role": "system", "content": instructions})
+    included_call_ids: set[str] = set()
+    for item in input_items:
+        if isinstance(item, dict) and "role" in item:
+            messages.append({"role": item["role"], "content": _coerce_content(item.get("content"))})
+            continue
+        if isinstance(item, dict) and item.get("type") == "function_call":
+            call_id = item.get("call_id")
+            name = item.get("name")
+            if call_id and name and call_id in call_output_ids:
+                args_raw = call_args_by_id.get(call_id) or item.get("arguments")
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": name,
+                                    "arguments": args_raw if isinstance(args_raw, str) else "{}",
+                                },
+                            }
+                        ],
+                    }
+                )
+                included_call_ids.add(call_id)
+            elif call_id and name:
+                LOGGER.warning(
+                    "LiteLLM tool call skipped: missing output for tool_call_id=%s name=%s",
+                    call_id,
+                    name,
+                )
             continue
         if isinstance(item, dict) and item.get("type") == "function_call_output":
-            name = item.get("name")
-            if not name:
-                call_id = item.get("call_id")
-                name = call_name_by_id.get(call_id) if call_id else None
-                args_preview = None
-                if call_id:
-                    args_preview = call_args_by_id.get(call_id)
-                if isinstance(args_preview, str) and len(args_preview) > 500:
-                    args_preview = args_preview[:500] + "…"
-                if not name:
-                    name = "tool"
+            call_id = item.get("call_id")
+            if not call_id:
                 LOGGER.warning(
-                    "LiteLLM tool output missing name; using fallback name=%s tool_call_id=%s args=%s",
-                    name,
-                    item.get("call_id"),
+                    "LiteLLM tool output skipped: missing call_id output=%s",
+                    str(item.get("output"))[:200],
+                )
+                continue
+            if call_id not in included_call_ids:
+                LOGGER.warning(
+                    "LiteLLM tool output skipped: no matching tool_call_id=%s",
+                    call_id,
+                )
+                continue
+            name = item.get("name") or call_name_by_id.get(call_id)
+            args_preview = call_args_by_id.get(call_id)
+            if isinstance(args_preview, str) and len(args_preview) > 500:
+                args_preview = args_preview[:500] + "…"
+            if not name:
+                LOGGER.warning(
+                    "LiteLLM tool output skipped: no matching tool_call_id name=%s tool_call_id=%s args=%s",
+                    item.get("name"),
+                    call_id,
                     args_preview,
                 )
+                continue
             messages.append(
                 {
                     "role": "tool",
-                    "tool_call_id": item.get("call_id"),
+                    "tool_call_id": call_id,
                     "name": name,
                     "content": _coerce_content(item.get("output")),
                 }
@@ -332,7 +375,15 @@ def _build_output_items(text: str | None, tool_calls: list[dict[str, Any]]) -> l
     return output
 
 
-def _iter_stream_chunks(stream: Iterable[Any]) -> Iterable[tuple[str, list[dict[str, Any]]]]:
+def _get_delta_attr(delta: Any, key: str) -> Any:
+    if isinstance(delta, dict):
+        return delta.get(key)
+    return getattr(delta, key, None)
+
+
+def _iter_stream_chunks(
+    stream: Iterable[Any],
+) -> Iterable[tuple[str, list[dict[str, Any]], str]]:
     tool_accumulator: dict[int, dict[str, Any]] = {}
     for chunk in stream:
         choice = _extract_choice(chunk)
@@ -341,9 +392,12 @@ def _iter_stream_chunks(stream: Iterable[Any]) -> Iterable[tuple[str, list[dict[
         delta = choice.get("delta") if isinstance(choice, dict) else getattr(choice, "delta", None)
         if not delta:
             continue
-        text = delta.get("content") if isinstance(delta, dict) else getattr(delta, "content", None)
+        text = _get_delta_attr(delta, "content")
+        reasoning = _get_delta_attr(delta, "reasoning_content") or _get_delta_attr(delta, "reasoning")
         if text:
-            yield text, []
+            yield text, [], ""
+        if reasoning:
+            yield "", [], reasoning
         tool_calls = delta.get("tool_calls") if isinstance(delta, dict) else getattr(delta, "tool_calls", None)
         if tool_calls:
             for call in tool_calls:
@@ -378,7 +432,7 @@ def _iter_stream_chunks(stream: Iterable[Any]) -> Iterable[tuple[str, list[dict[
                 "arguments": entry["arguments"] or "{}",
             }
         )
-    yield "", tool_calls_out
+    yield "", tool_calls_out, ""
 
 
 class _Unsupported:
@@ -400,6 +454,8 @@ class LiteLLMResponses:
         model = payload.get("model")
         if not model:
             raise RuntimeError("LiteLLM create requires model")
+        if isinstance(model, str) and "gpt-5" in model:
+            litellm.drop_params = True
         input_items = payload.get("input") or []
         instructions = payload.get("instructions")
         messages = _messages_from_input(input_items, instructions)
@@ -517,7 +573,9 @@ class LiteLLMResponses:
             )
             collected_text = ""
             collected_calls: list[dict[str, Any]] = []
-            for text_delta, tool_calls in _iter_stream_chunks(stream_resp):
+            for text_delta, tool_calls, reasoning_delta in _iter_stream_chunks(stream_resp):
+                if reasoning_delta:
+                    yield SimpleNamespace(type="response.reasoning_text.delta", delta=reasoning_delta)
                 if text_delta:
                     collected_text += text_delta
                     yield SimpleNamespace(type="response.output_text.delta", delta=text_delta)

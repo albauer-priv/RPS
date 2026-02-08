@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LiteLLM runtime now falls back to tool_call_id as tool name when a tool output is missing a name.
 - Coach chat now logs response text lengths to help debug missing replies.
 - Coach chat now logs tool call and output lengths for debugging empty responses.
+- LiteLLM runtime now pairs tool calls and outputs to avoid invalid tool-message sequences for OpenAI.
 
 ## [0.10.3] - 2026-02-06
 
@@ -184,6 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added run housekeeping: prune run history older than `RPS_RUN_RETENTION_DAYS` (default 7) and clear done/failed queues (ADR-020).
 - README now documents log rotation and retention env vars.
 - Phase Preview mandatory output now requires derived_from to include the base phase_structure_<iso_week_range>.json filename (timestamps handled internally).
+- Mandatory output guidance now requires Phase Guardrails/Structure/Preview to reference stored artifact filenames (no guessed names) and to fully propagate planned event windows from Season Plan.
+- Mandatory output chapters now explicitly require tool-call arguments to be valid JSON only.
 - TPM rate limit errors now wait twice the suggested retry time and automatically retry once per request.
 - TPM retry behavior is now configurable via RPS_TPM_WAIT_MULTIPLIER and RPS_TPM_RETRY_COUNT.
 - Coach chat refactor now uses the in-repo chat class (no streamlit-openai), with compaction + token budgeting and UI summary positioning; verified stable for 8–10 dialog turns without errors.

@@ -69,6 +69,17 @@ Required:
 Always import `season_plan.data.global_constraints`:
 - `availability_assumptions`, `risk_constraints`, `planned_event_windows`, `recovery_protection` (if present).
 
+Planned event windows MUST be fully represented in `data.events_constraints.events[]`.
+To avoid validation errors, follow this **exact** procedure:
+1) Prefer `season_plan.data.global_constraints.planned_event_windows` as the source of truth.
+2) If `planned_event_windows` is missing or empty, **derive it** from
+   `season_plan.data.phases[].events_constraints[]` across **all phases** (not just the current phase).
+3) After building the list, **each window must appear** in `events_constraints.events[]`
+   with matching date, correct ISO week string, and the A/B/C type from the
+   season plan phase constraints.
+4) Do **not** omit events that fall outside the current phase range; they must still be listed
+   to satisfy cross‑validation.
+
 Mapping (must include, do not omit):
 - Availability assumptions → `phase_summary.non_negotiables` (verbatim).
   Every entry from `season_plan.data.global_constraints.availability_assumptions`
@@ -140,6 +151,7 @@ All required booleans must be present and set to `true`:
 #### 12) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
 - Validate against `phase_guardrails.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.

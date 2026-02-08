@@ -84,6 +84,7 @@ All required booleans must be present and set to `true`:
 #### 11) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
 - Validate against `phase_feed_forward.schema.json` before calling the store tool.
 - If validation fails or any required field is missing/unknown: STOP.

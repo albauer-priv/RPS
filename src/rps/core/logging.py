@@ -180,6 +180,13 @@ def setup_logging(
     for handler in handlers:
         root.addHandler(handler)
 
+    # Silence verbose LiteLLM debug unless explicitly raised elsewhere.
+    for name in ("litellm", "LiteLLM"):
+        llm_logger = logging.getLogger(name)
+        llm_logger.setLevel(logging.WARNING)
+        llm_logger.propagate = False
+        llm_logger.handlers.clear()
+
     if log_file:
         announce_level = max(file_level_value, console_level_value)
         logging.getLogger("rps.logging").log(announce_level, "Log file: %s", log_file)

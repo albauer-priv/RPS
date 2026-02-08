@@ -34,6 +34,7 @@ Required fields:
 - Do not use empty strings for required string fields (including citations). If required info is missing: STOP.
 - Call `store_intervals_workouts_export` with the JSON array only (no envelope).
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).
 - On any error: **STOP** and report schema errors.
 
 ---

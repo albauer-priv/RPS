@@ -69,12 +69,17 @@ Required strings:
 - `derived_from` (array, min 1)
 - `conflict_resolution` (array, min 1)
 - Only these two keys are allowed inside `data.traceability` (no extra fields).
-- `derived_from` MUST include the phase structure filename
-  `phase_structure_<iso_week_range>.json` (base week-range filename; timestamps are resolved at storage time).
+- `derived_from` MUST include the **stored phase structure filename**.
+  To avoid validation errors, follow this exact procedure:
+  1) Read the **stored** PHASE_STRUCTURE artefact metadata.
+  2) Use the real filename returned by the store (or latest path in workspace).
+  3) Set `derived_from` to that exact filename string.
+  Do NOT construct the name from `iso_week_range` if you have the stored path.
 
 #### 9) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
+- Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).
 - Do NOT include workouts, interval structures, %FTP targets, zones (Z1–Z7), or day‑by‑day kJ targets.
 - Before output: confirm the Mandatory Output Chapter was read in full and followed exactly.
 - Validate against `phase_preview.schema.json` before calling the store tool.
@@ -84,8 +89,8 @@ Required strings:
 - On any error: **STOP** and report schema errors.
 - STOP if no stored PHASE_STRUCTURE exists for the **exact** `meta.iso_week_range`.
 - STOP if `data.traceability` includes any keys beyond `derived_from` and `conflict_resolution`.
-- STOP if `data.traceability.derived_from` does not include
-  `phase_structure_<iso_week_range>.json`.
+- STOP if `data.traceability.derived_from` does not include the **stored**
+  PHASE_STRUCTURE filename (use the file returned by storage/workspace; do not guess).
 
 ---
 
