@@ -60,6 +60,8 @@ render_status_panel()
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 events = data.get("events") or []
+if "events_auto_upgrade_done" not in st.session_state:
+    st.session_state["events_auto_upgrade_done"] = False
 
 event_type_options = list(DEFAULT_EVENT_TYPES)
 if profile_path.exists():
@@ -117,7 +119,11 @@ def _needs_upgrade(rows: list[dict[str, object]]) -> bool:
     for row in rows:
         if not isinstance(row, dict):
             return True
-        if "priority" not in row or "rank" not in row:
+        has_priority_rank = "priority" in row and "rank" in row
+        has_type_rank = "type" in row and "priority_rank" in row
+        if not (has_priority_rank or has_type_rank):
+            return True
+        if "objective" in row:
             return True
     return False
 
@@ -252,6 +258,15 @@ def _save_events_payload(
 
 st.subheader("Planning Events (A/B/C)")
 legacy_upgrade_needed = _needs_upgrade([row for row in events if isinstance(row, dict)])
+if legacy_upgrade_needed and not st.session_state["events_auto_upgrade_done"]:
+    normalized_events = [_normalize_event(row) for row in events if isinstance(row, dict)]
+    if not normalized_events:
+        normalized_events = [_normalize_event({})]
+    logger.info("Events auto-upgrade triggered")
+    _save_events_payload(store, athlete_id, normalized_events)
+    set_status(status_state="done", title="Events", message="Events upgraded.")
+    st.session_state["events_auto_upgrade_done"] = True
+    st.rerun()
 events = [_normalize_event(row) for row in events if isinstance(row, dict)]
 if not events:
     events = [_normalize_event({})]
@@ -259,13 +274,6 @@ events = _sort_events(events)
 st.caption(
     "Add A/B/C events with a priority rank (1-3). Event Type defaults to the KPI profile when available."
 )
-if legacy_upgrade_needed:
-    st.warning("Legacy planning events detected. Upgrade to the latest schema to unlock all fields.")
-    if st.button("Upgrade legacy events", width="content"):
-        _save_events_payload(store, athlete_id, events)
-        st.success("Planning events upgraded.")
-        set_status(status_state="done", title="Events", message="Upgraded planning events input.")
-        st.rerun()
 events_df = pd.DataFrame(events, columns=EVENT_COLUMNS)
 events_df = st.data_editor(
     events_df,
