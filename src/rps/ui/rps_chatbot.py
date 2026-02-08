@@ -22,6 +22,7 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from rps.openai.response_utils import extract_text_output
 from rps.openai.client import get_client
+LOGGER = logging.getLogger(__name__)
 CHAT_HISTORY_INSTRUCTIONS = """
 - This conversation was loaded from a chat history file.
 - All input files uploaded so far were actually provided previously, so you should not treat them as new uploads.
@@ -589,12 +590,14 @@ class Chat():
         )
         tool_call_events = []
         assistant_text = ""
+        response1_text = ""
         for event1 in events1:
             if event1.type == "response.completed":
                 self._previous_response_id = event1.response.id
                 self.input_tokens += event1.response.usage.input_tokens
                 self.output_tokens += event1.response.usage.output_tokens
                 final_text = event1.response.output_text or extract_text_output(event1.response) or ""
+                response1_text = final_text
                 if final_text and not assistant_text:
                     self.last_section.update_and_stream("text", final_text)
                     assistant_text += final_text
@@ -644,6 +647,11 @@ class Chat():
                             filename=event1.annotation["filename"],
                             file_id=event1.annotation["file_id"]
                         )
+        LOGGER.info(
+            "Coach response1 complete text_len=%d tool_calls=%d",
+            len(response1_text),
+            len(tool_call_events),
+        )
         self._conversation_items.extend(self._normalize_items(self._input))
         if assistant_text:
             self._conversation_items.append({"role": "assistant", "content": assistant_text})
@@ -680,16 +688,22 @@ class Chat():
                 stream=True,
             )
             assistant_text = ""
+            response2_text = ""
             for event2 in events2:
                 if event2.type == "response.completed":
                     self._previous_response_id = event2.response.id
                     final_text = event2.response.output_text or extract_text_output(event2.response) or ""
+                    response2_text = final_text
                     if final_text and not assistant_text:
                         self.last_section.update_and_stream("text", final_text)
                         assistant_text += final_text
                 elif event2.type == "response.output_text.delta":
                     self.last_section.update_and_stream("text", event2.delta)
                     assistant_text += event2.delta
+            LOGGER.info(
+                "Coach response2 complete text_len=%d",
+                len(response2_text),
+            )
             self._conversation_items.extend(self._normalize_items(self._input))
             if assistant_text:
                 self._conversation_items.append({"role": "assistant", "content": assistant_text})

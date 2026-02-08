@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LiteLLM runtime now drops invalid tool_choice entries when tool names are missing or mismatched.
 - Coach tool outputs now include tool names so Groq can render tool messages.
 - LiteLLM runtime now falls back to tool_call_id as tool name when a tool output is missing a name.
+- Coach chat now logs response text lengths to help debug missing replies.
 
 ## [0.10.3] - 2026-02-06
 
