@@ -1,13 +1,13 @@
 ---
-Version: 1.0
-Status: Approved
+Version: 1.1
+Status: Implemented
 Last-Updated: 2026-02-08
 Owner: UI
 ---
 # FEAT: About You Guidance Copy
 
 * **ID:** FEAT_about_you_guidance
-* **Status:** Approved
+* **Status:** Implemented
 * **Owner/Area:** Athlete Profile UI
 * **Last-Updated:** 2026-02-08
 * **Related:** —

@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-02-05
+Last-Updated: 2026-02-08
 Owner: UI
 ---
 # Athlete Profile Pages
@@ -9,6 +9,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 
 ## About You & Goals
 - Athlete profile, goals, and constraints (authoritative input)
+- Fields include inline guidance + examples to clarify expected inputs
 
 ## Availability
 - Editable weekly availability table and hours
