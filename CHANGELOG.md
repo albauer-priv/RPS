@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LiteLLM runtime no longer sends unsupported `project` parameter; it is passed via `extra_body` when set.
 - Coach summary now defaults to the active coach model when no summary override is set.
 - LiteLLM runtime now skips tool definitions missing a name to avoid Groq tool rendering errors.
+- LiteLLM runtime now accepts tool definitions with nested `function.name` and logs any unnamed tools.
 
 ## [0.10.3] - 2026-02-06
 

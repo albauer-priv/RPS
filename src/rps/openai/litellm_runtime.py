@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any, Iterable
 import json
+import logging
 import os
 import re
 import uuid
@@ -13,6 +14,9 @@ import uuid
 import litellm
 
 from rps.core.config import normalize_agent_name
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -109,14 +113,25 @@ def _tools_from_payload(tools: list[dict[str, Any]] | None) -> list[dict[str, An
             continue
         name = tool.get("name")
         if not name:
+            function = tool.get("function") if isinstance(tool.get("function"), dict) else {}
+            name = function.get("name")
+        if not name:
+            LOGGER.warning("LiteLLM tool skipped: missing name in tool definition")
             continue
+        description = tool.get("description", "")
+        parameters = tool.get("parameters", {})
+        function = tool.get("function") if isinstance(tool.get("function"), dict) else {}
+        if not description:
+            description = function.get("description", "")
+        if not parameters:
+            parameters = function.get("parameters", {})
         converted.append(
             {
                 "type": "function",
                 "function": {
                     "name": name,
-                    "description": tool.get("description", ""),
-                    "parameters": tool.get("parameters", {}),
+                    "description": description,
+                    "parameters": parameters,
                 },
             }
         )
