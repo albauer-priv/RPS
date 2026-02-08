@@ -128,6 +128,38 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
     return messages
 
 
+def _summarize_message(message: dict[str, Any]) -> dict[str, Any]:
+    role = message.get("role")
+    name = message.get("name")
+    summary: dict[str, Any] = {"role": role}
+    if name:
+        summary["name"] = name
+    if "tool_call_id" in message:
+        summary["tool_call_id"] = message.get("tool_call_id")
+    content = message.get("content")
+    if isinstance(content, list):
+        parts: list[dict[str, Any]] = []
+        for item in content:
+            if isinstance(item, dict):
+                text = item.get("text")
+                parts.append(
+                    {
+                        "type": item.get("type"),
+                        "len": len(text) if isinstance(text, str) else 0,
+                    }
+                )
+        summary["content"] = parts
+    elif isinstance(content, str):
+        summary["content_len"] = len(content)
+    else:
+        summary["content_len"] = 0
+    return summary
+
+
+def _summarize_messages(messages: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [_summarize_message(message) for message in messages]
+
+
 def _tools_from_payload(tools: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
     converted: list[dict[str, Any]] = []
     for tool in tools or []:
@@ -419,13 +451,29 @@ class LiteLLMResponses:
             kwargs["temperature"] = temperature
         if max_completion_tokens is not None:
             kwargs["max_completion_tokens"] = max_completion_tokens
-        if tools:
-            kwargs["tools"] = tools
-        if tool_choice:
-            kwargs["tool_choice"] = tool_choice
-        if tools and _is_groq_model(model, self._config.base_url):
-            # Groq examples expect explicit tool_choice; keep it non-forcing.
-            kwargs["tool_choice"] = "auto"
+    if tools:
+        kwargs["tools"] = tools
+    if tool_choice:
+        kwargs["tool_choice"] = tool_choice
+    if tools and _is_groq_model(model, self._config.base_url):
+        # Groq examples expect explicit tool_choice; keep it non-forcing.
+        kwargs["tool_choice"] = "auto"
+    debug_tools = os.getenv("RPS_LLM_DEBUG_TOOLS", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    if debug_tools:
+        LOGGER.info(
+            "LiteLLM request meta model=%s base_url=%s stream=%s tools=%s tool_choice=%s messages=%s",
+            model,
+            self._config.base_url,
+            stream,
+            [tool.get(\"function\", {}).get(\"name\") for tool in tools] if tools else [],
+            tool_choice,
+            _summarize_messages(messages),
+        )
 
         if not stream:
             response = _with_retry(
