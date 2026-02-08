@@ -300,6 +300,17 @@ class LiteLLMResponses:
         tools = _tools_from_payload(payload.get("tools"))
         tool_choice = _tool_choice_from_payload(payload.get("tool_choice"))
         if tools:
+            tool_names = [
+                tool["function"]["name"]
+                for tool in tools
+                if tool.get("function") and tool["function"].get("name")
+            ]
+            LOGGER.info(
+                "LiteLLM tools prepared count=%d names=%s",
+                len(tool_names),
+                tool_names,
+            )
+        if tools:
             valid_names = {
                 tool["function"]["name"]
                 for tool in tools
