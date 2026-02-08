@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import time
@@ -21,6 +22,7 @@ from .versioning import (
     WEEK_SCOPED_ARTIFACTS,
 )
 
+logger = logging.getLogger(__name__)
 
 def utc_iso_now() -> str:
     """Return the current time in ISO-8601 UTC format."""
@@ -337,6 +339,13 @@ class LocalArtifactStore:
 
         self._atomic_write_json(version_path, doc)
         self._append_log(athlete_id, meta, version_path)
+        logger.info(
+            "Artifact write type=%s version_key=%s path=%s run_id=%s",
+            meta.artifact_type.value,
+            meta.version_key,
+            version_path,
+            meta.run_id,
+        )
 
         if update_latest:
             latest_path = self.latest_path(athlete_id, artifact_type)
@@ -397,6 +406,13 @@ class LocalArtifactStore:
             producer_agent=producer_agent,
             run_id=run_id,
             path=str(version_path),
+        )
+        logger.info(
+            "Artifact write type=%s version_key=%s path=%s run_id=%s",
+            artifact_type.value,
+            normalized_key,
+            version_path,
+            run_id,
         )
 
         self._record_index_write(
