@@ -767,8 +767,11 @@ def run_agent_multi_output(
         )
         if reasoning:
             payload["reasoning"] = reasoning
-        if force_search_flag:
-            payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
+        # NOTE(temporary): Disabled forced knowledge_search tool_choice due to Groq
+        # tool_choice mismatch errors (2026-02-08). Re-enable when Groq tool
+        # routing is stable again.
+        # if force_search_flag:
+        #     payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
         elif forced_tool_name:
             payload["tool_choice"] = {"type": "function", "name": forced_tool_name}
         if debug_file_search:
