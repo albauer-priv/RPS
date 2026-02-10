@@ -53,6 +53,7 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Legacy CLI entrypoint removed; project is UI-only (Streamlit + maintenance scripts).
 * **Recent status:** UI pages now use a consistent header order (Title → Athlete → Status hints → Actions).
 * **Recent status:** Workouts and System Status pages no longer show duplicate status panels.
+* **Recent status:** Plan Hub highlights that Plan Week can auto-create missing phase artefacts when needed.
 
 ### Tech stack & constraints
 

@@ -351,7 +351,11 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
     if not readiness_key:
         return False
     step = readiness_map.get(readiness_key)
-    return bool(step and step.status in {"ready", "stale"})
+    if not step:
+        return False
+    if readiness_key == "week_plan" and step.status == "stale":
+        return False
+    return step.status in {"ready", "stale"}
 
 
 def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
@@ -725,6 +729,25 @@ def _build_execution_steps(
     selected_steps = [step["step_id"] for step in STEP_DEFINITIONS if step["step_id"] != "INPUTS_CHECK"]
     if mode == "Scoped" and scope in SCOPE_STEPS:
         selected_steps = SCOPE_STEPS[scope]
+        if scope == "Week Plan":
+            readiness_map = {step.key: step for step in readiness}
+            phase_guardrails = readiness_map.get("phase_guardrails")
+            phase_structure = readiness_map.get("phase_structure")
+            if phase_guardrails and phase_guardrails.status in {"missing", "stale"}:
+                selected_steps = [
+                    "PHASE_GUARDRAILS",
+                    "PHASE_STRUCTURE",
+                    "PHASE_PREVIEW",
+                    *selected_steps,
+                ]
+            elif phase_structure and phase_structure.status in {"missing", "stale"}:
+                selected_steps = [
+                    "PHASE_STRUCTURE",
+                    "PHASE_PREVIEW",
+                    *selected_steps,
+                ]
+        seen: set[str] = set()
+        selected_steps = [step_id for step_id in selected_steps if not (step_id in seen or seen.add(step_id))]
 
     steps: list[dict[str, Any]] = []
     for definition in STEP_DEFINITIONS:
@@ -914,8 +937,23 @@ if run_state:
 set_status(status_state=status_state, title="Plan Hub", message=status_message)
 render_status_panel()
 st.subheader("Readiness")
+st.markdown("`Auto-creates phase artifacts`")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 st.caption(overall_message)
+phase_guardrails_step = readiness_map.get("phase_guardrails")
+phase_structure_step = readiness_map.get("phase_structure")
+week_plan_step = readiness_map.get("week_plan")
+if week_plan_step and week_plan_step.status in {"missing", "stale"}:
+    if phase_guardrails_step and phase_guardrails_step.status in {"missing", "stale"}:
+        st.info(
+            "Plan Week will create missing or stale Phase Guardrails/Structure (and Preview) before "
+            "generating the Week Plan for the selected ISO week."
+        )
+    elif phase_structure_step and phase_structure_step.status in {"missing", "stale"}:
+        st.info(
+            "Plan Week will create missing or stale Phase Structure (and Preview) before "
+            "generating the Week Plan for the selected ISO week."
+        )
 
 readiness_container = st.container()
 readiness_cols = readiness_container.columns(2)
@@ -988,7 +1026,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                                 allow_delete=False,
                                 process_subtype=desired_subtype,
                             )
-                            st.info("Run requested (placeholder).")
+                            st.info("Run requested.")
                             st.rerun()
                     elif step.key == "season_plan":
                         if st.button(step.fix_label, key=f"fix_{step.key}"):
@@ -1044,7 +1082,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                                 allow_delete=False,
                                 process_subtype=desired_subtype,
                             )
-                            st.info("Run requested (placeholder).")
+                            st.info("Run requested.")
                             st.rerun()
                     elif step.key == "scenario_selection":
                         if st.button(step.fix_label, key=f"fix_{step.key}"):
@@ -1194,7 +1232,8 @@ if not has_blockers:
         with run_actions:
             st.markdown("**Run actions**")
             st.caption(
-                "Plan Week runs a scoped week plan for the current/next ISO week. "
+                "Plan Week runs a scoped week plan for the current/next ISO week and will create missing "
+                "phase artifacts (guardrails/structure/preview) if needed. "
                 "Run orchestrated executes the full plan cascade. Run scoped only reruns the selected scope "
                 "and dependent outputs."
             )
@@ -1257,7 +1296,7 @@ if not has_blockers:
             allow_delete=False,
             process_subtype=desired_subtype,
         )
-        st.info("Run requested (placeholder).")
+        st.info("Run requested.")
 
     if run_orchestrated:
         if not _is_week_in_scope(base_week):
@@ -1302,7 +1341,7 @@ if not has_blockers:
             allow_delete=False,
             process_subtype="orchestrated",
         )
-        st.info("Run requested (placeholder).")
+        st.info("Run requested.")
 
     if run_scoped:
         desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
@@ -1345,7 +1384,7 @@ if not has_blockers:
         st.session_state["plan_hub_running"] = True
         st.session_state["plan_hub_active_run_id"] = run_id
         _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], run_id, allow_delete=False, process_subtype=desired_subtype)
-        st.info("Run requested (placeholder).")
+        st.info("Run requested.")
 
 if summary_text:
     st.info(summary_text)

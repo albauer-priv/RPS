@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backup now always creates a full archive; restore keeps a scope selector for partial re-import.
 - Updated UI spec and artefact flow docs to reflect full backup + selective restore.
 - System → History status banner now renders under the page header for consistent layout.
+- Plan Hub now surfaces an `Auto-creates phase artifacts` readiness hint and clarifies that Plan Week will create missing phase artifacts when needed.
 - Simplified logging configuration to `RPS_LOG_LEVEL` + `RPS_LOG_CONSOLE` + `RPS_LOG_FILE` + `RPS_LOG_UI`, with unified LLM debug (`RPS_LLM_DEBUG`) and reasoning log control (`RPS_LLM_REASONING_LOG`).
 - Removed the legacy CLI entrypoint (`src/rps/main.py`) and deprecated data pipeline wrapper scripts; documentation now reflects UI-only workflows and the `intervals_data.py` entrypoint.
 - Feed Forward now uses the selected ISO week (current or previous only), with a single chained action to create the DES report, Season→Phase feed forward, then Phase→Week feed forward.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local artifact writes now emit log entries in `rps.log` for easier debugging from Athlete Profile pages.
 
 ### Fixed
+- Plan Week no longer crashes Intervals export due to `IsoWeek` formatting (week variable shadowing removed).
 - LiteLLM message builder now batches tool calls and always emits matching tool responses to satisfy OpenAI tool-call sequencing.
 - Tool output events now carry tool names through the runner to stabilize tool-call matching.
 - `smoke_vectorstores` now syncs missing local collections using an existing Qdrant client and tolerates older Qdrant delete signatures.

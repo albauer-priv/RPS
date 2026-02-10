@@ -663,8 +663,8 @@ def plan_week(
     else:
         if workspace.latest_exists(ArtifactType.WEEK_PLAN):
             plan = workspace.get_latest(ArtifactType.WEEK_PLAN)
-            week = envelope_week(plan)
-            if week and (week.year == target.year and week.week == target.week):
+            plan_week = envelope_week(plan)
+            if plan_week and (plan_week.year == target.year and plan_week.week == target.week):
                 message = (
                     f"WEEK_PLAN matches ISO week {target_label} but is stale. Will create."
                 )
