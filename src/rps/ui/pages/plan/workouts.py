@@ -133,8 +133,6 @@ if revise_submit:
             with st.expander("Revise output", expanded=False):
                 st.code(output)
 
-render_status_panel()
-
 intervals_payload = None
 try:
     intervals_payload = store.load_version(athlete_id, ArtifactType.INTERVALS_WORKOUTS, version_key)

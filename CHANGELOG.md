@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plan → Week no longer shows the System output/logs expander.
 - Analyse → Data & Metrics removes weekly load, durability/decoupling, and weekly decoupling charts.
 - UI pages now follow a consistent layout order: Title → Athlete → Status hints → Actions/content.
+- Workouts and System Status pages now render a single status panel (no duplicate status blocks).
 - Events page now offers an upgrade action for legacy planning events payloads to restore all columns.
 - Planning Events no longer include an `objective` field; legacy values are mapped into `goal` on load with schema bumped to 1.2.
 - Events page now auto-upgrades legacy planning events on load instead of prompting.

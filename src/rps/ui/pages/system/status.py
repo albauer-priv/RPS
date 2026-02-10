@@ -186,7 +186,6 @@ set_status(
     message=f"{len(filtered_runs)} runs" if filtered_runs else "No runs found.",
     last_action="View Status",
 )
-render_status_panel()
 
 if filtered_runs:
     st.subheader("Running Processes")
