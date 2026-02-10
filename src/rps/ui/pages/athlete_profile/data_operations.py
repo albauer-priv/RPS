@@ -46,11 +46,8 @@ mode_options = list(PARTIAL_RESTORE_MODES.keys())
 
 with st.expander("Backup (Export)", expanded=False):
     st.write("Create a portable archive of this athlete’s data.")
-    backup_mode = st.selectbox(
-        "Backup scope",
-        options=mode_options,
-        format_func=lambda key: mode_labels.get(key, key),
-    )
+    backup_mode = "full"
+    st.caption("Backup scope: Full backup")
     if st.button("Create Backup", width="content"):
         with st.spinner("Building backup archive..."):
             try:

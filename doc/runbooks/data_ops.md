@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: Runbook
 ---
 # Athlete Backup & Restore (Concept)
@@ -97,10 +97,10 @@ Contains:
 
 ## UI behavior (Data Operations page)
 
-- **Create Backup** generates an archive for the selected scope and provides a download link.
+- **Create Backup** always generates a full archive and provides a download link.
 - **Download Last Backup** reuses the most recent bundle in the UI session.
 - **Validate Backup** runs checksum validation and reports how many files are in scope (no writes).
-- **Show files to restore** lists all files that would be written for the selected scope.
+- **Show files to restore** lists all files that would be written for the selected restore scope.
 - **Summary** shows file counts per top‑level folder (inputs/latest/data/receipts/rendered).
 - **Restore Backup** requires a typed confirmation and optional force‑restore into a non‑empty workspace.
 
