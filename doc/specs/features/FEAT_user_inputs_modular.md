@@ -249,22 +249,22 @@ flowchart TD
 
 ## 11) Documentation Updates
 
-* [x] [[doc/ui/pages/athlete_profile.md](doc/ui/pages/athlete_profile.md)](doc/ui/pages/athlete_profile.md) — new nav order + new pages.
-* [x] [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md) — new inputs in `inputs/`.
-* [x] [[doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)](doc/overview/artefact_flow.md) — updated inputs.
+* [x] [doc/ui/pages/athlete_profile.md](../../ui/pages/athlete_profile.md) — new nav order + new pages.
+* [x] [doc/architecture/workspace.md](../../architecture/workspace.md) — new inputs in `inputs/`.
+* [x] [doc/overview/artefact_flow.md](../../overview/artefact_flow.md) — updated inputs.
 * [x] Deprecation notices for Season Brief / events.md specs.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* UI flows/actions: [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md)
-* UI contract: [[doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md)](doc/ui/streamlit_contract.md)
-* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
-* Workspace: [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)
-* Schema versioning: [[doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)](doc/architecture/schema_versioning.md)
-* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
-* ADRs: [[doc/adr/README.md](doc/adr/README.md)](doc/adr/README.md)
+* UI flows/actions: [doc/ui/ui_spec.md](../../ui/ui_spec.md)
+* UI contract: [doc/ui/streamlit_contract.md](../../ui/streamlit_contract.md)
+* Architecture: [doc/architecture/system_architecture.md](../../architecture/system_architecture.md)
+* Workspace: [doc/architecture/workspace.md](../../architecture/workspace.md)
+* Schema versioning: [doc/architecture/schema_versioning.md](../../architecture/schema_versioning.md)
+* Logging policy: [doc/specs/contracts/logging_policy.md](../contracts/logging_policy.md))
+* ADRs: [doc/adr/README.md](../../adr/README.md)
 
 ---
 

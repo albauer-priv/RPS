@@ -4,7 +4,7 @@
 * **Status:** Approved
 * **Owner/Area:** Data Pipeline
 * **Last-Updated:** 2026-02-05
-* **Related:** [doc/ui/pages/athlete_profile.md](doc/ui/pages/athlete_profile.md)
+* **Related:** [doc/ui/pages/athlete_profile.md](../../ui/pages/athlete_profile.md)
 
 ---
 
@@ -206,8 +206,8 @@ flowchart TD
 
 ## 11) Documentation Updates
 
-* [ ] [[doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md)](doc/architecture/subsystems/data_pipeline.md) — add historical baseline step.
-* [ ] [[doc/ui/pages/athlete_profile.md](doc/ui/pages/athlete_profile.md)](doc/ui/pages/athlete_profile.md) — historic data source and refresh behavior.
+* [ ] [doc/architecture/subsystems/data_pipeline.md](../../architecture/subsystems/data_pipeline.md) — add historical baseline step.
+* [ ] [doc/ui/pages/athlete_profile.md](../../ui/pages/athlete_profile.md) — historic data source and refresh behavior.
 
 ---
 
@@ -218,8 +218,8 @@ flowchart TD
 * Architecture: `doc/architecture/system_architecture.md#data-pipeline`
 * Workspace: `doc/architecture/workspace.md#analysis-artifacts`
 * Schema versioning: `doc/architecture/schema_versioning.md#artifact-schemas`
-* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
-* Validation / runbooks: [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
-* ADRs: [[doc/adr/README.md](doc/adr/README.md)](doc/adr/README.md)
+* Logging policy: [doc/specs/contracts/logging_policy.md](../contracts/logging_policy.md))
+* Validation / runbooks: [doc/runbooks/validation.md](../../runbooks/validation.md)
+* ADRs: [doc/adr/README.md](../../adr/README.md)
 
 ---

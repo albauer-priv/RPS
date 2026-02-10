@@ -231,7 +231,7 @@ Update these docs as part of implementation:
 * Schema versioning: `doc/architecture/schema_versioning.md#...`
 * Logging policy: `doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md)#...` (or wherever it lives)
 * Validation / runbooks: `doc/runbooks/validation.md#...`
-* ADRs: [[doc/adr/000x-....md](doc/adr/000x-....md)](doc/adr/000x-....md)
+* ADRs: [doc/adr/000x-....md](doc/adr/000x-....md)
 
 ---
 

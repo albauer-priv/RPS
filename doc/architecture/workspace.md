@@ -51,9 +51,9 @@ runtime/athletes/<athlete_id>/
 
 Templates are available under:
 
-- [[specs/knowledge/_shared/sources/templates/athlete_profile_template.md](specs/knowledge/_shared/sources/templates/athlete_profile_template.md)](specs/knowledge/_shared/sources/templates/athlete_profile_template.md)
-- [[specs/knowledge/_shared/sources/templates/planning_events_template.md](specs/knowledge/_shared/sources/templates/planning_events_template.md)](specs/knowledge/_shared/sources/templates/planning_events_template.md)
-- [[specs/knowledge/_shared/sources/templates/logistics_template.md](specs/knowledge/_shared/sources/templates/logistics_template.md)](specs/knowledge/_shared/sources/templates/logistics_template.md)
+- [specs/knowledge/_shared/sources/templates/athlete_profile_template.md](specs/knowledge/_shared/sources/templates/athlete_profile_template.md)
+- [specs/knowledge/_shared/sources/templates/planning_events_template.md](specs/knowledge/_shared/sources/templates/planning_events_template.md)
+- [specs/knowledge/_shared/sources/templates/logistics_template.md](specs/knowledge/_shared/sources/templates/logistics_template.md)
 
 ---
 

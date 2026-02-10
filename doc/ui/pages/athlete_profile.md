@@ -42,4 +42,4 @@ All input guidance is provided on the pages themselves; templates are not used.
 - Select + view KPI profile
 
 ## Data Operations
-- Backup is always full; restore scope is selectable (see [[doc/runbooks/data_ops.md](doc/runbooks/data_ops.md)](doc/runbooks/data_ops.md))
+- Backup is always full; restore scope is selectable (see [doc/runbooks/data_ops.md](../../runbooks/data_ops.md))

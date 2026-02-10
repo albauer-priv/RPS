@@ -35,6 +35,6 @@ and must not replace JSON/CSV artifacts.
 
 ## Links
 
-- Feature spec: [[doc/specs/features/FEAT_parquet_cache.md](doc/specs/features/FEAT_parquet_cache.md)](doc/[specs/features/FEAT_parquet_cache.md](specs/features/FEAT_parquet_cache.md))
-- Data pipeline: [[doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md)](doc/architecture/subsystems/data_pipeline.md)
+- Feature spec: [doc/specs/features/FEAT_parquet_cache.md](../specs/features/FEAT_parquet_cache.md))
+- Data pipeline: [doc/architecture/subsystems/data_pipeline.md](../architecture/subsystems/data_pipeline.md)
 

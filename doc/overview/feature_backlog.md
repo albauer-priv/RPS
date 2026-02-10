@@ -7,7 +7,7 @@ Owner: Product
 # Feature Backlog
 
 This backlog tracks upcoming features and refactors. Each item should link to a
-feature spec ([[doc/specs/features/FEAT_<slug>.md](doc/specs/features/FEAT_<slug>.md)](doc/[specs/features/FEAT_<slug>.md](specs/features/FEAT_<slug>.md))) before implementation.
+feature spec ([doc/specs/features/FEAT_<slug>.md](doc/specs/features/FEAT_<slug>.md))) before implementation.
 
 ## Ranked Backlog (with dependencies)
 
@@ -58,15 +58,15 @@ flowchart TD
 When resuming work, follow this order so context stays consistent:
 
 1) Read `AGENTS.md` (rules, doc placement, feature-first workflow).
-2) Review [[doc/specs/features/FEAT_user_inputs_modular.md](doc/specs/features/FEAT_user_inputs_modular.md)](doc/[specs/features/FEAT_user_inputs_modular.md](specs/features/FEAT_user_inputs_modular.md)) for scope and current status.
+2) Review [doc/specs/features/FEAT_user_inputs_modular.md](../specs/features/FEAT_user_inputs_modular.md)) for scope and current status.
 3) Verify current backlog order and dependencies in this file.
 4) Check repo for in-flight changes:
    - `git status`
    - recently modified files in `src/rps/ui/pages/athlete_profile/` and `specs/schemas/`
 5) Implement the next backlog item only after the related feature doc is **Reviewed/Approved**.
 6) Keep docs in sync:
-   - [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md), [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md), [[doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)](doc/overview/artefact_flow.md)
-   - update [[doc/README.md](doc/README.md)](doc/README.md) index if files move
+   - [doc/ui/ui_spec.md](../ui/ui_spec.md), [doc/architecture/workspace.md](../architecture/workspace.md), [doc/overview/artefact_flow.md](artefact_flow.md)
+   - update [doc/README.md](../README.md) index if files move
 7) Run required checks:
    - `python -m py_compile $(git ls-files '*.py')`
    - one relevant smoke run (UI/CLI)

@@ -141,7 +141,7 @@ agent_id = resolver.id_for_store_name("vs_rps_all_agents")
 - `.cache/` is gitignored by default.
 
 For operational limits, data sensitivity, and incident response, see
-[[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md) (Vector Stores section).
+[doc/architecture/system_architecture.md](system_architecture.md) (Vector Stores section).
 
 ---
 

@@ -23,10 +23,10 @@ This document is the canonical registry of agents, their roles, modes, and artif
 ## Mode Notes
 
 - Modes are referenced by orchestrators and UI run scopes.
-- Prompts are in [[prompts/agents/*.md](prompts/agents/*.md)](prompts/agents/*.md) and knowledge injection is configured in `config/agent_knowledge_injection.yaml`.
+- Prompts are in [prompts/agents/*.md](prompts/agents/*.md) and knowledge injection is configured in `config/agent_knowledge_injection.yaml`.
 
 ## Related Docs
 
-- UI flows: [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md)
-- Orchestration flow: [[doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)](doc/overview/artefact_flow.md)
-- Planning sequence: [[doc/overview/how_to_plan.md](doc/overview/how_to_plan.md)](doc/overview/how_to_plan.md)
+- UI flows: [doc/ui/ui_spec.md](../ui/ui_spec.md)
+- Orchestration flow: [doc/overview/artefact_flow.md](../overview/artefact_flow.md)
+- Planning sequence: [doc/overview/how_to_plan.md](../overview/how_to_plan.md)

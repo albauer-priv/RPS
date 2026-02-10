@@ -15,6 +15,6 @@ Key concepts:
 - **Agents**: model-backed planners that write artifacts to the workspace.
 
 See:
-- [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
-- [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md)
-- [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
+- [doc/architecture/system_architecture.md](../architecture/system_architecture.md)
+- [doc/ui/ui_spec.md](../ui/ui_spec.md)
+- [doc/runbooks/validation.md](../runbooks/validation.md)
