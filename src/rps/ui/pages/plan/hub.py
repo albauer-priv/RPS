@@ -353,9 +353,8 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
     step = readiness_map.get(readiness_key)
     if not step:
         return False
-    if readiness_key == "week_plan" and step.status == "stale":
-        return False
-    return step.status in {"ready", "stale"}
+    # Only require overrides when we're explicitly modifying an existing artifact.
+    return step.status == "ready"
 
 
 def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
@@ -1208,6 +1207,7 @@ if not has_blockers:
                 placeholder="Describe what to change at the selected scope.",
                 disabled=not scope,
             )
+            st.caption("Override is only required when modifying an existing artifact.")
             if override_required and not (override_text or "").strip():
                 st.warning("Override required when modifying existing artifacts.")
         default_run_id = (
