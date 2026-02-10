@@ -35,6 +35,7 @@ athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+status_slot = st.container()
 
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()
 artefacts = index.get("artefacts") or {}
@@ -170,11 +171,13 @@ for artifact_type, entry in artefacts.items():
 
 if not rows:
     set_status(status_state="idle", title="System", message="No artefacts found.")
-    render_status_panel()
+    with status_slot:
+        render_status_panel()
     st.stop()
 
 set_status(status_state="done", title="System", message="History loaded.")
-render_status_panel()
+with status_slot:
+    render_status_panel()
 
 st.subheader("Overview")
 st.caption("Latest outputs and run history (planning + data).")

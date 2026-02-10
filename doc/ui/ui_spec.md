@@ -26,6 +26,11 @@ See `doc/architecture/system_architecture.md` for C4 diagrams and system-level c
 
 ## Global UI Contract
 
+### Page Layout Standard (all non‑Coach pages)
+- Order: **Title → Athlete caption → Status panel → Actions/controls → Content/details**.
+- Show only one status banner per page.
+- Additional captions (scope, ISO range, etc.) belong inside their section, not above the status panel.
+
 ### Global Sidebar (non‑Coach pages)
 - Inputs: Athlete ID, ISO Year, ISO Week, Phase (if available), Dev Mode
 - Purpose: global state only, no heavy IO
