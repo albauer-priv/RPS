@@ -14,13 +14,13 @@ This file is the **README for coding agents** working in this repository. It con
 
 > Prefer running commands from repo root.
 
-* Syntax check (fast): `python -m py_compile $(git ls-files '*.py')`
+* Syntax check (fast): `python3 -m py_compile $(git ls-files '*.py')`
 * Run app: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
 * Tests (if present): `pytest -q`
 * UI smoke check (manual): `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
 * Targeted CLI smoke checks (common):
   * Intervals pipeline help (safe): `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`
-  * Plan-week: smoke via UI (Plan → Week page) until a non-deprecated CLI entrypoint exists.
+  * Plan-week: smoke via UI (Plan → Week page).
 
 **Rule:** Before marking a task “done”, run at least **syntax check + one relevant smoke run** (UI or CLI), and fix failures.
 
@@ -45,7 +45,6 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Phase/Week/Workouts headers include ISO-week date ranges and render above captions; Season now shows the plan date range in the header.
 * **Recent status:** Report page now surfaces Narrative/KPI Summary/Trend Analysis sections and hides raw JSON.
 * **Recent status:** Data & Metrics decoupling chart shows weekly trend plus per-activity values.
-* **Recent status:** Events page can upgrade legacy planning events payloads to restore all columns.
 * **Recent status:** Schema bundler strips nested `$id` values to prevent duplicate canonical-uri errors (Groq tool schema compile).
 * **Recent status:** Multi-output runner stages tools (read/search first, store-only second) to reduce token usage.
 * **Recent status:** LiteLLM Groq requests set `tool_choice=auto` and retry on TPM limits using `RPS_TPM_*` env.
@@ -54,6 +53,8 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** UI pages now use a consistent header order (Title → Athlete → Status hints → Actions).
 * **Recent status:** Workouts and System Status pages no longer show duplicate status panels.
 * **Recent status:** Plan Hub highlights that Plan Week can auto-create missing phase artefacts when needed.
+* **Recent status:** Legacy Season Brief support removed (parsers, UI page, schema fields); run-store JSONL fallback and workspace legacy path normalization removed.
+* **Recent status:** Events UI no longer auto-upgrades legacy planning events payloads.
 
 ### Tech stack & constraints
 
