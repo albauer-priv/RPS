@@ -141,12 +141,12 @@ Owner: UI Analytics
 
 ## 11) Documentation Updates
 
-* [ ] `doc/ui/pages/performance_data_metrics.md` — note Parquet preference.
+* [ ] [[doc/ui/pages/performance_data_metrics.md](doc/ui/pages/performance_data_metrics.md)](doc/ui/pages/performance_data_metrics.md) — note Parquet preference.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* UI: `doc/ui/pages/performance_data_metrics.md`
-* Architecture: `doc/architecture/subsystems/data_pipeline.md`
-* Feature cache: `doc/specs/features/FEAT_parquet_cache.md`
+* UI: [[doc/ui/pages/performance_data_metrics.md](doc/ui/pages/performance_data_metrics.md)](doc/ui/pages/performance_data_metrics.md)
+* Architecture: [[doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md)](doc/architecture/subsystems/data_pipeline.md)
+* Feature cache: [[doc/specs/features/FEAT_parquet_cache.md](doc/specs/features/FEAT_parquet_cache.md)](doc/[specs/features/FEAT_parquet_cache.md](specs/features/FEAT_parquet_cache.md))

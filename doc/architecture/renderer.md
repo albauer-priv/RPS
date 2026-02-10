@@ -63,7 +63,7 @@ The renderer supports the following artifact types (meta.artifact_type):
 ## 5. Notes
 
 - Default output location (if `--out` is omitted):
-  - `runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md`
+  - [[runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md](runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md)](runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md)
   - `ATHLETE_ID` is loaded from `.env` (Intervals.icu athlete ID).
 - Artefacts saved via the runner are auto-rendered using the integrated renderer.
 - If `meta.trace_upstream` is a list of strings, it is rendered directly.

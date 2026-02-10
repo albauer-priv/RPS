@@ -10,7 +10,7 @@ Owner: UI/Data Contracts
 * **Status:** Approved
 * **Owner/Area:** UI + Schemas
 * **Last-Updated:** 2026-02-08
-* **Related:** doc/ui/pages/athlete_profile/events.md (if present), specs/schemas/planning_events.schema.json
+* **Related:** [doc/ui/pages/athlete_profile/events.md](doc/ui/pages/athlete_profile/events.md) (if present), specs/schemas/planning_events.schema.json
 
 ---
 
@@ -218,6 +218,6 @@ flowchart TD
 
 * `specs/schemas/planning_events.schema.json`
 * `specs/knowledge/_shared/sources/schemas/bundled/planning_events.schema.json`
-* `doc/ui/pages/athlete_profile/events.md` (if present)
-* `doc/overview/artefact_flow.md`
-* `doc/architecture/workspace.md`
+* [[doc/ui/pages/athlete_profile/events.md](doc/ui/pages/athlete_profile/events.md)](doc/ui/pages/athlete_profile/events.md) (if present)
+* [[doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)](doc/overview/artefact_flow.md)
+* [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)

@@ -49,7 +49,7 @@ vector_store_name: vs_rps_all_agents
 description: Unified knowledge store for all agents
 
 sources:
-  - path: ../_shared/sources/specs/load_estimation_spec.md
+  - path: ../_shared/sources/[specs/load_estimation_spec.md](specs/load_estimation_spec.md)
     tags: [week, rules]
   - path: sources/week_plan_contract.md
     tags: [schema]
@@ -141,7 +141,7 @@ agent_id = resolver.id_for_store_name("vs_rps_all_agents")
 - `.cache/` is gitignored by default.
 
 For operational limits, data sensitivity, and incident response, see
-`doc/architecture/system_architecture.md` (Vector Stores section).
+[[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md) (Vector Stores section).
 
 ---
 

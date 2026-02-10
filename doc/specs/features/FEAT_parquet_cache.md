@@ -198,16 +198,16 @@ Owner: Data Pipeline
 
 ## 11) Documentation Updates
 
-* [ ] `doc/architecture/subsystems/data_pipeline.md` — mention Parquet cache.
-* [ ] `doc/adr/ADR-024-parquet-cache.md` — decision record.
+* [ ] [[doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md)](doc/architecture/subsystems/data_pipeline.md) — mention Parquet cache.
+* [ ] [[doc/adr/ADR-024-parquet-cache.md](doc/adr/ADR-024-parquet-cache.md)](doc/adr/ADR-024-parquet-cache.md) — decision record.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* Architecture: `doc/architecture/system_architecture.md`
-* Workspace: `doc/architecture/workspace.md`
-* Schema versioning: `doc/architecture/schema_versioning.md`
-* Logging policy: `doc/specs/contracts/logging_policy.md`
-* ADRs: `doc/adr/ADR-024-parquet-cache.md`
+* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
+* Workspace: [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)
+* Schema versioning: [[doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)](doc/architecture/schema_versioning.md)
+* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
+* ADRs: [[doc/adr/ADR-024-parquet-cache.md](doc/adr/ADR-024-parquet-cache.md)](doc/adr/ADR-024-parquet-cache.md)
 

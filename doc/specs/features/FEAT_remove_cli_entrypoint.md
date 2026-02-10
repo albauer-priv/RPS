@@ -210,19 +210,19 @@ Owner: UI
 ## 11) Documentation Updates
 
 * [x] `README.md` — remove `python -m rps.main ...` usage.
-* [x] `doc/overview/how_to_plan.md` — replace CLI references with UI flow.
-* [x] `doc/architecture/system_architecture.md` — remove CLI entrypoint references.
-* [x] `doc/architecture/subsystems/data_pipeline.md` — update pipeline entrypoints.
+* [x] [[doc/overview/how_to_plan.md](doc/overview/how_to_plan.md)](doc/overview/how_to_plan.md) — replace CLI references with UI flow.
+* [x] [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md) — remove CLI entrypoint references.
+* [x] [[doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md)](doc/architecture/subsystems/data_pipeline.md) — update pipeline entrypoints.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* UI flows/actions: `doc/ui/ui_spec.md`
-* UI contract (Streamlit): `doc/ui/streamlit_contract.md`
-* Architecture: `doc/architecture/system_architecture.md`
-* Workspace: `doc/architecture/workspace.md`
-* Schema versioning: `doc/architecture/schema_versioning.md`
-* Logging policy: `doc/specs/contracts/logging_policy.md`
-* Validation / runbooks: `doc/runbooks/validation.md`
-* ADRs: `doc/adr/README.md`
+* UI flows/actions: [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md)
+* UI contract (Streamlit): [[doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md)](doc/ui/streamlit_contract.md)
+* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
+* Workspace: [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)
+* Schema versioning: [[doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)](doc/architecture/schema_versioning.md)
+* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
+* Validation / runbooks: [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
+* ADRs: [[doc/adr/README.md](doc/adr/README.md)](doc/adr/README.md)

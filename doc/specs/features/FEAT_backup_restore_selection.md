@@ -222,16 +222,16 @@ flowchart TD
 
 ## 11) Documentation Updates
 
-* [x] `doc/runbooks/data_ops.md` — update backup/restore UX behavior.
-* [ ] `doc/overview/artefact_flow.md` — include backup/restore nodes.
+* [x] [[doc/runbooks/data_ops.md](doc/runbooks/data_ops.md)](doc/runbooks/data_ops.md) — update backup/restore UX behavior.
+* [ ] [[doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)](doc/overview/artefact_flow.md) — include backup/restore nodes.
 * [ ] `CHANGELOG.md` — record behavior change.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* Architecture: `doc/architecture/system_architecture.md`
-* Workspace: `doc/architecture/workspace.md`
-* Logging policy: `doc/specs/contracts/logging_policy.md`
-* Validation / runbooks: `doc/runbooks/validation.md`
-* ADRs: `doc/adr/README.md`
+* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
+* Workspace: [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)
+* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
+* Validation / runbooks: [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
+* ADRs: [[doc/adr/README.md](doc/adr/README.md)](doc/adr/README.md)

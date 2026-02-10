@@ -222,14 +222,14 @@ Owner: Platform
 ## 11) Documentation Updates
 
 * [x] `.env.example` — replace logging section with simplified vars.
-* [x] `doc/specs/contracts/logging_policy.md` — note new logging controls.
+* [x] [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md)) — note new logging controls.
 * [x] `CHANGELOG.md` — record logging simplification.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* Architecture: `doc/architecture/system_architecture.md`
-* Logging policy: `doc/specs/contracts/logging_policy.md`
-* Validation / runbooks: `doc/runbooks/validation.md`
-* ADRs: `doc/adr/README.md`
+* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
+* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
+* Validation / runbooks: [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
+* ADRs: [[doc/adr/README.md](doc/adr/README.md)](doc/adr/README.md)

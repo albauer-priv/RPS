@@ -10,64 +10,64 @@ This directory contains the canonical documentation for the platform. It is a na
 
 ## Where to start
 
-- `overview/system_overview.md`
-- `architecture/system_architecture.md`
-- `ui/ui_spec.md`
+- [System Overview](overview/system_overview.md)
+- [System Architecture](architecture/system_architecture.md)
+- [UI Spec](ui/ui_spec.md)
 
 ## Documentation index
 
 ### Overview (explanation)
-- `overview/system_overview.md`
-- `overview/how_to_plan.md`
-- `overview/planning_principles.md`
-- `overview/artefact_flow.md`
-- `overview/recommended_models.md`
-- `overview/feature_backlog.md`
+- [System Overview](overview/system_overview.md)
+- [How to Plan](overview/how_to_plan.md)
+- [Planning Principles](overview/planning_principles.md)
+- [Artefact Flow](overview/artefact_flow.md)
+- [Recommended Models](overview/recommended_models.md)
+- [Feature Backlog](overview/feature_backlog.md)
 
 ### Architecture (system design)
-- `architecture/system_architecture.md`
-- `architecture/agents.md`
-- `architecture/workspace.md`
-- `architecture/schema_versioning.md`
-- `architecture/deployment.md`
-- `architecture/vectorstores.md`
-- `architecture/renderer.md`
-- `architecture/subsystems/data_pipeline.md`
-- `architecture/subsystems/intervals_posting.md`
+- [System Architecture](architecture/system_architecture.md)
+- [Agents](architecture/agents.md)
+- [Workspace](architecture/workspace.md)
+- [Schema Versioning](architecture/schema_versioning.md)
+- [Deployment](architecture/deployment.md)
+- [Vectorstores](architecture/vectorstores.md)
+- [Renderer](architecture/renderer.md)
+- [Data Pipeline Subsystem](architecture/subsystems/data_pipeline.md)
+- [Intervals Posting Subsystem](architecture/subsystems/intervals_posting.md)
 
 ### UI (flows + Streamlit contract)
-- `ui/ui_spec.md`
-- `ui/streamlit_contract.md`
-- `ui/pages/plan_hub.md`
-- `ui/pages/home.md`
-- `ui/pages/coach.md`
-- `ui/pages/plan_season.md`
-- `ui/pages/plan_phase.md`
-- `ui/pages/plan_week.md`
-- `ui/pages/plan_workouts.md`
-- `ui/pages/performance_data_metrics.md`
-- `ui/pages/performance_report.md`
-- `ui/pages/performance_feed_forward.md`
-- `ui/pages/system_status.md`
-- `ui/pages/system_history.md`
-- `ui/pages/system_log.md`
-- `ui/pages/athlete_profile.md`
+- [UI Spec](ui/ui_spec.md)
+- [Streamlit Contract](ui/streamlit_contract.md)
+- [Plan Hub](ui/pages/plan_hub.md)
+- [Home](ui/pages/home.md)
+- [Coach](ui/pages/coach.md)
+- [Plan Season](ui/pages/plan_season.md)
+- [Plan Phase](ui/pages/plan_phase.md)
+- [Plan Week](ui/pages/plan_week.md)
+- [Plan Workouts](ui/pages/plan_workouts.md)
+- [Performance Data & Metrics](ui/pages/performance_data_metrics.md)
+- [Performance Report](ui/pages/performance_report.md)
+- [Performance Feed Forward](ui/pages/performance_feed_forward.md)
+- [System Status](ui/pages/system_status.md)
+- [System History](ui/pages/system_history.md)
+- [System Log](ui/pages/system_log.md)
+- [Athlete Profile](ui/pages/athlete_profile.md)
 
 ### Specs (normative contracts)
-- `specs/contracts/logging_policy.md`
-- `specs/contracts/validation/` (artifact validation references)
+- [Logging Policy](specs/contracts/logging_policy.md)
+- [Validation Contracts](specs/contracts/validation/) (artifact validation references)
 
 ### Runbooks (ops)
-- `runbooks/validation.md`
-- `runbooks/data_ops.md`
+- [Validation Runbook](runbooks/validation.md)
+- [Data Ops Runbook](runbooks/data_ops.md)
 
 ### ADRs
-- `adr/README.md`
+- [ADR Index](adr/README.md)
 
 ### Proposals
-- `proposals/queue_scheduler.md` (superseded proposal)
+- [Queue Scheduler Proposal](proposals/queue_scheduler.md) (superseded proposal)
 
 ## Conventions (short)
 
-- Doc-writing rules live in `AGENTS.md`.
+- Doc-writing rules live in [AGENTS.md](../AGENTS.md).
 - Every doc must have Version/Status/Last-Updated/Owner header.

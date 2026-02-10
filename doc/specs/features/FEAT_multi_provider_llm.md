@@ -269,10 +269,10 @@ Owner: Architecture
 
 Update these docs as part of implementation:
 
-* [ ] `doc/architecture/system_architecture.md` — runtime/provider abstraction.
-* [ ] `doc/architecture/vectorstores.md` — Qdrant embedded + sync rules.
-* [ ] `doc/runbooks/validation.md` — smoke checks for LiteLLM path.
-* [ ] `doc/overview/feature_backlog.md` — backlog item status.
+* [ ] [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md) — runtime/provider abstraction.
+* [ ] [[doc/architecture/vectorstores.md](doc/architecture/vectorstores.md)](doc/architecture/vectorstores.md) — Qdrant embedded + sync rules.
+* [ ] [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md) — smoke checks for LiteLLM path.
+* [ ] [[doc/overview/feature_backlog.md](doc/overview/feature_backlog.md)](doc/overview/feature_backlog.md) — backlog item status.
 
 ---
 
@@ -283,9 +283,9 @@ Update these docs as part of implementation:
 * Architecture: `doc/architecture/system_architecture.md#...`
 * Workspace: `doc/architecture/workspace.md#...`
 * Schema versioning: `doc/architecture/schema_versioning.md#...`
-* Logging policy: `doc/specs/contracts/logging_policy.md#...`
+* Logging policy: `doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md)#...`
 * Validation / runbooks: `doc/runbooks/validation.md#...`
-* ADRs: `doc/adr/ADR-025-multi-provider-runtime-and-local-vectorstore.md`
+* ADRs: [[doc/adr/ADR-025-multi-provider-runtime-and-local-vectorstore.md](doc/adr/ADR-025-multi-provider-runtime-and-local-vectorstore.md)](doc/adr/ADR-025-multi-provider-runtime-and-local-vectorstore.md)
 
 ---
 

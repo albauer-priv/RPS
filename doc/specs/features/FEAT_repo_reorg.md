@@ -237,21 +237,21 @@ Owner: Architecture
 Update these docs as part of implementation:
 
 * [ ] `README.md` — repo layout overview.
-* [ ] `doc/overview/artefact_flow.md` — update runtime/spec root references.
-* [ ] `doc/architecture/workspace.md` — workspace root + run store paths.
-* [ ] `doc/runbooks/validation.md` — updated paths for scripts/tools.
+* [ ] [[doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)](doc/overview/artefact_flow.md) — update runtime/spec root references.
+* [ ] [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md) — workspace root + run store paths.
+* [ ] [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md) — updated paths for scripts/tools.
 
 ---
 
 ## 12) Link Map (no duplication; links only)
 
-* UI flows/actions: `doc/ui/ui_spec.md`
-* UI contract (Streamlit): `doc/ui/streamlit_contract.md`
-* Architecture: `doc/architecture/system_architecture.md`
-* Workspace: `doc/architecture/workspace.md`
-* Schema versioning: `doc/architecture/schema_versioning.md`
-* Logging policy: `doc/specs/contracts/logging_policy.md`
-* Validation / runbooks: `doc/runbooks/validation.md`
+* UI flows/actions: [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md)
+* UI contract (Streamlit): [[doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md)](doc/ui/streamlit_contract.md)
+* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
+* Workspace: [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)
+* Schema versioning: [[doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)](doc/architecture/schema_versioning.md)
+* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
+* Validation / runbooks: [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
 * ADRs: `doc/adr/` (new ADR required)
 
 ---

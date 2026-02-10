@@ -25,7 +25,7 @@ It covers:
 - runtime storage and traceability
 
 It is a system document, not a coaching manual.
-See `doc/adr/README.md` for architecture decisions.
+See [[doc/adr/README.md](doc/adr/README.md)](doc/adr/README.md) for architecture decisions.
 
 ---
 
@@ -108,7 +108,7 @@ flowchart TD
 
 ## C4 Diagrams
 
-This section provides system-level C4 views. UI flows are documented separately in `doc/ui/ui_spec.md`.
+This section provides system-level C4 views. UI flows are documented separately in [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md).
 
 ### C4: Container View (Simplified)
 
@@ -126,7 +126,7 @@ flowchart TB
 
 ## 3. Agent Roles & Responsibilities
 
-See `doc/architecture/agents.md` for the canonical registry of agents, modes, and IO.
+See [[doc/architecture/agents.md](doc/architecture/agents.md)](doc/architecture/agents.md) for the canonical registry of agents, modes, and IO.
 
 ### 3.1 Performance-Analyst
 - Diagnostic only, advisory output.

@@ -192,11 +192,11 @@ Owner: UI
 
 ## 12) Link Map (no duplication; links only)
 
-* UI flows/actions: `doc/ui/ui_spec.md`
-* UI contract (Streamlit): `doc/ui/streamlit_contract.md`
-* Architecture: `doc/architecture/system_architecture.md`
-* Workspace: `doc/architecture/workspace.md`
-* Schema versioning: `doc/architecture/schema_versioning.md`
-* Logging policy: `doc/specs/contracts/logging_policy.md`
-* Validation / runbooks: `doc/runbooks/validation.md`
+* UI flows/actions: [[doc/ui/ui_spec.md](doc/ui/ui_spec.md)](doc/ui/ui_spec.md)
+* UI contract (Streamlit): [[doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md)](doc/ui/streamlit_contract.md)
+* Architecture: [[doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)](doc/architecture/system_architecture.md)
+* Workspace: [[doc/architecture/workspace.md](doc/architecture/workspace.md)](doc/architecture/workspace.md)
+* Schema versioning: [[doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)](doc/architecture/schema_versioning.md)
+* Logging policy: [[doc/specs/contracts/logging_policy.md](doc/specs/contracts/logging_policy.md)](doc/[specs/contracts/logging_policy.md](specs/contracts/logging_policy.md))
+* Validation / runbooks: [[doc/runbooks/validation.md](doc/runbooks/validation.md)](doc/runbooks/validation.md)
 * ADRs: n/a

@@ -4,32 +4,32 @@ Scaffold for local vector stores with a unified, versioned knowledge base.
 
 ## Layout
 
-- `src/rps/`: app code and OpenAI helpers.
-- `doc/`: system documentation.
-- `prompts/`: shared + per-agent prompts.
-- `specs/knowledge/`: versioned sources and manifests (no embeddings in repo).
-- `scripts/`: maintenance helpers (schemas, validation, vector stores).
-- `legacy/`: artifacts to migrate from the predecessor project (gitignored).
-- `runtime/athletes/`: runtime state for local athlete workspaces (gitignored).
-- `.cache/`: local Qdrant state for vector stores (gitignored).
+- [`src/rps/`](src/rps/): app code and OpenAI helpers.
+- [`doc/`](doc/): system documentation.
+- [`prompts/`](prompts/): shared + per-agent prompts.
+- [`specs/knowledge/`](specs/knowledge/): versioned sources and manifests (no embeddings in repo).
+- [`scripts/`](scripts/): maintenance helpers (schemas, validation, vector stores).
+- [`legacy/`](legacy/): artifacts to migrate from the predecessor project (gitignored).
+- [`runtime/athletes/`](runtime/athletes/): runtime state for local athlete workspaces (gitignored).
+- [`.cache/`](.cache/): local Qdrant state for vector stores (gitignored).
 
 ## Documentation
 
-- `doc/README.md`: entry point and index for system docs.
-- `doc/adr/README.md`: Architecture Decision Records (ADR) index.
-- `doc/architecture/system_architecture.md`: system overview and design principles.
-- `doc/architecture/vectorstores.md`: vector store setup and sync workflow.
-- `doc/overview/how_to_plan.md`: planner roles, artifacts, and flow.
-- `doc/overview/how_to_plan.md`: step-by-step planning workflow and cadence.
-- `doc/overview/artefact_flow.md`: end-to-end artefact flow with detail diagrams.
-- `doc/architecture/renderer.md`: JSON-to-Markdown sidecar rendering.
-- `doc/runbooks/validation.md`: validate pipeline outputs against schemas.
-- `doc/architecture/subsystems/data_pipeline.md`: pipeline entrypoints, outputs, and defaults.
-- `doc/overview/planning_principles.md`: planning guardrails for scope, timing, and reports.
-- `doc/architecture/workspace.md`: local workspace layout and rules.
-- `doc/architecture/schema_versioning.md`: schema change policy and compatibility.
-- `doc/architecture/deployment.md`: environment setup and deployment notes.
-- `doc/overview/recommended_models.md`: model selection guidance for cost-optimized runs.
+- [doc/README.md](doc/README.md): entry point and index for system docs.
+- [doc/adr/README.md](doc/adr/README.md): Architecture Decision Records (ADR) index.
+- [doc/architecture/system_architecture.md](doc/architecture/system_architecture.md): system overview and design principles.
+- [doc/architecture/vectorstores.md](doc/architecture/vectorstores.md): vector store setup and sync workflow.
+- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md): planner roles, artifacts, and flow.
+- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md): step-by-step planning workflow and cadence.
+- [doc/overview/artefact_flow.md](doc/overview/artefact_flow.md): end-to-end artefact flow with detail diagrams.
+- [doc/architecture/renderer.md](doc/architecture/renderer.md): JSON-to-Markdown sidecar rendering.
+- [doc/runbooks/validation.md](doc/runbooks/validation.md): validate pipeline outputs against schemas.
+- [doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md): pipeline entrypoints, outputs, and defaults.
+- [doc/overview/planning_principles.md](doc/overview/planning_principles.md): planning guardrails for scope, timing, and reports.
+- [doc/architecture/workspace.md](doc/architecture/workspace.md): local workspace layout and rules.
+- [doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md): schema change policy and compatibility.
+- [doc/architecture/deployment.md](doc/architecture/deployment.md): environment setup and deployment notes.
+- [doc/overview/recommended_models.md](doc/overview/recommended_models.md): model selection guidance for cost-optimized runs.
 
 ## Quick start
 

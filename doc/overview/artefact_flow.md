@@ -455,7 +455,7 @@ flowchart LR
 
 ### 3.2 Season-Scenario-Agent
 
-See `doc/architecture/agents.md` for the canonical agent registry.
+See [[doc/architecture/agents.md](doc/architecture/agents.md)](doc/architecture/agents.md) for the canonical agent registry.
 - `season_scenarios_yyyy-ww--yyyy-ww.json`
 
 ### 3.3 Season-Planner

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System → History status banner now renders under the page header for consistent layout.
 - Plan Hub now surfaces an `Auto-creates phase artifacts` readiness hint and clarifies that Plan Week will create missing phase artifacts when needed.
 - Plan Hub override gating is now consistent: overrides are required only when modifying existing artifacts.
+- Doc references in `doc/` now use clickable Markdown links instead of plain-text paths.
 - Simplified logging configuration to `RPS_LOG_LEVEL` + `RPS_LOG_CONSOLE` + `RPS_LOG_FILE` + `RPS_LOG_UI`, with unified LLM debug (`RPS_LLM_DEBUG`) and reasoning log control (`RPS_LLM_REASONING_LOG`).
 - Removed the legacy CLI entrypoint (`src/rps/main.py`) and deprecated data pipeline wrapper scripts; documentation now reflects UI-only workflows and the `intervals_data.py` entrypoint.
 - Feed Forward now uses the selected ISO week (current or previous only), with a single chained action to create the DES report, Season→Phase feed forward, then Phase→Week feed forward.
