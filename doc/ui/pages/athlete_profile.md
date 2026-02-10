@@ -1,7 +1,7 @@
 ---
 Version: 1.1
 Status: Updated
-Last-Updated: 2026-02-08
+Last-Updated: 2026-02-10
 Owner: UI
 ---
 # Athlete Profile Pages
@@ -42,4 +42,4 @@ All input guidance is provided on the pages themselves; templates are not used.
 - Select + view KPI profile
 
 ## Data Operations
-- Backup/restore actions (see `doc/runbooks/data_ops.md`)
+- Backup is always full; restore scope is selectable (see `doc/runbooks/data_ops.md`)

@@ -417,6 +417,33 @@ flowchart LR
 
 ---
 
+### 2.9 Data Operations (Backup + Restore)
+
+**Inputs (Artefacts)**
+- Athlete workspace directory (`var/athletes/<athlete_id>/`)
+
+**Processing (Conceptual)**
+- Backup is always **full** (no scope selector).
+- Restore applies **only the selected scope** from the uploaded archive.
+
+**Outputs (Artefacts)**
+- `backup_archive_<athlete_id>_<timestamp>.zip` (full snapshot)
+- `backup_manifest.json` (embedded inside the archive)
+
+```mermaid
+flowchart LR
+  U[User]:::actor --> DO["Data Operations UI"]:::component
+  DO --> BK["backup_archive_<athlete_id>_<timestamp>.zip"]:::artefact
+  BK --> DO
+  DO --> RS["Select Restore Scope"]:::component
+  RS --> WR["Write Selected Artefacts"]:::component
+  classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
+  classDef component fill:#eef8ee,stroke:#2f6b2f,stroke-width:1px;
+  classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+```
+
+---
+
 ## 3. Artefact Index (Quick Reference)
 
 ### 3.1 User-Maintained
@@ -457,6 +484,10 @@ See `doc/architecture/agents.md` for the canonical agent registry.
 
 ### 3.8 Performance-Analyst
 - `des_analysis_report_yyyy-ww.json`
+
+### 3.9 Data Operations
+- `backup_archive_<athlete_id>_<timestamp>.zip`
+- `backup_manifest.json` (embedded)
 
 ---
 

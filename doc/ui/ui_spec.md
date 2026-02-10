@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: UI
 ---
 # UI Flow (Athlete-First)
@@ -138,33 +138,33 @@ Handled by **Plan Hub — Orchestrated Run** (or Scoped: Week Plan). The Week pa
 ### Athlete Profile — Data Operations — Create Backup
 - **Preconditions:** athlete workspace exists
 - **Orchestrator call:** none (local archive creation)
-- **Writes/side-effects:** creates an in-memory archive for download
+- **Writes/side-effects:** creates a full in-memory archive for download (no scope selector)
 - **UI feedback:** success banner + download button
 
 ### Athlete Profile — Data Operations — Validate Backup (Dry-Run)
 - **Preconditions:** archive uploaded
 - **Orchestrator call:** none (local validation)
 - **Writes/side-effects:** none
-- **UI feedback:** validation status + file count in scope
+- **UI feedback:** validation status + file count by category
 
 ### Athlete Profile — Data Operations — Restore Backup
-- **Preconditions:** archive uploaded + user confirmation; target workspace empty unless force
+- **Preconditions:** archive uploaded + restore scope selected + user confirmation; target workspace empty unless force
 - **Orchestrator call:** none (local restore)
-- **Writes/side-effects:** writes files into `var/athletes/<athlete_id>/` per scope
+- **Writes/side-effects:** writes files into `var/athletes/<athlete_id>/` per selected restore scope
 - **UI feedback:** success/error banner + count of restored files
 
 #### Flow: Data Operations (Backup & Restore)
 
 ```mermaid
 flowchart TD
-    A["Open Data Operations Page"] --> B["Select Scope (Full/Partial)"]
-    B --> C["Create Backup"]
-    C --> D["Download Backup"]
-    B --> E["Upload Backup Archive"]
-    E --> F["Validate Backup (Dry-Run)"]
+    A["Open Data Operations Page"] --> B["Create Full Backup"]
+    B --> C["Download Backup"]
+    A --> D["Upload Backup Archive"]
+    D --> E["Validate Backup (Dry-Run)"]
+    E --> F["Select Restore Scope"]
     F --> G{"Confirmation Provided?"}
     G -- "No" --> H["Show Error"]
-    G -- "Yes" --> I["Restore Backup"]
+    G -- "Yes" --> I["Restore Selected Scope"]
     I --> J["Show Restore Summary"]
 ```
 
