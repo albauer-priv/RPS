@@ -37,7 +37,7 @@ render_status_panel()
 
 st.subheader("UI Log Level")
 levels = ["DEBUG", "INFO", "WARNING", "ERROR"]
-current_level = os.getenv("RPS_LOG_LEVEL_UI", "INFO")
+current_level = os.getenv("RPS_LOG_UI", "INFO")
 selected = st.selectbox("Log level", options=levels, index=levels.index(current_level) if current_level in levels else 1)
 
 if st.button("Save log level"):
@@ -47,14 +47,14 @@ if st.button("Save log level"):
         lines = env_path.read_text(encoding="utf-8").splitlines()
     updated = False
     for idx, line in enumerate(lines):
-        if line.strip().startswith("RPS_LOG_LEVEL_UI="):
-            lines[idx] = f"RPS_LOG_LEVEL_UI={selected}"
+        if line.strip().startswith("RPS_LOG_UI="):
+            lines[idx] = f"RPS_LOG_UI={selected}"
             updated = True
             break
     if not updated:
-        lines.append(f"RPS_LOG_LEVEL_UI={selected}")
+        lines.append(f"RPS_LOG_UI={selected}")
     env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    os.environ["RPS_LOG_LEVEL_UI"] = selected
+    os.environ["RPS_LOG_UI"] = selected
     load_env_file(env_path)
     st.success("Log level saved. Reload the page to apply to new logs.")
 

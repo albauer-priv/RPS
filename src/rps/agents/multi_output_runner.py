@@ -329,8 +329,7 @@ def run_agent_multi_output(
         max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 20
     debug_file_search = (
         include_debug_file_search
-        or _env_flag("RPS_LLM_DEBUG_FILE_SEARCH")
-        or _env_flag("RPS_LLM_FILE_SEARCH_DEBUG")
+        or _env_flag("RPS_LLM_DEBUG")
         or logger.isEnabledFor(logging.DEBUG)
     )
 

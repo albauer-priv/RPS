@@ -116,11 +116,7 @@ def run_agent_task_strict(
 
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 6
-    debug_file_search = (
-        _env_flag("RPS_LLM_DEBUG_FILE_SEARCH")
-        or _env_flag("RPS_LLM_FILE_SEARCH_DEBUG")
-        or logger.isEnabledFor(logging.DEBUG)
-    )
+    debug_file_search = _env_flag("RPS_LLM_DEBUG") or logger.isEnabledFor(logging.DEBUG)
 
     tools = [
         _knowledge_search_tool(),

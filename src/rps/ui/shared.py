@@ -31,7 +31,7 @@ load_env_file(ROOT / ".env")
 SETTINGS = load_app_settings()
 
 LOGGER = logging.getLogger("rps.streamlit")
-UI_LOG_LEVEL = _normalize_level(os.getenv("RPS_LOG_LEVEL_UI", "INFO"))
+UI_LOG_LEVEL = _normalize_level(os.getenv("RPS_LOG_UI", "INFO"))
 
 CAPTURE_LOGGERS: list[logging.Logger] = [
     logging.getLogger("rps.workspace.guarded_store"),

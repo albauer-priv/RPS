@@ -243,8 +243,7 @@ def run_agent_session(
     tools += tool_defs
     debug_knowledge_search = (
         include_debug_file_search
-        or _env_flag("RPS_LLM_DEBUG_FILE_SEARCH")
-        or _env_flag("RPS_LLM_FILE_SEARCH_DEBUG")
+        or _env_flag("RPS_LLM_DEBUG")
         or logger.isEnabledFor(logging.DEBUG)
     )
     logger.info(

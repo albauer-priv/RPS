@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: ADR
 ---
 # ADR-019: Single Log File with Rotation
@@ -31,4 +31,4 @@ Multiple timestamped log files per run make it hard to find the right log for UI
 
 ## Exceptions
 
-- Explicit `APP_LOG_FILE` overrides continue to be honored for CLI runs (e.g., ad-hoc debugging).
+- None. Log target is fixed to the per-athlete `rps.log`.

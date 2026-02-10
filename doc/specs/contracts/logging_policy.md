@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: Documentation
 ---
 # Logging Policy
@@ -69,12 +69,16 @@ Time is in UTC.
 ## Configuration
 
 Environment variables:
-- APP_LOG_LEVEL: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
-- APP_LOG_STDOUT: if true, also logs to stdout
-- APP_LOG_FILE: overrides default log file location (CLI only)
+- RPS_LOG_LEVEL: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
+- RPS_LOG_CONSOLE: console log level (set OFF to disable console output)
+- RPS_LOG_FILE: file log level for `rps.log`
+- RPS_LOG_UI: Streamlit system log panel level
 - RPS_LOG_ROTATE_MB: rotate `rps.log` when it exceeds this size in MB (default: 50)
 - RPS_LOG_RETENTION_DAYS: delete rotated logs older than this many days (default: 7)
 - RPS_RUN_RETENTION_DAYS: delete run history older than N days (default: 7)
+- RPS_LLM_DEBUG: enable LLM debug logging (tools/stream events)
+- RPS_LLM_REASONING_LOG: off|summary|full (reasoning output control)
+- RPS_LLM_REASONING_LOG_FILE: optional reasoning log path
 - RPS_TPM_WAIT_MULTIPLIER: multiplier applied to TPM retry wait time (default: 2)
 - RPS_TPM_RETRY_COUNT: number of TPM retries before failing (default: 1)
 

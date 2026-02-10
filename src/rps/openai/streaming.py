@@ -23,7 +23,7 @@ def should_stream() -> bool:
 
 
 def stream_reasoning_mode() -> str:
-    raw = os.getenv("RPS_LLM_STREAM_REASONING", "full").strip().lower()
+    raw = os.getenv("RPS_LLM_REASONING_LOG", "off").strip().lower()
     if raw in ("none", "off", "0", "false", "no"):
         return "none"
     if raw in ("full", "reasoning"):
@@ -41,14 +41,9 @@ def stream_show_usage() -> bool:
     return raw not in ("0", "false", "no", "off")
 
 
-def stream_log_reasoning() -> bool:
-    raw = os.getenv("RPS_LLM_STREAM_LOG_REASONING", "1").strip().lower()
-    return raw not in ("0", "false", "no", "off")
-
-
-def stream_reasoning_italics() -> bool:
-    raw = os.getenv("RPS_LLM_STREAM_ITALICS", "0").strip().lower()
-    return raw not in ("0", "false", "no", "off")
+def llm_debug_enabled() -> bool:
+    raw = os.getenv("RPS_LLM_DEBUG", "0").strip().lower()
+    return raw in ("1", "true", "yes", "on")
 
 
 def reasoning_log_path() -> str | None:
@@ -208,8 +203,7 @@ def create_response(
     show_output = stream_show_output()
     reasoning_mode = stream_reasoning_mode()
     show_usage = stream_show_usage()
-    log_reasoning = stream_log_reasoning()
-    reasoning_italics = stream_reasoning_italics()
+    log_reasoning = reasoning_mode != "none"
     reasoning_log_file = reasoning_log_path()
     wrote_any = False
     wrote_reasoning_prefix = False
@@ -217,23 +211,8 @@ def create_response(
     final_response = None
     saw_full_reasoning = False
     reasoning_chunks: list[str] = []
-    debug_events = os.getenv("RPS_LLM_STREAM_DEBUG", "0").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-        "on",
-    )
-    debug_file_search = os.getenv("RPS_LLM_DEBUG_FILE_SEARCH", "0").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-        "on",
-    ) or os.getenv("RPS_LLM_FILE_SEARCH_DEBUG", "0").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-        "on",
-    )
+    debug_events = llm_debug_enabled()
+    debug_file_search = llm_debug_enabled()
 
     reasoning_log_started = False
     wrote_reasoning_log = False
@@ -275,8 +254,6 @@ def create_response(
 
     if stream_handlers is not None:
         show_output = True
-        if on_summary and reasoning_mode == "none":
-            reasoning_mode = "summary"
 
     for event in stream:
         event_type = _get_attr(event, "type")
@@ -295,10 +272,7 @@ def create_response(
                     if not wrote_reasoning_prefix:
                         sys.stdout.write("[reasoning] ")
                         wrote_reasoning_prefix = True
-                    if reasoning_italics:
-                        sys.stdout.write(f"\033[3m{delta}\033[0m")
-                    else:
-                        sys.stdout.write(delta)
+                    sys.stdout.write(delta)
                     sys.stdout.flush()
                 wrote_any = True
                 saw_full_reasoning = True
@@ -313,10 +287,7 @@ def create_response(
                     if not wrote_reasoning_prefix:
                         sys.stdout.write("[reasoning] ")
                         wrote_reasoning_prefix = True
-                    if reasoning_italics:
-                        sys.stdout.write(f"\033[3m{delta}\033[0m")
-                    else:
-                        sys.stdout.write(delta)
+                    sys.stdout.write(delta)
                     sys.stdout.flush()
                 wrote_any = True
                 reasoning_chunks.append(delta)
@@ -345,10 +316,7 @@ def create_response(
                         if not wrote_reasoning_prefix:
                             sys.stdout.write("[reasoning] ")
                             wrote_reasoning_prefix = True
-                        if reasoning_italics:
-                            sys.stdout.write(f"\033[3m{delta_text}\033[0m")
-                        else:
-                            sys.stdout.write(delta_text)
+                        sys.stdout.write(delta_text)
                         sys.stdout.flush()
                     wrote_any = True
                     reasoning_chunks.append(delta_text)

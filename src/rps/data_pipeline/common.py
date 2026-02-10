@@ -39,7 +39,7 @@ def _resolve_workspace_root() -> Path:
 
 def configure_logging(script_name: str) -> logging.Logger:
     """Configure logging to the shared rotating rps.log."""
-    log_level = os.getenv("APP_LOG_LEVEL", "INFO")
+    log_level = os.getenv("RPS_LOG_LEVEL", "INFO")
     athlete_id = os.getenv("ATHLETE_ID")
     if athlete_id:
         log_dir = _resolve_workspace_root() / athlete_id / "logs"

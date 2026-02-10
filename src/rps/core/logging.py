@@ -31,6 +31,14 @@ import os
 from datetime import datetime, timedelta, timezone
 
 
+def _is_disabled(value: str | int | None) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, int):
+        return value <= 0
+    return value.strip().lower() in {"0", "false", "no", "off", "none"}
+
+
 def _utc_today() -> datetime.date:
     return datetime.now(timezone.utc).date()
 
@@ -121,7 +129,6 @@ def setup_logging(
     level: str | int | None = None,
     log_file: str | Path | None = None,
     *,
-    log_stdout: bool | None = None,
     file_level: str | int | None = None,
     console_level: str | int | None = None,
 ) -> None:
@@ -130,16 +137,24 @@ def setup_logging(
         def filter(self, record: logging.LogRecord) -> bool:
             if record.levelno > logging.DEBUG:
                 return True
+            if os.getenv("RPS_LLM_DEBUG", "0").strip().lower() in ("1", "true", "yes", "on"):
+                return True
             name = record.name
             return not (name.startswith("litellm") or name.startswith("LiteLLM"))
 
     root = logging.getLogger()
     root.handlers.clear()
-    env_file_level = os.getenv("RPS_LOG_LEVEL_FILE")
-    env_console_level = os.getenv("RPS_LOG_LEVEL_CONSOLE")
-    file_level_value = _normalize_level(file_level or env_file_level or level or logging.INFO)
-    console_level_value = _normalize_level(console_level or env_console_level or logging.WARNING)
-    root.setLevel(min(file_level_value, console_level_value, logging.DEBUG))
+    env_default_level = os.getenv("RPS_LOG_LEVEL")
+    env_file_level = os.getenv("RPS_LOG_FILE")
+    env_console_level = os.getenv("RPS_LOG_CONSOLE")
+    file_level_value = _normalize_level(file_level or env_file_level or level or env_default_level or logging.INFO)
+    console_level_raw = console_level or env_console_level or level or env_default_level or logging.WARNING
+    console_disabled = _is_disabled(console_level_raw)
+    console_level_value = _normalize_level(console_level_raw)
+    root_levels = [file_level_value, logging.DEBUG]
+    if not console_disabled:
+        root_levels.append(console_level_value)
+    root.setLevel(min(root_levels))
 
     formatter = logging.Formatter(
         "%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -148,13 +163,7 @@ def setup_logging(
     formatter.converter = time.gmtime
 
     handlers: Iterable[logging.Handler] = []
-    if log_stdout is None:
-        env = os.getenv("APP_LOG_STDOUT")
-        if env is None:
-            log_stdout = False
-        else:
-            log_stdout = env.strip().lower() not in {"0", "false", "no"}
-    if log_stdout:
+    if not console_disabled:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(console_level_value)

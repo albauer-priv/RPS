@@ -585,7 +585,7 @@ class LiteLLMResponses:
         if tools and _is_groq_model(model, self._config.base_url) and not force_tool_choice:
             # Groq examples expect explicit tool_choice; keep it non-forcing.
             kwargs["tool_choice"] = "auto"
-        debug_tools = os.getenv("RPS_LLM_DEBUG_TOOLS", "0").strip().lower() in (
+        debug_tools = os.getenv("RPS_LLM_DEBUG", "0").strip().lower() in (
             "1",
             "true",
             "yes",
