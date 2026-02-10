@@ -33,7 +33,7 @@ announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
 
-profiles_dir = ROOT / "kpi_profiles"
+profiles_dir = ROOT / "specs" / "kpi_profiles"
 profile_paths = sorted(profiles_dir.glob("kpi_profile_*.json"))
 
 if not profile_paths:

@@ -59,8 +59,8 @@ def check_schema(path: Path) -> list[str]:
 def main() -> int:
     root = Path.cwd()
     schema_dirs = [
-        root / "schemas",
-        root / "knowledge" / "_shared" / "sources" / "schemas" / "bundled",
+        root / "specs" / "schemas",
+        root / "specs" / "knowledge" / "_shared" / "sources" / "schemas" / "bundled",
     ]
     files: list[Path] = []
     for directory in schema_dirs:

@@ -14,6 +14,7 @@ from typing import Callable
 
 from jinja2 import BaseLoader, Environment
 import streamlit as st
+from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from rps.core.config import load_app_settings, load_env_file
 from rps.core.logging import _normalize_level, setup_logging
@@ -272,6 +273,13 @@ def set_status(
 def render_status_panel() -> None:
     """Render the always-visible status panel."""
     state = init_ui_state()
+    run_ctx = get_script_run_ctx()
+    run_id = getattr(run_ctx, "run_id", None)
+    if run_id:
+        last_run_id = state.get("_status_panel_rendered_run_id")
+        if last_run_id == run_id:
+            return
+        state["_status_panel_rendered_run_id"] = run_id
     title = state.get("status_title") or "Status"
     message = state.get("status_message") or "Idle"
     status_state = state.get("status_state") or "idle"

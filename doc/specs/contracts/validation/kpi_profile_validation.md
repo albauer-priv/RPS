@@ -12,4 +12,4 @@ Owner: Specs
 
 ## Consistency
 - [ ] KPI values are consistent with the athlete profile.
-- [ ] File is copied to `var/athletes/<athlete_id>/latest/kpi_profile.json`.
+- [ ] File is copied to `runtime/athletes/<athlete_id>/latest/kpi_profile.json`.

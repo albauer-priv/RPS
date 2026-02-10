@@ -6,27 +6,27 @@
 agents:
   season_planner:
     inject:
-    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+    - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
       label: LoadEstimationSpec
-    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
-    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/contracts/season__phase_contract.md
-    - path: knowledge/_shared/sources/contracts/data_pipeline__season_contract.md
-    - path: knowledge/_shared/sources/contracts/scenario__season_contract.md
-    - path: knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
-    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
-    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
-    - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
-    - path: knowledge/_shared/sources/specs/season_cycle_enum_spec.md
-    - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: specs/knowledge/_shared/sources/contracts/season__phase_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/data_pipeline__season_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/scenario__season_contract.md
+    - path: specs/knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/season_cycle_enum_spec.md
+    - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
+    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
+    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       season_plan:
         bundle_id: season_plan
@@ -37,38 +37,38 @@ agents:
     bundles:
     - id: season_plan
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_season_plan.md
-      - path: knowledge/_shared/sources/schemas/bundled/season_plan.schema.json
+      - path: specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md
+      - path: specs/knowledge/_shared/sources/schemas/bundled/season_plan.schema.json
     - id: season_feed_forward
       inject:
-      - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+      - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
         label: LoadEstimationSpec
-      - path: knowledge/_shared/sources/specs/mandatory_output_season_phase_feed_forward.md
-      - path: knowledge/_shared/sources/schemas/bundled/season_phase_feed_forward.schema.json
+      - path: specs/knowledge/_shared/sources/specs/mandatory_output_season_phase_feed_forward.md
+      - path: specs/knowledge/_shared/sources/schemas/bundled/season_phase_feed_forward.schema.json
     - id: season_scenario
       inject:
-      - path: knowledge/_shared/sources/contracts/scenario__season_contract.md
-      - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
-      - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+      - path: specs/knowledge/_shared/sources/contracts/scenario__season_contract.md
+      - path: specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
   season_scenario:
     inject:
-    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - path: knowledge/_shared/sources/contracts/data_pipeline__scenario_contract.md
-    - path: knowledge/_shared/sources/contracts/scenario__season_contract.md
-    - path: knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
-    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
-    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - path: knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
-    - path: knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
-    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md
-    - path: knowledge/_shared/sources/schemas/bundled/season_scenarios.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/season_scenario_selection.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: specs/knowledge/_shared/sources/contracts/data_pipeline__scenario_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/scenario__season_contract.md
+    - path: specs/knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+    - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
+    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: specs/knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/season_scenarios.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/season_scenario_selection.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       scenario:
         bundle_id: season_scenario
@@ -77,16 +77,16 @@ agents:
       inject:
   coach:
     inject:
-    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
-    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
-    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
-    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
-    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+    - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
+    - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: specs/knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
     modes:
       coach:
         bundle_id: coach_coach
@@ -95,30 +95,30 @@ agents:
       inject:
   phase_architect:
     inject:
-    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+    - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
       label: LoadEstimationSpec
-    - path: knowledge/_shared/sources/contracts/season__phase_contract.md
-    - path: knowledge/_shared/sources/contracts/phase__week_contract.md
-    - path: knowledge/_shared/sources/contracts/data_pipeline__phase_contract.md
-    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
-    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
-    - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
-    - path: knowledge/_shared/sources/specs/data_confidence_spec.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
-    - path: knowledge/_shared/sources/specs/season_cycle_enum_spec.md
-    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
-    - path: knowledge/_shared/sources/specs/availability_interface_spec.md
-    - path: knowledge/_shared/sources/specs/wellness_interface_spec.md
-    - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_feed_forward.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: specs/knowledge/_shared/sources/contracts/season__phase_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/phase__week_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/data_pipeline__phase_contract.md
+    - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+    - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: specs/knowledge/_shared/sources/principles/evidence_layer_durability.md
+    - path: specs/knowledge/_shared/sources/specs/data_confidence_spec.md
+    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
+    - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
+    - path: specs/knowledge/_shared/sources/specs/season_cycle_enum_spec.md
+    - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_feed_forward.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       phase_guardrails:
         bundle_id: phase_guardrails
@@ -131,86 +131,86 @@ agents:
     bundles:
     - id: phase_guardrails
       inject:
-      - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
-      - path: knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md
+      - path: specs/knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+      - path: specs/knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md
     - id: phase_structure
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_phase_structure.md
-      - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
+      - path: specs/knowledge/_shared/sources/specs/mandatory_output_phase_structure.md
+      - path: specs/knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
     - id: phase_preview
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_phase_preview.md
-      - path: knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
+      - path: specs/knowledge/_shared/sources/specs/mandatory_output_phase_preview.md
+      - path: specs/knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json
     - id: phase_feed_forward
       inject:
-      - path: knowledge/_shared/sources/specs/mandatory_output_phase_feed_forward.md
-      - path: knowledge/_shared/sources/schemas/bundled/phase_feed_forward.schema.json
+      - path: specs/knowledge/_shared/sources/specs/mandatory_output_phase_feed_forward.md
+      - path: specs/knowledge/_shared/sources/schemas/bundled/phase_feed_forward.schema.json
   week_planner:
     inject:
-    - path: knowledge/_shared/sources/specs/load_estimation_spec.md
+    - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
       label: LoadEstimationSpec
-    - path: knowledge/_shared/sources/contracts/data_pipeline__week_contract.md
-    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
-    - path: knowledge/_shared/sources/specs/agenda_enum_spec.md
-    - path: knowledge/_shared/sources/policies/workout_policy.md
-    - path: knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
-    - path: knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
-    - path: knowledge/_shared/sources/specs/workouts/workout_json_spec.md
-    - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
-    - path: knowledge/_shared/sources/contracts/phase__week_contract.md
-    - path: knowledge/_shared/sources/contracts/week__builder_contract.md
-    - path: knowledge/_shared/sources/specs/mandatory_output_week_plan.md
-    - path: knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/phase_feed_forward.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: specs/knowledge/_shared/sources/contracts/data_pipeline__week_contract.md
+    - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+    - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
+    - path: specs/knowledge/_shared/sources/policies/workout_policy.md
+    - path: specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
+    - path: specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
+    - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md
+    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
+    - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: specs/knowledge/_shared/sources/contracts/phase__week_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/week__builder_contract.md
+    - path: specs/knowledge/_shared/sources/specs/mandatory_output_week_plan.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/phase_feed_forward.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       week_plan:
         inject:
   workout_builder:
     inject:
-    - path: knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
-    - path: knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
-    - path: knowledge/_shared/sources/specs/workouts/workout_json_spec.md
-    - path: knowledge/_shared/sources/policies/workout_policy.md
-    - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/contracts/week__builder_contract.md
-    - path: knowledge/_shared/sources/specs/mandatory_output_intervals_workouts.md
-    - path: knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/workouts.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
+    - path: specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
+    - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md
+    - path: specs/knowledge/_shared/sources/policies/workout_policy.md
+    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
+    - path: specs/knowledge/_shared/sources/contracts/week__builder_contract.md
+    - path: specs/knowledge/_shared/sources/specs/mandatory_output_intervals_workouts.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/workouts.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       intervals_workouts:
         inject:
   performance_analysis:
     inject:
-    - path: knowledge/_shared/sources/policies/progressive_overload_policy.md
-    - path: knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
-    - path: knowledge/_shared/sources/principles/principles_durability_first_cycling.md
-    - path: knowledge/_shared/sources/evidence/durability_bibliography.md
-    - path: knowledge/_shared/sources/principles/evidence_layer_durability.md
-    - path: knowledge/_shared/sources/policies/des_evaluation_policy.md
-    - path: knowledge/_shared/sources/specs/data_confidence_spec.md
-    - path: knowledge/_shared/sources/specs/traceability_spec.md
-    - path: knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: knowledge/_shared/sources/contracts/analyst__season_contract.md
-    - path: knowledge/_shared/sources/contracts/data_pipeline__analyst_contract.md
-    - path: knowledge/_shared/sources/specs/planning_events_interface_spec.md
-    - path: knowledge/_shared/sources/specs/logistics_interface_spec.md
-    - path: knowledge/_shared/sources/specs/mandatory_output_des_analysis_report.md
-    - path: knowledge/_shared/sources/schemas/bundled/des_analysis_report.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/activities_actual.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/activities_trend.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
+    - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+    - path: specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+    - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+    - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
+    - path: specs/knowledge/_shared/sources/principles/evidence_layer_durability.md
+    - path: specs/knowledge/_shared/sources/policies/des_evaluation_policy.md
+    - path: specs/knowledge/_shared/sources/specs/data_confidence_spec.md
+    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
+    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
+    - path: specs/knowledge/_shared/sources/contracts/analyst__season_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/data_pipeline__analyst_contract.md
+    - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+    - path: specs/knowledge/_shared/sources/specs/mandatory_output_des_analysis_report.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/des_analysis_report.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/activities_actual.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/activities_trend.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
+    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:
       des_analysis_report:
         inject:

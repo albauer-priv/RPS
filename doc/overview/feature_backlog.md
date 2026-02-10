@@ -62,7 +62,7 @@ When resuming work, follow this order so context stays consistent:
 3) Verify current backlog order and dependencies in this file.
 4) Check repo for in-flight changes:
    - `git status`
-   - recently modified files in `src/rps/ui/pages/athlete_profile/` and `schemas/`
+   - recently modified files in `src/rps/ui/pages/athlete_profile/` and `specs/schemas/`
 5) Implement the next backlog item only after the related feature doc is **Reviewed/Approved**.
 6) Keep docs in sync:
    - `doc/ui/ui_spec.md`, `doc/architecture/workspace.md`, `doc/overview/artefact_flow.md`

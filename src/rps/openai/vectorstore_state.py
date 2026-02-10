@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-DEFAULT_STATE_PATH = Path(".cache/vectorstores_state.json")
+DEFAULT_STATE_PATH = Path("runtime/vectorstores_state.json")
 
 
 def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:

@@ -249,7 +249,7 @@ def run_agent_multi_output(
 
     def _load_load_estimation_spec_season() -> str | None:
         root = Path(__file__).resolve().parents[3]
-        path = root / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
+        path = root / "specs" / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
         if not path.exists():
             return None
         content = path.read_text(encoding="utf-8")
@@ -264,7 +264,7 @@ def run_agent_multi_output(
 
     def _load_mandatory_doc(name: str) -> str | None:
         root = Path(__file__).resolve().parents[3]
-        path = root / "knowledge" / "_shared" / "sources" / "specs" / name
+        path = root / "specs" / "knowledge" / "_shared" / "sources" / "specs" / name
         if not path.exists():
             return None
         return path.read_text(encoding="utf-8").strip()

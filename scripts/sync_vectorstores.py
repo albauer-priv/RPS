@@ -47,7 +47,7 @@ def select_manifests(args: argparse.Namespace) -> list[Path]:
 def main() -> None:
     """Sync local manifest sources to OpenAI vector stores."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--knowledge-root", default="knowledge")
+    parser.add_argument("--knowledge-root", default="specs/knowledge")
     parser.add_argument("--manifest", help="Path to a single manifest.yaml")
     parser.add_argument("--agent", help="Sync only a single agent")
     parser.add_argument("--delete-removed", action="store_true")

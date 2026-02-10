@@ -7,8 +7,8 @@ Owner: Specs
 # LOGISTICS Validation
 
 ## Location
-- [ ] File lives in `var/athletes/<athlete_id>/inputs/logistics_*.json`.
-- [ ] Latest copy exists at `var/athletes/<athlete_id>/latest/logistics.json`.
+- [ ] File lives in `runtime/athletes/<athlete_id>/inputs/logistics_*.json`.
+- [ ] Latest copy exists at `runtime/athletes/<athlete_id>/latest/logistics.json`.
 
 ## Required content
 - [ ] Validates against `logistics.schema.json`.

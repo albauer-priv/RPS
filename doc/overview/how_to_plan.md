@@ -14,13 +14,13 @@ Last-Updated: 2026-02-10
 
 ## Quickstart (UI-first)
 
-1) Add inputs in Athlete Profile pages (stored under `var/athletes/<athlete_id>/inputs/`):
+1) Add inputs in Athlete Profile pages (stored under `runtime/athletes/<athlete_id>/inputs/`):
    - `athlete_profile_*.json`
    - `planning_events_*.json`
    - `logistics_*.json`
    - `availability_*.json`
 2) Select a KPI profile (UI: Athlete Profile → KPI Profile) to copy it into
-   `var/athletes/<athlete_id>/latest/kpi_profile.json` and `inputs/kpi_profile.json`.
+   `runtime/athletes/<athlete_id>/latest/kpi_profile.json` and `inputs/kpi_profile.json`.
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
    UI auto-refresh or `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py`.
 4) Open the **Plan Hub** and confirm Scope (athlete, ISO year/week, phase).
@@ -137,9 +137,9 @@ if selection is missing.
 ## 4. Run Execution Model
 
 Each run stores:
-- `runs/<run_id>/run.json`
-- `runs/<run_id>/steps.json`
-- `runs/<run_id>/events.jsonl`
+- `runtime/athletes/<athlete_id>/runs/<run_id>/run.json`
+- `runtime/athletes/<athlete_id>/runs/<run_id>/steps.json`
+- `runtime/athletes/<athlete_id>/runs/<run_id>/events.jsonl`
 
 Plan Hub displays step status, outputs, and events. Runs are append-only; failed
 runs can be superseded by a new run.

@@ -74,10 +74,10 @@ This file is the **README for coding agents** working in this repository. It con
 * `/src/rps/openai`: Responses API streaming, vectorstore, client.
 * `/src/rps/workspace`: Artifact store, schemas, ISO helpers.
 * `/config`: Knowledge injection, runtime config.
-* `/knowledge`: Specs, policies, principles, schemas.
-* `/var/athletes`: Workspace artifacts/logs/inputs.
+* `/specs/knowledge`: Specs, policies, principles, schemas.
+* `/runtime/athletes`: Workspace artifacts/logs/inputs.
 * `/doc`: System architecture, planner docs, artifact flows.
-* `/schemas`: JSON schemas (bundled + interface).
+* `/specs/schemas`: JSON schemas (bundled + interface).
 
 ### Key docs & config
 
@@ -89,7 +89,7 @@ This file is the **README for coding agents** working in this repository. It con
 * `doc/ui/pages/plan_hub.md`: Plan Hub proposal with readiness rules and layout.
 * `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
 * `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).
-* `schemas/**`: JSON schemas (esp. artifact interfaces).
+* `specs/schemas/**`: JSON schemas (esp. artifact interfaces).
 
 ---
 
@@ -485,7 +485,7 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 
 ## 12) Change impact checklist (use before/after changes)
 
-### Schema changes (`/schemas`, `knowledge/_shared/sources/schemas`)
+### Schema changes (`/specs/schemas`, `specs/knowledge/_shared/sources/schemas`)
 
 * For schemas used by the Responses API: ensure **all properties are listed in `required`** (strict tool schema requirement).
 * Run `python3 scripts/check_schema_required.py`.
@@ -543,7 +543,7 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 * Add worker heartbeats + stuck‑run recovery (timeout → FAILED or requeue).
 * Support `validate_only` runs (no writes, validation only).
 * Add `cancel_requested` handling so the worker can safely stop between steps.
-* Optional per‑step log files (`runs/<run_id>/logs/<step_id>.log`) for deep debugging.
+* Optional per‑step log files (`runtime/athletes/<athlete_id>/runs/<run_id>/logs/<step_id>.log`) for deep debugging.
 * Add heartbeat + “stuck run” UI (timeout → mark failed / requeue).
 * Add unposted count + receipts diff check on Week page.
 * Add receipt conflict UX (manual confirm) and external idempotency headers when available.

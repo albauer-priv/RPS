@@ -17,11 +17,11 @@ from script_logging import configure_logging  # noqa: E402
 
 
 def main() -> int:
-    """Bundle all schemas/ into knowledge/_shared/sources/schemas/bundled/."""
+    """Bundle all specs/schemas/ into specs/knowledge/_shared/sources/schemas/bundled/."""
     load_env_file(ROOT / ".env")
     logger = configure_logging(ROOT, Path(__file__).stem)
-    schema_dir = ROOT / "schemas"
-    output_dir = ROOT / "knowledge" / "_shared" / "sources" / "schemas" / "bundled"
+    schema_dir = ROOT / "specs" / "schemas"
+    output_dir = ROOT / "specs" / "knowledge" / "_shared" / "sources" / "schemas" / "bundled"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("Bundling schemas from %s to %s", schema_dir, output_dir)

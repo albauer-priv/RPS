@@ -155,7 +155,7 @@ Handled by **Plan Hub — Orchestrated Run** (or Scoped: Week Plan). The Week pa
 ### Athlete Profile — Data Operations — Restore Backup
 - **Preconditions:** archive uploaded + restore scope selected + user confirmation; target workspace empty unless force
 - **Orchestrator call:** none (local restore)
-- **Writes/side-effects:** writes files into `var/athletes/<athlete_id>/` per selected restore scope
+- **Writes/side-effects:** writes files into `runtime/athletes/<athlete_id>/` per selected restore scope
 - **UI feedback:** success/error banner + count of restored files
 
 #### Flow: Data Operations (Backup & Restore)

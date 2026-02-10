@@ -15,7 +15,7 @@ Last-Updated: 2026-01-20
 ## Purpose
 
 The workspace is the local, append-only storage for all artefacts and data
-related to an athlete. It lives under `var/athletes/<athlete_id>/` and is
+related to an athlete. It lives under `runtime/athletes/<athlete_id>/` and is
 gitignored.
 
 ---
@@ -23,7 +23,7 @@ gitignored.
 ## Layout
 
 ```
-var/athletes/<athlete_id>/
+runtime/athletes/<athlete_id>/
   inputs/
   data/
     plans/season/
@@ -51,9 +51,9 @@ var/athletes/<athlete_id>/
 
 Templates are available under:
 
-- `knowledge/_shared/sources/templates/athlete_profile_template.md`
-- `knowledge/_shared/sources/templates/planning_events_template.md`
-- `knowledge/_shared/sources/templates/logistics_template.md`
+- `specs/knowledge/_shared/sources/templates/athlete_profile_template.md`
+- `specs/knowledge/_shared/sources/templates/planning_events_template.md`
+- `specs/knowledge/_shared/sources/templates/logistics_template.md`
 
 ---
 

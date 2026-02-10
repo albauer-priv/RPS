@@ -113,7 +113,7 @@ class Workspace:
     ) -> str:
         """Validate against schemas and write a document."""
         if schema_dir is None:
-            schema_dir = Path("schemas")
+            schema_dir = Path("specs/schemas")
 
         from .validated_api import ValidatedWorkspace
 

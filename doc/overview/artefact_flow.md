@@ -420,7 +420,7 @@ flowchart LR
 ### 2.9 Data Operations (Backup + Restore)
 
 **Inputs (Artefacts)**
-- Athlete workspace directory (`var/athletes/<athlete_id>/`)
+- Athlete workspace directory (`runtime/athletes/<athlete_id>/`)
 
 **Processing (Conceptual)**
 - Backup is always **full** (no scope selector).

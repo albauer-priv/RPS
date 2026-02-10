@@ -209,9 +209,9 @@ def load_app_settings() -> AppSettings:
         openai_reasoning_summary_overrides=reasoning_summary_overrides,
         openai_max_completion_tokens=default_max_completion,
         openai_max_completion_tokens_overrides=max_completion_overrides,
-        workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")),
-        schema_dir=Path(os.getenv("SCHEMA_DIR", "schemas")),
+        workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "runtime/athletes")),
+        schema_dir=Path(os.getenv("SCHEMA_DIR", "specs/schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),
-        vs_state_path=Path(os.getenv("VECTORSTORE_STATE_PATH", ".cache/vectorstores_state.json")),
+        vs_state_path=Path(os.getenv("VECTORSTORE_STATE_PATH", "runtime/vectorstores_state.json")),
         file_search_max_results=_parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 20,
     )

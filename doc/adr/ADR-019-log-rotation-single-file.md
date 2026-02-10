@@ -16,7 +16,7 @@ Multiple timestamped log files per run make it hard to find the right log for UI
 ## Decision
 
 - Write all UI/CLI/worker logs to a single per-athlete file:
-  `var/athletes/<athlete_id>/logs/rps.log`.
+  `runtime/athletes/<athlete_id>/logs/rps.log`.
 - Rotate the file:
   - on day change, or
   - when it exceeds `RPS_LOG_ROTATE_MB` (default 50 MB).

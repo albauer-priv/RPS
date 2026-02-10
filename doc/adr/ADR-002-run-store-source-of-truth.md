@@ -15,7 +15,7 @@ Multiple pages need consistent, real-time planning status. Spreading status logi
 
 ## Decision
 
-Run status is persisted in the run store (`runs/<run_id>/*`) and is the single source of truth. UI pages read status via helpers (e.g., `get_planning_run_status`).
+Run status is persisted in the run store (`runtime/athletes/<athlete_id>/runs/<run_id>/*`) and is the single source of truth. UI pages read status via helpers (e.g., `get_planning_run_status`).
 
 ## Consequences
 

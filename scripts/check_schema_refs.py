@@ -16,7 +16,7 @@ from script_logging import configure_logging  # noqa: E402
 load_env_file(ROOT / ".env")
 logger = configure_logging(ROOT, Path(__file__).stem)
 
-schema_dir = Path("schemas")
+schema_dir = Path("specs/schemas")
 refs = set()
 
 

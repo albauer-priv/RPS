@@ -13,7 +13,7 @@ from rps.core.logging import log_and_print, setup_logging, timestamped_log_path
 
 def _resolve_workspace_root(root: Path) -> Path:
     """Resolve ATHLETE_WORKSPACE_ROOT relative to repo root when needed."""
-    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(root / "var/athletes"))
+    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(root / "runtime/athletes"))
     root_path = Path(raw_root)
     if not root_path.is_absolute():
         root_path = (root / root_path).resolve()

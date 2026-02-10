@@ -18,7 +18,7 @@ from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, load_vectorstore_id
 from rps.prompts.loader import agent_system_prompt
 
 
-DEFAULT_KNOWLEDGE_ROOT = Path("knowledge")
+DEFAULT_KNOWLEDGE_ROOT = Path("specs/knowledge")
 logger = logging.getLogger(__name__)
 
 

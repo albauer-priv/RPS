@@ -10,7 +10,7 @@ RPS is an end-to-end planning system for endurance athletes. It manages the Seas
 
 Key concepts:
 - **Artifacts**: versioned JSON outputs (season/phase/week/workouts, reports, inputs).
-- **Workspace**: append-only storage under `var/athletes/<athlete_id>/` with `latest/` pointers.
+- **Workspace**: append-only storage under `runtime/athletes/<athlete_id>/` with `latest/` pointers.
 - **Run Store**: per-run status/events for background jobs.
 - **Agents**: model-backed planners that write artifacts to the workspace.
 

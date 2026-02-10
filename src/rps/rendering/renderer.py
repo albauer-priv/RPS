@@ -1804,7 +1804,7 @@ def render_json_sidecar(
 
     resolved_schema_dir = Path(
         schema_dir
-        or os.getenv("SCHEMA_DIR", str(REPO_ROOT / "schemas"))
+        or os.getenv("SCHEMA_DIR", str(REPO_ROOT / "specs/schemas"))
     ).resolve()
     if validate:
         validate_document(doc, artifact_type, resolved_schema_dir)

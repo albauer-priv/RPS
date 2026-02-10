@@ -7,11 +7,11 @@ Scaffold for local vector stores with a unified, versioned knowledge base.
 - `src/rps/`: app code and OpenAI helpers.
 - `doc/`: system documentation.
 - `prompts/`: shared + per-agent prompts.
-- `knowledge/`: versioned sources and manifests (no embeddings in repo).
+- `specs/knowledge/`: versioned sources and manifests (no embeddings in repo).
 - `scripts/`: maintenance helpers (schemas, validation, vector stores).
 - `legacy/`: artifacts to migrate from the predecessor project (gitignored).
-- `var/athletes/`: runtime state for local athlete workspaces (gitignored).
-- `.cache/`: local sync state for vector stores (gitignored).
+- `runtime/athletes/`: runtime state for local athlete workspaces (gitignored).
+- `.cache/`: local Qdrant state for vector stores (gitignored).
 
 ## Documentation
 
@@ -34,7 +34,7 @@ Scaffold for local vector stores with a unified, versioned knowledge base.
 ## Quick start
 
 1. Copy `.env.example` to `.env` and fill in `RPS_LLM_API_KEY` and `ATHLETE_ID` (Intervals.icu).
-2. Add documents under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
+2. Add documents under `specs/knowledge/_shared/sources/` and update `specs/knowledge/all_agents/manifest.yaml`.
 3. Run `python scripts/bundle_schemas.py` (build bundled schemas for retrieval).
 4. Vector store sync runs in the UI background; use `python scripts/smoke_vectorstores.py` for manual verification.
 
@@ -71,7 +71,7 @@ Prerequisites:
 
 ### Logging (env)
 
-Log files are written to `var/athletes/<athlete_id>/logs/rps.log` with rotation.
+Log files are written to `runtime/athletes/<athlete_id>/logs/rps.log` with rotation.
 
 Optional env vars:
 - `RPS_LOG_ROTATE_MB=50` (rotate when size exceeds MB)
@@ -92,7 +92,7 @@ Optional env vars:
 - Validate outputs (latest): `python scripts/validate_outputs.py`
 - Validate outputs (week): `python scripts/validate_outputs.py --year 2026 --week 6`
 
-Outputs land in `var/athletes/<athlete_id>/data/` and are mirrored to `var/athletes/<athlete_id>/latest/`.
+Outputs land in `runtime/athletes/<athlete_id>/data/` and are mirrored to `runtime/athletes/<athlete_id>/latest/`.
 
 ### Formatting & rounding policy
 
@@ -153,7 +153,7 @@ ws.guard_put(
 
 ## Schema validation
 
-- Place your JSON schemas in `schemas/` (including all `$ref` targets).
+- Place your JSON schemas in `specs/schemas/` (including all `$ref` targets).
 - Use `Workspace.put_validated(...)` or `ValidatedWorkspace` to validate before saving.
 - Envelope vs raw documents are detected automatically (e.g. `workouts.schema.json` is raw).
 - Optional: run `python scripts/check_schema_refs.py` to verify all `$ref` files exist.
@@ -179,7 +179,7 @@ ws.put_validated(
     },
     producer_agent="phase_architect",
     run_id="run_2026-06_phase_001",
-    schema_dir=Path("schemas"),
+    schema_dir=Path("specs/schemas"),
 )
 ```
 
@@ -188,12 +188,12 @@ ws.put_validated(
 Render human-readable sidecars for JSON artefacts:
 
 ```bash
-PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer import render_json_sidecar; render_json_sidecar(Path('kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json'))"
+PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer import render_json_sidecar; render_json_sidecar(Path('specs/kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json'))"
 ```
 
 ## Vector store runtime
 
-- The UI background sync writes `.cache/vectorstores_state.json` with collection IDs (use `scripts/smoke_vectorstores.py` to verify).
+- The UI background sync writes `runtime/vectorstores_state.json` with collection IDs (use `scripts/smoke_vectorstores.py` to verify).
 - Use `rps.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
 - Load prompts from disk with `rps.prompts.loader.agent_system_prompt(...)`.
 
@@ -210,4 +210,4 @@ For CI/smoke checks, use the CLI helpers listed above (e.g., `intervals_data.py 
 
 - Vector stores are remote state; this repo only keeps sources + manifests.
 - Shared knowledge should be referenced from each agent manifest via `../_shared/...` paths (single store per agent).
-- Local artifacts live under `var/athletes/<athlete_id>/` and are managed by `rps.workspace`.
+- Local artifacts live under `runtime/athletes/<athlete_id>/` and are managed by `rps.workspace`.

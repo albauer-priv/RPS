@@ -12,30 +12,30 @@ Goal: allow an athlete to export all of their data from a running system and res
 
 ## Scope
 
-This design covers **per‑athlete data** stored under `var/athletes/<athlete_id>/` plus the minimal metadata needed to make those artifacts usable after restore. It does **not** include global system configuration, models, or vector stores. Those are managed separately by the system.
+This design covers **per‑athlete data** stored under `runtime/athletes/<athlete_id>/` plus the minimal metadata needed to make those artifacts usable after restore. It does **not** include global system configuration, models, or vector stores. Those are managed separately by the system.
 
 ---
 
 ## Data to include in the backup
 
 ### Required (restore must include)
-- `var/athletes/<athlete_id>/inputs/`  
+- `runtime/athletes/<athlete_id>/inputs/`  
   Athlete Profile, Availability, Planning Events, Logistics, KPI Profile, etc.
-- `var/athletes/<athlete_id>/latest/`  
+- `runtime/athletes/<athlete_id>/latest/`  
   Latest pointers for all artifact types.
-- `var/athletes/<athlete_id>/data/`  
+- `runtime/athletes/<athlete_id>/data/`  
   Versioned artifacts (e.g., plans/season, plans/phase, plans/week, analysis, exports, etc.).
-- `var/athletes/<athlete_id>/receipts/`  
+- `runtime/athletes/<athlete_id>/receipts/`  
   Intervals posting receipts and idempotency records.
-- `var/athletes/<athlete_id>/rendered/` (optional but recommended)  
+- `runtime/athletes/<athlete_id>/rendered/` (optional but recommended)  
   Rendered artifacts for faster UI load; can be regenerated.
 
 ### Excluded
 - Global caches, locks, temp files (these must **not** be restored)
 - Vector store contents (rebuild via sync)
 - System config and secrets (`.env`, `.streamlit/secrets.toml`)
-- `var/athletes/<athlete_id>/runs/` (run history)
-- `var/athletes/<athlete_id>/logs/` (UI logs)
+- `runtime/athletes/<athlete_id>/runs/` (run history)
+- `runtime/athletes/<athlete_id>/logs/` (UI logs)
 
 ---
 
@@ -84,7 +84,7 @@ Contains:
 
 1. **Validate archive** (manifest + checksums).
 2. **Verify target athlete** (confirm athlete_id / destination).
-3. **Restore files** into `var/athletes/<athlete_id>/`:
+3. **Restore files** into `runtime/athletes/<athlete_id>/`:
    - Ensure `latest/` and `data/` exist before writing.
    - Overwrite allowed (fresh system) or require an empty target.
 4. **Rebuild indexes / latest pointers**:

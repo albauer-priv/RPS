@@ -68,7 +68,7 @@ def prune_rendered_sidecars(root: Path, athlete_id: str) -> int:
     """Remove rendered sidecars that no longer have a JSON artefact.
 
     Args:
-        root: Workspace root path (var/athletes).
+        root: Workspace root path (runtime/athletes).
         athlete_id: Athlete workspace identifier.
 
     Returns:

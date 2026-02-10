@@ -44,7 +44,7 @@ Guidelines:
 
 ## Change Process
 
-1. Update the schema file in `schemas/`.
+1. Update the schema file in `specs/schemas/`.
 2. Bump `schema_version` (and update const fields if required).
 3. Update producers (agent prompts, pipeline scripts).
 4. If needed, provide a migration script for existing artefacts.

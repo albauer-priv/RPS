@@ -30,7 +30,7 @@ def load_env(env_path: Optional[Path] = None) -> None:
 
 def _resolve_workspace_root() -> Path:
     """Resolve ATHLETE_WORKSPACE_ROOT relative to repo root when needed."""
-    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(ROOT / "var/athletes"))
+    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(ROOT / "runtime/athletes"))
     root_path = Path(raw_root)
     if not root_path.is_absolute():
         root_path = (ROOT / root_path).resolve()
@@ -64,7 +64,7 @@ def configure_logging(script_name: str) -> logging.Logger:
 
 def resolve_workspace_root() -> Path:
     """Return the absolute path to the athlete workspace root."""
-    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(ROOT / "var/athletes"))
+    raw_root = os.getenv("ATHLETE_WORKSPACE_ROOT", str(ROOT / "runtime/athletes"))
     root_path = Path(raw_root)
     if not root_path.is_absolute():
         root_path = (ROOT / root_path).resolve()
@@ -73,7 +73,7 @@ def resolve_workspace_root() -> Path:
 
 def resolve_schema_dir() -> Path:
     """Return the absolute path to the JSON schema directory."""
-    raw_dir = os.getenv("SCHEMA_DIR", str(ROOT / "schemas"))
+    raw_dir = os.getenv("SCHEMA_DIR", str(ROOT / "specs/schemas"))
     dir_path = Path(raw_dir)
     if not dir_path.is_absolute():
         dir_path = (ROOT / dir_path).resolve()

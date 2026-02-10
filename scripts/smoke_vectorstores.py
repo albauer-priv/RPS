@@ -15,7 +15,12 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from scripts.data_pipeline.common import load_env  # noqa: E402
-from rps.openai.vectorstore_state import load_state, load_vectorstore_id, write_state  # noqa: E402
+from rps.openai.vectorstore_state import (  # noqa: E402
+    DEFAULT_STATE_PATH,
+    load_state,
+    load_vectorstore_id,
+    write_state,
+)
 from rps.openai.vectorstores import compute_manifest_hash, sync_manifest  # noqa: E402
 from rps.vectorstores.qdrant_local import (  # noqa: E402
     embed_texts,
@@ -77,7 +82,7 @@ def main() -> int:
     config = resolve_embedding_config()
     vector = embed_texts([args.question], config)[0]
 
-    manifest_path = ROOT / "knowledge" / "all_agents" / "manifest.yaml"
+    manifest_path = ROOT / "specs" / "knowledge" / "all_agents" / "manifest.yaml"
 
     def _sync_collection() -> str:
         if not manifest_path.exists():
@@ -94,7 +99,7 @@ def main() -> int:
         )
         state_entry = state.setdefault("vectorstores", {}).setdefault(args.store, {})
         state_entry["manifest_hash"] = compute_manifest_hash(manifest_path)
-        write_state(ROOT / ".cache" / "vectorstores_state.json", state)
+        write_state(DEFAULT_STATE_PATH, state)
         updated_id = load_vectorstore_id(args.store)
         logger.info("Sync complete; store_id=%s (stats=%s)", updated_id, stats)
         return updated_id

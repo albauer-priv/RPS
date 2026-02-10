@@ -49,7 +49,7 @@ class LocalArtifactStore:
 
     def __init__(self, root: Optional[Path] = None):
         """Initialize the store rooted at ATHLETE_WORKSPACE_ROOT."""
-        root_env = os.getenv("ATHLETE_WORKSPACE_ROOT", "var/athletes")
+        root_env = os.getenv("ATHLETE_WORKSPACE_ROOT", "runtime/athletes")
         self.root = (root or Path(root_env)).resolve()
 
     def athlete_root(self, athlete_id: str) -> Path:

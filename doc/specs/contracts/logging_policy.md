@@ -87,7 +87,7 @@ Environment variables:
 All app/CLI/UI logs write to a single file per athlete:
 
 ```
-var/athletes/<athlete_id>/logs/rps.log
+runtime/athletes/<athlete_id>/logs/rps.log
 ```
 
 Rotation:

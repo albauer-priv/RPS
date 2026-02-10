@@ -21,14 +21,14 @@ This proposal outlines a minimal, file-based scheduler/queue that complements th
 ## Concepts
 
 ### 1) Run Store (State)
-- Location: `runs/<run_id>/run.json`, `steps.json`, `events.jsonl`
+- Location: `runtime/athletes/<athlete_id>/runs/<run_id>/run.json`, `steps.json`, `events.jsonl`
 - Owned by Orchestrators and Workers
 - UI pages only read
 
 ### 2) Queue (Intent)
-- File-based queue under `runs/queue/`
+- File-based queue under `runtime/athletes/runs/queue/`
 - State markers: `pending/`, `active/`, `done/`, `failed/` (directories)
-- Each queue item is a JSON file: `runs/queue/pending/<run_id>.json`
+- Each queue item is a JSON file: `runtime/athletes/runs/queue/pending/<run_id>.json`
 
 ### 3) Scheduler (Decision)
 - Periodically scans `queue/pending/` and `queue/active/`
@@ -79,7 +79,7 @@ flowchart TD
 
 ## Implementation Plan (Incremental)
 
-1) Add queue folders under `runs/queue/{pending,active,done,failed}`
+1) Add queue folders under `runtime/athletes/runs/queue/{pending,active,done,failed}`
 2) Add helper: `enqueue_run(run_id)`
 3) Add scheduler loop (file-based) inside orchestrator module
 4) Replace Plan Hub worker start with enqueue + scheduler

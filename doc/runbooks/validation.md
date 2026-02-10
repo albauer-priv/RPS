@@ -29,7 +29,7 @@ flowchart TD
   AT --> VA
   AV --> VA
   WL --> VA
-  VA --> SC[schemas/*.schema.json]
+  VA --> SC[specs/schemas/*.schema.json]
   VA --> OK[Validation OK / Errors]
 ```
 
@@ -43,10 +43,10 @@ python scripts/validate_outputs.py
 
 This validates:
 
-- `var/athletes/<athlete_id>/latest/activities_actual.json`
-- `var/athletes/<athlete_id>/latest/activities_trend.json`
-- `var/athletes/<athlete_id>/latest/availability.json`
-- `var/athletes/<athlete_id>/latest/wellness.json`
+- `runtime/athletes/<athlete_id>/latest/activities_actual.json`
+- `runtime/athletes/<athlete_id>/latest/activities_trend.json`
+- `runtime/athletes/<athlete_id>/latest/availability.json`
+- `runtime/athletes/<athlete_id>/latest/wellness.json`
 
 The athlete ID is read from `.env` (`ATHLETE_ID`).
 
@@ -61,7 +61,7 @@ python scripts/validate_outputs.py --year 2026 --week 6
 This validates the JSON files under:
 
 ```
-var/athletes/<athlete_id>/data/2026/06/
+runtime/athletes/<athlete_id>/data/2026/06/
 ```
 
 ---
@@ -70,17 +70,17 @@ var/athletes/<athlete_id>/data/2026/06/
 
 ```bash
 python scripts/validate_outputs.py \
-  --actual-path var/athletes/<athlete_id>/data/2026/06/activities_actual_2026-06.json \
-  --trend-path var/athletes/<athlete_id>/data/2026/06/activities_trend_2026-06.json \
-  --availability-path var/athletes/<athlete_id>/data/2026/06/availability_2026-06.json \
-  --wellness-path var/athletes/<athlete_id>/data/2026/06/wellness_2026-06.json
+  --actual-path runtime/athletes/<athlete_id>/data/2026/06/activities_actual_2026-06.json \
+  --trend-path runtime/athletes/<athlete_id>/data/2026/06/activities_trend_2026-06.json \
+  --availability-path runtime/athletes/<athlete_id>/data/2026/06/availability_2026-06.json \
+  --wellness-path runtime/athletes/<athlete_id>/data/2026/06/wellness_2026-06.json
 ```
 
 ---
 
 ## Notes
 
-- Schemas live in `schemas/` and are loaded with `$ref` resolution.
+- Schemas live in `specs/schemas/` and are loaded with `$ref` resolution.
 - The validator reports all schema errors with JSON paths.
 - Output is non-destructive; it does not modify files.
 

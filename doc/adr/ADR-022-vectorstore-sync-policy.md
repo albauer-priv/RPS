@@ -21,7 +21,7 @@ We run a background sync check from Streamlit startup that:
 
 - Computes a deterministic manifest hash (manifest + source file hashes).
 - Compares the hash to the last synced hash stored in
-  `.cache/vectorstores_state.json`.
+  `runtime/vectorstores_state.json`.
 - If hashes match, mark the store as up to date.
 - If hashes differ or the store is unknown, **reset** the vector store and
   re-sync all sources.

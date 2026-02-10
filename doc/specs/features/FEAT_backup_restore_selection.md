@@ -215,7 +215,7 @@ flowchart TD
 
 **Diagnostics**
 
-* `var/athletes/<id>/logs/rps.log`
+* `runtime/athletes/<id>/logs/rps.log`
 * restore summary in UI
 
 ---

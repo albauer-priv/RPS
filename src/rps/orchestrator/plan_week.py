@@ -134,7 +134,7 @@ def _extract_general_and_phase(spec_text: str) -> str:
 
 def _load_load_estimation_spec_phase() -> tuple[str, str]:
     """Load LoadEstimationSpec and keep General + Phase sections only."""
-    path = ROOT / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
+    path = ROOT / "specs" / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
     content = path.read_text(encoding="utf-8")
     return str(path), _extract_general_and_phase(content)
 

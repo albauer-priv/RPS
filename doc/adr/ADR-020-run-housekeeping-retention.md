@@ -11,13 +11,13 @@ Owner: ADR
 
 ## Context
 
-Run history and queue files in `var/athletes/*/runs` grow quickly and clutter the workspace. We need automated cleanup that preserves recent runs while keeping queues clean.
+Run history and queue files in `runtime/athletes/*/runs` grow quickly and clutter the workspace. We need automated cleanup that preserves recent runs while keeping queues clean.
 
 ## Decision
 
 - Add a background housekeeping job that:
   - deletes run directories older than `RPS_RUN_RETENTION_DAYS` (default 7), and
-  - clears queue items in `runs/queue/done` and `runs/queue/failed`.
+  - clears queue items in `runtime/athletes/runs/queue/done` and `runtime/athletes/runs/queue/failed`.
 - The job runs once per Streamlit session startup, using the same background tracker pattern as index cleanup.
 
 ## Consequences

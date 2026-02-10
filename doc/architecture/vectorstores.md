@@ -18,7 +18,7 @@ This system uses a **local embedded Qdrant** vector store for knowledge state.
 Sources + manifests live in the repo; embeddings are built locally at sync time.
 
 ```
-knowledge/
+specs/knowledge/
   _shared/
     sources/
   all_agents/
@@ -26,13 +26,13 @@ knowledge/
 ```
 
 All agents use a single vector store. Shared knowledge is listed once in
-`knowledge/all_agents/manifest.yaml` (no per‑agent stores).
+`specs/knowledge/all_agents/manifest.yaml` (no per‑agent stores).
 
-Schemas are source-of-truth in `schemas/`. Bundled copies are generated for
+Schemas are source-of-truth in `specs/schemas/`. Bundled copies are generated for
 vector store retrieval and stored under:
 
 ```
-knowledge/_shared/sources/schemas/bundled/
+specs/knowledge/_shared/sources/schemas/bundled/
 ```
 
 Run `python scripts/bundle_schemas.py` before syncing vector stores.
@@ -41,7 +41,7 @@ Run `python scripts/bundle_schemas.py` before syncing vector stores.
 
 ## 2. Manifest Format
 
-The unified `knowledge/all_agents/manifest.yaml` declares the store name and sources.
+The unified `specs/knowledge/all_agents/manifest.yaml` declares the store name and sources.
 
 ```yaml
 agent: all_agents
@@ -68,7 +68,7 @@ script is retained for manual validation and troubleshooting:
 python3 scripts/smoke_vectorstores.py
 ```
 
-The sync writes `.cache/vectorstores_state.json`, which maps store names to
+The sync writes `runtime/vectorstores_state.json`, which maps store names to
 local collection IDs.
 
 ---
@@ -78,7 +78,7 @@ local collection IDs.
 Streamlit startup runs a background check to keep vector stores current:
 
 - Computes a deterministic manifest hash (manifest + source file hashes).
-- Compares to the last synced hash stored in `.cache/vectorstores_state.json`.
+- Compares to the last synced hash stored in `runtime/vectorstores_state.json`.
 - If the hash differs, performs a **reset + full sync**.
 
 The check runs on a configurable interval:
@@ -106,7 +106,7 @@ RPS_LLM_EMBEDDING_BATCH_SIZE=32
 ## 4. Vector Store IDs
 
 IDs map to local Qdrant collection names. The sync writes them to
-`.cache/vectorstores_state.json` for runtime lookup.
+`runtime/vectorstores_state.json` for runtime lookup.
 
 ---
 
@@ -137,7 +137,7 @@ agent_id = resolver.id_for_store_name("vs_rps_all_agents")
 - Keep sources small and well scoped.
 - Use `tags` to support metadata filtering later.
 - Avoid committing private PDFs; store locally and update only manifests if needed.
-- Do not include rendered sidecars (`*.md` under `var/athletes/*/rendered`) in vector stores.
+- Do not include rendered sidecars (`*.md` under `runtime/athletes/*/rendered`) in vector stores.
 - `.cache/` is gitignored by default.
 
 For operational limits, data sensitivity, and incident response, see

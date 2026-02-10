@@ -261,7 +261,7 @@ Owner: Architecture
 
 **Diagnostics**
 
-* Run-store events + `var/athletes/.../logs/rps.log`.
+* Run-store events + `runtime/athletes/.../logs/rps.log`.
 
 ---
 
@@ -292,7 +292,7 @@ Update these docs as part of implementation:
 ## Open Questions (max 5) — optional
 
 * Which LiteLLM providers/models are first-class supported?
-* Should Qdrant data live under `var/athletes/<id>/vectorstore/` or global?
+* Should Qdrant data live under `runtime/athletes/<id>/vectorstore/` or global?
 * Where should per-agent provider overrides live (config file vs. env vars vs. workspace settings)?
 * What triggers a switch from env-only overrides to file-backed or hybrid config (admin editability without redeploy)?
 

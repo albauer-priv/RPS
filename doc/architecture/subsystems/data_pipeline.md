@@ -22,8 +22,8 @@ The data pipeline fetches factual activity data from Intervals.icu and produces:
 
 Outputs are stored under:
 
-- `var/athletes/<athlete_id>/data/`
-- mirrored into `var/athletes/<athlete_id>/latest/`
+- `runtime/athletes/<athlete_id>/data/`
+- mirrored into `runtime/athletes/<athlete_id>/latest/`
 
 Parquet caches are written alongside CSV/JSON outputs and are **non-canonical**.
 
@@ -85,7 +85,7 @@ Per run:
 ## Validation
 
 Use `scripts/validate_outputs.py` to validate JSON outputs against schemas
-in `schemas/`.
+in `specs/schemas/`.
 
 ---
 

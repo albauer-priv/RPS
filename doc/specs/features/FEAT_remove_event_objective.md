@@ -10,7 +10,7 @@ Owner: UI/Data Contracts
 * **Status:** Approved
 * **Owner/Area:** UI + Schemas
 * **Last-Updated:** 2026-02-08
-* **Related:** doc/ui/pages/athlete_profile/events.md (if present), schemas/planning_events.schema.json
+* **Related:** doc/ui/pages/athlete_profile/events.md (if present), specs/schemas/planning_events.schema.json
 
 ---
 
@@ -72,7 +72,7 @@ flowchart TD
 
 **Non-UI behavior (if applicable)**
 
-* Components involved: `schemas/planning_events.schema.json`, Events UI, payload migration helper.
+* Components involved: `specs/schemas/planning_events.schema.json`, Events UI, payload migration helper.
 * Contracts touched: Planning Events schema.
 
 ---
@@ -81,8 +81,8 @@ flowchart TD
 
 **Components / Modules**
 
-* `schemas/planning_events.schema.json`: remove `objective` field, bump schema version.
-* `knowledge/_shared/sources/schemas/bundled/planning_events.schema.json`: regenerated.
+* `specs/schemas/planning_events.schema.json`: remove `objective` field, bump schema version.
+* `specs/knowledge/_shared/sources/schemas/bundled/planning_events.schema.json`: regenerated.
 * Events UI: remove Objective column and legacy mapping.
 * Legacy upgrade: drop `objective`, or map into `goal` when `goal` is missing.
 
@@ -169,7 +169,7 @@ flowchart TD
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [ ] Events UI no longer displays `objective`.
-* [ ] `schemas/planning_events.schema.json` removes `objective` and bumps version.
+* [ ] `specs/schemas/planning_events.schema.json` removes `objective` and bumps version.
 * [ ] Bundled schemas regenerated and validated.
 * [ ] Legacy events upgrade removes `objective` or maps into `goal`.
 * [ ] Validation passes: `python3 scripts/check_schema_required.py`, `python3 scripts/bundle_schemas.py`.
@@ -216,8 +216,8 @@ flowchart TD
 
 ## 12) Link Map
 
-* `schemas/planning_events.schema.json`
-* `knowledge/_shared/sources/schemas/bundled/planning_events.schema.json`
+* `specs/schemas/planning_events.schema.json`
+* `specs/knowledge/_shared/sources/schemas/bundled/planning_events.schema.json`
 * `doc/ui/pages/athlete_profile/events.md` (if present)
 * `doc/overview/artefact_flow.md`
 * `doc/architecture/workspace.md`

@@ -113,7 +113,7 @@ def _vectorstore_sync_background(root: Path, athlete_id: str, interval_minutes: 
     """Background sync for vector stores based on manifest hash."""
     if os.getenv("RPS_DISABLE_VECTORSTORE_SYNC") == "1":
         return
-    manifest_path = Path("knowledge/all_agents/manifest.yaml")
+    manifest_path = Path("specs/knowledge/all_agents/manifest.yaml")
     if not manifest_path.exists():
         return
     try:

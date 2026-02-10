@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Consolidated repo layout into `runtime/` (workspace/runs/logs) and `specs/` (knowledge, schemas, KPI profiles), removing the unused `evals/` folder and updating scripts/docs to the new roots.
 - Backup now always creates a full archive; restore keeps a scope selector for partial re-import.
 - Updated UI spec and artefact flow docs to reflect full backup + selective restore.
 - System → History status banner now renders under the page header for consistent layout.
@@ -382,13 +383,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Clarified that `compile_activities_actual` iterates every ISO week in the Intervals export and writes schema-compliant CSV/JSON per week (latest copy still lives under `var/athletes/<athlete>/latest`), so additional artefacts only require rerunning with a wider range if older weeks are needed.
+- Clarified that `compile_activities_actual` iterates every ISO week in the Intervals export and writes schema-compliant CSV/JSON per week (latest copy still lives under `runtime/athletes/<athlete>/latest`), so additional artefacts only require rerunning with a wider range if older weeks are needed.
 ### Changed
 - The root Streamlit app now triggers the background-threaded Intervals pipeline refresh (tracked in `st.session_state`) so stale data starts refreshing before any page needs it, and the Data & Metrics page can simply surface the status without blocking.
 - Local workspace reads now respect the actual recorded paths for archived artifacts (e.g., `ACTIVITIES_ACTUAL` per ISO week) when loading specific versions, instead of assuming a single `data/analysis` folder.
 - Vector store sync now retries transient API errors with backoff instead of failing immediately.
 - Streaming output supports optional italic rendering of reasoning via `RPS_LLM_STREAM_ITALICS`.
-- Consolidated all agent knowledge into a single vector store (`vs_rps_all_agents`) with a unified `knowledge/all_agents/manifest.yaml`.
+- Consolidated all agent knowledge into a single vector store (`vs_rps_all_agents`) with a unified `specs/knowledge/all_agents/manifest.yaml`.
 - Consolidated season/phase load policies into `load_estimation_spec.md` (General/Season/Phase sections) and removed the standalone policy docs.
 - LoadEstimationSpec tightened: deterministic Season utilization/body-mass fallback, KPI band selector, domain aliasing, and clarified Season/Phase responsibilities.
 - Added ENDURANCE_LOW/ENDURANCE_HIGH intensity domains (with legacy aliasing), renamed `SST` → `SWEET_SPOT`, and reintroduced THRESHOLD in intensity-domain enums across schemas, specs, prompts, and workout policy.
@@ -544,7 +545,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wellness artefact (`WELLNESS`) + schema/interface spec for daily biometric/self-report data.
 - Data pipeline now writes `wellness_yyyy-ww.json` and latest `wellness.json`.
 - Availability validation checklist and `validate_outputs.py` support for availability artefacts.
-- Standalone scripts now emit per-run logs with timestamped filenames under `var/athletes/<athlete_id>/logs`.
+- Standalone scripts now emit per-run logs with timestamped filenames under `runtime/athletes/<athlete_id>/logs`.
 - Logging policy document for levels, format, and per-run log file locations.
 - Artifact writes now emit INFO logs with type, version key, and path.
 - Artifact saves now trigger automatic rendering to Markdown when a template exists.
@@ -625,7 +626,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Principles 3.2 backplanning guidance rewritten as an agent-executable planning cookbook and synced to agent knowledge copies.
 - Principles 3.2 macrocycle wording now aligns with `SEASON_CYCLE_ENUM` (Base/Build/Peak/Transition).
 - Season-Planner prompt now mirrors the `SEASON_CYCLE_ENUM` wording in backplanning guidance.
-- Agent artifact storage now nests plans/analysis/exports under `var/athletes/<id>/data/`, and the legacy `workouts/` folder is no longer created.
+- Agent artifact storage now nests plans/analysis/exports under `runtime/athletes/<id>/data/`, and the legacy `workouts/` folder is no longer created.
 - Season/Phase/Week prompts now require `events.md` from inputs and STOP if it is missing.
 
 ## [0.2.0] - 2026-01-22
@@ -636,7 +637,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `workspace_get_input` tool for athlete-specific markdown inputs (season brief, events).
 - Vector store sync progress output and `--reset` to reinitialize stores.
 - Vector store sync now attaches header/schema-derived attributes for filtered file_search.
-- Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `knowledge/_shared/sources/schemas/bundled/`.
+- Schema bundling workflow (`scripts/bundle_schemas.py`) and bundled outputs under `specs/knowledge/_shared/sources/schemas/bundled/`.
 - Vector store smoke test script: `scripts/smoke_vectorstores.py`.
 - Build checklist and recommended model guidance docs.
 - Mode A season helper script for scenarios + season plan (deprecated; streamlit UI replaces it).
@@ -650,7 +651,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent prompts are simplified further by removing legacy template/YAML language and redundant checks.
 - Planning docs now specify copying the selected KPI profile into `latest/kpi_profile.json`.
 - Artefact flow docs now describe the two-step Season Mode A scripts.
-- KPI profile JSON sources moved to top-level `kpi_profiles/` and removed from vector store manifests.
+- KPI profile JSON sources moved to top-level `specs/kpi_profiles/` and removed from vector store manifests.
 - Data pipeline scripts now accept `--athlete` with `.env` fallback for multi-athlete runs.
 - Data pipeline docs now include multi-athlete CLI examples.
 - User input interface specs/templates for season briefs and events moved to shared knowledge sources.
@@ -671,7 +672,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Durability bibliography now carries a compliant YAML header.
 
 ### Removed
-- Legacy schema copies under `knowledge/_shared/sources/schemas/` (replaced by bundled variants).
+- Legacy schema copies under `specs/knowledge/_shared/sources/schemas/` (replaced by bundled variants).
 - Obsolete shared schemas `data_confidence` and `season_cycle_enum` from knowledge sources.
 
 ## [Unreleased]

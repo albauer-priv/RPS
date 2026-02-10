@@ -180,13 +180,6 @@ def _matches_filter(run: dict) -> bool:
 
 filtered_runs = [run for run in runs if _matches_filter(run)]
 
-set_status(
-    status_state="done" if filtered_runs else "idle",
-    title="System",
-    message=f"{len(filtered_runs)} runs" if filtered_runs else "No runs found.",
-    last_action="View Status",
-)
-
 if filtered_runs:
     st.subheader("Running Processes")
     rows = []

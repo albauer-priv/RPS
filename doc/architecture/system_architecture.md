@@ -88,13 +88,13 @@ flowchart TD
 3. **Prompt Loader**
    - Shared system prompt + per-agent prompt from `prompts/`.
 4. **Workspace Storage**
-   - Local file store under `var/athletes/` with versioned artifacts and `index.json`.
+   - Local file store under `runtime/athletes/` with versioned artifacts and `index.json`.
 5. **Schema Validation**
    - JSON schema validation for all artifacts (envelope or raw payload).
 6. **Orchestrator (optional)**
    - `plan-week` for Season → Phase → Week → Builder → Analysis sequencing.
 7. **Run Store**
-   - Per-run JSON state under `runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
+  - Per-run JSON state under `runtime/athletes/<athlete_id>/runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
    - Background jobs (data pipeline, housekeeping, agent reports) also write run records with `process_type`/`process_subtype`.
    - Use the background run tracker helper to standardize status updates.
    - Scheduling guards block concurrent runs sharing the same type/subtype and prevent lower-priority planning runs while higher-priority ones are active.
@@ -171,7 +171,7 @@ See `doc/architecture/agents.md` for the canonical registry of agents, modes, an
 ## 4. Knowledge Delivery
 
 - **Prompts** live in `prompts/` and are loaded at runtime.
-- **Knowledge sources** live in `knowledge/` and are synced to a local Qdrant vector store.
+- **Knowledge sources** live in `specs/knowledge/` and are synced to a local Qdrant vector store.
 - At runtime, agents use the `knowledge_search` function tool for retrieval.
 
 ### 4.1 Vector Stores
@@ -183,12 +183,12 @@ The system uses a single shared store for all agents:
 - `vs_rps_all_agents`: unified knowledge store containing all specs, contracts,
   policies, schemas, and prompts used across agents.
 
-Knowledge sources live under `knowledge/_shared/` and are listed in
-`knowledge/all_agents/manifest.yaml`. The vector store itself is local state.
+Knowledge sources live under `specs/knowledge/_shared/` and are listed in
+`specs/knowledge/all_agents/manifest.yaml`. The vector store itself is local state.
 
 ```mermaid
 flowchart LR
-  SRC[knowledge/all_agents/manifest.yaml] --> SYNC[background sync (Streamlit)]
+  SRC[specs/knowledge/all_agents/manifest.yaml] --> SYNC[background sync (Streamlit)]
   SYNC --> VS[(Qdrant Local)]
   VS --> FS[knowledge_search tool]
   FS --> AG[Agent Runtime]
@@ -203,7 +203,7 @@ Manual verification uses `python scripts/smoke_vectorstores.py`.
 
 Streamlit startup performs a background sync check using a deterministic
 manifest hash (manifest + source file hashes). If the hash differs from the
-last synced hash stored in `.cache/vectorstores_state.json`, the store is reset
+last synced hash stored in `runtime/vectorstores_state.json`, the store is reset
 and fully re-synced. This is tracked as a background run with
 `process_type=system_housekeeping` and `process_subtype=vectorstore_sync`.
 
@@ -219,7 +219,7 @@ Example:
 Local Qdrant collections are rebuilt during sync from the manifest and source files.
 
 Notes:
-- The sync writes `.cache/vectorstores_state.json` to map store names to local collection IDs.
+- The sync writes `runtime/vectorstores_state.json` to map store names to local collection IDs.
 - Collections are rebuilt locally when the manifest hash changes.
 
 #### 4.1.3 Vector Store Attributes and Filters
@@ -326,8 +326,8 @@ Modes are chosen by the orchestrator/runner based on the task
 #### 4.1.5 Data Sensitivity
 
 - Never upload private or licensed material without explicit permission.
-- Keep athlete-specific data out of vector stores; use `var/athletes/`.
-- Avoid placing any API keys or secrets in `knowledge/`.
+- Keep athlete-specific data out of vector stores; use `runtime/athletes/`.
+- Avoid placing any API keys or secrets in `specs/knowledge/`.
 
 #### 4.1.6 Incident Playbook
 
@@ -338,7 +338,7 @@ If a store gets out of sync or corrupted:
 3. If a store must be rebuilt:
    - Create a new store name.
    - Update `manifest.yaml` and re-sync.
-   - Update `.env` or `.cache/vectorstores_state.json`.
+   - Update `.env` or `runtime/vectorstores_state.json`.
 
 ---
 
@@ -346,13 +346,13 @@ If a store gets out of sync or corrupted:
 
 ### 5.1 Workspace Handling (Local Files)
 
-The workspace is a **local, append-only file store** under `var/athletes/<athlete_id>/`.
+The workspace is a **local, append-only file store** under `runtime/athletes/<athlete_id>/`.
 It is the single source of truth for planning artefacts and factual data in dev.
 
 **Directory layout**
 
 ```
-var/athletes/<athlete_id>/
+runtime/athletes/<athlete_id>/
   data/
     plans/season/
     plans/phase/
@@ -398,7 +398,7 @@ Use `rps.rendering.renderer.render_json_sidecar` to generate human-readable side
 
 ---
 
-Artifacts are stored under `var/athletes/<athlete_id>/data/`:
+Artifacts are stored under `runtime/athletes/<athlete_id>/data/`:
 
 - `data/plans/season/`, `data/plans/phase/`, `data/plans/week/`, `data/analysis/`, `data/exports/`
 - `data/YYYY/WW/` holds data pipeline snapshots (CSV + JSON)
@@ -411,7 +411,7 @@ All artifacts are **append-only**; updates are new versions with new run IDs.
 
 ## 6. Validation & Contracts
 
-- Artifacts are validated against schemas under `schemas/`.
+- Artifacts are validated against schemas under `specs/schemas/`.
 - Envelope artifacts use `{ "meta": { ... }, "data": { ... } }`.
 - Raw payloads (e.g., Intervals export) are validated against their raw schema.
 
@@ -468,7 +468,7 @@ Use this checklist to initialize a fresh environment:
    `API_KEY`, and `BASE_URL`.
 2. Install dependencies: `pip install -r requirements.txt` or `pip install -e .`
    (depending on how you set up the repo).
-3. Add knowledge sources under `knowledge/_shared/sources/` and update `knowledge/all_agents/manifest.yaml`.
+3. Add knowledge sources under `specs/knowledge/_shared/sources/` and update `specs/knowledge/all_agents/manifest.yaml`.
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
 5. Vector store sync runs in the UI background (auto-rebuild on manifest changes).
 6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.

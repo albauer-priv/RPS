@@ -145,6 +145,7 @@ env.bak/
 venv.bak/
 
 # Runtime state
+runtime/
 var/
 legacy/
 .DS_Store

@@ -37,7 +37,7 @@ Optional parameters (call-level):
 
 - `output_path`: write to a specific output file
 - `validate`: validate against JSON schema before rendering
-- `schema_dir`: override schema directory (default: `SCHEMA_DIR` or `./schemas`)
+- `schema_dir`: override schema directory (default: `SCHEMA_DIR` or `./specs/schemas`)
 
 ---
 
@@ -63,7 +63,7 @@ The renderer supports the following artifact types (meta.artifact_type):
 ## 5. Notes
 
 - Default output location (if `--out` is omitted):
-  - `var/athletes/<ATHLETE_ID>/rendered/<filename>.md`
+  - `runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md`
   - `ATHLETE_ID` is loaded from `.env` (Intervals.icu athlete ID).
 - Artefacts saved via the runner are auto-rendered using the integrated renderer.
 - If `meta.trace_upstream` is a list of strings, it is rendered directly.

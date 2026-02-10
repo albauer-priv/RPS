@@ -7,8 +7,8 @@ Owner: Specs
 # ATHLETE_PROFILE Validation
 
 ## Location
-- [ ] File lives in `var/athletes/<athlete_id>/inputs/athlete_profile_*.json`.
-- [ ] Latest copy exists at `var/athletes/<athlete_id>/latest/athlete_profile.json`.
+- [ ] File lives in `runtime/athletes/<athlete_id>/inputs/athlete_profile_*.json`.
+- [ ] Latest copy exists at `runtime/athletes/<athlete_id>/latest/athlete_profile.json`.
 
 ## Required content
 - [ ] Validates against `athlete_profile.schema.json`.

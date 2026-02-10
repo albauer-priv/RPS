@@ -72,7 +72,7 @@ Receipts are the authoritative record of posted events.
 **Location:**
 
 ```
-var/athletes/<athlete_id>/receipts/intervals/<external_id>.json
+runtime/athletes/<athlete_id>/receipts/intervals/<external_id>.json
 ```
 
 **Receipt JSON (example):**

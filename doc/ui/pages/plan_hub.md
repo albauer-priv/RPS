@@ -16,7 +16,7 @@ This document captures the proposed **Plan Hub** layout and readiness logic, and
 
 - Plan Hub page with readiness checklist, run controls, run execution table, latest outputs, and run history.
 - KPI Profile is a readiness prerequisite for planning and feed-forward flows.
-- Run store (`runs/<run_id>/run.json`, `steps.json`, `events.jsonl`) with async worker execution.
+- Run store (`runtime/athletes/<athlete_id>/runs/<run_id>/run.json`, `steps.json`, `events.jsonl`) with async worker execution.
 - Manual scenario selection handoff + restart run (superseded runs tracked).
 - Export/post separation with receipts and Intervals commit support.
 

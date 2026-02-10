@@ -214,8 +214,8 @@ Owner: Platform
 
 **Diagnostics**
 
-* `var/athletes/<id>/logs/rps.log`
-* `var/athletes/<id>/logs/reasoning_chunks.log` (if enabled)
+* `runtime/athletes/<id>/logs/rps.log`
+* `runtime/athletes/<id>/logs/reasoning_chunks.log` (if enabled)
 
 ---
 

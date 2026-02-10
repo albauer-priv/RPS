@@ -22,7 +22,7 @@ PYTHONPATH=src python3.14 -m streamlit run src/rps/ui/streamlit_app.py
 - Uses the same `.env` as the CLI (`RPS_LLM_API_KEY` is required).
 - Non-Coach pages share a global sidebar for athlete + ISO scope.
 - All non-Coach pages render a single status banner for last action/result.
-- Plan Hub relies on the run store (`runs/<run_id>/*`) for execution status.
+- Plan Hub relies on the run store (`runtime/athletes/<athlete_id>/runs/<run_id>/*`) for execution status.
 
 ## Plan UI layout contract
 

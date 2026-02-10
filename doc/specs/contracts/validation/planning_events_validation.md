@@ -7,8 +7,8 @@ Owner: Specs
 # PLANNING_EVENTS Validation
 
 ## Location
-- [ ] File lives in `var/athletes/<athlete_id>/inputs/planning_events_*.json`.
-- [ ] Latest copy exists at `var/athletes/<athlete_id>/latest/planning_events.json`.
+- [ ] File lives in `runtime/athletes/<athlete_id>/inputs/planning_events_*.json`.
+- [ ] Latest copy exists at `runtime/athletes/<athlete_id>/latest/planning_events.json`.
 
 ## Required content
 - [ ] Validates against `planning_events.schema.json`.

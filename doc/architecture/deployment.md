@@ -49,7 +49,7 @@ Optional:
 
 Recommended environments:
 
-- **dev**: local workspace under `var/athletes/`
+- **dev**: local workspace under `runtime/athletes/`
 - **staging**: separate `ATHLETE_WORKSPACE_ROOT` and vector stores
 - **prod**: locked schemas, versioned prompts, audited syncs
 
@@ -65,7 +65,7 @@ Recommended environments:
 
 ## Vector Stores
 
-Vector store IDs are environment-specific. Use `.cache/vectorstores_state.json`
+Vector store IDs are environment-specific. Use `runtime/vectorstores_state.json`
 for local development or provide overrides via env vars.
 
 ---
