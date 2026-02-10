@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: Architecture
 ---
 # Intervals Posting
 
 Version: 1.0
 Status: Draft
-Last-Updated: 2026-01-30
+Last-Updated: 2026-02-10
 
 ---
 
@@ -30,12 +30,7 @@ Default policy:
 - Orchestrated planning runs build steps only.
 - Posting is optional (toggle) or a dedicated scoped action.
 
-CLI helper (legacy-compatible):
-
-```bash
-PYTHONPATH=src python3 scripts/data_pipeline/post_workout.py \  # Deprecated; prefer Plan → Workouts UI
-  --json var/athletes/<athlete_id>/latest/workouts.json
-```
+Posting is performed from the UI (Plan → Workouts).
 
 ---
 

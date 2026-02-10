@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: Overview
 ---
 # Artefact Flow
 
 Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-02-02  
+Last-Updated: 2026-02-10  
 Format: GitHub-renderable Markdown + Mermaid
 
 ---
@@ -26,7 +26,7 @@ flowchart TD
   WB[Workout-Builder]:::agent
   PA[Performance-Analyst]:::agent
   I[Intervals.icu]:::external
-  EXP[parse-intervals]:::script
+  EXP["intervals_data.py"]:::script
   VAL[validate_outputs.py]:::script
   POST["post_to_intervals (commit)"]:::script
   RCPT[post_receipts_yyyy-ww.json]:::artefact
@@ -335,7 +335,7 @@ flowchart LR
 - `availability_*.json` (user-managed input, validated alongside outputs)
 
 **Processing (Conceptual)**
-- `parse-intervals`: fetch raw activity data, compile `activities_actual` and `activities_trend`
+- `intervals_data.py`: fetch raw activity data, compile `activities_actual` and `activities_trend`
 - `validate_outputs.py`: validate JSON outputs against schemas
 
 **Outputs (Artefacts)**
@@ -345,7 +345,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  I[Intervals.icu]:::external --> EXP[parse-intervals]:::script
+  I[Intervals.icu]:::external --> EXP["intervals_data.py"]:::script
   EXP --> AA[activities_actual_yyyy-ww.json]:::artefact
   EXP --> AT[activities_trend_yyyy-ww.json]:::artefact
   AVI[availability_yyyy-ww.json]:::artefact --> VAL

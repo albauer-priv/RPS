@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-02-10
 Owner: Overview
 ---
 # How to Plan
 
 Version: 2.3
 Status: Updated
-Last-Updated: 2026-02-02
+Last-Updated: 2026-02-10
 
 ---
 
@@ -22,7 +22,7 @@ Last-Updated: 2026-02-02
 2) Select a KPI profile (UI: Athlete Profile → KPI Profile) to copy it into
    `var/athletes/<athlete_id>/latest/kpi_profile.json` and `inputs/kpi_profile.json`.
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
-   `python -m rps.main parse-intervals` or UI auto-refresh.
+   UI auto-refresh or `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py`.
 4) Open the **Plan Hub** and confirm Scope (athlete, ISO year/week, phase).
 5) Run **Season Scenarios** from Plan Hub if missing.
 6) Select a scenario on **Plan -> Season** (manual decision).
@@ -103,7 +103,7 @@ flowchart TD
   WB --> WJ[workouts_yyyy-ww.json]
   WJ --> POST["post_to_intervals (commit)"]
 
-  DP[parse-intervals] --> AA[activities_actual]
+  DP["intervals_data pipeline"] --> AA[activities_actual]
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
@@ -165,80 +165,7 @@ button. Post/commit runs from the Workouts page.
 
 ---
 
-## 6. CLI (Optional)
-
-### Plan week (orchestrated)
-
-```bash
-PYTHONPATH=src python3 -m rps.main plan-week \
-  --year 2026 \
-  --week 6 \
-  --run-id run_2026_06
-```
-
-### Agent tasks
-
-See `doc/architecture/agents.md` for the canonical agent registry (roles, modes, inputs/outputs).
-
-```bash
-# Season scenarios
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent season_scenario \
-  --task CREATE_SEASON_SCENARIOS \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06). Generate pre-decision scenarios."
-```
-
-```bash
-# Scenario selection (manual choice logged)
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent season_scenario \
-  --task CREATE_SEASON_SCENARIO_SELECTION \
-  --text "Select Scenario A for ISO week 2026-06. Use latest SEASON_SCENARIOS."
-```
-
-```bash
-# Season plan
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent season_planner \
-  --task CREATE_SEASON_PLAN \
-  --text "Scenario A. Create SEASON_PLAN for ISO week 2026-06."
-```
-
-```bash
-# Phase
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent phase_architect \
-  --task CREATE_PHASE_GUARDRAILS CREATE_PHASE_STRUCTURE \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06)."
-```
-
-```bash
-# Week
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent week_planner \
-  --task CREATE_WEEK_PLAN \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06)."
-```
-
-```bash
-# Export workouts
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent workout_builder \
-  --task CREATE_INTERVALS_WORKOUTS_EXPORT \
-  --text "Convert week_plan into Intervals.icu workouts JSON for ISO week 2026-06."
-```
-
-```bash
-# Performance report
-PYTHONPATH=src python3 -m rps.main run-agent \
-  --agent performance_analysis \
-  --task CREATE_DES_ANALYSIS_REPORT \
-  --text "Target ISO week: year=2026, week=6 (ISO 2026-06)."
-```
-
----
-
-## 7. Notes
+## 6. Notes
 
 - Inputs are Markdown; artifacts are JSON validated by schema.
 - Phase artifacts are derived from season phase ranges (no manual range guessing).

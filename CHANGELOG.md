@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Removed the legacy CLI entrypoint (`src/rps/main.py`) and deprecated data pipeline wrapper scripts; documentation now reflects UI-only workflows and the `intervals_data.py` entrypoint.
 - Feed Forward now uses the selected ISO week (current or previous only), with a single chained action to create the DES report, Season→Phase feed forward, then Phase→Week feed forward.
 - Feed Forward now shows a week selector, summary line, and uses a single action button label; readiness/trigger controls moved under the selector.
 - Report page status panel now renders under the title and no longer shows a model reasoning expander.

@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-05
+Last-Updated: 2026-02-10
 Owner: Architecture
 ---
 # Data Pipeline
 
 Version: 2.0  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-02-10
 
 ---
 
@@ -34,28 +34,15 @@ Parquet caches are written alongside CSV/JSON outputs and are **non-canonical**.
 ### Fetch + Compile + Validate
 
 ```bash
-python -m rps.main parse-intervals --year 2026 --week 6
-python scripts/validate_outputs.py --year 2026 --week 6
+PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --year 2026 --week 6
+PYTHONPATH=src python3 scripts/validate_outputs.py --year 2026 --week 6
 ```
 
 With an explicit athlete id:
 
 ```bash
-python -m rps.main parse-intervals --year 2026 --week 6 --athlete ath_001
-python scripts/validate_outputs.py --year 2026 --week 6 --athlete ath_001
-```
-
-### Post planned workouts
-
-```bash
-python scripts/data_pipeline/post_workout.py \  # Deprecated; prefer Plan → Workouts UI
-  --json var/athletes/<athlete_id>/latest/workouts.json
-```
-
-With an explicit athlete id:
-
-```bash
-python scripts/data_pipeline/post_workout.py --athlete ath_001  # Deprecated; prefer Plan → Workouts UI
+PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --year 2026 --week 6 --athlete ath_001
+PYTHONPATH=src python3 scripts/validate_outputs.py --year 2026 --week 6 --athlete ath_001
 ```
 
 ---
@@ -77,7 +64,7 @@ Historical baseline aggregation uses the most recent N calendar years
 ## Inputs
 
 - Intervals.icu API access (`ATHLETE_ID`, `API_KEY`, `BASE_URL` in `.env`)
-- Optional planned workouts JSON for calendar posting
+- Planned workouts are posted from the UI (Plan → Workouts).
 
 ---
 

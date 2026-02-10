@@ -8,8 +8,7 @@ Scaffold for local vector stores with a unified, versioned knowledge base.
 - `doc/`: system documentation.
 - `prompts/`: shared + per-agent prompts.
 - `knowledge/`: versioned sources and manifests (no embeddings in repo).
-- `scripts/`: sync/list/prune helpers for vector stores.
-- `scripts/data_pipeline/`: Intervals.icu data pipeline scripts.
+- `scripts/`: maintenance helpers (schemas, validation, vector stores).
 - `legacy/`: artifacts to migrate from the predecessor project (gitignored).
 - `var/athletes/`: runtime state for local athlete workspaces (gitignored).
 - `.cache/`: local sync state for vector stores (gitignored).
@@ -67,7 +66,7 @@ Prerequisites:
 3. Build bundled schemas: `python scripts/bundle_schemas.py`.
 4. Vector store sync runs in the UI background; use `python scripts/smoke_vectorstores.py` for manual verification.
 5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.
-6. Run data pipeline: use the current CLI entrypoint for `parse-intervals` (do not use deprecated `rps.main`).
+6. Run data pipeline via the UI (Refresh Intervals Data) or manually with the module entrypoint (see Data pipeline below).
 7. Validate outputs: `python scripts/validate_outputs.py`.
 
 ### Logging (env)
@@ -89,8 +88,7 @@ Optional env vars:
 ## Data pipeline (Intervals.icu)
 
 - Set `ATHLETE_ID`, `API_KEY`, and `BASE_URL` in `.env`.
-- All-in-one: `python -m rps.main parse-intervals --year 2026 --week 6`
-- (Deprecated) Post workouts: `python scripts/data_pipeline/post_workout.py --json var/athletes/<athlete_id>/latest/intervals_workouts.json` — prefer Plan → Workouts UI.
+- Manual run: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --year 2026 --week 6`
 - Validate outputs (latest): `python scripts/validate_outputs.py`
 - Validate outputs (week): `python scripts/validate_outputs.py --year 2026 --week 6`
 
@@ -98,7 +96,7 @@ Outputs land in `var/athletes/<athlete_id>/data/` and are mirrored to `var/athle
 
 ### Formatting & rounding policy
 
-`python -m rps.main parse-intervals` applies a single rounding policy to all steps:
+`src/rps/data_pipeline/intervals_data.py` applies a single rounding policy to all steps:
 
 - Integer outputs: columns ending with `(W)`, `(bpm)`, `(rpm)`, `(J)`, `(kJ)` plus `Load (TSS)`, `Strain Score`,
   `Power Load`, `HR Load (HRSS)`, `Calories (kcal)`, `CTL (Fitness)`, `ATL (Fatigue)`, `Power/HR Z2 Time (min)`.
@@ -199,45 +197,14 @@ PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer
 - Use `rps.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
 - Load prompts from disk with `rps.prompts.loader.agent_system_prompt(...)`.
 
-## Agent runner
+## Planning workflows
 
-```bash
-PYTHONPATH=src python -m rps.main \\
-  --agent week_planner \\
-  --text "Plane Woche 2026-06 basierend auf der aktuellen Phase und dem KPI Profil."
-```
+All planning flows are UI-driven now. Use:
 
-```bash
-PYTHONPATH=src python -m rps.main plan-week \\
-  --year 2026 \\
-  --week 6 \\
-  --run-id run_2026_06
-```
+- Plan Hub for season/phase/week/workouts planning runs.
+- Performance pages for Report and Feed Forward runs.
 
-If `ATHLETE_ID` is set in `.env`, the `--athlete` flag is optional.
-Use `--no-file-search` to disable forced vector store retrieval.
-
-## Season planning (two-step)
-
-Generate scenarios first, then create the season plan using the selected scenario:
-
-```bash
-PYTHONPATH=src python -m rps.main run-agent \
-  --agent season_scenario \
-  --task CREATE_SEASON_SCENARIOS \
-  --text "Create season scenarios for ISO week 2026-06." \
-  --run-id season_scenarios_2026_w06
-```
-
-```bash
-PYTHONPATH=src python -m rps.main run-agent \
-  --agent season_planner \
-  --task CREATE_SEASON_PLAN \
-  --text "Create the season plan for ISO week 2026-06 using scenario A." \
-  --run-id season_plan_2026_w06
-```
-
-Scenarios are written to `.cache/season_scenarios/<run-id>.md` by default.
+For CI/smoke checks, use the CLI helpers listed above (e.g., `intervals_data.py --help`) and the Streamlit UI.
 
 ## Notes
 

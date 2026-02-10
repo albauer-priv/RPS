@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-06
+Last-Updated: 2026-02-10
 Owner: Architecture
 ---
 # System Architecture
 
 Version: 2.3  
 Status: Updated  
-Last-Updated: 2026-02-06
+Last-Updated: 2026-02-10
 
 ---
 
@@ -63,7 +63,7 @@ flowchart TD
   WB --> WJ[workouts_yyyy-ww.json]
   WJ --> POST[Post to Intervals (commit)]
 
-  DP[Data Pipeline\nparse-intervals] --> AA[activities_actual]
+  DP["Data Pipeline<br>intervals_data.py"] --> AA[activities_actual]
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
@@ -139,8 +139,7 @@ See `doc/architecture/agents.md` for the canonical registry of agents, modes, an
 - Writes `activities_actual`, `activities_trend`, `zone_model`, and `wellness` into the athlete workspace.
 - `availability` is a user-managed input (manual edits + optional legacy import).
 - Updates `latest/` so planners and the Plan Hub always read the freshest factual data.
-- Pipeline entrypoint: `python -m rps.main parse-intervals`.
-- Legacy Season Brief availability parser: `python -m rps.main parse-availability` (deprecated).
+- Pipeline entrypoint: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py` (or UI refresh).
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
 
@@ -473,7 +472,7 @@ Use this checklist to initialize a fresh environment:
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
 5. Vector store sync runs in the UI background (auto-rebuild on manifest changes).
 6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.
-7. Run data pipeline: `python -m rps.main parse-intervals`.
+7. Run data pipeline: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`.
 8. Validate outputs: `python scripts/validate_outputs.py`.
 
 ---
