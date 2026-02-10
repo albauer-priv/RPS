@@ -794,6 +794,8 @@ announce_log_file(athlete_id)
 
 st.title("Data & Metrics")
 st.caption(f"Athlete: {athlete_id}")
+set_status(status_state="running", title="Data & Metrics", message="Checking intervals data...")
+render_status_panel()
 
 latest_dir = ROOT / athlete_id / "latest"
 actual_path = latest_dir / "activities_actual.json"
@@ -839,8 +841,6 @@ week_corridor = _week_plan_corridor_by_week(store, athlete_id)
 planned_weekly_kj = _planned_weekly_kj_by_week(store, athlete_id)
 current_year, current_week = get_iso_year_week()
 recent_activity_weeks = _last_n_weeks(IsoWeek(current_year, current_week), _ACTIVITY_WINDOW_WEEKS)
-
-render_status_panel()
 
 with st.container():
     st.subheader("Planning Load Corridors")

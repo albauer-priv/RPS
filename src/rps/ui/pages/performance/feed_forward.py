@@ -44,6 +44,7 @@ year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+set_status(status_state="done", title="Feed Forward", message="Ready.")
 render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)

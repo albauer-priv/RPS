@@ -104,10 +104,6 @@ announce_log_file(athlete_id)
 
 st.title("Logistics")
 st.caption(f"Athlete: {athlete_id}")
-st.info(
-    "Capture context events (travel, work, life constraints) that affect training availability "
-    "but are not A/B/C planning events."
-)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -118,10 +114,15 @@ if logistics_path.exists():
     payload = json.loads(logistics_path.read_text(encoding="utf-8"))
     set_status(status_state="done", title="Logistics", message="Ready.")
 else:
-    st.info("No logistics input found yet. Add context events below.")
     set_status(status_state="running", title="Logistics", message="Missing logistics input.")
 
 render_status_panel()
+st.info(
+    "Capture context events (travel, work, life constraints) that affect training availability "
+    "but are not A/B/C planning events."
+)
+if not logistics_path.exists():
+    st.info("No logistics input found yet. Add context events below.")
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 events = data.get("events") or []

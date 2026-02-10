@@ -33,10 +33,6 @@ announce_log_file(athlete_id)
 
 st.title("Historic Data")
 st.caption(f"Athlete: {athlete_id}")
-st.info(
-    "Historic baseline metrics are computed from full-year Intervals data. "
-    "Use Refresh to recompute after new activities are imported."
-)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -50,6 +46,10 @@ else:
     set_status(status_state="running", title="Historic Data", message="Missing baseline.")
 
 render_status_panel()
+st.info(
+    "Historic baseline metrics are computed from full-year Intervals data. "
+    "Use Refresh to recompute after new activities are imported."
+)
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 meta = payload.get("meta", {}) if isinstance(payload, dict) else {}

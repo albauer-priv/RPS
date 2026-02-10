@@ -836,8 +836,6 @@ def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_r
         )
 
 
-st.title("Plan Hub")
-
 state = init_ui_state()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
@@ -849,6 +847,9 @@ hub_scope = st.session_state.get("hub_scope") or {
     "iso_week": week,
     "phase_label": st.session_state.get("selected_phase_label"),
 }
+
+st.title("Plan Hub")
+st.caption(f"Athlete: {hub_scope['athlete_id']}")
 
 active_run_id = st.session_state.get("plan_hub_active_run_id")
 run_records = load_runs(SETTINGS.workspace_root, hub_scope["athlete_id"], limit=5)
@@ -875,8 +876,6 @@ if run_state:
 if active_run_id:
     _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id, allow_delete=bool(active_run.get("delete_removed_intervals")), process_subtype=active_run.get("process_subtype"))
 
-st.subheader("Readiness")
-st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
 readiness_map = {step.key: step for step in readiness}
 required_steps = [step for step in readiness if not step.optional]
@@ -914,6 +913,8 @@ if run_state:
     status_message = "Running"
 set_status(status_state=status_state, title="Plan Hub", message=status_message)
 render_status_panel()
+st.subheader("Readiness")
+st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 st.caption(overall_message)
 
 readiness_container = st.container()

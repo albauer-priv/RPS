@@ -96,17 +96,19 @@ def _artifact_status_rows(store: LocalArtifactStore, athlete_id: str) -> list[di
         )
     return rows
 
-st.title("RPS - Randonneur Performance System")
-st.caption("Chat-style control surface for preflight, season-plan, and plan-week flows.")
-
 init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
 announce_log_file(athlete_id)
 
+st.title("RPS - Randonneur Performance System")
+st.caption(f"Athlete: {athlete_id}")
+
 set_status(status_state="done", title="Home", message="Ready.")
 render_status_panel()
+
+st.caption("Chat-style control surface for preflight, season-plan, and plan-week flows.")
 
 marketing_text = _load_marketing_text(MARKETING_PATH)
 st.markdown(marketing_text)

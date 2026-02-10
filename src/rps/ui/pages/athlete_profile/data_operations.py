@@ -30,10 +30,9 @@ announce_log_file(athlete_id)
 
 st.title("Data Operations")
 st.caption(f"Athlete: {athlete_id}")
-st.write("Backup and restore athlete data for portability and recovery.")
-
 set_status(status_state="ready", title="Data Operations", message="Backup/restore tools are available.")
 render_status_panel()
+st.write("Backup and restore athlete data for portability and recovery.")
 
 mode_labels = {
     "full": "Full backup",

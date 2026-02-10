@@ -140,6 +140,7 @@ announce_log_file(athlete_id)
 
 st.title("Report")
 st.caption(f"Athlete: {athlete_id}")
+set_status(status_state="done", title="Report", message="Ready.")
 render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)

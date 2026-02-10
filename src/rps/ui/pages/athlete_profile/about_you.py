@@ -25,10 +25,6 @@ announce_log_file(athlete_id)
 
 st.title("About You & Goals")
 st.caption(f"Athlete: {athlete_id}")
-st.info(
-    "Capture your core profile, goals, and constraints here. "
-    "These values inform season planning and load estimation."
-)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -41,6 +37,10 @@ if profile_path.exists():
 else:
     set_status(status_state="running", title="About You & Goals", message="Missing profile input.")
 render_status_panel()
+st.info(
+    "Capture your core profile, goals, and constraints here. "
+    "These values inform season planning and load estimation."
+)
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 profile = data.get("profile") or {}

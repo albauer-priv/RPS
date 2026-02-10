@@ -42,6 +42,8 @@ announce_log_file(athlete_id)
 week_start, week_end = iso_week_date_range(year, week)
 st.title(f"Workouts · {week_start} to {week_end}")
 st.caption(f"Athlete: {athlete_id}")
+set_status(status_state="done", title="Workouts", message="Ready.")
+render_status_panel()
 
 # CHECKLIST (Workouts page)
 # - Current week actions: Post to Intervals, Delete posted, Revise via Week Planner message.

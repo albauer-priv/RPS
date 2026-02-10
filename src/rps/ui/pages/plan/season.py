@@ -51,6 +51,13 @@ if date_range:
 else:
     st.title("Season")
 st.caption(f"Athlete: {athlete_id}")
+set_status(
+    status_state="done",
+    title="Season",
+    message="Viewing Season.",
+    last_action="View Season",
+)
+render_status_panel()
 
 SCENARIO_TEMPLATE = """
 ### Metadata
@@ -435,7 +442,6 @@ with st.expander("Actions", expanded=False):
         if not scenario_options:
             st.info("Create Season Scenarios from Plan → Hub.")
 
-render_status_panel()
 
 if has_plan:
     rendered = load_rendered_markdown(athlete_id, ArtifactType.SEASON_PLAN)

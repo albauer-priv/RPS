@@ -30,6 +30,10 @@ render_global_sidebar()
 athlete_id = st.session_state.get("rps_state", {}).get("athlete_id")
 if athlete_id:
     announce_log_file(athlete_id)
+    st.caption(f"Athlete: {athlete_id}")
+
+set_status(status_state="done", title="System", message="System logs.")
+render_status_panel()
 
 st.subheader("UI Log Level")
 levels = ["DEBUG", "INFO", "WARNING", "ERROR"]
@@ -57,8 +61,5 @@ if st.button("Save log level"):
 if athlete_id:
     log_file = ensure_logging(athlete_id)
     st.caption(f"Log file: {log_file}")
-
-set_status(status_state="done", title="System", message="System logs.")
-render_status_panel()
 
 system_log_panel(expanded=True)

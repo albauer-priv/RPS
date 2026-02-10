@@ -19,10 +19,6 @@ announce_log_file(athlete_id)
 
 st.title("Season Brief (Deprecated)")
 st.caption(f"Athlete: {athlete_id}")
-st.info(
-    "Season Brief has been replaced by modular inputs. "
-    "Use About You & Goals, Availability, Events, and Logistics instead."
-)
 set_status(
     status_state="warning",
     title="Season Brief",
@@ -30,3 +26,7 @@ set_status(
 )
 
 render_status_panel()
+st.info(
+    "Season Brief has been replaced by modular inputs. "
+    "Use About You & Goals, Availability, Events, and Logistics instead."
+)

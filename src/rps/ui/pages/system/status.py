@@ -45,6 +45,8 @@ athlete_id = get_athlete_id()
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
+set_status(status_state="done", title="System", message="Status loaded.")
+render_status_panel()
 
 runs_status = get_planning_run_status(SETTINGS.workspace_root, athlete_id)
 if runs_status:

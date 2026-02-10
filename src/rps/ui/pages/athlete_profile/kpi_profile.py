@@ -41,6 +41,9 @@ if not profile_paths:
     render_status_panel()
     st.stop()
 
+set_status(status_state="done", title="KPI Profile", message="Ready.")
+render_status_panel()
+
 profile_map = {path.stem: path for path in profile_paths}
 profile_keys = list(profile_map.keys())
 selected_key = st.selectbox("Select KPI Profile", options=profile_keys)
@@ -101,5 +104,3 @@ if st.button("Use this KPI Profile"):
         last_action="Select KPI Profile",
     )
     st.success("KPI Profile updated.")
-
-render_status_panel()

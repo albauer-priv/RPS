@@ -98,6 +98,10 @@ if not allowed_scope:
 if not allowed and reason:
     st.caption(reason)
 
+if not allowed:
+    set_status(status_state="error", title="Week", message=reason or "Planning not allowed.")
+else:
+    set_status(status_state="done", title="Week", message="Ready.")
 render_status_panel()
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)

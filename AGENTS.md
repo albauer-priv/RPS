@@ -50,6 +50,7 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Multi-output runner stages tools (read/search first, store-only second) to reduce token usage.
 * **Recent status:** LiteLLM Groq requests set `tool_choice=auto` and retry on TPM limits using `RPS_TPM_*` env.
 * **Recent status:** Added `RPS_LLM_MAX_COMPLETION_TOKENS` (and per-agent overrides) plus Groq default model fallback.
+* **Recent status:** UI pages now use a consistent header order (Title → Athlete → Status hints → Actions).
 
 ### Tech stack & constraints
 

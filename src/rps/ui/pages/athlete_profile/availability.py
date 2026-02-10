@@ -25,10 +25,6 @@ announce_log_file(athlete_id)
 
 st.title("Availability")
 st.caption(f"Athlete: {athlete_id}")
-st.info(
-    "Describe typical weekly hours plus any fixed rest days. "
-    "This is used to bound feasible weekly load corridors."
-)
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 TRAVEL_RISK_OPTIONS = ["LOW", "MED", "HIGH"]
@@ -82,13 +78,18 @@ availability_path = store.latest_path(athlete_id, ArtifactType.AVAILABILITY)
 
 if not availability_path.exists():
     payload: dict[str, object] = {}
-    st.info("No availability input found yet. Add your weekly availability below.")
     set_status(status_state="running", title="Availability", message="Missing availability input.")
 else:
     payload = json.loads(availability_path.read_text(encoding="utf-8"))
     set_status(status_state="done", title="Availability", message="Ready.")
 
 render_status_panel()
+st.info(
+    "Describe typical weekly hours plus any fixed rest days. "
+    "This is used to bound feasible weekly load corridors."
+)
+if not availability_path.exists():
+    st.info("No availability input found yet. Add your weekly availability below.")
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 availability_table = data.get("availability_table") or []

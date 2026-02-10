@@ -38,10 +38,6 @@ announce_log_file(athlete_id)
 
 st.title("Events")
 st.caption(f"Athlete: {athlete_id}")
-st.info(
-    "Add your A/B/C planning events. Type is A/B/C; Priority ranks events within the type "
-    "(e.g. B1/B2/B3). A-events must be spaced at least 12 weeks apart."
-)
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
 store.ensure_workspace(athlete_id)
@@ -53,10 +49,15 @@ if events_path.exists():
     payload = json.loads(events_path.read_text(encoding="utf-8"))
     set_status(status_state="done", title="Events", message="Ready.")
 else:
-    st.info("No planning events found yet. Add A/B/C events below.")
     set_status(status_state="running", title="Events", message="Missing planning events input.")
 
 render_status_panel()
+st.info(
+    "Add your A/B/C planning events. Type is A/B/C; Priority ranks events within the type "
+    "(e.g. B1/B2/B3). A-events must be spaced at least 12 weeks apart."
+)
+if not events_path.exists():
+    st.info("No planning events found yet. Add A/B/C events below.")
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 events = data.get("events") or []

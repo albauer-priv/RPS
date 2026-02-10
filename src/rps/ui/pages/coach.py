@@ -22,6 +22,8 @@ from rps.ui.shared import (
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
+    render_status_panel,
+    set_status,
     ui_log,
 )
 
@@ -32,6 +34,8 @@ year, _ = get_iso_year_week()
 
 st.title("Coach")
 st.caption(f"Athlete: {athlete_id}")
+set_status(status_state="done", title="Coach", message="Ready.")
+render_status_panel()
 
 try:
     base = base_runtime()
