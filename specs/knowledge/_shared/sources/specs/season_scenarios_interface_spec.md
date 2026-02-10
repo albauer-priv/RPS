@@ -29,13 +29,12 @@ Must include:
 
 ### data
 Required fields:
-- `season_brief_ref` (legacy; populate with Athlete Profile run_id/version key)
 - `kpi_profile_ref` (string)
+- `athlete_profile_ref` (string; canonical reference)
 - `scenarios` (array of exactly three scenario objects)
+- `planning_horizon_weeks` (integer)
 
 Optional fields:
-- `athlete_profile_ref` (string; preferred canonical reference)
-- `planning_horizon_weeks` (integer)
 - `notes` (array of strings)
 
 `planning_horizon_weeks` MUST match the total weeks covered by `meta.iso_week_range`

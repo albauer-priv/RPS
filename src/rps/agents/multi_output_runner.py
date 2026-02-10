@@ -432,7 +432,6 @@ def run_agent_multi_output(
         if not isinstance(data, dict):
             data = {}
         allowed_data_keys = {
-            "season_brief_ref",
             "kpi_profile_ref",
             "athlete_profile_ref",
             "planning_horizon_weeks",

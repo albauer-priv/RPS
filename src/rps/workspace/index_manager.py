@@ -41,35 +41,7 @@ class WorkspaceIndexManager:
                 "artefacts": {},
             }
         index = json.loads(path.read_text(encoding="utf-8"))
-        if self._normalize_paths(index):
-            self.save(index)
         return index
-
-    def _normalize_paths(self, index: dict[str, Any]) -> bool:
-        """Normalize legacy paths in index records when newer paths exist."""
-        artefacts = index.get("artefacts", {})
-        if not isinstance(artefacts, dict):
-            return False
-        changed = False
-        for entry in artefacts.values():
-            versions = entry.get("versions", {})
-            if not isinstance(versions, dict):
-                continue
-            for record in versions.values():
-                if not isinstance(record, dict):
-                    continue
-                for key in ("path", "relative_path"):
-                    value = record.get(key)
-                    if not isinstance(value, str):
-                        continue
-                    if value.startswith("analysis/"):
-                        candidate = f"data/{value}"
-                        legacy_path = self.athlete_root() / value
-                        new_path = self.athlete_root() / candidate
-                        if new_path.exists() and not legacy_path.exists():
-                            record[key] = candidate
-                            changed = True
-        return changed
 
     def save(self, index: dict[str, Any]) -> None:
         """Persist the index to disk with an updated timestamp."""

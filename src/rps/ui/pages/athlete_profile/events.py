@@ -61,8 +61,6 @@ if not events_path.exists():
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
 events = data.get("events") or []
-if "events_auto_upgrade_done" not in st.session_state:
-    st.session_state["events_auto_upgrade_done"] = False
 
 event_type_options = list(DEFAULT_EVENT_TYPES)
 if profile_path.exists():
@@ -100,8 +98,6 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
         normalized["rank"] = normalized.get("priority_rank", 1)
     if not normalized.get("priority"):
         normalized["priority"] = "A"
-    if not normalized.get("goal") and normalized.get("objective"):
-        normalized["goal"] = normalized.get("objective")
     normalized.setdefault("event_name", "")
     normalized.setdefault("date", "")
     normalized.setdefault("event_type", event_type_options[0] if event_type_options else "")
@@ -112,21 +108,6 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
     normalized.setdefault("time_limit", "TBD")
     normalized.pop("objective", None)
     return normalized
-
-
-def _needs_upgrade(rows: list[dict[str, object]]) -> bool:
-    if not rows:
-        return False
-    for row in rows:
-        if not isinstance(row, dict):
-            return True
-        has_priority_rank = "priority" in row and "rank" in row
-        has_type_rank = "type" in row and "priority_rank" in row
-        if not (has_priority_rank or has_type_rank):
-            return True
-        if "objective" in row:
-            return True
-    return False
 
 
 def _to_storage_event(entry: dict[str, object]) -> dict[str, object]:
@@ -226,13 +207,6 @@ def _save_events_payload(
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     storage_events = [_to_storage_event(event) for event in _sort_events(ui_events)]
-    replaced = sum(
-        1
-        for event in ui_events
-        if not event.get("goal") and event.get("objective")
-    )
-    if replaced:
-        logger.info("Events upgrade mapped objective->goal rows=%d", replaced)
     payload = {"events": storage_events}
     store.save_version(
         athlete_id,
@@ -258,16 +232,6 @@ def _save_events_payload(
 
 
 st.subheader("Planning Events (A/B/C)")
-legacy_upgrade_needed = _needs_upgrade([row for row in events if isinstance(row, dict)])
-if legacy_upgrade_needed and not st.session_state["events_auto_upgrade_done"]:
-    normalized_events = [_normalize_event(row) for row in events if isinstance(row, dict)]
-    if not normalized_events:
-        normalized_events = [_normalize_event({})]
-    logger.info("Events auto-upgrade triggered")
-    _save_events_payload(store, athlete_id, normalized_events)
-    set_status(status_state="done", title="Events", message="Events upgraded.")
-    st.session_state["events_auto_upgrade_done"] = True
-    st.rerun()
 events = [_normalize_event(row) for row in events if isinstance(row, dict)]
 if not events:
     events = [_normalize_event({})]

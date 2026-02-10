@@ -515,7 +515,7 @@ def season_plan_covers_week(athlete_id: str, year: int, week: int) -> tuple[bool
 
 
 def render_phase_markdown(phase: dict) -> str:
-    """Render phase details using the legacy phase card template."""
+    """Render phase details using the phase card template."""
     overview = phase.get("overview", {}) if isinstance(phase, dict) else {}
     goals = overview.get("phase_goals", {}) if isinstance(overview, dict) else {}
     overview = dict(overview)

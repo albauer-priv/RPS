@@ -27,11 +27,6 @@ def _run_store_dir(root: Path, athlete_id: str) -> Path:
     return (root / athlete_id / "runs").resolve()
 
 
-def run_store_path(root: Path, athlete_id: str) -> Path:
-    """Return the JSONL path for legacy plan hub runs."""
-    return _run_store_dir(root, athlete_id) / "plan_hub_runs.jsonl"
-
-
 def run_dir(root: Path, athlete_id: str, run_id: str) -> Path:
     """Return the directory for a specific run."""
     return _run_store_dir(root, athlete_id) / run_id
@@ -95,7 +90,7 @@ def _load_run_dir(root: Path, athlete_id: str, run_id: str) -> dict[str, Any] | 
 
 
 def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
-    """Load run records from per-run directories (fallback to legacy JSONL)."""
+    """Load run records from per-run directories."""
     records: list[dict[str, Any]] = []
     run_root = _run_store_dir(root, athlete_id)
     if run_root.exists():
@@ -105,20 +100,6 @@ def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[dict[str,
             record = _load_run_dir(root, athlete_id, run_path.name)
             if record:
                 records.append(record)
-    # Legacy fallback for older runs
-    path = run_store_path(root, athlete_id)
-    if path.exists():
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            try:
-                record = json.loads(line)
-                # skip if run already loaded from per-run dir
-                if any(r.get("run_id") == record.get("run_id") for r in records):
-                    continue
-                records.append(record)
-            except json.JSONDecodeError:
-                logger.warning("Skipping invalid run_store line in %s", path)
     records.sort(key=lambda r: r.get("created_at") or "", reverse=True)
     return records[:limit]
 

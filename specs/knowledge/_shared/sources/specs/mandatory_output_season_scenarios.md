@@ -40,7 +40,6 @@ required schema, field sources, and a minimal valid example.
 - `notes`: non‑empty string
 
 #### 3) `data` (required fields)
-- `season_brief_ref`: legacy field; populate with Athlete Profile run_id or version key
 - `kpi_profile_ref`: loaded KPI Profile id (exact string)
 - `athlete_profile_ref`: Athlete Profile run_id or profile id
 - `planning_horizon_weeks`: integer (>=1)
@@ -112,7 +111,6 @@ Notes:
     "notes": "Example only. Replace with real trace references."
   },
   "data": {
-    "season_brief_ref": "athlete_profile_2026",
     "kpi_profile_ref": "KPI_Profile_Example",
     "athlete_profile_ref": "athlete_profile_2026",
     "planning_horizon_weeks": 16,

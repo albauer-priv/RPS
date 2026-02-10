@@ -17,8 +17,6 @@ class ArtifactPathConfig:
 
 
 ARTIFACT_PATHS: dict[ArtifactType, ArtifactPathConfig] = {
-    ArtifactType.SEASON_BRIEF: ArtifactPathConfig("inputs", "season_brief"),
-    ArtifactType.EVENTS: ArtifactPathConfig("inputs", "events"),
     ArtifactType.KPI_PROFILE: ArtifactPathConfig("inputs", "kpi_profile"),
     ArtifactType.ATHLETE_PROFILE: ArtifactPathConfig("inputs", "athlete_profile"),
     ArtifactType.LOGISTICS: ArtifactPathConfig("inputs", "logistics"),

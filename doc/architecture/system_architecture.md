@@ -137,7 +137,7 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 
 - Deterministic scripts ingest external activity data.
 - Writes `activities_actual`, `activities_trend`, `zone_model`, and `wellness` into the athlete workspace.
-- `availability` is a user-managed input (manual edits + optional legacy import).
+- `availability` is a user-managed input (manual edits).
 - Updates `latest/` so planners and the Plan Hub always read the freshest factual data.
 - Pipeline entrypoint: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py` (or UI refresh).
 - Validation helper: `scripts/validate_outputs.py`.
@@ -416,7 +416,6 @@ All artifacts are **append-only**; updates are new versions with new run IDs.
 - Raw payloads (e.g., Intervals export) are validated against their raw schema.
 
 Authority values are enforced by schema (Binding/Derived/Informational/Factual).
-The local store normalizes legacy labels (e.g., Structural → Derived).
 
 ## 6.1 Artefact Renderer
 

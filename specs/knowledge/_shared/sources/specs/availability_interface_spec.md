@@ -9,7 +9,6 @@ Authority: Binding
 
 Inputs-From:
   - AthleteProfileInterface
-  - (Legacy) SeasonBriefInterface (deprecated)
 Outputs-To:
   - Season-Scenario-Agent
   - Season-Planner
@@ -21,8 +20,7 @@ Outputs-To:
 
 ## 1) Purpose (Binding)
 Provide a user-managed availability artefact that planners can use for
-load plausibility checks and daily constraints. Legacy Season Brief parsing
-is supported only for backward compatibility.
+load plausibility checks and daily constraints.
 
 ## 2) Required Meta (Binding)
 The artefact MUST include a valid `meta` envelope (`artefact_meta.schema.json`) with:
@@ -35,8 +33,8 @@ The artefact MUST include a valid `meta` envelope (`artefact_meta.schema.json`) 
 
 ## 3) Required Data Fields (Binding)
 `data` MUST include:
-- `source_type` (`manual|imported|season_brief`)
-- `source_ref` (string; may be a UI run_id or legacy Season Brief ref)
+- `source_type` (`manual|imported`)
+- `source_ref` (string; may be a UI run_id)
 - `availability_table` (array of 7 entries; one per weekday)
 - `weekly_hours` (object: `min`, `typical`, `max`)
 - `fixed_rest_days` (array of weekday enums)
@@ -51,7 +49,7 @@ Each entry MUST include:
 - `indoor_possible` (boolean)
 - `travel_risk` (`LOW|MED|HIGH`)
 - `locked` (boolean; true for fixed rest days)
-Note: raw Season Brief source fields are no longer stored in the availability table.
+Note: raw source fields are not stored in the availability table.
 
 ### 3.2 Weekly Hours (Binding)
 `weekly_hours` MUST be the sum of daily entries:
@@ -61,8 +59,6 @@ Note: raw Season Brief source fields are no longer stored in the availability ta
 
 ## 4) Authoring / Parsing Rules (Binding)
 - Manual entries MUST be provided by the user via the Availability UI.
-- If `source_type=season_brief`, the availability table MUST be parsed from the
-  Season Brief “Weekly availability table”.
 - Fixed rest days MUST be marked as `0 h / locked` and mapped to `locked=true`.
 - If any day is missing or cannot be parsed, the parser MUST STOP.
 
@@ -72,7 +68,6 @@ Note: raw Season Brief source fields are no longer stored in the availability ta
 - Do NOT smooth or adjust values beyond numeric parsing of the provided table.
 
 ## 6) Traceability (Binding)
-- If `source_type=season_brief`, `trace_upstream` MUST reference the Season Brief.
-- Otherwise, `trace_upstream` MAY be empty.
+- `trace_upstream` MAY be empty when the source is manual.
 
 ## End of Availability Interface Specification v1.0

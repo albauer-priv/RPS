@@ -99,7 +99,6 @@
           "type": "string",
           "enum": [
             "manual",
-            "season_brief",
             "imported"
           ]
         },

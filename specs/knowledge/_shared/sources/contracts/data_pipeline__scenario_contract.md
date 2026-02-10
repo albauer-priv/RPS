@@ -28,7 +28,7 @@ Provide normalized availability data from user-managed Availability inputs.
 
 ## 2) Producer Responsibilities (Data-Pipeline)
 - MUST emit `availability_yyyy-ww.json` validated against `availability.schema.json`
-  when Availability inputs exist (legacy Season Brief parsing is deprecated).
+  when Availability inputs exist.
 - MUST include required meta fields and trace_upstream references per `traceability_spec.md`.
 - MUST STOP on schema validation failure.
 

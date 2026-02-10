@@ -43,7 +43,6 @@ required schema, field sources, and a minimal valid example.
 #### 3) `data.body_metadata`
 Required:
 - `planning_horizon_weeks` (integer, **8–32**)
-- `season_brief_ref` (legacy field; populate with Athlete Profile run_id or version key)
 - `kpi_profile_ref` (KPI_PROFILE id)
 - `moving_time_rate_guidance`:
   - `segment` (string label used, e.g., `"fast_competitive"`)
@@ -228,7 +227,6 @@ All required booleans must be present. Set to `true` only if valid:
   "data": {
     "body_metadata": {
       "planning_horizon_weeks": 8,
-      "season_brief_ref": "athlete_profile_2026",
       "kpi_profile_ref": "KPI_Profile_Example",
       "moving_time_rate_guidance": {
         "segment": "fast_competitive",

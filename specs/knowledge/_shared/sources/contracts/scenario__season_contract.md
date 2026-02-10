@@ -45,7 +45,6 @@ Season-Planner retains binding decision authority.
 ## 4) Required Fields
 The `SEASON_SCENARIOS` artefact MUST include:
 - `meta` envelope (SeasonScenariosInterface)
-- `data.season_brief_ref` (legacy; populate from Athlete Profile ref)
 - `data.kpi_profile_ref`
 - `data.scenarios` with exactly three entries:
   - `scenario_id` in {A, B, C}

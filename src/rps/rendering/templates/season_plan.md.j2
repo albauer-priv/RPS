@@ -34,7 +34,7 @@ Trace-Upstream:
 ## 0) Body Metadata
 
 - Planning-Horizon (weeks): {{ body_metadata.planning_horizon_weeks }}
-- Athlete-Profile-Ref (legacy season_brief_ref): {{ body_metadata.athlete_profile_ref or body_metadata.season_brief_ref or "N/A" }}
+- Athlete-Profile-Ref: {{ body_metadata.athlete_profile_ref or "N/A" }}
 - KPI-Profile-Ref: {{ body_metadata.kpi_profile_ref }}
 - Body mass (kg): {{ body_metadata.body_mass_kg or "N/A" }}
 - Moving-time rate guidance:

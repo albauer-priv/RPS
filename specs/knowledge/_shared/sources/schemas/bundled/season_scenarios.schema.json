@@ -220,7 +220,6 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "season_brief_ref",
         "kpi_profile_ref",
         "athlete_profile_ref",
         "planning_horizon_weeks",
@@ -228,10 +227,6 @@
         "notes"
       ],
       "properties": {
-        "season_brief_ref": {
-          "type": "string",
-          "minLength": 1
-        },
         "kpi_profile_ref": {
           "type": "string",
           "minLength": 1
@@ -684,7 +679,6 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "season_brief_ref",
         "kpi_profile_ref",
         "athlete_profile_ref",
         "planning_horizon_weeks",
@@ -692,10 +686,6 @@
         "notes"
       ],
       "properties": {
-        "season_brief_ref": {
-          "type": "string",
-          "minLength": 1
-        },
         "kpi_profile_ref": {
           "type": "string",
           "minLength": 1

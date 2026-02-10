@@ -230,7 +230,6 @@ def build_season_plan_context(doc):
         "trace_events": format_trace_list(meta.get("trace_events")),
         "body_metadata": {
             "planning_horizon_weeks": body.get("planning_horizon_weeks"),
-            "season_brief_ref": body.get("season_brief_ref"),
             "kpi_profile_ref": body.get("kpi_profile_ref"),
             "athlete_profile_ref": body.get("athlete_profile_ref"),
             "body_mass_kg": body.get("body_mass_kg"),

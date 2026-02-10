@@ -84,7 +84,7 @@ Owner: UI
     `validate_outputs.py`, vectorstore helpers (`sync_vectorstores.py`, `smoke_vectorstores.py`,
     `list_vectorstores.py`, `prune_orphans.py`).
   * Evaluate removal of deprecated CLI wrappers: `scripts/data_pipeline/post_workout.py`,
-    `scripts/data_pipeline/parse_season_brief_availability.py`, `scripts/data_pipeline/get_intervals_data.py`
+    `scripts/data_pipeline/get_intervals_data.py`
     if no longer referenced by UI or required by tests.
 * Update documentation to remove `python -m rps.main ...` references and point to UI
   or direct module invocations (e.g., `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`).

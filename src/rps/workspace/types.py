@@ -20,8 +20,6 @@ class Authority(str, Enum):
 class ArtifactType(str, Enum):
     """Canonical artifact identifiers used across the workspace."""
     # Inputs
-    SEASON_BRIEF = "SEASON_BRIEF"
-    EVENTS = "EVENTS"
     KPI_PROFILE = "KPI_PROFILE"
     ATHLETE_PROFILE = "ATHLETE_PROFILE"
     LOGISTICS = "LOGISTICS"

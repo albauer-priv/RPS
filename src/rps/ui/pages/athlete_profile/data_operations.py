@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import logging
 import streamlit as st
 
-from rps.data_pipeline.season_brief_availability import parse_and_store_availability
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,

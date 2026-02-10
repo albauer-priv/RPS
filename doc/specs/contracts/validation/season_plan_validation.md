@@ -12,7 +12,7 @@ Owner: Specs
 - [ ] `meta.iso_week_range` spans the intended planning horizon.
 
 ## Upstream coverage
-- [ ] `body_metadata.season_brief_ref` (legacy field; should reference athlete_profile) and `kpi_profile_ref` are set.
+- [ ] `body_metadata.athlete_profile_ref` and `kpi_profile_ref` are set.
 - [ ] `global_constraints.availability_assumptions`, `risk_constraints`, `planned_event_windows`, and `recovery_protection` are present.
 - [ ] If fixed rest days are known, `global_constraints.recovery_protection.fixed_rest_days` is set.
 - [ ] If `global_constraints.recovery_protection` is present, `notes` is filled (can be empty if explicitly unknown).

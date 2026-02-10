@@ -109,7 +109,6 @@
           "additionalProperties": false,
           "required": [
             "planning_horizon_weeks",
-            "season_brief_ref",
             "kpi_profile_ref",
             "moving_time_rate_guidance",
             "athlete_profile_ref",
@@ -120,10 +119,6 @@
               "type": "integer",
               "minimum": 8,
               "maximum": 32
-            },
-            "season_brief_ref": {
-              "type": "string",
-              "minLength": 1
             },
             "kpi_profile_ref": {
               "type": "string",
@@ -1518,7 +1513,6 @@
           "additionalProperties": false,
           "required": [
             "planning_horizon_weeks",
-            "season_brief_ref",
             "kpi_profile_ref",
             "moving_time_rate_guidance",
             "athlete_profile_ref",
@@ -1529,10 +1523,6 @@
               "type": "integer",
               "minimum": 8,
               "maximum": 32
-            },
-            "season_brief_ref": {
-              "type": "string",
-              "minLength": 1
             },
             "kpi_profile_ref": {
               "type": "string",
