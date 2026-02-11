@@ -73,10 +73,6 @@ The most important building blocks:
 - **Workout Policy** — what workouts may/must contain, including limits on structure/progression.  
   [specs/knowledge/_shared/sources/policies/workout_policy.md](specs/knowledge/_shared/sources/policies/workout_policy.md)
 
-Missing a core foundation? I would also recommend:
-- **Traceability Spec** (artifact lineage/upstream references)  
-- **File Naming Spec** (artifact names are binding for routing/validation)  
-- **Season → Phase / Phase → Week Contracts** (binding handoff rules)
 ---
 
 ### 3.4 Traceability & Governance
