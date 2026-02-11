@@ -617,19 +617,7 @@ flowchart TD
     classDef step fill:#efefef,stroke:#8a8a8a,stroke-width:1px,color:#111;
 ```
 
-## Implementation Notes
+## Related Contracts
 
-- **Readiness evaluation** should be deterministic and based on “latest” artifacts.
-- **Stale detection** should compare timestamps and ISO week ranges.
-- **Auto-run** should be safe: only write missing or outdated artifacts.
-- **No dangling artifacts:** every flow must leave `latest/` fully updated for all artifacts it owns.
-- **Replace semantics:** when an artifact is re-generated, delete the existing `latest/` copy first, then write the new version.
-- **Prerequisites:** planning actions only run when their required upstream artifacts exist and are within the active Season Plan ISO range.
-- **Athlete simplicity** comes from a single CTA and minimal decision points.
-- **Optional toggles** (advanced panel): auto-post, allow delete, validation only.
-
-## Future Enhancements
-
-- Background job queue for long runs with progress indicators.
-- Notification banner when planning is done (email/push optional).
-- Auto-retry for transient failures with clear logs.
+- [Streamlit Contract](streamlit_contract.md) — global UI layout + readiness behavior
+- [Feature Backlog](../overview/feature_backlog.md) — queued enhancements and refactors

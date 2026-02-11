@@ -29,7 +29,6 @@ Scaffold for local vector stores with a unified, versioned knowledge base.
 - [doc/architecture/workspace.md](doc/architecture/workspace.md): local workspace layout and rules.
 - [doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md): schema change policy and compatibility.
 - [doc/architecture/deployment.md](doc/architecture/deployment.md): environment setup and deployment notes.
-- [doc/overview/recommended_models.md](doc/overview/recommended_models.md): model selection guidance for cost-optimized runs.
 
 ## Quick start
 
@@ -41,17 +40,9 @@ Scaffold for local vector stores with a unified, versioned knowledge base.
 Per-agent model overrides (optional):
 
 ```
-RPS_LLM_MODEL=gpt-4.1
-RPS_LLM_MODEL_WEEK_PLANNER=gpt-4.1-mini
-RPS_LLM_MODEL_WORKOUT_BUILDER=gpt-4.1-mini
-```
-
-## Streamlit coach experiment
-
-The optional coach-only streaming UI uses the in-repo chat implementation.
-
-```bash
-PYTHONPATH=src streamlit run src/rps/ui/coach_experiment.py
+RPS_LLM_MODEL=openai/gpt-5-mini
+RPS_LLM_MODEL_WEEK_PLANNER=openai/gpt-5-mini
+RPS_LLM_MODEL_WORKOUT_BUILDER=openai/gpt-5-nano
 ```
 
 ## Build checklist

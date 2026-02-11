@@ -101,7 +101,7 @@ Manual validation checklists live under `doc/specs/contracts/validation/`:
 - [doc/specs/contracts/validation/phase_structure_validation.md](../specs/contracts/validation/phase_structure_validation.md))
 - [doc/specs/contracts/validation/phase_preview_validation.md](../specs/contracts/validation/phase_preview_validation.md))
 - [doc/specs/contracts/validation/phase_feed_forward_validation.md](../specs/contracts/validation/phase_feed_forward_validation.md))
-- [doc/specs/contracts/validation/zone_model_validation.md](../specs/contracts/validation/zone_model_validation.md))
+- [doc/specs/contracts/validation/zone_model_validation.md](/doc/specs/contracts/validation/zone_model_validation.md)
 - [doc/specs/contracts/validation/week_plan_validation.md](../specs/contracts/validation/week_plan_validation.md))
 - [doc/specs/contracts/validation/intervals_workouts_validation.md](../specs/contracts/validation/intervals_workouts_validation.md))
 - [doc/specs/contracts/validation/availability_validation.md](../specs/contracts/validation/availability_validation.md))

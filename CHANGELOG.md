@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated UI spec and artefact flow docs to reflect full backup + selective restore.
 - Standardized Mermaid node labels in docs by quoting non-identifier labels for GitHub rendering.
 - Normalized in-doc links to repo-root paths (e.g., `/doc/...`) for GitHub previews.
+- Moved UI implementation notes from `ui_spec` into the Streamlit contract and queued future items in the feature backlog.
+- Updated `.env.example` model defaults to GPT‑5 mini/nano and adjusted temperatures to GPT‑5‑safe defaults.
+- Removed the obsolete coach experiment entrypoint and deprecated model guidance doc.
 - System → History status banner now renders under the page header for consistent layout.
 - Plan Hub now surfaces an `Auto-creates phase artifacts` readiness hint and clarifies that Plan Week will create missing phase artifacts when needed.
 - Plan Hub override gating is now consistent: overrides are required only when modifying existing artifacts.

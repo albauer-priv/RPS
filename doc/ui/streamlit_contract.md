@@ -90,6 +90,16 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
 - Reset/Delete actions remove latest artefacts; delete also clears scenarios + selection while reset keeps them.
 
+**Readiness + Auto-run rules**
+
+- **Readiness evaluation** is deterministic and based on `latest/` artifacts only.
+- **Stale detection** compares timestamps and ISO week ranges.
+- **Auto-run safety:** only write missing or outdated artifacts.
+- **No dangling artifacts:** every flow must leave `latest/` fully updated for all artifacts it owns.
+- **Replace semantics:** when an artifact is regenerated, delete the existing `latest/` copy first, then write the new version.
+- **Prerequisites:** planning actions run only when required upstream artifacts exist and the target week is within the active Season Plan ISO range.
+- **Simplicity:** prefer a single CTA and minimal decision points; advanced toggles stay in an optional panel (auto-post, allow delete, validation only).
+
 #### Plan -> Season
 
 **Action panel (forms)**
