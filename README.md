@@ -166,6 +166,10 @@ Runtime depends on LLM keys, model settings, and athlete ID. See:
 - [doc/architecture/deployment.md](doc/architecture/deployment.md)
 - `.env.example`
 
+**GHCR publishing (optional):**  
+A GitHub Actions workflow is included for GHCR publishing but left disabled by default.
+Enable the `push` trigger in `.github/workflows/ghcr-image.yml` when you are ready to publish on each `main` commit.
+
 ---
 
 ## 7) Project structure (short)

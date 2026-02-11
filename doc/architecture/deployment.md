@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-06
+Last-Updated: 2026-02-11
 Owner: Architecture
 ---
 # Deployment
 
 Version: 1.0  
 Status: Draft  
-Last-Updated: 2026-02-06
+Last-Updated: 2026-02-11
 
 ---
 
@@ -60,6 +60,22 @@ Recommended environments:
 - Never commit `.env`.
 - Use a secret manager for production.
 - Rotate API keys regularly.
+
+---
+
+## GHCR Publishing (Optional)
+
+The repo includes a GHCR workflow at `.github/workflows/ghcr-image.yml`.
+It is **disabled by default** (manual dispatch only) so you can review the repo before publishing.
+
+To enable automatic publishing on each `main` commit:
+
+1. Edit `.github/workflows/ghcr-image.yml`.
+2. Uncomment the `push` trigger for `main`.
+
+Images are pushed to `ghcr.io/<owner>/<repo>` with tags:
+- `latest`
+- `sha-<short>`
 
 ---
 
