@@ -1,7 +1,7 @@
 [project]
-name = "my-openai-platform"
+name = "rps"
 version = "0.10.4"
-description = "Scaffold for OpenAI hosted vector stores with versioned knowledge."
+description = "Randonneur Performance System (RPS) for endurance planning and feedback."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

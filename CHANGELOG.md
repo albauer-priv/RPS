@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Added English translations alongside German titles in the durability bibliography and principles references, and clarified the week anchor wording in planning principles.
-- Added Dockerfile, `.dockerignore`, and a disabled GHCR publish workflow (manual dispatch only) with deployment doc updates.
+- Updated package metadata name/description in `pyproject.toml` to match RPS.
+- Updated Docker references to the real GHCR package (`ghcr.io/albauer-priv/rps:latest`) in compose and README usage examples.
+- Enabled automatic GHCR publishing on pushes to `main` in `.github/workflows/ghcr-image.yml` (manual dispatch remains available).
+- Translated remaining German wording in README navigation/headings to English.
 
 ## [0.10.4] - 2026-02-11
 

@@ -2,9 +2,8 @@ name: Build & Push Docker (GHCR)
 
 on:
   workflow_dispatch:
-  # Enable when ready for automated publishes on main:
-  # push:
-  #   branches: ["main"]
+  push:
+    branches: ["main"]
 
 permissions:
   contents: read

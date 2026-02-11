@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   rps:
-    image: ghcr.io/OWNER/REPO:latest
+    image: ghcr.io/albauer-priv/rps:latest
     ports:
       - "8501:8501"
     env_file:

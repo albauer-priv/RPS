@@ -38,7 +38,7 @@ peak performance.
 
 ## 3) Principles (Planning & Feed Forward)
 
-### 3.1 Planung (Season → Phase → Week)
+### 3.1 Planning (Season → Phase → Week)
 
 - **Durability‑first:** stability under load beats short‑term peaks.
 - **kJ‑first:** mechanical work (kJ) is the primary steering metric.
@@ -120,11 +120,11 @@ For readiness rules and artifact chains, see:
 
 ### UI & behavior
 - [doc/ui/ui_spec.md](doc/ui/ui_spec.md) — UI structure and page responsibilities
-- [doc/ui/flows.md](doc/ui/flows.md) — UI‑Aktionen + Flow‑Diagramme
-- [doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md) — verbindliche UI‑Regeln
-- [doc/ui/pages/](doc/ui/pages/) — Page‑Spezifikationen
+- [doc/ui/flows.md](doc/ui/flows.md) — UI actions + flow diagrams
+- [doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md) — binding UI rules
+- [doc/ui/pages/](doc/ui/pages/) — page specifications
 
-### Architektur
+### Architecture
 - [doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)
 - [doc/architecture/workspace.md](doc/architecture/workspace.md)
 - [doc/architecture/subsystems/](doc/architecture/subsystems/)
@@ -147,28 +147,36 @@ For readiness rules and artifact chains, see:
 **Goal:** run RPS as a UI‑only Streamlit app.
 
 1. Create `.env` (see `.env.example`)
-2. Build Docker image
+2. Pull Docker image from GHCR
 3. Start container
 
-Example (simplified):
+Example (GHCR package):
 
 ```bash
-docker build -t rps .
-docker run --env-file .env -p 8501:8501 rps
+docker pull ghcr.io/albauer-priv/rps:latest
+docker run --env-file .env -p 8501:8501 ghcr.io/albauer-priv/rps:latest
 ```
 
 **Docker Compose (host mapping):**  
 Use `docker-compose.yml` to map the local `runtime/` folder and load `.env` automatically.
-Update the image name (`ghcr.io/OWNER/REPO:latest`) after you rename the repo.
+The compose file is already set to `ghcr.io/albauer-priv/rps:latest`.
+
+Compose start (including GHCR login):
+
+```bash
+docker login ghcr.io
+docker pull ghcr.io/albauer-priv/rps:latest
+docker compose up -d
+```
 
 **Configuration:**  
 Runtime depends on LLM keys, model settings, and athlete ID. See:
 - [doc/architecture/deployment.md](doc/architecture/deployment.md)
 - `.env.example`
 
-**GHCR publishing (optional):**  
-A GitHub Actions workflow is included for GHCR publishing but left disabled by default.
-Enable the `push` trigger in `.github/workflows/ghcr-image.yml` when you are ready to publish on each `main` commit.
+**GHCR publishing:**  
+The workflow `.github/workflows/ghcr-image.yml` publishes `latest` and a short SHA tag to GHCR.
+It runs on manual dispatch and automatically on pushes to `main`.
 
 ---
 
