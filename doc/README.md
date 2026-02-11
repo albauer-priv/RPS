@@ -13,6 +13,7 @@ This directory contains the canonical documentation for the platform. It is a na
 - [System Overview](overview/system_overview.md)
 - [System Architecture](architecture/system_architecture.md)
 - [UI Spec](ui/ui_spec.md)
+- [UI Action & Flow Catalog](ui/flows.md)
 
 ## Documentation index
 
@@ -36,6 +37,7 @@ This directory contains the canonical documentation for the platform. It is a na
 
 ### UI (flows + Streamlit contract)
 - [UI Spec](ui/ui_spec.md)
+- [UI Action & Flow Catalog](ui/flows.md)
 - [Streamlit Contract](ui/streamlit_contract.md)
 - [Plan Hub](ui/pages/plan_hub.md)
 - [Home](ui/pages/home.md)

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidated repo layout into `runtime/` (workspace/runs/logs) and `specs/` (knowledge, schemas, KPI profiles), removing the unused `evals/` folder and updating scripts/docs to the new roots.
 - Backup now always creates a full archive; restore keeps a scope selector for partial re-import.
 - Updated UI spec and artefact flow docs to reflect full backup + selective restore.
+- Split detailed UI action specs and flow diagrams into `doc/ui/flows.md`, keeping `ui_spec` focused on page responsibilities.
 - Standardized Mermaid node labels in docs by quoting non-identifier labels for GitHub rendering.
 - Normalized in-doc links to repo-root paths (e.g., `/doc/...`) for GitHub previews.
 - Moved UI implementation notes from `ui_spec` into the Streamlit contract and queued future items in the feature backlog.
