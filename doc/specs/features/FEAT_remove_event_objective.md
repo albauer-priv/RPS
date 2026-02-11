@@ -66,7 +66,7 @@ Owner: UI/Data Contracts
 ```mermaid
 flowchart TD
   A["Events Page Load"] --> B["Normalize Payload"]
-  B --> C[""Render Table (Goal Only")"]
+  B --> C["Render Table (Goal Only)"]
   C --> D["Save Writes Goal Only"]
 ```
 

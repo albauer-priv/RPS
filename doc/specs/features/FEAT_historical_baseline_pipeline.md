@@ -61,7 +61,7 @@
 ```mermaid
 flowchart TD
   A["Open Historic Data"] --> B["Read HISTORICAL_BASELINE"]
-  B --> C{ "Baseline present?" }
+  B --> C{"Baseline present?"}
   C -->|"Yes"| D["Render baseline + yearly summary"]
   C -->|"No"| E["Show missing baseline message"]
   E --> F["Trigger Intervals refresh"]

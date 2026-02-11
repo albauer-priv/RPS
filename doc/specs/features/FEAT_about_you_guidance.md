@@ -62,7 +62,7 @@ Owner: UI
 ```mermaid
 flowchart TD
   subgraph Legend
-    L1[""Page (UI")"]:::page
+    L1["Page (UI)"]:::page
     L2["Flow Step"]:::step
   end
   A["About You Page"]:::page --> B["Render field guidance + example"]:::step

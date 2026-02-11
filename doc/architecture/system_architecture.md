@@ -61,7 +61,7 @@ flowchart TD
   MI --> WP[week_plan]
   WP --> WB["Workout-Builder"]
   WB --> WJ["workouts_yyyy-ww.json"]
-  WJ --> POST["Post to Intervals (commit")]
+  WJ --> POST["Post to Intervals (commit)"]
 
   DP["Data Pipeline<br>intervals_data.py"] --> AA[activities_actual]
   DP --> AT[activities_trend]
@@ -188,8 +188,8 @@ Knowledge sources live under `specs/knowledge/_shared/` and are listed in
 
 ```mermaid
 flowchart LR
-  SRC["specs/knowledge/all_agents/manifest.yaml"] --> SYNC["background sync (Streamlit")]
-  SYNC --> VS["(Qdrant Local")]
+  SRC["specs/knowledge/all_agents/manifest.yaml"] --> SYNC["background sync (Streamlit)"]
+  SYNC --> VS["(Qdrant Local)"]
   VS --> FS["knowledge_search tool"]
   FS --> AG["Agent Runtime"]
 ```

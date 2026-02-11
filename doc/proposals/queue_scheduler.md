@@ -47,12 +47,12 @@ This proposal outlines a minimal, file-based scheduler/queue that complements th
 ```mermaid
 flowchart TD
     A["Plan Hub / UI Action"] --> B["Write run.json + steps.json"]
-    B --> C[""Enqueue run (queue/pending")"]
-    C --> D{ "Scheduler tick" }
+    B --> C["Enqueue run (queue/pending)"]
+    C --> D{"Scheduler tick"}
     D -- eligible --> E["Move to queue/active"]
     E --> F["Worker executes steps"]
     F --> G["Update Run Store status"]
-    G --> H{ "Run finished?" }
+    G --> H{"Run finished?"}
     H -- yes --> I["Move to queue/done or queue/failed"]
     H -- no --> F
 ```

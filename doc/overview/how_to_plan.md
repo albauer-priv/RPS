@@ -101,7 +101,7 @@ flowchart TD
   WEEK --> WP[week_plan]
   WP --> WB["Workout-Builder"]
   WB --> WJ["workouts_yyyy-ww.json"]
-  WJ --> POST[""post_to_intervals (commit")"]
+  WJ --> POST["post_to_intervals (commit)"]
 
   DP["intervals_data pipeline"] --> AA[activities_actual]
   DP --> AT[activities_trend]

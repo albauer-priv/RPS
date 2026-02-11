@@ -28,7 +28,7 @@ flowchart TD
   I["Intervals.icu"]:::external
   EXP["intervals_data.py"]:::script
   VAL["validate_outputs.py"]:::script
-  POST[""post_to_intervals (commit")"]:::script
+  POST["post_to_intervals (commit)"]:::script
   RCPT["post_receipts_yyyy-ww.json"]:::artefact
 
   %% Artefacts
@@ -103,7 +103,7 @@ flowchart TD
   WL -. info .-> ME
   PA --> DR --> MA
 
-  %% Events can be used by multiple agents (informational)
+  %% Events can be used by multiple agents(informational)
   PE -. info .-> MA
   PE -. info .-> ME
   PE -. info .-> MI
@@ -316,7 +316,7 @@ flowchart LR
 ```mermaid
 flowchart LR
   WP["week_plan_yyyy-ww.json"]:::artefact --> WB["Workout-Builder"]:::agent
-  WB --> WJ["workouts_yyyy-ww.json"]:::artefact --> POST[""post_to_intervals (commit")"]:::script
+  WB --> WJ["workouts_yyyy-ww.json"]:::artefact --> POST["post_to_intervals (commit)"]:::script
   POST --> RCPT["post_receipts_yyyy-ww.json"]:::artefact --> CAL["Planned Activities<br/>in Calendar"]:::artefact --> I["Intervals.icu"]:::external
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;

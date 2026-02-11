@@ -73,11 +73,11 @@ Owner: Platform
 flowchart TD
   A["Open Backup/Restore"] --> B["Create Full Backup"]
   B --> C["Backup Created + Manifest"]
-  A --> D["Restore"]
+  A --> D[Restore]
   D --> E["Select Restore Targets"]
   E --> F{"Confirm Restore?"}
   F -->|Yes| G["Apply Selected Restore"]
-  F -->|No| H["Cancel"]
+  F -->|No| H[Cancel]
   G --> I["Restore Summary + Logs"]
 ```
 

@@ -97,11 +97,11 @@ Owner: Data Model / UI
 ```mermaid
 flowchart TD
   A["Athlete Profile"] --> B["About You & Goals"]
-  A --> C["Availability"]
-  A --> D["Events"]
-  A --> E["Logistics"]
+  A --> C[Availability]
+  A --> D[Events]
+  A --> E[Logistics]
   A --> F["Historic Data"]
-  A --> G["Zones"]
+  A --> G[Zones]
   A --> H["KPI Profile"]
   A --> I["Data Operations"]
 ```

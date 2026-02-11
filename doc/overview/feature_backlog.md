@@ -44,13 +44,13 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 
 ```mermaid
 flowchart TD
-  A["FEAT_user_inputs_modular"] --> B["FEAT_user_data_editors"]
-  A --> C["FEAT_user_inputs_io"]
-  A --> E["FEAT_plan_adjustments"]
+  A[FEAT_user_inputs_modular] --> B[FEAT_user_data_editors]
+  A --> C[FEAT_user_inputs_io]
+  A --> E[FEAT_plan_adjustments]
   B --> E
-  A --> I["FEAT_historical_baseline_refresh"]
-  G["FEAT_posting_receipts_inspection"] --> H["FEAT_posting_receipts_conflict_ux"]
-  M["FEAT_multi_provider_llm"]
+  A --> I[FEAT_historical_baseline_refresh]
+  G[FEAT_posting_receipts_inspection] --> H[FEAT_posting_receipts_conflict_ux]
+  M[FEAT_multi_provider_llm]
 ```
 
 ## Continuation Protocol (for new sessions)
