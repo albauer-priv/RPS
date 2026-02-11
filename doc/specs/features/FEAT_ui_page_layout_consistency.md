@@ -63,7 +63,7 @@ Owner: UI
 flowchart TD
   A["Page load"] --> B["Title"]
   B --> C["Athlete ID caption"]
-  C --> D["Status panel (hints)"]
+  C --> D[""Status panel (hints")"]
   D --> E["Actions / Main content"]
   E --> F["Page details"]
 ```

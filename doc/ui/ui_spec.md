@@ -165,7 +165,7 @@ flowchart TD
     A["Open Data Operations Page"] --> B["Create Full Backup"]
     B --> C["Download Backup"]
     A --> D["Upload Backup Archive"]
-    D --> E["Validate Backup (Dry-Run)"]
+    D --> E[""Validate Backup (Dry-Run")"]
     E --> F["Select Restore Scope"]
     F --> G{"Confirmation Provided?"}
     G -- "No" --> H["Show Error"]
@@ -265,7 +265,7 @@ flowchart TD
 
     subgraph "Plan > Season"
         D1 --> D2["Present Scenario Summary"]:::page
-        D2 --> E1["Select Scenario<br>(Choose A/B/C + optional rationale)<br>Writes: season_scenario_selection"]:::page
+        D2 --> E1[""Select Scenario<br>(Choose A/B/C + optional rationale")<br>Writes: season_scenario_selection"]:::page
         E1 --> E2["Save Selection"]:::orch
         E2 --> F
     end
@@ -278,7 +278,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -323,7 +323,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -363,7 +363,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -390,12 +390,12 @@ flowchart TD
         A1["Open Workouts Page"]:::page --> A2{"Week Plan OK?"}:::step
         A2 -- No --> A3["Enter Coach Message"]:::page
         A3 --> A4["Send to Week Planner<br>Mode: revise_week_plan"]:::orch
-        A4 --> A5["Write week_plan (replace latest)"]:::orch
+        A4 --> A5[""Write week_plan (replace latest")"]:::orch
         A5 --> A2
         A2 -- Yes --> A6{"Workouts Exist?"}:::step
         A6 -- Yes --> A8{"Workouts Posted to Intervals?"}:::step
-        A6 -- No --> A11["Delete workouts_yyyy-ww.json (latest)"]:::orch
-        A8 -- Yes --> A9["Delete Posted Workouts (Intervals)"]:::orch
+        A6 -- No --> A11[""Delete workouts_yyyy-ww.json (latest")"]:::orch
+        A8 -- Yes --> A9[""Delete Posted Workouts (Intervals")"]:::orch
         A8 -- No --> A10["Skip Intervals Delete"]:::step
         A9 --> A11
         A10 --> A11
@@ -403,7 +403,7 @@ flowchart TD
         A13 --> A14{"OK to Post?"}:::step
         A14 -- No --> A3
         A14 -- Yes --> A15["Run Workout Builder"]:::orch
-        A15 --> A16["Write workouts_yyyy-ww.json (replace latest)"]:::orch
+        A15 --> A16[""Write workouts_yyyy-ww.json (replace latest")"]:::orch
         A16 --> A17["Post Workouts to Intervals"]:::orch
         A17 --> A18["Show Status"]:::page
     end
@@ -416,7 +416,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -462,7 +462,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -500,7 +500,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -535,7 +535,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -558,7 +558,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph "Data Pipeline Refresh"
-        D1["Run Intervals Pipeline"]:::orch --> D2["Write activities_* + zone_model + wellness<br>(replace latest)"]:::orch
+        D1["Run Intervals Pipeline"]:::orch --> D2[""Write activities_* + zone_model + wellness<br>(replace latest")"]:::orch
         D2 --> D3["Show Status"]:::page
     end
 
@@ -570,7 +570,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step
@@ -594,7 +594,7 @@ flowchart TD
 flowchart TD
     subgraph "Inputs Update"
         I1["Open Athlete Profile Page"]:::page --> I2["Edit Inputs"]:::page
-        I2 --> I3["Write latest input artefact<br>(replace latest)"]:::orch
+        I2 --> I3[""Write latest input artefact<br>(replace latest")"]:::orch
         I3 --> I4["Show Status"]:::page
     end
 
@@ -606,7 +606,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    L1["Page (UI)"]:::page
+    L1[""Page (UI")"]:::page
     L2["Orchestrator"]:::orch
     L3["Agent"]:::agent
     L4["Flow Step"]:::step

@@ -7,7 +7,7 @@ Owner: Product
 # Feature Backlog
 
 This backlog tracks upcoming features and refactors. Each item should link to a
-feature spec ([doc/specs/features/FEAT_<slug>.md](doc/specs/features/FEAT_<slug>.md))) before implementation.
+feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug>.md))) before implementation.
 
 ## Ranked Backlog (with dependencies)
 

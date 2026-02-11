@@ -78,36 +78,36 @@ available for manual, step-by-step runs.
 
 ```mermaid
 flowchart TD
-  AP[athlete_profile_*.json] --> SS[Season-Scenario-Agent]
-  KP[kpi_profile.json] --> SS
+  AP["athlete_profile_*.json"] --> SS["Season-Scenario-Agent"]
+  KP["kpi_profile.json"] --> SS
   SS --> SC[season_scenarios]
-  SC -. advisory .-> SEASON[Season-Planner]
-  PE[planning_events_*.json] -. info .-> SS
+  SC -. advisory .-> SEASON["Season-Planner"]
+  PE["planning_events_*.json"] -. info .-> SS
   PE -. info .-> SEASON
-  LG[logistics_*.json] -. info .-> SS
+  LG["logistics_*.json"] -. info .-> SS
   LG -. info .-> SEASON
 
   SEASON --> SP[season_plan]
   SEASON -. optional .-> SPFF[season_phase_feed_forward]
 
-  SP --> PHASE[Phase-Architect]
+  SP --> PHASE["Phase-Architect"]
   SPFF -. optional .-> PHASE
   PHASE --> PG[phase_guardrails]
   PHASE --> PS[phase_structure]
   PHASE -. optional .-> PP[phase_preview]
 
-  PG --> WEEK[Week-Planner]
+  PG --> WEEK["Week-Planner"]
   PS --> WEEK
   WEEK --> WP[week_plan]
-  WP --> WB[Workout-Builder]
-  WB --> WJ[workouts_yyyy-ww.json]
-  WJ --> POST["post_to_intervals (commit)"]
+  WP --> WB["Workout-Builder"]
+  WB --> WJ["workouts_yyyy-ww.json"]
+  WJ --> POST[""post_to_intervals (commit")"]
 
   DP["intervals_data pipeline"] --> AA[activities_actual]
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
-  AA --> PA[Performance-Analyst]
+  AA --> PA["Performance-Analyst"]
   AT --> PA
   PA --> DR[des_analysis_report]
 ```

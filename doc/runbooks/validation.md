@@ -21,16 +21,16 @@ against the local JSON schemas before they are consumed by planners.
 
 ```mermaid
 flowchart TD
-  DP["Data Pipeline<br>intervals_data.py"] --> AA[activities_actual.json]
-  DP --> AT[activities_trend.json]
-  DP --> WL[wellness.json]
-  UI[User Input] --> AV[availability.json]
-  AA --> VA[validate_outputs.py]
+  DP["Data Pipeline<br>intervals_data.py"] --> AA["activities_actual.json"]
+  DP --> AT["activities_trend.json"]
+  DP --> WL["wellness.json"]
+  UI["User Input"] --> AV["availability.json"]
+  AA --> VA["validate_outputs.py"]
   AT --> VA
   AV --> VA
   WL --> VA
-  VA --> SC[specs/schemas/*.schema.json]
-  VA --> OK[Validation OK / Errors]
+  VA --> SC["specs/schemas/*.schema.json"]
+  VA --> OK["Validation OK / Errors"]
 ```
 
 ---

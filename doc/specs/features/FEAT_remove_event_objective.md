@@ -10,7 +10,7 @@ Owner: UI/Data Contracts
 * **Status:** Approved
 * **Owner/Area:** UI + Schemas
 * **Last-Updated:** 2026-02-08
-* **Related:** [doc/ui/pages/athlete_profile/events.md](doc/ui/pages/athlete_profile/events.md) (if present), specs/schemas/planning_events.schema.json
+* **Related:** [doc/ui/pages/athlete_profile/events.md](/doc/ui/pages/athlete_profile/events.md) (if present), specs/schemas/planning_events.schema.json
 
 ---
 
@@ -66,7 +66,7 @@ Owner: UI/Data Contracts
 ```mermaid
 flowchart TD
   A["Events Page Load"] --> B["Normalize Payload"]
-  B --> C["Render Table (Goal Only)"]
+  B --> C[""Render Table (Goal Only")"]
   C --> D["Save Writes Goal Only"]
 ```
 
@@ -218,6 +218,6 @@ flowchart TD
 
 * `specs/schemas/planning_events.schema.json`
 * `specs/knowledge/_shared/sources/schemas/bundled/planning_events.schema.json`
-* [doc/ui/pages/athlete_profile/events.md](doc/ui/pages/athlete_profile/events.md) (if present)
+* [doc/ui/pages/athlete_profile/events.md](/doc/ui/pages/athlete_profile/events.md) (if present)
 * [doc/overview/artefact_flow.md](../../overview/artefact_flow.md)
 * [doc/architecture/workspace.md](../../architecture/workspace.md)

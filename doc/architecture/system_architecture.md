@@ -38,10 +38,10 @@ Agents communicate via validated artifacts and never share implicit state.
 
 ```mermaid
 flowchart TD
-  AP[athlete_profile] --> SS[Season-Scenario-Agent]
+  AP[athlete_profile] --> SS["Season-Scenario-Agent"]
   KP[kpi_profile] --> SS
   SS --> SC[season_scenarios]
-  SC -. advisory .-> MA[Season-Planner]
+  SC -. advisory .-> MA["Season-Planner"]
   KP --> MA
   PE[planning_events] -. info .-> SS
   LG[logistics] -. info .-> SS
@@ -50,26 +50,26 @@ flowchart TD
   MA --> MO[season_plan]
   MA -. optional .-> SPFF[season_phase_feed_forward]
 
-  MO --> ME[Phase-Architect]
+  MO --> ME["Phase-Architect"]
   SPFF -. optional .-> ME
   ME --> BG[phase_guardrails]
   ME --> BEA[phase_structure]
   ME -. optional .-> BEP[phase_preview]
 
-  BG --> MI[Week-Planner]
+  BG --> MI["Week-Planner"]
   BEA --> MI
   MI --> WP[week_plan]
-  WP --> WB[Workout-Builder]
-  WB --> WJ[workouts_yyyy-ww.json]
-  WJ --> POST[Post to Intervals (commit)]
+  WP --> WB["Workout-Builder"]
+  WB --> WJ["workouts_yyyy-ww.json"]
+  WJ --> POST["Post to Intervals (commit")]
 
   DP["Data Pipeline<br>intervals_data.py"] --> AA[activities_actual]
   DP --> AT[activities_trend]
   DP --> ZM[zone_model]
   DP --> WL[wellness]
-  VA[Validation\nvalidate_outputs.py] -. checks .-> AA
+  VA["Validation\nvalidate_outputs.py"] -. checks .-> AA
   VA -. checks .-> AT
-  AA --> PA[Performance-Analyst]
+  AA --> PA["Performance-Analyst"]
   AT --> PA
   ZM -. info .-> ME
   ZM -. info .-> MI
@@ -188,10 +188,10 @@ Knowledge sources live under `specs/knowledge/_shared/` and are listed in
 
 ```mermaid
 flowchart LR
-  SRC[specs/knowledge/all_agents/manifest.yaml] --> SYNC[background sync (Streamlit)]
-  SYNC --> VS[(Qdrant Local)]
-  VS --> FS[knowledge_search tool]
-  FS --> AG[Agent Runtime]
+  SRC["specs/knowledge/all_agents/manifest.yaml"] --> SYNC["background sync (Streamlit")]
+  SYNC --> VS["(Qdrant Local")]
+  VS --> FS["knowledge_search tool"]
+  FS --> AG["Agent Runtime"]
 ```
 
 #### 4.1.2 Handling (Init / Update / Delete)
@@ -367,12 +367,12 @@ runtime/athletes/<athlete_id>/
 
 ```mermaid
 flowchart LR
-  AG[Agent Runtime] --> WS[Workspace Writer]
-  DP[Data Pipeline] --> WS
-  WS --> VERS[Versioned Files]
-  WS --> LATEST[latest/ pointers]
-  WS --> IDX[index.json]
-  RENDER[rendering/renderer.py] -. optional .-> VERS
+  AG["Agent Runtime"] --> WS["Workspace Writer"]
+  DP["Data Pipeline"] --> WS
+  WS --> VERS["Versioned Files"]
+  WS --> LATEST["latest/ pointers"]
+  WS --> IDX["index.json"]
+  RENDER["rendering/renderer.py"] -. optional .-> VERS
 ```
 
 **Key rules**

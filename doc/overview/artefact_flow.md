@@ -19,39 +19,39 @@ Format: GitHub-renderable Markdown + Mermaid
 flowchart TD
   %% Actors / Components
   U[User]:::actor
-  SS[Season-Scenario-Agent]:::agent
-  MA[Season-Planner]:::agent
-  ME[Phase-Architect]:::agent
-  MI[Week-Planner]:::agent
-  WB[Workout-Builder]:::agent
-  PA[Performance-Analyst]:::agent
-  I[Intervals.icu]:::external
+  SS["Season-Scenario-Agent"]:::agent
+  MA["Season-Planner"]:::agent
+  ME["Phase-Architect"]:::agent
+  MI["Week-Planner"]:::agent
+  WB["Workout-Builder"]:::agent
+  PA["Performance-Analyst"]:::agent
+  I["Intervals.icu"]:::external
   EXP["intervals_data.py"]:::script
-  VAL[validate_outputs.py]:::script
-  POST["post_to_intervals (commit)"]:::script
-  RCPT[post_receipts_yyyy-ww.json]:::artefact
+  VAL["validate_outputs.py"]:::script
+  POST[""post_to_intervals (commit")"]:::script
+  RCPT["post_receipts_yyyy-ww.json"]:::artefact
 
   %% Artefacts
-  AP[athlete_profile_*.json]:::artefact
-  KP[kpi_profile_des_*.json]:::artefact
-  PE[planning_events_*.json]:::artefact
-  LG[logistics_*.json]:::artefact
-  AV[availability_yyyy-ww.json]:::artefact
-  SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
-  MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact
-  SPFF[season_phase_feed_forward_yyyy-ww.json]:::artefact
-  BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact
-  BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact
-  BEP[phase_preview_yyyy-ww--yyyy-ww.json]:::artefact
-  BFF[phase_feed_forward_yyyy-ww.json]:::artefact
-  ZM[zone_model_power_<FTP>W.json]:::artefact
-  WP[week_plan_yyyy-ww.json]:::artefact
-  WJ[workouts_yyyy-ww.json]:::artefact
-  CAL[Planned Activities<br/>in Calendar]:::artefact
-  AA[activities_actual_yyyy-ww.json]:::artefact
-  AT[activities_trend_yyyy-ww.json]:::artefact
-  WL[wellness_yyyy-ww.json]:::artefact
-  DR[des_analysis_report_yyyy-ww.json]:::artefact
+  AP["athlete_profile_*.json"]:::artefact
+  KP["kpi_profile_des_*.json"]:::artefact
+  PE["planning_events_*.json"]:::artefact
+  LG["logistics_*.json"]:::artefact
+  AV["availability_yyyy-ww.json"]:::artefact
+  SC["season_scenarios_yyyy-ww--yyyy-ww.json"]:::artefact
+  MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact
+  SPFF["season_phase_feed_forward_yyyy-ww.json"]:::artefact
+  BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact
+  BEA["phase_structure_yyyy-ww--yyyy-ww.json"]:::artefact
+  BEP["phase_preview_yyyy-ww--yyyy-ww.json"]:::artefact
+  BFF["phase_feed_forward_yyyy-ww.json"]:::artefact
+  ZM["zone_model_power_<FTP>W.json"]:::artefact
+  WP["week_plan_yyyy-ww.json"]:::artefact
+  WJ["workouts_yyyy-ww.json"]:::artefact
+  CAL["Planned Activities<br/>in Calendar"]:::artefact
+  AA["activities_actual_yyyy-ww.json"]:::artefact
+  AT["activities_trend_yyyy-ww.json"]:::artefact
+  WL["wellness_yyyy-ww.json"]:::artefact
+  DR["des_analysis_report_yyyy-ww.json"]:::artefact
 
   %% Planning chain
   U --> AP
@@ -145,12 +145,12 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> AP[athlete_profile_*.json]:::artefact --> SS[Season-Scenario-Agent]:::agent
-  U --> AV[availability_*.json]:::artefact --> SS
-  U --> KP[kpi_profile_des_*.json]:::artefact --> SS
-  U --> PE[planning_events_*.json]:::artefact --> SS
-  U --> LG[logistics_*.json]:::artefact --> SS
-  SS --> SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact
+  U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> SS["Season-Scenario-Agent"]:::agent
+  U --> AV["availability_*.json"]:::artefact --> SS
+  U --> KP["kpi_profile_des_*.json"]:::artefact --> SS
+  U --> PE["planning_events_*.json"]:::artefact --> SS
+  U --> LG["logistics_*.json"]:::artefact --> SS
+  SS --> SC["season_scenarios_yyyy-ww--yyyy-ww.json"]:::artefact
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
@@ -185,23 +185,23 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> AP[athlete_profile_*.json]:::artefact --> MA[Season-Planner]:::agent
-  U --> AV[availability_*.json]:::artefact --> MA
-  U --> KP[kpi_profile_des_*.json]:::artefact --> MA
-  U --> PE[planning_events_*.json]:::artefact --> MA
-  U --> LG[logistics_*.json]:::artefact --> MA
-  SC[season_scenarios_yyyy-ww--yyyy-ww.json]:::artefact -. advisory .-> MA
-  DR[des_analysis_report_yyyy-ww.json]:::artefact -. advisory .-> MA
-  AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MA
-  AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MA
-  AV[availability_yyyy-ww.json]:::artefact -. info .-> MA
-  WL[wellness_yyyy-ww.json]:::artefact -. info .-> MA
+  U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> MA["Season-Planner"]:::agent
+  U --> AV["availability_*.json"]:::artefact --> MA
+  U --> KP["kpi_profile_des_*.json"]:::artefact --> MA
+  U --> PE["planning_events_*.json"]:::artefact --> MA
+  U --> LG["logistics_*.json"]:::artefact --> MA
+  SC["season_scenarios_yyyy-ww--yyyy-ww.json"]:::artefact -. advisory .-> MA
+  DR["des_analysis_report_yyyy-ww.json"]:::artefact -. advisory .-> MA
+  AA["activities_actual_yyyy-ww.json"]:::artefact -. info .-> MA
+  AT["activities_trend_yyyy-ww.json"]:::artefact -. info .-> MA
+  AV["availability_yyyy-ww.json"]:::artefact -. info .-> MA
+  WL["wellness_yyyy-ww.json"]:::artefact -. info .-> MA
 
-  SS[Season-Scenario-Agent]:::agent --> SC
-  SS --> SEL[season_scenario_selection_yyyy-ww.json]:::artefact --> MA
+  SS["Season-Scenario-Agent"]:::agent --> SC
+  SS --> SEL["season_scenario_selection_yyyy-ww.json"]:::artefact --> MA
 
-  MA --> MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact
-  MA -. optional .-> SPFF[season_phase_feed_forward_yyyy-ww.json]:::artefact
+  MA --> MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact
+  MA -. optional .-> SPFF["season_phase_feed_forward_yyyy-ww.json"]:::artefact
 
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
@@ -236,20 +236,20 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact --> ME[Phase-Architect]:::agent
-  SPFF[season_phase_feed_forward_yyyy-ww.json]:::artefact -. optional .-> ME
-  PE[planning_events_*.json]:::artefact -. info .-> ME
-  LG[logistics_*.json]:::artefact -. info .-> ME
-  AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> ME
-  AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> ME
-  ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> ME
-  AV[availability_yyyy-ww.json]:::artefact -. info .-> ME
-  WL[wellness_yyyy-ww.json]:::artefact -. info .-> ME
+  MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact --> ME["Phase-Architect"]:::agent
+  SPFF["season_phase_feed_forward_yyyy-ww.json"]:::artefact -. optional .-> ME
+  PE["planning_events_*.json"]:::artefact -. info .-> ME
+  LG["logistics_*.json"]:::artefact -. info .-> ME
+  AA["activities_actual_yyyy-ww.json"]:::artefact -. info .-> ME
+  AT["activities_trend_yyyy-ww.json"]:::artefact -. info .-> ME
+  ZM["zone_model_power_<FTP>W.json"]:::artefact -. info .-> ME
+  AV["availability_yyyy-ww.json"]:::artefact -. info .-> ME
+  WL["wellness_yyyy-ww.json"]:::artefact -. info .-> ME
 
-  ME --> BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact
-  ME --> BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact
-  ME -. explanatory .-> BEP[phase_preview_yyyy-ww--yyyy-ww.json]:::artefact
-  ME -. optional .-> BFF[phase_feed_forward_yyyy-ww.json]:::artefact
+  ME --> BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact
+  ME --> BEA["phase_structure_yyyy-ww--yyyy-ww.json"]:::artefact
+  ME -. explanatory .-> BEP["phase_preview_yyyy-ww--yyyy-ww.json"]:::artefact
+  ME -. optional .-> BFF["phase_feed_forward_yyyy-ww.json"]:::artefact
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
@@ -279,18 +279,18 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact --> MI[Week-Planner]:::agent
-  BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact --> MI
-  BFF[phase_feed_forward_yyyy-ww.json]:::artefact -. optional .-> MI
-  ZM[zone_model_power_<FTP>W.json]:::artefact -. info .-> MI
-  AV[availability_yyyy-ww.json]:::artefact -. info .-> MI
-  WL[wellness_yyyy-ww.json]:::artefact -. info .-> MI
-  PE[planning_events_*.json]:::artefact -. info .-> MI
-  LG[logistics_*.json]:::artefact -. info .-> MI
-  AA[activities_actual_yyyy-ww.json]:::artefact -. info .-> MI
-  AT[activities_trend_yyyy-ww.json]:::artefact -. info .-> MI
+  BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact --> MI["Week-Planner"]:::agent
+  BEA["phase_structure_yyyy-ww--yyyy-ww.json"]:::artefact --> MI
+  BFF["phase_feed_forward_yyyy-ww.json"]:::artefact -. optional .-> MI
+  ZM["zone_model_power_<FTP>W.json"]:::artefact -. info .-> MI
+  AV["availability_yyyy-ww.json"]:::artefact -. info .-> MI
+  WL["wellness_yyyy-ww.json"]:::artefact -. info .-> MI
+  PE["planning_events_*.json"]:::artefact -. info .-> MI
+  LG["logistics_*.json"]:::artefact -. info .-> MI
+  AA["activities_actual_yyyy-ww.json"]:::artefact -. info .-> MI
+  AT["activities_trend_yyyy-ww.json"]:::artefact -. info .-> MI
 
-  MI --> WP[week_plan_yyyy-ww.json]:::artefact
+  MI --> WP["week_plan_yyyy-ww.json"]:::artefact
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
@@ -315,9 +315,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  WP[week_plan_yyyy-ww.json]:::artefact --> WB[Workout-Builder]:::agent
-  WB --> WJ[workouts_yyyy-ww.json]:::artefact --> POST["post_to_intervals (commit)"]:::script
-  POST --> RCPT[post_receipts_yyyy-ww.json]:::artefact --> CAL["Planned Activities<br/>in Calendar"]:::artefact --> I[Intervals.icu]:::external
+  WP["week_plan_yyyy-ww.json"]:::artefact --> WB["Workout-Builder"]:::agent
+  WB --> WJ["workouts_yyyy-ww.json"]:::artefact --> POST[""post_to_intervals (commit")"]:::script
+  POST --> RCPT["post_receipts_yyyy-ww.json"]:::artefact --> CAL["Planned Activities<br/>in Calendar"]:::artefact --> I["Intervals.icu"]:::external
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef external fill:#fff3e6,stroke:#a35b00,stroke-width:1px;
@@ -345,11 +345,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  I[Intervals.icu]:::external --> EXP["intervals_data.py"]:::script
-  EXP --> AA[activities_actual_yyyy-ww.json]:::artefact
-  EXP --> AT[activities_trend_yyyy-ww.json]:::artefact
-  AVI[availability_yyyy-ww.json]:::artefact --> VAL
-  AA --> VAL[validate_outputs.py]:::script
+  I["Intervals.icu"]:::external --> EXP["intervals_data.py"]:::script
+  EXP --> AA["activities_actual_yyyy-ww.json"]:::artefact
+  EXP --> AT["activities_trend_yyyy-ww.json"]:::artefact
+  AVI["availability_yyyy-ww.json"]:::artefact --> VAL
+  AA --> VAL["validate_outputs.py"]:::script
   AT --> VAL
   VAL -. checks .-> AA
   VAL -. checks .-> AT
@@ -400,16 +400,16 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  AA[activities_actual_yyyy-ww.json]:::artefact --> PA[Performance-Analyst]:::agent
-  AT[activities_trend_yyyy-ww.json]:::artefact --> PA
-  KP[kpi_profile_des_*.json]:::artefact --> PA
-  BEA[phase_structure_yyyy-ww--yyyy-ww.json]:::artefact --> PA
-  BG[phase_guardrails_yyyy-ww--yyyy-ww.json]:::artefact --> PA
-  MO[season_plan_yyyy-ww--yyyy-ww.json]:::artefact --> PA
-  PE[planning_events_*.json]:::artefact -. info .-> PA
-  LG[logistics_*.json]:::artefact -. info .-> PA
+  AA["activities_actual_yyyy-ww.json"]:::artefact --> PA["Performance-Analyst"]:::agent
+  AT["activities_trend_yyyy-ww.json"]:::artefact --> PA
+  KP["kpi_profile_des_*.json"]:::artefact --> PA
+  BEA["phase_structure_yyyy-ww--yyyy-ww.json"]:::artefact --> PA
+  BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact --> PA
+  MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact --> PA
+  PE["planning_events_*.json"]:::artefact -. info .-> PA
+  LG["logistics_*.json"]:::artefact -. info .-> PA
 
-  PA --> DR[des_analysis_report_yyyy-ww.json]:::artefact
+  PA --> DR["des_analysis_report_yyyy-ww.json"]:::artefact
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
