@@ -161,6 +161,10 @@ docker build -t rps .
 docker run --env-file .env -p 8501:8501 rps
 ```
 
+**Docker Compose (host mapping):**  
+Use `docker-compose.yml` to map the local `runtime/` folder and load `.env` automatically.
+Update the image name (`ghcr.io/OWNER/REPO:latest`) after you rename the repo.
+
 **Configuration:**  
 Runtime depends on LLM keys, model settings, and athlete ID. See:
 - [doc/architecture/deployment.md](doc/architecture/deployment.md)
