@@ -241,6 +241,7 @@ When starting a new chat or agent session, do this in order:
 
 * Mermaid diagram labels should wrap text in quotes, e.g. `["Label"]` or `{"Decision?"}`, to ensure consistent rendering.
 * Avoid `\\n` in Mermaid labels; use `<br>` or a single space instead.
+* Quote any Mermaid label that is not a simple identifier. If a label contains spaces or special characters (e.g. `(`, `)`, `*`, `/`, `-`, `:`), wrap it in double quotes inside the node: `NODE["Label with spaces"]`.
 * For UI flow diagrams, use layered styling with a legend:
   - **Page (UI)** nodes in yellow
   - **Orchestrator** nodes in blue
