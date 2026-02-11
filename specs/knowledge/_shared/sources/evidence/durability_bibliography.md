@@ -152,19 +152,19 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 ## 8. SITZFLEISCH PODCAST (Christoph Strasser / Kinzlbauer)
 
-60. Sitzfleisch Ep. 39 – *Straps und Flo mit Coach Max Kinzlbauer*. (Coaching practice, K3).
+60. Sitzfleisch Ep. 39 – *Straps und Flo mit Coach Max Kinzlbauer* ("Straps and Flo with coach Max Kinzlbauer"). (Coaching practice, K3).
 
-61. Sitzfleisch Ep. 154 – *Ultracycling-Training mit Coach Max Kinzlbauer*. (Volume/intensity/fueling).
+61. Sitzfleisch Ep. 154 – *Ultracycling-Training mit Coach Max Kinzlbauer* ("Ultracycling training with coach Max Kinzlbauer"). (Volume/intensity/fueling).
 
-62. Sitzfleisch Ep. 154 (Re-Upload) – *Ultracycling-Training mit Coach Max Kinzlbauer*. (Z2-load, sleep, pacing).
+62. Sitzfleisch Ep. 154 (Re-Upload) – *Ultracycling-Training mit Coach Max Kinzlbauer* ("Ultracycling training with coach Max Kinzlbauer"). (Z2-load, sleep, pacing).
 
-63. Sitzfleisch Ep. 218 – *Richtig regenerieren und smart trainieren mit Max Kinzlbauer*. (Recovery, consistency).
+63. Sitzfleisch Ep. 218 – *Richtig regenerieren und smart trainieren mit Max Kinzlbauer* ("Recover properly and train smart with Max Kinzlbauer"). (Recovery, consistency).
 
-64. Sitzfleisch Ep. 272 – *Trainingslager Pro & Contra ft. Max Kinzlbauer*. (Camps for ultras).
+64. Sitzfleisch Ep. 272 – *Trainingslager Pro & Contra ft. Max Kinzlbauer* ("Training camps: pros and cons ft. Max Kinzlbauer"). (Camps for ultras).
 
-65. Sitzfleisch Ep. 78 – *Training, Ausrüstung & Ernährung für Ultras*. (Pacing, fueling).
+65. Sitzfleisch Ep. 78 – *Training, Ausrüstung & Ernährung für Ultras* ("Training, equipment & nutrition for ultras"). (Pacing, fueling).
 
-66. Sitzfleisch Ep. 166 – *Unsupported Ernährung und Vorschau Race Across Austria* (unsupported fueling/self-support tactics; with Max Kinzlbauer). 
+66. Sitzfleisch Ep. 166 – *Unsupported Ernährung und Vorschau Race Across Austria* ("Unsupported nutrition and Race Across Austria preview") (unsupported fueling/self-support tactics; with Max Kinzlbauer). 
 
 ---
 
@@ -201,21 +201,21 @@ Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style the
 
 ## 11. JUNKMILES PODCAST (German; Geßmann/Beck)
 
-78. JunkMiles Ep. 10 – *VLamax – Der Gegenspieler*. (Glycolytic rate, fat metabolism).
+78. JunkMiles Ep. 10 – *VLamax – Der Gegenspieler* ("VLamax — the counterpart"). (Glycolytic rate, fat metabolism).
 
-79. JunkMiles Ep. 31 – *Die anaerobe Schwelle – Mythen & Einordnung*. (Lactate threshold).
+79. JunkMiles Ep. 31 – *Die anaerobe Schwelle – Mythen & Einordnung* ("The anaerobic threshold — myths and context"). (Lactate threshold).
 
 ---
 
 ## 12. SCYENCE PODCAST (German; Lactate/Metabolism)
 
-80. SCYENCE Ep. 25 – *Laktat Auf- und Abbau, MCT-Transporter-Training*. (Lactate clearance).
+80. SCYENCE Ep. 25 – *Laktat Auf- und Abbau, MCT-Transporter-Training* ("Lactate production/clearance, MCT transporter training"). (Lactate clearance).
 
 81. SCYENCE Ep. 49 – *Zone 2 Training: San Millán / LIT / FATmax*. (Aerobic base).
 
-82. SCYENCE Ep. 76 – *FATmax vs. Maximales Pyruvat-Defizit*. (Energetic pathways).
+82. SCYENCE Ep. 76 – *FATmax vs. Maximales Pyruvat-Defizit* ("FATmax vs. maximal pyruvate deficit"). (Energetic pathways).
 
-83. SCYENCE Ep. 94 – *Das Laktatwaschbecken, Trainingslager & Crash-Diät*. (Long phases planning).
+83. SCYENCE Ep. 94 – *Das Laktatwaschbecken, Trainingslager & Crash-Diät* ("The lactate washbasin, training camps & crash dieting"). (Long phases planning).
 
 ---
 

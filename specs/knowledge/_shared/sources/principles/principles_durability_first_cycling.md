@@ -339,8 +339,8 @@ Use the following items as traceability anchors in justification.citations when 
 
 - **Kinzlbauer (Science2Performance):** "Metabolic efficiency for brevets: FatMax and fueling" (Durability Bibliography #38).
 - **Sitzfleisch Podcast (Kinzlbauer):**
-  - Ep. 154 "Ultracycling-Training mit Coach Max Kinzlbauer" (Bibliography #61/#62).
-  - Ep. 218 "Richtig regenerieren und smart trainieren mit Max Kinzlbauer" (Bibliography #63).
+  - Ep. 154 "Ultracycling-Training mit Coach Max Kinzlbauer" ("Ultracycling training with coach Max Kinzlbauer") (Bibliography #61/#62).
+  - Ep. 218 "Richtig regenerieren und smart trainieren mit Max Kinzlbauer" ("Recover properly and train smart with Max Kinzlbauer") (Bibliography #63).
   - Optional supporting context: Ep. 39 (K3 practice) (Bibliography #60), Ep. 272 (training camps) (Bibliography #64).
 
 ## 4. Training Content Taxonomy (What trains what?)

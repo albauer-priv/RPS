@@ -9,7 +9,7 @@ Owner: Overview
 This document captures scheduling and data guardrails for weekly planning.
 
 ## 1) Planning timing
-- The planning of the **following week** happens in the **current week**, typically on the **Wochenanker** (afternoon/evening) after the last workouts are completed.
+- Planning the **following week** happens in the **current week**, typically on the **week anchor (Sunday)** after the last workouts are completed.
 - Planning may also occur on Monday or Tuesday of the **following week** if needed.
 
 ## 2) Scope and horizon
@@ -29,7 +29,7 @@ This document captures scheduling and data guardrails for weekly planning.
 - A Performance Report can be created for any week that has the required data coverage.
 
 ## 5) Feed Forward constraints
-- Feed Forward is run for a **completed training week**, typically around the **Wochenanker** or Monday.
+- Feed Forward is run for a **completed training week**, typically around the **week anchor (Sunday)** or Monday.
 - It should run once the full week’s activities are present in Intervals data.
 - A new Performance Report is created if Intervals data is newer than the current report for the completed week.
 - The Performance Report is an **input** to the Feed Forward request that updates the Season Plan.

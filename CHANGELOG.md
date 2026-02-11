@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Added English translations alongside German titles in the durability bibliography and principles references, and clarified the week anchor wording in planning principles.
+
 ## [0.10.4] - 2026-02-11
 
 ### Changed

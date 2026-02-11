@@ -11,80 +11,120 @@ artifacts, and every decision is traceable to inputs and governance.
 
 ---
 
-## 1) Was macht RPS?
+## 1) What does RPS do?
 
-**RPS hilft Athleten**, ihren Saisonverlauf und die Wochenplanung konsistent,
-nachvollziehbar und robust zu gestalten — besonders bei langen Distanzen, wo
-Durability (Leistungsstabilität unter Ermüdung) wichtiger ist als kurzfristige
-Peak‑Leistung.
+**RPS helps athletes** keep their season trajectory and weekly planning
+consistent, traceable, and robust — especially for long distances where
+durability (performance stability under fatigue) matters more than short‑term
+peak performance.
 
-**Kernfunktionen**
+**Core capabilities**
 
-- **Planung:** Season → Phase → Week → Workouts (mit klaren Regeln/Artefakt‑Ketten)
-- **Feedback:** Performance Report + Feed Forward (was passt, was fehlt, was ist riskant?)
-- **Transparenz:** Jede Entscheidung hinterlässt Artefakte mit Versionen und
-  Referenzen auf Inputs/Upstream‑Quellen.
-- **Sicherheit:** Readiness‑Checks verhindern, dass Schritte ohne gültige Inputs laufen.
-
----
-
-## 2) Für wen ist das gedacht?
-
-**Primär:** Athleten (Randonneur/Brevet, Ultra‑Distance, langfristige Ausdauerziele)  
-**Sekundär:** Coaches, die planbare Governance und stabile Prozessketten brauchen  
-**Ops/Engineering:** Für Installation/Deployment/Monitoring
+- **Planning:** Season → Phase → Week → Workouts (with explicit rules/artifact chains)
+- **Feedback:** Performance Report + Feed Forward (what fits, what’s missing, what’s risky)
+- **Transparency:** every decision produces versioned artifacts with references
+  to inputs/upstream sources.
+- **Safety:** readiness checks prevent steps from running without valid inputs.
 
 ---
 
-## 3) Prinzipien (Planung & Feed Forward)
+## 2) Who is this for?
+
+**Primary:** Athletes (Randonneur/Brevet, ultra‑distance, long‑term endurance goals)  
+**Secondary:** Coaches who need predictable governance and stable process chains  
+**Ops/Engineering:** Installation, deployment, monitoring
+
+---
+
+## 3) Principles (Planning & Feed Forward)
 
 ### 3.1 Planung (Season → Phase → Week)
 
-- **Durability‑first:** Stabilität unter Belastung schlägt kurzfristigen Peak.
-- **kJ‑first:** Mechanische Arbeit (kJ) ist die primäre Steuergröße.
-- **Governance‑first:** KPI‑Profile + Policies definieren Grenzen, nicht Ad‑hoc‑Entscheidungen.
-- **Deterministisch:** Gleiche Inputs → gleiche Artefakte.
-- **Artefakt‑Kette:** Jeder Schritt hat definierte Inputs/Outputs; keine „impliziten“ Änderungen.
+- **Durability‑first:** stability under load beats short‑term peaks.
+- **kJ‑first:** mechanical work (kJ) is the primary steering metric.
+- **Governance‑first:** KPI profiles + policies define limits, not ad‑hoc decisions.
+- **Deterministic:** same inputs → same artifacts.
+- **Artifact chain:** every step has defined inputs/outputs; no “implicit” changes.
 
-### 3.2 Feed Forward (Rückkopplung)
+### 3.2 Feed Forward (feedback loop)
 
-- **Nur abgeschlossene Wochen:** Feed‑Forward basiert auf vorhandenen Daten.
-- **Keine Wochen‑Planung:** Feed‑Forward ist **nicht** der Planer, sondern die
-  Diagnose‑/Anpassungsschicht.
-- **Upstream‑Priorität:** Anpassungen erfolgen auf Season/Phase‑Ebene, nicht
-  als spontane Wochen‑Eingriffe.
-- **Transparenz:** Empfehlungen referenzieren konkrete Artefakte und KPI‑Signale.
+- **Completed weeks only:** Feed Forward relies on available data.
+- **No weekly planning:** Feed Forward is **not** the planner, but the
+  diagnosis/adjustment layer.
+- **Upstream priority:** adjustments happen at Season/Phase level, not as
+  ad‑hoc week edits.
+- **Transparency:** recommendations reference concrete artifacts and KPI signals.
 
 ---
 
-## 4) Beispiel‑Workflow für Athleten (Kurzablauf)
+### 3.3 Foundations: Key Specs & Policies
 
-1. **Profil ausfüllen:** Athlete Profile → About You & Goals  
-2. **Events & Logistik erfassen:** Athlete Profile → Events, Logistics  
-3. **Verfügbarkeit angeben:** Athlete Profile → Availability  
-4. **KPI‑Profil wählen:** Athlete Profile → KPI Profile  
-5. **Daten aktualisieren:** Analyse → Data & Metrics → Refresh Intervals Data  
-6. **Plan Hub öffnen:** Readiness prüfen, fehlende Inputs ergänzen  
-7. **Planung starten:** Plan Hub → Orchestrated Run  
-8. **Woche prüfen:** Plan → Week  
-9. **Workouts exportieren/posten:** Plan → Workouts  
-10. **Rückkopplung:** Analyse → Report / Feed Forward
+Planning and Feed Forward are grounded in binding specifications and policies.
+The most important building blocks:
 
-Für Details zu Readiness‑Regeln und Artefakt‑Ketten siehe:
+- **Durability‑First Principles** — guiding principles for long‑distance planning and durability focus.  
+  [specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md](specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md)
+- **Load Estimation Spec** — defines how kJ‑based load is calculated and compared consistently.  
+  [specs/knowledge/_shared/sources/specs/load_estimation_spec.md](specs/knowledge/_shared/sources/specs/load_estimation_spec.md)
+- **Progressive Overload Policy** — binding rules for progression/deload on a kJ basis.  
+  [specs/knowledge/_shared/sources/policies/progressive_overload_policy.md](specs/knowledge/_shared/sources/policies/progressive_overload_policy.md)
+- **KPI Signal Effects Policy** — how KPI signals are allowed to affect planning decisions.  
+  [specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md](specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md)
+- **Workout Policy** — what workouts may/must contain, including limits on structure/progression.  
+  [specs/knowledge/_shared/sources/policies/workout_policy.md](specs/knowledge/_shared/sources/policies/workout_policy.md)
+
+Missing a core foundation? I would also recommend:
+- **Traceability Spec** (artifact lineage/upstream references)  
+- **File Naming Spec** (artifact names are binding for routing/validation)  
+- **Season → Phase / Phase → Week Contracts** (binding handoff rules)
+
+---
+
+### 3.4 Traceability & Governance
+
+RPS ensures planning steps are traceable and versioned.
+These foundations govern **artifact lineage**, **naming conventions**, and
+**binding handoffs** between planning stages:
+
+- **Traceability Spec** — defines upstream references, run IDs, and artifact lineage.  
+  [specs/knowledge/_shared/sources/specs/traceability_spec.md](specs/knowledge/_shared/sources/specs/traceability_spec.md)
+- **File Naming Spec** — binding filenames for routing, validation, and linting.  
+  [specs/knowledge/_shared/sources/specs/file_naming_spec.md](specs/knowledge/_shared/sources/specs/file_naming_spec.md)
+- **Season → Phase Contract** — handoff rules between Season Planner and Phase Architect.  
+  [specs/knowledge/_shared/sources/contracts/season__phase_contract.md](specs/knowledge/_shared/sources/contracts/season__phase_contract.md)
+- **Phase → Week Contract** — handoff rules between Phase Architect and Week Planner.  
+  [specs/knowledge/_shared/sources/contracts/phase__week_contract.md](specs/knowledge/_shared/sources/contracts/phase__week_contract.md)
+
+---
+
+## 4) Example Athlete Workflow (Short)
+
+1. **Fill profile:** Athlete Profile → About You & Goals  
+2. **Enter events & logistics:** Athlete Profile → Events, Logistics  
+3. **Set availability:** Athlete Profile → Availability  
+4. **Choose KPI profile:** Athlete Profile → KPI Profile  
+5. **Refresh data:** Analyse → Data & Metrics → Refresh Intervals Data  
+6. **Open Plan Hub:** check readiness, fix missing inputs  
+7. **Start planning:** Plan Hub → Orchestrated Run  
+8. **Review week:** Plan → Week  
+9. **Export/post workouts:** Plan → Workouts  
+10. **Feedback:** Analyse → Report / Feed Forward
+
+For readiness rules and artifact chains, see:
 - [doc/ui/flows.md](doc/ui/flows.md)
 - [doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)
 
 ---
 
-## 5) Index — Wo finde ich was?
+## 5) Index — Where to find what
 
-### Einstieg
-- [doc/README.md](doc/README.md) — zentraler Dokumentations‑Index
-- [doc/overview/system_overview.md](doc/overview/system_overview.md) — Systemüberblick
-- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md) — Planungsablauf (konzeptionell)
+### Getting started
+- [doc/README.md](doc/README.md) — documentation index
+- [doc/overview/system_overview.md](doc/overview/system_overview.md) — system overview
+- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md) — planning flow (conceptual)
 
-### UI & Bedienlogik
-- [doc/ui/ui_spec.md](doc/ui/ui_spec.md) — UI‑Struktur und Page‑Verantwortungen
+### UI & behavior
+- [doc/ui/ui_spec.md](doc/ui/ui_spec.md) — UI structure and page responsibilities
 - [doc/ui/flows.md](doc/ui/flows.md) — UI‑Aktionen + Flow‑Diagramme
 - [doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md) — verbindliche UI‑Regeln
 - [doc/ui/pages/](doc/ui/pages/) — Page‑Spezifikationen
@@ -96,7 +136,7 @@ Für Details zu Readiness‑Regeln und Artefakt‑Ketten siehe:
 - [doc/architecture/deployment.md](doc/architecture/deployment.md)
 - [doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)
 
-### Planung / Governance / Policies
+### Planning / Governance / Policies
 - [doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)
 - [doc/overview/planning_principles.md](doc/overview/planning_principles.md)
 - [doc/specs/](doc/specs/) (Features + Policies + Contracts)
@@ -107,38 +147,38 @@ Für Details zu Readiness‑Regeln und Artefakt‑Ketten siehe:
 
 ---
 
-## 6) Installation & Deployment (Docker, kurz)
+## 6) Installation & Deployment (Docker, short)
 
-**Ziel:** RPS als UI‑only Streamlit‑App betreiben.
+**Goal:** run RPS as a UI‑only Streamlit app.
 
-1. `.env` erstellen (siehe `.env.example`)
-2. Docker Image bauen
-3. Container starten
+1. Create `.env` (see `.env.example`)
+2. Build Docker image
+3. Start container
 
-Beispiel (vereinfachtes Schema):
+Example (simplified):
 
 ```bash
 docker build -t rps .
 docker run --env-file .env -p 8501:8501 rps
 ```
 
-**Konfiguration:**  
-Die Runtime hängt von LLM‑Keys, Modell‑Settings und Athlete‑ID ab. Siehe:
+**Configuration:**  
+Runtime depends on LLM keys, model settings, and athlete ID. See:
 - [doc/architecture/deployment.md](doc/architecture/deployment.md)
 - `.env.example`
 
 ---
 
-## 7) Projektstruktur (kurz)
+## 7) Project structure (short)
 
-- `src/rps/` — Anwendungscode + UI
-- `doc/` — Dokumentation (Überblick, UI, Architektur, Specs, Runbooks)
-- `prompts/` — Agent‑Prompts
-- `specs/` — Wissensquellen, Schemas, KPI‑Profile
-- `runtime/` — Laufzeitdaten (gitignored)
+- `src/rps/` — application code + UI
+- `doc/` — documentation (overview, UI, architecture, specs, runbooks)
+- `prompts/` — agent prompts
+- `specs/` — knowledge sources, schemas, KPI profiles
+- `runtime/` — runtime data (gitignored)
 
 ---
 
-## Lizenz
+## License
 
-Siehe [LICENSE](LICENSE).
+See [LICENSE](LICENSE).
