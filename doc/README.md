@@ -66,7 +66,7 @@ This directory contains the canonical documentation for the platform. It is a na
 - [ADR Index](adr/README.md)
 
 ### Proposals
-- [Queue Scheduler Proposal](proposals/queue_scheduler.md) (superseded proposal)
+- [Queue Scheduler Proposal](proposals/_archive/queue_scheduler.md) (superseded proposal)
 
 ## Conventions (short)
 
