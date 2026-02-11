@@ -77,7 +77,6 @@ Missing a core foundation? I would also recommend:
 - **Traceability Spec** (artifact lineage/upstream references)  
 - **File Naming Spec** (artifact names are binding for routing/validation)  
 - **Season → Phase / Phase → Week Contracts** (binding handoff rules)
-
 ---
 
 ### 3.4 Traceability & Governance
