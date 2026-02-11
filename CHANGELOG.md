@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-02-11
+
+### Changed
+- Rewrote `README.md` as an athlete-first introduction with principles, a workflow quickstart, a detailed index, and Docker-focused deployment notes.
+
 ### Changed
 - Consolidated repo layout into `runtime/` (workspace/runs/logs) and `specs/` (knowledge, schemas, KPI profiles), removing the unused `evals/` folder and updating scripts/docs to the new roots.
 - Backup now always creates a full archive; restore keeps a scope selector for partial re-import.

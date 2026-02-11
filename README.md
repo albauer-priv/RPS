@@ -1,204 +1,144 @@
-# my-openai-platform
+# RPS — Randonneur Performance System
 
-Scaffold for local vector stores with a unified, versioned knowledge base.
+RPS is a planning and feedback system for endurance athletes (with a focus on
+long‑distance and brevet cycling). It turns athlete context + inputs into a
+structured Season → Phase → Week → Workouts plan, and then evaluates progress
+with data‑driven reports and feed‑forward guidance.
 
-## Layout
+The primary interface is a **Streamlit UI**. The system is designed to be
+deterministic, auditable, and safe: every planning step produces versioned
+artifacts, and every decision is traceable to inputs and governance.
 
-- [`src/rps/`](src/rps/): app code and OpenAI helpers.
-- [`doc/`](doc/): system documentation.
-- [`prompts/`](prompts/): shared + per-agent prompts.
-- [`specs/knowledge/`](specs/knowledge/): versioned sources and manifests (no embeddings in repo).
-- [`scripts/`](scripts/): maintenance helpers (schemas, validation, vector stores).
-- [`legacy/`](legacy/): artifacts to migrate from the predecessor project (gitignored).
-- [`runtime/athletes/`](runtime/athletes/): runtime state for local athlete workspaces (gitignored).
-- [`.cache/`](.cache/): local Qdrant state for vector stores (gitignored).
+---
 
-## Documentation
+## 1) Was macht RPS?
 
-- [doc/README.md](doc/README.md): entry point and index for system docs.
-- [doc/adr/README.md](doc/adr/README.md): Architecture Decision Records (ADR) index.
-- [doc/architecture/system_architecture.md](doc/architecture/system_architecture.md): system overview and design principles.
-- [doc/architecture/vectorstores.md](doc/architecture/vectorstores.md): vector store setup and sync workflow.
-- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md): planner roles, artifacts, and flow.
-- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md): step-by-step planning workflow and cadence.
-- [doc/overview/artefact_flow.md](doc/overview/artefact_flow.md): end-to-end artefact flow with detail diagrams.
-- [doc/architecture/renderer.md](doc/architecture/renderer.md): JSON-to-Markdown sidecar rendering.
-- [doc/runbooks/validation.md](doc/runbooks/validation.md): validate pipeline outputs against schemas.
-- [doc/architecture/subsystems/data_pipeline.md](doc/architecture/subsystems/data_pipeline.md): pipeline entrypoints, outputs, and defaults.
-- [doc/overview/planning_principles.md](doc/overview/planning_principles.md): planning guardrails for scope, timing, and reports.
-- [doc/architecture/workspace.md](doc/architecture/workspace.md): local workspace layout and rules.
-- [doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md): schema change policy and compatibility.
-- [doc/architecture/deployment.md](doc/architecture/deployment.md): environment setup and deployment notes.
+**RPS hilft Athleten**, ihren Saisonverlauf und die Wochenplanung konsistent,
+nachvollziehbar und robust zu gestalten — besonders bei langen Distanzen, wo
+Durability (Leistungsstabilität unter Ermüdung) wichtiger ist als kurzfristige
+Peak‑Leistung.
 
-## Quick start
+**Kernfunktionen**
 
-1. Copy `.env.example` to `.env` and fill in `RPS_LLM_API_KEY` and `ATHLETE_ID` (Intervals.icu).
-2. Add documents under `specs/knowledge/_shared/sources/` and update `specs/knowledge/all_agents/manifest.yaml`.
-3. Run `python scripts/bundle_schemas.py` (build bundled schemas for retrieval).
-4. Vector store sync runs in the UI background; use `python scripts/smoke_vectorstores.py` for manual verification.
+- **Planung:** Season → Phase → Week → Workouts (mit klaren Regeln/Artefakt‑Ketten)
+- **Feedback:** Performance Report + Feed Forward (was passt, was fehlt, was ist riskant?)
+- **Transparenz:** Jede Entscheidung hinterlässt Artefakte mit Versionen und
+  Referenzen auf Inputs/Upstream‑Quellen.
+- **Sicherheit:** Readiness‑Checks verhindern, dass Schritte ohne gültige Inputs laufen.
 
-Per-agent model overrides (optional):
+---
 
-```
-RPS_LLM_MODEL=openai/gpt-5-mini
-RPS_LLM_MODEL_WEEK_PLANNER=openai/gpt-5-mini
-RPS_LLM_MODEL_WORKOUT_BUILDER=openai/gpt-5-nano
-```
+## 2) Für wen ist das gedacht?
 
-## Build checklist
+**Primär:** Athleten (Randonneur/Brevet, Ultra‑Distance, langfristige Ausdauerziele)  
+**Sekundär:** Coaches, die planbare Governance und stabile Prozessketten brauchen  
+**Ops/Engineering:** Für Installation/Deployment/Monitoring
 
-Prerequisites:
+---
 
-- Python 3.11+ (3.14 works)
-- `pip` / virtualenv recommended
+## 3) Prinzipien (Planung & Feed Forward)
 
-1. Copy `.env.example` to `.env` and set required keys.
-2. Install dependencies (`pip install -r requirements.txt` or `pip install -e .`).
-3. Build bundled schemas: `python scripts/bundle_schemas.py`.
-4. Vector store sync runs in the UI background; use `python scripts/smoke_vectorstores.py` for manual verification.
-5. Smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.
-6. Run data pipeline via the UI (Refresh Intervals Data) or manually with the module entrypoint (see Data pipeline below).
-7. Validate outputs: `python scripts/validate_outputs.py`.
+### 3.1 Planung (Season → Phase → Week)
 
-### Logging (env)
+- **Durability‑first:** Stabilität unter Belastung schlägt kurzfristigen Peak.
+- **kJ‑first:** Mechanische Arbeit (kJ) ist die primäre Steuergröße.
+- **Governance‑first:** KPI‑Profile + Policies definieren Grenzen, nicht Ad‑hoc‑Entscheidungen.
+- **Deterministisch:** Gleiche Inputs → gleiche Artefakte.
+- **Artefakt‑Kette:** Jeder Schritt hat definierte Inputs/Outputs; keine „impliziten“ Änderungen.
 
-Log files are written to `runtime/athletes/<athlete_id>/logs/rps.log` with rotation.
+### 3.2 Feed Forward (Rückkopplung)
 
-Optional env vars:
-- `RPS_LOG_ROTATE_MB=50` (rotate when size exceeds MB)
-- `RPS_LOG_RETENTION_DAYS=7` (delete rotated logs older than N days)
-- `RPS_RUN_RETENTION_DAYS=7` (delete run history older than N days; clears done/failed queues)
+- **Nur abgeschlossene Wochen:** Feed‑Forward basiert auf vorhandenen Daten.
+- **Keine Wochen‑Planung:** Feed‑Forward ist **nicht** der Planer, sondern die
+  Diagnose‑/Anpassungsschicht.
+- **Upstream‑Priorität:** Anpassungen erfolgen auf Season/Phase‑Ebene, nicht
+  als spontane Wochen‑Eingriffe.
+- **Transparenz:** Empfehlungen referenzieren konkrete Artefakte und KPI‑Signale.
 
-## Testing
+---
 
-- UI changes must include Streamlit AppTest coverage in `tests/` (`streamlit.testing.v1.AppTest`).
-- UI smoke test (manual): `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
-- Intervals pipeline help (safe CLI smoke): `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`
-- Run tests with `pytest -q`.
+## 4) Beispiel‑Workflow für Athleten (Kurzablauf)
 
-## Data pipeline (Intervals.icu)
+1. **Profil ausfüllen:** Athlete Profile → About You & Goals  
+2. **Events & Logistik erfassen:** Athlete Profile → Events, Logistics  
+3. **Verfügbarkeit angeben:** Athlete Profile → Availability  
+4. **KPI‑Profil wählen:** Athlete Profile → KPI Profile  
+5. **Daten aktualisieren:** Analyse → Data & Metrics → Refresh Intervals Data  
+6. **Plan Hub öffnen:** Readiness prüfen, fehlende Inputs ergänzen  
+7. **Planung starten:** Plan Hub → Orchestrated Run  
+8. **Woche prüfen:** Plan → Week  
+9. **Workouts exportieren/posten:** Plan → Workouts  
+10. **Rückkopplung:** Analyse → Report / Feed Forward
 
-- Set `ATHLETE_ID`, `API_KEY`, and `BASE_URL` in `.env`.
-- Manual run: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --year 2026 --week 6`
-- Validate outputs (latest): `python scripts/validate_outputs.py`
-- Validate outputs (week): `python scripts/validate_outputs.py --year 2026 --week 6`
+Für Details zu Readiness‑Regeln und Artefakt‑Ketten siehe:
+- [doc/ui/flows.md](doc/ui/flows.md)
+- [doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)
 
-Outputs land in `runtime/athletes/<athlete_id>/data/` and are mirrored to `runtime/athletes/<athlete_id>/latest/`.
+---
 
-### Formatting & rounding policy
+## 5) Index — Wo finde ich was?
 
-`src/rps/data_pipeline/intervals_data.py` applies a single rounding policy to all steps:
+### Einstieg
+- [doc/README.md](doc/README.md) — zentraler Dokumentations‑Index
+- [doc/overview/system_overview.md](doc/overview/system_overview.md) — Systemüberblick
+- [doc/overview/how_to_plan.md](doc/overview/how_to_plan.md) — Planungsablauf (konzeptionell)
 
-- Integer outputs: columns ending with `(W)`, `(bpm)`, `(rpm)`, `(J)`, `(kJ)` plus `Load (TSS)`, `Strain Score`,
-  `Power Load`, `HR Load (HRSS)`, `Calories (kcal)`, `CTL (Fitness)`, `ATL (Fatigue)`, `Power/HR Z2 Time (min)`.
-- One decimal: distance/speed/elevation/temp plus `Pa:Hr (HR drift)` and `Decoupling (%)`.
-- Two decimals: ratio/efficiency/intensity/variability/polarization plus derived FIR/VO2/FTP and durability fields.
-- Percent-int: `Compliance (%)`, `Sweet Spot Min (%FTP)`, `Sweet Spot Max (%FTP)`.
+### UI & Bedienlogik
+- [doc/ui/ui_spec.md](doc/ui/ui_spec.md) — UI‑Struktur und Page‑Verantwortungen
+- [doc/ui/flows.md](doc/ui/flows.md) — UI‑Aktionen + Flow‑Diagramme
+- [doc/ui/streamlit_contract.md](doc/ui/streamlit_contract.md) — verbindliche UI‑Regeln
+- [doc/ui/pages/](doc/ui/pages/) — Page‑Spezifikationen
 
-## Workspace usage
+### Architektur
+- [doc/architecture/system_architecture.md](doc/architecture/system_architecture.md)
+- [doc/architecture/workspace.md](doc/architecture/workspace.md)
+- [doc/architecture/subsystems/](doc/architecture/subsystems/)
+- [doc/architecture/deployment.md](doc/architecture/deployment.md)
+- [doc/architecture/schema_versioning.md](doc/architecture/schema_versioning.md)
 
-```python
-from datetime import date
+### Planung / Governance / Policies
+- [doc/overview/artefact_flow.md](doc/overview/artefact_flow.md)
+- [doc/overview/planning_principles.md](doc/overview/planning_principles.md)
+- [doc/specs/](doc/specs/) (Features + Policies + Contracts)
 
-from rps.workspace import ArtifactType, Workspace
+### Runbooks & Ops
+- [doc/runbooks/validation.md](doc/runbooks/validation.md)
+- [doc/adr/README.md](doc/adr/README.md)
 
-ws = Workspace.for_athlete("ath_001")
-ws.ensure()
+---
 
-week_key = ws.current_week_key(date.today())
-phase = ws.current_phase(week_key, phase_length_weeks=4)
-ws.put(
-    ArtifactType.WEEK_PLAN,
-    version_key=week_key,
-    payload={"week": week_key, "sessions": []},
-    producer_agent="week_planner",
-    run_id="run_2026-06_week_001",
-)
+## 6) Installation & Deployment (Docker, kurz)
 
-print(ws.list_versions(ArtifactType.WEEK_PLAN))
-print(phase.range_key)
-print(phase.start_week, phase.end_week)
-```
+**Ziel:** RPS als UI‑only Streamlit‑App betreiben.
 
-```python
-from rps.workspace import ArtifactType, Authority, Workspace
-from rps.workspace.helpers import upstream_ref
+1. `.env` erstellen (siehe `.env.example`)
+2. Docker Image bauen
+3. Container starten
 
-ws = Workspace.for_athlete("ath_001")
-
-ws.guard_put(
-    ArtifactType.WEEK_PLAN,
-    version_key="2026-06",
-    payload={"week": "2026-06", "sessions": []},
-    producer_agent="week_planner",
-    run_id="run_2026-06_week_001",
-    authority=Authority.STRUCTURAL,
-    trace_upstream=[
-        upstream_ref(
-            ArtifactType.PHASE_STRUCTURE.value,
-            ws.latest_version_key(ArtifactType.PHASE_STRUCTURE),
-        )
-    ],
-)
-```
-
-## Schema validation
-
-- Place your JSON schemas in `specs/schemas/` (including all `$ref` targets).
-- Use `Workspace.put_validated(...)` or `ValidatedWorkspace` to validate before saving.
-- Envelope vs raw documents are detected automatically (e.g. `workouts.schema.json` is raw).
-- Optional: run `python scripts/check_schema_refs.py` to verify all `$ref` files exist.
-
-```python
-from pathlib import Path
-
-from rps.workspace import ArtifactType, Authority, Workspace
-
-ws = Workspace.for_athlete("ath_001")
-ws.put_validated(
-    ArtifactType.PHASE_STRUCTURE,
-    version_key="2026-06--2026-09",
-    payload={"example": True},
-    payload_meta={
-        "schema_id": "PhaseStructureInterface",
-        "schema_version": "1.0",
-        "version": "1.0",
-        "authority": "Binding",
-        "owner_agent": "Phase-Architect",
-        "iso_week_range": {"start": {"year": 2026, "week": 6}, "end": {"year": 2026, "week": 9}},
-        "trace_upstream": [],
-    },
-    producer_agent="phase_architect",
-    run_id="run_2026-06_phase_001",
-    schema_dir=Path("specs/schemas"),
-)
-```
-
-## Artefact renderer
-
-Render human-readable sidecars for JSON artefacts:
+Beispiel (vereinfachtes Schema):
 
 ```bash
-PYTHONPATH=src python3 -c "from pathlib import Path; from rps.rendering.renderer import render_json_sidecar; render_json_sidecar(Path('specs/kpi_profiles/kpi_profile_des_brevet_200_400_km_masters.json'))"
+docker build -t rps .
+docker run --env-file .env -p 8501:8501 rps
 ```
 
-## Vector store runtime
+**Konfiguration:**  
+Die Runtime hängt von LLM‑Keys, Modell‑Settings und Athlete‑ID ab. Siehe:
+- [doc/architecture/deployment.md](doc/architecture/deployment.md)
+- `.env.example`
 
-- The UI background sync writes `runtime/vectorstores_state.json` with collection IDs (use `scripts/smoke_vectorstores.py` to verify).
-- Use `rps.openai.runtime.resolve_vectorstore_ids(...)` to attach the agent store.
-- Load prompts from disk with `rps.prompts.loader.agent_system_prompt(...)`.
+---
 
-## Planning workflows
+## 7) Projektstruktur (kurz)
 
-All planning flows are UI-driven now. Use:
+- `src/rps/` — Anwendungscode + UI
+- `doc/` — Dokumentation (Überblick, UI, Architektur, Specs, Runbooks)
+- `prompts/` — Agent‑Prompts
+- `specs/` — Wissensquellen, Schemas, KPI‑Profile
+- `runtime/` — Laufzeitdaten (gitignored)
 
-- Plan Hub for season/phase/week/workouts planning runs.
-- Performance pages for Report and Feed Forward runs.
+---
 
-For CI/smoke checks, use the CLI helpers listed above (e.g., `intervals_data.py --help`) and the Streamlit UI.
+## Lizenz
 
-## Notes
-
-- Vector stores are remote state; this repo only keeps sources + manifests.
-- Shared knowledge should be referenced from each agent manifest via `../_shared/...` paths (single store per agent).
-- Local artifacts live under `runtime/athletes/<athlete_id>/` and are managed by `rps.workspace`.
+Siehe [LICENSE](LICENSE).
