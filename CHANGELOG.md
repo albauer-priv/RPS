@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backup now always creates a full archive; restore keeps a scope selector for partial re-import.
 - Updated UI spec and artefact flow docs to reflect full backup + selective restore.
 - Split detailed UI action specs and flow diagrams into `doc/ui/flows.md`, keeping `ui_spec` focused on page responsibilities.
+- Trimmed `doc/overview/how_to_plan.md` to high-level guidance and linked readiness/run details to UI and architecture docs.
 - Standardized Mermaid node labels in docs by quoting non-identifier labels for GitHub rendering.
 - Normalized in-doc links to repo-root paths (e.g., `/doc/...`) for GitHub previews.
 - Moved UI implementation notes from `ui_spec` into the Streamlit contract and queued future items in the feature backlog.

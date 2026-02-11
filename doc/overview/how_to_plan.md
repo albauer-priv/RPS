@@ -14,13 +14,12 @@ Last-Updated: 2026-02-10
 
 ## Quickstart (UI-first)
 
-1) Add inputs in Athlete Profile pages (stored under `runtime/athletes/<athlete_id>/inputs/`):
+1) Add inputs in Athlete Profile pages (stored in the athlete workspace):
    - `athlete_profile_*.json`
    - `planning_events_*.json`
    - `logistics_*.json`
    - `availability_*.json`
-2) Select a KPI profile (UI: Athlete Profile → KPI Profile) to copy it into
-   `runtime/athletes/<athlete_id>/latest/kpi_profile.json` and `inputs/kpi_profile.json`.
+2) Select a KPI profile (UI: Athlete Profile → KPI Profile).
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
    UI auto-refresh or `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py`.
 4) Open the **Plan Hub** and confirm Scope (athlete, ISO year/week, phase).
@@ -70,7 +69,7 @@ available for manual, step-by-step runs.
 ### System
 - Status (running processes + latest artefacts).
 - History (artefacts grouped by time with validity).
-- Log (log output + log level selector persisted to `.env`, plus live log tail).
+- Log (log output).
 
 ---
 
@@ -114,60 +113,17 @@ flowchart TD
 
 ---
 
-## 3. Readiness Rules (Plan Hub)
+## 3. Readiness & Run Details
 
-Plan Hub maps readiness to execution steps. Steps become QUEUED if missing or
-stale, SKIPPED if fresh, and BLOCKED when upstream fails.
-
-### Required chain (core)
-- Season Scenarios -> Selected Scenario -> Season Plan
-- Season Plan -> Phase Guardrails + Phase Structure
-- Phase Guardrails/Structure -> Week Plan
-- Week Plan -> Build Workouts (optional)
-
-### Optional chain
-- Phase Preview (optional)
-- Workouts posting (commit step) from Plan → Workouts
-
-Scenario selection is always manual; Plan Hub will stop and require user action
-if selection is missing.
+Readiness rules, run execution details, and commit-step behavior are defined in:
+- [doc/ui/pages/plan_hub.md](../ui/pages/plan_hub.md)
+- [doc/architecture/workspace.md](../architecture/workspace.md)
+- [doc/architecture/subsystems/intervals_posting.md](../architecture/subsystems/intervals_posting.md)
 
 ---
 
-## 4. Run Execution Model
-
-Each run stores:
-- `runtime/athletes/<athlete_id>/runs/<run_id>/run.json`
-- `runtime/athletes/<athlete_id>/runs/<run_id>/steps.json`
-- `runtime/athletes/<athlete_id>/runs/<run_id>/events.jsonl`
-
-Plan Hub displays step status, outputs, and events. Runs are append-only; failed
-runs can be superseded by a new run.
-
-Statuses:
-- `QUEUED`, `RUNNING`, `DONE`, `FAILED`, `SKIPPED`, `BLOCKED`, `SUPERSEDED`
-
----
-
-## 5. Intervals Posting (Commit Step)
-
-Export is a build step. Posting is a commit step.
-
-Idempotency is enforced by receipts:
-- `receipts/post_to_intervals/<athlete>/<yyyy-Www>/<uid>.json`
-
-Behavior:
-- If receipt exists and payload hash matches -> SKIP
-- If hash changed -> conflict (manual resolution)
-
-Week page shows unposted count + conflicts and provides a manual resolution
-button. Post/commit runs from the Workouts page.
-
----
-
-## 6. Notes
+## 4. Notes
 
 - Inputs are Markdown; artifacts are JSON validated by schema.
 - Phase artifacts are derived from season phase ranges (no manual range guessing).
 - Exports use `workouts_yyyy-ww.json` version keys.
-- Commit steps should be manual or explicitly toggled to avoid unintended side effects.
