@@ -87,6 +87,7 @@ This follows the current UI contract: global sidebar + always-visible status ban
 - If Scoped:
   - `st.selectbox("Scope", ["Season Scenarios", "Scenario Selection", "Season Plan", "Phase (Guardrails + Structure)", "Week Plan", "Build Workouts"])`
   - `st.text_area("Override", ...)`
+  - If the selected scope already exists, the scoped run still queues a rerun for that scope and its dependent outputs.
 - `st.text_input("Run ID", value=auto_run_id())`
 - `st.checkbox("Validate only (no write)", value=False)` → mapped to `validate_outputs.py`
 - `st.button("Run")` (run control + cancellation are handled from System → Status)

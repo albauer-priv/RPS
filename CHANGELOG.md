@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Plan Hub scoped reruns now queue explicit `Week Plan` and `Build Workouts` reruns even when the current artifacts are already ready, so existing weeks can be re-planned with an override.
 - Added English translations alongside German titles in the durability bibliography and principles references, and clarified the week anchor wording in planning principles.
 - Updated package metadata name/description in `pyproject.toml` to match RPS.
 - Updated Docker references to the real GHCR package (`ghcr.io/albauer-priv/rps:latest`) in compose and README usage examples.

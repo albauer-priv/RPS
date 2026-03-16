@@ -167,6 +167,42 @@ def test_plan_hub_readiness_requires_latest_files(tmp_path):
     assert readiness_map["season_plan"].status in {"missing", "blocked"}
 
 
+def test_plan_hub_scoped_week_run_forces_rerun_when_ready():
+    from rps.ui.pages.plan import hub as plan_hub
+
+    readiness = [
+        plan_hub.ReadinessStep("inputs", "Inputs", "ready", "", ""),
+        plan_hub.ReadinessStep("season_scenarios", "Season Scenarios", "ready", "", ""),
+        plan_hub.ReadinessStep("scenario_selection", "Selected Scenario", "ready", "", ""),
+        plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
+    ]
+
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Week Plan")
+    status_by_id = {step["step_id"]: step["Status"] for step in steps}
+
+    assert status_by_id["WEEK_PLAN"] == "QUEUED"
+    assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+
+
+def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
+    from rps.ui.pages.plan import hub as plan_hub
+
+    readiness = [
+        plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
+    ]
+
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Build Workouts")
+    status_by_id = {step["step_id"]: step["Status"] for step in steps}
+
+    assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+
+
 def test_week_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/plan/week.py")
     at.run()

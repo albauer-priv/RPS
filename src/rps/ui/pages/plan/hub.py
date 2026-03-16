@@ -726,6 +726,7 @@ def _build_execution_steps(
     """Build execution steps from readiness + scope mapping."""
     readiness_map = {step.key: step for step in readiness}
     selected_steps = [step["step_id"] for step in STEP_DEFINITIONS if step["step_id"] != "INPUTS_CHECK"]
+    force_run_steps: set[str] = set()
     if mode == "Scoped" and scope in SCOPE_STEPS:
         selected_steps = SCOPE_STEPS[scope]
         if scope == "Week Plan":
@@ -747,6 +748,7 @@ def _build_execution_steps(
                 ]
         seen: set[str] = set()
         selected_steps = [step_id for step_id in selected_steps if not (step_id in seen or seen.add(step_id))]
+        force_run_steps = set(selected_steps)
 
     steps: list[dict[str, Any]] = []
     for definition in STEP_DEFINITIONS:
@@ -771,6 +773,9 @@ def _build_execution_steps(
         if readiness_status == "blocked":
             status = "BLOCKED"
             details = readiness_reason
+        elif step_id in force_run_steps:
+            status = "QUEUED"
+            details = "Explicit scoped rerun requested."
         elif readiness_status in {"missing", "stale"}:
             status = "QUEUED"
             details = readiness_reason
