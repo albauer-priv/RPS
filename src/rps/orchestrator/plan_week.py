@@ -6,7 +6,7 @@ import json
 import logging
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterable
 
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
@@ -394,6 +394,13 @@ class PlanWeekResult:
     steps: list[dict]
 
 
+def _normalize_force_steps(force_steps: Iterable[str] | None) -> set[str]:
+    """Normalize optional forced step ids to uppercase identifiers."""
+    if not force_steps:
+        return set()
+    return {str(step).strip().upper() for step in force_steps if str(step).strip()}
+
+
 def plan_week(
     runtime: AgentRuntime,
     *,
@@ -401,6 +408,7 @@ def plan_week(
     year: int,
     week: int,
     run_id: str,
+    force_steps: Iterable[str] | None = None,
     override_text: str | None = None,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
@@ -414,6 +422,7 @@ def plan_week(
     Purpose:
         Generate missing/stale phase, week, and workouts artifacts for a target ISO week.
     Inputs:
+        force_steps: optional step ids that should rerun even if artifacts already exist.
         override_text: optional override to apply at the selected scope, passed into agent prompts.
     Outputs:
         PlanWeekResult with ok flag and step summaries.
@@ -423,6 +432,7 @@ def plan_week(
     workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
     store = LocalArtifactStore(root=runtime.workspace_root)
     target = IsoWeek(year=year, week=week)
+    forced_steps = _normalize_force_steps(force_steps)
 
     steps: list[dict] = []
     target_label = f"{year:04d}-{week:02d}"
@@ -546,17 +556,17 @@ def plan_week(
     phase_structure_record, phase_structure_path, phase_structure_mtime = _latest_range_record(ArtifactType.PHASE_STRUCTURE)
     phase_preview_record, phase_preview_path, phase_preview_mtime = _latest_range_record(ArtifactType.PHASE_PREVIEW)
 
-    needs_phase_guardrails = phase_guardrails_path is None
+    needs_phase_guardrails = phase_guardrails_path is None or "PHASE_GUARDRAILS" in forced_steps
     if season_plan_mtime and phase_guardrails_mtime and season_plan_mtime > phase_guardrails_mtime:
         needs_phase_guardrails = True
 
-    needs_phase_structure = phase_structure_path is None
+    needs_phase_structure = phase_structure_path is None or "PHASE_STRUCTURE" in forced_steps
     if season_plan_mtime and phase_structure_mtime and season_plan_mtime > phase_structure_mtime:
         needs_phase_structure = True
     if phase_guardrails_mtime and phase_structure_mtime and phase_guardrails_mtime > phase_structure_mtime:
         needs_phase_structure = True
 
-    needs_phase_preview = phase_preview_path is None
+    needs_phase_preview = phase_preview_path is None or "PHASE_PREVIEW" in forced_steps
     if phase_structure_mtime and phase_preview_mtime and phase_structure_mtime > phase_preview_mtime:
         needs_phase_preview = True
 
@@ -647,7 +657,7 @@ def plan_week(
     version_exists = resolved_key is not None
     plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, resolved_key) if resolved_key else None
     plan_mtime = _mtime(plan_path)
-    needs_week_plan = not version_exists
+    needs_week_plan = (not version_exists) or ("WEEK_PLAN" in forced_steps)
     if season_plan_mtime and plan_mtime and season_plan_mtime > plan_mtime:
         needs_week_plan = True
     if phase_guardrails_mtime and plan_mtime and phase_guardrails_mtime > plan_mtime:
@@ -722,6 +732,7 @@ def plan_week(
         injected_block=injected_block,
         plan_mtime=plan_mtime,
         needs_week_plan=needs_week_plan,
+        force_export="EXPORT_WORKOUTS" in forced_steps,
         override_text=override_text,
         force_file_search=force_file_search,
         max_num_results=max_num_results,

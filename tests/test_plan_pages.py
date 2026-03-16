@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -201,6 +202,47 @@ def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
     assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+
+
+def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):
+    class _Runtime:
+        def __init__(self, workspace_root):
+            self.workspace_root = workspace_root
+
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+    week_key = "2026-12"
+    store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, week_key).write_text("{}", encoding="utf-8")
+    store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, week_key).write_text("{}", encoding="utf-8")
+
+    calls = []
+
+    def _runtime_for(_agent_name):
+        return _Runtime(tmp_path)
+
+    def _fake_run_agent_multi_output(*args, **kwargs):
+        calls.append(kwargs)
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.workout_export.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    result = create_intervals_workouts_export(
+        _runtime_for,
+        store=store,
+        athlete_id=athlete_id,
+        year=2026,
+        week=12,
+        run_id="test_run",
+        injected_block="",
+        plan_mtime=None,
+        needs_week_plan=False,
+        force_export=True,
+        override_text="rebuild export",
+    )
+
+    assert result["ran"] is True
+    assert calls
 
 
 def test_week_page_renders():

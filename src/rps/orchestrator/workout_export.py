@@ -32,6 +32,7 @@ def create_intervals_workouts_export(
     injected_block: str,
     plan_mtime: float | None,
     needs_week_plan: bool,
+    force_export: bool = False,
     override_text: str | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
@@ -52,6 +53,7 @@ def create_intervals_workouts_export(
         injected_block: mandatory knowledge injection block (already built).
         plan_mtime: week plan modified time.
         needs_week_plan: whether week plan was regenerated this run.
+        force_export: whether this export was explicitly requested by the caller.
         override_text: optional override text appended to the export prompt.
         force_file_search/max_num_results: agent settings.
         model_resolver/temperature_resolver: optional model overrides.
@@ -85,6 +87,8 @@ def create_intervals_workouts_export(
     if plan_mtime and intervals_mtime and plan_mtime > intervals_mtime:
         needs_intervals = True
     if needs_week_plan:
+        needs_intervals = True
+    if force_export:
         needs_intervals = True
 
     if not needs_intervals:

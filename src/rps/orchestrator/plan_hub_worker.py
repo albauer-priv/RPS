@@ -350,6 +350,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                 year=active.get("iso_year"),
                                 week=active.get("iso_week"),
                                 run_id=config.run_id,
+                                force_steps=[step_id] if step_id else None,
                                 override_text=active.get("override_text"),
                                 model_resolver=config.model_resolver,
                                 temperature_resolver=config.temperature_resolver,
