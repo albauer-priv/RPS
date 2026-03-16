@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Athlete Profile -> KPI Profile now initializes the dropdown from the saved latest KPI profile and shows the active profile explicitly on page load.
 - Plan Hub scoped reruns now force `plan_week` and workout export regeneration for explicitly selected `Week Plan` and `Build Workouts` steps, so existing weeks can be re-planned with an override instead of short-circuiting on existing artifacts.
 - Clarified and test-covered scoped rerun behavior across planning scopes: `Season Scenarios` and `Season Plan` already rerun directly, `Phase` reruns are forced through `plan_week`, and `Selected Scenario` remains a manual Season-page action.
 - Added English translations alongside German titles in the durability bibliography and principles references, and clarified the week anchor wording in planning principles.

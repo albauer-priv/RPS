@@ -9,6 +9,7 @@ from streamlit.testing.v1 import AppTest
 from rps.orchestrator import season_flow
 from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.orchestrator.plan_week import plan_week
+from rps.ui.shared import SETTINGS
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -393,6 +394,33 @@ def test_kpi_profile_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
     at.run()
     assert len(at.error) == 0
+
+
+def test_kpi_profile_page_defaults_to_saved_profile():
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+    profile_key = "des_brevet_600_km_masters"
+
+    selected_payload = json.loads(
+        (Path("specs/kpi_profiles") / f"kpi_profile_{profile_key}.json").read_text(encoding="utf-8")
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.KPI_PROFILE,
+        profile_key,
+        selected_payload,
+        producer_agent="user",
+        run_id="test_kpi_profile_select",
+        update_latest=True,
+    )
+
+    at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
+    at.run()
+
+    assert len(at.error) == 0
+    assert at.selectbox[0].value == f"kpi_profile_{profile_key}"
+    assert any(f"Active KPI Profile: kpi_profile_{profile_key}" in info.value for info in at.info)
 
 
 def test_data_operations_page_renders():

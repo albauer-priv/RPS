@@ -46,12 +46,31 @@ render_status_panel()
 
 profile_map = {path.stem: path for path in profile_paths}
 profile_keys = list(profile_map.keys())
-selected_key = st.selectbox("Select KPI Profile", options=profile_keys)
+store = LocalArtifactStore(root=SETTINGS.workspace_root)
+current_profile_key = None
+try:
+    current_version_key = store.get_latest_version_key(athlete_id, ArtifactType.KPI_PROFILE)
+    candidate_key = f"kpi_profile_{current_version_key}"
+    if candidate_key in profile_map:
+        current_profile_key = candidate_key
+except (FileNotFoundError, ValueError):
+    current_profile_key = None
+
+selectbox_key = "kpi_profile_selected_key"
+if current_profile_key and st.session_state.get(selectbox_key) not in profile_keys:
+    st.session_state[selectbox_key] = current_profile_key
+elif selectbox_key not in st.session_state or st.session_state.get(selectbox_key) not in profile_keys:
+    st.session_state[selectbox_key] = profile_keys[0]
+
+selected_key = st.selectbox("Select KPI Profile", options=profile_keys, key=selectbox_key)
 
 selected_payload = json.loads(profile_map[selected_key].read_text(encoding="utf-8"))
 meta = selected_payload.get("meta", {}) if isinstance(selected_payload, dict) else {}
 data = selected_payload.get("data", {}) if isinstance(selected_payload, dict) else {}
 profile_meta = data.get("profile_metadata", {}) if isinstance(data, dict) else {}
+
+active_profile_label = current_profile_key or "No KPI profile selected yet."
+st.info(f"Active KPI Profile: {active_profile_label}")
 
 with st.expander("Available KPI Profiles", expanded=False):
     for key, path in profile_map.items():
@@ -83,7 +102,6 @@ with st.expander("Profile Details", expanded=False):
     st.json(data)
 
 if st.button("Use this KPI Profile"):
-    store = LocalArtifactStore(root=SETTINGS.workspace_root)
     version_key = selected_key.replace("kpi_profile_", "")
     store.save_document(
         athlete_id,
@@ -97,6 +115,7 @@ if st.button("Use this KPI Profile"):
     # Ensure a canonical inputs copy exists (kpi_profile.json) alongside versioned input.
     inputs_path = store.type_dir(athlete_id, ArtifactType.KPI_PROFILE) / "kpi_profile.json"
     inputs_path.write_text(json.dumps(selected_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    st.session_state[selectbox_key] = selected_key
     set_status(
         status_state="done",
         title="KPI Profile",

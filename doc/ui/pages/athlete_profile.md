@@ -40,6 +40,7 @@ All input guidance is provided on the pages themselves; templates are not used.
 
 ## KPI Profile
 - Select + view KPI profile
+- The saved latest KPI profile is shown as the active selection when the page loads
 
 ## Data Operations
 - Backup is always full; restore scope is selectable (see [doc/runbooks/data_ops.md](../../runbooks/data_ops.md))
