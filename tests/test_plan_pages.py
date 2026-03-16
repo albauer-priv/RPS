@@ -1,11 +1,14 @@
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from rps.orchestrator import season_flow
 from rps.orchestrator.workout_export import create_intervals_workouts_export
+from rps.orchestrator.plan_week import plan_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -243,6 +246,119 @@ def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatc
 
     assert result["ran"] is True
     assert calls
+
+
+def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
+    calls = []
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*args, **kwargs):
+        calls.append(kwargs)
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.orchestrator.season_flow._build_injection_block", lambda *_args, **_kwargs: "")
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.SEASON_SCENARIO_SELECTION).write_text(
+        json.dumps({"data": {"kpi_moving_time_rate_guidance_selection": None}}),
+        encoding="utf-8",
+    )
+
+    season_flow.create_season_scenarios(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_scenarios",
+        override_text="rerun scenarios",
+    )
+    season_flow.create_season_plan(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_plan",
+        selected=None,
+        override_text="rerun season",
+    )
+
+    assert len(calls) == 2
+
+
+def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
+    athlete_id = "test_athlete"
+    year = 2026
+    week = 12
+    run_ids = []
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "meta": {"iso_week_range": "2026-11--2026-13"},
+                "data": {
+                    "phases": [
+                        {
+                            "id": "P01",
+                            "name": "Base 1",
+                            "cycle": "Base",
+                            "iso_week_range": "2026-11--2026-13",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    for artifact_type in (
+        ArtifactType.PHASE_GUARDRAILS,
+        ArtifactType.PHASE_STRUCTURE,
+        ArtifactType.PHASE_PREVIEW,
+        ArtifactType.WEEK_PLAN,
+        ArtifactType.INTERVALS_WORKOUTS,
+    ):
+        key = "2026-11--2026-13" if artifact_type in {
+            ArtifactType.PHASE_GUARDRAILS,
+            ArtifactType.PHASE_STRUCTURE,
+            ArtifactType.PHASE_PREVIEW,
+        } else "2026-12"
+        store.versioned_path(athlete_id, artifact_type, key).write_text("{}", encoding="utf-8")
+
+    runtime = SimpleNamespace(
+        workspace_root=tmp_path,
+        reasoning_effort=None,
+        reasoning_summary=None,
+    )
+
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_injection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.run_agent_multi_output",
+        lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},
+    )
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.create_intervals_workouts_export",
+        lambda *_args, **_kwargs: {"ran": False, "ok": True, "produced": False, "result": None},
+    )
+
+    result = plan_week(
+        runtime,
+        athlete_id=athlete_id,
+        year=year,
+        week=week,
+        run_id="test_run",
+        force_steps=["PHASE_STRUCTURE"],
+    )
+
+    assert any(step["agent"] == "phase_architect" for step in result.steps)
+    assert any(run_id.endswith("_phase_create_phase_structure") for run_id in run_ids)
 
 
 def test_week_page_renders():
