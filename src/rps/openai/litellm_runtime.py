@@ -504,6 +504,7 @@ class LiteLLMResponses:
     def __init__(self, config: LLMProviderConfig, logger: Any | None = None) -> None:
         self._config = config
         self._logger = logger
+        self._responses: dict[str, LiteLLMResponse] = {}
 
     def create(self, **payload: Any):
         model = payload.get("model")
@@ -511,7 +512,12 @@ class LiteLLMResponses:
             raise RuntimeError("LiteLLM create requires model")
         if isinstance(model, str) and "gpt-5" in model:
             litellm.drop_params = True
-        input_items = payload.get("input") or []
+        input_items = list(payload.get("input") or [])
+        previous_response_id = payload.get("previous_response_id")
+        if previous_response_id:
+            previous = self._responses.get(str(previous_response_id))
+            if previous:
+                input_items = list(previous.output or []) + input_items
         instructions = payload.get("instructions")
         messages = _messages_from_input(input_items, instructions)
         tools = _tools_from_payload(payload.get("tools"))
@@ -614,12 +620,14 @@ class LiteLLMResponses:
                 text = message.get("content") if isinstance(message, dict) else getattr(message, "content", None)
             tool_calls = _collect_tool_calls(message or {})
             output_items = _build_output_items(text, tool_calls)
-            return LiteLLMResponse(
+            response_obj = LiteLLMResponse(
                 id=str(uuid.uuid4()),
                 output=output_items,
                 output_text=text,
                 usage=_usage_from_response(response),
             )
+            self._responses[response_obj.id] = response_obj
+            return response_obj
 
         def _event_stream():
             stream_resp = _with_retry(
@@ -650,6 +658,7 @@ class LiteLLMResponses:
                 output_text=collected_text or None,
                 usage=SimpleNamespace(input_tokens=0, output_tokens=0, total_tokens=0),
             )
+            self._responses[response_obj.id] = response_obj
             yield SimpleNamespace(type="response.completed", response=response_obj)
 
         return _event_stream()
