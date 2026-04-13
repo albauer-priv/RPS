@@ -120,6 +120,21 @@ def parse_iso_week(value: str | None) -> dict[str, int] | None:
         return None
 
 
+def parse_iso_week_range(value: str | None) -> dict[str, dict[str, int]] | None:
+    """Parse YYYY-WW--YYYY-WW into structured range metadata for index storage."""
+    if not value:
+        return None
+    try:
+        start_key, end_key = value.split("--", 1)
+    except ValueError:
+        return None
+    start = parse_iso_week(start_key)
+    end = parse_iso_week(end_key)
+    if start is None or end is None:
+        return None
+    return {"start": start, "end": end}
+
+
 def record_index_write(
     *,
     athlete_id: str,
@@ -148,7 +163,7 @@ def record_index_write(
         producer_agent=producer_agent,
         created_at=created_at,
         iso_week=parse_iso_week(iso_week),
-        iso_week_range=iso_week_range,
+        iso_week_range=parse_iso_week_range(iso_week_range),
     )
     logger.info(
         "Recorded artifact write type=%s version_key=%s path=%s run_id=%s",

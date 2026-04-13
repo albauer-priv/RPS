@@ -4,6 +4,7 @@ import json
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
 
 import streamlit as st
 
@@ -106,7 +107,7 @@ if revise_submit:
             last_action="Revise Week Plan",
             last_run_id=run_id,
         )
-        result, output = capture_output(
+        raw_result, output = capture_output(
             lambda: revise_week_plan(
                 lambda name: multi_runtime_for(name),
                 athlete_id=athlete_id,
@@ -121,7 +122,8 @@ if revise_submit:
             ),
             loggers=CAPTURE_LOGGERS,
         )
-        status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
+        revise_result = raw_result
+        status = "done" if isinstance(revise_result, dict) or getattr(revise_result, "ok", False) else "error"
         set_status(
             status_state=status,
             title="Workouts",
@@ -191,6 +193,7 @@ else:
         day = ""
         if date_str and date_str in day_lookup:
             candidates = day_lookup[date_str]
+            match: dict[str, str] | None
             if len(candidates) == 1:
                 match = candidates[0]
             else:

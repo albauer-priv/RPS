@@ -158,16 +158,37 @@ def _is_blocked(step_id: str, failed_step_id: str, deps: dict[str, list[str]], v
 
 def _mark_blocked(steps: list[dict[str, Any]], failed_step: dict[str, Any]) -> None:
     """Mark queued steps as blocked when a failure prevents downstream steps."""
-    failed_step_id = failed_step.get("step_id") or ""
+    failed_step_id = str(failed_step.get("step_id") or "")
     reason = f"Blocked by failed step: {failed_step.get('Step') or failed_step_id}"
-    deps = {step.get("step_id"): step.get("Deps") or [] for step in steps}
+    deps: dict[str, list[str]] = {}
+    for step in steps:
+        step_id = str(step.get("step_id") or "")
+        raw_deps = step.get("Deps") or []
+        deps[step_id] = [str(dep) for dep in raw_deps if dep is not None]
     for pending in steps:
         if pending.get("Status") != "QUEUED":
             continue
-        step_id = pending.get("step_id") or ""
+        step_id = str(pending.get("step_id") or "")
         if _is_blocked(step_id, failed_step_id, deps, set()):
             pending["Status"] = "BLOCKED"
             pending["Details"] = reason
+
+
+def _active_int(run_record: dict[str, Any], key: str) -> int | None:
+    """Return an integer run-field value when present and parseable."""
+    value = run_record.get(key)
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        try:
+            return int(value.strip())
+        except ValueError:
+            return None
+    return None
 
 
 def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event) -> None:
@@ -312,62 +333,76 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     else:
                         exec_result = None
                         step_id = step.get("step_id")
+                        active_year = _active_int(active, "iso_year")
+                        active_week = _active_int(active, "iso_week")
                         if step_id == "SEASON_SCENARIOS":
-                            exec_result = execute_season_scenarios(
-                                config.runtime_for_agent,
-                                athlete_id=config.athlete_id,
-                                year=active.get("iso_year"),
-                                week=active.get("iso_week"),
-                                run_id=config.run_id,
-                                override_text=active.get("override_text"),
-                                model_resolver=config.model_resolver,
-                                temperature_resolver=config.temperature_resolver,
-                                force_file_search=config.force_file_search,
-                                max_num_results=config.max_num_results,
-                            )
+                            if active_year is None or active_week is None:
+                                exec_result = {"ok": False, "error": "Missing ISO year/week on queued run."}
+                            else:
+                                exec_result = execute_season_scenarios(
+                                    config.runtime_for_agent,
+                                    athlete_id=config.athlete_id,
+                                    year=active_year,
+                                    week=active_week,
+                                    run_id=config.run_id,
+                                    override_text=active.get("override_text"),
+                                    model_resolver=config.model_resolver,
+                                    temperature_resolver=config.temperature_resolver,
+                                    force_file_search=config.force_file_search,
+                                    max_num_results=config.max_num_results,
+                                )
                         elif step_id == "SCENARIO_SELECTION":
                             if store.latest_exists(config.athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
                                 exec_result = {"ok": True}
                             else:
                                 exec_result = execute_scenario_selection()
                         elif step_id == "SEASON_PLAN":
-                            exec_result = execute_season_plan(
-                                config.runtime_for_agent,
-                                athlete_id=config.athlete_id,
-                                year=active.get("iso_year"),
-                                week=active.get("iso_week"),
-                                run_id=config.run_id,
-                                override_text=active.get("override_text"),
-                                model_resolver=config.model_resolver,
-                                temperature_resolver=config.temperature_resolver,
-                                force_file_search=config.force_file_search,
-                                max_num_results=config.max_num_results,
-                            )
+                            if active_year is None or active_week is None:
+                                exec_result = {"ok": False, "error": "Missing ISO year/week on queued run."}
+                            else:
+                                exec_result = execute_season_plan(
+                                    config.runtime_for_agent,
+                                    athlete_id=config.athlete_id,
+                                    year=active_year,
+                                    week=active_week,
+                                    run_id=config.run_id,
+                                    override_text=active.get("override_text"),
+                                    model_resolver=config.model_resolver,
+                                    temperature_resolver=config.temperature_resolver,
+                                    force_file_search=config.force_file_search,
+                                    max_num_results=config.max_num_results,
+                                )
                         elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
-                            exec_result = execute_plan_week(
-                                config.runtime_for_agent,
-                                athlete_id=config.athlete_id,
-                                year=active.get("iso_year"),
-                                week=active.get("iso_week"),
-                                run_id=config.run_id,
-                                force_steps=[step_id] if step_id else None,
-                                override_text=active.get("override_text"),
-                                model_resolver=config.model_resolver,
-                                temperature_resolver=config.temperature_resolver,
-                                reasoning_effort_resolver=config.reasoning_effort_resolver,
-                                reasoning_summary_resolver=config.reasoning_summary_resolver,
-                                force_file_search=config.force_file_search,
-                                max_num_results=config.max_num_results,
-                            )
+                            if active_year is None or active_week is None:
+                                exec_result = {"ok": False, "error": "Missing ISO year/week on queued run."}
+                            else:
+                                exec_result = execute_plan_week(
+                                    config.runtime_for_agent,
+                                    athlete_id=config.athlete_id,
+                                    year=active_year,
+                                    week=active_week,
+                                    run_id=config.run_id,
+                                    force_steps=[step_id] if step_id else None,
+                                    override_text=active.get("override_text"),
+                                    model_resolver=config.model_resolver,
+                                    temperature_resolver=config.temperature_resolver,
+                                    reasoning_effort_resolver=config.reasoning_effort_resolver,
+                                    reasoning_summary_resolver=config.reasoning_summary_resolver,
+                                    force_file_search=config.force_file_search,
+                                    max_num_results=config.max_num_results,
+                                )
                         elif step_id == "POST_INTERVALS":
-                            exec_result = execute_post_intervals(
-                                store=store,
-                                athlete_id=config.athlete_id,
-                                year=active.get("iso_year"),
-                                week=active.get("iso_week"),
-                                run_id=config.run_id,
-                                allow_delete=config.allow_delete_intervals,
-                            )
+                            if active_year is None or active_week is None:
+                                exec_result = {"ok": False, "error": "Missing ISO year/week on queued run."}
+                            else:
+                                exec_result = execute_post_intervals(
+                                    store=store,
+                                    athlete_id=config.athlete_id,
+                                    year=active_year,
+                                    week=active_week,
+                                    run_id=config.run_id,
+                                    allow_delete=config.allow_delete_intervals,
+                                )
 
                         if exec_result and exec_result.get("ok"):
                             step["Status"] = "DONE"
@@ -375,8 +410,9 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             _set_duration(step)
                             index = _load_index(config.root, config.athlete_id)
                             outputs = []
-                            if exec_result.get("outputs"):
-                                outputs.extend(exec_result.get("outputs") or [])
+                            raw_outputs = exec_result.get("outputs")
+                            if isinstance(raw_outputs, list):
+                                outputs.extend(output for output in raw_outputs if isinstance(output, dict))
                             for artifact_type in step.get("write_types") or []:
                                 outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
                             if outputs:

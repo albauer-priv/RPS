@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date as calendar_date
+from typing import Any
 
 import streamlit as st
 
@@ -23,8 +24,11 @@ from rps.workspace.iso_helpers import IsoWeek, next_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
+AgendaRow = dict[str, Any]
+WorkoutRow = dict[str, Any]
 
-def _agenda_table(agenda: list[dict]) -> str:
+
+def _agenda_table(agenda: list[AgendaRow]) -> str:
     header = (
         "| Day | Date (YYYY-MM-DD) | Day-Role | Planned Duration | Planned Load (kJ) | Workout-ID |\n"
         "| --- | --- | --- | --- | ---: | --- |\n"
@@ -47,10 +51,16 @@ def _agenda_table(agenda: list[dict]) -> str:
 
 
 def _parse_float(value: object) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
+    if isinstance(value, bool):
         return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return 0.0
+    return 0.0
 
 
 def _intensity_buckets(workout_text: str) -> dict[str, int]:
@@ -89,7 +99,7 @@ st.session_state["iso_year"] = year
 st.session_state["iso_week"] = week
 
 allowed, reason = season_plan_covers_week(athlete_id, year, week)
-current_week = IsoWeek(*date.today().isocalendar()[:2])
+current_week = IsoWeek(*calendar_date.today().isocalendar()[:2])
 allowed_scope = IsoWeek(year=year, week=week) in {current_week, next_iso_week(current_week)}
 if not allowed_scope:
     allowed = False
@@ -111,15 +121,21 @@ try:
 except FileNotFoundError:
     agenda_payload = None
 
-agenda_rows = []
-workout_rows = []
+agenda_rows: list[AgendaRow] = []
+workout_rows: list[WorkoutRow] = []
 if isinstance(agenda_payload, dict):
-    agenda_rows = (agenda_payload.get("data") or {}).get("agenda") or []
-    workout_rows = (agenda_payload.get("data") or {}).get("workouts") or []
+    data = agenda_payload.get("data")
+    if isinstance(data, dict):
+        raw_agenda = data.get("agenda")
+        if isinstance(raw_agenda, list):
+            agenda_rows = [row for row in raw_agenda if isinstance(row, dict)]
+        raw_workouts = data.get("workouts")
+        if isinstance(raw_workouts, list):
+            workout_rows = [row for row in raw_workouts if isinstance(row, dict)]
 
 workout_map = {workout.get("workout_id"): workout for workout in workout_rows if workout.get("workout_id")}
 
-total_activities = sum(1 for row in agenda_rows if row.get("workout_id"))
+total_activities = sum(bool(row.get("workout_id")) for row in agenda_rows)
 total_minutes = 0
 total_kj = 0.0
 for row in agenda_rows:
@@ -174,7 +190,7 @@ for row in sorted_agenda:
     duration = row.get("planned_duration") or workout.get("duration") or "N/A"
     load_kj = row.get("planned_kj") or "N/A"
     day = row.get("day") or "N/A"
-    date = row.get("date") or "N/A"
+    workout_date = row.get("date") or "N/A"
 
     focus = title.split(" - ")[-1] if " - " in title else title
     if isinstance(focus, str) and focus.lower().startswith(f"{day}".lower()):
@@ -189,7 +205,7 @@ for row in sorted_agenda:
         cols = st.columns([2, 1])
         with cols[0]:
             st.markdown(f"**Notes:** {notes}")
-            st.markdown(f"**Date:** {date}")
+            st.markdown(f"**Date:** {workout_date}")
         with cols[1]:
             st.markdown(f"**Duration:** {duration_label}")
             st.markdown(f"**Load:** {load_kj} kJ")

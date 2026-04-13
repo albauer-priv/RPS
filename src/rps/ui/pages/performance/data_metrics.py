@@ -635,11 +635,13 @@ def _build_daily_durability_scatter(points: list[dict[str, object]]):
     if not points:
         return None
     fig = go.Figure()
-    filtered = [
-        point
-        for point in points
-        if (point.get("flags") or {}).get("flag_drift_valid_z2_90min_bool")
-    ]
+    filtered = []
+    for point in points:
+        raw_flags = point.get("flags")
+        if not isinstance(raw_flags, dict):
+            continue
+        if raw_flags.get("flag_drift_valid_z2_90min_bool"):
+            filtered.append(point)
     if not filtered:
         return None
     fig.add_trace(
@@ -1004,7 +1006,9 @@ with st.container():
         )
         filtered_points = []
         for point in activity_durability_points:
-            flags = point.get("flags") or {}
+            flags = point.get("flags")
+            if not isinstance(flags, dict):
+                flags = {}
             if drift_only and not flags.get("flag_drift_valid_z2_90min_bool"):
                 continue
             if long_ride_only and not flags.get("flag_long_ride_180min_bool"):

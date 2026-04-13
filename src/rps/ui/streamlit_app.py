@@ -129,7 +129,7 @@ def _vectorstore_sync_background(root: Path, athlete_id: str, interval_minutes: 
             last_check_dt = datetime.fromisoformat(last_check_at)
         except ValueError:
             last_check_dt = None
-        else:
+        if last_check_dt is not None:
             elapsed = datetime.now(timezone.utc) - last_check_dt
             if elapsed.total_seconds() < interval_minutes * 60:
                 return

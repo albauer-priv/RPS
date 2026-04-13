@@ -56,7 +56,9 @@ meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
 created_at = meta.get("created_at") if isinstance(meta, dict) else None
 if created_at:
     st.caption(f"Last refresh: {created_at}")
-yearly_summary = data.get("yearly_summary") or []
+yearly_summary = data.get("yearly_summary") if isinstance(data, dict) else []
+if not isinstance(yearly_summary, list):
+    yearly_summary = []
 yearly_summary = sorted(
     yearly_summary,
     key=lambda entry: entry.get("year") or 0,

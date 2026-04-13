@@ -78,6 +78,15 @@ def _read_queue_item(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _item_str(item: dict[str, Any], key: str) -> str | None:
+    """Return a required queue item string field when present and non-empty."""
+    value = item.get(key)
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped or None
+    return None
+
+
 def _eligible(root: Path, item: dict[str, Any]) -> bool:
     """Return True if no other active run for the same athlete."""
     athlete_id = item.get("athlete_id")
@@ -131,10 +140,16 @@ def start_queue_scheduler(
                     continue
                 # Claim
                 active_path = _move(item_path, paths.active)
+                athlete_id = _item_str(item, "athlete_id")
+                run_id = _item_str(item, "run_id")
+                if athlete_id is None or run_id is None:
+                    logger.warning("Queue item missing athlete_id/run_id %s", active_path)
+                    _move(active_path, paths.failed)
+                    continue
                 config = PlanHubWorkerConfig(
                     root=root,
-                    athlete_id=item.get("athlete_id"),
-                    run_id=item.get("run_id"),
+                    athlete_id=athlete_id,
+                    run_id=run_id,
                     runtime_for_agent=runtime_for_agent,
                     model_resolver=model_resolver,
                     temperature_resolver=temperature_resolver,

@@ -406,8 +406,8 @@ def post_to_intervals_commit(
             )
             if delete_result.get("ok"):
                 for external_id in to_delete:
-                    path = receipt_paths.get(external_id)
-                    if not path:
+                    receipt_path = receipt_paths.get(external_id)
+                    if not receipt_path:
                         continue
                     tombstone = {
                         "external_id": external_id,
@@ -416,9 +416,9 @@ def post_to_intervals_commit(
                         "run_id": run_id,
                         "last_payload_hash": receipt_map.get(external_id, {}).get("payload_hash"),
                     }
-                    path.write_text(json.dumps(tombstone, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                    receipt_path.write_text(json.dumps(tombstone, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
                     deleted += 1
-                    outputs.append({"receipt": str(path), "status": "deleted"})
+                    outputs.append({"receipt": str(receipt_path), "status": "deleted"})
             else:
                 return ReceiptResult(
                     ok=False,
