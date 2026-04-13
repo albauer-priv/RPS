@@ -271,6 +271,17 @@ def _normalize_force_steps(force_steps: Iterable[str] | None) -> set[str]:
     return {str(step).strip().upper() for step in force_steps if str(step).strip()}
 
 
+def _required_phase_artefacts_for_forced_steps(forced_steps: set[str]) -> list[ArtifactType]:
+    """Return exact-range phase artefacts required for an isolated forced phase run."""
+    if forced_steps == {"PHASE_GUARDRAILS"}:
+        return [ArtifactType.PHASE_GUARDRAILS]
+    if forced_steps == {"PHASE_STRUCTURE"}:
+        return [ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE]
+    if forced_steps == {"PHASE_PREVIEW"}:
+        return [ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE, ArtifactType.PHASE_PREVIEW]
+    return []
+
+
 def plan_week(
     runtime: AgentRuntime,
     *,
@@ -303,6 +314,7 @@ def plan_week(
     store = LocalArtifactStore(root=runtime.workspace_root)
     target = IsoWeek(year=year, week=week)
     forced_steps = _normalize_force_steps(force_steps)
+    isolated_phase_force = bool(_required_phase_artefacts_for_forced_steps(forced_steps))
 
     steps: list[dict] = []
     target_label = f"{year:04d}-{week:02d}"
@@ -440,10 +452,16 @@ def plan_week(
     if phase_structure_mtime and phase_preview_mtime and phase_structure_mtime > phase_preview_mtime:
         needs_phase_preview = True
 
-    if needs_phase_guardrails:
+    if forced_steps == {"PHASE_GUARDRAILS"}:
+        needs_phase_structure = False
+        needs_phase_preview = False
+    elif forced_steps == {"PHASE_STRUCTURE"}:
+        needs_phase_preview = False
+
+    if needs_phase_guardrails and not isolated_phase_force:
         needs_phase_structure = True
         needs_phase_preview = True
-    if needs_phase_structure:
+    if needs_phase_structure and not isolated_phase_force:
         needs_phase_preview = True
 
     phase_tasks: list[AgentTask] = []
@@ -490,7 +508,6 @@ def plan_week(
                     "Use this phase range as the iso_week_range for the artefact. "
                     "Read season_plan and use workspace_get_latest to pull required inputs. "
                     f"{user_data_block}"
-                    f"{kpi_block}"
                     f"{override_line}"
                     f"{injected_block}"
                 ),
@@ -503,6 +520,34 @@ def plan_week(
             steps.append({"agent": "phase_architect", "tasks": [task.value], "result": out})
             if out.get("ok") and out.get("produced"):
                 _log("Done.")
+
+    required_phase_artefacts = _required_phase_artefacts_for_forced_steps(forced_steps)
+    if required_phase_artefacts:
+        missing_required = [
+            artifact_type
+            for artifact_type in required_phase_artefacts
+            if not index_query.has_exact_range(artifact_type.value, phase_range)
+        ]
+        if missing_required:
+            missing_labels = ", ".join(artifact_type.value for artifact_type in missing_required)
+            message = (
+                f"Required isolated phase artefacts missing for range {phase_range_label}: "
+                f"{missing_labels}."
+            )
+            _log(message, logging.ERROR)
+            steps.append(
+                {
+                    "agent": "phase_architect",
+                    "tasks": [],
+                    "result": {"ok": False, "error": f"Missing isolated phase artefacts: {missing_labels}"},
+                }
+            )
+            return PlanWeekResult(ok=False, steps=steps)
+        _log(
+            f"Isolated phase run completed for range {phase_range_label} "
+            f"(forced_steps={sorted(forced_steps)})."
+        )
+        return PlanWeekResult(ok=True, steps=steps)
 
     if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not index_query.has_exact_range(
         ArtifactType.PHASE_STRUCTURE.value, phase_range

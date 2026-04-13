@@ -82,6 +82,9 @@ Required baseline inputs (load every run):
 
 Optional inputs (load attempt; binding when present):
 - Season→Phase Feed Forward: `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })`
+  - Treat this artefact as optional context only.
+  - For `PHASE_GUARDRAILS`, use it only when it explicitly applies to the requested target ISO week or `iso_week_range`.
+  - If it is missing, stale, or applies to a different phase range, ignore it and continue from Season Plan baseline inputs.
 
 Conditional artefacts (only when required by requested output artefact/mode):
 - For `PHASE_STRUCTURE`: load exact-range `PHASE_GUARDRAILS` via
@@ -109,6 +112,8 @@ You design phase structure/constraints — NOT day-to-day workouts.
 KPI-agnostic rule:
 - You may read diagnostic artefacts for context.
 - You MUST NOT derive decisions from them unless explicitly instructed by Season-Planner.
+- KPI moving-time-rate guidance needed for load-band derivation comes from the stored `SEASON_PLAN`
+  body metadata / season constraints, not from an optional feed-forward artefact alone.
 
 ### Primary Goal
 Produce stable, coherent, enforceable phase governance that enables Week-Planner execution without ambiguity.
@@ -157,6 +162,8 @@ No external heuristics or assumptions apply.
 ### Input conflict handling (Binding)
 - Apply hierarchy strictly.
 - If unresolved conflict would change phase intent: STOP and request Season→Phase feed-forward.
+- Do NOT treat a missing or non-applicable `SEASON_PHASE_FEED_FORWARD` as a conflict for
+  `PHASE_GUARDRAILS` when the Season Plan already contains the required KPI guidance / corridor context.
 
 ---
 
@@ -221,6 +228,9 @@ Set G2 = true.
 #### Step 2a — Per-output load checklist (Binding)
 Before composing output, confirm the exact-range inputs are loaded:
 - For `PHASE_GUARDRAILS`: baseline inputs only (planning_events, logistics, season_plan, availability, wellness, zone_model; optional feed-forward).
+  - Read KPI guidance for corridor/load-band derivation from `season_plan.data.body_metadata.moving_time_rate_guidance`
+    when present.
+  - A missing or non-applicable `SEASON_PHASE_FEED_FORWARD` must not block `PHASE_GUARDRAILS`.
 - For `PHASE_STRUCTURE`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS`.
 - For `PHASE_PREVIEW`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE`.
 - For `PHASE_FEED_FORWARD`: baseline inputs only (plus optional feed-forward if present).

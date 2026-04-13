@@ -208,6 +208,24 @@ def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
     assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
 
 
+def test_plan_hub_phase_guardrails_scope_is_isolated():
+    from rps.ui.pages.plan import hub as plan_hub
+
+    readiness = [
+        plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
+    ]
+
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Phase Guardrails")
+
+    assert [step["step_id"] for step in steps] == ["PHASE_GUARDRAILS"]
+    assert steps[0]["Status"] == "QUEUED"
+
+
 def test_plan_hub_build_workouts_adds_missing_week_dependencies():
     from rps.ui.pages.plan import hub as plan_hub
 
@@ -435,6 +453,55 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
     assert len(calls) == 2
 
 
+def test_create_season_plan_includes_selected_kpi_guidance(monkeypatch, tmp_path):
+    captured_inputs: list[str] = []
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.save_document(
+        "test_athlete",
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        "2026-12",
+        {
+            "data": {
+                "kpi_moving_time_rate_guidance_selection": {
+                    "segment": "fast_competitive",
+                    "w_per_kg": {"min": 2.5, "max": 3.0},
+                    "kj_per_kg_per_hour": {"min": 20, "max": 24},
+                }
+            }
+        },
+        producer_agent="user",
+        run_id="test_selection",
+        update_latest=True,
+    )
+
+    season_flow.create_season_plan(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_plan",
+        selected=None,
+        override_text="rerun season",
+    )
+
+    assert captured_inputs
+    assert "Selected KPI guidance:" in captured_inputs[0]
+    assert "kpi_rate_band_selector fast_competitive" in captured_inputs[0]
+
+
 def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
     athlete_id = "test_athlete"
     year = 2026
@@ -504,6 +571,183 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
 
     assert any(step["agent"] == "phase_architect" for step in result.steps)
     assert any(run_id.endswith("_phase_create_phase_structure") for run_id in run_ids)
+
+
+def test_plan_week_force_phase_guardrails_runs_in_isolation(monkeypatch, tmp_path):
+    athlete_id = "test_athlete"
+    year = 2026
+    week = 12
+    written_types: list[ArtifactType] = []
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "meta": {"iso_week_range": "2026-11--2026-13"},
+                "data": {
+                    "phases": [
+                        {
+                            "id": "P01",
+                            "name": "Base 1",
+                            "cycle": "Base",
+                            "iso_week_range": "2026-11--2026-13",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    runtime = SimpleNamespace(
+        workspace_root=tmp_path,
+        reasoning_effort=None,
+        reasoning_summary=None,
+    )
+
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        task_value = kwargs["tasks"][0].value
+        if task_value == "CREATE_PHASE_GUARDRAILS":
+            payload = {
+                "meta": {
+                    "artifact_type": "PHASE_GUARDRAILS",
+                    "version_key": "2026-11--2026-13",
+                    "iso_week_range": "2026-11--2026-13",
+                    "created_at": "2026-04-13T00:00:00Z",
+                },
+                "data": {},
+            }
+            store.save_document(
+                athlete_id,
+                ArtifactType.PHASE_GUARDRAILS,
+                "2026-11--2026-13",
+                payload,
+                producer_agent="phase_architect",
+                run_id=kwargs["run_id"],
+                update_latest=True,
+            )
+            written_types.append(ArtifactType.PHASE_GUARDRAILS)
+        elif task_value == "CREATE_PHASE_STRUCTURE":
+            pytest.fail("Isolated PHASE_GUARDRAILS run must not trigger PHASE_STRUCTURE.")
+        elif task_value == "CREATE_PHASE_PREVIEW":
+            pytest.fail("Isolated PHASE_GUARDRAILS run must not trigger PHASE_PREVIEW.")
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.create_intervals_workouts_export",
+        lambda *_args, **_kwargs: pytest.fail("Isolated PHASE_GUARDRAILS run must not reach workout export."),
+    )
+
+    result = plan_week(
+        runtime,
+        athlete_id=athlete_id,
+        year=year,
+        week=week,
+        run_id="test_run",
+        force_steps=["PHASE_GUARDRAILS"],
+    )
+
+    assert result.ok is True
+    assert written_types == [ArtifactType.PHASE_GUARDRAILS]
+
+
+def test_plan_week_phase_architect_omits_direct_kpi_guidance(monkeypatch, tmp_path):
+    athlete_id = "test_athlete"
+    captured_inputs: list[str] = []
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "meta": {"iso_week_range": "2026-11--2026-13"},
+                "data": {
+                    "phases": [
+                        {
+                            "id": "P01",
+                            "name": "Base 1",
+                            "cycle": "Base",
+                            "iso_week_range": "2026-11--2026-13",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        "2026-12",
+        {
+            "data": {
+                "kpi_moving_time_rate_guidance_selection": {
+                    "segment": "fast_competitive",
+                    "w_per_kg": {"min": 2.5, "max": 3.0},
+                    "kj_per_kg_per_hour": {"min": 20, "max": 24},
+                }
+            }
+        },
+        producer_agent="user",
+        run_id="test_selection",
+        update_latest=True,
+    )
+
+    runtime = SimpleNamespace(
+        workspace_root=tmp_path,
+        reasoning_effort=None,
+        reasoning_summary=None,
+    )
+
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        payload = {
+            "meta": {
+                "artifact_type": "PHASE_GUARDRAILS",
+                "version_key": "2026-11--2026-13",
+                "iso_week_range": "2026-11--2026-13",
+                "created_at": "2026-04-13T00:00:00Z",
+            },
+            "data": {},
+        }
+        store.save_document(
+            athlete_id,
+            ArtifactType.PHASE_GUARDRAILS,
+            "2026-11--2026-13",
+            payload,
+            producer_agent="phase_architect",
+            run_id=kwargs["run_id"],
+            update_latest=True,
+        )
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.create_intervals_workouts_export",
+        lambda *_args, **_kwargs: pytest.fail("Isolated PHASE_GUARDRAILS run must not reach workout export."),
+    )
+
+    result = plan_week(
+        runtime,
+        athlete_id=athlete_id,
+        year=2026,
+        week=12,
+        run_id="test_run",
+        force_steps=["PHASE_GUARDRAILS"],
+    )
+
+    assert result.ok is True
+    assert captured_inputs
+    assert all("Selected KPI guidance:" not in user_input for user_input in captured_inputs)
 
 
 def test_week_page_renders():
