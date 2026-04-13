@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NotRequired, TypedDict, cast
 import time
 import json
 import difflib
@@ -46,6 +46,45 @@ from rps.tools.knowledge_search import ensure_knowledge_store_ready, knowledge_s
 
 logger = logging.getLogger(__name__)
 
+
+class StepDefinition(TypedDict):
+    step_id: str
+    label: str
+    agent: str
+    writes: list[ArtifactType]
+    authority: list[str]
+
+
+class WriteDetail(TypedDict):
+    artifact_key: str
+    display_name: str
+    authority: str
+
+
+ExecutionStep = TypedDict(
+    "ExecutionStep",
+    {
+        "Step": str,
+        "Agent": str,
+        "Writes": str,
+        "Authority": str,
+        "Status": str,
+        "Started": str | None,
+        "Duration": str | None,
+        "Ended": str | None,
+        "Details": str,
+        "step_id": str,
+        "response_id": str | None,
+        "write_types": list[str],
+        "writes": list[WriteDetail],
+        "Deps": list[str],
+        "Outputs": list[dict[str, Any]],
+        "Log": str,
+        "Outputs Written": int,
+    },
+    total=False,
+)
+
 RESET_LATEST_TYPES = (
     ArtifactType.SEASON_PLAN,
     ArtifactType.PHASE_GUARDRAILS,
@@ -61,7 +100,7 @@ DELETE_LATEST_TYPES = (
     *RESET_LATEST_TYPES,
 )
 
-STEP_DEFINITIONS = [
+STEP_DEFINITIONS: list[StepDefinition] = [
     {
         "step_id": "INPUTS_CHECK",
         "label": "Inputs",
@@ -127,7 +166,7 @@ STEP_DEFINITIONS = [
     },
 ]
 
-PLANNING_SCOPE_SUBTYPE = {
+PLANNING_SCOPE_SUBTYPE: dict[str, str] = {
     "Season Scenarios": "season_scenarios",
     "Selected Scenario": "scenario_selection",
     "Season Plan": "season_plan",
@@ -139,7 +178,7 @@ PLANNING_SCOPE_SUBTYPE = {
     "Build Workouts": "export_workouts",
 }
 
-PLANNING_PRIORITY = {
+PLANNING_PRIORITY: dict[str, int] = {
     "orchestrated": 3,
     "season_scenarios": 3,
     "scenario_selection": 3,
@@ -177,7 +216,7 @@ def _planning_block_reason(root: Path, athlete_id: str, desired_subtype: str) ->
             )
     return None
 
-STEP_DEPS = {
+STEP_DEPS: dict[str, list[str]] = {
     "SEASON_SCENARIOS": ["INPUTS_CHECK"],
     "SCENARIO_SELECTION": ["SEASON_SCENARIOS"],
     "SEASON_PLAN": ["SCENARIO_SELECTION"],
@@ -188,7 +227,7 @@ STEP_DEPS = {
     "EXPORT_WORKOUTS": ["WEEK_PLAN"],
 }
 
-READINESS_DEPENDENCIES = {
+READINESS_DEPENDENCIES: dict[str, list[str]] = {
     "season_scenarios": ["inputs"],
     "scenario_selection": ["season_scenarios"],
     "season_plan": ["scenario_selection"],
@@ -199,7 +238,7 @@ READINESS_DEPENDENCIES = {
     "intervals_workouts": ["week_plan"],
 }
 
-SCOPE_STEPS = {
+SCOPE_STEPS: dict[str, list[str]] = {
     "Season Scenarios": ["SEASON_SCENARIOS"],
     "Selected Scenario": ["SCENARIO_SELECTION"],
     "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
@@ -827,13 +866,15 @@ def _build_execution_steps(
     readiness: list[ReadinessStep],
     mode: str,
     scope: str | None,
-) -> list[dict[str, Any]]:
+) -> list[ExecutionStep]:
     """Build execution steps from readiness + scope mapping."""
     readiness_map = {step.key: step for step in readiness}
-    selected_steps = [step["step_id"] for step in STEP_DEFINITIONS if step["step_id"] != "INPUTS_CHECK"]
+    selected_steps: list[str] = [
+        definition["step_id"] for definition in STEP_DEFINITIONS if definition["step_id"] != "INPUTS_CHECK"
+    ]
     force_run_steps: set[str] = set()
     if mode == "Scoped" and scope in SCOPE_STEPS:
-        selected_steps = SCOPE_STEPS[scope]
+        selected_steps = list(SCOPE_STEPS[scope])
         phase_guardrails = readiness_map.get("phase_guardrails")
         phase_structure = readiness_map.get("phase_structure")
         week_plan = readiness_map.get("week_plan")
@@ -854,10 +895,16 @@ def _build_execution_steps(
         if scope == "Build Workouts" and week_plan and week_plan.status in {"missing", "stale"}:
             selected_steps = ["WEEK_PLAN", *selected_steps]
         seen: set[str] = set()
-        selected_steps = [step_id for step_id in selected_steps if not (step_id in seen or seen.add(step_id))]
+        deduped_steps: list[str] = []
+        for step_id in selected_steps:
+            if step_id in seen:
+                continue
+            seen.add(step_id)
+            deduped_steps.append(step_id)
+        selected_steps = deduped_steps
         force_run_steps = set(selected_steps)
 
-    steps: list[dict[str, Any]] = []
+    steps: list[ExecutionStep] = []
     for definition in STEP_DEFINITIONS:
         step_id = definition["step_id"]
         if step_id == "INPUTS_CHECK":
@@ -874,7 +921,11 @@ def _build_execution_steps(
             "WEEK_PLAN": "week_plan",
             "EXPORT_WORKOUTS": "intervals_workouts",
         }.get(step_id)
-        readiness_step = readiness_map.get(readiness_key, ReadinessStep("", "", "missing", "", ""))
+        readiness_step = (
+            readiness_map.get(readiness_key, ReadinessStep("", "", "missing", "", ""))
+            if readiness_key is not None
+            else ReadinessStep("", "", "missing", "", "")
+        )
         readiness_status = readiness_step.status
         readiness_reason = readiness_step.reason or "—"
         if readiness_status == "blocked":
@@ -889,7 +940,7 @@ def _build_execution_steps(
         else:
             status = "SKIPPED"
             details = "Already up-to-date."
-        writes_detail = []
+        writes_detail: list[WriteDetail] = []
         for artifact_type, authority in zip(definition["writes"], definition["authority"]):
             writes_detail.append(
                 {
@@ -968,6 +1019,17 @@ def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_r
             old_run_id,
             {"status": "SUPERSEDED", "superseded_by": new_run_id},
         )
+
+
+def _coerce_execution_steps(raw_steps: Any) -> list[ExecutionStep]:
+    """Return execution steps from stored run data when the shape is list-like."""
+    if not isinstance(raw_steps, list):
+        return []
+    steps: list[ExecutionStep] = []
+    for item in raw_steps:
+        if isinstance(item, dict):
+            steps.append(cast(ExecutionStep, item))
+    return steps
 
 
 def _queue_scoped_run(
@@ -1194,7 +1256,7 @@ with st.container():
 
 active_run_id = st.session_state.get("plan_hub_active_run_id")
 run_records = load_runs(SETTINGS.workspace_root, hub_scope["athlete_id"], limit=5)
-active_run = None
+active_run: dict[str, Any] | None = None
 if active_run_id:
     for record in run_records:
         if record.get("run_id") == active_run_id:
@@ -1215,8 +1277,14 @@ planning_locked = scope_lock or not knowledge_ready
 if run_state:
     st.session_state["plan_hub_autorefresh_ts"] = time.time()
 
-if active_run_id:
-    _ensure_worker(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run_id, allow_delete=bool(active_run.get("delete_removed_intervals")), process_subtype=active_run.get("process_subtype"))
+if active_run_id and active_run is not None:
+    _ensure_worker(
+        SETTINGS.workspace_root,
+        hub_scope["athlete_id"],
+        active_run_id,
+        allow_delete=bool(active_run.get("delete_removed_intervals")),
+        process_subtype=cast(str | None, active_run.get("process_subtype")),
+    )
 
 readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
 readiness_map = {step.key: step for step in readiness}
@@ -1316,9 +1384,9 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                                 hub_scope["iso_year"],
                                 hub_scope["iso_week"],
                             )
-                            steps = _build_execution_steps(readiness_snapshot, "Scoped", "Season Scenarios")
+                            queued_steps = _build_execution_steps(readiness_snapshot, "Scoped", "Season Scenarios")
                             log_ref = ensure_logging(hub_scope["athlete_id"])
-                            for step_row in steps:
+                            for step_row in queued_steps:
                                 step_row["Log"] = log_ref
                             run_id = (
                                 f"ui_season_scenarios_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_"
@@ -1335,7 +1403,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                                 "process_subtype": desired_subtype,
                                 "scope": "Season Scenarios",
                                 "status": "QUEUED",
-                                "steps": steps,
+                                "steps": queued_steps,
                                 "log_ref": log_ref,
                                 "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
                                 "current_step": None,
@@ -1369,9 +1437,9 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                                 hub_scope["iso_year"],
                                 hub_scope["iso_week"],
                             )
-                            steps = _build_execution_steps(readiness_snapshot, "Scoped", "Season Plan")
+                            queued_steps = _build_execution_steps(readiness_snapshot, "Scoped", "Season Plan")
                             log_ref = ensure_logging(hub_scope["athlete_id"])
-                            for step_row in steps:
+                            for step_row in queued_steps:
                                 step_row["Log"] = log_ref
                             run_id = (
                                 f"ui_season_plan_{hub_scope['iso_year']:04d}W{hub_scope['iso_week']:02d}_"
@@ -1388,7 +1456,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                                 "process_subtype": desired_subtype,
                                 "scope": "Season Plan",
                                 "status": "QUEUED",
-                                "steps": steps,
+                                "steps": queued_steps,
                                 "log_ref": log_ref,
                                 "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
                                 "current_step": None,
@@ -1474,14 +1542,18 @@ if not has_blockers:
             )
         )
         phase_label = hub_scope.get("phase_label")
-        phases = []
+        phases: list[dict[str, Any]] = []
         season_plan = None
         try:
             season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
         except FileNotFoundError:
             season_plan = None
         if isinstance(season_plan, dict):
-            phases = season_plan.get("data", {}).get("phases", []) or []
+            season_data = season_plan.get("data", {})
+            if isinstance(season_data, dict):
+                raw_phases = season_data.get("phases", []) or []
+                if isinstance(raw_phases, list):
+                    phases = [phase for phase in raw_phases if isinstance(phase, dict)]
         if phases:
             options, _ = build_phase_options(phases)
             if phase_label not in options:
@@ -1595,10 +1667,10 @@ if not has_blockers:
             st.warning(block_reason)
             st.stop()
         run_id = f"plan_week_{target_week.year:04d}W{target_week.week:02d}"
-        steps = _build_execution_steps(target_readiness, "Scoped", "Week Plan")
+        queued_steps = _build_execution_steps(target_readiness, "Scoped", "Week Plan")
         log_ref = ensure_logging(athlete_id)
-        for step in steps:
-            step["Log"] = log_ref
+        for queued_step in queued_steps:
+            queued_step["Log"] = log_ref
         record = {
             "run_id": run_id,
             "athlete_id": athlete_id,
@@ -1610,7 +1682,7 @@ if not has_blockers:
             "process_subtype": desired_subtype,
             "scope": "Week Plan",
             "status": "QUEUED",
-            "steps": steps,
+            "steps": queued_steps,
             "log_ref": log_ref,
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
@@ -1640,10 +1712,10 @@ if not has_blockers:
         if block_reason:
             st.warning(block_reason)
             st.stop()
-        steps = _build_execution_steps(run_readiness, "Orchestrated", None)
+        queued_steps = _build_execution_steps(run_readiness, "Orchestrated", None)
         log_ref = ensure_logging(hub_scope["athlete_id"])
-        for step in steps:
-            step["Log"] = log_ref
+        for queued_step in queued_steps:
+            queued_step["Log"] = log_ref
         record = {
             "run_id": run_id,
             "athlete_id": hub_scope["athlete_id"],
@@ -1655,7 +1727,7 @@ if not has_blockers:
             "process_subtype": "orchestrated",
             "scope": None,
             "status": "QUEUED",
-            "steps": steps,
+            "steps": queued_steps,
             "log_ref": log_ref,
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
@@ -1677,7 +1749,7 @@ if not has_blockers:
         if not knowledge_ready:
             st.warning("Knowledge store is not ready. Rebuild it before planning.")
             st.stop()
-        desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
+        desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope or "", "scoped")
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
             hub_scope["athlete_id"],
@@ -1689,10 +1761,10 @@ if not has_blockers:
         if override_required and not (override_text or "").strip():
             st.warning("Override required when modifying existing artifacts.")
             st.stop()
-        steps = _build_execution_steps(run_readiness, "Scoped", scope)
+        queued_steps = _build_execution_steps(run_readiness, "Scoped", scope)
         log_ref = ensure_logging(hub_scope["athlete_id"])
-        for step in steps:
-            step["Log"] = log_ref
+        for queued_step in queued_steps:
+            queued_step["Log"] = log_ref
         record = {
             "run_id": run_id,
             "athlete_id": hub_scope["athlete_id"],
@@ -1704,7 +1776,7 @@ if not has_blockers:
             "process_subtype": desired_subtype,
             "scope": scope,
             "status": "QUEUED",
-            "steps": steps,
+            "steps": queued_steps,
             "log_ref": log_ref,
             "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
             "current_step": None,
@@ -1721,24 +1793,24 @@ if summary_text:
 
 st.subheader("Run Execution")
 if active_run:
-    steps = active_run.get("steps") or []
-    for step in steps:
-        if step.get("Duration") or not step.get("Started") or not step.get("Ended"):
+    active_steps = _coerce_execution_steps(active_run.get("steps"))
+    for active_step in active_steps:
+        if active_step.get("Duration") or not active_step.get("Started") or not active_step.get("Ended"):
             continue
         try:
-            start_dt = datetime.fromisoformat(str(step["Started"]).replace("Z", "+00:00"))
-            end_dt = datetime.fromisoformat(str(step["Ended"]).replace("Z", "+00:00"))
+            start_dt = datetime.fromisoformat(str(active_step["Started"]).replace("Z", "+00:00"))
+            end_dt = datetime.fromisoformat(str(active_step["Ended"]).replace("Z", "+00:00"))
         except ValueError:
             continue
         seconds = int((end_dt - start_dt).total_seconds())
-        step["Duration"] = f"{max(seconds, 0)}s"
-    for step in steps:
-        outputs = step.get("Outputs") or []
-        step["Outputs Written"] = len(outputs)
+        active_step["Duration"] = f"{max(seconds, 0)}s"
+    for active_step in active_steps:
+        outputs = active_step.get("Outputs") or []
+        active_step["Outputs Written"] = len(outputs)
     if active_run.get("log_ref"):
         st.caption(f"Log file: {active_run.get('log_ref')}")
     if active_run.get("status") == "FAILED":
-        if any(step.get("Details") == "Athlete lock busy." for step in steps):
+        if any(active_step.get("Details") == "Athlete lock busy." for active_step in active_steps):
             st.info("Another run is active for this athlete. Try again after it finishes.")
     can_restart = False
     if active_run.get("status") == "FAILED":
@@ -1755,7 +1827,10 @@ if active_run:
     if active_run.get("current_step"):
         st.caption(f"Current step: {active_run.get('current_step')}")
     manual_missing = False
-    if any(step.get("step_id") == "SCENARIO_SELECTION" and step.get("Status") == "FAILED" for step in steps):
+    if any(
+        active_step.get("step_id") == "SCENARIO_SELECTION" and active_step.get("Status") == "FAILED"
+        for active_step in active_steps
+    ):
         store = LocalArtifactStore(root=SETTINGS.workspace_root)
         manual_missing = not store.latest_exists(hub_scope["athlete_id"], ArtifactType.SEASON_SCENARIO_SELECTION)
     if manual_missing:
@@ -1766,8 +1841,8 @@ if active_run:
         readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
         new_steps = _build_execution_steps(readiness, "Orchestrated", None)
         log_ref = ensure_logging(hub_scope["athlete_id"])
-        for step in new_steps:
-            step["Log"] = log_ref
+        for new_step in new_steps:
+            new_step["Log"] = log_ref
         record = {
             "run_id": new_run_id,
             "athlete_id": hub_scope["athlete_id"],
@@ -1787,7 +1862,7 @@ if active_run:
         _mark_runs_superseded(
             SETTINGS.workspace_root,
             hub_scope["athlete_id"],
-            [active_run.get("run_id")] if active_run.get("run_id") else [],
+            [str(active_run.get("run_id"))] if active_run.get("run_id") else [],
             new_run_id,
         )
         st.session_state["plan_hub_running"] = True
@@ -1797,14 +1872,24 @@ if active_run:
             hub_scope["athlete_id"],
             new_run_id,
             allow_delete=False,
-            process_subtype=active_run.get("process_subtype"),
+            process_subtype=cast(str | None, active_run.get("process_subtype")),
         )
         st.rerun()
-    st.dataframe(steps, width="stretch")
-    events = load_events(SETTINGS.workspace_root, hub_scope["athlete_id"], active_run.get("run_id") or "", limit=200)
+    st.dataframe(active_steps, width="stretch")
+    events = load_events(
+        SETTINGS.workspace_root,
+        hub_scope["athlete_id"],
+        str(active_run.get("run_id") or ""),
+        limit=200,
+    )
     if events:
         with st.expander("Run events", expanded=False):
-            event_types = sorted({event.get("type") for event in events if event.get("type")})
+            event_types = sorted(
+                str(event_type)
+                for event in events
+                for event_type in [event.get("type")]
+                if event_type
+            )
             filter_options = ["All", "STEP_*", "RUN_*"] + event_types
             default_index = 1 if active_run and active_run.get("status") in {"QUEUED", "RUNNING"} else 0
             selected_filter = st.selectbox("Filter", options=filter_options, index=default_index)

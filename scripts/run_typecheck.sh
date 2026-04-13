@@ -22,6 +22,7 @@ TYPECHECK_TARGETS=(
   "src/rps/ui/pages/athlete_profile/availability.py"
   "src/rps/ui/pages/athlete_profile/events.py"
   "src/rps/ui/pages/athlete_profile/logistics.py"
+  "src/rps/ui/pages/plan/hub.py"
   "src/rps/ui/pages/plan/season.py"
 )
 
