@@ -279,10 +279,10 @@ def run_agent_session(
             payload["reasoning"] = reasoning
         if force_search_flag:
             payload["tool_choice"] = {"type": "function", "name": "knowledge_search"}
-    if temperature is not None and supports_temperature(model):
-        payload["temperature"] = temperature
-    if runtime.max_completion_tokens is not None:
-        payload["max_completion_tokens"] = runtime.max_completion_tokens
+        if temperature is not None and supports_temperature(model):
+            payload["temperature"] = temperature
+        if runtime.max_completion_tokens is not None:
+            payload["max_completion_tokens"] = runtime.max_completion_tokens
         if debug_knowledge_search:
             logger.info(
                 "responses.create: tool_choice=%s tools=%d",

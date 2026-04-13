@@ -60,6 +60,8 @@ if not events_path.exists():
     st.info("No planning events found yet. Add A/B/C events below.")
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
+if not isinstance(data, dict):
+    data = {}
 events = data.get("events") or []
 
 event_type_options = list(DEFAULT_EVENT_TYPES)
@@ -111,9 +113,17 @@ def _normalize_event(entry: dict[str, object]) -> dict[str, object]:
 
 
 def _to_storage_event(entry: dict[str, object]) -> dict[str, object]:
+    def _coerce_rank(value: object) -> int:
+        try:
+            return int(str(value)) if value is not None else 1
+        except (TypeError, ValueError):
+            return 1
+
+    rank_value = entry.get("rank")
+    rank = _coerce_rank(rank_value)
     return {
         "type": str(entry.get("priority") or "A").upper(),
-        "priority_rank": int(entry.get("rank") or 1),
+        "priority_rank": rank,
         "event_name": str(entry.get("event_name") or "").strip(),
         "date": str(entry.get("date") or "").strip(),
         "event_type": str(entry.get("event_type") or "").strip(),
@@ -163,7 +173,7 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
             missing_errors.append(f"Row {idx}: priority must be A, B, or C.")
         rank_val = row.get("rank")
         try:
-            rank = int(rank_val)
+            rank = int(str(rank_val))
         except (TypeError, ValueError):
             missing_errors.append(f"Row {idx}: rank must be an integer 1-3.")
             continue

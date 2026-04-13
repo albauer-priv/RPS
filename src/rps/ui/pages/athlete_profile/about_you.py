@@ -43,9 +43,17 @@ st.info(
 )
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
+if not isinstance(data, dict):
+    data = {}
 profile = data.get("profile") or {}
 objectives = data.get("objectives") or {}
 constraints = data.get("constraints") or {}
+if not isinstance(profile, dict):
+    profile = {}
+if not isinstance(objectives, dict):
+    objectives = {}
+if not isinstance(constraints, dict):
+    constraints = {}
 
 st.subheader("Athlete Profile")
 col_left, col_right = st.columns(2)

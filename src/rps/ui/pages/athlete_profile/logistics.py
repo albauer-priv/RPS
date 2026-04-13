@@ -125,6 +125,8 @@ if not logistics_path.exists():
     st.info("No logistics input found yet. Add context events below.")
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
+if not isinstance(data, dict):
+    data = {}
 events = data.get("events") or []
 
 EVENT_TYPE_OPTIONS = [

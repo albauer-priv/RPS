@@ -1801,10 +1801,8 @@ def render_json_sidecar(
     if artifact_type not in RENDERERS:
         return None
 
-    resolved_schema_dir = Path(
-        schema_dir
-        or os.getenv("SCHEMA_DIR", str(REPO_ROOT / "specs/schemas"))
-    ).resolve()
+    schema_dir_value = schema_dir or os.getenv("SCHEMA_DIR") or str(REPO_ROOT / "specs/schemas")
+    resolved_schema_dir = Path(schema_dir_value).resolve()
     if validate:
         validate_document(doc, artifact_type, resolved_schema_dir)
 

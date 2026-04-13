@@ -151,15 +151,15 @@ def _join_list(values: Any) -> str | None:
 
 def _format_dependency(item: Any) -> str | None:
     if not isinstance(item, dict):
-        value = str(item).strip()
-        return value or None
+        text_value = str(item).strip()
+        return text_value or None
     for key in ("Specification-ID", "Interface-ID", "ID"):
-        value = item.get(key)
-        if value:
+        raw_value = item.get(key)
+        if raw_value:
             version = item.get("Version")
             if version:
-                return f"{value}@{version}"
-            return str(value)
+                return f"{raw_value}@{version}"
+            return str(raw_value)
     return None
 
 
@@ -216,6 +216,18 @@ def _flatten_header_attributes(header: dict[str, Any]) -> dict[str, str]:
                 attrs["implements"] = value
 
     return attrs
+
+
+def _resolve_qdrant_vector_size(collection_info: Any) -> int | None:
+    """Return the configured vector size from a Qdrant collection info object."""
+    try:
+        vectors = collection_info.config.params.vectors
+    except AttributeError:
+        return None
+    if isinstance(vectors, dict):
+        first = next(iter(vectors.values()), None)
+        return getattr(first, "size", None)
+    return getattr(vectors, "size", None)
 
 
 def _trim_attributes(attrs: dict[str, Any]) -> dict[str, Any]:
@@ -340,7 +352,7 @@ def _build_local_index(
         except Exception:
             existing = None
         if existing:
-            current_size = existing.config.params.vectors.size
+            current_size = _resolve_qdrant_vector_size(existing)
             if current_size != vector_size:
                 client.recreate_collection(
                     collection_name=collection,

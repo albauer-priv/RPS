@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import time
 from typing import Iterable
+import datetime as dt
 
 
 _LEVELS = {
@@ -28,7 +29,6 @@ def _normalize_level(level: str | int | None) -> int:
 
 
 import os
-from datetime import datetime, timedelta, timezone
 
 
 def _is_disabled(value: str | int | None) -> bool:
@@ -39,16 +39,16 @@ def _is_disabled(value: str | int | None) -> bool:
     return value.strip().lower() in {"0", "false", "no", "off", "none"}
 
 
-def _utc_today() -> datetime.date:
-    return datetime.now(timezone.utc).date()
+def _utc_today() -> dt.date:
+    return dt.datetime.now(dt.timezone.utc).date()
 
 
-def _file_date(path: Path) -> datetime.date | None:
+def _file_date(path: Path) -> dt.date | None:
     try:
         mtime = path.stat().st_mtime
     except OSError:
         return None
-    return datetime.fromtimestamp(mtime, tz=timezone.utc).date()
+    return dt.datetime.fromtimestamp(mtime, tz=dt.timezone.utc).date()
 
 
 def _parse_rotate_mb(value: str | None, default_mb: int = 50) -> int:
@@ -211,7 +211,7 @@ def prune_old_logs(log_dir: Path, retention_days: int) -> int:
     """Delete log files older than retention_days; returns count removed."""
     if retention_days <= 0:
         return 0
-    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=retention_days)
     removed = 0
     if not log_dir.exists():
         return removed
@@ -219,7 +219,7 @@ def prune_old_logs(log_dir: Path, retention_days: int) -> int:
         if path.name == "rps.log":
             continue
         try:
-            mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+            mtime = dt.datetime.fromtimestamp(path.stat().st_mtime, tz=dt.timezone.utc)
         except OSError:
             continue
         if mtime < cutoff:

@@ -141,9 +141,9 @@ def ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, 
             return True, job.get("message", "Intervals data refreshed.")
         if job.get("status") == "failed":
             job = _schedule_intervals_refresh(athlete_id, logger, job_key)
-            return False, job.get("message")
+            return False, str(job.get("message") or "Intervals pipeline is running...")
     job = _schedule_intervals_refresh(athlete_id, logger, job_key)
-    return False, job.get("message")
+    return False, str(job.get("message") or "Intervals pipeline is running...")
 
 
 def request_intervals_refresh(athlete_id: str) -> tuple[str, str | None, str | None]:

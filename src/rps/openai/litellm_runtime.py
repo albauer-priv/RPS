@@ -222,14 +222,14 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
                     args_preview,
                     _coerce_content(item.get("output"))[:200],
                 )
-            message: dict[str, Any] = {
+            tool_message: dict[str, Any] = {
                 "role": "tool",
                 "tool_call_id": call_id,
                 "content": _coerce_content(item.get("output")),
             }
             if name:
-                message["name"] = name
-            messages.append(message)
+                tool_message["name"] = name
+            messages.append(tool_message)
             idx += 1
             continue
         idx += 1
@@ -274,15 +274,15 @@ def _tools_from_payload(tools: list[dict[str, Any]] | None) -> list[dict[str, An
         if tool.get("type") != "function":
             continue
         name = tool.get("name")
+        raw_function = tool.get("function")
+        function: dict[str, Any] = raw_function if isinstance(raw_function, dict) else {}
         if not name:
-            function = tool.get("function") if isinstance(tool.get("function"), dict) else {}
             name = function.get("name")
         if not name:
             LOGGER.warning("LiteLLM tool skipped: missing name in tool definition")
             continue
         description = tool.get("description", "")
         parameters = tool.get("parameters", {})
-        function = tool.get("function") if isinstance(tool.get("function"), dict) else {}
         if not description:
             description = function.get("description", "")
         if not parameters:

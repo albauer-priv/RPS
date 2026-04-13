@@ -458,9 +458,10 @@ if has_plan:
     _render_phase_panels(plan_payload)
     st.stop()
 
-if output := state.get("season_scenarios_output"):
+season_scenarios_output = state.get("season_scenarios_output")
+if isinstance(season_scenarios_output, str) and season_scenarios_output:
     with st.expander("Create Scenarios Output", expanded=False):
-        st.code(output)
+        st.code(season_scenarios_output)
 
 if not scenarios_payload:
     st.info("No SEASON_SCENARIOS found yet.")
@@ -485,9 +486,10 @@ if not scenario_options:
     st.info("No scenario IDs available to select.")
     st.stop()
 
-if output := state.get("season_selection_output"):
+season_selection_output = state.get("season_selection_output")
+if isinstance(season_selection_output, str) and season_selection_output:
     with st.expander("Scenario Selection Output", expanded=False):
-        st.code(output)
+        st.code(season_selection_output)
 
 if selection_payload:
     st.subheader("Create Season Plan")
@@ -495,9 +497,10 @@ if selection_payload:
         st.success("Scenario selection saved.")
     st.page_link("pages/plan/hub.py", label="Back to Plan Hub")
 
-if output := state.get("season_plan_output"):
+season_plan_output = state.get("season_plan_output")
+if isinstance(season_plan_output, str) and season_plan_output:
     with st.expander("Create Season Plan Output", expanded=False):
-        st.code(output)
+        st.code(season_plan_output)
 
 if output := state.pop("season_selection_error_output", None):
     st.error("Scenario selection did not write. Check the output below.")

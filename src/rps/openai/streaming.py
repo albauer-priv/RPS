@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from datetime import datetime, timezone
+import datetime as dt
 from pathlib import Path
 import os
 import re
@@ -54,16 +54,16 @@ def reasoning_log_path() -> str | None:
     return path or None
 
 
-def _utc_today() -> datetime.date:
-    return datetime.now(timezone.utc).date()
+def _utc_today() -> dt.date:
+    return dt.datetime.now(dt.timezone.utc).date()
 
 
-def _file_date(path: Path) -> datetime.date | None:
+def _file_date(path: Path) -> dt.date | None:
     try:
         mtime = path.stat().st_mtime
     except OSError:
         return None
-    return datetime.fromtimestamp(mtime, tz=timezone.utc).date()
+    return dt.datetime.fromtimestamp(mtime, tz=dt.timezone.utc).date()
 
 
 def _parse_rotate_mb(value: str | None, default_mb: int = 50) -> int:

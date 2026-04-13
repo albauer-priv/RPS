@@ -174,7 +174,7 @@ def run_agent(
         payload["temperature"] = temperature
     if max_completion_tokens is not None:
         payload["max_completion_tokens"] = max_completion_tokens
-    reasoning = build_reasoning_payload(model, reasoning_effort, reasoning_summary)
+    reasoning = build_reasoning_payload(str(model), reasoning_effort, reasoning_summary)
     if reasoning:
         payload["reasoning"] = reasoning
     return create_response(client, payload, logger)

@@ -57,10 +57,16 @@ def _normalize_travel_risk(value: object) -> str:
 
 def _normalize_entry(row: dict[str, object] | None, weekday: str) -> dict[str, object]:
     row = row or {}
-    hours = row.get("hours", 0.0)
-    hours_min = row.get("hours_min", hours)
-    hours_typical = row.get("hours_typical", hours)
-    hours_max = row.get("hours_max", hours)
+    def _coerce_hours(value: object, default: float) -> float:
+        try:
+            return float(str(value))
+        except (TypeError, ValueError):
+            return default
+
+    hours = _coerce_hours(row.get("hours", 0.0), 0.0)
+    hours_min = _coerce_hours(row.get("hours_min", hours), hours)
+    hours_typical = _coerce_hours(row.get("hours_typical", hours), hours)
+    hours_max = _coerce_hours(row.get("hours_max", hours), hours)
     return {
         "weekday": weekday,
         "hours_min": _snap_half(hours_min),
@@ -92,10 +98,14 @@ if not availability_path.exists():
     st.info("No availability input found yet. Add your weekly availability below.")
 
 data = payload.get("data", {}) if isinstance(payload, dict) else {}
+if not isinstance(data, dict):
+    data = {}
 availability_table = data.get("availability_table") or []
 weekly_hours = data.get("weekly_hours") or {"min": 0.0, "typical": 0.0, "max": 0.0}
 fixed_rest_days = data.get("fixed_rest_days") or []
 notes = data.get("notes") or ""
+if not isinstance(weekly_hours, dict):
+    weekly_hours = {"min": 0.0, "typical": 0.0, "max": 0.0}
 
 st.subheader("Weekly Hours")
 col_min, col_typ, col_max = st.columns(3)
