@@ -208,6 +208,134 @@ def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
     assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
 
 
+def test_plan_hub_build_workouts_adds_missing_week_dependencies():
+    from rps.ui.pages.plan import hub as plan_hub
+
+    readiness = [
+        plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("week_plan", "Week Plan", "missing", "", ""),
+        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "missing", "", "", optional=True),
+    ]
+
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Build Workouts")
+    status_by_id = {step["step_id"]: step["Status"] for step in steps}
+
+    assert status_by_id["WEEK_PLAN"] == "QUEUED"
+    assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+
+
+def test_plan_hub_phase_action_targets_follow_current_and_next_week(tmp_path):
+    from rps.ui.pages.plan import hub as plan_hub
+
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+    current_week = plan_hub._current_iso_week()
+    next_week = plan_hub.next_iso_week(current_week)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "phases": [
+                        {
+                            "phase_id": "P01",
+                            "name": "Base 1",
+                            "iso_week_range": (
+                                f"{current_week.year:04d}-{current_week.week:02d}"
+                                f"--{current_week.year:04d}-{current_week.week:02d}"
+                            ),
+                        },
+                        {
+                            "phase_id": "P02",
+                            "name": "Build 1",
+                            "iso_week_range": (
+                                f"{next_week.year:04d}-{next_week.week:02d}"
+                                f"--{next_week.year:04d}-{next_week.week:02d}"
+                            ),
+                        },
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    original_root = plan_hub.SETTINGS.workspace_root
+    object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
+    try:
+        targets = plan_hub._action_phase_targets(athlete_id, current_week)
+    finally:
+        object.__setattr__(plan_hub.SETTINGS, "workspace_root", original_root)
+
+    assert len(targets) == 2
+    assert targets[0][0] == "current"
+    assert targets[0][1] == current_week
+    assert targets[0][2].startswith("P01")
+    assert targets[1][0] == "next"
+    assert targets[1][1] == next_week
+    assert targets[1][2].startswith("P02")
+
+
+def test_plan_hub_direct_action_buttons_render(tmp_path):
+    from rps.ui.pages.plan import hub as plan_hub
+
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+    current_week = plan_hub._current_iso_week()
+    next_week = plan_hub.next_iso_week(current_week)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "phases": [
+                        {
+                            "phase_id": "P01",
+                            "name": "Base 1",
+                            "iso_week_range": (
+                                f"{current_week.year:04d}-{current_week.week:02d}"
+                                f"--{current_week.year:04d}-{current_week.week:02d}"
+                            ),
+                        },
+                        {
+                            "phase_id": "P02",
+                            "name": "Build 1",
+                            "iso_week_range": (
+                                f"{next_week.year:04d}-{next_week.week:02d}"
+                                f"--{next_week.year:04d}-{next_week.week:02d}"
+                            ),
+                        },
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    original_root = plan_hub.SETTINGS.workspace_root
+    object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
+    try:
+        at = AppTest.from_file("src/rps/ui/pages/plan/hub.py")
+        at.session_state["hub_scope"] = {
+            "athlete_id": athlete_id,
+            "iso_year": current_week.year,
+            "iso_week": current_week.week,
+            "phase_label": None,
+        }
+        at.run(timeout=10)
+    finally:
+        object.__setattr__(plan_hub.SETTINGS, "workspace_root", original_root)
+
+    assert len(at.error) == 0
+    labels = [button.label for button in at.button]
+    assert labels.count("Run Current Phase") >= 1
+    assert labels.count("Run Next Phase") >= 1
+    assert labels.count("Run Current Week") >= 1
+    assert labels.count("Run Next Week") >= 1
+
+
 def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):
     class _Runtime:
         def __init__(self, workspace_root):

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Plan Hub readiness cards for `Phase Guardrails`, `Phase Structure`, `Phase Preview`, `Week Plan`, and `Build Workouts` now expose direct current/next phase or week actions that queue regular scoped planning runs through the worker.
+- Phase-Guardrails recovery protection propagation now has a canonical array-to-string mapping, so season recovery notes no longer deadlock Phase Guardrails creation when the season plan provides multiple notes.
 - LiteLLM Responses handling now replays prior response output items when `previous_response_id` is used, so Coach follow-up tool outputs can be matched back to their original tool calls.
 - Athlete Profile -> KPI Profile now initializes the dropdown from the saved latest KPI profile and shows the active profile explicitly on page load.
 - Plan Hub scoped reruns now force `plan_week` and workout export regeneration for explicitly selected `Week Plan` and `Build Workouts` steps, so existing weeks can be re-planned with an override instead of short-circuiting on existing artifacts.

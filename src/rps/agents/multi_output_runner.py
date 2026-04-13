@@ -121,6 +121,65 @@ def _item_field(item: Any, name: str) -> Any:
     return getattr(item, name, None)
 
 
+def normalize_phase_guardrails_document(document: dict[str, Any]) -> dict[str, Any]:
+    """Normalize PHASE_GUARDRAILS shape quirks before guarded store validation."""
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta") or {}
+    if str(meta.get("artifact_type", "")).upper() != "PHASE_GUARDRAILS":
+        return document
+    data = document.get("data")
+    if not isinstance(data, dict):
+        return document
+    execution_non_negotiables = data.get("execution_non_negotiables")
+    if isinstance(execution_non_negotiables, dict):
+        recovery_rules = execution_non_negotiables.get("recovery_protection_rules")
+        if isinstance(recovery_rules, list):
+            normalized_rules = [str(item).strip() for item in recovery_rules if str(item).strip()]
+            execution_non_negotiables["recovery_protection_rules"] = " | ".join(normalized_rules)
+        data["execution_non_negotiables"] = execution_non_negotiables
+    load_guardrails = data.get("load_guardrails")
+    if not isinstance(load_guardrails, dict):
+        document["data"] = data
+        return document
+
+    def _widen_band(entry: dict[str, Any]) -> None:
+        band = entry.get("band")
+        if not isinstance(band, dict):
+            return
+        min_val = band.get("min")
+        max_val = band.get("max")
+        if isinstance(min_val, (int, float)) and isinstance(max_val, (int, float)):
+            if min_val > max_val:
+                min_val, max_val = max_val, min_val
+            if min_val == max_val:
+                base = float(min_val)
+                width = max(1.0, base * 0.05)
+                note = str(band.get("notes", "")).lower()
+                if "deload" in note or "taper" in note:
+                    new_min = max(0.0, base - width)
+                    new_max = base
+                else:
+                    new_min = max(0.0, base - width / 2)
+                    new_max = base + width / 2
+                band["min"] = round(new_min, 2)
+                band["max"] = round(new_max, 2)
+            else:
+                band["min"] = float(min_val)
+                band["max"] = float(max_val)
+
+    for key in ("weekly_kj_bands",):
+        rows = load_guardrails.get(key)
+        if not isinstance(rows, list):
+            continue
+        for entry in rows:
+            if isinstance(entry, dict):
+                _widen_band(entry)
+
+    document["data"] = data
+    return document
+
+
 def _log_file_search_results(response: Any) -> None:
     """Log knowledge_search calls for debugging."""
     items = getattr(response, "output", []) or []
@@ -606,53 +665,7 @@ def run_agent_multi_output(
         return document
 
     def _normalize_phase_guardrails(document: dict[str, Any]) -> dict[str, Any]:
-        """Ensure PHASE_GUARDRAILS weekly bands are non-degenerate."""
-        if not isinstance(document, dict):
-            return document
-        meta = document.get("meta") or {}
-        if str(meta.get("artifact_type", "")).upper() != "PHASE_GUARDRAILS":
-            return document
-        data = document.get("data")
-        if not isinstance(data, dict):
-            return document
-        load_guardrails = data.get("load_guardrails")
-        if not isinstance(load_guardrails, dict):
-            return document
-
-        def _widen_band(entry: dict[str, Any]) -> None:
-            band = entry.get("band")
-            if not isinstance(band, dict):
-                return
-            min_val = band.get("min")
-            max_val = band.get("max")
-            if isinstance(min_val, (int, float)) and isinstance(max_val, (int, float)):
-                if min_val > max_val:
-                    min_val, max_val = max_val, min_val
-                if min_val == max_val:
-                    base = float(min_val)
-                    width = max(1.0, base * 0.05)
-                    note = str(band.get("notes", "")).lower()
-                    if "deload" in note or "taper" in note:
-                        new_min = max(0.0, base - width)
-                        new_max = base
-                    else:
-                        new_min = max(0.0, base - width / 2)
-                        new_max = base + width / 2
-                    band["min"] = round(new_min, 2)
-                    band["max"] = round(new_max, 2)
-                else:
-                    band["min"] = float(min_val)
-                    band["max"] = float(max_val)
-
-        for key in ("weekly_kj_bands",):
-            rows = load_guardrails.get(key)
-            if not isinstance(rows, list):
-                continue
-            for entry in rows:
-                if isinstance(entry, dict):
-                    _widen_band(entry)
-
-        return document
+        return normalize_phase_guardrails_document(document)
 
     def _fill_season_plan(document: dict[str, Any]) -> dict[str, Any]:
         """Normalize common SEASON_PLAN placement issues."""

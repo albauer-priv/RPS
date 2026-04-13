@@ -131,6 +131,9 @@ PLANNING_SCOPE_SUBTYPE = {
     "Selected Scenario": "scenario_selection",
     "Season Plan": "season_plan",
     "Phase (Guardrails + Structure)": "phase",
+    "Phase Guardrails": "phase",
+    "Phase Structure": "phase",
+    "Phase Preview": "phase",
     "Week Plan": "week_plan",
     "Build Workouts": "export_workouts",
 }
@@ -200,6 +203,9 @@ SCOPE_STEPS = {
     "Selected Scenario": ["SCENARIO_SELECTION"],
     "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
+    "Phase Guardrails": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
+    "Phase Structure": ["PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
+    "Phase Preview": ["PHASE_PREVIEW"],
     "Week Plan": ["WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Build Workouts": ["EXPORT_WORKOUTS"],
 }
@@ -355,6 +361,53 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
         return False
     # Only require overrides when we're explicitly modifying an existing artifact.
     return step.status == "ready"
+
+
+def _load_season_phase_map(athlete_id: str) -> dict[str, dict]:
+    """Return the latest season-plan phase map keyed by UI phase label."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    if not store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
+        return {}
+    try:
+        season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    except FileNotFoundError:
+        return {}
+    if not isinstance(season_plan, dict):
+        return {}
+    phases = season_plan.get("data", {}).get("phases", []) or []
+    _options, phase_map = build_phase_options(phases)
+    return phase_map
+
+
+def _phase_label_for_week(athlete_id: str, target_week: IsoWeek) -> str | None:
+    """Return the phase label covering the target week, if one exists."""
+    phase_map = _load_season_phase_map(athlete_id)
+    for label, phase in phase_map.items():
+        iso_range = parse_iso_week_range(phase.get("iso_week_range"))
+        if iso_range and range_contains(iso_range, target_week):
+            return label
+    return None
+
+
+def _action_week_targets(base_week: IsoWeek) -> list[tuple[str, IsoWeek]]:
+    """Return current/next week targets that are still in planning scope."""
+    targets: list[tuple[str, IsoWeek]] = []
+    if _is_week_in_scope(base_week):
+        targets.append(("current", base_week))
+    next_week = next_iso_week(base_week)
+    if _is_week_in_scope(next_week):
+        targets.append(("next", next_week))
+    return targets
+
+
+def _action_phase_targets(athlete_id: str, base_week: IsoWeek) -> list[tuple[str, IsoWeek, str]]:
+    """Return current/next phase targets resolved from the season plan."""
+    targets: list[tuple[str, IsoWeek, str]] = []
+    for target_name, target_week in _action_week_targets(base_week):
+        phase_label = _phase_label_for_week(athlete_id, target_week)
+        if phase_label:
+            targets.append((target_name, target_week, phase_label))
+    return targets
 
 
 def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
@@ -729,10 +782,10 @@ def _build_execution_steps(
     force_run_steps: set[str] = set()
     if mode == "Scoped" and scope in SCOPE_STEPS:
         selected_steps = SCOPE_STEPS[scope]
-        if scope == "Week Plan":
-            readiness_map = {step.key: step for step in readiness}
-            phase_guardrails = readiness_map.get("phase_guardrails")
-            phase_structure = readiness_map.get("phase_structure")
+        phase_guardrails = readiness_map.get("phase_guardrails")
+        phase_structure = readiness_map.get("phase_structure")
+        week_plan = readiness_map.get("week_plan")
+        if scope in {"Phase Structure", "Phase Preview", "Week Plan", "Build Workouts"}:
             if phase_guardrails and phase_guardrails.status in {"missing", "stale"}:
                 selected_steps = [
                     "PHASE_GUARDRAILS",
@@ -746,6 +799,8 @@ def _build_execution_steps(
                     "PHASE_PREVIEW",
                     *selected_steps,
                 ]
+        if scope == "Build Workouts" and week_plan and week_plan.status in {"missing", "stale"}:
+            selected_steps = ["WEEK_PLAN", *selected_steps]
         seen: set[str] = set()
         selected_steps = [step_id for step_id in selected_steps if not (step_id in seen or seen.add(step_id))]
         force_run_steps = set(selected_steps)
@@ -861,6 +916,163 @@ def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_r
             old_run_id,
             {"status": "SUPERSEDED", "superseded_by": new_run_id},
         )
+
+
+def _queue_scoped_run(
+    *,
+    athlete_id: str,
+    iso_year: int,
+    iso_week: int,
+    phase_label: str | None,
+    scope: str,
+    run_id_prefix: str,
+    override_text: str | None = None,
+) -> str:
+    """Create and enqueue a scoped planning run via the regular Plan Hub worker path."""
+    desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
+    readiness_snapshot = _compute_readiness(athlete_id, iso_year, iso_week)
+    steps = _build_execution_steps(readiness_snapshot, "Scoped", scope)
+    log_ref = ensure_logging(athlete_id)
+    for step in steps:
+        step["Log"] = log_ref
+    run_id = f"{run_id_prefix}_{iso_year:04d}W{iso_week:02d}_{time.strftime('%Y%m%d_%H%M%S')}"
+    record = {
+        "run_id": run_id,
+        "athlete_id": athlete_id,
+        "iso_year": iso_year,
+        "iso_week": iso_week,
+        "phase_label": phase_label,
+        "mode": "Scoped",
+        "process_type": "planning",
+        "process_subtype": desired_subtype,
+        "scope": scope,
+        "status": "QUEUED",
+        "steps": steps,
+        "log_ref": log_ref,
+        "summary": {"steps_done": 0, "steps_failed": 0, "artefacts_written": 0},
+        "current_step": None,
+        "override_text": (override_text or "").strip() or None,
+    }
+    append_run(SETTINGS.workspace_root, athlete_id, record)
+    st.session_state["plan_hub_running"] = True
+    st.session_state["plan_hub_active_run_id"] = run_id
+    _ensure_worker(
+        SETTINGS.workspace_root,
+        athlete_id,
+        run_id,
+        allow_delete=False,
+        process_subtype=desired_subtype,
+    )
+    logger.info(
+        "Queued scoped plan hub run run_id=%s athlete=%s iso=%04d-W%02d scope=%s phase=%s",
+        run_id,
+        athlete_id,
+        iso_year,
+        iso_week,
+        scope,
+        phase_label or "—",
+    )
+    return run_id
+
+
+def _render_direct_step_actions(
+    step: ReadinessStep,
+    *,
+    athlete_id: str,
+    base_week: IsoWeek,
+    scope_lock: bool,
+) -> bool:
+    """Render direct current/next action buttons for readiness cards."""
+    if step.key not in {
+        "phase_guardrails",
+        "phase_structure",
+        "phase_preview",
+        "week_plan",
+        "intervals_workouts",
+    }:
+        return False
+
+    phase_scope_map = {
+        "phase_guardrails": "Phase Guardrails",
+        "phase_structure": "Phase Structure",
+        "phase_preview": "Phase Preview",
+    }
+    week_scope_map = {
+        "week_plan": "Week Plan",
+        "intervals_workouts": "Build Workouts",
+    }
+
+    if step.key in phase_scope_map:
+        targets = _action_phase_targets(athlete_id, base_week)
+        if not targets:
+            return False
+        st.caption("Direct actions")
+        cols = st.columns(len(targets))
+        for col, (target_name, target_week, phase_label) in zip(cols, targets):
+            button_label = "Run Current Phase" if target_name == "current" else "Run Next Phase"
+            clicked = col.button(
+                button_label,
+                key=f"direct_{step.key}_{target_name}_{target_week.year}_{target_week.week}",
+                disabled=scope_lock,
+                help=f"{phase_label} · {target_week.year:04d}-W{target_week.week:02d}",
+            )
+            if not clicked:
+                continue
+            block_reason = _planning_block_reason(
+                SETTINGS.workspace_root,
+                athlete_id,
+                PLANNING_SCOPE_SUBTYPE[phase_scope_map[step.key]],
+            )
+            if block_reason:
+                st.warning(block_reason)
+                st.stop()
+            _queue_scoped_run(
+                athlete_id=athlete_id,
+                iso_year=target_week.year,
+                iso_week=target_week.week,
+                phase_label=phase_label,
+                scope=phase_scope_map[step.key],
+                run_id_prefix=f"plan_hub_{step.key}",
+            )
+            st.info("Run requested.")
+            st.rerun()
+        return True
+
+    targets = _action_week_targets(base_week)
+    if not targets:
+        return False
+    st.caption("Direct actions")
+    cols = st.columns(len(targets))
+    for col, (target_name, target_week) in zip(cols, targets):
+        button_label = "Run Current Week" if target_name == "current" else "Run Next Week"
+        clicked = col.button(
+            button_label,
+            key=f"direct_{step.key}_{target_name}_{target_week.year}_{target_week.week}",
+            disabled=scope_lock,
+            help=f"{target_week.year:04d}-W{target_week.week:02d}",
+        )
+        if not clicked:
+            continue
+        block_reason = _planning_block_reason(
+            SETTINGS.workspace_root,
+            athlete_id,
+            PLANNING_SCOPE_SUBTYPE[week_scope_map[step.key]],
+        )
+        if block_reason:
+            st.warning(block_reason)
+            st.stop()
+        phase_label = _phase_label_for_week(athlete_id, target_week)
+        _queue_scoped_run(
+            athlete_id=athlete_id,
+            iso_year=target_week.year,
+            iso_week=target_week.week,
+            phase_label=phase_label,
+            scope=week_scope_map[step.key],
+            run_id_prefix=f"plan_hub_{step.key}",
+        )
+        st.info("Run requested.")
+        st.rerun()
+    return True
 
 
 state = init_ui_state()
@@ -1091,6 +1303,12 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                     elif step.key == "scenario_selection":
                         if st.button(step.fix_label, key=f"fix_{step.key}"):
                             st.switch_page("pages/plan/season.py")
+                _render_direct_step_actions(
+                    step,
+                    athlete_id=hub_scope["athlete_id"],
+                    base_week=IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"]),
+                    scope_lock=scope_lock,
+                )
 
 with st.expander("Season Plan: Delete or Reset", expanded=False):
     store = LocalArtifactStore(root=SETTINGS.workspace_root)

@@ -94,7 +94,9 @@ Mapping (must include, do not omit):
   Do NOT source A/B/C event types from logistics (logistics is context-only). Use planning_events.
   Also add a single summary line to `phase_summary.non_negotiables`:
   `"Planned A/B/C windows included in events_constraints (from season_plan)."`
-- Recovery protection notes → `execution_non_negotiables.recovery_protection_rules` (verbatim).
+- Recovery protection notes → `execution_non_negotiables.recovery_protection_rules`.
+  Since the season-plan source is an array and the phase-guardrails target field is a single string,
+  preserve every entry verbatim and join them into one string using ` | ` as the delimiter.
 
 #### 6) `data.allowed_forbidden_semantics`
 Required:
@@ -167,8 +169,8 @@ Additional hard stops (binding):
 - STOP if any date in `season_plan.data.global_constraints.planned_event_windows`
   is not represented in `events_constraints.events[]` with matching date, correct ISO week,
   and A/B/C type from `season_plan.data.phases[].events_constraints`.
-- STOP if `season_plan.data.global_constraints.recovery_protection.notes` is not
-  present verbatim in `execution_non_negotiables.recovery_protection_rules`.
+- STOP if any entry from `season_plan.data.global_constraints.recovery_protection.notes`
+  is not present verbatim inside `execution_non_negotiables.recovery_protection_rules`.
 - STOP only after applying the full **LoadEstimationSpec S5** ladder:
   - If any **S5.5** hard stop is triggered (e.g., `feasible_band` empty, `override_band` empty), STOP.
   - Otherwise accept the S5 output band (including degenerate/override outputs) even if it
