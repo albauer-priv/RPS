@@ -8,7 +8,8 @@ from typing import Callable
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
-from rps.orchestrator.plan_week import _build_injection_block, _mode_for_task
+from rps.agents.knowledge_injection import build_injection_block
+from rps.orchestrator.plan_week import _mode_for_task
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ def revise_week_plan(
         Writes a revised WEEK_PLAN artifact to the workspace.
     """
     spec = AGENTS["week_planner"]
-    injected_block = _build_injection_block("week_planner", mode=_mode_for_task(AgentTask.CREATE_WEEK_PLAN))
+    injected_block = build_injection_block("week_planner", mode=_mode_for_task(AgentTask.CREATE_WEEK_PLAN))
     user_input = (
         f"Target ISO week: year={year}, week={week} (ISO {year:04d}-{week:02d}). "
         "Revise the week plan based on the following coach message. "

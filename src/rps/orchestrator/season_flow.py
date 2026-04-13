@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 from typing import Callable
 
+from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-from rps.orchestrator.plan_week import _build_injection_block
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ def create_season_scenarios(
 ) -> dict:
     """Create season scenarios for the target ISO week."""
     spec = AGENTS["season_scenario"]
-    injected_block = _build_injection_block("season_scenario", mode="scenario")
+    injected_block = build_injection_block("season_scenario", mode="scenario")
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
@@ -102,7 +102,7 @@ def select_season_scenario(
 ) -> dict:
     """Select a season scenario for the target ISO week."""
     spec = AGENTS["season_scenario"]
-    injected_block = _build_injection_block("season_scenario", mode="scenario")
+    injected_block = build_injection_block("season_scenario", mode="scenario")
     rationale_line = f"Rationale: {rationale.strip()}. " if rationale else ""
     kpi_line = ""
     if isinstance(kpi_selection, dict):
@@ -163,7 +163,7 @@ def create_season_plan(
 ) -> dict:
     """Create the season plan for the selected scenario."""
     spec = AGENTS["season_planner"]
-    injected_block = _build_injection_block("season_planner", mode="season_plan")
+    injected_block = build_injection_block("season_planner", mode="season_plan")
     scenario_line = f"Scenario {selected.upper()}. " if selected else ""
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
     user_data_block = ""

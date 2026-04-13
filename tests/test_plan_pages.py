@@ -404,7 +404,7 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.season_flow._build_injection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
@@ -483,7 +483,7 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week._build_injection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_agent_multi_output",
         lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import Callable, Iterable
 
+from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
@@ -28,8 +27,6 @@ from rps.core.logging import log_and_print
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
-ROOT = Path(__file__).resolve().parents[3]
-INJECTION_CONFIG = ROOT / "config" / "agent_knowledge_injection.yaml"
 
 
 def _format_screen_text(text: str) -> str:
@@ -107,65 +104,6 @@ def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athle
     except Exception:
         return ""
     return ""
-
-
-def _extract_general_and_phase(spec_text: str) -> str:
-    """Return General + Phase sections, skipping Season section when present."""
-    lines = spec_text.splitlines()
-    season_idx = None
-    phase_idx = None
-    for idx, line in enumerate(lines):
-        if line.startswith("## "):
-            if season_idx is None and line.startswith("## Season"):
-                season_idx = idx
-            if phase_idx is None and line.startswith("## Phase"):
-                phase_idx = idx
-        if season_idx is not None and phase_idx is not None:
-            break
-
-    if phase_idx is None:
-        return spec_text
-    if season_idx is None or phase_idx < season_idx:
-        return spec_text
-    head = "\n".join(lines[:season_idx]).rstrip()
-    tail = "\n".join(lines[phase_idx:]).lstrip()
-    return f"{head}\n\n{tail}".strip()
-
-
-def _load_load_estimation_spec_phase() -> tuple[str, str]:
-    """Load LoadEstimationSpec and keep General + Phase sections only."""
-    path = ROOT / "specs" / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
-    content = path.read_text(encoding="utf-8")
-    return str(path), _extract_general_and_phase(content)
-
-
-def _extract_load_estimation_section(spec_text: str, section: str | None) -> str:
-    if not section:
-        return spec_text
-    section_key = section.strip().lower()
-    if section_key == "general":
-        lines = spec_text.splitlines()
-        season_idx = None
-        for idx, line in enumerate(lines):
-            if line.startswith("## Season"):
-                season_idx = idx
-                break
-        if season_idx is None:
-            return spec_text
-        return "\n".join(lines[:season_idx]).rstrip()
-    if section_key == "general+phase":
-        return _extract_general_and_phase(spec_text)
-    return spec_text
-
-
-def _load_agent_injection_config() -> dict:
-    if not INJECTION_CONFIG.exists():
-        return {}
-    try:
-        import yaml
-    except ImportError:
-        return {}
-    return yaml.safe_load(INJECTION_CONFIG.read_text(encoding="utf-8")) or {}
 
 
 def _mode_for_task(task: AgentTask) -> str | None:
@@ -275,7 +213,7 @@ def create_performance_report(
         message = f"Running Performance-Analyst for ISO week {report_label}."
         _log(message)
         mode = _mode_for_task(AgentTask.CREATE_DES_ANALYSIS_REPORT)
-        injected_block = _build_injection_block("performance_analysis", mode=mode)
+        injected_block = build_injection_block("performance_analysis", mode=mode)
         stream_chunks: list[str] = []
         def _on_reasoning_chunk(delta: str) -> None:
             stream_chunks.append(delta)
@@ -318,74 +256,6 @@ def create_performance_report(
         }
     finally:
         agent_logger.removeHandler(handler)
-
-
-def _build_injection_block(agent_name: str, mode: str | None = None) -> str:
-    config = _load_agent_injection_config()
-    agent_cfg = (config.get("agents") or {}).get(agent_name) or {}
-    base_items = agent_cfg.get("inject") or []
-    items = list(base_items)
-    if mode:
-        modes = agent_cfg.get("modes") or {}
-        mode_cfg = modes.get(mode) or {}
-        bundle_id = mode_cfg.get("bundle_id")
-        bundle_items: list = []
-        if bundle_id:
-            bundles = agent_cfg.get("bundles") or []
-            bundle_cfg = next((b for b in bundles if b.get("id") == bundle_id), {})
-            bundle_items = bundle_cfg.get("inject") or []
-        mode_items = mode_cfg.get("inject") or []
-        combined: list = []
-        combined.extend(base_items)
-        combined.extend(bundle_items)
-        combined.extend(mode_items)
-
-        # Deduplicate while preserving order (dicts keyed by stable JSON).
-        seen: set[str] = set()
-        deduped: list = []
-        for item in combined:
-            if isinstance(item, dict):
-                key = json.dumps(item, sort_keys=True, ensure_ascii=True)
-            else:
-                key = str(item)
-            if key in seen:
-                continue
-            seen.add(key)
-            deduped.append(item)
-        items = deduped
-    if not items:
-        return ""
-    chunks: list[str] = [
-        (
-            "Injected mandatory knowledge "
-            f"(mode={mode}; read in full; do NOT file_search these files):"
-            if mode
-            else "Injected mandatory knowledge (read in full; do NOT file_search these files):"
-        )
-    ]
-    for item in items:
-        path_str = None
-        label = None
-        section = None
-        if isinstance(item, dict):
-            path_str = item.get("path")
-            label = item.get("label")
-            section = item.get("section")
-        elif isinstance(item, str):
-            path_str = item
-        if not path_str:
-            continue
-        path = (ROOT / path_str).resolve()
-        header = label or str(path)
-        try:
-            content = path.read_text(encoding="utf-8")
-            if path.name == "load_estimation_spec.md":
-                content = _extract_load_estimation_section(content, section)
-            chunks.append(f"{header}:\n\"\"\"\n{content}\n\"\"\"\n")
-        except FileNotFoundError:
-            chunks.append(f"{header}: MISSING\n")
-    return "\n".join(chunks)
-
 
 @dataclass
 class PlanWeekResult:
@@ -605,7 +475,7 @@ def plan_week(
         spec = AGENTS["phase_architect"]
         for task in phase_tasks:
             mode = _mode_for_task(task)
-            injected_block = _build_injection_block("phase_architect", mode=mode)
+            injected_block = build_injection_block("phase_architect", mode=mode)
             message = f"Running Phase-Architect task {task.value} for phase range {phase_range_label}."
             _log(message)
             out = run_agent_multi_output(
@@ -692,7 +562,7 @@ def plan_week(
         message = f"Running Week-Planner for ISO week {target_label}."
         _log(message)
         mode = _mode_for_task(AgentTask.CREATE_WEEK_PLAN)
-        injected_block = _build_injection_block("week_planner", mode=mode)
+        injected_block = build_injection_block("week_planner", mode=mode)
         out = run_agent_multi_output(
             runtime_for(spec.name),
             agent_name=spec.name,
@@ -718,7 +588,7 @@ def plan_week(
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
-    injected_block = _build_injection_block(
+    injected_block = build_injection_block(
         "workout_builder",
         mode=_mode_for_task(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT),
     )

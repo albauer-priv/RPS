@@ -12,7 +12,7 @@ except Exception as exc:  # pragma: no cover - UI fallback
     st.stop()
 
 from rps.agents.registry import AGENTS
-from rps.orchestrator.plan_week import _build_injection_block
+from rps.agents.knowledge_injection import build_injection_block
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.ui.rps_chatbot import Chat
@@ -76,7 +76,7 @@ for spec in read_tool_defs():
 prompt_loader = PromptLoader(SETTINGS.prompts_dir)
 base_prompt = prompt_loader.combined_system_prompt("coach")
 base_prompt = base_prompt.replace("SEASON_BRIEF_YEAR", str(year))
-injected = _build_injection_block("coach", mode="coach")
+injected = build_injection_block("coach", mode="coach")
 
 instructions = base_prompt
 if injected:

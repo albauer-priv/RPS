@@ -8,6 +8,7 @@ agents:
     inject:
     - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
       label: LoadEstimationSpec
+      section: season
     - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
     - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
     - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
@@ -43,6 +44,7 @@ agents:
       inject:
       - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
         label: LoadEstimationSpec
+        section: season
       - path: specs/knowledge/_shared/sources/specs/mandatory_output_season_phase_feed_forward.md
       - path: specs/knowledge/_shared/sources/schemas/bundled/season_phase_feed_forward.schema.json
     - id: season_scenario
@@ -97,6 +99,7 @@ agents:
     inject:
     - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
       label: LoadEstimationSpec
+      section: general+phase
     - path: specs/knowledge/_shared/sources/contracts/season__phase_contract.md
     - path: specs/knowledge/_shared/sources/contracts/phase__week_contract.md
     - path: specs/knowledge/_shared/sources/contracts/data_pipeline__phase_contract.md
@@ -109,10 +112,12 @@ agents:
     - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
     - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
     - path: specs/knowledge/_shared/sources/specs/season_cycle_enum_spec.md
+    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
     - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
     - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+    - path: specs/knowledge/_shared/sources/schemas/bundled/zone_model.schema.json
     - path: specs/knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json
     - path: specs/knowledge/_shared/sources/schemas/bundled/phase_structure.schema.json
     - path: specs/knowledge/_shared/sources/schemas/bundled/phase_preview.schema.json

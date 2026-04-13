@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
 from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
@@ -27,6 +28,8 @@ from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
+
+_KNOWLEDGE_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "specs" / "knowledge" / "_shared" / "sources"
 
 @dataclass(frozen=True)
 class AgentRuntime:
@@ -258,6 +261,35 @@ def _extract_usage(response: Any) -> dict[str, Any]:
     }
 
 
+def _load_knowledge_source(relative_dir: str, filename: str) -> str | None:
+    """Return a shared knowledge source file content when it exists."""
+    path = _KNOWLEDGE_SOURCE_ROOT / relative_dir / filename
+    if not path.exists():
+        return None
+    return path.read_text(encoding="utf-8").strip()
+
+
+def injection_mode_for_tasks(tasks: list[AgentTask]) -> str | None:
+    """Resolve a single injection mode from the requested task list."""
+    mapping = {
+        AgentTask.CREATE_SEASON_SCENARIOS: "scenario",
+        AgentTask.CREATE_SEASON_SCENARIO_SELECTION: "scenario",
+        AgentTask.CREATE_SEASON_PLAN: "season_plan",
+        AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD: "feed_forward",
+        AgentTask.CREATE_PHASE_GUARDRAILS: "phase_guardrails",
+        AgentTask.CREATE_PHASE_STRUCTURE: "phase_structure",
+        AgentTask.CREATE_PHASE_PREVIEW: "phase_preview",
+        AgentTask.CREATE_PHASE_FEED_FORWARD: "phase_feed_forward",
+        AgentTask.CREATE_WEEK_PLAN: "week_plan",
+        AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: "intervals_workouts",
+        AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
+    }
+    modes = {mapping[task] for task in tasks if task in mapping}
+    if len(modes) != 1:
+        return None
+    return next(iter(modes))
+
+
 def _log_response_diagnostics(response: Any, *, label: str, elapsed_s: float) -> None:
     """Log timing + shape info for a response."""
     try:
@@ -306,27 +338,8 @@ def run_agent_multi_output(
         isinstance(base_url, str) and "api.groq.com" in base_url
     )
 
-    def _load_load_estimation_spec_season() -> str | None:
-        root = Path(__file__).resolve().parents[3]
-        path = root / "specs" / "knowledge" / "_shared" / "sources" / "specs" / "load_estimation_spec.md"
-        if not path.exists():
-            return None
-        content = path.read_text(encoding="utf-8")
-        lines = content.splitlines()
-        end = None
-        for i, line in enumerate(lines):
-            if line.startswith("## Phase"):
-                end = i
-                break
-        section = "\n".join(lines[:end]).strip() if end else content
-        return section
-
     def _load_mandatory_doc(name: str) -> str | None:
-        root = Path(__file__).resolve().parents[3]
-        path = root / "specs" / "knowledge" / "_shared" / "sources" / "specs" / name
-        if not path.exists():
-            return None
-        return path.read_text(encoding="utf-8").strip()
+        return _load_knowledge_source("specs", name)
 
     mandatory_by_schema = {
         "season_scenarios.schema.json": "mandatory_output_season_scenarios.md",
@@ -356,15 +369,10 @@ def run_agent_multi_output(
                 f"\"\"\"\n{mandatory}\n\"\"\"\n"
             )
 
-    if agent_name == "season_planner":
-        if "LoadEstimationSpec (Season section" not in system_prompt and "load_estimation_spec.md" not in system_prompt:
-            spec_section = _load_load_estimation_spec_season()
-            if spec_section:
-                system_prompt = (
-                    f"{system_prompt}\n"
-                    "LoadEstimationSpec (Season section; injected):\n"
-                    f"\"\"\"\n{spec_section}\n\"\"\"\n"
-                )
+    mode = injection_mode_for_tasks(tasks)
+    injected_block = build_injection_block(agent_name, mode=mode)
+    if injected_block and injected_block not in system_prompt:
+        system_prompt = f"{system_prompt}\n{injected_block}"
 
     bundler = SchemaBundler(runtime.schema_dir)
     store_tools = [build_strict_store_tool(bundler, spec) for spec in output_specs]
