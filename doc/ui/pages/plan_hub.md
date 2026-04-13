@@ -78,24 +78,27 @@ This follows the current UI contract: global sidebar + always-visible status ban
 
 ---
 
-### C) Right Column: **Runner Panel** (Orchestrator + Scoped Runs)
+### C) Right Column: **Quick Actions** (routine path) + **Advanced Manual Run**
 
 **Widget structure:**
 
-- `st.subheader("Run Planning")`
-- `st.radio("Run mode", ["Orchestrated (recommended)", "Scoped"])`
-- If Scoped:
-  - `st.selectbox("Scope", ["Season Scenarios", "Scenario Selection", "Season Plan", "Phase (Guardrails + Structure)", "Week Plan", "Build Workouts"])`
-  - `st.text_area("Override", ...)`
-  - If the selected scope already exists, the scoped run still queues a rerun for that scope and its dependent outputs.
-- `st.text_input("Run ID", value=auto_run_id())`
-- `st.checkbox("Validate only (no write)", value=False)` → mapped to `validate_outputs.py`
-- `st.button("Run")` (run control + cancellation are handled from System → Status)
+- `st.subheader("Quick Actions")`
+- Primary one-click CTA for `Plan Week` / `Plan Next Week`
+- Routine planning is expected to happen from:
+  - readiness-card direct action buttons
+  - the primary `Plan Week` CTA
+- `st.expander("Advanced manual run")`
+  - `st.radio("Run mode", ["Orchestrated", "Scoped"])`
+  - if scoped: `st.selectbox("Scope", [...])`
+  - optional override text
+  - custom `Run ID`
+  - `Validate only (no write)`
+  - `Run scoped` / `Run orchestrated`
 
-**Run Scope Summary (read-only)**
+**Design intent**
 
-- `st.info()` text: “This run will create new versions of: … (Binding/Informational/Advisory)”
-- Important for append‑only + latest pointers.
+- The generic run builder remains available, but it is no longer the primary visible control surface.
+- The page should emphasize direct artifact actions because Plan Hub already knows readiness, dependencies, and next valid steps.
 
 ---
 

@@ -728,6 +728,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RPS_LLM_MAX_COMPLETION_TOKENS` with per-agent overrides via `RPS_LLM_MAX_COMPLETION_TOKENS_<AGENT>`.
 
 ### Changed
+- Plan Hub now uses a direct-actions-first layout: routine planning is driven by readiness-card actions and the primary Plan Week CTA, while the generic scoped/orchestrated run builder moved into an `Advanced manual run` expander.
 - Historic Data now reads yearly summaries from the `historical_baseline` artifact and refreshes via the Intervals pipeline.
 - Historical baseline schema now includes `yearly_summary` payloads.
 - Availability inputs now enforce 0.5h increments with 1-decimal precision, and travel risk values are normalized to uppercase (`LOW|MED|HIGH`) across UI, schema, and parser.

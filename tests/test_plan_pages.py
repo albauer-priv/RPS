@@ -56,6 +56,18 @@ def test_plan_hub_season_actions_expander(tmp_path):
     assert "Inputs missing" in info_text
 
 
+def test_plan_hub_uses_quick_actions_with_advanced_manual_run(tmp_path):
+    at = AppTest.from_file("src/rps/ui/pages/plan/hub.py")
+    at.run(timeout=10)
+
+    assert len(at.error) == 0
+    subheaders = [subheader.value for subheader in at.subheader]
+    assert "Run Planning" not in subheaders
+    source = Path("src/rps/ui/pages/plan/hub.py").read_text(encoding="utf-8")
+    assert 'st.subheader("Quick Actions")' in source
+    assert 'st.expander("Advanced manual run"' in source
+
+
 def test_plan_hub_reset_delete_latest(tmp_path):
     from rps.ui.pages.plan import hub as plan_hub
 
