@@ -33,3 +33,20 @@ def test_search_knowledge_rebuilds_missing_collection(monkeypatch):
     assert calls["search"] == 2
     assert calls["rebuild"] == 1
     assert result[0]["text"] == "match"
+
+
+def test_knowledge_store_status_for_agent_ready(monkeypatch):
+    monkeypatch.setattr(knowledge_search, "_manifest_for_store", lambda _store: knowledge_search.Path("specs/knowledge/all_agents/manifest.yaml"))
+    monkeypatch.setattr(knowledge_search, "load_state", lambda _path: {"vectorstores": {"vs_rps_all_agents": {"vector_store_id": "vs_rps_all_agents"}}})
+
+    class _Client:
+        def get_collection(self, name):
+            assert name == "vs_rps_all_agents"
+            return {"name": name}
+
+    monkeypatch.setattr(knowledge_search, "get_qdrant_client", lambda: _Client())
+
+    status = knowledge_search.knowledge_store_status_for_agent("phase_architect")
+
+    assert status["ready"] is True
+    assert status["collection_name"] == "vs_rps_all_agents"

@@ -335,6 +335,23 @@ def test_plan_hub_direct_action_buttons_render(tmp_path):
     assert "Week" in select_labels
 
 
+def test_plan_hub_shows_knowledge_store_status(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps({"meta": {"version_key": "test"}, "data": {"phases": []}}),
+        encoding="utf-8",
+    )
+
+    at = AppTest.from_file("src/rps/ui/pages/plan/hub.py")
+    at.run(timeout=10)
+
+    assert len(at.error) == 0
+    success_text = "\n".join(success.value for success in at.success)
+    assert "Ready: `vs_rps_all_agents`" in success_text
+
+
 def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):
     class _Runtime:
         def __init__(self, workspace_root):

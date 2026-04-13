@@ -36,6 +36,36 @@ def _manifest_for_store(store_name: str) -> Path:
     raise FileNotFoundError(f"Manifest not found for vector store {store_name}")
 
 
+def knowledge_store_status_for_agent(agent_name: str) -> dict[str, Any]:
+    """Return readiness details for the agent's configured local knowledge store."""
+    spec = AGENTS.get(agent_name)
+    if not spec:
+        raise ValueError(f"Unknown agent: {agent_name}")
+    store_name = spec.vector_store_name
+    manifest_path = _manifest_for_store(store_name)
+    state = load_state(DEFAULT_STATE_PATH)
+    store_entry = (state.get("vectorstores") or {}).get(store_name) or {}
+    collection_name = store_entry.get("vector_store_id") or store_name
+    client = get_qdrant_client()
+    status = {
+        "agent_name": agent_name,
+        "store_name": store_name,
+        "collection_name": collection_name,
+        "manifest_path": str(manifest_path),
+        "state_has_entry": bool(store_entry),
+        "manifest_hash": store_entry.get("manifest_hash"),
+        "ready": False,
+        "error": None,
+    }
+    try:
+        client.get_collection(collection_name)
+    except Exception as exc:
+        status["error"] = str(exc)
+        return status
+    status["ready"] = True
+    return status
+
+
 def _rebuild_collection_for_agent(agent_name: str) -> None:
     spec = AGENTS.get(agent_name)
     if not spec:
@@ -52,6 +82,18 @@ def _rebuild_collection_for_agent(agent_name: str) -> None:
     store_entry = state.setdefault("vectorstores", {}).setdefault(spec.vector_store_name, {})
     store_entry["manifest_hash"] = compute_manifest_hash(manifest_path)
     write_state(DEFAULT_STATE_PATH, state)
+
+
+def ensure_knowledge_store_ready(agent_name: str) -> dict[str, Any]:
+    """Ensure the local knowledge store for an agent exists, rebuilding if needed."""
+    status = knowledge_store_status_for_agent(agent_name)
+    if status.get("ready"):
+        status["rebuilt"] = False
+        return status
+    _rebuild_collection_for_agent(agent_name)
+    status = knowledge_store_status_for_agent(agent_name)
+    status["rebuilt"] = True
+    return status
 
 
 def _is_missing_collection_error(exc: Exception) -> bool:

@@ -41,6 +41,7 @@ from rps.agents.multi_output_runner import AgentRuntime
 from rps.orchestrator.queue_scheduler import enqueue_run, start_queue_scheduler, ensure_queue_dirs
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
+from rps.tools.knowledge_search import ensure_knowledge_store_ready, knowledge_store_status_for_agent
 
 
 logger = logging.getLogger(__name__)
@@ -1163,6 +1164,34 @@ hub_scope = st.session_state.get("hub_scope") or {
 st.title("Plan Hub")
 st.caption(f"Athlete: {hub_scope['athlete_id']}")
 
+knowledge_status = knowledge_store_status_for_agent("phase_architect")
+knowledge_ready = bool(knowledge_status.get("ready"))
+
+with st.container():
+    st.subheader("Knowledge Store")
+    if knowledge_ready:
+        st.success(
+            f"Ready: `{knowledge_status.get('store_name')}` "
+            f"(`{knowledge_status.get('collection_name')}`)"
+        )
+    else:
+        st.warning(
+            f"Not ready: `{knowledge_status.get('store_name')}` "
+            f"(`{knowledge_status.get('collection_name')}`)."
+        )
+        if knowledge_status.get("error"):
+            st.caption(f"Error: {knowledge_status['error']}")
+        st.caption(f"Manifest: {knowledge_status.get('manifest_path')}")
+        if st.button("Rebuild Knowledge Store", key="plan_hub_rebuild_knowledge_store"):
+            with st.spinner("Rebuilding knowledge store from manifest..."):
+                rebuilt_status = ensure_knowledge_store_ready("phase_architect")
+            if rebuilt_status.get("ready"):
+                st.success(
+                    f"Knowledge store rebuilt: `{rebuilt_status.get('collection_name')}`"
+                )
+                st.rerun()
+            st.error(rebuilt_status.get("error") or "Knowledge store rebuild failed.")
+
 active_run_id = st.session_state.get("plan_hub_active_run_id")
 run_records = load_runs(SETTINGS.workspace_root, hub_scope["athlete_id"], limit=5)
 active_run = None
@@ -1181,6 +1210,7 @@ if active_run and active_run.get("status") in {"QUEUED", "RUNNING"}:
 run_state = bool(active_run and active_run.get("status") in {"QUEUED", "RUNNING"})
 st.session_state["plan_hub_running"] = run_state
 scope_lock = run_state
+planning_locked = scope_lock or not knowledge_ready
 
 if run_state:
     st.session_state["plan_hub_autorefresh_ts"] = time.time()
@@ -1229,6 +1259,8 @@ st.subheader("Readiness")
 st.markdown("`Auto-creates phase artifacts`")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 st.caption(overall_message)
+if not knowledge_ready:
+    st.info("Planning actions stay disabled until the knowledge store is ready.")
 phase_guardrails_step = readiness_map.get("phase_guardrails")
 phase_structure_step = readiness_map.get("phase_structure")
 week_plan_step = readiness_map.get("week_plan")
@@ -1261,7 +1293,11 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                 if step.fix_label:
                     if step.key == "season_scenarios":
                         allow_fix = readiness_map.get("inputs", step).status == "ready"
-                        clicked = st.button(step.fix_label, key=f"fix_{step.key}", disabled=not allow_fix)
+                        clicked = st.button(
+                            step.fix_label,
+                            key=f"fix_{step.key}",
+                            disabled=not allow_fix or planning_locked,
+                        )
                         if clicked:
                             if not allow_fix:
                                 st.warning("Resolve required inputs before running this step.")
@@ -1318,7 +1354,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                             st.info("Run requested.")
                             st.rerun()
                     elif step.key == "season_plan":
-                        if st.button(step.fix_label, key=f"fix_{step.key}"):
+                        if st.button(step.fix_label, key=f"fix_{step.key}", disabled=planning_locked):
                             desired_subtype = PLANNING_SCOPE_SUBTYPE["Season Plan"]
                             block_reason = _planning_block_reason(
                                 SETTINGS.workspace_root,
@@ -1377,7 +1413,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                     step,
                     athlete_id=hub_scope["athlete_id"],
                     base_week=IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"]),
-                    scope_lock=scope_lock,
+                    scope_lock=planning_locked,
                     default_phase_label=hub_scope.get("phase_label"),
                 )
 
@@ -1415,7 +1451,7 @@ if not has_blockers:
         athlete_id = st.text_input(
             "Athlete",
             value=hub_scope["athlete_id"],
-            disabled=scope_lock,
+            disabled=planning_locked,
         )
         year = int(
             st.number_input(
@@ -1424,7 +1460,7 @@ if not has_blockers:
                 max_value=2100,
                 value=hub_scope["iso_year"],
                 step=1,
-                disabled=scope_lock,
+                disabled=planning_locked,
             )
         )
         week = int(
@@ -1434,7 +1470,7 @@ if not has_blockers:
                 max_value=53,
                 value=hub_scope["iso_week"],
                 step=1,
-                disabled=scope_lock,
+                disabled=planning_locked,
             )
         )
         phase_label = hub_scope.get("phase_label")
@@ -1454,7 +1490,7 @@ if not has_blockers:
                 "Phase",
                 options=options,
                 index=options.index(phase_label),
-                disabled=scope_lock,
+                disabled=planning_locked,
             )
         hub_scope = {
             "athlete_id": athlete_id,
@@ -1476,7 +1512,7 @@ if not has_blockers:
         target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
         cta_prefix = "Plan Next Week" if plan_next else "Plan Week"
         cta_label = f"{cta_prefix}: {target_week.year:04d}-W{target_week.week:02d}"
-        cta_disabled = scope_lock
+        cta_disabled = planning_locked
 
         run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
         scope = None
@@ -1535,14 +1571,17 @@ if not has_blockers:
             run_week = col_week.button(cta_label, disabled=cta_disabled)
             run_scoped = col_scoped.button(
                 "Run scoped",
-                disabled=run_mode != "Scoped",
+                disabled=planning_locked or run_mode != "Scoped",
             )
             run_orchestrated = col_orchestrated.button(
                 "Run orchestrated",
-                disabled=scope_lock or run_mode != "Orchestrated",
+                disabled=planning_locked or run_mode != "Orchestrated",
             )
 
     if run_week:
+        if not knowledge_ready:
+            st.warning("Knowledge store is not ready. Rebuild it before planning.")
+            st.stop()
         if _override_required("Week Plan", target_readiness):
             st.warning("This week already has planning artifacts. Use a scoped run with an override.")
             st.stop()
@@ -1590,6 +1629,9 @@ if not has_blockers:
         st.info("Run requested.")
 
     if run_orchestrated:
+        if not knowledge_ready:
+            st.warning("Knowledge store is not ready. Rebuild it before planning.")
+            st.stop()
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
             hub_scope["athlete_id"],
@@ -1632,6 +1674,9 @@ if not has_blockers:
         st.info("Run requested.")
 
     if run_scoped:
+        if not knowledge_ready:
+            st.warning("Knowledge store is not ready. Rebuild it before planning.")
+            st.stop()
         desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope, "scoped")
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
