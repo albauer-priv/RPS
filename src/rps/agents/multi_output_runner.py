@@ -10,7 +10,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
@@ -470,8 +470,10 @@ def run_agent_multi_output(
                 meta["schema_version"] = "1.0"
             if "notes" not in meta:
                 meta["notes"] = ""
-            elif isinstance(meta.get("notes"), list):
-                meta["notes"] = " ".join(str(item) for item in meta.get("notes") if item is not None)
+            else:
+                notes_value = meta.get("notes")
+                if isinstance(notes_value, list):
+                    meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
             document["meta"] = meta
             data = document.get("data") or {}
             if not isinstance(data, dict):
@@ -492,8 +494,10 @@ def run_agent_multi_output(
             meta["schema_version"] = "1.0"
         if "notes" not in meta:
             meta["notes"] = ""
-        elif isinstance(meta.get("notes"), list):
-            meta["notes"] = " ".join(str(item) for item in meta.get("notes") if item is not None)
+        else:
+            notes_value = meta.get("notes")
+            if isinstance(notes_value, list):
+                meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
         document["meta"] = meta
         data = document.get("data") or {}
         if not isinstance(data, dict):
@@ -868,7 +872,7 @@ def run_agent_multi_output(
         if runtime.max_completion_tokens is not None:
             payload["max_completion_tokens"] = runtime.max_completion_tokens
         start = time.perf_counter()
-        local_handlers = dict(stream_handlers) if stream_handlers else {}
+        local_handlers: dict[str, Any] = dict(stream_handlers) if stream_handlers else {}
         if "reasoning_log_meta" not in local_handlers:
             local_handlers["reasoning_log_meta"] = {
                 "agent": agent_name,
@@ -1125,8 +1129,8 @@ def run_agent_multi_output(
                 )
                 continue
 
-            spec = next((item for item in output_specs if item.tool_name == name), None)
-            if spec is None:
+            spec_match = next((item for item in output_specs if item.tool_name == name), None)
+            if spec_match is None:
                 result = {"ok": False, "error": f"Unknown store tool: {name}"}
                 input_list.append(
                     {
@@ -1137,6 +1141,7 @@ def run_agent_multi_output(
                     }
                 )
                 continue
+            spec = spec_match
 
             document = _coerce_envelope_args(args) if spec.envelope else args.get("workouts")
             document = _fill_season_scenarios(document)

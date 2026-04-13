@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Local commits now run a repo-managed pre-commit gate with `py_compile` plus a curated `mypy` scope, and the shared planning modules now have a committed typecheck entrypoint via `scripts/run_typecheck.sh`.
 - Local embedded Qdrant access now reuses a cached client per storage path, avoiding self-inflicted `.cache/qdrant` lock errors during planning knowledge lookups.
 - Local `knowledge_search` now auto-rebuilds the missing `vs_rps_all_agents` Qdrant collection from the canonical manifest and retries once, so planning does not hard-stop on a recoverable vectorstore sync issue.
 - Agent knowledge injection is now driven consistently from `config/agent_knowledge_injection.yaml` across orchestration and multi-output runs; `phase_architect` now receives its missing `file_naming_spec.md` and `zone_model.schema.json`, and `season_planner` now injects the Season-only `load_estimation_spec.md` section from config instead of a code-only special case.

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+STAGED_PY_FILES=()
+while IFS= read -r path; do
+  [[ -n "$path" ]] && STAGED_PY_FILES+=("$path")
+done < <(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.py$' || true)
+
+if ((${#STAGED_PY_FILES[@]} > 0)); then
+  echo "Running syntax check for staged Python files..."
+  python3 -m py_compile "${STAGED_PY_FILES[@]}"
+else
+  echo "No staged Python files for syntax check."
+fi
+
+"$ROOT/scripts/run_typecheck.sh"

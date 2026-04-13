@@ -15,6 +15,7 @@ This file is the **README for coding agents** working in this repository. It con
 > Prefer running commands from repo root.
 
 * Syntax check (fast): `python3 -m py_compile $(git ls-files '*.py')`
+* Type check (commit gate scope): `./scripts/run_typecheck.sh`
 * Run app: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
 * Tests (if present): `pytest -q`
 * UI smoke check (manual): `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
@@ -22,7 +23,7 @@ This file is the **README for coding agents** working in this repository. It con
   * Intervals pipeline help (safe): `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`
   * Plan-week: smoke via UI (Plan → Week page).
 
-**Rule:** Before marking a task “done”, run at least **syntax check + one relevant smoke run** (UI or CLI), and fix failures.
+**Rule:** Before marking a task “done”, run at least **syntax check + type check + one relevant smoke run** (UI or CLI), and fix failures.
 
 ---
 

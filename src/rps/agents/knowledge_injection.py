@@ -191,7 +191,7 @@ def resolve_agent_injection_items(agent_name: str, mode: str | None = None) -> l
     bundle_items: list[Any] = []
     if bundle_id:
         bundles = agent_cfg.get("bundles") or []
-        bundle_cfg = next((b for b in bundles if b.get("id") == bundle_id), {})
+        bundle_cfg: dict[str, Any] = next((b for b in bundles if b.get("id") == bundle_id), {})
         bundle_items = list(bundle_cfg.get("inject") or [])
     mode_items = list(mode_cfg.get("inject") or [])
     return _dedupe_items([*base_items, *bundle_items, *mode_items])
