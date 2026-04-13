@@ -62,9 +62,11 @@ def test_plan_hub_uses_quick_actions_with_advanced_manual_run(tmp_path):
 
     assert len(at.error) == 0
     subheaders = [subheader.value for subheader in at.subheader]
+    assert "Scope" not in subheaders
     assert "Run Planning" not in subheaders
     source = Path("src/rps/ui/pages/plan/hub.py").read_text(encoding="utf-8")
     assert 'st.subheader("Quick Actions")' in source
+    assert 'st.expander("Context"' in source
     assert 'st.expander("Advanced manual run"' in source
 
 
