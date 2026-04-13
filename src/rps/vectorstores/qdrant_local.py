@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 import os
@@ -48,12 +49,20 @@ def resolve_qdrant_path() -> str | None:
     return raw
 
 
+@lru_cache(maxsize=4)
+def _build_qdrant_client(path_key: str) -> QdrantClient:
+    """Build and cache one Qdrant client per storage path."""
+    if path_key == ":memory:":
+        return QdrantClient(":memory:")
+    return QdrantClient(path=path_key)
+
+
 def get_qdrant_client() -> QdrantClient:
     """Return a local Qdrant client using the configured path."""
     path = resolve_qdrant_path()
     if path is None:
-        return QdrantClient(":memory:")
-    return QdrantClient(path=str(Path(path)))
+        return _build_qdrant_client(":memory:")
+    return _build_qdrant_client(str(Path(path)))
 
 
 def embed_texts(texts: Iterable[str], config: EmbeddingConfig | None = None) -> list[list[float]]:
