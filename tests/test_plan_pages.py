@@ -240,6 +240,22 @@ def test_plan_hub_phase_guardrails_scope_is_isolated():
     assert steps[0]["Status"] == "QUEUED"
 
 
+def test_plan_hub_phase_structure_scope_also_queues_preview():
+    from rps.ui.pages.plan import hub as plan_hub
+
+    readiness = [
+        plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
+    ]
+
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Phase Structure")
+
+    assert [step["step_id"] for step in steps] == ["PHASE_STRUCTURE", "PHASE_PREVIEW"]
+    assert all(step["Status"] == "QUEUED" for step in steps)
+
+
 def test_plan_hub_build_workouts_adds_missing_week_dependencies():
     from rps.ui.pages.plan import hub as plan_hub
 
@@ -585,6 +601,7 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
 
     assert any(step["agent"] == "phase_architect" for step in result.steps)
     assert any(run_id.endswith("_phase_create_phase_structure") for run_id in run_ids)
+    assert any(run_id.endswith("_phase_create_phase_preview") for run_id in run_ids)
 
 
 def test_plan_week_force_phase_guardrails_runs_in_isolation(monkeypatch, tmp_path):

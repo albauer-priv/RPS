@@ -244,7 +244,7 @@ SCOPE_STEPS: dict[str, list[str]] = {
     "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Phase Guardrails": ["PHASE_GUARDRAILS"],
-    "Phase Structure": ["PHASE_STRUCTURE"],
+    "Phase Structure": ["PHASE_STRUCTURE", "PHASE_PREVIEW"],
     "Phase Preview": ["PHASE_PREVIEW"],
     "Week Plan": ["WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Build Workouts": ["EXPORT_WORKOUTS"],

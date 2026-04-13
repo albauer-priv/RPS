@@ -275,9 +275,7 @@ def _required_phase_artefacts_for_forced_steps(forced_steps: set[str]) -> list[A
     """Return exact-range phase artefacts required for an isolated forced phase run."""
     if forced_steps == {"PHASE_GUARDRAILS"}:
         return [ArtifactType.PHASE_GUARDRAILS]
-    if forced_steps == {"PHASE_STRUCTURE"}:
-        return [ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE]
-    if forced_steps == {"PHASE_PREVIEW"}:
+    if "PHASE_PREVIEW" in forced_steps or "PHASE_STRUCTURE" in forced_steps:
         return [ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE, ArtifactType.PHASE_PREVIEW]
     return []
 
@@ -455,14 +453,23 @@ def plan_week(
     if forced_steps == {"PHASE_GUARDRAILS"}:
         needs_phase_structure = False
         needs_phase_preview = False
-    elif forced_steps == {"PHASE_STRUCTURE"}:
-        needs_phase_preview = False
 
     if needs_phase_guardrails and not isolated_phase_force:
         needs_phase_structure = True
         needs_phase_preview = True
     if needs_phase_structure and not isolated_phase_force:
         needs_phase_preview = True
+
+    if forced_steps == {"PHASE_GUARDRAILS"}:
+        _log(
+            f"Scoped phase guardrails run requested for range {phase_range_label}; "
+            "PHASE_STRUCTURE and PHASE_PREVIEW will be reused if present and will not be rerun."
+        )
+    elif forced_steps == {"PHASE_STRUCTURE"}:
+        _log(
+            f"Scoped phase structure run requested for range {phase_range_label}; "
+            "PHASE_PREVIEW is included in this scoped run and will be rerun after PHASE_STRUCTURE."
+        )
 
     phase_tasks: list[AgentTask] = []
     if not needs_phase_guardrails:
@@ -474,7 +481,13 @@ def plan_week(
         phase_tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
 
     if not needs_phase_structure:
-        message = f"Found PHASE_STRUCTURE for phase range {phase_range_label}."
+        if forced_steps == {"PHASE_GUARDRAILS"}:
+            message = (
+                f"Reusing existing PHASE_STRUCTURE for phase range {phase_range_label}; "
+                "not queued for this scoped run."
+            )
+        else:
+            message = f"Found PHASE_STRUCTURE for phase range {phase_range_label}."
         _log(message)
     else:
         message = f"PHASE_STRUCTURE missing/stale for phase range {phase_range_label}. Will create."
@@ -482,7 +495,13 @@ def plan_week(
         phase_tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
 
     if not needs_phase_preview:
-        message = f"Found PHASE_PREVIEW for phase range {phase_range_label}."
+        if forced_steps == {"PHASE_GUARDRAILS"}:
+            message = (
+                f"Reusing existing PHASE_PREVIEW for phase range {phase_range_label}; "
+                "not queued for this scoped run."
+            )
+        else:
+            message = f"Found PHASE_PREVIEW for phase range {phase_range_label}."
         _log(message)
     else:
         message = f"PHASE_PREVIEW missing/stale for phase range {phase_range_label}. Will create."

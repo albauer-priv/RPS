@@ -40,7 +40,7 @@ Owner: UI / Orchestration
 **Goals**
 
 * [x] `Phase Guardrails` direct/scoped runs only rerun Guardrails.
-* [x] `Phase Structure` direct/scoped runs rerun Structure, adding Guardrails only when required.
+* [x] `Phase Structure` direct/scoped runs rerun Structure and Preview, adding Guardrails only when required.
 * [x] `Phase Preview` direct/scoped runs rerun Preview, adding missing predecessors only when required.
 
 **Non-Goals**
@@ -56,7 +56,8 @@ Owner: UI / Orchestration
 
 * A scoped run for `Phase Guardrails` queues only the `PHASE_GUARDRAILS` step.
 * A forced `PHASE_GUARDRAILS` execution inside `plan_week(...)` stops successfully after Guardrails exists for the exact phase range.
-* Direct actions for later phase steps remain dependency-aware, but only for prerequisites, not downstream outputs.
+* Direct actions for later phase steps remain dependency-aware, but only for prerequisites, not unrelated downstream outputs.
+* A scoped `Phase Structure` run also produces `Phase Preview`, because Preview is the immediate dependent phase artefact and should stay aligned with the rerun structure output.
 
 **UI impact**
 
@@ -69,7 +70,7 @@ Owner: UI / Orchestration
 flowchart TD
   A["Plan Hub Phase Card"] --> B{"Selected scope"}
   B -->|Phase Guardrails| C["Queue only PHASE_GUARDRAILS"]
-  B -->|Phase Structure| D["Queue PHASE_STRUCTURE plus missing PHASE_GUARDRAILS"]
+  B -->|Phase Structure| D["Queue PHASE_STRUCTURE and PHASE_PREVIEW plus missing PHASE_GUARDRAILS"]
   B -->|Phase Preview| E["Queue PHASE_PREVIEW plus missing predecessors"]
   C --> F["Worker executes isolated phase run"]
   D --> F
@@ -87,8 +88,8 @@ flowchart TD
 
 **Components / Modules**
 
-* `src/rps/ui/pages/plan/hub.py`: narrow phase-scoped step lists.
-* `src/rps/orchestrator/plan_week.py`: treat isolated forced phase steps as valid terminal runs once their requested artefacts exist.
+* `src/rps/ui/pages/plan/hub.py`: narrow phase-scoped step lists and keep `Phase Structure` coupled to `Phase Preview`.
+* `src/rps/orchestrator/plan_week.py`: treat isolated forced phase steps as valid terminal runs once their requested artefacts exist, and require Preview for explicit structure reruns.
 * `tests/test_plan_pages.py`: add regression tests for both queue composition and isolated plan-week execution.
 
 **Data flow**
@@ -176,6 +177,7 @@ flowchart TD
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [x] `Phase Guardrails` scoped runs queue only `PHASE_GUARDRAILS`.
+* [x] `Phase Structure` scoped runs queue `PHASE_STRUCTURE` and `PHASE_PREVIEW`.
 * [x] Isolated `force_steps=["PHASE_GUARDRAILS"]` runs can succeed without creating structure/preview/week artefacts.
 * [x] Existing `Week Plan` and `Build Workouts` dependency behavior remains intact.
 * [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
@@ -217,7 +219,7 @@ flowchart TD
 **New/changed events**
 
 * no new event types
-* existing `plan_week` logs should show isolated phase completion without week-planner failure
+* existing `plan_week` logs should show that isolated `Phase Structure` reruns include `Phase Preview`
 
 **Diagnostics**
 
@@ -229,7 +231,7 @@ flowchart TD
 ## 11) Documentation Updates
 
 * [x] `doc/specs/features/FEAT_plan_hub_phase_step_isolation.md` — document the scoped isolation fix
-* [ ] `CHANGELOG.md` — record the bug fix
+* [x] `CHANGELOG.md` — record the bug fix
 
 ---
 
