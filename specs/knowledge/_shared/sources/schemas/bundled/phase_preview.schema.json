@@ -441,6 +441,7 @@
         "owner_agent": {
           "type": "string",
           "enum": [
+            "User",
             "Data-Pipeline",
             "Season-Scenario-Agent",
             "Season-Planner",

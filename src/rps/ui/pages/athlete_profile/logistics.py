@@ -212,7 +212,7 @@ if st.button("Save Logistics", width="content"):
             "authority": Authority.INFORMATIONAL.value,
             "owner_agent": "User",
             "scope": "Context",
-            "data_confidence": "USER",
+            "data_confidence": "UNKNOWN",
             "created_at": run_ts.isoformat(),
             "notes": "",
         },

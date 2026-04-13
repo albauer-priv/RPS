@@ -230,7 +230,7 @@ def _save_events_payload(
             "authority": Authority.BINDING.value,
             "owner_agent": "User",
             "scope": "Shared",
-            "data_confidence": "USER",
+            "data_confidence": "UNKNOWN",
             "created_at": run_ts.isoformat(),
             "notes": "",
         },

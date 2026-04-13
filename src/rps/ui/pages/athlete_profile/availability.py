@@ -235,7 +235,7 @@ if st.button("Save Availability", width="content"):
             "authority": Authority.BINDING.value,
             "owner_agent": "User",
             "scope": "Shared",
-            "data_confidence": "USER",
+            "data_confidence": "UNKNOWN",
             "created_at": run_ts.isoformat(),
         },
         authority=Authority.BINDING,
