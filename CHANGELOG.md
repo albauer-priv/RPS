@@ -728,6 +728,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RPS_LLM_MAX_COMPLETION_TOKENS` with per-agent overrides via `RPS_LLM_MAX_COMPLETION_TOKENS_<AGENT>`.
 
 ### Changed
+- Week page now treats a missing Season Plan as a warning-state readiness hint instead of a hard page error, so the page still renders cleanly before planning inputs are complete.
 - Plan Hub scoped `Phase Structure` runs now always rerun `Phase Preview` immediately after `Phase Structure`, keeping both phase artefacts aligned without requiring a separate manual preview run.
 - User-authored input artefacts now use valid metadata semantics: `owner_agent` allows `User`, manual UI inputs no longer write `data_confidence: "USER"`, and bundled schemas were rebuilt accordingly.
 - Guarded store validation for `PHASE_GUARDRAILS` and `PHASE_STRUCTURE` now matches planned event windows semantically instead of requiring the exact season-plan string form to appear verbatim in downstream payload blobs, and recovery-protection notes are normalized safely from string or list inputs.
