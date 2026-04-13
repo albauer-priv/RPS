@@ -104,6 +104,20 @@ class GuardedValidatedStore:
             raw = str(payload)
         return self._normalize_text(raw)
 
+    def _normalized_string_list(self, value: Any) -> list[str]:
+        """Return normalized non-empty strings from a list-like or scalar input."""
+        if isinstance(value, str):
+            stripped = value.strip()
+            return [self._normalize_text(stripped)] if stripped else []
+        if not isinstance(value, list):
+            return []
+        items: list[str] = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                items.append(self._normalize_text(text))
+        return items
+
     def _season_constraints(self, season_plan: dict[str, Any]) -> dict[str, list[str]]:
         """Collect season plan constraints for propagation checks."""
         data = season_plan.get("data", {})
@@ -129,11 +143,15 @@ class GuardedValidatedStore:
             for item in (recovery.get("fixed_rest_days") or [])
             if str(item).strip()
         ]
-        notes = [
-            str(item).strip()
-            for item in (recovery.get("notes") or [])
-            if str(item).strip()
-        ]
+        raw_notes = recovery.get("notes")
+        if isinstance(raw_notes, str):
+            notes = [raw_notes.strip()] if raw_notes.strip() else []
+        else:
+            notes = [
+                str(item).strip()
+                for item in (raw_notes or [])
+                if str(item).strip()
+            ]
         return {
             "availability": availability,
             "risks": risks,
@@ -141,6 +159,43 @@ class GuardedValidatedStore:
             "fixed_days": fixed_days,
             "recovery_notes": notes,
         }
+
+    def _parse_planned_event_window(self, value: str) -> tuple[str, str] | None:
+        """Extract `(date, type)` from a planned-event-window string when possible."""
+        match = re.search(r"(\d{4}-\d{2}-\d{2})\s*\((A|B|C)\)", value, re.IGNORECASE)
+        if not match:
+            return None
+        return match.group(1), match.group(2).upper()
+
+    def _guardrails_event_pairs(self, document: dict[str, Any]) -> set[tuple[str, str]]:
+        """Return `(date, type)` pairs from guardrails event constraints."""
+        data = document.get("data", {})
+        events = ((data.get("events_constraints") or {}).get("events") or [])
+        pairs: set[tuple[str, str]] = set()
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            date_value = str(event.get("date") or "").strip()
+            type_value = str(event.get("type") or "").strip().upper()
+            if date_value and type_value:
+                pairs.add((date_value, type_value))
+        return pairs
+
+    def _contains_normalized_item(self, haystack: list[str], item: str) -> bool:
+        """Return whether a normalized item exists in a normalized string list."""
+        normalized = self._normalize_text(item)
+        return bool(normalized and normalized in haystack)
+
+    def _structure_constraint_has_event_window(self, upstream_blob: str, raw_item: str) -> bool:
+        """Return whether a phase-structure constraint blob semantically contains the planned-event marker."""
+        parsed = self._parse_planned_event_window(raw_item)
+        if parsed is None:
+            normalized = self._normalize_text(raw_item)
+            return bool(normalized and normalized in upstream_blob)
+        event_date, event_type = parsed
+        date_token = self._normalize_text(event_date)
+        type_token = self._normalize_text(event_type)
+        return bool(date_token and type_token and date_token in upstream_blob and type_token in upstream_blob)
 
     def _load_phase_guardrails_for_range(
         self,
@@ -209,18 +264,37 @@ class GuardedValidatedStore:
         constraints = self._season_constraints(season_plan)
         data = document.get("data", {})
         blob = self._normalize_payload(data)
+        guardrails_events = self._guardrails_event_pairs(document)
+        phase_summary = data.get("phase_summary", {})
+        non_negotiables = self._normalized_string_list(phase_summary.get("non_negotiables"))
+        key_risks = self._normalized_string_list(phase_summary.get("key_risks_warnings"))
+        recovery_rules = self._normalize_text(
+            str(((data.get("execution_non_negotiables") or {}).get("recovery_protection_rules") or "")).strip()
+        )
         errors: list[str] = []
 
-        for label, items in (
-            ("availability_assumptions", constraints["availability"]),
-            ("risk_constraints", constraints["risks"]),
-            ("planned_event_windows", constraints["planned"]),
-            ("recovery_notes", constraints["recovery_notes"]),
-        ):
-            for item in items:
+        for item in constraints["availability"]:
+            if not self._contains_normalized_item(non_negotiables, item):
+                errors.append(f"Season plan availability_assumptions missing in phase_guardrails: {item}")
+
+        for item in constraints["risks"]:
+            if not self._contains_normalized_item(key_risks, item):
+                errors.append(f"Season plan risk_constraints missing in phase_guardrails: {item}")
+
+        for item in constraints["recovery_notes"]:
+            normalized = self._normalize_text(item)
+            if normalized and normalized not in recovery_rules:
+                errors.append(f"Season plan recovery_notes missing in phase_guardrails: {item}")
+
+        for item in constraints["planned"]:
+            parsed = self._parse_planned_event_window(item)
+            if parsed is None:
                 normalized = self._normalize_text(item)
                 if normalized and normalized not in blob:
-                    errors.append(f"Season plan {label} missing in phase_guardrails: {item}")
+                    errors.append(f"Season plan planned_event_windows missing in phase_guardrails: {item}")
+                continue
+            if parsed not in guardrails_events:
+                errors.append(f"Season plan planned_event_windows missing in phase_guardrails: {item}")
 
         if constraints["fixed_days"]:
             day_aliases = {
@@ -251,18 +325,24 @@ class GuardedValidatedStore:
         data = document.get("data", {})
         upstream_constraints = data.get("upstream_intent", {}).get("constraints", [])
         upstream_blob = self._normalize_text(" ".join(str(item) for item in upstream_constraints))
+        upstream_items = self._normalized_string_list(upstream_constraints)
         errors: list[str] = []
 
-        for label, items in (
-            ("availability_assumptions", constraints["availability"]),
-            ("risk_constraints", constraints["risks"]),
-            ("planned_event_windows", constraints["planned"]),
-            ("recovery_notes", constraints["recovery_notes"]),
-        ):
-            for item in items:
-                normalized = self._normalize_text(item)
-                if normalized and normalized not in upstream_blob:
-                    errors.append(f"Season plan {label} missing in upstream_intent.constraints: {item}")
+        for item in constraints["availability"]:
+            if not self._contains_normalized_item(upstream_items, item):
+                errors.append(f"Season plan availability_assumptions missing in upstream_intent.constraints: {item}")
+
+        for item in constraints["risks"]:
+            if not self._contains_normalized_item(upstream_items, item):
+                errors.append(f"Season plan risk_constraints missing in upstream_intent.constraints: {item}")
+
+        for item in constraints["recovery_notes"]:
+            if not self._contains_normalized_item(upstream_items, item):
+                errors.append(f"Season plan recovery_notes missing in upstream_intent.constraints: {item}")
+
+        for item in constraints["planned"]:
+            if not self._structure_constraint_has_event_window(upstream_blob, item):
+                errors.append(f"Season plan planned_event_windows missing in upstream_intent.constraints: {item}")
 
         fixed_days = constraints["fixed_days"]
         exec_days = (
