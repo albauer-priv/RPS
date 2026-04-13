@@ -141,32 +141,36 @@ if chat and not isinstance(chat, Chat):
 if chat and getattr(chat, "model", None) != model:
     st.session_state.pop("coach_chat", None)
 if "coach_chat" not in st.session_state:
-    chat_kwargs = {
-        "model": model,
-        "instructions": instructions,
-        "functions": functions,
-        "vector_store_ids": None,
-        "allow_code_interpreter": False,
-        "allow_file_search": False,
-        "allow_web_search": allow_web_search,
-        "allow_image_generation": False,
-        "placeholder": "Ask the coach…",
-        "auto_compact_turns": 3,
-        "agent_name": "coach",
-    }
+    auto_compact_turns: int | None = 3
+    compact_model: str | None = None
+    temperature_value: float | None = None
     compact_turns = os.getenv("RPS_LLM_COACH_COMPACT_TURNS")
     if compact_turns:
         try:
-            chat_kwargs["auto_compact_turns"] = int(compact_turns)
+            auto_compact_turns = int(compact_turns)
         except ValueError:
             pass
     compact_model = os.getenv("RPS_LLM_COACH_COMPACT_MODEL")
     if compact_model:
-        chat_kwargs["compact_model"] = compact_model
+        compact_model = compact_model
     temperature = os.getenv("RPS_LLM_TEMPERATURE_COACH")
     if temperature and not model.startswith("gpt-5"):
-        chat_kwargs["temperature"] = float(temperature)
-    st.session_state.coach_chat = Chat(**chat_kwargs)
+        temperature_value = float(temperature)
+    st.session_state.coach_chat = Chat(
+        model=model,
+        instructions=instructions,
+        functions=functions,
+        vector_store_ids=None,
+        allow_code_interpreter=False,
+        allow_file_search=False,
+        allow_web_search=allow_web_search,
+        allow_image_generation=False,
+        placeholder="Ask the coach…",
+        auto_compact_turns=auto_compact_turns,
+        compact_model=compact_model,
+        temperature=temperature_value,
+        agent_name="coach",
+    )
 
 ui_log(
     f"Coach initialized with model={model} base_url={base_url or 'default'} api_key={key_hint}"

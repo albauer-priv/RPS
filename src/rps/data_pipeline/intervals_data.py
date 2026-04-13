@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timedelta, date, timezone
 from io import StringIO
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence, TypedDict, cast
 
 import numpy as np
 import pandas as pd
@@ -288,7 +288,23 @@ FLAG_COLUMN_KEYS = {
 # === Zone model defaults ===
 DEFAULT_POWER_ZONE_BOUNDS_PCT = [55, 75, 90, 105, 120, 150, 200]
 DEFAULT_SWEET_SPOT_RANGE_PCT = (84, 97)
-ZONE_MODEL_DEFAULTS = {
+
+
+class ZoneModelDefault(TypedDict):
+    name: str
+    typical_if: float | None
+    training_intent: str
+
+
+class IndexMeta(TypedDict):
+    run_id: str
+    owner_agent: str
+    created_at: str | None
+    iso_week: str | None
+    iso_week_range: str | None
+
+
+ZONE_MODEL_DEFAULTS: dict[str, ZoneModelDefault] = {
     "Z1": {
         "name": "Active Recovery",
         "typical_if": 0.45,
@@ -336,7 +352,9 @@ def seconds_to_hms(seconds: float | int | None) -> str:
     """Format seconds as HH:MM:SS, returning empty for missing values."""
     if pd.isna(seconds):
         return ""
-    total_seconds = int(round(seconds))
+    if seconds is None:
+        return ""
+    total_seconds = int(round(float(seconds)))
     h = total_seconds // 3600
     m = (total_seconds % 3600) // 60
     s = total_seconds % 60
@@ -740,14 +758,20 @@ def _extract_power_zone_bounds(setting: dict) -> list[float] | None:
                 bounds.append(max_val)
         return bounds or None
     if isinstance(raw, list):
-        bounds = [_as_percent(val) for val in raw if isinstance(val, (int, float))]
+        bounds = [
+            pct
+            for val in raw
+            if isinstance(val, (int, float))
+            for pct in [_as_percent(val)]
+            if pct is not None
+        ]
         return bounds or None
     return None
 
 
 def _build_zone_ranges(bounds: list[float]) -> dict[str, tuple[float, float]]:
     if len(bounds) < 7:
-        bounds = DEFAULT_POWER_ZONE_BOUNDS_PCT
+        bounds = [float(bound) for bound in DEFAULT_POWER_ZONE_BOUNDS_PCT]
     bounds = [float(b) for b in bounds[:7]]
     ranges: dict[str, tuple[float, float]] = {}
     prev = 0.0
@@ -1043,16 +1067,17 @@ def write_wellness(
     latest_file = latest_dir / "wellness.json"
     latest_file.write_bytes(out_file.read_bytes())
 
+    index_meta = cast(IndexMeta, meta)
     record_index_write(
         athlete_id=athlete_id,
         artifact_type="WELLNESS",
         version_key=version_key,
         path=out_file,
-        run_id=meta["run_id"],
-        producer_agent=meta["owner_agent"],
-        created_at=meta["created_at"],
-        iso_week=meta["iso_week"],
-        iso_week_range=meta["iso_week_range"],
+        run_id=index_meta["run_id"],
+        producer_agent=index_meta["owner_agent"],
+        created_at=index_meta["created_at"],
+        iso_week=index_meta["iso_week"],
+        iso_week_range=index_meta["iso_week_range"],
     )
 
     print(f"Wellness written: {out_file}")
@@ -1098,6 +1123,8 @@ def export_range(
     rows = []
     for act in activities:
         aid = act.get("id")
+        if not isinstance(aid, (str, int)):
+            continue
         detail = get_activity_detail(base_url, aid)
 
         power_zone_secs = {z["id"]: z["secs"] for z in (detail.get("icu_zone_times") or [])}
@@ -1826,15 +1853,16 @@ def compile_activities_actual(
         last_out_json_file = out_json_file
         last_out_parquet_file = out_parquet_file
 
+        index_meta = cast(IndexMeta, meta)
         record_index_write(
             athlete_id=athlete_id,
             artifact_type="ACTIVITIES_ACTUAL",
             version_key=version_key,
             path=out_json_file,
-            run_id=meta["run_id"],
-            producer_agent=meta["owner_agent"],
-            created_at=meta["created_at"],
-            iso_week=meta["iso_week"],
+            run_id=index_meta["run_id"],
+            producer_agent=index_meta["owner_agent"],
+            created_at=index_meta["created_at"],
+            iso_week=index_meta["iso_week"],
         )
 
         print(f"JSON exported: {out_json_file}")
@@ -2040,7 +2068,7 @@ def compile_activities_trend(
         if col_vo2_hr_s:
             vo2_hr_sec_raw = sum_seconds(g[col_vo2_hr_s])
         else:
-            hr_seconds = 0
+            hr_seconds = 0.0
             for z in range(4, 8):
                 c = hr_cols[z]
                 if c is not None:
@@ -2406,16 +2434,17 @@ def compile_activities_trend(
         latest_parquet = latest_dir / "activities_trend.parquet"
         latest_parquet.write_bytes(out_parquet_file.read_bytes())
 
+    index_meta = cast(IndexMeta, meta)
     record_index_write(
         athlete_id=athlete_id,
         artifact_type="ACTIVITIES_TREND",
         version_key=version_key,
         path=out_json_file,
-        run_id=meta["run_id"],
-        producer_agent=meta["owner_agent"],
-        created_at=meta["created_at"],
-        iso_week=meta["iso_week"],
-        iso_week_range=meta["iso_week_range"],
+        run_id=index_meta["run_id"],
+        producer_agent=index_meta["owner_agent"],
+        created_at=index_meta["created_at"],
+        iso_week=index_meta["iso_week"],
+        iso_week_range=index_meta["iso_week_range"],
     )
 
     print(f"JSON exported: {out_json_file}")
@@ -2437,7 +2466,10 @@ def _aggregate_yearly_activity_summary(
     for activity in activities:
         total_seconds += float(activity.get("moving_time") or 0.0)
         total_km += float(activity.get("distance") or 0.0) / 1000.0
-        detail = get_activity_detail(base_url, activity.get("id"))
+        activity_id = activity.get("id")
+        if not isinstance(activity_id, (str, int)):
+            continue
+        detail = get_activity_detail(base_url, activity_id)
         joules = detail.get("icu_joules") or 0.0
         total_kj += float(joules) / 1000.0
     return {
@@ -2558,14 +2590,15 @@ def compile_historical_baseline(
     latest_file = latest_dir / "historical_baseline.json"
     latest_file.write_bytes(out_file.read_bytes())
 
+    payload_meta = cast(dict[str, Any], payload["meta"])
     record_index_write(
         athlete_id=athlete_id,
         artifact_type="HISTORICAL_BASELINE",
         version_key=version_key,
         path=out_file,
         run_id=run_id,
-        producer_agent=payload["meta"]["owner_agent"],
-        created_at=payload["meta"]["created_at"],
+        producer_agent=str(payload_meta["owner_agent"]),
+        created_at=cast(str | None, payload_meta["created_at"]),
         iso_week=None,
         iso_week_range=None,
     )

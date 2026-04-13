@@ -10,18 +10,21 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Literal, cast
 
 import openai
 import streamlit as st
+_tiktoken: Any = None
 try:
-    import tiktoken
+    import tiktoken as _tiktoken
 except Exception:  # pragma: no cover - optional dependency
-    tiktoken = None
+    _tiktoken = None
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from rps.openai.response_utils import extract_text_output
 from rps.openai.client import get_client
+
+tiktoken: Any = _tiktoken
 LOGGER = logging.getLogger(__name__)
 CHAT_HISTORY_INSTRUCTIONS = """
 - This conversation was loaded from a chat history file.
@@ -84,6 +87,8 @@ MODEL_LIMITS = [
     ("gpt-5", {"context_window": 400_000, "max_output_tokens": 128_000}),
 ]
 CONSERVATIVE_CONTEXT_FRACTION = 0.9
+BlockCategory = Literal["text", "code", "reasoning", "image", "generated_image", "download", "upload"]
+BlockContent = str | bytes | Any
 
 
 class CustomFunction:
@@ -93,7 +98,7 @@ class CustomFunction:
         self,
         name: str,
         description: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         handler: Callable[..., Any],
     ) -> None:
         self.name = name
@@ -113,8 +118,8 @@ class RemoteMCP:
         server_label: str,
         server_url: str,
         require_approval: str = "never",
-        headers: Optional[Dict[str, Any]] = None,
-        allowed_tools: Optional[List[str]] = None,
+        headers: dict[str, Any] | None = None,
+        allowed_tools: list[str] | None = None,
     ) -> None:
         self.server_label = server_label
         self.server_url = server_url
@@ -129,28 +134,28 @@ class Chat():
     """A Streamlit-based chat interface powered by OpenAI's Responses API."""
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        model: Optional[str] = "gpt-4o",
-        instructions: Optional[str] = None,
-        temperature: Optional[float] = 1.0,
-        accept_file: Union[bool, Literal["multiple"]] = "multiple",
-        uploaded_files: Optional[List[str]] = None,
-        functions: Optional[List[CustomFunction]] = None,
-        mcps: Optional[List[RemoteMCP]] = None,
-        user_avatar: Optional[str] = None,
-        assistant_avatar: Optional[str] = None,
-        placeholder: Optional[str] = "Your message",
-        welcome_message: Optional[str] = None,
-        example_messages: Optional[List[dict]] = None,
-        info_message: Optional[str] = None,
-        vector_store_ids: Optional[List[str]] = None,
-        allow_code_interpreter: Optional[bool] = True,
-        allow_file_search: Optional[bool] = True,
-        allow_web_search: Optional[bool] = True,
-        allow_image_generation: Optional[bool] = True,
-        auto_compact_turns: Optional[int] = None,
-        compact_model: Optional[str] = None,
-        agent_name: Optional[str] = None,
+        api_key: str | None = None,
+        model: str | None = "gpt-4o",
+        instructions: str | None = None,
+        temperature: float | None = 1.0,
+        accept_file: bool | Literal["multiple", "directory"] = "multiple",
+        uploaded_files: list[str] | None = None,
+        functions: list[CustomFunction] | None = None,
+        mcps: list[RemoteMCP] | None = None,
+        user_avatar: str | None = None,
+        assistant_avatar: str | None = None,
+        placeholder: str | None = "Your message",
+        welcome_message: str | None = None,
+        example_messages: list[str] | None = None,
+        info_message: str | None = None,
+        vector_store_ids: list[str] | None = None,
+        allow_code_interpreter: bool | None = True,
+        allow_file_search: bool | None = True,
+        allow_web_search: bool | None = True,
+        allow_image_generation: bool | None = True,
+        auto_compact_turns: int | None = None,
+        compact_model: str | None = None,
+        agent_name: str | None = None,
     ) -> None:
         """
         Initializes a Chat instance.
@@ -178,7 +183,7 @@ class Chat():
             agent_name (str): Optional agent identifier for per-agent LLM config overrides.
         """
         self.api_key = os.getenv("RPS_LLM_API_KEY") if api_key is None else api_key
-        self.model = model
+        self.model = model or "gpt-4o"
         self.instructions = "" if instructions is None else instructions
         self.temperature = temperature
         self.accept_file = accept_file
@@ -205,17 +210,17 @@ class Chat():
             os.environ["RPS_LLM_API_KEY"] = api_key
         self._client = get_client(agent_name)
         self._temp_dir = tempfile.TemporaryDirectory()
-        self._selected_example = None
-        self._input = []
-        self._tools = []
-        self._previous_response_id = None
-        self._container_id = None
-        self._sections = []
-        self._static_files = []
-        self._tracked_files = []
+        self._selected_example: str | None = None
+        self._input: list[dict[str, Any]] = []
+        self._tools: list[dict[str, Any]] = []
+        self._previous_response_id: str | None = None
+        self._container_id: str | None = None
+        self._sections: list["Chat.Section"] = []
+        self._static_files: list["Chat.TrackedFile"] = []
+        self._tracked_files: list["Chat.TrackedFile"] = []
         self._download_button_key = 0
-        self._dynamic_vector_store = None
-        self._conversation_items = []
+        self._dynamic_vector_store: Any = None
+        self._conversation_items: list[dict[str, Any]] = []
         self._turn_count = 0
         self._last_compact_turn = 0
 
@@ -273,7 +278,7 @@ class Chat():
                 self._static_files.append(self._tracked_files[-1])
 
     @property
-    def last_section(self) -> Optional["Section"]:
+    def last_section(self) -> "Chat.Section" | None:
         """Returns the last section of the chat."""
         return self._sections[-1] if self._sections else None
 
@@ -281,7 +286,7 @@ class Chat():
         """Update the chat summary."""
         sections = []
         for section in self._sections:
-            s = {"role": section.role, "blocks": []}
+            s: dict[str, Any] = {"role": section.role, "blocks": []}
             if not section.blocks:
                 continue
             for block in section.blocks:
@@ -311,7 +316,7 @@ class Chat():
             )
             self.summary = response.output_text or extract_text_output(response) or "New Chat"
 
-    def _get_model_limits(self, model: str) -> Optional[Dict[str, int]]:
+    def _get_model_limits(self, model: str) -> dict[str, int] | None:
         """Return context/max-output limits for a model prefix."""
         for prefix, limits in MODEL_LIMITS:
             if model.startswith(prefix):
@@ -329,7 +334,7 @@ class Chat():
             encoding = tiktoken.get_encoding("o200k_base")
         return len(encoding.encode(text))
 
-    def _estimate_items_tokens(self, items: List[Any]) -> int:
+    def _estimate_items_tokens(self, items: list[Any]) -> int:
         """Estimate tokens for items by encoding a compact JSON string."""
         payload = json.dumps(items, ensure_ascii=True, separators=(",", ":"), default=str)
         return self._estimate_tokens(payload, self.model)
@@ -378,9 +383,9 @@ class Chat():
         logger.warning("Compaction insufficient; truncating conversation items.")
         self._truncate_conversation_items(context_budget - reserved_output)
 
-    def _normalize_items(self, items: List[Any]) -> List[Dict[str, Any]]:
+    def _normalize_items(self, items: list[Any]) -> list[dict[str, Any]]:
         """Normalize SDK items to dicts for Responses API input."""
-        normalized = []
+        normalized: list[dict[str, Any]] = []
         for item in items:
             if hasattr(item, "model_dump"):
                 data = item.model_dump()
@@ -395,15 +400,15 @@ class Chat():
             normalized.append(data)
         return normalized
 
-    def _message_items(self, items: List[Any]) -> List[Dict[str, Any]]:
+    def _message_items(self, items: list[Any]) -> list[dict[str, Any]]:
         """Return only message-style items (role + content)."""
-        messages = []
+        messages: list[dict[str, Any]] = []
         for item in items:
             if isinstance(item, dict) and "role" in item and "content" in item:
                 messages.append(self._strip_content_annotations(item))
         return messages
 
-    def _strip_content_annotations(self, message: Dict[str, Any]) -> Dict[str, Any]:
+    def _strip_content_annotations(self, message: dict[str, Any]) -> dict[str, Any]:
         """Remove unsupported fields from message content blocks."""
         content = message.get("content")
         if isinstance(content, list):
@@ -460,13 +465,13 @@ class Chat():
         with tempfile.TemporaryDirectory() as t:
             sections = []
             for section in self._sections:
-                s = {"role": section.role, "blocks": []}
+                s: dict[str, Any] = {"role": section.role, "blocks": []}
                 for block in section.blocks:
                     if block.category in ["text", "code", "reasoning"]:
                         content = block.content
                     else:
                         with open(f"{t}/{block.file_id}-{block.filename}", "wb") as f:
-                            f.write(block.content)
+                            f.write(cast(bytes, block.content))
                         content = "Bytes"
                     s["blocks"].append({
                         "category": block.category,
@@ -476,7 +481,8 @@ class Chat():
                     })
                 sections.append(s)
             for static_file in self._static_files:
-                shutil.copy(static_file._file_path, t)
+                if static_file._file_path is not None:
+                    shutil.copy(static_file._file_path, t)
             data = {
                 "model": self.model,
                 "instructions": self.instructions,
@@ -559,10 +565,18 @@ class Chat():
             chat._input.append({"role": "developer", "content": CHAT_HISTORY_INSTRUCTIONS})
         return chat
 
+    def _require_last_section(self) -> "Chat.Section":
+        """Return the active section and fail fast if the conversation state is invalid."""
+        section = self.last_section
+        if section is None:
+            raise RuntimeError("Chat section missing while streaming a response.")
+        return section
+
     def respond(self, prompt) -> None:
         """Sends the user prompt to the assistant and streams the response."""
         self._input.append({"role": "user", "content": prompt})
         self.add_section("assistant")
+        current_section = self._require_last_section()
         if self.allow_code_interpreter:
             result = self._client.containers.retrieve(container_id=self._container_id)
             if result.status == "expired":
@@ -576,7 +590,7 @@ class Chat():
                         )
             for tool in self._tools:
                 if tool["type"] == "code_interpreter":
-                    tool["container"] = self._container_id
+                    tool["container"] = self._container_id or ""
         self._ensure_token_budget()
         input_items = self._message_items(self._conversation_items) + self._input
         events1 = self._client.responses.create(
@@ -599,22 +613,30 @@ class Chat():
                 final_text = event1.response.output_text or extract_text_output(event1.response) or ""
                 response1_text = final_text
                 if final_text and not assistant_text:
-                    self.last_section.update_and_stream("text", final_text)
+                    current_section.update_and_stream("text", final_text)
                     assistant_text += final_text
             elif event1.type == "response.output_text.delta":
-                self.last_section.update_and_stream("text", event1.delta)
+                current_section.update_and_stream("text", event1.delta)
                 assistant_text += event1.delta
-                self.last_section.last_block.content = re.sub(r"!?\[([^\]]+)\]\(sandbox:/mnt/data/([^\)]+)\)", r"\1 (`\2`)", self.last_section.last_block.content)
+                last_block = current_section.last_block
+                if last_block is not None and isinstance(last_block.content, str):
+                    last_block.content = re.sub(
+                        r"!?\[([^\]]+)\]\(sandbox:/mnt/data/([^\)]+)\)",
+                        r"\1 (`\2`)",
+                        last_block.content,
+                    )
             elif event1.type == "response.code_interpreter_call_code.delta":
-                self.last_section.update_and_stream("code", event1.delta)
+                current_section.update_and_stream("code", event1.delta)
             elif event1.type == "response.output_item.done" and event1.item.type == "function_call":
                 tool_call_events.append(event1.item)
             elif event1.type == "response.reasoning_summary_text.delta":
-                self.last_section.update_and_stream("reasoning", event1.delta)
+                current_section.update_and_stream("reasoning", event1.delta)
             elif event1.type == "response.reasoning_summary_text.done":
-                self.last_section.last_block.content += "\n\n"
+                last_block = current_section.last_block
+                if last_block is not None and isinstance(last_block.content, str):
+                    last_block.content += "\n\n"
             elif event1.type == "response.image_generation_call.partial_image":
-                self.last_section.update_and_stream(
+                current_section.update_and_stream(
                     "generated_image",
                     base64.b64decode(event1.partial_image_b64),
                     filename=f"{event1.item_id}.{event1.output_format}",
@@ -630,7 +652,7 @@ class Chat():
                                 file_id=event1.annotation["file_id"],
                                 container_id=self._container_id
                             )
-                            self.last_section.update_and_stream(
+                            current_section.update_and_stream(
                                 "image",
                                 image_content.read(),
                                 filename=event1.annotation["filename"],
@@ -641,7 +663,7 @@ class Chat():
                             file_id=event1.annotation["file_id"],
                             container_id=self._container_id
                         )
-                        self.last_section.update_and_stream(
+                        current_section.update_and_stream(
                             "download",
                             cfile_content.read(),
                             filename=event1.annotation["filename"],
@@ -705,10 +727,10 @@ class Chat():
                     final_text = event2.response.output_text or extract_text_output(event2.response) or ""
                     response2_text = final_text
                     if final_text and not assistant_text:
-                        self.last_section.update_and_stream("text", final_text)
+                        current_section.update_and_stream("text", final_text)
                         assistant_text += final_text
                 elif event2.type == "response.output_text.delta":
-                    self.last_section.update_and_stream("text", event2.delta)
+                    current_section.update_and_stream("text", event2.delta)
                     assistant_text += event2.delta
             LOGGER.info(
                 "Coach response2 complete text_len=%d",
@@ -722,25 +744,28 @@ class Chat():
         self._turn_count += 1
         self._maybe_compact()
 
-    def run(self, uploaded_files=None) -> None:
+    def run(self, uploaded_files: list[UploadedFile] | None = None) -> None:
         """Runs the main assistant loop."""
         if self.info_message is not None:
             st.info(self.info_message)
         for section in self._sections:
             section.write()
         summary_placeholder = st.empty()
-        chat_input = st.chat_input(placeholder=self.placeholder, accept_file=self.accept_file)
+        chat_input_kwargs: dict[str, Any] = {"placeholder": self.placeholder or "Your message"}
+        if self.accept_file is not False:
+            chat_input_kwargs["accept_file"] = self.accept_file
+        chat_input = st.chat_input(**chat_input_kwargs)
         if chat_input is not None:
             if self.accept_file in [True, "multiple"]:
                 prompt = chat_input.text
-                attachments = chat_input.files
+                attachments = list(chat_input.files)
                 if attachments:
                     if uploaded_files is None:
                         uploaded_files = attachments
                     else:
                         uploaded_files.extend(attachments)
             else:
-                prompt = chat_input
+                prompt = str(chat_input)
                 attachments = []
             section = self.create_section("user")
             with st.chat_message("user"):
@@ -767,7 +792,7 @@ class Chat():
                         label_visibility="collapsed"
                     )
                     if selected_example:
-                        self._selected_example = selected_example
+                        self._selected_example = str(selected_example)
                         st.rerun()
                 else:
                     with st.chat_message("user"):
@@ -782,13 +807,18 @@ class Chat():
         summary = self.summary if self.summary else "New Chat"
         summary_placeholder.info(f"Summary: {summary}")
 
-    def handle_files(self, uploaded_files) -> None:
+    def handle_files(self, uploaded_files: list[UploadedFile] | None) -> None:
         """Handles uploaded files."""
         if uploaded_files is None:
             return
         else:
             for uploaded_file in uploaded_files:
-                if uploaded_file.file_id in [x.uploaded_file.file_id for x in self._tracked_files if isinstance(x, UploadedFile)]:
+                tracked_upload_ids = [
+                    tracked.uploaded_file.file_id
+                    for tracked in self._tracked_files
+                    if isinstance(tracked.uploaded_file, UploadedFile)
+                ]
+                if uploaded_file.file_id in tracked_upload_ids:
                     continue
                 self.track(uploaded_file)
 
@@ -797,7 +827,7 @@ class Chat():
         def __init__(
             self,
             chat: "Chat",
-            uploaded_file: Optional[Union[UploadedFile, str]]
+            uploaded_file: UploadedFile | str | None,
         ) -> None:
             """
             Initializes a TrackedFile instance.
@@ -808,9 +838,9 @@ class Chat():
             """
             self.chat = chat
             self.uploaded_file = uploaded_file
-            self._file_path = None
-            self._openai_file = None
-            self._vision_file = None
+            self._file_path: Path | None = None
+            self._openai_file: Any = None
+            self._vision_file: Any = None
             self._skip_file_search = False
             self._is_container_file = False
 
@@ -823,13 +853,14 @@ class Chat():
             else:
                 raise ValueError("uploaded_file must be an instance of UploadedFile or a string representing the file path.")
 
+            file_path = self._file_path
             self.chat._input.append(
-                {"role": "user", "content": [{"type": "input_text", "text": f"File locally available at: {self._file_path}"}]}
+                {"role": "user", "content": [{"type": "input_text", "text": f"File locally available at: {file_path}"}]}
             )
 
-            if self._file_path.suffix == ".pdf":
+            if file_path.suffix == ".pdf":
                 if self._openai_file is None:
-                    with open(self._file_path, "rb") as f:
+                    with open(file_path, "rb") as f:
                         self._openai_file = self.chat._client.files.create(file=f, purpose="user_data")
                 try:
                     # Test if the PDF file can be processed
@@ -845,24 +876,24 @@ class Chat():
                         "content": [{"type": "input_file", "file_id": self._openai_file.id}]
                     })
                     self._skip_file_search = True
-                except Exception as e:
+                except Exception:
                     pass
 
-            if self._file_path.suffix in VISION_EXTENSIONS:
-                self._vision_file = self.chat._client.files.create(file=self._file_path, purpose="vision")
+            if file_path.suffix in VISION_EXTENSIONS:
+                self._vision_file = self.chat._client.files.create(file=file_path, purpose="vision")
                 self.chat._input.append({
                     "role": "user",
                     "content": [{"type": "input_image", "file_id": self._vision_file.id}]
                 })
 
-            if self.chat.allow_code_interpreter and self._file_path.suffix in CODE_INTERPRETER_EXTENSIONS:
+            if self.chat.allow_code_interpreter and file_path.suffix in CODE_INTERPRETER_EXTENSIONS:
                 # If an image file is uploaded for vision purposes but is also 
                 # supported by the code interpreter, it will be automatically 
                 # uploaded to the code interpreter container.
-                if self._file_path.suffix in VISION_EXTENSIONS:
+                if file_path.suffix in VISION_EXTENSIONS:
                     self._openai_file = self._vision_file
                 if self._openai_file is None:
-                    with open(self._file_path, "rb") as f:
+                    with open(file_path, "rb") as f:
                         self._openai_file = self.chat._client.files.create(file=f, purpose="user_data")
                 self.chat._client.containers.files.create(
                     container_id=self.chat._container_id,
@@ -870,24 +901,25 @@ class Chat():
                 )
                 self._is_container_file = True
 
-            if self.chat.allow_file_search and not self._skip_file_search and self._file_path.suffix in FILE_SEARCH_EXTENSIONS:
+            if self.chat.allow_file_search and not self._skip_file_search and file_path.suffix in FILE_SEARCH_EXTENSIONS:
                 if self._openai_file is None:
-                    with open(self._file_path, "rb") as f:
+                    with open(file_path, "rb") as f:
                         self._openai_file = self.chat._client.files.create(file=f, purpose="user_data")
+                vector_store_client = cast(Any, self.chat._client)
                 if self.chat._dynamic_vector_store is None:
-                    self.chat._dynamic_vector_store = self.chat._client.vector_stores.create(
+                    self.chat._dynamic_vector_store = vector_store_client.vector_stores.create(
                         name="streamlit-openai"
                     )
-                self.chat._client.vector_stores.files.create(
+                vector_store_client.vector_stores.files.create(
                     vector_store_id=self.chat._dynamic_vector_store.id,
                     file_id=self._openai_file.id
                 )
-                result = self.chat._client.vector_stores.retrieve(
+                result = vector_store_client.vector_stores.retrieve(
                     vector_store_id=self.chat._dynamic_vector_store.id,
                 )
                 while result.status != "completed":
                     time.sleep(1)
-                    result = self.chat._client.vector_stores.retrieve(
+                    result = vector_store_client.vector_stores.retrieve(
                         vector_store_id=self.chat._dynamic_vector_store.id,
                     )
                 for tool in self.chat._tools:
@@ -901,10 +933,11 @@ class Chat():
                         "vector_store_ids": [self.chat._dynamic_vector_store.id]
                     })
 
-        def __repr__(self) -> None:
-            return f"TrackedFile(uploaded_file='{self._file_path.name}')"
+        def __repr__(self) -> str:
+            file_name = self._file_path.name if self._file_path is not None else "<unknown>"
+            return f"TrackedFile(uploaded_file='{file_name}')"
         
-    def track(self, uploaded_file) -> None:
+    def track(self, uploaded_file: UploadedFile | str) -> None:
         """Tracks a file uploaded by the user."""
         self._tracked_files.append(
             self.TrackedFile(self, uploaded_file)
@@ -915,10 +948,10 @@ class Chat():
         def __init__(
             self,
             chat: "Chat",
-            category: str,
-            content: Optional[Union[str, bytes, openai.File]] = None,
-            filename: Optional[str] = None,
-            file_id: Optional[str] = None,
+            category: BlockCategory,
+            content: BlockContent | None = None,
+            filename: str | None = None,
+            file_id: str | None = None,
         ) -> None:
             """
             Initializes a Block instance.
@@ -941,10 +974,12 @@ class Chat():
             else:
                 self.content = content
 
-        def __repr__(self) -> None:
+        def __repr__(self) -> str:
             """Returns a string representation of the Block."""
             if self.category in ["text", "code", "reasoning"]:
                 content = self.content
+                if not isinstance(content, str):
+                    content = str(content)
                 if len(content) > 30:
                     content = content[:30].strip() + "..."
                 content = repr(content)
@@ -952,7 +987,7 @@ class Chat():
                 content = "Bytes"
             return f"Block(category='{self.category}', content={content}, filename='{self.filename}', file_id='{self.file_id}')"
 
-        def iscategory(self, category) -> bool:
+        def iscategory(self, category: BlockCategory) -> bool:
             """Checks if the block belongs to the specified category."""
             return self.category == category
 
@@ -967,14 +1002,15 @@ class Chat():
                 with st.expander("", expanded=False, icon=":material/lightbulb:"):
                     st.markdown(self.content)
             elif self.category in ["image", "generated_image"]:
-                st.image(self.content)
+                st.image(cast(Any, self.content))
             elif self.category == "download":
-                _, file_extension = os.path.splitext(self.filename)
+                filename = self.filename or "download.bin"
+                _, file_extension = os.path.splitext(filename)
                 st.download_button(
-                    label=self.filename,
-                    data=self.content,
-                    file_name=self.filename,
-                    mime=MIME_TYPES[file_extension.lstrip(".")],
+                    label=filename,
+                    data=cast(Any, self.content),
+                    file_name=filename,
+                    mime=MIME_TYPES.get(file_extension.lstrip("."), "application/octet-stream"),
                     icon=":material/download:",
                     key=self.chat._download_button_key,
                 )
@@ -982,7 +1018,13 @@ class Chat():
             elif self.category == "upload":
                 st.markdown(f":material/attach_file: `{self.filename}`")
 
-    def create_block(self, category, content=None, filename=None, file_id=None) -> "Block":
+    def create_block(
+        self,
+        category: BlockCategory,
+        content: BlockContent | None = None,
+        filename: str | None = None,
+        file_id: str | None = None,
+    ) -> "Block":
         """Creates a new Block object."""
         return self.Block(
             self, category, content=content, filename=filename, file_id=file_id
@@ -994,7 +1036,7 @@ class Chat():
             self,
             chat: "Chat",
             role: str,
-            blocks: Optional[List["Block"]] = None,
+            blocks: list["Chat.Block"] | None = None,
         ) -> None:
             """
             Initializes a Section instance.
@@ -1006,32 +1048,44 @@ class Chat():
             """
             self.chat = chat
             self.role = role
-            self.blocks = blocks
+            self.blocks: list["Chat.Block"] = blocks or []
             self.delta_generator = st.empty()
             
-        def __repr__(self) -> None:
+        def __repr__(self) -> str:
             """Returns a string representation of the Section."""
             return f"Section(role='{self.role}', blocks={self.blocks})"
 
         @property
         def empty(self) -> bool:
             """Returns True if the section has no blocks."""
-            return self.blocks is None
+            return not self.blocks
 
         @property
-        def last_block(self) -> Optional["Block"]:
+        def last_block(self) -> "Chat.Block" | None:
             """Returns the last block in the section or None if empty."""
             return None if self.empty else self.blocks[-1]
 
-        def update(self, category, content, filename=None, file_id=None) -> None:
+        def update(
+            self,
+            category: BlockCategory,
+            content: BlockContent,
+            filename: str | None = None,
+            file_id: str | None = None,
+        ) -> None:
             """Updates the section with new content, appending or extending existing blocks."""
             if self.empty:
                 self.blocks = [self.chat.create_block(
                     category, content, filename=filename, file_id=file_id
                 )]
-            elif category in ["text", "code", "reasoning"] and self.last_block.iscategory(category):
+            elif (
+                category in ["text", "code", "reasoning"]
+                and self.last_block is not None
+                and self.last_block.iscategory(category)
+                and isinstance(self.last_block.content, str)
+                and isinstance(content, str)
+            ):
                 self.last_block.content += content
-            elif category == "generated_image" and self.last_block.iscategory(category):
+            elif category == "generated_image" and self.last_block is not None and self.last_block.iscategory(category):
                 self.last_block.content = content
             else:
                 self.blocks.append(self.chat.create_block(
@@ -1047,7 +1101,13 @@ class Chat():
                     for block in self.blocks:
                         block.write()
 
-        def update_and_stream(self, category, content, filename=None, file_id=None) -> None:
+        def update_and_stream(
+            self,
+            category: BlockCategory,
+            content: BlockContent,
+            filename: str | None = None,
+            file_id: str | None = None,
+        ) -> None:
             """Updates the section and streams the update live to the UI."""
             self.update(category, content, filename=filename, file_id=file_id)
             self.stream()
@@ -1057,11 +1117,11 @@ class Chat():
             with self.delta_generator:
                 self.write()
 
-    def create_section(self, role, blocks=None) -> "Section":
+    def create_section(self, role: str, blocks: list["Chat.Block"] | None = None) -> "Section":
         """Creates a new Section object."""
         return self.Section(self, role, blocks=blocks)
 
-    def add_section(self, role, blocks=None) -> None:
+    def add_section(self, role: str, blocks: list["Chat.Block"] | None = None) -> None:
         """Adds a new Section."""
         self._sections.append(
             self.Section(self, role, blocks=blocks)

@@ -225,7 +225,7 @@ def render_global_sidebar() -> dict:
         )
         ui_dev_mode = st.toggle("Dev mode", value=bool(state.get("ui_dev_mode", False)))
 
-        phases = []
+        phases: list[dict[str, object]] = []
         phase_label = state.get("selected_phase_label")
         season_plan = _cached_season_plan(athlete_id, workspace_root)
         if isinstance(season_plan, dict):
@@ -373,7 +373,7 @@ def system_log_panel(expanded: bool = True) -> None:
             log_file = ensure_logging(athlete_id)
         path = Path(log_file) if log_file else None
         if path and path.exists():
-            tail = deque(maxlen=200)
+            tail: deque[str] = deque(maxlen=200)
             with path.open("r", encoding="utf-8", errors="replace") as handle:
                 for line in handle:
                     tail.append(line.rstrip("\n"))
@@ -492,7 +492,8 @@ def season_plan_covers_week(athlete_id: str, year: int, week: int) -> tuple[bool
 
     if isinstance(iso_range, str):
         try:
-            if range_contains(parse_iso_week_range(iso_range), target):
+            parsed_range = parse_iso_week_range(iso_range)
+            if parsed_range and range_contains(parsed_range, target):
                 return True, None
         except Exception:
             pass
@@ -506,7 +507,8 @@ def season_plan_covers_week(athlete_id: str, year: int, week: int) -> tuple[bool
             phase_range = phase.get("iso_week_range")
             if isinstance(phase_range, str):
                 try:
-                    if range_contains(parse_iso_week_range(phase_range), target):
+                    parsed_range = parse_iso_week_range(phase_range)
+                    if parsed_range and range_contains(parsed_range, target):
                         return True, None
                 except Exception:
                     continue
