@@ -226,7 +226,7 @@ def test_plan_hub_build_workouts_adds_missing_week_dependencies():
     assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
 
 
-def test_plan_hub_phase_action_targets_follow_current_and_next_week(tmp_path):
+def test_plan_hub_phase_week_selector_helpers_follow_current_week(tmp_path):
     from rps.ui.pages.plan import hub as plan_hub
 
     store = LocalArtifactStore(root=tmp_path)
@@ -265,17 +265,14 @@ def test_plan_hub_phase_action_targets_follow_current_and_next_week(tmp_path):
     original_root = plan_hub.SETTINGS.workspace_root
     object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
     try:
-        targets = plan_hub._action_phase_targets(athlete_id, current_week)
+        selected_phase = plan_hub._default_phase_label(athlete_id, current_week)
+        phase_weeks = plan_hub._weeks_for_phase_label(athlete_id, selected_phase)
     finally:
         object.__setattr__(plan_hub.SETTINGS, "workspace_root", original_root)
 
-    assert len(targets) == 2
-    assert targets[0][0] == "current"
-    assert targets[0][1] == current_week
-    assert targets[0][2].startswith("P01")
-    assert targets[1][0] == "next"
-    assert targets[1][1] == next_week
-    assert targets[1][2].startswith("P02")
+    assert selected_phase is not None
+    assert selected_phase.startswith("P01")
+    assert phase_weeks == [current_week]
 
 
 def test_plan_hub_direct_action_buttons_render(tmp_path):
@@ -330,10 +327,12 @@ def test_plan_hub_direct_action_buttons_render(tmp_path):
 
     assert len(at.error) == 0
     labels = [button.label for button in at.button]
-    assert labels.count("Run Current Phase") >= 1
-    assert labels.count("Run Next Phase") >= 1
-    assert labels.count("Run Current Week") >= 1
-    assert labels.count("Run Next Week") >= 1
+    assert labels.count("Run Phase") >= 1
+    assert labels.count("Run Week") >= 1
+    assert labels.count("Run Workouts") >= 1
+    select_labels = [select.label for select in at.selectbox]
+    assert select_labels.count("Phase") >= 2
+    assert "Week" in select_labels
 
 
 def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):

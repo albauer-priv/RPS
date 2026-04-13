@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Local `knowledge_search` now auto-rebuilds the missing `vs_rps_all_agents` Qdrant collection from the canonical manifest and retries once, so planning does not hard-stop on a recoverable vectorstore sync issue.
+- Plan Hub phase cards now use a phase selector, and week/workout cards now use phase plus week selectors defaulted from the current-week phase context; Plan Hub planning actions are no longer restricted to current/next week only.
 - Plan Hub readiness cards for `Phase Guardrails`, `Phase Structure`, `Phase Preview`, `Week Plan`, and `Build Workouts` now expose direct current/next phase or week actions that queue regular scoped planning runs through the worker.
 - Phase-Guardrails recovery protection propagation now has a canonical array-to-string mapping, so season recovery notes no longer deadlock Phase Guardrails creation when the season plan provides multiple notes.
 - LiteLLM Responses handling now replays prior response output items when `previous_response_id` is used, so Coach follow-up tool outputs can be matched back to their original tool calls.

@@ -410,6 +410,57 @@ def _action_phase_targets(athlete_id: str, base_week: IsoWeek) -> list[tuple[str
     return targets
 
 
+def _phase_options_for_athlete(athlete_id: str) -> tuple[list[str], dict[str, dict]]:
+    """Return phase select options and labels for the latest season plan."""
+    phase_map = _load_season_phase_map(athlete_id)
+    return list(phase_map.keys()), phase_map
+
+
+def _weeks_for_phase_label(athlete_id: str, phase_label: str | None) -> list[IsoWeek]:
+    """Return all ISO weeks covered by the selected phase label."""
+    if not phase_label:
+        return []
+    phase_map = _load_season_phase_map(athlete_id)
+    phase = phase_map.get(phase_label)
+    if not isinstance(phase, dict):
+        return []
+    iso_range = parse_iso_week_range(phase.get("iso_week_range"))
+    if not iso_range:
+        return []
+    weeks: list[IsoWeek] = []
+    current = iso_range.start
+    while True:
+        weeks.append(current)
+        if current == iso_range.end:
+            break
+        current = next_iso_week(current)
+    return weeks
+
+
+def _default_phase_label(athlete_id: str, preferred_week: IsoWeek, fallback_label: str | None = None) -> str | None:
+    """Return the default phase label for a selected week, then fallback label, then first option."""
+    options, _phase_map = _phase_options_for_athlete(athlete_id)
+    if not options:
+        return None
+    resolved = _phase_label_for_week(athlete_id, preferred_week)
+    if resolved in options:
+        return resolved
+    if fallback_label in options:
+        return fallback_label
+    return options[0]
+
+
+def _week_option_labels(weeks: list[IsoWeek]) -> tuple[list[str], dict[str, IsoWeek]]:
+    """Return select labels and mapping for ISO week choices."""
+    labels: list[str] = []
+    mapping: dict[str, IsoWeek] = {}
+    for week in weeks:
+        label = f"{week.year:04d}-W{week.week:02d}"
+        labels.append(label)
+        mapping[label] = week
+    return labels, mapping
+
+
 def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessStep]:
     """Compute readiness across the planning pipeline."""
     logger.debug("Computing readiness athlete=%s iso=%04d-W%02d", athlete_id, year, week)
@@ -981,8 +1032,9 @@ def _render_direct_step_actions(
     athlete_id: str,
     base_week: IsoWeek,
     scope_lock: bool,
+    default_phase_label: str | None = None,
 ) -> bool:
-    """Render direct current/next action buttons for readiness cards."""
+    """Render selector-driven direct action controls for readiness cards."""
     if step.key not in {
         "phase_guardrails",
         "phase_structure",
@@ -1003,21 +1055,27 @@ def _render_direct_step_actions(
     }
 
     if step.key in phase_scope_map:
-        targets = _action_phase_targets(athlete_id, base_week)
-        if not targets:
+        phase_options, _phase_map = _phase_options_for_athlete(athlete_id)
+        selected_phase = _default_phase_label(athlete_id, base_week, default_phase_label)
+        if not phase_options or selected_phase not in phase_options:
             return False
         st.caption("Direct actions")
-        cols = st.columns(len(targets))
-        for col, (target_name, target_week, phase_label) in zip(cols, targets):
-            button_label = "Run Current Phase" if target_name == "current" else "Run Next Phase"
-            clicked = col.button(
-                button_label,
-                key=f"direct_{step.key}_{target_name}_{target_week.year}_{target_week.week}",
-                disabled=scope_lock,
-                help=f"{phase_label} · {target_week.year:04d}-W{target_week.week:02d}",
-            )
-            if not clicked:
-                continue
+        selected_phase = st.selectbox(
+            "Phase",
+            options=phase_options,
+            index=phase_options.index(selected_phase),
+            key=f"direct_phase_select_{step.key}",
+            disabled=scope_lock,
+        )
+        phase_weeks = _weeks_for_phase_label(athlete_id, selected_phase)
+        if not phase_weeks:
+            return False
+        target_week = phase_weeks[0]
+        if st.button(
+            "Run Phase",
+            key=f"direct_phase_run_{step.key}",
+            disabled=scope_lock,
+        ):
             block_reason = _planning_block_reason(
                 SETTINGS.workspace_root,
                 athlete_id,
@@ -1030,7 +1088,7 @@ def _render_direct_step_actions(
                 athlete_id=athlete_id,
                 iso_year=target_week.year,
                 iso_week=target_week.week,
-                phase_label=phase_label,
+                phase_label=selected_phase,
                 scope=phase_scope_map[step.key],
                 run_id_prefix=f"plan_hub_{step.key}",
             )
@@ -1038,21 +1096,37 @@ def _render_direct_step_actions(
             st.rerun()
         return True
 
-    targets = _action_week_targets(base_week)
-    if not targets:
+    phase_options, _phase_map = _phase_options_for_athlete(athlete_id)
+    selected_phase = _default_phase_label(athlete_id, base_week, default_phase_label)
+    if not phase_options or selected_phase not in phase_options:
         return False
     st.caption("Direct actions")
-    cols = st.columns(len(targets))
-    for col, (target_name, target_week) in zip(cols, targets):
-        button_label = "Run Current Week" if target_name == "current" else "Run Next Week"
-        clicked = col.button(
-            button_label,
-            key=f"direct_{step.key}_{target_name}_{target_week.year}_{target_week.week}",
-            disabled=scope_lock,
-            help=f"{target_week.year:04d}-W{target_week.week:02d}",
-        )
-        if not clicked:
-            continue
+    selected_phase = st.selectbox(
+        "Phase",
+        options=phase_options,
+        index=phase_options.index(selected_phase),
+        key=f"direct_week_phase_select_{step.key}",
+        disabled=scope_lock,
+    )
+    phase_weeks = _weeks_for_phase_label(athlete_id, selected_phase)
+    if not phase_weeks:
+        return False
+    week_labels, week_map = _week_option_labels(phase_weeks)
+    default_week = base_week if base_week in phase_weeks else phase_weeks[0]
+    default_week_label = f"{default_week.year:04d}-W{default_week.week:02d}"
+    selected_week_label = st.selectbox(
+        "Week",
+        options=week_labels,
+        index=week_labels.index(default_week_label),
+        key=f"direct_week_select_{step.key}",
+        disabled=scope_lock,
+    )
+    target_week = week_map[selected_week_label]
+    if st.button(
+        "Run Week" if step.key == "week_plan" else "Run Workouts",
+        key=f"direct_week_run_{step.key}",
+        disabled=scope_lock,
+    ):
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
             athlete_id,
@@ -1061,12 +1135,11 @@ def _render_direct_step_actions(
         if block_reason:
             st.warning(block_reason)
             st.stop()
-        phase_label = _phase_label_for_week(athlete_id, target_week)
         _queue_scoped_run(
             athlete_id=athlete_id,
             iso_year=target_week.year,
             iso_week=target_week.week,
-            phase_label=phase_label,
+            phase_label=selected_phase,
             scope=week_scope_map[step.key],
             run_id_prefix=f"plan_hub_{step.key}",
         )
@@ -1255,9 +1328,6 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                             if block_reason:
                                 st.warning(block_reason)
                                 st.stop()
-                            if not _is_week_in_scope(IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"])):
-                                st.warning("Planning scope is limited to the current or next ISO week.")
-                                st.stop()
                             readiness_snapshot = _compute_readiness(
                                 hub_scope["athlete_id"],
                                 hub_scope["iso_year"],
@@ -1308,6 +1378,7 @@ for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_id
                     athlete_id=hub_scope["athlete_id"],
                     base_week=IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"]),
                     scope_lock=scope_lock,
+                    default_phase_label=hub_scope.get("phase_label"),
                 )
 
 with st.expander("Season Plan: Delete or Reset", expanded=False):
@@ -1405,7 +1476,7 @@ if not has_blockers:
         target_readiness = _compute_readiness(athlete_id, target_week.year, target_week.week)
         cta_prefix = "Plan Next Week" if plan_next else "Plan Week"
         cta_label = f"{cta_prefix}: {target_week.year:04d}-W{target_week.week:02d}"
-        cta_disabled = scope_lock or not _is_week_in_scope(target_week)
+        cta_disabled = scope_lock
 
         run_mode = st.radio("Run mode", ["Orchestrated", "Scoped"], index=1)
         scope = None
@@ -1472,9 +1543,6 @@ if not has_blockers:
             )
 
     if run_week:
-        if not _is_week_in_scope(target_week):
-            st.warning("Planning scope is limited to the current or next ISO week.")
-            st.stop()
         if _override_required("Week Plan", target_readiness):
             st.warning("This week already has planning artifacts. Use a scoped run with an override.")
             st.stop()
@@ -1522,9 +1590,6 @@ if not has_blockers:
         st.info("Run requested.")
 
     if run_orchestrated:
-        if not _is_week_in_scope(base_week):
-            st.warning("Planning scope is limited to the current or next ISO week.")
-            st.stop()
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
             hub_scope["athlete_id"],
@@ -1575,9 +1640,6 @@ if not has_blockers:
         )
         if block_reason:
             st.warning(block_reason)
-            st.stop()
-        if not _is_week_in_scope(base_week):
-            st.warning("Planning scope is limited to the current or next ISO week.")
             st.stop()
         if override_required and not (override_text or "").strip():
             st.warning("Override required when modifying existing artifacts.")
