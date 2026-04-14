@@ -90,8 +90,7 @@ def _parse_rotate_mb(value: str | None, default_mb: int = 50) -> int:
     if value is None or value == "":
         return default_mb
     try:
-        parsed = int(value)
-        return parsed
+        return int(value)
     except (TypeError, ValueError):
         return default_mb
 

@@ -40,7 +40,7 @@ def select_manifests(args: argparse.Namespace) -> list[Path]:
     selected: list[Path] = []
     for manifest_path in manifests:
         manifest = load_manifest(manifest_path)
-        if manifest.agent == args.agent or manifest_path.parent.name == args.agent:
+        if args.agent in {manifest.agent, manifest_path.parent.name}:
             selected.append(manifest_path)
     return selected
 

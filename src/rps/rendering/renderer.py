@@ -223,7 +223,7 @@ def build_season_plan_context(doc):
             }
         )
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -300,7 +300,6 @@ def build_season_plan_context(doc):
         "explicit_forbidden_content": data.get("explicit_forbidden_content", []),
         "self_check": self_check,
     }
-    return context
 
 
 def build_phase_guardrails_context(doc):
@@ -343,7 +342,7 @@ def build_phase_guardrails_context(doc):
         for event in data.get("events_constraints", {}).get("events", [])
     ]
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -427,7 +426,6 @@ def build_phase_guardrails_context(doc):
             ),
         },
     }
-    return context
 
 
 def build_week_plan_context(doc):
@@ -465,7 +463,7 @@ def build_week_plan_context(doc):
         for workout in data.get("workouts", [])
     ]
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -483,7 +481,6 @@ def build_week_plan_context(doc):
         "agenda": agenda_rows,
         "workouts": workouts,
     }
-    return context
 
 
 def build_phase_structure_context(doc):
@@ -506,7 +503,7 @@ def build_phase_structure_context(doc):
     relationships = data.get("relationships", {})
     self_check = data.get("self_check", {})
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -606,7 +603,6 @@ def build_phase_structure_context(doc):
             "no_kpi_gate_inferred": bool(self_check.get("no_kpi_gate_inferred")),
         },
     }
-    return context
 
 
 def build_phase_preview_context(doc):
@@ -641,7 +637,7 @@ def build_phase_preview_context(doc):
     week_to_week = data.get("week_to_week_narrative", {})
     traceability = data.get("traceability", {})
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -673,7 +669,6 @@ def build_phase_preview_context(doc):
             "conflict_resolution": traceability.get("conflict_resolution", []),
         },
     }
-    return context
 
 
 def build_phase_feed_forward_context(doc):
@@ -707,7 +702,7 @@ def build_phase_feed_forward_context(doc):
             )
         return rows
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -769,7 +764,6 @@ def build_phase_feed_forward_context(doc):
             "no_week_content_present": bool(self_check.get("no_week_content_present")),
         },
     }
-    return context
 
 
 def build_season_phase_feed_forward_context(doc):
@@ -781,7 +775,7 @@ def build_season_phase_feed_forward_context(doc):
     decision_summary = data.get("decision_summary", {})
     phase_adjustment = data.get("phase_adjustment")
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -798,7 +792,6 @@ def build_season_phase_feed_forward_context(doc):
         "phase_adjustment": phase_adjustment,
         "explicit_non_actions": data.get("explicit_non_actions", []),
     }
-    return context
 
 
 def build_des_analysis_report_context(doc):
@@ -825,7 +818,7 @@ def build_des_analysis_report_context(doc):
             "delta_vs_baseline": entry.get("delta_vs_baseline", ""),
         }
 
-    context = {
+    return {
         "meta": meta,
         "summary_meta": {
             "year": summary_meta.get("year"),
@@ -873,7 +866,6 @@ def build_des_analysis_report_context(doc):
             ),
         },
     }
-    return context
 
 
 def build_activities_actual_context(doc):
@@ -983,7 +975,7 @@ def build_activities_actual_context(doc):
                 row[key] = "" if value is None else fmt_number(value)
         rows.append(row)
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -992,7 +984,6 @@ def build_activities_actual_context(doc):
         "rows": rows,
         "notes": data.get("notes"),
     }
-    return context
 
 
 def build_activities_trend_context(doc):
@@ -1172,7 +1163,7 @@ def build_activities_trend_context(doc):
                 row[key] = fmt_number(trend.get(key))
         rows.append(row)
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -1181,7 +1172,6 @@ def build_activities_trend_context(doc):
         "rows": rows,
         "notes": data.get("notes"),
     }
-    return context
 
 
 def build_zone_model_context(doc):
@@ -1238,7 +1228,7 @@ def build_zone_model_context(doc):
         except ValueError:
             z2_np_example = ""
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -1254,7 +1244,6 @@ def build_zone_model_context(doc):
         "versioning_usage": data.get("versioning_usage", []),
         "z2_np_example": z2_np_example,
     }
-    return context
 
 
 def build_kpi_profile_context(doc):
@@ -1311,7 +1300,7 @@ def build_kpi_profile_context(doc):
     recovery = data.get("recovery_tolerability", {})
     traceability = data.get("traceability", {})
 
-    context = {
+    return {
         "meta": {
             "artifact_type": meta.get("artifact_type", ""),
             "schema_id": meta.get("schema_id", ""),
@@ -1490,7 +1479,6 @@ def build_kpi_profile_context(doc):
             "requirements": traceability.get("requirements") or [],
         },
     }
-    return context
 
 
 def build_availability_context(doc):
@@ -1512,7 +1500,7 @@ def build_availability_context(doc):
         for row in data.get("availability_table", [])
     ]
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -1530,7 +1518,6 @@ def build_availability_context(doc):
             "notes": data.get("notes", ""),
         },
     }
-    return context
 
 
 def build_wellness_context(doc):
@@ -1541,7 +1528,7 @@ def build_wellness_context(doc):
     entries = list(data.get("entries") or [])
     entries.sort(key=lambda row: row.get("date") or "")
 
-    context = {
+    return {
         "meta": meta,
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
@@ -1552,7 +1539,6 @@ def build_wellness_context(doc):
             "notes": data.get("notes", ""),
         },
     }
-    return context
 
 
 def render_season_plan(doc, template_dir: Path):

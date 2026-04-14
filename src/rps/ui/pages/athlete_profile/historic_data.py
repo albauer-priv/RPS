@@ -81,10 +81,10 @@ if yearly_summary:
                 "year": item.get("year"),
                 "activities": item.get("activities"),
                 "moving_time": _format_hh_mm(moving_time_seconds),
-                "km": int(round(km)) if km is not None else None,
-                "kj_year": int(round(kj_year)) if kj_year is not None else None,
-                "kj_activity": int(round(kj_activity)) if kj_activity is not None else None,
-                "kj_hour": int(round(kj_hour)) if kj_hour is not None else None,
+                "km": round(km) if km is not None else None,
+                "kj_year": round(kj_year) if kj_year is not None else None,
+                "kj_activity": round(kj_activity) if kj_activity is not None else None,
+                "kj_hour": round(kj_hour) if kj_hour is not None else None,
             }
         )
     st.dataframe(

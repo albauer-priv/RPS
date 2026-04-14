@@ -350,7 +350,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                 if step_status == "RUNNING":
                     response_id = _step_str(step, "response_id")
                     response_status = _poll_response_status(response_id) if response_id else None
-                    if response_status in {"completed"}:
+                    if response_status == "completed":
                         step["Status"] = "DONE"
                         step["Ended"] = datetime.now(UTC).isoformat()
                         _set_duration(step)

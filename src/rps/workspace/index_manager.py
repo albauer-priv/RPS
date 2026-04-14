@@ -51,8 +51,7 @@ class WorkspaceIndexManager:
                 "updated_at": utc_iso_now(),
                 "artefacts": {},
             }
-        index = json.loads(path.read_text(encoding="utf-8"))
-        return index
+        return json.loads(path.read_text(encoding="utf-8"))
 
     def save(self, index: JsonMap) -> None:
         """Persist the index to disk with an updated timestamp."""

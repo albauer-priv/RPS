@@ -732,7 +732,7 @@ def run_agent_multi_output(
                     for bound in ("min", "max"):
                         val = weekly_kj.get(bound)
                         if isinstance(val, (int, float)):
-                            weekly_kj[bound] = int(round(float(val)))
+                            weekly_kj[bound] = round(float(val))
                     for bound in ("kj_per_kg_min", "kj_per_kg_max"):
                         val = weekly_kj.get(bound)
                         if isinstance(val, (int, float)):
@@ -747,7 +747,7 @@ def run_agent_multi_output(
                 for bound in ("min", "max"):
                     val = expected_range.get(bound)
                     if isinstance(val, (int, float)):
-                        expected_range[bound] = int(round(float(val)))
+                        expected_range[bound] = round(float(val))
         global_constraints = data.get("global_constraints")
         if isinstance(global_constraints, dict):
             recovery = global_constraints.get("recovery_protection")
@@ -1243,3 +1243,4 @@ def run_agent_multi_output(
             seen_summaries.add(summary)
             logger.info("Reasoning summary: %s", _format_heading_for_log(summary))
         input_list += response.output
+    return {"ok": False, "produced": produced, "final_text": last_text, "error": "UNEXPECTED_LOOP_EXIT"}

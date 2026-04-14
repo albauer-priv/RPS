@@ -148,7 +148,7 @@ agenda_title = (
     "Weekly Agenda: "
     f"{total_activities} Act. - "
     f"{format_duration_hhmm(total_minutes)} Duration - "
-    f"{int(round(total_kj))} kJ Load"
+    f"{round(total_kj)} kJ Load"
 )
 
 with st.expander(agenda_title, expanded=False):

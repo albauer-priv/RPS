@@ -529,13 +529,13 @@ class GuardedValidatedStore:
         if isinstance(value, (int, float)):
             joined = _joined_path(path)
             if "integer" in types and "number" not in types:
-                return int(round(float(value)))
+                return round(float(value))
             if "integer" in types and "number" in types and abs(float(value) - round(float(value))) < INTEGER_ROUNDING_EPSILON:
-                return int(round(float(value)))
+                return round(float(value))
             if "number" in types or not types:
                 decimals = self._rounding_decimals(joined)
                 if decimals == 0:
-                    return int(round(float(value)))
+                    return round(float(value))
                 return round(float(value), decimals)
         return value
 

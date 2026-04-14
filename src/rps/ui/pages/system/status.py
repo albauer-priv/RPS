@@ -182,10 +182,10 @@ def _matches_filter(run: dict) -> bool:
     if status_filter != "All" and run.get("status") != status_filter:
         return False
     process_type = _run_str(run, "process_type")
-    if type_filter != "All" and process_type != type_filter:
+    if type_filter not in {"All", process_type}:
         return False
     process_subtype = _run_str(run, "process_subtype")
-    return not (subtype_filter != "All" and process_subtype != subtype_filter)
+    return subtype_filter in {"All", process_subtype}
 
 
 filtered_runs = [run for run in runs if _matches_filter(run)]

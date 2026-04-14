@@ -1367,7 +1367,7 @@ total_required = len(required_steps)
 ready_required = sum(1 for step in required_steps if step.status == "ready")
 has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
 missing_blocked_steps = [step for step in required_steps if step.status in {"missing", "blocked"}]
-panel_blockers = [step for step in missing_blocked_steps if step.key not in {"week_plan"}]
+panel_blockers = [step for step in missing_blocked_steps if step.key != "week_plan"]
 has_blockers = bool(panel_blockers)
 blocked_messages: list[str] = []
 if missing_blocked_steps:

@@ -204,7 +204,7 @@ if st.button("Save Availability", width="content"):
         _normalize_entry(row if isinstance(row, dict) else None, day)
         for day, row in zip(WEEKDAYS, availability_table, strict=True)
     ]
-    fixed_rest_days_set = {day for day in fixed_rest_days}
+    fixed_rest_days_set = set(fixed_rest_days)
     for row in normalized_table:
         if row["weekday"] in fixed_rest_days_set:
             row["locked"] = True

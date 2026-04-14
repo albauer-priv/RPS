@@ -269,7 +269,7 @@ def _build_corridor_overview_chart(
                 y=min_vals,
                 mode="lines",
                 name=f"{name} Min",
-                line=dict(color=color, dash="dot"),
+                line={"color": color, "dash": "dot"},
                 hovertemplate="Week %{x}<br>%{fullData.name} %{y}<extra></extra>",
             )
         )
@@ -279,7 +279,7 @@ def _build_corridor_overview_chart(
                 y=max_vals,
                 mode="lines",
                 name=f"{name} Max",
-                line=dict(color=color),
+                line={"color": color},
                 fill="tonexty",
                 fillcolor=f"rgba{tuple(int(color[i:i+2], 16) for i in (1, 3, 5)) + (0.12,)}",
                 hovertemplate="Week %{x}<br>%{fullData.name} %{y}<extra></extra>",
@@ -305,16 +305,16 @@ def _build_corridor_overview_chart(
                 y=planned_vals,
                 mode="lines+markers",
                 name="Planned Weekly kJ",
-                line=dict(color="#1f77b4", dash="dash"),
+                line={"color": "#1f77b4", "dash": "dash"},
                 hovertemplate="Week %{x}<br>Planned kJ %{y}<extra></extra>",
             )
         )
     fig.update_layout(
-        xaxis=dict(title="Week", tickangle=-45),
-        yaxis=dict(title="kJ Corridor"),
+        xaxis={"title": "Week", "tickangle": -45},
+        yaxis={"title": "kJ Corridor"},
         legend_title_text="Corridor",
         barmode="overlay",
-        margin=dict(l=40, r=20, t=20, b=60),
+        margin={"l": 40, "r": 20, "t": 20, "b": 60},
     )
     return fig
 
@@ -600,7 +600,7 @@ def _build_weekly_dose_outcome_chart(weekly_df):
             y=ordered["durability_index"],
             mode="lines+markers",
             name="Durability Index",
-            line=dict(color="#f15a22"),
+            line={"color": "#f15a22"},
             hovertemplate="Week %{x}<br>DI %{y:.2f}<extra></extra>",
             yaxis="y2",
         ),
@@ -611,27 +611,27 @@ def _build_weekly_dose_outcome_chart(weekly_df):
             y=ordered["decoupling_percent"],
             mode="lines+markers",
             name="Decoupling (%)",
-            line=dict(color="#2ca02c", dash="dot"),
+            line={"color": "#2ca02c", "dash": "dot"},
             hovertemplate="Week %{x}<br>Decoupling %{y:.2f}%<extra></extra>",
             yaxis="y3",
         ),
     )
     fig.update_layout(
-        xaxis=dict(title="Week", tickangle=-45),
+        xaxis={"title": "Week", "tickangle": -45},
         legend_title_text="Series",
-        yaxis=dict(title="Work (kJ)"),
-        yaxis2=dict(
-            title="Durability Index",
-            overlaying="y",
-            side="right",
-        ),
-        yaxis3=dict(
-            title="Decoupling (%)",
-            overlaying="y",
-            side="right",
-            position=0.98,
-        ),
-        margin=dict(l=40, r=70, t=20, b=60),
+        yaxis={"title": "Work (kJ)"},
+        yaxis2={
+            "title": "Durability Index",
+            "overlaying": "y",
+            "side": "right",
+        },
+        yaxis3={
+            "title": "Decoupling (%)",
+            "overlaying": "y",
+            "side": "right",
+            "position": 0.98,
+        },
+        margin={"l": 40, "r": 70, "t": 20, "b": 60},
     )
     return fig
 
@@ -657,13 +657,13 @@ def _build_daily_durability_scatter(points: list[dict[str, object]]):
             y=[p["durability_index"] for p in filtered],
             mode="markers",
             name="Activity",
-            marker=dict(
-                size=10,
-                color=[p["decoupling"] for p in filtered],
-                colorscale="RdYlGn_r",
-                colorbar=dict(title="Decoupling"),
-                showscale=True,
-            ),
+            marker={
+                "size": 10,
+                "color": [p["decoupling"] for p in filtered],
+                "colorscale": "RdYlGn_r",
+                "colorbar": {"title": "Decoupling"},
+                "showscale": True,
+            },
             hovertemplate=(
                 "Work %{x} kJ<br>"
                 "DI %{y:.2f}<br>"
@@ -677,9 +677,9 @@ def _build_daily_durability_scatter(points: list[dict[str, object]]):
         )
     )
     fig.update_layout(
-        xaxis=dict(title="Work (kJ)"),
-        yaxis=dict(title="Durability Index"),
-        margin=dict(l=40, r=20, t=20, b=60),
+        xaxis={"title": "Work (kJ)"},
+        yaxis={"title": "Durability Index"},
+        margin={"l": 40, "r": 20, "t": 20, "b": 60},
     )
     return fig
 

@@ -366,7 +366,7 @@ def seconds_to_hms(seconds: float | int | None) -> str:
         return ""
     if seconds is None:
         return ""
-    total_seconds = int(round(float(seconds)))
+    total_seconds = round(float(seconds))
     h = total_seconds // 3600
     m = (total_seconds % 3600) // 60
     s = total_seconds % 60
@@ -657,7 +657,7 @@ def _as_percent(value: float | int | None) -> float | None:
 
 def _round_pct(value: float) -> float | int:
     if abs(value - round(value)) < PERCENT_INTEGER_EPSILON:
-        return int(round(value))
+        return round(value)
     return round(value, 1)
 
 
@@ -822,7 +822,7 @@ def build_zone_model_payload(
     version_key = f"{iso_year}-{iso_week:02d}"
     last_week = last_iso_week(iso_year)
     iso_week_range = f"{version_key}--{iso_year}-{last_week:02d}"
-    filename = f"zone_model_power_{int(round(ftp_watts))}W_{valid_from}"
+    filename = f"zone_model_power_{round(ftp_watts)}W_{valid_from}"
 
     zones = []
     for zone_id in ["Z1", "Z2", "Z3", "SS", "Z4", "Z5", "Z6", "Z7"]:
@@ -840,15 +840,15 @@ def build_zone_model_payload(
                     "max": _round_pct(max_pct),
                 },
                 "watt_range": {
-                    "min": int(round(ftp_watts * (min_pct / 100.0))),
-                    "max": int(round(ftp_watts * (max_pct / 100.0))),
+                    "min": round(ftp_watts * (min_pct / 100.0)),
+                    "max": round(ftp_watts * (max_pct / 100.0)),
                 },
                 "typical_if": zone_def["typical_if"],
                 "training_intent": zone_def["training_intent"],
             }
         )
 
-    payload = {
+    return {
         "meta": {
             "artifact_type": "ZONE_MODEL",
             "schema_id": "ZoneModelInterface",
@@ -880,7 +880,7 @@ def build_zone_model_payload(
         "data": {
             "model_metadata": {
                 "valid_from": valid_from,
-                "ftp_watts": int(round(ftp_watts)),
+                "ftp_watts": round(ftp_watts),
                 "purpose": "Power zone model derived from Intervals.icu sport settings.",
                 "filename": filename,
             },
@@ -892,7 +892,6 @@ def build_zone_model_payload(
             ],
         },
     }
-    return payload
 
 
 def write_zone_model(
@@ -1973,7 +1972,7 @@ def compile_activities_trend(
         return pd.to_numeric(series, errors="coerce").fillna(0).sum()
 
     def sum_seconds_to_hmm(seconds: float) -> str:
-        total_minutes = int(round(seconds / 60.0))
+        total_minutes = round(seconds / 60.0)
         h = total_minutes // 60
         m = total_minutes % 60
         return f"{h:02d}:{m:02d}"
@@ -1997,7 +1996,7 @@ def compile_activities_trend(
         return v.iloc[-1]
 
     def fmt_int(value: float) -> int | str:
-        return "" if pd.isna(value) else int(round(value))
+        return "" if pd.isna(value) else round(value)
 
     def fmt_dec(value: float, nd: int) -> float | str:
         return "" if pd.isna(value) else round(float(value), nd)
@@ -2108,7 +2107,7 @@ def compile_activities_trend(
         if (yr, wk) in kj_plan_by_week and not pd.isna(kj_sum_raw):
             plan = kj_plan_by_week[(yr, wk)]
             if plan:
-                adher = int(round(100.0 * kj_sum_raw / plan))
+                adher = round(100.0 * kj_sum_raw / plan)
 
         b2b = count_back_to_back_z2_days(g, pz_cols[2])
 
@@ -2178,7 +2177,7 @@ def compile_activities_trend(
             "Year": int(yr),
             "ISO Week": int(wk),
             "Period": period,
-            "# Activities": int(len(g)),
+            "# Activities": len(g),
             "Moving Time (h:mm)": "" if pd.isna(move_seconds) else sum_seconds_to_hmm(move_seconds),
             "Distance (km)": fmt_dec(dist_km_raw, 1),
             "Load (TSS)": fmt_int(tss_sum_raw),
@@ -2257,7 +2256,7 @@ def compile_activities_trend(
                 "to": end.isoformat(),
             },
             "weekly_aggregates": {
-                "activity_count": int(len(g)),
+                "activity_count": len(g),
                 "moving_time": duration_hm_from_seconds(move_seconds),
                 "distance_km": num_or_none(fmt_dec(dist_km_raw, 1)),
                 "load_tss": int_or_none(fmt_int(tss_sum_raw)),
