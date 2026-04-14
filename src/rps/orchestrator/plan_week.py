@@ -190,8 +190,6 @@ def create_performance_report(
         ArtifactType.ACTIVITIES_TREND,
         ArtifactType.KPI_PROFILE,
         ArtifactType.SEASON_PLAN,
-        ArtifactType.PHASE_GUARDRAILS,
-        ArtifactType.PHASE_STRUCTURE,
     ]
     missing_required = [item for item in required if not workspace.latest_exists(item)]
     if missing_required:

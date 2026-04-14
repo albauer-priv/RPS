@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
     # Allow running tests without installing the package.
     sys.path.insert(0, str(SRC))
 
+from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers  # noqa: E402
 from rps.workspace.api import Workspace  # noqa: E402
 from rps.workspace.guards import MissingDependenciesError  # noqa: E402
 from rps.workspace.helpers import (  # noqa: E402
@@ -213,6 +214,73 @@ class GuardTests(unittest.TestCase):
                     producer_agent="week_planner",
                     run_id="run_2026-06_week_001",
                 )
+
+
+class WorkspaceReadToolTests(unittest.TestCase):
+    """Coverage for workspace read tool helpers."""
+
+    def test_workspace_get_phase_context_includes_phase_info(self) -> None:
+        """Verify phase context includes derived phase week and focus."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_006"
+            store.ensure_workspace(athlete_id)
+            store.save_document(
+                athlete_id,
+                ArtifactType.SEASON_PLAN,
+                "2026-14--2026-20",
+                {
+                    "meta": {
+                        "artifact_type": "SEASON_PLAN",
+                        "schema_id": "SeasonPlanInterface",
+                        "schema_version": "1.0",
+                        "version": "1.0",
+                        "authority": "Binding",
+                        "owner_agent": "Season-Planner",
+                        "run_id": "season_plan_test",
+                        "created_at": "2026-04-01T00:00:00Z",
+                        "scope": "Season",
+                        "iso_week": "2026-14",
+                        "iso_week_range": "2026-14--2026-20",
+                        "temporal_scope": {"from": "2026-03-30", "to": "2026-05-17"},
+                        "trace_upstream": [],
+                        "trace_data": [],
+                        "trace_events": [],
+                        "data_confidence": "UNKNOWN",
+                        "notes": "",
+                    },
+                    "data": {
+                        "phases": [
+                            {
+                                "phase_id": "P02",
+                                "phase_name": "Build 1",
+                                "phase_type": "Build",
+                                "iso_week_range": "2026-14--2026-16",
+                            }
+                        ]
+                    },
+                },
+                producer_agent="test",
+                run_id="season_plan_test",
+                update_latest=True,
+            )
+
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="performance_analysis",
+                )
+            )
+            result = handlers["workspace_get_phase_context"]({"year": 2026, "week": 15})
+
+            self.assertIsInstance(result, dict)
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["phase_info"]["phase_id"], "P02")
+            self.assertEqual(result["phase_info"]["phase_focus"], "Build 1")
+            self.assertEqual(result["phase_info"]["phase_week"], 2)
+            self.assertEqual(result["phase_info"]["range_key"], "2026-14--2026-16")
 
 
 class SchemaRegistryTests(unittest.TestCase):

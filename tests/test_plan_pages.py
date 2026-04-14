@@ -5,8 +5,9 @@ from types import SimpleNamespace
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from rps.agents.tasks import AgentTask
 from rps.orchestrator import season_flow
-from rps.orchestrator.plan_week import plan_week
+from rps.orchestrator.plan_week import create_performance_report, plan_week
 from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.ui.shared import SETTINGS
 from rps.workspace.local_store import LocalArtifactStore
@@ -876,6 +877,102 @@ def test_kpi_profile_page_saves_canonical_meta():
     assert "run_id" in meta["trace_upstream"][0]
     assert meta["trace_data"] == []
     assert meta["trace_events"] == []
+
+
+def test_create_performance_report_does_not_require_phase_artefacts(monkeypatch, tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+
+    season_plan = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "schema_id": "SeasonPlanInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Season-Planner",
+            "run_id": "season_plan_test",
+            "created_at": "2026-04-01T00:00:00Z",
+            "scope": "Season",
+            "iso_week": "2026-14",
+            "iso_week_range": "2026-14--2026-20",
+            "temporal_scope": {"from": "2026-03-30", "to": "2026-05-17"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "UNKNOWN",
+            "notes": "",
+        },
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P02",
+                    "phase_name": "Build 1",
+                    "phase_type": "Build",
+                    "iso_week_range": "2026-14--2026-16",
+                }
+            ]
+        },
+    }
+    generic_input = {
+        "meta": {
+            "artifact_type": "TEST",
+            "schema_id": "TestInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "User",
+            "run_id": "input_test",
+            "created_at": "2026-04-10T00:00:00Z",
+            "scope": "Shared",
+            "iso_week": "2026-15",
+            "iso_week_range": "2026-15--2026-15",
+            "temporal_scope": {"from": "2026-04-06", "to": "2026-04-12"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "UNKNOWN",
+            "notes": "",
+        },
+        "data": {},
+    }
+
+    for artifact_type, version_key, document in (
+        (ArtifactType.SEASON_PLAN, "2026-14--2026-20", season_plan),
+        (ArtifactType.ACTIVITIES_ACTUAL, "2026-15", generic_input),
+        (ArtifactType.ACTIVITIES_TREND, "2026-15", generic_input),
+        (ArtifactType.KPI_PROFILE, "sample_profile", generic_input),
+    ):
+        store.save_document(
+            athlete_id,
+            artifact_type,
+            version_key,
+            document,
+            producer_agent="test",
+            run_id=f"store_{artifact_type.value.lower()}",
+            update_latest=True,
+        )
+
+    captured: dict[str, object] = {}
+
+    def _fake_run_agent_multi_output(runtime, **kwargs):
+        captured["runtime"] = runtime
+        captured["kwargs"] = kwargs
+        return {"ok": True, "produced": {"store_des_analysis_report": {"path": "dummy"}}}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    runtime = SimpleNamespace(workspace_root=tmp_path)
+    result = create_performance_report(
+        lambda _agent_name: runtime,
+        athlete_id=athlete_id,
+        report_week=SimpleNamespace(year=2026, week=15),
+        run_id_prefix="report_ui",
+    )
+
+    assert result["ok"] is True
+    assert captured["kwargs"]["tasks"] == [AgentTask.CREATE_DES_ANALYSIS_REPORT]
 
 
 def test_data_operations_page_renders():

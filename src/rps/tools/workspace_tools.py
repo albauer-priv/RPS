@@ -17,7 +17,10 @@ from rps.workspace.phase_from_season_plan import IsoWeek
 from rps.workspace.phase_resolution import add_weeks
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaValidationError
-from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
+from rps.workspace.season_plan_service import (
+    phase_context_summary,
+    resolve_phase_range_from_season_plan,
+)
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
@@ -223,12 +226,14 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, ToolHandler]:
         phase_range = resolve_phase_range_from_season_plan(
             season_plan, target, phase_len=phase_len
         )
+        phase_info = phase_context_summary(season_plan, target)
 
         return {
             "ok": True,
             "target_week": {"year": target.year, "week": target.week},
             "phase_len": phase_len,
             "offset_phases": offset_phases,
+            "phase_info": phase_info,
             "phase_range": {
                 "start": {"year": phase_range.start.year, "week": phase_range.start.week},
                 "end": {"year": phase_range.end.year, "week": phase_range.end.week},
