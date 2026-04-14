@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
@@ -119,9 +120,29 @@ def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athle
                     f"(w_per_kg {w_bounds.get('min')} - {w_bounds.get('max')}, "
                     f"kj_per_kg_per_hour {kj_bounds.get('min')} - {kj_bounds.get('max')}). "
                 )
+        return ""
     except Exception:
         return ""
-    return ""
+
+
+def _required_workspace_input_exists(root: Path, athlete_id: str, input_type: str) -> bool:
+    """Return whether a required shared input exists in inputs/ or latest/."""
+    athlete_root = root / athlete_id
+    patterns: dict[str, tuple[str, ...]] = {
+        "planning_events": ("planning_events*.json",),
+        "logistics": ("logistics*.json",),
+    }
+    wanted = patterns.get(input_type)
+    if not wanted:
+        return False
+    for folder_name in ("inputs", "latest"):
+        folder = athlete_root / folder_name
+        if not folder.exists():
+            continue
+        for pattern in wanted:
+            if any(folder.glob(pattern)):
+                return True
+    return False
 
 
 def _mode_for_task(task: AgentTask) -> str | None:
@@ -192,8 +213,14 @@ def create_performance_report(
         ArtifactType.SEASON_PLAN,
     ]
     missing_required = [item for item in required if not workspace.latest_exists(item)]
-    if missing_required:
-        message = "Performance analysis skipped: required inputs missing."
+    missing_context_inputs = [
+        input_name
+        for input_name in ("planning_events", "logistics")
+        if not _required_workspace_input_exists(runtime.workspace_root, athlete_id, input_name)
+    ]
+    if missing_required or missing_context_inputs:
+        missing_labels = [item.value for item in missing_required] + missing_context_inputs
+        message = f"Performance analysis skipped: required inputs missing ({', '.join(missing_labels)})."
         _log(message)
         return {"ok": False, "message": message, "step": None}
 

@@ -943,6 +943,8 @@ def test_create_performance_report_does_not_require_phase_artefacts(monkeypatch,
         (ArtifactType.ACTIVITIES_ACTUAL, "2026-15", generic_input),
         (ArtifactType.ACTIVITIES_TREND, "2026-15", generic_input),
         (ArtifactType.KPI_PROFILE, "sample_profile", generic_input),
+        (ArtifactType.PLANNING_EVENTS, "2026-15", generic_input),
+        (ArtifactType.LOGISTICS, "2026-15", generic_input),
     ):
         store.save_document(
             athlete_id,
@@ -973,6 +975,85 @@ def test_create_performance_report_does_not_require_phase_artefacts(monkeypatch,
 
     assert result["ok"] is True
     assert captured["kwargs"]["tasks"] == [AgentTask.CREATE_DES_ANALYSIS_REPORT]
+
+
+def test_create_performance_report_skips_when_context_inputs_missing(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+
+    season_plan = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "schema_id": "SeasonPlanInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Season-Planner",
+            "run_id": "season_plan_test",
+            "created_at": "2026-04-01T00:00:00Z",
+            "scope": "Season",
+            "iso_week": "2026-14",
+            "iso_week_range": "2026-14--2026-20",
+            "temporal_scope": {"from": "2026-03-30", "to": "2026-05-17"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "UNKNOWN",
+            "notes": "",
+        },
+        "data": {"phases": []},
+    }
+    generic_input = {
+        "meta": {
+            "artifact_type": "TEST",
+            "schema_id": "TestInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "User",
+            "run_id": "input_test",
+            "created_at": "2026-04-10T00:00:00Z",
+            "scope": "Shared",
+            "iso_week": "2026-15",
+            "iso_week_range": "2026-15--2026-15",
+            "temporal_scope": {"from": "2026-04-06", "to": "2026-04-12"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "UNKNOWN",
+            "notes": "",
+        },
+        "data": {},
+    }
+
+    for artifact_type, version_key, document in (
+        (ArtifactType.SEASON_PLAN, "2026-14--2026-20", season_plan),
+        (ArtifactType.ACTIVITIES_ACTUAL, "2026-15", generic_input),
+        (ArtifactType.ACTIVITIES_TREND, "2026-15", generic_input),
+        (ArtifactType.KPI_PROFILE, "sample_profile", generic_input),
+    ):
+        store.save_document(
+            athlete_id,
+            artifact_type,
+            version_key,
+            document,
+            producer_agent="test",
+            run_id=f"store_{artifact_type.value.lower()}",
+            update_latest=True,
+        )
+
+    runtime = SimpleNamespace(workspace_root=tmp_path)
+    result = create_performance_report(
+        lambda _agent_name: runtime,
+        athlete_id=athlete_id,
+        report_week=SimpleNamespace(year=2026, week=15),
+        run_id_prefix="report_ui",
+    )
+
+    assert result["ok"] is False
+    assert "planning_events" in result["message"]
+    assert "logistics" in result["message"]
 
 
 def test_data_operations_page_renders():
