@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Stabilized `scripts/run_typecheck.sh` by switching the curated mypy commit gate from fragile per-file runs to grouped module/directory runs, avoiding the local `mypy` segfault seen on `src/rps/agents/runner.py` in single-file mode while preserving the same checked scope.
 - Local commits now run a repo-managed pre-commit gate with `py_compile` plus a curated `mypy` scope, and the shared planning modules now have a committed typecheck entrypoint via `scripts/run_typecheck.sh`.
 - Internal type cleanup now covers `src/rps/agents/runner.py` and `src/rps/agents/runner_strict.py`, replacing loose LiteLLM response/client handling with typed runtime/result helpers across both standard and strict agent execution paths.
 - Internal type cleanup now covers `src/rps/orchestrator/plan_hub_actions.py` and `src/rps/orchestrator/plan_hub_worker.py`, replacing loose planning action/step/run bookkeeping with typed records and explicit narrowing helpers.

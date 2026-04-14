@@ -4,19 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-TYPECHECK_TARGETS=(
-  "src/rps/agents/knowledge_injection.py"
-  "src/rps/agents/multi_output_runner.py"
-  "src/rps/agents/runner.py"
+TYPECHECK_GROUPS=(
+  "src/rps/agents"
   "src/rps/core/logging.py"
   "src/rps/data_pipeline/intervals_data.py"
-  "src/rps/openai/litellm_runtime.py"
-  "src/rps/openai/runtime.py"
-  "src/rps/openai/streaming.py"
-  "src/rps/openai/vectorstores.py"
-  "src/rps/orchestrator/plan_week.py"
-  "src/rps/orchestrator/season_flow.py"
-  "src/rps/orchestrator/week_revision.py"
+  "src/rps/openai"
+  "src/rps/orchestrator"
   "src/rps/rendering/renderer.py"
   "src/rps/ui/intervals_refresh.py"
   "src/rps/ui/rps_chatbot.py"
@@ -31,7 +24,7 @@ TYPECHECK_TARGETS=(
 )
 
 echo "Running mypy on curated commit gate scope..."
-for target in "${TYPECHECK_TARGETS[@]}"; do
+for target in "${TYPECHECK_GROUPS[@]}"; do
   echo "  - $target"
   PYTHONPATH=src python3 -m mypy "$target"
 done
