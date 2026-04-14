@@ -333,16 +333,15 @@ def build_phase_guardrails_context(doc):
             )
         return rows
 
-    events = []
-    for event in data.get("events_constraints", {}).get("events", []):
-        events.append(
-            {
-                "date": event.get("date", ""),
-                "week": event.get("week", ""),
-                "type": event.get("type", ""),
-                "constraint": event.get("constraint", ""),
-            }
-        )
+    events = [
+        {
+            "date": event.get("date", ""),
+            "week": event.get("week", ""),
+            "type": event.get("type", ""),
+            "constraint": event.get("constraint", ""),
+        }
+        for event in data.get("events_constraints", {}).get("events", [])
+    ]
 
     context = {
         "meta": meta,
@@ -439,34 +438,32 @@ def build_week_plan_context(doc):
     week_summary = data.get("week_summary", {})
     load_corridor = week_summary.get("weekly_load_corridor_kj", {})
 
-    agenda_rows = []
-    for row in data.get("agenda", []):
-        agenda_rows.append(
-            {
-                "day": row.get("day", ""),
-                "date": row.get("date", ""),
-                "day_role": row.get("day_role", ""),
-                "planned_duration": row.get("planned_duration", ""),
-                "planned_kj": fmt_number(row.get("planned_kj")),
-                "workout_id": row.get("workout_id") or "",
-            }
-        )
+    agenda_rows = [
+        {
+            "day": row.get("day", ""),
+            "date": row.get("date", ""),
+            "day_role": row.get("day_role", ""),
+            "planned_duration": row.get("planned_duration", ""),
+            "planned_kj": fmt_number(row.get("planned_kj")),
+            "workout_id": row.get("workout_id") or "",
+        }
+        for row in data.get("agenda", [])
+    ]
     day_order = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6}
     agenda_rows.sort(key=lambda entry: day_order.get(entry.get("day", ""), 99))
 
-    workouts = []
-    for workout in data.get("workouts", []):
-        workouts.append(
-            {
-                "workout_id": workout.get("workout_id", ""),
-                "title": workout.get("title", ""),
-                "notes": workout.get("notes") or "",
-                "date": workout.get("date", ""),
-                "start": workout.get("start", ""),
-                "duration": workout.get("duration", ""),
-                "workout_text": workout.get("workout_text", ""),
-            }
-        )
+    workouts = [
+        {
+            "workout_id": workout.get("workout_id", ""),
+            "title": workout.get("title", ""),
+            "notes": workout.get("notes") or "",
+            "date": workout.get("date", ""),
+            "start": workout.get("start", ""),
+            "duration": workout.get("duration", ""),
+            "workout_text": workout.get("workout_text", ""),
+        }
+        for workout in data.get("workouts", [])
+    ]
 
     context = {
         "meta": meta,
@@ -623,17 +620,16 @@ def build_phase_preview_context(doc):
     week_previews = []
     day_order = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6}
     for week in data.get("weekly_agenda_preview", []):
-        days = []
-        for day in week.get("days", []):
-            days.append(
-                {
-                    "day_of_week": day.get("day_of_week", ""),
-                    "day_role": day.get("day_role", ""),
-                    "intensity_domain": day.get("intensity_domain", ""),
-                    "load_modality": day.get("load_modality", ""),
-                    "notes": day.get("notes", ""),
-                }
-            )
+        days = [
+            {
+                "day_of_week": day.get("day_of_week", ""),
+                "day_role": day.get("day_role", ""),
+                "intensity_domain": day.get("intensity_domain", ""),
+                "load_modality": day.get("load_modality", ""),
+                "notes": day.get("notes", ""),
+            }
+            for day in week.get("days", [])
+        ]
         days.sort(key=lambda entry: day_order.get(entry.get("day_of_week", ""), 99))
         week_previews.append(
             {
@@ -1223,16 +1219,15 @@ def build_zone_model_context(doc):
         )
     zones.sort(key=lambda entry: zone_order.get(str(entry.get("zone_id") or ""), 99))
 
-    examples = []
-    for example in data.get("examples", []):
-        examples.append(
-            {
-                "workout_name": example.get("workout_name", ""),
-                "structure": example.get("structure", ""),
-                "duration": example.get("duration", ""),
-                "if_adj": "" if example.get("if_adj") is None else fmt_number(example.get("if_adj")),
-            }
-        )
+    examples = [
+        {
+            "workout_name": example.get("workout_name", ""),
+            "structure": example.get("structure", ""),
+            "duration": example.get("duration", ""),
+            "if_adj": "" if example.get("if_adj") is None else fmt_number(example.get("if_adj")),
+        }
+        for example in data.get("examples", [])
+    ]
 
     z2_np_example = ""
     z2_zone = next((zone for zone in zones if zone.get("zone_id") == "Z2"), None)
@@ -1504,19 +1499,18 @@ def build_availability_context(doc):
     data = doc.get("data", {})
 
     weekly_hours = data.get("weekly_hours") or {}
-    availability_table = []
-    for row in data.get("availability_table", []):
-        availability_table.append(
-            {
-                "weekday": row.get("weekday", ""),
-                "hours_min": fmt_number(row.get("hours_min")),
-                "hours_typical": fmt_number(row.get("hours_typical")),
-                "hours_max": fmt_number(row.get("hours_max")),
-                "indoor_possible": row.get("indoor_possible"),
-                "travel_risk": row.get("travel_risk"),
-                "locked": row.get("locked"),
-            }
-        )
+    availability_table = [
+        {
+            "weekday": row.get("weekday", ""),
+            "hours_min": fmt_number(row.get("hours_min")),
+            "hours_typical": fmt_number(row.get("hours_typical")),
+            "hours_max": fmt_number(row.get("hours_max")),
+            "indoor_possible": row.get("indoor_possible"),
+            "travel_risk": row.get("travel_risk"),
+            "locked": row.get("locked"),
+        }
+        for row in data.get("availability_table", [])
+    ]
 
     context = {
         "meta": meta,

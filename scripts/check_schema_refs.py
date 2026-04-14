@@ -41,10 +41,7 @@ for path in schema_dir.glob("*.json"):
 
 refs = {ref.split("#", 1)[0] for ref in refs if not ref.startswith("#")}
 
-missing = []
-for ref in sorted(refs):
-    if not (schema_dir / ref).exists():
-        missing.append(ref)
+missing = [ref for ref in sorted(refs) if not (schema_dir / ref).exists()]
 
 print(f"Referenced schemas: {len(refs)}")
 print(f"Missing schemas: {len(missing)}")

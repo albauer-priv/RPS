@@ -95,19 +95,17 @@ def _run_history(*, limit: int = 20, allowed: set[str] | None = None) -> list[di
 
 def _run_store_history(*, limit: int = 20) -> list[dict[str, str]]:
     runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=limit)
-    rows: list[dict[str, str]] = []
-    for run in runs:
-        rows.append(
-            {
-                "Run ID": str(run.get("run_id") or "—"),
-                "Status": str(run.get("status") or "—"),
-                "Mode": str(run.get("mode") or "—"),
-                "Scope": str(run.get("scope") or "—"),
-                "Created": str(run.get("created_at") or "—"),
-                "Superseded By": str(run.get("superseded_by") or "—"),
-            }
-        )
-    return rows
+    return [
+        {
+            "Run ID": str(run.get("run_id") or "—"),
+            "Status": str(run.get("status") or "—"),
+            "Mode": str(run.get("mode") or "—"),
+            "Scope": str(run.get("scope") or "—"),
+            "Created": str(run.get("created_at") or "—"),
+            "Superseded By": str(run.get("superseded_by") or "—"),
+        }
+        for run in runs
+    ]
 
 
 def _style_superseded(df: pd.DataFrame) -> pd.io.formats.style.Styler:

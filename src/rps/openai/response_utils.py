@@ -44,14 +44,14 @@ def extract_file_search_results(response: LiteLLMResponse) -> list[dict[str, obj
         results = _item_field(item, "results") or []
         if not isinstance(results, list) or not results:
             continue
-        for result in results:
-            items.append(
-                {
-                    "filename": _item_field(result, "filename"),
-                    "score": _item_field(result, "score"),
-                    "attributes": _item_field(result, "attributes") or {},
-                }
-            )
+        items.extend(
+            {
+                "filename": _item_field(result, "filename"),
+                "score": _item_field(result, "score"),
+                "attributes": _item_field(result, "attributes") or {},
+            }
+            for result in results
+        )
     return items
 
 

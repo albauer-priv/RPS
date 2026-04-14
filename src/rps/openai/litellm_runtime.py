@@ -432,16 +432,15 @@ def _collect_tool_calls(message: object) -> list[ToolCallMap]:
 
 
 def _build_output_items(text: str | None, tool_calls: list[ToolCallMap]) -> list[JsonMap]:
-    output: list[JsonMap] = []
-    for call in tool_calls:
-        output.append(
-            {
-                "type": "function_call",
-                "name": call.get("name"),
-                "arguments": call.get("arguments") or "{}",
-                "call_id": call.get("id") or str(uuid.uuid4()),
-            }
-        )
+    output: list[JsonMap] = [
+        {
+            "type": "function_call",
+            "name": call.get("name"),
+            "arguments": call.get("arguments") or "{}",
+            "call_id": call.get("id") or str(uuid.uuid4()),
+        }
+        for call in tool_calls
+    ]
     if text:
         output.append(
             {

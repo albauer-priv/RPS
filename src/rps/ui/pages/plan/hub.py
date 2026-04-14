@@ -881,19 +881,17 @@ def _run_history(
 def _run_store_history(athlete_id: str, *, limit: int = 20) -> list[dict[str, str]]:
     """Return recent Plan Hub runs from the run store."""
     runs = load_runs(SETTINGS.workspace_root, athlete_id, limit=limit)
-    rows: list[dict[str, str]] = []
-    for run in runs:
-        rows.append(
-            {
-                "Run ID": str(run.get("run_id") or "—"),
-                "Status": str(run.get("status") or "—"),
-                "Mode": str(run.get("mode") or "—"),
-                "Scope": str(run.get("scope") or "—"),
-                "Created": str(run.get("created_at") or "—"),
-                "Superseded By": str(run.get("superseded_by") or "—"),
-            }
-        )
-    return rows
+    return [
+        {
+            "Run ID": str(run.get("run_id") or "—"),
+            "Status": str(run.get("status") or "—"),
+            "Mode": str(run.get("mode") or "—"),
+            "Scope": str(run.get("scope") or "—"),
+            "Created": str(run.get("created_at") or "—"),
+            "Superseded By": str(run.get("superseded_by") or "—"),
+        }
+        for run in runs
+    ]
 
 
 def _style_superseded(df: pd.DataFrame) -> pd.io.formats.style.Styler:
@@ -1111,11 +1109,7 @@ def _coerce_execution_steps(raw_steps: object) -> list[ExecutionStep]:
     """Return execution steps from stored run data when the shape is list-like."""
     if not isinstance(raw_steps, list):
         return []
-    steps: list[ExecutionStep] = []
-    for item in raw_steps:
-        if isinstance(item, dict):
-            steps.append(cast(ExecutionStep, item))
-    return steps
+    return [cast(ExecutionStep, item) for item in raw_steps if isinstance(item, dict)]
 
 
 def _queue_scoped_run(

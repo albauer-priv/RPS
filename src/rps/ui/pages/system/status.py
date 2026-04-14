@@ -192,21 +192,20 @@ filtered_runs = [run for run in runs if _matches_filter(run)]
 
 if filtered_runs:
     st.subheader("Running Processes")
-    rows = []
-    for run in filtered_runs:
-        rows.append(
-            {
-                "Select": False,
-                "Run ID": run.get("run_id"),
-                "Status": run.get("status"),
-                "Type": run.get("process_type") or "Unspecified",
-                "Subtype": run.get("process_subtype") or "Unspecified",
-                "Mode": run.get("mode"),
-                "Scope": run.get("scope") or "—",
-                "Created": run.get("created_at") or "—",
-                "Current Step": run.get("current_step") or "—",
-            }
-        )
+    rows = [
+        {
+            "Select": False,
+            "Run ID": run.get("run_id"),
+            "Status": run.get("status"),
+            "Type": run.get("process_type") or "Unspecified",
+            "Subtype": run.get("process_subtype") or "Unspecified",
+            "Mode": run.get("mode"),
+            "Scope": run.get("scope") or "—",
+            "Created": run.get("created_at") or "—",
+            "Current Step": run.get("current_step") or "—",
+        }
+        for run in filtered_runs
+    ]
     edited = st.data_editor(
         rows,
         width="stretch",
