@@ -207,18 +207,8 @@ def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
     for run_path in run_root.iterdir():
         if not run_path.is_dir():
             continue
-        run_path_json = run_path / "run.json"
-        try:
-            if run_path_json.exists():
-                record = json.loads(run_path_json.read_text(encoding="utf-8"))
-                created_at = record.get("created_at")
-                if created_at:
-                    created_dt = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
-                else:
-                    created_dt = datetime.fromtimestamp(run_path_json.stat().st_mtime, tz=UTC)
-            else:
-                created_dt = datetime.fromtimestamp(run_path.stat().st_mtime, tz=UTC)
-        except Exception:
+        created_dt = _run_created_at(run_path)
+        if created_dt is None:
             continue
         if created_dt < cutoff:
             try:
@@ -230,6 +220,21 @@ def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
             except OSError:
                 continue
     return removed
+
+
+def _run_created_at(run_path: Path) -> datetime | None:
+    """Resolve the creation timestamp for a run directory."""
+    run_path_json = run_path / "run.json"
+    try:
+        if not run_path_json.exists():
+            return datetime.fromtimestamp(run_path.stat().st_mtime, tz=UTC)
+        record = json.loads(run_path_json.read_text(encoding="utf-8"))
+        created_at = record.get("created_at")
+        if created_at:
+            return datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+        return datetime.fromtimestamp(run_path_json.stat().st_mtime, tz=UTC)
+    except Exception:
+        return None
 
 
 def clear_queue_folders(root: Path) -> int:

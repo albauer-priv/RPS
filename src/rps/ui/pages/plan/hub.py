@@ -74,6 +74,16 @@ class WriteDetail(TypedDict):
     authority: str
 
 
+class ArtifactReadinessSpec(TypedDict):
+    key: str
+    label: str
+    artifact_type: ArtifactType
+    required: list[str]
+    match_context: bool
+    optional: bool
+    fix_label: str | None
+
+
 ExecutionStep = TypedDict(
     "ExecutionStep",
     {
@@ -176,6 +186,91 @@ STEP_DEFINITIONS: list[StepDefinition] = [
         "agent": "Workout Builder",
         "writes": [ArtifactType.INTERVALS_WORKOUTS],
         "authority": ["Raw"],
+    },
+]
+
+INPUT_ARTIFACTS: list[tuple[ArtifactType, str]] = [
+    (ArtifactType.ATHLETE_PROFILE, "About You & Goals"),
+    (ArtifactType.AVAILABILITY, "Availability"),
+    (ArtifactType.PLANNING_EVENTS, "Events"),
+    (ArtifactType.LOGISTICS, "Logistics"),
+    (ArtifactType.KPI_PROFILE, "KPI Profile"),
+    (ArtifactType.ZONE_MODEL, "Zones"),
+    (ArtifactType.WELLNESS, "Wellness"),
+]
+
+ARTIFACT_READINESS_SPECS: list[ArtifactReadinessSpec] = [
+    {
+        "key": "season_scenarios",
+        "label": "Season Scenarios",
+        "artifact_type": ArtifactType.SEASON_SCENARIOS,
+        "required": ["inputs"],
+        "match_context": False,
+        "optional": False,
+        "fix_label": "Create Scenarios",
+    },
+    {
+        "key": "scenario_selection",
+        "label": "Selected Scenario",
+        "artifact_type": ArtifactType.SEASON_SCENARIO_SELECTION,
+        "required": ["season_scenarios"],
+        "match_context": False,
+        "optional": False,
+        "fix_label": "Select Scenario",
+    },
+    {
+        "key": "season_plan",
+        "label": "Season Plan",
+        "artifact_type": ArtifactType.SEASON_PLAN,
+        "required": ["scenario_selection"],
+        "match_context": True,
+        "optional": False,
+        "fix_label": "Create Season Plan",
+    },
+    {
+        "key": "phase_guardrails",
+        "label": "Phase Guardrails",
+        "artifact_type": ArtifactType.PHASE_GUARDRAILS,
+        "required": ["season_plan"],
+        "match_context": True,
+        "optional": False,
+        "fix_label": None,
+    },
+    {
+        "key": "phase_structure",
+        "label": "Phase Structure",
+        "artifact_type": ArtifactType.PHASE_STRUCTURE,
+        "required": ["season_plan"],
+        "match_context": True,
+        "optional": False,
+        "fix_label": None,
+    },
+    {
+        "key": "phase_preview",
+        "label": "Phase Preview (optional)",
+        "artifact_type": ArtifactType.PHASE_PREVIEW,
+        "required": ["phase_structure"],
+        "match_context": True,
+        "optional": True,
+        "fix_label": None,
+    },
+    {
+        "key": "week_plan",
+        "label": "Week Plan",
+        "artifact_type": ArtifactType.WEEK_PLAN,
+        "required": ["phase_guardrails", "phase_structure"],
+        "match_context": True,
+        "optional": False,
+        "fix_label": None,
+    },
+    {
+        "key": "intervals_workouts",
+        "label": "Build Workouts (optional)",
+        "artifact_type": ArtifactType.INTERVALS_WORKOUTS,
+        "required": ["week_plan"],
+        "match_context": True,
+        "optional": True,
+        "fix_label": None,
     },
 ]
 
@@ -535,166 +630,122 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     def add_step(step: ReadinessStep) -> None:
         steps.append(step)
         status_map[step.key] = step
-
-    # Step 1: Inputs
-    inputs_missing: list[str] = []
-    input_artifacts = [
-        (ArtifactType.ATHLETE_PROFILE, "About You & Goals"),
-        (ArtifactType.AVAILABILITY, "Availability"),
-        (ArtifactType.PLANNING_EVENTS, "Events"),
-        (ArtifactType.LOGISTICS, "Logistics"),
-        (ArtifactType.KPI_PROFILE, "KPI Profile"),
-        (ArtifactType.ZONE_MODEL, "Zones"),
-        (ArtifactType.WELLNESS, "Wellness"),
-    ]
-    for artifact_type, label in input_artifacts:
-        if not store.latest_exists(athlete_id, artifact_type):
-            inputs_missing.append(label)
-    if inputs_missing:
+    add_step(_inputs_readiness_step(store, athlete_id))
+    for spec in ARTIFACT_READINESS_SPECS:
         add_step(
-            ReadinessStep(
-                key="inputs",
-                label="Inputs",
-                status="missing",
-                summary="Missing inputs",
-                reason="Missing: " + ", ".join(inputs_missing),
-                fix_label="Add Inputs",
+            _artifact_readiness_step(
+                index=index,
+                store=store,
+                athlete_id=athlete_id,
+                target_week=target_week,
+                status_map=status_map,
+                spec=spec,
             )
         )
-    else:
-        add_step(
-            ReadinessStep(
-                key="inputs",
-                label="Inputs",
-                status="ready",
-                summary="Inputs present",
-                reason="All required inputs found.",
-            )
-        )
-
-    # Helper to evaluate artifact steps
-    def artifact_step(
-        key: str,
-        label: str,
-        artifact_type: ArtifactType,
-        required: list[str],
-        *,
-        match_context: bool = True,
-        optional: bool = False,
-        fix_label: str | None = None,
-    ) -> None:
-        record = _latest_record(index, artifact_type)
-        if not store.latest_exists(athlete_id, artifact_type):
-            record = None
-        created_at = _as_str(record.get("created_at")) if record else None
-        latest_ts = _parse_iso_datetime(created_at)
-        latest_label = _as_str(record.get("version_key")) if record else None
-        run_id = _as_str(record.get("run_id")) if record else None
-
-        missing = record is None
-        blocked = missing and any(status_map[r].status in {"missing", "blocked"} for r in required)
-        stale = False
-        reason = ""
-        if not missing:
-            if match_context and not _record_matches_context(record, target_week):
-                stale = True
-                reason = "Latest does not match the selected ISO week."
-            for upstream in required:
-                upstream_ts = _parse_iso_datetime(status_map[upstream].created_at)
-                if latest_ts and upstream_ts and upstream_ts > latest_ts:
-                    stale = True
-                    reason = "Upstream artifact is newer."
-        if missing and optional:
-            status = "missing"
-            summary = "Missing (optional)"
-            reason = "Optional step; no artifact present."
-        elif blocked:
-            status = "blocked"
-            summary = "Blocked"
-            reason = "Required upstream artifacts are missing."
-        elif missing:
-            status = "missing"
-            summary = "Missing"
-            reason = "No artifact found."
-        elif stale:
-            status = "stale"
-            summary = "Stale"
-        else:
-            status = "ready"
-            summary = "Ready"
-            reason = "Latest artifact is current."
-
-        add_step(
-            ReadinessStep(
-                key=key,
-                label=label,
-                status=status,
-                summary=summary,
-                reason=reason,
-                latest=latest_label,
-                run_id=run_id,
-                created_at=created_at,
-                optional=optional,
-                fix_label=fix_label,
-            )
-        )
-
-    artifact_step(
-        key="season_scenarios",
-        label="Season Scenarios",
-        artifact_type=ArtifactType.SEASON_SCENARIOS,
-        required=["inputs"],
-        match_context=False,
-        fix_label="Create Scenarios",
-    )
-    artifact_step(
-        key="scenario_selection",
-        label="Selected Scenario",
-        artifact_type=ArtifactType.SEASON_SCENARIO_SELECTION,
-        required=["season_scenarios"],
-        match_context=False,
-        fix_label="Select Scenario",
-    )
-    artifact_step(
-        key="season_plan",
-        label="Season Plan",
-        artifact_type=ArtifactType.SEASON_PLAN,
-        required=["scenario_selection"],
-        fix_label="Create Season Plan",
-    )
-    artifact_step(
-        key="phase_guardrails",
-        label="Phase Guardrails",
-        artifact_type=ArtifactType.PHASE_GUARDRAILS,
-        required=["season_plan"],
-    )
-    artifact_step(
-        key="phase_structure",
-        label="Phase Structure",
-        artifact_type=ArtifactType.PHASE_STRUCTURE,
-        required=["season_plan"],
-    )
-    artifact_step(
-        key="phase_preview",
-        label="Phase Preview (optional)",
-        artifact_type=ArtifactType.PHASE_PREVIEW,
-        required=["phase_structure"],
-        optional=True,
-    )
-    artifact_step(
-        key="week_plan",
-        label="Week Plan",
-        artifact_type=ArtifactType.WEEK_PLAN,
-        required=["phase_guardrails", "phase_structure"],
-    )
-    artifact_step(
-        key="intervals_workouts",
-        label="Build Workouts (optional)",
-        artifact_type=ArtifactType.INTERVALS_WORKOUTS,
-        required=["week_plan"],
-        optional=True,
-    )
     return steps
+
+
+def _inputs_readiness_step(store: LocalArtifactStore, athlete_id: str) -> ReadinessStep:
+    """Build readiness state for required athlete input artefacts."""
+    inputs_missing = [
+        label
+        for artifact_type, label in INPUT_ARTIFACTS
+        if not store.latest_exists(athlete_id, artifact_type)
+    ]
+    if inputs_missing:
+        return ReadinessStep(
+            key="inputs",
+            label="Inputs",
+            status="missing",
+            summary="Missing inputs",
+            reason="Missing: " + ", ".join(inputs_missing),
+            fix_label="Add Inputs",
+        )
+    return ReadinessStep(
+        key="inputs",
+        label="Inputs",
+        status="ready",
+        summary="Inputs present",
+        reason="All required inputs found.",
+    )
+
+
+def _artifact_readiness_status(
+    *,
+    record: JsonMap | None,
+    required: list[str],
+    status_map: dict[str, ReadinessStep],
+    target_week: IsoWeek,
+    match_context: bool,
+) -> tuple[str, str]:
+    """Resolve readiness status and reason for a single artefact step."""
+    latest_ts = _parse_iso_datetime(_as_str(record.get("created_at")) if record else None)
+    missing = record is None
+    blocked = missing and any(status_map[r].status in {"missing", "blocked"} for r in required)
+    stale = False
+    reason = ""
+    if not missing and record is not None:
+        if match_context and not _record_matches_context(record, target_week):
+            stale = True
+            reason = "Latest does not match the selected ISO week."
+        for upstream in required:
+            upstream_ts = _parse_iso_datetime(status_map[upstream].created_at)
+            if latest_ts and upstream_ts and upstream_ts > latest_ts:
+                stale = True
+                reason = "Upstream artifact is newer."
+    if blocked:
+        return "blocked", "Required upstream artifacts are missing."
+    if missing:
+        return "missing", "No artifact found."
+    if stale:
+        return "stale", reason
+    return "ready", "Latest artifact is current."
+
+
+def _artifact_readiness_step(
+    *,
+    index: JsonMap,
+    store: LocalArtifactStore,
+    athlete_id: str,
+    target_week: IsoWeek,
+    status_map: dict[str, ReadinessStep],
+    spec: ArtifactReadinessSpec,
+) -> ReadinessStep:
+    """Build readiness state for a single planning artefact."""
+    record = _latest_record(index, spec["artifact_type"])
+    if not store.latest_exists(athlete_id, spec["artifact_type"]):
+        record = None
+    created_at = _as_str(record.get("created_at")) if record else None
+    latest_label = _as_str(record.get("version_key")) if record else None
+    run_id = _as_str(record.get("run_id")) if record else None
+    status, reason = _artifact_readiness_status(
+        record=record,
+        required=spec["required"],
+        status_map=status_map,
+        target_week=target_week,
+        match_context=spec["match_context"],
+    )
+    summary = {
+        "ready": "Ready",
+        "stale": "Stale",
+        "missing": "Missing",
+        "blocked": "Blocked",
+    }[status]
+    if status == "missing" and spec["optional"]:
+        summary = "Missing (optional)"
+        reason = "Optional step; no artifact present."
+    return ReadinessStep(
+        key=spec["key"],
+        label=spec["label"],
+        status=status,
+        summary=summary,
+        reason=reason,
+        latest=latest_label,
+        run_id=run_id,
+        created_at=created_at,
+        optional=spec["optional"],
+        fix_label=spec["fix_label"],
+    )
 
 
 def _display_readiness_steps(readiness: list[ReadinessStep]) -> list[ReadinessStep]:
@@ -943,6 +994,78 @@ def _diff_json(a: JsonMap | JsonList | None, b: JsonMap | JsonList | None) -> st
     return "\n".join(diff) or "No differences."
 
 
+def _dedupe_step_ids(step_ids: list[str]) -> list[str]:
+    """Return step ids in original order without duplicates."""
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for step_id in step_ids:
+        if step_id in seen:
+            continue
+        seen.add(step_id)
+        deduped.append(step_id)
+    return deduped
+
+
+def _resolve_scoped_step_selection(
+    readiness_map: dict[str, ReadinessStep],
+    scope: str,
+) -> tuple[list[str], set[str]]:
+    """Return scoped step ids and the set of explicitly forced steps."""
+    selected_steps = list(SCOPE_STEPS[scope])
+    phase_guardrails = readiness_map.get("phase_guardrails")
+    phase_structure = readiness_map.get("phase_structure")
+    week_plan = readiness_map.get("week_plan")
+    if scope in {"Phase", "Week Plan", "Build Workouts"}:
+        if phase_guardrails and phase_guardrails.status in {"missing", "stale"}:
+            selected_steps = [
+                "PHASE_GUARDRAILS",
+                "PHASE_STRUCTURE",
+                "PHASE_PREVIEW",
+                *selected_steps,
+            ]
+        elif phase_structure and phase_structure.status in {"missing", "stale"}:
+            selected_steps = [
+                "PHASE_STRUCTURE",
+                "PHASE_PREVIEW",
+                *selected_steps,
+            ]
+    if scope == "Build Workouts" and week_plan and week_plan.status in {"missing", "stale"}:
+        selected_steps = ["WEEK_PLAN", *selected_steps]
+    selected_steps = _dedupe_step_ids(selected_steps)
+    return selected_steps, set(selected_steps)
+
+
+def _step_execution_state(
+    step_id: str,
+    readiness_step: ReadinessStep,
+    force_run_steps: set[str],
+) -> tuple[str, str]:
+    """Resolve execution status and details for a single execution step."""
+    readiness_status = readiness_step.status
+    readiness_reason = readiness_step.reason or "—"
+    if readiness_status == "blocked":
+        return "BLOCKED", readiness_reason
+    if step_id in force_run_steps:
+        return "QUEUED", "Explicit scoped rerun requested."
+    if readiness_status in {"missing", "stale"}:
+        return "QUEUED", readiness_reason
+    return "SKIPPED", "Already up-to-date."
+
+
+def _build_write_details(definition: StepDefinition) -> list[WriteDetail]:
+    """Build artifact write metadata for an execution step definition."""
+    return [
+        {
+            "artifact_key": artifact_type.value,
+            "display_name": artifact_type.value,
+            "authority": authority,
+        }
+        for artifact_type, authority in zip(
+            definition["writes"], definition["authority"], strict=True
+        )
+    ]
+
+
 def _build_execution_steps(
     readiness: list[ReadinessStep],
     mode: str,
@@ -955,35 +1078,7 @@ def _build_execution_steps(
     ]
     force_run_steps: set[str] = set()
     if mode == "Scoped" and scope in SCOPE_STEPS:
-        selected_steps = list(SCOPE_STEPS[scope])
-        phase_guardrails = readiness_map.get("phase_guardrails")
-        phase_structure = readiness_map.get("phase_structure")
-        week_plan = readiness_map.get("week_plan")
-        if scope in {"Phase", "Week Plan", "Build Workouts"}:
-            if phase_guardrails and phase_guardrails.status in {"missing", "stale"}:
-                selected_steps = [
-                    "PHASE_GUARDRAILS",
-                    "PHASE_STRUCTURE",
-                    "PHASE_PREVIEW",
-                    *selected_steps,
-                ]
-            elif phase_structure and phase_structure.status in {"missing", "stale"}:
-                selected_steps = [
-                    "PHASE_STRUCTURE",
-                    "PHASE_PREVIEW",
-                    *selected_steps,
-                ]
-        if scope == "Build Workouts" and week_plan and week_plan.status in {"missing", "stale"}:
-            selected_steps = ["WEEK_PLAN", *selected_steps]
-        seen: set[str] = set()
-        deduped_steps: list[str] = []
-        for step_id in selected_steps:
-            if step_id in seen:
-                continue
-            seen.add(step_id)
-            deduped_steps.append(step_id)
-        selected_steps = deduped_steps
-        force_run_steps = set(selected_steps)
+        selected_steps, force_run_steps = _resolve_scoped_step_selection(readiness_map, scope)
 
     steps: list[ExecutionStep] = []
     for definition in STEP_DEFINITIONS:
@@ -1007,31 +1102,8 @@ def _build_execution_steps(
             if readiness_key is not None
             else ReadinessStep("", "", "missing", "", "")
         )
-        readiness_status = readiness_step.status
-        readiness_reason = readiness_step.reason or "—"
-        if readiness_status == "blocked":
-            status = "BLOCKED"
-            details = readiness_reason
-        elif step_id in force_run_steps:
-            status = "QUEUED"
-            details = "Explicit scoped rerun requested."
-        elif readiness_status in {"missing", "stale"}:
-            status = "QUEUED"
-            details = readiness_reason
-        else:
-            status = "SKIPPED"
-            details = "Already up-to-date."
-        writes_detail: list[WriteDetail] = []
-        for artifact_type, authority in zip(
-            definition["writes"], definition["authority"], strict=True
-        ):
-            writes_detail.append(
-                {
-                    "artifact_key": artifact_type.value,
-                    "display_name": artifact_type.value,
-                    "authority": authority,
-                }
-            )
+        status, details = _step_execution_state(step_id, readiness_step, force_run_steps)
+        writes_detail = _build_write_details(definition)
         steps.append(
             {
                 "Step": definition["label"],

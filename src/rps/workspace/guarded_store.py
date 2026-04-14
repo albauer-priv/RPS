@@ -470,46 +470,14 @@ class GuardedValidatedStore:
         """Apply consistent rounding to numeric values using schema hints when possible."""
         if path is None:
             path = []
-
-        def _joined_path(keys: list[str]) -> str:
-            return "_".join(keys).lower()
-
-        def _resolve_schema(node: JsonMap | None) -> JsonMap | None:
-            if not isinstance(node, dict):
-                return None
-            ref = node.get("$ref")
-            if not ref or not isinstance(ref, str) or not ref.startswith("#/"):
-                return node
-            parts = ref.lstrip("#/").split("/")
-            cur: object = root_schema
-            for part in parts:
-                if not isinstance(cur, dict):
-                    return node
-                cur = cur.get(part)
-                if cur is None:
-                    return node
-            if isinstance(cur, dict):
-                return cur
-            return node
-
-        schema_node = _resolve_schema(schema_node)
-        node_type = schema_node.get("type") if isinstance(schema_node, dict) else None
-        types: list[str] = []
-        if isinstance(node_type, list):
-            types = [str(t) for t in node_type]
-        elif isinstance(node_type, str):
-            types = [node_type]
+        schema_node = self._resolve_rounding_schema(schema_node, root_schema)
+        joined = "_".join(path).lower()
+        types = self._schema_types(schema_node)
 
         if isinstance(value, dict):
-            props = schema_node.get("properties") if isinstance(schema_node, dict) else None
-            additional = schema_node.get("additionalProperties") if isinstance(schema_node, dict) else None
             rounded: JsonMap = {}
             for k, v in value.items():
-                child_schema = None
-                if isinstance(props, dict) and k in props:
-                    child_schema = props[k]
-                elif isinstance(additional, dict):
-                    child_schema = additional
+                child_schema = self._child_rounding_schema(schema_node, k)
                 rounded[k] = self._round_numeric_fields(
                     v,
                     child_schema,
@@ -519,15 +487,13 @@ class GuardedValidatedStore:
             return rounded
 
         if isinstance(value, list):
-            raw_items_schema = schema_node.get("items") if isinstance(schema_node, dict) else None
-            items_schema = raw_items_schema if isinstance(raw_items_schema, dict) else None
+            items_schema = self._list_item_rounding_schema(schema_node)
             return [
                 self._round_numeric_fields(item, items_schema, root_schema, path)
                 for item in value
             ]
 
         if isinstance(value, (int, float)):
-            joined = _joined_path(path)
             if "integer" in types and "number" not in types:
                 return round(float(value))
             if "integer" in types and "number" in types and abs(float(value) - round(float(value))) < INTEGER_ROUNDING_EPSILON:
@@ -538,6 +504,60 @@ class GuardedValidatedStore:
                     return round(float(value))
                 return round(float(value), decimals)
         return value
+
+    def _resolve_rounding_schema(
+        self,
+        schema_node: JsonMap | None,
+        root_schema: JsonMap,
+    ) -> JsonMap | None:
+        """Resolve a local schema node, following local ``$ref`` targets when present."""
+        if not isinstance(schema_node, dict):
+            return None
+        ref = schema_node.get("$ref")
+        if not ref or not isinstance(ref, str) or not ref.startswith("#/"):
+            return schema_node
+        parts = ref.lstrip("#/").split("/")
+        current: object = root_schema
+        for part in parts:
+            if not isinstance(current, dict):
+                return schema_node
+            current = current.get(part)
+            if current is None:
+                return schema_node
+        if isinstance(current, dict):
+            return current
+        return schema_node
+
+    @staticmethod
+    def _schema_types(schema_node: JsonMap | None) -> list[str]:
+        """Extract normalized ``type`` entries from a schema node."""
+        node_type = schema_node.get("type") if isinstance(schema_node, dict) else None
+        if isinstance(node_type, list):
+            return [str(entry) for entry in node_type]
+        if isinstance(node_type, str):
+            return [node_type]
+        return []
+
+    @staticmethod
+    def _child_rounding_schema(schema_node: JsonMap | None, key: str) -> object:
+        """Return the schema node for a child mapping entry when available."""
+        if not isinstance(schema_node, dict):
+            return None
+        props = schema_node.get("properties")
+        if isinstance(props, dict) and key in props:
+            return props[key]
+        additional = schema_node.get("additionalProperties")
+        if isinstance(additional, dict):
+            return additional
+        return None
+
+    @staticmethod
+    def _list_item_rounding_schema(schema_node: JsonMap | None) -> JsonMap | None:
+        """Return the schema node for list items when available."""
+        if not isinstance(schema_node, dict):
+            return None
+        raw_items_schema = schema_node.get("items")
+        return raw_items_schema if isinstance(raw_items_schema, dict) else None
 
     def _apply_rounding(self, document: object, schema: JsonMap) -> object:
         """Round numeric values on the document before validation/storage."""
@@ -611,48 +631,17 @@ class GuardedValidatedStore:
 
             schema = self.schemas.get_schema(output_spec.schema_file)
             validator = self.schemas.validator_for(output_spec.schema_file)
-
-            if is_envelope_schema(schema):
-                if not isinstance(document, dict) or "meta" not in document or "data" not in document:
-                    raise ValueError("Envelope artefact must be an object with meta and data")
-                if isinstance(document.get("meta"), dict) and "data_confidence" not in document["meta"]:
-                    document["meta"]["data_confidence"] = "UNKNOWN"
-                document = self._apply_rounding(document, schema)
-                envelope_document = cast(JsonMap, document)
-                validate_or_raise(validator, envelope_document)
-                version_key = derive_version_key_from_envelope(envelope_document, target)
-            else:
-                document = self._apply_rounding(document, schema)
-                validate_or_raise(validator, cast(JsonMap, document))
-                version_key = "raw"
+            document, version_key = self._validate_and_version_document(
+                document=document,
+                schema=schema,
+                validator=validator,
+                target=target,
+            )
             if target == ArtifactType.INTERVALS_WORKOUTS:
                 version_key = self._derive_intervals_version_key(document)
             version_key = normalize_version_key(version_key, artifact_type=target)
 
-            season_plan_doc: JsonMap | None = None
-            if target in (
-                ArtifactType.PHASE_GUARDRAILS,
-                ArtifactType.PHASE_STRUCTURE,
-                ArtifactType.PHASE_PREVIEW,
-                ArtifactType.PHASE_FEED_FORWARD,
-            ):
-                season_plan_doc = self._as_map(
-                    self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
-                )
-                self._ensure_phase_range_matches_plan(cast(JsonMap, document), season_plan_doc)
-            if target in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE):
-                if season_plan_doc is None:
-                    season_plan_doc = self._as_map(
-                        self.store.load_latest(
-                            self.athlete_id, ArtifactType.SEASON_PLAN
-                        )
-                    )
-                if target == ArtifactType.PHASE_GUARDRAILS:
-                    self._enforce_phase_guardrails_constraints(cast(JsonMap, document), season_plan_doc)
-                else:
-                    self._enforce_phase_structure_constraints(cast(JsonMap, document), season_plan_doc)
-            elif target == ArtifactType.PHASE_PREVIEW:
-                self._enforce_phase_preview_traceability(cast(JsonMap, document))
+            self._apply_phase_store_constraints(target, cast(JsonMap, document))
 
             path = self.store.save_document(
                 athlete_id=self.athlete_id,
@@ -692,6 +681,56 @@ class GuardedValidatedStore:
                 producer_agent=producer_agent,
             )
             raise
+
+    def _validate_and_version_document(
+        self,
+        *,
+        document: object,
+        schema: JsonMap,
+        validator: object,
+        target: ArtifactType,
+    ) -> tuple[object, str]:
+        """Apply rounding, schema validation, and base version derivation."""
+        if is_envelope_schema(schema):
+            if not isinstance(document, dict) or "meta" not in document or "data" not in document:
+                raise ValueError("Envelope artefact must be an object with meta and data")
+            if isinstance(document.get("meta"), dict) and "data_confidence" not in document["meta"]:
+                document["meta"]["data_confidence"] = "UNKNOWN"
+            document = self._apply_rounding(document, schema)
+            envelope_document = cast(JsonMap, document)
+            validate_or_raise(validator, envelope_document)
+            version_key = derive_version_key_from_envelope(envelope_document, target)
+            return document, version_key
+        document = self._apply_rounding(document, schema)
+        validate_or_raise(validator, cast(JsonMap, document))
+        return document, "raw"
+
+    def _apply_phase_store_constraints(self, target: ArtifactType, document: JsonMap) -> None:
+        """Apply phase-specific store guards after validation and versioning."""
+        phase_targets = {
+            ArtifactType.PHASE_GUARDRAILS,
+            ArtifactType.PHASE_STRUCTURE,
+            ArtifactType.PHASE_PREVIEW,
+            ArtifactType.PHASE_FEED_FORWARD,
+        }
+        season_plan_doc: JsonMap | None = None
+        if target in phase_targets:
+            season_plan_doc = self._as_map(
+                self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+            )
+            self._ensure_phase_range_matches_plan(document, season_plan_doc)
+        if target in {ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE}:
+            if season_plan_doc is None:
+                season_plan_doc = self._as_map(
+                    self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+                )
+            if target == ArtifactType.PHASE_GUARDRAILS:
+                self._enforce_phase_guardrails_constraints(document, season_plan_doc)
+            else:
+                self._enforce_phase_structure_constraints(document, season_plan_doc)
+            return
+        if target == ArtifactType.PHASE_PREVIEW:
+            self._enforce_phase_preview_traceability(document)
 
     def _format_payload(self, document: object) -> str:
         """Return a formatted payload string for logging."""

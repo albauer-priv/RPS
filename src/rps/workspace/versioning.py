@@ -158,65 +158,99 @@ def derive_version_key_from_envelope(
 ) -> str:
     """Derive a version key using known metadata fields."""
     meta = envelope.get("meta", {})
-
-    if artifact_type in RANGE_SCOPED_ARTIFACTS and "iso_week_range" in meta:
-        range_key = _coerce_range(meta["iso_week_range"])
-        if range_key:
-            return normalize_version_key(
-                range_key,
-                meta.get("created_at"),
-                artifact_type=artifact_type,
-            )
-
-    if "iso_week" in meta:
-        wk_key = _coerce_week(meta["iso_week"])
-        if wk_key:
-            version_key = meta.get("version_key") if isinstance(meta, dict) else None
-            if isinstance(version_key, str):
-                return normalize_version_key(
-                    version_key,
-                    meta.get("created_at"),
-                    artifact_type=artifact_type,
-                )
-            return normalize_version_key(
-                wk_key,
-                meta.get("created_at"),
-                artifact_type=artifact_type,
-            )
-
-    if "iso_week_range" in meta:
-        range_key = _coerce_range(meta["iso_week_range"])
-        if range_key:
-            return normalize_version_key(
-                range_key,
-                meta.get("created_at"),
-                artifact_type=artifact_type,
-            )
-
-    if "temporal_scope" in meta:
-        scope = meta["temporal_scope"]
-        if isinstance(scope, dict):
-            start = scope.get("start") or scope.get("from")
-            end = scope.get("end") or scope.get("to")
-            if start and end:
-                return normalize_version_key(
-                    f"{start}--{end}",
-                    meta.get("created_at"),
-                    artifact_type=artifact_type,
-                )
-
-    if "date_range" in meta:
-        date_range = meta["date_range"]
-        if isinstance(date_range, dict):
-            start = date_range.get("start") or date_range.get("from")
-            end = date_range.get("end") or date_range.get("to")
-            if start and end:
-                return f"{start}--{end}"
-        elif isinstance(date_range, str):
-            return normalize_version_key(
-                date_range,
-                meta.get("created_at"),
-                artifact_type=artifact_type,
-            )
-
+    range_key = _version_key_from_iso_week_range(meta, artifact_type)
+    if range_key:
+        return range_key
+    week_key = _version_key_from_iso_week(meta, artifact_type)
+    if week_key:
+        return week_key
+    temporal_key = _version_key_from_temporal_scope(meta, artifact_type)
+    if temporal_key:
+        return temporal_key
+    date_range_key = _version_key_from_date_range(meta, artifact_type)
+    if date_range_key:
+        return date_range_key
     return "unversioned"
+
+
+def _version_key_from_iso_week_range(
+    meta: object,
+    artifact_type: ArtifactType | None,
+) -> str | None:
+    if not isinstance(meta, dict) or "iso_week_range" not in meta:
+        return None
+    if artifact_type not in RANGE_SCOPED_ARTIFACTS and "iso_week_range" not in meta:
+        return None
+    range_key = _coerce_range(meta["iso_week_range"])
+    if not range_key:
+        return None
+    return normalize_version_key(
+        range_key,
+        meta.get("created_at"),
+        artifact_type=artifact_type,
+    )
+
+
+def _version_key_from_iso_week(
+    meta: object,
+    artifact_type: ArtifactType | None,
+) -> str | None:
+    if not isinstance(meta, dict) or "iso_week" not in meta:
+        return None
+    wk_key = _coerce_week(meta["iso_week"])
+    if not wk_key:
+        return None
+    version_key = meta.get("version_key")
+    if isinstance(version_key, str):
+        return normalize_version_key(
+            version_key,
+            meta.get("created_at"),
+            artifact_type=artifact_type,
+        )
+    return normalize_version_key(
+        wk_key,
+        meta.get("created_at"),
+        artifact_type=artifact_type,
+    )
+
+
+def _version_key_from_temporal_scope(
+    meta: object,
+    artifact_type: ArtifactType | None,
+) -> str | None:
+    if not isinstance(meta, dict):
+        return None
+    scope = meta.get("temporal_scope")
+    if not isinstance(scope, dict):
+        return None
+    start = scope.get("start") or scope.get("from")
+    end = scope.get("end") or scope.get("to")
+    if not (start and end):
+        return None
+    return normalize_version_key(
+        f"{start}--{end}",
+        meta.get("created_at"),
+        artifact_type=artifact_type,
+    )
+
+
+def _version_key_from_date_range(
+    meta: object,
+    artifact_type: ArtifactType | None,
+) -> str | None:
+    if not isinstance(meta, dict) or "date_range" not in meta:
+        return None
+    date_range = meta["date_range"]
+    if isinstance(date_range, dict):
+        start = date_range.get("start") or date_range.get("from")
+        end = date_range.get("end") or date_range.get("to")
+        if start and end:
+            return f"{start}--{end}"
+        return None
+    if isinstance(date_range, str):
+        return normalize_version_key(
+            date_range,
+            meta.get("created_at"),
+            artifact_type=artifact_type,
+        )
+    return None

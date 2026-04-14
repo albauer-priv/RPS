@@ -149,8 +149,53 @@ def _parse_event_date(raw: object) -> date | None:
         return None
 
 
+def _collect_missing_event_fields(
+    rows: list[dict[str, object]], required_fields: list[str]
+) -> list[str]:
+    errors: list[str] = []
+    for idx, row in enumerate(rows, start=1):
+        for field in required_fields:
+            value = row.get(field)
+            if value is None or value == "":
+                errors.append(f"Row {idx}: missing {field}.")
+    return errors
+
+
+def _validate_event_row(
+    idx: int,
+    row: dict[str, object],
+    priority_rank_map: dict[str, set[int]],
+) -> tuple[list[str], date | None]:
+    errors: list[str] = []
+    priority = str(row.get("priority") or "").upper()
+    if priority not in {"A", "B", "C"}:
+        errors.append(f"Row {idx}: priority must be A, B, or C.")
+    rank_val = row.get("rank")
+    try:
+        rank = int(str(rank_val))
+    except (TypeError, ValueError):
+        errors.append(
+            f"Row {idx}: rank must be an integer {MIN_PRIORITY_RANK}-{MAX_PRIORITY_RANK}."
+        )
+        return errors, None
+    if rank < MIN_PRIORITY_RANK or rank > MAX_PRIORITY_RANK:
+        errors.append(
+            f"Row {idx}: rank must be between {MIN_PRIORITY_RANK} and {MAX_PRIORITY_RANK}."
+        )
+    rank_set = priority_rank_map.setdefault(priority, set())
+    if rank in rank_set:
+        errors.append(f"Row {idx}: duplicate rank {rank} within priority {priority}.")
+    else:
+        rank_set.add(rank)
+    parsed_date = _parse_event_date(row.get("date"))
+    if row.get("date") and parsed_date is None:
+        errors.append(f"Row {idx}: date must be YYYY-MM-DD.")
+    if priority == "A" and parsed_date:
+        return errors, parsed_date
+    return errors, None
+
+
 def _validate_events(rows: list[dict[str, object]]) -> list[str]:
-    missing_errors: list[str] = []
     required_fields = [
         "priority",
         "rank",
@@ -163,40 +208,13 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
         "expected_duration",
         "time_limit",
     ]
-    for idx, row in enumerate(rows, start=1):
-        for field in required_fields:
-            value = row.get(field)
-            if value is None or value == "":
-                missing_errors.append(f"Row {idx}: missing {field}.")
+    missing_errors = _collect_missing_event_fields(rows, required_fields)
     priority_rank_map: dict[str, set[int]] = {}
     a_dates: list[date] = []
     for idx, row in enumerate(rows, start=1):
-        priority = str(row.get("priority") or "").upper()
-        if priority not in {"A", "B", "C"}:
-            missing_errors.append(f"Row {idx}: priority must be A, B, or C.")
-        rank_val = row.get("rank")
-        try:
-            rank = int(str(rank_val))
-        except (TypeError, ValueError):
-            missing_errors.append(
-                f"Row {idx}: rank must be an integer {MIN_PRIORITY_RANK}-{MAX_PRIORITY_RANK}."
-            )
-            continue
-        if rank < MIN_PRIORITY_RANK or rank > MAX_PRIORITY_RANK:
-            missing_errors.append(
-                f"Row {idx}: rank must be between {MIN_PRIORITY_RANK} and {MAX_PRIORITY_RANK}."
-            )
-        rank_set = priority_rank_map.setdefault(priority, set())
-        if rank in rank_set:
-            missing_errors.append(
-                f"Row {idx}: duplicate rank {rank} within priority {priority}."
-            )
-        else:
-            rank_set.add(rank)
-        parsed_date = _parse_event_date(row.get("date"))
-        if row.get("date") and parsed_date is None:
-            missing_errors.append(f"Row {idx}: date must be YYYY-MM-DD.")
-        if priority == "A" and parsed_date:
+        row_errors, parsed_date = _validate_event_row(idx, row, priority_rank_map)
+        missing_errors.extend(row_errors)
+        if parsed_date is not None:
             a_dates.append(parsed_date)
     a_dates = sorted(a_dates)
     for prev, current in zip(a_dates, a_dates[1:], strict=False):
