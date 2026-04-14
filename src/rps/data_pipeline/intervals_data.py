@@ -2126,22 +2126,32 @@ def compile_activities_trend(
         z2_min_max = float(z2_min_series.max()) if len(z2_min_series) else np.nan
         weekly_z2_share_pct = (z2_min_total / move_min_total * 100.0) if move_min_total else np.nan
 
-        def sum_minutes_where(mask_col: str, minutes_series: pd.Series) -> float:
-            if mask_col not in g.columns or len(minutes_series) == 0:
+        def sum_minutes_where(
+            week_frame: pd.DataFrame, mask_col: str, minutes_series: pd.Series
+        ) -> float:
+            if mask_col not in week_frame.columns or len(minutes_series) == 0:
                 return np.nan
-            mask = g[mask_col].fillna(False).astype(bool)
+            mask = week_frame[mask_col].fillna(False).astype(bool)
             return float(minutes_series.where(mask, 0).sum())
 
-        move_min_150plus = sum_minutes_where("Flag Long Ride >=150min (bool)", move_min_series)
-        move_min_180plus = sum_minutes_where("Flag Long Ride >=180min (bool)", move_min_series)
-        move_min_240plus = sum_minutes_where("Flag Long Ride >=240min (bool)", move_min_series)
-        move_min_des_long_base = sum_minutes_where("Flag DES Long Base Candidate (bool)", move_min_series)
-        move_min_des_long_build = sum_minutes_where("Flag DES Long Build Candidate (bool)", move_min_series)
-        z2_min_des_long_base = sum_minutes_where("Flag DES Long Base Candidate (bool)", z2_min_series)
-        z2_min_des_long_build = sum_minutes_where("Flag DES Long Build Candidate (bool)", z2_min_series)
-        z2_min_150plus = sum_minutes_where("Flag Long Ride >=150min (bool)", z2_min_series)
-        z2_min_180plus = sum_minutes_where("Flag Long Ride >=180min (bool)", z2_min_series)
-        z2_min_240plus = sum_minutes_where("Flag Long Ride >=240min (bool)", z2_min_series)
+        move_min_150plus = sum_minutes_where(g, "Flag Long Ride >=150min (bool)", move_min_series)
+        move_min_180plus = sum_minutes_where(g, "Flag Long Ride >=180min (bool)", move_min_series)
+        move_min_240plus = sum_minutes_where(g, "Flag Long Ride >=240min (bool)", move_min_series)
+        move_min_des_long_base = sum_minutes_where(
+            g, "Flag DES Long Base Candidate (bool)", move_min_series
+        )
+        move_min_des_long_build = sum_minutes_where(
+            g, "Flag DES Long Build Candidate (bool)", move_min_series
+        )
+        z2_min_des_long_base = sum_minutes_where(
+            g, "Flag DES Long Base Candidate (bool)", z2_min_series
+        )
+        z2_min_des_long_build = sum_minutes_where(
+            g, "Flag DES Long Build Candidate (bool)", z2_min_series
+        )
+        z2_min_150plus = sum_minutes_where(g, "Flag Long Ride >=150min (bool)", z2_min_series)
+        z2_min_180plus = sum_minutes_where(g, "Flag Long Ride >=180min (bool)", z2_min_series)
+        z2_min_240plus = sum_minutes_where(g, "Flag Long Ride >=240min (bool)", z2_min_series)
 
         row = {
             "Year": int(yr),
