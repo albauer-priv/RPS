@@ -5,9 +5,9 @@ from __future__ import annotations
 import atexit
 import logging
 import os
-from pathlib import Path
 import sys
-from typing import Optional, TypeAlias
+from pathlib import Path
+from typing import TypeAlias
 
 ROOT = Path(__file__).resolve().parents[3]
 SYS_PATH = str(ROOT / "src")
@@ -17,13 +17,13 @@ if SYS_PATH not in sys.path:
 
 from rps.core.config import load_env_file  # noqa: E402
 from rps.core.logging import log_and_print, setup_logging  # noqa: E402
-from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 from rps.rendering.auto_render import render_sidecar  # noqa: E402
+from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 
 logger = logging.getLogger(__name__)
 JsonMap: TypeAlias = dict[str, object]
 
-def load_env(env_path: Optional[Path] = None) -> None:
+def load_env(env_path: Path | None = None) -> None:
     """Load environment variables from a .env file if it exists."""
     path = env_path or (ROOT / ".env")
     load_env_file(path)

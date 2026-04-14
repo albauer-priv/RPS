@@ -24,6 +24,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "mypy>=1.20.1",
+  "ruff>=0.15.10",
   "types-PyYAML>=6.0.12.20260408",
 ]
 
@@ -42,3 +43,11 @@ disable_error_code = ["import-untyped"]
 exclude = [
   "^runtime/",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["runtime"]
+
+[tool.ruff.lint]
+select = ["F", "I"]

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 from rps.ui.shared import (
     SETTINGS,
@@ -214,7 +214,7 @@ def _save_events_payload(
     athlete_id: str,
     ui_events: list[dict[str, object]],
 ) -> None:
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     storage_events = [_to_storage_event(event) for event in _sort_events(ui_events)]
     payload: dict[str, object] = {"events": storage_events}

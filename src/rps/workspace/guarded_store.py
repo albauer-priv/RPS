@@ -2,25 +2,29 @@
 
 from __future__ import annotations
 
+import json
+import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime
-import logging
-import json
 from pathlib import Path
-import re
 from typing import cast
 
 from rps.agents.tasks import OutputSpec
-from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
-from rps.workspace.schema_utils import is_envelope_schema
+from rps.rendering.auto_render import render_sidecar
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import envelope_week_range
-from rps.workspace.season_plan_service import resolve_season_plan_phase_info
-from rps.workspace.paths import ARTIFACT_PATHS
-from rps.workspace.types import ArtifactType
-from rps.workspace.versioning import derive_version_key_from_envelope, normalize_week_version_key, normalize_version_key
 from rps.workspace.local_store import LocalArtifactStore
-from rps.rendering.auto_render import render_sidecar
+from rps.workspace.paths import ARTIFACT_PATHS
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
+from rps.workspace.schema_utils import is_envelope_schema
+from rps.workspace.season_plan_service import resolve_season_plan_phase_info
+from rps.workspace.types import ArtifactType
+from rps.workspace.versioning import (
+    derive_version_key_from_envelope,
+    normalize_version_key,
+    normalize_week_version_key,
+)
 
 JsonMap = dict[str, object]
 StringListMap = dict[str, list[str]]

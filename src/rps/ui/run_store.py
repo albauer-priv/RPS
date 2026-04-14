@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 import json
 import logging
 import os
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
-
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +53,12 @@ def events_jsonl_path(root: Path, athlete_id: str, run_id: str) -> Path:
 
 def _utc_iso_now() -> str:
     """Return current UTC time as ISO-8601 string."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _utc_run_id_suffix() -> str:
     """Return a filesystem-safe UTC suffix for run ids."""
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 def _utc_timestamp() -> str:
@@ -200,7 +199,7 @@ def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
     """Delete per-run directories older than retention_days; returns count removed."""
     if retention_days <= 0:
         return 0
-    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
     run_root = _run_store_dir(root, athlete_id)
     if not run_root.exists():
         return 0
@@ -216,9 +215,9 @@ def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
                 if created_at:
                     created_dt = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
                 else:
-                    created_dt = datetime.fromtimestamp(run_path_json.stat().st_mtime, tz=timezone.utc)
+                    created_dt = datetime.fromtimestamp(run_path_json.stat().st_mtime, tz=UTC)
             else:
-                created_dt = datetime.fromtimestamp(run_path.stat().st_mtime, tz=timezone.utc)
+                created_dt = datetime.fromtimestamp(run_path.stat().st_mtime, tz=UTC)
         except Exception:
             continue
         if created_dt < cutoff:

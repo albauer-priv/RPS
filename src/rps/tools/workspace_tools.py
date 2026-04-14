@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
+from rps.rendering.auto_render import render_sidecar
+from rps.tools.knowledge_search import search_knowledge
 from rps.workspace.api import Workspace
+from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import IsoWeekRange
 from rps.workspace.phase_from_season_plan import IsoWeek
 from rps.workspace.phase_resolution import add_weeks
-from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaValidationError
-from rps.rendering.auto_render import render_sidecar
+from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
 from rps.workspace.types import ArtifactType
-from rps.tools.knowledge_search import search_knowledge
 
 logger = logging.getLogger(__name__)
 

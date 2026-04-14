@@ -18,8 +18,8 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.iso_helpers import parse_iso_week_range
+from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)

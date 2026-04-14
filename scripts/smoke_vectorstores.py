@@ -14,7 +14,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from scripts.data_pipeline.common import load_env  # noqa: E402
+from script_logging import configure_logging  # noqa: E402
+
 from rps.openai.vectorstore_state import (  # noqa: E402
     DEFAULT_STATE_PATH,
     load_state,
@@ -28,7 +29,7 @@ from rps.vectorstores.qdrant_local import (  # noqa: E402
     resolve_embedding_config,
     search_points,
 )
-from script_logging import configure_logging  # noqa: E402
+from scripts.data_pipeline.common import load_env  # noqa: E402
 
 
 def _default_max_results() -> int:

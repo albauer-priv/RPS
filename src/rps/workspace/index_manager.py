@@ -5,9 +5,8 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
 from datetime import datetime
+from pathlib import Path
 
 JsonMap = dict[str, object]
 
@@ -130,8 +129,8 @@ class WorkspaceIndexManager:
         run_id: str,
         producer_agent: str,
         created_at: str | None = None,
-        iso_week: Optional[JsonMap] = None,
-        iso_week_range: Optional[JsonMap] = None,
+        iso_week: JsonMap | None = None,
+        iso_week_range: JsonMap | None = None,
     ) -> None:
         """Record a write event and mark it as latest for the artifact type."""
         index = self.load()

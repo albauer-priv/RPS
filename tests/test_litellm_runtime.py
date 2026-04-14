@@ -1,6 +1,5 @@
-from types import SimpleNamespace
 
-from rps.openai.litellm_runtime import LLMProviderConfig, LiteLLMResponses
+from rps.openai.litellm_runtime import LiteLLMResponses, LLMProviderConfig
 
 
 def test_litellm_previous_response_replays_tool_calls(monkeypatch):

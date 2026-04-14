@@ -6,14 +6,14 @@ import io
 import logging
 import os
 import re
-from contextlib import redirect_stdout
 from collections import deque
-from datetime import date, datetime, timezone
+from collections.abc import Callable
+from contextlib import redirect_stdout
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Callable
 
-from jinja2 import BaseLoader, Environment
 import streamlit as st
+from jinja2 import BaseLoader, Environment
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from rps.core.config import load_app_settings, load_env_file
@@ -21,11 +21,10 @@ from rps.core.logging import _normalize_level, setup_logging
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
-from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
-from rps.workspace.types import ArtifactType
+from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
-
+from rps.workspace.types import ArtifactType
 
 ROOT = Path(__file__).resolve().parents[3]
 load_env_file(ROOT / ".env")
@@ -326,7 +325,7 @@ def append_system_log(source: str, content: str, level: int = logging.INFO) -> N
     logs: list[dict] = st.session_state["rps_state"].setdefault("system_logs", [])
     logs.append(
         {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "source": source,
             "content": content,
         }
@@ -470,7 +469,7 @@ def capture_output(
 
 def make_ui_run_id(name: str) -> str:
     """Return a timestamped UI run id for logging/traceability."""
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     safe = re.sub(r"[^A-Za-z0-9_-]+", "_", name)
     return f"ui_{safe}_{stamp}"
 

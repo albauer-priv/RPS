@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import datetime
 import difflib
 import json
+from collections import defaultdict
+from datetime import datetime
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
+from rps.ui.run_store import load_runs
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -17,7 +18,6 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.ui.run_store import load_runs
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 

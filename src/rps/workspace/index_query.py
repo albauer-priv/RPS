@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week_range
@@ -43,7 +42,7 @@ class IndexQuery:
         self,
         artifact_type: ArtifactType | str,
         target: IsoWeek,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Return the newest version_key whose range covers the target week."""
         key = artifact_type.value if isinstance(artifact_type, ArtifactType) else str(artifact_type)
         index = self._index_manager.load()

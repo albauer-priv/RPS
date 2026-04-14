@@ -12,8 +12,11 @@ done < <(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.py$' || t
 if ((${#STAGED_PY_FILES[@]} > 0)); then
   echo "Running syntax check for staged Python files..."
   python3 -m py_compile "${STAGED_PY_FILES[@]}"
+
+  echo "Running ruff for staged Python files..."
+  "$ROOT/scripts/run_lint.sh" "${STAGED_PY_FILES[@]}"
 else
-  echo "No staged Python files for syntax check."
+  echo "No staged Python files for syntax/lint check."
 fi
 
 "$ROOT/scripts/run_typecheck.sh"

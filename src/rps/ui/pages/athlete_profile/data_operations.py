@@ -6,7 +6,6 @@ from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
     get_athlete_id,
-    get_iso_year_week,
     init_ui_state,
     render_global_sidebar,
     render_status_panel,
@@ -19,7 +18,6 @@ from rps.workspace.backup_restore import (
     restore_backup_bundle,
     validate_backup_bundle,
 )
-
 
 init_ui_state()
 render_global_sidebar()

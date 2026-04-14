@@ -4,7 +4,11 @@ import io
 import zipfile
 from pathlib import Path
 
-from rps.workspace.backup_restore import create_backup_bundle, list_backup_files, restore_backup_bundle
+from rps.workspace.backup_restore import (
+    create_backup_bundle,
+    list_backup_files,
+    restore_backup_bundle,
+)
 
 
 def _write_file(path: Path, content: str = "data") -> None:

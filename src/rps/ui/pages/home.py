@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import streamlit as st
@@ -16,7 +16,6 @@ from rps.ui.shared import (
     render_global_sidebar,
     render_status_panel,
     set_status,
-    system_log_panel,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -82,7 +81,7 @@ def _artifact_status_rows(store: LocalArtifactStore, athlete_id: str) -> list[di
         exists = path.exists()
         updated_at = "—"
         if exists:
-            ts = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+            ts = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
             updated_at = ts.strftime("%Y-%m-%d %H:%M UTC")
         rows.append(
             {

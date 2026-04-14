@@ -4,19 +4,19 @@ from __future__ import annotations
 
 import datetime
 import json
-import math
 import logging
+import math
 import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from rps.agents.knowledge_injection import build_injection_block
-from rps.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
+from rps.agents.tasks import OUTPUT_SPECS, AgentTask, OutputSpec
 from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
-from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
+from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.response_utils import extract_reasoning_summaries, extract_text_output
 from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import VectorStoreResolver

@@ -1,12 +1,11 @@
 """Unit tests for workspace helpers and storage."""
 
+import json
 import sys
-from datetime import date
-from pathlib import Path
 import tempfile
 import unittest
-import json
-
+from datetime import date
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -14,11 +13,15 @@ if str(SRC) not in sys.path:
     # Allow running tests without installing the package.
     sys.path.insert(0, str(SRC))
 
+from rps.workspace.api import Workspace  # noqa: E402
 from rps.workspace.guards import MissingDependenciesError  # noqa: E402
-from rps.workspace.helpers import resolve_current_phase, resolve_current_week, upstream_ref  # noqa: E402
+from rps.workspace.helpers import (  # noqa: E402
+    resolve_current_phase,
+    resolve_current_week,
+    upstream_ref,
+)
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
-from rps.workspace.api import Workspace  # noqa: E402
 
 
 class WorkspaceHelperTests(unittest.TestCase):

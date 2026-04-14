@@ -3,27 +3,26 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
-from typing import Callable, Iterable
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
+from rps.core.logging import log_and_print
+from rps.orchestrator.workout_export import create_intervals_workouts_export
+from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import (
     IsoWeek,
     envelope_week,
     envelope_week_range,
     parse_iso_week_range,
-    previous_iso_week,
     range_contains,
 )
-from rps.workspace.season_plan_service import resolve_season_plan_phase_info
-from rps.orchestrator.workout_export import create_intervals_workouts_export
-from rps.workspace.api import Workspace
 from rps.workspace.local_store import LocalArtifactStore
-from rps.core.logging import log_and_print
+from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)

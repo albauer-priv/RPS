@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 from rps.agents.tasks import AgentTask
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
 from rps.workspace.iso_helpers import IsoWeek, envelope_week
+from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan
 from rps.workspace.types import ArtifactType
 
 
@@ -26,9 +25,9 @@ class AgentTaskRouter:
         """Initialize with routing context."""
         self.ctx = ctx
 
-    def route_season(self, target: IsoWeek) -> List[AgentTask]:
+    def route_season(self, target: IsoWeek) -> list[AgentTask]:
         """Return season-plan tasks required for the target week."""
-        tasks: List[AgentTask] = []
+        tasks: list[AgentTask] = []
 
         if not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PLAN):
             tasks.append(AgentTask.CREATE_SEASON_PLAN)
@@ -41,9 +40,9 @@ class AgentTaskRouter:
 
         return tasks
 
-    def route_phase(self, target: IsoWeek) -> List[AgentTask]:
+    def route_phase(self, target: IsoWeek) -> list[AgentTask]:
         """Return phase tasks required for the target week."""
-        tasks: List[AgentTask] = []
+        tasks: list[AgentTask] = []
 
         if not self.ctx.workspace.latest_exists(ArtifactType.SEASON_PLAN):
             return tasks
@@ -72,9 +71,9 @@ class AgentTaskRouter:
 
         return tasks
 
-    def route_week(self, target: IsoWeek) -> List[AgentTask]:
+    def route_week(self, target: IsoWeek) -> list[AgentTask]:
         """Return week tasks required for the target week."""
-        tasks: List[AgentTask] = []
+        tasks: list[AgentTask] = []
 
         if not (
             self.ctx.workspace.latest_exists(ArtifactType.PHASE_GUARDRAILS)
@@ -92,9 +91,9 @@ class AgentTaskRouter:
         tasks.append(AgentTask.CREATE_WEEK_PLAN)
         return tasks
 
-    def route_builder(self, _target: IsoWeek) -> List[AgentTask]:
+    def route_builder(self, _target: IsoWeek) -> list[AgentTask]:
         """Return builder tasks required for the target week."""
-        tasks: List[AgentTask] = []
+        tasks: list[AgentTask] = []
 
         if not self.ctx.workspace.latest_exists(ArtifactType.WEEK_PLAN):
             return tasks
@@ -102,9 +101,9 @@ class AgentTaskRouter:
         tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
         return tasks
 
-    def route_analysis(self, target: IsoWeek) -> List[AgentTask]:
+    def route_analysis(self, target: IsoWeek) -> list[AgentTask]:
         """Return analysis tasks required for the target week."""
-        tasks: List[AgentTask] = []
+        tasks: list[AgentTask] = []
 
         required = [
             ArtifactType.ACTIVITIES_ACTUAL,

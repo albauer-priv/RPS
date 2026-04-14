@@ -2,7 +2,6 @@
 
 from rps.agents.spec import AgentSpec
 
-
 AGENTS: dict[str, AgentSpec] = {
     "season_scenario": AgentSpec(
         name="season_scenario",

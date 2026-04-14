@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import shutil
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 
+from rps.agents.multi_output_runner import AgentRuntime
 from rps.core.config import load_env_file
+from rps.openai.client import get_client
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.orchestrator.plan_hub_worker import get_planning_run_status
+from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
+from rps.prompts.loader import PromptLoader
+from rps.ui.run_store import load_runs, release_athlete_lock, update_run
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -15,15 +23,6 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.agents.multi_output_runner import AgentRuntime
-from rps.openai.client import get_client
-from rps.openai.vectorstore_state import VectorStoreResolver
-from rps.prompts.loader import PromptLoader
-import shutil
-
-from rps.ui.run_store import load_runs, release_athlete_lock, update_run
-from rps.orchestrator.plan_hub_worker import get_planning_run_status
-from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 

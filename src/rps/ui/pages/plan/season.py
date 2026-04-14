@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import streamlit as st
 from jinja2 import BaseLoader, Environment
@@ -20,13 +20,13 @@ from rps.ui.shared import (
     load_rendered_markdown,
     make_ui_run_id,
     multi_runtime_for,
-    render_phase_markdown,
     render_global_sidebar,
+    render_phase_markdown,
     render_status_panel,
     set_status,
 )
-from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.iso_helpers import parse_iso_week_range
+from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 ISO_WEEK_RANGE_FALLBACK = "N/A"
@@ -208,7 +208,7 @@ def _action_select_scenario(selected: str, rationale: str | None, kpi_selection:
         "authority": "Informational",
         "owner_agent": "Season-Scenario-Agent",
         "run_id": run_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "scope": "Season",
         "iso_week": f"{year:04d}-{week:02d}",
         "iso_week_range": iso_week_range,

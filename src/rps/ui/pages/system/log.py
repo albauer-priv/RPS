@@ -17,7 +17,6 @@ from rps.ui.shared import (
     system_log_panel,
 )
 
-
 st.title("Log")
 
 # CHECKLIST (System -> Log)

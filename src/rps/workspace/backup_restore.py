@@ -7,10 +7,10 @@ import logging
 import tarfile
 import tempfile
 import zipfile
+from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import UTC
 from pathlib import Path
-from typing import Iterable
-
 
 LOGGER = logging.getLogger("rps.workspace.backup_restore")
 
@@ -77,9 +77,9 @@ def _build_manifest(athlete_id: str, included_paths: list[str], file_paths: list
 
 
 def _utc_now() -> str:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 def create_backup_bundle(

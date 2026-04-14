@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Tuple
 
 
 def resolve_current_week(d: date | datetime) -> str:
@@ -15,7 +14,7 @@ def resolve_current_week(d: date | datetime) -> str:
     return f"{iso_year:04d}-{iso_week:02d}"
 
 
-def _parse_week_key(week_key: str) -> Tuple[int, int]:
+def _parse_week_key(week_key: str) -> tuple[int, int]:
     """Parse a YYYY-WW week key into (year, week)."""
     year_s, week_s = week_key.split("-")
     return int(year_s), int(week_s)

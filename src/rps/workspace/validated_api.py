@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .local_store import LocalArtifactStore, utc_iso_now
 from .schema_map import ARTIFACT_SCHEMA_FILE
@@ -26,8 +26,8 @@ class ValidatedWorkspace:
         athlete_id: str,
         *,
         schema_dir: Path,
-        root: Optional[Path] = None,
-    ) -> "ValidatedWorkspace":
+        root: Path | None = None,
+    ) -> ValidatedWorkspace:
         """Construct a validated workspace for an athlete."""
         return cls(
             athlete_id=athlete_id,
@@ -41,7 +41,7 @@ class ValidatedWorkspace:
         version_key: str,
         payload: Any,
         *,
-        payload_meta: Optional[dict[str, Any]],
+        payload_meta: dict[str, Any] | None,
         producer_agent: str,
         run_id: str,
         update_latest: bool = True,

@@ -4,16 +4,15 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from pathlib import Path
 import os
 import re
 import sys
 import time
 from collections.abc import Iterable
+from pathlib import Path
 from typing import cast
 
 from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
-
 
 StreamHandlerMap = dict[str, object]
 
@@ -74,7 +73,7 @@ def reasoning_log_path() -> str | None:
 
 
 def _utc_today() -> dt.date:
-    return dt.datetime.now(dt.timezone.utc).date()
+    return dt.datetime.now(dt.UTC).date()
 
 
 def _file_date(path: Path) -> dt.date | None:
@@ -82,7 +81,7 @@ def _file_date(path: Path) -> dt.date | None:
         mtime = path.stat().st_mtime
     except OSError:
         return None
-    return dt.datetime.fromtimestamp(mtime, tz=dt.timezone.utc).date()
+    return dt.datetime.fromtimestamp(mtime, tz=dt.UTC).date()
 
 
 def _parse_rotate_mb(value: str | None, default_mb: int = 50) -> int:

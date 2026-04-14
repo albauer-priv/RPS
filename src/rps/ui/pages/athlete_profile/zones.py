@@ -14,7 +14,6 @@ from rps.ui.shared import (
     set_status,
 )
 
-
 init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()

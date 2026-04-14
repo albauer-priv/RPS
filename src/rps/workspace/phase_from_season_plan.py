@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
-from rps.workspace.phase_resolution import add_weeks, iso_week_monday
 from rps.workspace.iso_helpers import (
     IsoWeek,
     IsoWeekRange,
-    parse_iso_week_range as _parse_iso_week_range,
     range_contains,
     week_index,
 )
+from rps.workspace.iso_helpers import (
+    parse_iso_week_range as _parse_iso_week_range,
+)
+from rps.workspace.phase_resolution import add_weeks, iso_week_monday
 
 
 def parse_iso_week_range(obj: Any) -> IsoWeekRange:
@@ -25,7 +27,7 @@ def parse_iso_week_range(obj: Any) -> IsoWeekRange:
 def resolve_current_phase(
     season_plan_envelope: dict[str, Any],
     target: IsoWeek,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Return the phase entry that covers the target week, if any."""
     phases = season_plan_envelope.get("data", {}).get("phases", [])
     for phase in phases:

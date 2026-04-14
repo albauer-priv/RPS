@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import json
 import threading
-from pathlib import Path
-from typing import Any, Callable
-from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+import time
+from collections.abc import Callable
+from typing import Any
 
 import streamlit as st
-import time
+from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
 from rps.orchestrator.plan_week import create_performance_report
+from rps.ui.run_store import find_active_runs, start_background_tracker
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -22,10 +23,9 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.ui.run_store import find_active_runs, start_background_tracker
+from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-from rps.workspace.iso_helpers import IsoWeek
 
 
 def _report_job_key(athlete_id: str, year: int, week: int) -> str:

@@ -6,10 +6,10 @@ import json
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
 
 from rps.agents.multi_output_runner import AgentRuntime
 from rps.orchestrator.plan_hub_worker import PlanHubWorkerConfig, start_plan_hub_worker_with_stop
@@ -67,7 +67,7 @@ def enqueue_run(
     path = paths.pending / f"{run_id}.json"
     data = dict(payload)
     data.setdefault("run_id", run_id)
-    data.setdefault("created_at", datetime.now(timezone.utc).isoformat())
+    data.setdefault("created_at", datetime.now(UTC).isoformat())
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
 

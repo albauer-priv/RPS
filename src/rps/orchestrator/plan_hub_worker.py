@@ -6,10 +6,10 @@ import logging
 import os
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 from rps.agents.multi_output_runner import AgentRuntime
 from rps.core.logging import DailySizeRotatingFileHandler
@@ -272,7 +272,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             config.run_id,
             {
                 "status": "FAILED",
-                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "finished_at": datetime.now(UTC).isoformat(),
                 "summary": _run_summary(steps),
                 "steps": steps,
             },
@@ -296,7 +296,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     config.run_id,
                     {
                         "status": "CANCELLED",
-                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                        "finished_at": datetime.now(UTC).isoformat(),
                         "summary": _run_summary(_active_steps(active)),
                         "current_step": None,
                     },
@@ -318,7 +318,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     continue
                 if step_status == "QUEUED" and not running_found:
                     step["Status"] = "RUNNING"
-                    step["Started"] = datetime.now(timezone.utc).isoformat()
+                    step["Started"] = datetime.now(UTC).isoformat()
                     if not active.get("started_at"):
                         append_event(config.root, config.athlete_id, config.run_id, {"type": "RUN_STARTED"})
                         update_run(
@@ -327,7 +327,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             config.run_id,
                             {
                                 "status": "RUNNING",
-                                "started_at": datetime.now(timezone.utc).isoformat(),
+                                "started_at": datetime.now(UTC).isoformat(),
                                 "current_step": step.get("step_id"),
                                 "steps": steps,
                             },
@@ -352,7 +352,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     response_status = _poll_response_status(response_id) if response_id else None
                     if response_status in {"completed"}:
                         step["Status"] = "DONE"
-                        step["Ended"] = datetime.now(timezone.utc).isoformat()
+                        step["Ended"] = datetime.now(UTC).isoformat()
                         _set_duration(step)
                         index = _load_index(config.root, config.athlete_id)
                         outputs: list[StepRecord] = []
@@ -365,7 +365,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     elif response_status in {"failed", "cancelled"}:
                         step["Status"] = "FAILED"
                         step["Details"] = f"Response {response_status}"
-                        step["Ended"] = datetime.now(timezone.utc).isoformat()
+                        step["Ended"] = datetime.now(UTC).isoformat()
                         _set_duration(step)
                         _mark_blocked(steps, step)
                         append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
@@ -375,7 +375,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             config.run_id,
                             {
                                 "status": "FAILED",
-                                "finished_at": datetime.now(timezone.utc).isoformat(),
+                                "finished_at": datetime.now(UTC).isoformat(),
                                 "summary": _run_summary(steps),
                                 "steps": steps,
                             },
@@ -457,7 +457,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
 
                         if exec_result and exec_result.get("ok"):
                             step["Status"] = "DONE"
-                            step["Ended"] = datetime.now(timezone.utc).isoformat()
+                            step["Ended"] = datetime.now(UTC).isoformat()
                             _set_duration(step)
                             index = _load_index(config.root, config.athlete_id)
                             step_outputs: list[StepRecord] = []
@@ -475,7 +475,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             for artifact_type in _step_list(step, "write_types"):
                                 if _artifact_written_for_run(index, ArtifactType(artifact_type), config.run_id):
                                     step["Status"] = "DONE"
-                                    step["Ended"] = datetime.now(timezone.utc).isoformat()
+                                    step["Ended"] = datetime.now(UTC).isoformat()
                                     _set_duration(step)
                                     written_outputs: list[StepRecord] = []
                                     for artifact_type in _step_list(step, "write_types"):
@@ -488,7 +488,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             if step.get("Status") != "DONE":
                                 step["Status"] = "FAILED"
                                 step["Details"] = (exec_result or {}).get("error") or "Execution failed."
-                                step["Ended"] = datetime.now(timezone.utc).isoformat()
+                                step["Ended"] = datetime.now(UTC).isoformat()
                                 _set_duration(step)
                                 _mark_blocked(steps, step)
                                 append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
@@ -498,7 +498,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     config.run_id,
                                     {
                                         "status": "FAILED",
-                                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                                        "finished_at": datetime.now(UTC).isoformat(),
                                         "summary": _run_summary(steps),
                                         "steps": steps,
                                     },
@@ -514,7 +514,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     config.run_id,
                     {
                         "status": "DONE",
-                        "finished_at": datetime.now(timezone.utc).isoformat(),
+                        "finished_at": datetime.now(UTC).isoformat(),
                         "summary": _run_summary(steps),
                         "current_step": None,
                         "steps": steps,
@@ -533,7 +533,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             if step.get("Status") == "RUNNING":
                 step["Status"] = "FAILED"
                 step["Details"] = str(exc)
-                step["Ended"] = datetime.now(timezone.utc).isoformat()
+                step["Ended"] = datetime.now(UTC).isoformat()
                 _set_duration(step)
                 _mark_blocked(steps, step)
                 append_event(
@@ -549,7 +549,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             config.run_id,
             {
                 "status": "FAILED",
-                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "finished_at": datetime.now(UTC).isoformat(),
                 "summary": _run_summary(steps),
                 "steps": steps,
             },

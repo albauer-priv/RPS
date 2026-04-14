@@ -9,17 +9,16 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from .index_manager import WorkspaceIndexManager
 from .paths import ARTIFACT_PATHS, ensure_dir
 from .types import ArtifactMeta, ArtifactType, Authority
 from .versioning import (
+    RANGE_SCOPED_ARTIFACTS,
+    WEEK_SCOPED_ARTIFACTS,
     normalize_version_key,
     split_range_version_key,
     split_week_version_key,
-    RANGE_SCOPED_ARTIFACTS,
-    WEEK_SCOPED_ARTIFACTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,7 +60,7 @@ def _normalize_authority(authority: Authority | str | None) -> str | None:
 class LocalArtifactStore:
     """Local dev storage for athlete-specific artifacts."""
 
-    def __init__(self, root: Optional[Path] = None):
+    def __init__(self, root: Path | None = None):
         """Initialize the store rooted at ATHLETE_WORKSPACE_ROOT."""
         root_env = os.getenv("ATHLETE_WORKSPACE_ROOT", "runtime/athletes")
         self.root = (root or Path(root_env)).resolve()
@@ -121,7 +120,7 @@ class LocalArtifactStore:
         version_path: Path,
         run_id: str,
         producer_agent: str,
-        meta: Optional[JsonMap] = None,
+        meta: JsonMap | None = None,
     ) -> None:
         """Record a write in the per-athlete index.json."""
         rel_path = str(version_path.relative_to(self.athlete_root(athlete_id)))
@@ -305,11 +304,11 @@ class LocalArtifactStore:
         version_key: str,
         payload: JsonMap,
         *,
-        payload_meta: Optional[JsonMap] = None,
+        payload_meta: JsonMap | None = None,
         authority: Authority = Authority.STRUCTURAL,
         producer_agent: str = "unknown_agent",
         run_id: str = "run_unknown",
-        trace_upstream: Optional[list[str]] = None,
+        trace_upstream: list[str] | None = None,
         update_latest: bool = True,
     ) -> Path:
         """Write a schema-style {meta,data} envelope to disk."""

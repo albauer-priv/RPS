@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Optional
 
 from .guards import DEFAULT_RULES, MissingDependenciesError
 from .helpers import PhaseRange, resolve_current_phase, resolve_current_week
@@ -23,7 +22,7 @@ class Workspace:
     store: LocalArtifactStore
 
     @classmethod
-    def for_athlete(cls, athlete_id: str, root: Optional[Path] = None) -> "Workspace":
+    def for_athlete(cls, athlete_id: str, root: Path | None = None) -> Workspace:
         """Create a workspace instance for an athlete."""
         return cls(athlete_id=athlete_id, store=LocalArtifactStore(root=root))
 
@@ -81,7 +80,7 @@ class Workspace:
         producer_agent: str,
         run_id: str,
         authority: Authority = Authority.STRUCTURAL,
-        trace_upstream: Optional[list[str]] = None,
+        trace_upstream: list[str] | None = None,
         update_latest: bool = True,
     ) -> str:
         """Write an artifact after enforcing dependency rules."""
@@ -107,11 +106,11 @@ class Workspace:
         version_key: str,
         payload: object,
         *,
-        payload_meta: Optional[JsonMap] = None,
+        payload_meta: JsonMap | None = None,
         producer_agent: str,
         run_id: str,
         update_latest: bool = True,
-        schema_dir: Optional[Path] = None,
+        schema_dir: Path | None = None,
     ) -> str:
         """Validate against schemas and write a document."""
         if schema_dir is None:
@@ -143,7 +142,7 @@ class Workspace:
         authority: Authority = Authority.STRUCTURAL,
         producer_agent: str = "unknown_agent",
         run_id: str = "run_unknown",
-        trace_upstream: Optional[list[str]] = None,
+        trace_upstream: list[str] | None = None,
         update_latest: bool = True,
     ) -> str:
         """Write a schema-style {meta,data} envelope without validation."""

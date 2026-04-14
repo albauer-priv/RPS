@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output

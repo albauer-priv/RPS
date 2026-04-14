@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 from rps.workspace.types import ArtifactType
 
@@ -49,7 +49,7 @@ def _format_timestamp(created_at: str | None = None) -> str:
             value = created_at.replace("Z", "+00:00")
             dt = datetime.fromisoformat(value)
             if dt.tzinfo:
-                dt = dt.astimezone(timezone.utc)
+                dt = dt.astimezone(UTC)
             return dt.strftime("%Y%m%d_%H%M%S")
         except ValueError:
             pass

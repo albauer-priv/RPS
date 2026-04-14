@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import streamlit as st
 
@@ -16,7 +16,6 @@ from rps.ui.shared import (
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType, Authority
-
 
 init_ui_state()
 render_global_sidebar()
@@ -198,7 +197,7 @@ fixed_rest_days = st.multiselect(
 notes = st.text_area("Notes", value=notes, height=120)
 
 if st.button("Save Availability", width="content"):
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     normalized_table = [
         _normalize_entry(row if isinstance(row, dict) else None, day)

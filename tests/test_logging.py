@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, timezone
 import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from rps.core.logging import prune_old_logs
@@ -7,7 +7,7 @@ from rps.core.logging import prune_old_logs
 
 def _touch(path: Path, days_ago: int) -> None:
     path.write_text("log", encoding="utf-8")
-    ts = datetime.now(timezone.utc) - timedelta(days=days_ago)
+    ts = datetime.now(UTC) - timedelta(days=days_ago)
     epoch = ts.timestamp()
     os.utime(path, (epoch, epoch))
 

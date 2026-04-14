@@ -2,18 +2,23 @@ from __future__ import annotations
 
 import os
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypeAlias
 
 import streamlit as st
 
-from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.core.logging import prune_old_logs
 from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, load_state, write_state
 from rps.openai.vectorstores import compute_manifest_hash, load_manifest, sync_manifest
+from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.ui.intervals_refresh import ensure_intervals_data
-from rps.ui.run_store import clear_queue_folders, find_active_runs, prune_run_history, start_background_tracker
+from rps.ui.run_store import (
+    clear_queue_folders,
+    find_active_runs,
+    prune_run_history,
+    start_background_tracker,
+)
 from rps.ui.shared import SETTINGS, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
 
@@ -142,7 +147,7 @@ def _vectorstore_sync_background(root: Path, athlete_id: str, interval_minutes: 
         except ValueError:
             last_check_dt = None
         if last_check_dt is not None:
-            elapsed = datetime.now(timezone.utc) - last_check_dt
+            elapsed = datetime.now(UTC) - last_check_dt
             if elapsed.total_seconds() < interval_minutes * 60:
                 return
 
@@ -163,7 +168,7 @@ def _vectorstore_sync_background(root: Path, athlete_id: str, interval_minutes: 
         message="Checking vector store sync state.",
         status="RUNNING",
     )
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(UTC).isoformat()
     try:
         manifest_hash = compute_manifest_hash(manifest_path)
         store_entry["last_check_at"] = now_iso

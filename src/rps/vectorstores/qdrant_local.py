@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable
-import os
+from typing import Any
 
 import litellm
 from qdrant_client import QdrantClient
-from qdrant_client.models import Filter, FieldCondition, MatchAny
+from qdrant_client.models import FieldCondition, Filter, MatchAny
 
 from rps.core.config import load_settings
 

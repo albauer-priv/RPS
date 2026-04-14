@@ -9,11 +9,11 @@ import shutil
 import tempfile
 import time
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Literal, Protocol, Sequence, TypeAlias, TypeGuard, cast
+from typing import TYPE_CHECKING, Literal, Protocol, TypeAlias, TypeGuard, cast
 
-import openai
 import streamlit as st
 
 try:
@@ -29,7 +29,7 @@ from rps.openai.litellm_runtime import LiteLLMResponse
 from rps.openai.response_utils import extract_text_output
 
 if TYPE_CHECKING:  # pragma: no cover - import only for typing
-    import tiktoken as tiktoken_module
+    pass
 JsonScalar: TypeAlias = str | int | float | bool | None
 JsonValue: TypeAlias = JsonScalar | dict[str, object] | list[object]
 JsonMap: TypeAlias = dict[str, object]
@@ -327,9 +327,9 @@ class Chat:
         self._tools: list[ToolSpec] = []
         self._previous_response_id: str | None = None
         self._container_id: str | None = None
-        self._sections: list["Chat.Section"] = []
-        self._static_files: list["Chat.TrackedFile"] = []
-        self._tracked_files: list["Chat.TrackedFile"] = []
+        self._sections: list[Chat.Section] = []
+        self._static_files: list[Chat.TrackedFile] = []
+        self._tracked_files: list[Chat.TrackedFile] = []
         self._download_button_key = 0
         self._dynamic_vector_store: _VectorStoreRef | None = None
         self._conversation_items: list[InputItem] = []
@@ -387,7 +387,7 @@ class Chat:
                 self._static_files.append(self._tracked_files[-1])
 
     @property
-    def last_section(self) -> "Chat.Section" | None:
+    def last_section(self) -> Chat.Section | None:
         return self._sections[-1] if self._sections else None
 
     def summarize(self) -> None:
@@ -591,14 +591,14 @@ class Chat:
                         )
 
     @classmethod
-    def load(cls, history: str) -> "Chat":
+    def load(cls, history: str) -> Chat:
         if not history.endswith(".zip"):
             raise ValueError("History file must end with .zip")
         with tempfile.TemporaryDirectory() as temp_dir:
             with zipfile.ZipFile(history, "r") as archive:
                 archive.extractall(temp_dir)
             dir_path = f"{temp_dir}/{history.replace('.zip', '')}"
-            with open(f"{dir_path}/data.json", "r") as file_handle:
+            with open(f"{dir_path}/data.json") as file_handle:
                 data = cast(JsonMap, json.load(file_handle))
             chat = cls(
                 model=cast(str, data["model"]),
@@ -641,7 +641,7 @@ class Chat:
             chat._input.append({"role": "developer", "content": CHAT_HISTORY_INSTRUCTIONS})
         return chat
 
-    def _require_last_section(self) -> "Chat.Section":
+    def _require_last_section(self) -> Chat.Section:
         section = self.last_section
         if section is None:
             raise RuntimeError("Chat section missing while streaming a response.")
@@ -881,7 +881,7 @@ class Chat:
             self.track(uploaded_file)
 
     class TrackedFile:
-        def __init__(self, chat: "Chat", uploaded_file: UploadedFile | str | None) -> None:
+        def __init__(self, chat: Chat, uploaded_file: UploadedFile | str | None) -> None:
             self.chat = chat
             self.uploaded_file = uploaded_file
             self._file_path: Path | None = None
@@ -967,7 +967,7 @@ class Chat:
     class Block:
         def __init__(
             self,
-            chat: "Chat",
+            chat: Chat,
             category: BlockCategory,
             content: BlockContent | None = None,
             filename: str | None = None,
@@ -1024,14 +1024,14 @@ class Chat:
         content: BlockContent | None = None,
         filename: str | None = None,
         file_id: str | None = None,
-    ) -> "Block":
+    ) -> Block:
         return self.Block(self, category, content=content, filename=filename, file_id=file_id)
 
     class Section:
-        def __init__(self, chat: "Chat", role: str, blocks: list["Chat.Block"] | None = None) -> None:
+        def __init__(self, chat: Chat, role: str, blocks: list[Chat.Block] | None = None) -> None:
             self.chat = chat
             self.role = role
-            self.blocks: list["Chat.Block"] = blocks or []
+            self.blocks: list[Chat.Block] = blocks or []
             self.delta_generator = st.empty()
 
         def __repr__(self) -> str:
@@ -1042,7 +1042,7 @@ class Chat:
             return not self.blocks
 
         @property
-        def last_block(self) -> "Chat.Block" | None:
+        def last_block(self) -> Chat.Block | None:
             return None if self.empty else self.blocks[-1]
 
         def update(
@@ -1087,8 +1087,8 @@ class Chat:
             with self.delta_generator:
                 self.write()
 
-    def create_section(self, role: str, blocks: list["Chat.Block"] | None = None) -> "Section":
+    def create_section(self, role: str, blocks: list[Chat.Block] | None = None) -> Section:
         return self.Section(self, role, blocks=blocks)
 
-    def add_section(self, role: str, blocks: list["Chat.Block"] | None = None) -> None:
+    def add_section(self, role: str, blocks: list[Chat.Block] | None = None) -> None:
         self._sections.append(self.Section(self, role, blocks=blocks))

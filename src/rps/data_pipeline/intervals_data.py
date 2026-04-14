@@ -10,13 +10,12 @@ import argparse
 import csv
 import json
 import logging
-import os
 import re
-import sys
-from datetime import datetime, timedelta, date, timezone
+from collections.abc import Sequence
+from datetime import UTC, date, datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, Sequence, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
@@ -886,7 +885,7 @@ def write_zone_model(
     latest_dir: Path,
     skip_validate: bool,
 ) -> None:
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     athlete = get_athlete(athlete_id, base_url)
     weight_kg = _extract_weight_kg(athlete)
     if not weight_kg:
@@ -946,7 +945,7 @@ def write_wellness(
     to_date: date,
     skip_validate: bool,
 ) -> None:
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     athlete_data = get_athlete(athlete_id, base_url)
     body_mass_kg = _extract_weight_kg(athlete_data)
     entries = get_wellness(athlete_id, base_url, from_date, to_date)
@@ -1664,9 +1663,7 @@ def compile_activities_actual(
     groups = list(df.groupby(["ISO Year", "ISO Week"], sort=True))
     if not groups:
         raise ValueError("No rows available for activities_actual export.")
-    latest_entry = groups[-1]
-
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     run_stamp = run_ts.strftime("%Y%m%d-%H%M%S")
 
     schema_dir = resolve_schema_dir()
@@ -1899,7 +1896,7 @@ def compile_activities_trend(
     range_start = df["Day"].min()
     range_end = df["Day"].max()
     if pd.isna(range_start) or pd.isna(range_end):
-        fallback_day = datetime.now(timezone.utc).date()
+        fallback_day = datetime.now(UTC).date()
         range_start = fallback_day
         range_end = fallback_day
     start_day = range_start.date() if hasattr(range_start, "date") else range_start
@@ -2332,7 +2329,7 @@ def compile_activities_trend(
     if out.empty:
         raise ValueError("No data available for export.")
 
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     run_stamp = run_ts.strftime("%Y%m%d-%H%M%S")
 
     latest = out[["Year", "ISO Week"]].sort_values(["Year", "ISO Week"]).iloc[-1]
@@ -2535,7 +2532,7 @@ def compile_historical_baseline(
     avg_kj_activity = total_kj / total_activities if total_activities > 0 else 0.0
     avg_kj_hour = total_kj / (total_seconds / 3600.0) if total_seconds > 0 else 0.0
 
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     run_id = f"intervals_historical_baseline_{run_ts.strftime('%Y%m%dT%H%M%SZ')}"
 

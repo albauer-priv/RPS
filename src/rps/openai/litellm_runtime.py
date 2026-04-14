@@ -2,22 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from dataclasses import dataclass
-from types import SimpleNamespace
-from typing import Callable, Iterable, Protocol, TypeAlias, TypeVar, cast
 import json
 import logging
 import os
 import re
 import time
 import uuid
+from collections.abc import Callable, Iterable, Iterator
+from dataclasses import dataclass
+from types import SimpleNamespace
+from typing import TypeAlias, TypeVar
 
 import litellm
 from litellm import exceptions as litellm_exceptions
-
-from rps.core.config import normalize_agent_name
-
 
 LOGGER = logging.getLogger(__name__)
 _T = TypeVar("_T")
@@ -684,7 +681,6 @@ class LiteLLMResponses:
     def compact(self, **payload: object) -> LiteLLMResponse:
         input_items = payload.get("input") or []
         model = _as_str(payload.get("model"))
-        instructions = payload.get("instructions") or ""
         if not model:
             raise RuntimeError("LiteLLM compact requires model")
         compact_prompt = (

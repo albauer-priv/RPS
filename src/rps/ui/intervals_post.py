@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import json
 import logging
 import os
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypeAlias
 
-from rps.workspace.local_store import LocalArtifactStore
-from rps.workspace.types import ArtifactType
 from rps.data_pipeline.common import load_env
 from rps.data_pipeline.intervals_post import delete_events, post_events
-
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 JsonMap: TypeAlias = dict[str, object]
@@ -56,7 +55,7 @@ class ReceiptStatus:
 
 def _utc_iso_now() -> str:
     """Return current UTC time as ISO-8601 string."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _payload_hash(item: JsonMap) -> str:
@@ -180,7 +179,7 @@ def resolve_receipt_conflict(
     receipt = {
         "external_id": _external_id(athlete_id, year, week, match),
         "idempotency_key": hashlib.sha256(
-            f"{athlete_id}:{version_key}:{uid}:{_payload_hash(match)}".encode("utf-8")
+            f"{athlete_id}:{version_key}:{uid}:{_payload_hash(match)}".encode()
         ).hexdigest(),
         "payload_hash": _payload_hash(match),
         "posted_at": _utc_iso_now(),
@@ -270,7 +269,7 @@ def post_to_intervals_receipts(
             continue
 
         idempotency_key = hashlib.sha256(
-            f"{athlete_id}:{version_key}:{uid}:{payload_hash}".encode("utf-8")
+            f"{athlete_id}:{version_key}:{uid}:{payload_hash}".encode()
         ).hexdigest()
         receipt = {
             "external_id": external_id,
@@ -366,7 +365,6 @@ def post_to_intervals_commit(
 
     to_post: list[JsonMap] = []
     outputs: list[ReceiptRow] = []
-    conflicts: list[str] = []
     posted = 0
     skipped = 0
     deleted = 0

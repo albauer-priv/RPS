@@ -11,8 +11,8 @@ except Exception as exc:  # pragma: no cover - UI fallback
     st.error(f"Coach toolkit not available: {exc}")
     st.stop()
 
-from rps.agents.registry import AGENTS
 from rps.agents.knowledge_injection import build_injection_block
+from rps.agents.registry import AGENTS
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.ui.rps_chatbot import Chat
@@ -26,7 +26,6 @@ from rps.ui.shared import (
     set_status,
     ui_log,
 )
-
 
 init_ui_state()
 athlete_id = get_athlete_id()

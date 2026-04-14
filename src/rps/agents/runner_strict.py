@@ -8,7 +8,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from rps.agents.tasks import AgentTask, OUTPUT_SPECS
+from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.reasoning import build_reasoning_payload
@@ -17,10 +17,10 @@ from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.schemas.bundler import SchemaBundler
-from rps.tools.store_output_tools import build_strict_store_tool
 from rps.tools.knowledge_search import search_knowledge
-from rps.workspace.schema_registry import SchemaValidationError
+from rps.tools.store_output_tools import build_strict_store_tool
 from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.schema_registry import SchemaValidationError
 
 logger = logging.getLogger(__name__)
 

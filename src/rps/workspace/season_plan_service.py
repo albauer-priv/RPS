@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.phase_from_season_plan import (
     parse_iso_week_range,
-    resolve_current_phase_window_from_season_plan,
     resolve_current_phase,
+    resolve_current_phase_window_from_season_plan,
 )
-from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,7 @@ class SeasonPlanPhaseInfo:
 def resolve_season_plan_phase_info(
     season_plan_envelope: dict[str, Any],
     target: IsoWeek,
-) -> Optional[SeasonPlanPhaseInfo]:
+) -> SeasonPlanPhaseInfo | None:
     """Return season plan phase info for the target week if available."""
     phase = resolve_current_phase(season_plan_envelope, target)
     if not phase:

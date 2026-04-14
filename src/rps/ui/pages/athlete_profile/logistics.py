@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import streamlit as st
 
@@ -192,7 +192,7 @@ events = st.data_editor(
 )
 
 if st.button("Save Logistics", width="content"):
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     validation_errors = _validate_events(events)
     if validation_errors:

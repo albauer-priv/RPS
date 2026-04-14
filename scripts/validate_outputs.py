@@ -13,6 +13,11 @@ if str(ROOT) not in sys.path:
     # Allow running the script directly without installing the package.
     sys.path.insert(0, str(ROOT))
 
+from rps.workspace.schema_registry import (  # noqa: E402
+    SchemaRegistry,
+    SchemaValidationError,
+    validate_or_raise,
+)
 from scripts.data_pipeline.common import (  # noqa: E402
     athlete_data_dir,
     athlete_latest_dir,
@@ -20,11 +25,6 @@ from scripts.data_pipeline.common import (  # noqa: E402
     load_env,
     resolve_athlete_id,
     resolve_schema_dir,
-)
-from rps.workspace.schema_registry import (  # noqa: E402
-    SchemaRegistry,
-    SchemaValidationError,
-    validate_or_raise,
 )
 
 

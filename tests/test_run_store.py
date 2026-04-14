@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta, timezone
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from rps.ui.run_store import clear_queue_folders, prune_run_history
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs
+from rps.ui.run_store import clear_queue_folders, prune_run_history
 
 
 def _write_run(root: Path, athlete_id: str, run_id: str, days_ago: int) -> None:
     run_dir = root / athlete_id / "runs" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    created_at = (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat()
+    created_at = (datetime.now(UTC) - timedelta(days=days_ago)).isoformat()
     (run_dir / "run.json").write_text(json.dumps({"run_id": run_id, "created_at": created_at}), encoding="utf-8")
 
 

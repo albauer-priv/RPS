@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import streamlit as st
 
@@ -17,7 +16,6 @@ from rps.ui.shared import (
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-
 
 st.title("KPI Profile")
 

@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
-from typing import Any, cast
 
 import streamlit as st
 
@@ -20,8 +18,8 @@ from rps.ui.shared import (
     format_duration_hhmm,
     get_athlete_id,
     get_iso_year_week,
-    iso_week_date_range,
     init_ui_state,
+    iso_week_date_range,
     make_ui_run_id,
     multi_runtime_for,
     parse_duration_minutes,
@@ -43,7 +41,6 @@ def _as_map(value: object) -> JsonMap:
 def _as_list(value: object) -> list[object]:
     return value if isinstance(value, list) else []
 from rps.workspace.iso_helpers import parse_iso_week
-
 
 state = init_ui_state()
 render_global_sidebar()

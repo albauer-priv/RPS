@@ -3,18 +3,17 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rps.agents.multi_output_runner import AgentRuntime
-from rps.orchestrator.plan_week import plan_week
+from rps.orchestrator.plan_week import create_performance_report, plan_week
 from rps.orchestrator.season_flow import (
     create_season_plan,
     create_season_scenarios,
 )
 from rps.ui.intervals_post import post_to_intervals_commit
-from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.iso_helpers import IsoWeek
-from rps.orchestrator.plan_week import create_performance_report
+from rps.workspace.local_store import LocalArtifactStore
 
 logger = logging.getLogger(__name__)
 

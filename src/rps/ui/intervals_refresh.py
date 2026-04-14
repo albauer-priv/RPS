@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import streamlit as st
@@ -42,7 +42,7 @@ def _is_stale(path: Path, max_age_hours: float) -> bool:
     created_at = _parse_iso_datetime(payload.get("meta", {}).get("created_at"))
     if not created_at:
         return True
-    age = datetime.now(timezone.utc) - created_at
+    age = datetime.now(UTC) - created_at
     return age.total_seconds() > max_age_hours * 3600
 
 

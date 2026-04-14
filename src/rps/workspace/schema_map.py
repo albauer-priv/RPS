@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from .types import ArtifactType
 
-
 ARTIFACT_SCHEMA_FILE: dict[ArtifactType, str] = {
     ArtifactType.KPI_PROFILE: "kpi_profile.schema.json",
     ArtifactType.ATHLETE_PROFILE: "athlete_profile.schema.json",

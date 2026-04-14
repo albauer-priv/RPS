@@ -1,23 +1,40 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date, datetime, timezone
-from pathlib import Path
-from typing import NotRequired, TypedDict, cast
-import time
-import json
 import difflib
-
-import streamlit as st
+import json
 import logging
-import pandas as pd
+import time
+from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
+from typing import TypedDict, cast
 
+import pandas as pd
+import streamlit as st
+
+from rps.agents.multi_output_runner import AgentRuntime
+from rps.openai.client import get_client
+from rps.openai.vectorstore_state import VectorStoreResolver
+from rps.orchestrator.queue_scheduler import enqueue_run, ensure_queue_dirs, start_queue_scheduler
+from rps.prompts.loader import PromptLoader
+from rps.tools.knowledge_search import (
+    ensure_knowledge_store_ready,
+    knowledge_store_status_for_agent,
+)
+from rps.ui.run_store import (
+    RunRecord,
+    append_run,
+    find_active_runs,
+    load_events,
+    load_runs,
+    update_run,
+)
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
     append_system_log,
-    ensure_logging,
     build_phase_options,
+    ensure_logging,
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
@@ -25,25 +42,15 @@ from rps.ui.shared import (
     set_status,
 )
 from rps.workspace.index_manager import WorkspaceIndexManager
-from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, parse_iso_week_range, range_contains
+from rps.workspace.iso_helpers import (
+    IsoWeek,
+    next_iso_week,
+    parse_iso_week,
+    parse_iso_week_range,
+    range_contains,
+)
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-from rps.ui.run_store import (
-    RunRecord,
-    append_event,
-    append_run,
-    find_active_runs,
-    load_events,
-    load_runs,
-    update_run,
-)
-from rps.openai.client import get_client
-from rps.agents.multi_output_runner import AgentRuntime
-from rps.orchestrator.queue_scheduler import enqueue_run, start_queue_scheduler, ensure_queue_dirs
-from rps.openai.vectorstore_state import VectorStoreResolver
-from rps.prompts.loader import PromptLoader
-from rps.tools.knowledge_search import ensure_knowledge_store_ready, knowledge_store_status_for_agent
-
 
 logger = logging.getLogger(__name__)
 

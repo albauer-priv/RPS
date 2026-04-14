@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import streamlit as st
 
@@ -16,7 +16,6 @@ from rps.ui.shared import (
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType, Authority
-
 
 init_ui_state()
 render_global_sidebar()
@@ -179,7 +178,7 @@ success_criteria = st.text_area(
 st.caption("Define how success is measured. Example: Finish 400 km within time limit; steady power without bonk.")
 
 if st.button("Save Profile & Goals", width="content"):
-    run_ts = datetime.now(timezone.utc)
+    run_ts = datetime.now(UTC)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     payload = {
         "profile": {

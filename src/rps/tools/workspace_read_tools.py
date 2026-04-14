@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
+from rps.tools.knowledge_search import search_knowledge
 from rps.workspace.api import Workspace
+from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import IsoWeekRange
 from rps.workspace.phase_from_season_plan import IsoWeek
 from rps.workspace.phase_resolution import add_weeks
-from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan, resolve_season_plan_phase_info
+from rps.workspace.season_plan_service import (
+    resolve_phase_range_from_season_plan,
+    resolve_season_plan_phase_info,
+)
 from rps.workspace.types import ArtifactType
-from rps.tools.knowledge_search import search_knowledge
 
 JsonDict = dict[str, object]
 ToolHandler = Callable[[dict[str, Any]], object]

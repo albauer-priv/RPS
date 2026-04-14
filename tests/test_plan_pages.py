@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -7,8 +6,8 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from rps.orchestrator import season_flow
-from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.orchestrator.plan_week import plan_week
+from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.ui.shared import SETTINGS
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType

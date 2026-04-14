@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SYS_PATH = str(ROOT / "src")
@@ -13,10 +12,16 @@ if SYS_PATH not in sys.path:
     # Allow running this script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
+from script_logging import configure_logging  # noqa: E402
+
 from rps.core.config import load_env_file  # noqa: E402
 from rps.openai.client import get_client  # noqa: E402
-from rps.openai.vectorstores import MANAGED_BY, list_files, list_vector_store_files, list_vector_stores  # noqa: E402
-from script_logging import configure_logging  # noqa: E402
+from rps.openai.vectorstores import (  # noqa: E402
+    MANAGED_BY,
+    list_files,
+    list_vector_store_files,
+    list_vector_stores,
+)
 
 
 def main() -> None:

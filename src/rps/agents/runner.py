@@ -6,19 +6,19 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
-from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
+from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.response_utils import extract_reasoning_summaries, extract_text_output
 from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
-from rps.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def _log_knowledge_search(response: LiteLLMResponse) -> None:
 def _make_run_id(agent_name: str) -> str:
     """Generate a stable run identifier for artifact metadata."""
     slug = "".join(ch.lower() if ch.isalnum() else "_" for ch in agent_name).strip("_")
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     return f"{slug or 'agent'}_{stamp}"
 
 

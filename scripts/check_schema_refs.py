@@ -1,8 +1,8 @@
 """Check local schema directory for missing $ref targets."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SYS_PATH = str(ROOT / "src")
@@ -10,8 +10,9 @@ if SYS_PATH not in sys.path:
     # Allow running this script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from rps.core.config import load_env_file  # noqa: E402
 from script_logging import configure_logging  # noqa: E402
+
+from rps.core.config import load_env_file  # noqa: E402
 
 load_env_file(ROOT / ".env")
 logger = configure_logging(ROOT, Path(__file__).stem)

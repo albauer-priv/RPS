@@ -5,8 +5,8 @@ from __future__ import annotations
 import atexit
 import logging
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from rps.core.logging import log_and_print, setup_logging, timestamped_log_path
 

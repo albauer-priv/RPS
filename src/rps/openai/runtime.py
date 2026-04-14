@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import logging
 import os
 import re
+from pathlib import Path
 
 import yaml
 
@@ -15,7 +15,6 @@ from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.streaming import create_response
 from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, load_vectorstore_id
 from rps.prompts.loader import agent_system_prompt
-
 
 DEFAULT_KNOWLEDGE_ROOT = Path("specs/knowledge")
 logger = logging.getLogger(__name__)

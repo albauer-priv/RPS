@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from rps.workspace.index_manager import WorkspaceIndexManager
-from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range
+from rps.workspace.iso_helpers import IsoWeekRange, parse_iso_week_range
 
 JsonMap = dict[str, object]
 
@@ -62,7 +61,7 @@ class IndexExactQuery:
         self,
         artifact_type: str,
         expected_range: IsoWeekRange,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Return the newest version_key matching the exact range."""
         index = self._index_manager.load()
         artefacts = _as_map(index.get("artefacts"))

@@ -8,8 +8,18 @@ from typing import TypeAlias
 from qdrant_client.models import Filter
 
 from rps.agents.registry import AGENTS
-from rps.openai.vectorstore_state import DEFAULT_STATE_PATH, VectorStoreResolver, load_state, write_state
-from rps.openai.vectorstores import compute_manifest_hash, iter_manifest_paths, load_manifest, sync_manifest
+from rps.openai.vectorstore_state import (
+    DEFAULT_STATE_PATH,
+    VectorStoreResolver,
+    load_state,
+    write_state,
+)
+from rps.openai.vectorstores import (
+    compute_manifest_hash,
+    iter_manifest_paths,
+    load_manifest,
+    sync_manifest,
+)
 from rps.vectorstores.qdrant_local import (
     build_tag_filter,
     embed_texts,

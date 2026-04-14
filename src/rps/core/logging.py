@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
-from pathlib import Path
 import sys
 import time
-from typing import Iterable
-import datetime as dt
-
+from collections.abc import Iterable
+from pathlib import Path
 
 _LEVELS = {
     "CRITICAL": logging.CRITICAL,
@@ -40,7 +39,7 @@ def _is_disabled(value: str | int | None) -> bool:
 
 
 def _utc_today() -> dt.date:
-    return dt.datetime.now(dt.timezone.utc).date()
+    return dt.datetime.now(dt.UTC).date()
 
 
 def _file_date(path: Path) -> dt.date | None:
@@ -48,7 +47,7 @@ def _file_date(path: Path) -> dt.date | None:
         mtime = path.stat().st_mtime
     except OSError:
         return None
-    return dt.datetime.fromtimestamp(mtime, tz=dt.timezone.utc).date()
+    return dt.datetime.fromtimestamp(mtime, tz=dt.UTC).date()
 
 
 def _parse_rotate_mb(value: str | None, default_mb: int = 50) -> int:
@@ -211,7 +210,7 @@ def prune_old_logs(log_dir: Path, retention_days: int) -> int:
     """Delete log files older than retention_days; returns count removed."""
     if retention_days <= 0:
         return 0
-    cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=retention_days)
+    cutoff = dt.datetime.now(dt.UTC) - dt.timedelta(days=retention_days)
     removed = 0
     if not log_dir.exists():
         return removed
@@ -219,7 +218,7 @@ def prune_old_logs(log_dir: Path, retention_days: int) -> int:
         if path.name == "rps.log":
             continue
         try:
-            mtime = dt.datetime.fromtimestamp(path.stat().st_mtime, tz=dt.timezone.utc)
+            mtime = dt.datetime.fromtimestamp(path.stat().st_mtime, tz=dt.UTC)
         except OSError:
             continue
         if mtime < cutoff:
