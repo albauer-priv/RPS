@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+MODE="${1:-curated}"
+
 TYPECHECK_GROUPS=(
   "src/rps/agents"
   "src/rps/core/logging.py"
@@ -23,8 +25,28 @@ TYPECHECK_GROUPS=(
   "src/rps/ui/pages/plan/season.py"
 )
 
-echo "Running mypy on curated commit gate scope..."
-for target in "${TYPECHECK_GROUPS[@]}"; do
-  echo "  - $target"
-  PYTHONPATH=src python3 -m mypy "$target"
-done
+run_curated() {
+  echo "Running mypy on curated commit gate scope..."
+  for target in "${TYPECHECK_GROUPS[@]}"; do
+    echo "  - $target"
+    PYTHONPATH=src python3 -m mypy "$target"
+  done
+}
+
+run_full() {
+  echo "Running mypy on full repo scope..."
+  python3 -m mypy --explicit-package-bases src tests scripts
+}
+
+case "$MODE" in
+  curated)
+    run_curated
+    ;;
+  --full|full)
+    run_full
+    ;;
+  *)
+    echo "Usage: ./scripts/run_typecheck.sh [--full]" >&2
+    exit 2
+    ;;
+esac

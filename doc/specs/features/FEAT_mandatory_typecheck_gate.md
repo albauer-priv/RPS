@@ -9,7 +9,7 @@ Owner: Tooling
 * **ID:** FEAT_mandatory_typecheck_gate
 * **Status:** Implemented
 * **Owner/Area:** Tooling / Validation
-* **Last-Updated:** 2026-04-13
+* **Last-Updated:** 2026-04-14
 * **Related:** `pyproject.toml`, `.githooks/pre-commit`, `scripts/run_typecheck.sh`
 
 ---
@@ -57,6 +57,8 @@ Owner: Tooling
   * staged Python files pass `py_compile`
   * the configured `mypy` scope passes
 * The hook is stored in-repo and activated via `core.hooksPath=.githooks`.
+* `./scripts/run_typecheck.sh` runs the curated commit-gate scope.
+* `./scripts/run_typecheck.sh --full` runs the full repo check via `mypy --explicit-package-bases src tests scripts`.
 
 **UI impact**
 
@@ -75,13 +77,14 @@ Owner: Tooling
 
 * `pyproject.toml`: declare `mypy` dev dependency and config.
 * `scripts/run_typecheck.sh`: single repo command for commit gate and manual use.
+* `scripts/run_typecheck.sh --full`: full repository typecheck mode for periodic full validation.
 * `.githooks/pre-commit`: enforce syntax + typecheck before local commit.
 
 **Data flow**
 
 * Inputs: staged Python files, configured typecheck targets
-* Processing: collect staged Python files -> syntax check -> `mypy` on curated scope
-* Outputs: exit code for local commit gate
+* Processing: collect staged Python files -> syntax check -> `mypy` on curated scope, or run full repo scope on explicit `--full`
+* Outputs: exit code for local commit gate or full validation run
 
 **Schema / Artefacts**
 
@@ -165,6 +168,7 @@ Owner: Tooling
 * [x] the mandatory gate passes on the selected initial scope
 * [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
 * [x] Validation passes: manual run of the new typecheck entrypoint
+* [x] Validation passes: `./scripts/run_typecheck.sh --full`
 * [x] No regressions in: current commit workflow
 
 ---
@@ -205,6 +209,7 @@ Owner: Tooling
 **Diagnostics**
 
 * run `scripts/run_typecheck.sh`
+* run `scripts/run_typecheck.sh --full`
 * inspect `.githooks/pre-commit`
 * inspect `pyproject.toml` mypy config
 
@@ -213,7 +218,7 @@ Owner: Tooling
 ## 11) Documentation Updates
 
 * [x] `doc/specs/features/FEAT_mandatory_typecheck_gate.md` — feature spec
-* [ ] `CHANGELOG.md` — note the new mandatory typecheck gate
+* [x] `CHANGELOG.md` — note the new mandatory typecheck gate and full-mode follow-up
 
 ---
 

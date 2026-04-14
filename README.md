@@ -198,10 +198,13 @@ Run these from the repo root:
 python3 -m py_compile $(git ls-files '*.py')
 ./scripts/run_lint.sh
 ./scripts/run_typecheck.sh
+./scripts/run_typecheck.sh --full
 ```
 
 Notes:
 - `./scripts/run_lint.sh` is the repo-standard `ruff` entrypoint.
+- `./scripts/run_typecheck.sh` runs the curated commit-gate scope.
+- `./scripts/run_typecheck.sh --full` runs the full repo check via `mypy --explicit-package-bases src tests scripts`.
 - The repo-managed `.githooks/pre-commit` hook runs syntax checks, `ruff`, and the curated `mypy` gate automatically for staged Python files.
 - If hooks are not active locally, set them once with:
 

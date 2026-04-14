@@ -17,6 +17,7 @@ This file is the **README for coding agents** working in this repository. It con
 * Syntax check (fast): `python3 -m py_compile $(git ls-files '*.py')`
 * Lint (commit gate / default scope): `./scripts/run_lint.sh`
 * Type check (commit gate scope): `./scripts/run_typecheck.sh`
+* Type check (full repo): `./scripts/run_typecheck.sh --full`
 * Run app: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
 * Tests (if present): `pytest -q`
 * UI smoke check (manual): `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`
