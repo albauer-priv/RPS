@@ -61,9 +61,7 @@ def _iter_files(root: Path, include_paths: Iterable[str]) -> list[Path]:
         if resolved.is_file():
             paths.append(resolved)
         else:
-            for item in resolved.rglob("*"):
-                if item.is_file():
-                    paths.append(item)
+            paths.extend(item for item in resolved.rglob("*") if item.is_file())
     return sorted(set(paths))
 
 

@@ -68,17 +68,16 @@ def _find_phase_preview(
 def _render_week_table(week: dict) -> str:
     """Render a simple markdown table for a week preview."""
     header = "| Day | Role | Intensity | Modality | Notes |\n| --- | --- | --- | --- | --- |\n"
-    rows = []
-    for day in week.get("days", []):
-        rows.append(
-            "| {day} | {role} | {intensity} | {modality} | {notes} |".format(
-                day=day.get("day_of_week", "N/A"),
-                role=day.get("day_role", "N/A"),
-                intensity=day.get("intensity_domain", "N/A"),
-                modality=day.get("load_modality", "N/A"),
-                notes=day.get("notes", "N/A"),
-            )
+    rows = [
+        "| {day} | {role} | {intensity} | {modality} | {notes} |".format(
+            day=day.get("day_of_week", "N/A"),
+            role=day.get("day_role", "N/A"),
+            intensity=day.get("intensity_domain", "N/A"),
+            modality=day.get("load_modality", "N/A"),
+            notes=day.get("notes", "N/A"),
         )
+        for day in week.get("days", [])
+    ]
     return header + "\n".join(rows)
 
 

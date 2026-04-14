@@ -493,11 +493,11 @@ class Chat:
         return normalized
 
     def _message_items(self, items: Sequence[object]) -> list[InputItem]:
-        messages: list[InputItem] = []
-        for item in items:
-            if _is_input_item(item) and "role" in item and "content" in item:
-                messages.append(self._strip_content_annotations(item))
-        return messages
+        return [
+            self._strip_content_annotations(item)
+            for item in items
+            if _is_input_item(item) and "role" in item and "content" in item
+        ]
 
     def _strip_content_annotations(self, message: InputItem) -> InputItem:
         content = message.get("content")

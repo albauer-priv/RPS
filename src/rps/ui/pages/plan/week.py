@@ -33,18 +33,17 @@ def _agenda_table(agenda: list[AgendaRow]) -> str:
         "| Day | Date (YYYY-MM-DD) | Day-Role | Planned Duration | Planned Load (kJ) | Workout-ID |\n"
         "| --- | --- | --- | --- | ---: | --- |\n"
     )
-    rows = []
-    for row in agenda:
-        rows.append(
-            "| {day} | {date} | {role} | {duration} | {load} | {workout} |".format(
-                day=row.get("day", "N/A"),
-                date=row.get("date", "N/A"),
-                role=row.get("day_role", "N/A"),
-                duration=row.get("planned_duration", "N/A"),
-                load=row.get("planned_kj", "N/A"),
-                workout=row.get("workout_id", "N/A"),
-            )
+    rows = [
+        "| {day} | {date} | {role} | {duration} | {load} | {workout} |".format(
+            day=row.get("day", "N/A"),
+            date=row.get("date", "N/A"),
+            role=row.get("day_role", "N/A"),
+            duration=row.get("planned_duration", "N/A"),
+            load=row.get("planned_kj", "N/A"),
+            workout=row.get("workout_id", "N/A"),
         )
+        for row in agenda
+    ]
     if not rows:
         rows.append("| N/A | N/A | N/A | N/A | N/A | N/A |")
     return header + "\n".join(rows)
