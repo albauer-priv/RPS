@@ -7,7 +7,7 @@ import logging
 import os
 import shutil
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from .index_manager import WorkspaceIndexManager
@@ -36,6 +36,91 @@ def _as_map(value: object) -> JsonMap:
 def _as_str(value: object) -> str | None:
     """Return a string when the value is a string."""
     return value if isinstance(value, str) else None
+
+
+def _iso_week_key_from_date(value: date) -> str:
+    """Return the canonical ISO week key for a date."""
+    iso_year, iso_week, _ = value.isocalendar()
+    return f"{iso_year:04d}-{iso_week:02d}"
+
+
+def _week_bounds_from_key(week_key: str) -> tuple[str, str] | None:
+    """Return Monday/Sunday bounds for an ISO week key."""
+    try:
+        year_str, week_str = week_key.split("-", 1)
+        week_start = date.fromisocalendar(int(year_str), int(week_str), 1)
+        week_end = date.fromisocalendar(int(year_str), int(week_str), 7)
+    except ValueError:
+        return None
+    return week_start.isoformat(), week_end.isoformat()
+
+
+def _normalize_trace_references(value: object) -> JsonList:
+    """Return canonical trace references with fallback run ids for legacy docs."""
+    if not isinstance(value, list):
+        return []
+    normalized: JsonList = []
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, dict):
+            continue
+        artifact = _as_str(item.get("artifact")) or f"legacy_trace_{index}"
+        version = _as_str(item.get("version")) or "1.0"
+        run_id = _as_str(item.get("run_id")) or f"legacy_trace_{index}"
+        normalized.append(
+            {
+                "artifact": artifact,
+                "version": version,
+                "run_id": run_id,
+            }
+        )
+    return normalized
+
+
+def _normalize_loaded_meta(document: object) -> object:
+    """Backfill canonical meta fields for legacy envelopes when reading from disk."""
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta")
+    if not isinstance(meta, dict):
+        return document
+
+    normalized = dict(document)
+    meta_map = dict(meta)
+    created_raw = _as_str(meta_map.get("created_at"))
+    created_dt = _parse_created_at(created_raw)
+    created_date = created_dt.date() if created_dt != datetime.min else date(1970, 1, 1)
+    fallback_week_key = _iso_week_key_from_date(created_date)
+
+    raw_confidence = _as_str(meta_map.get("data_confidence"))
+    confidence_map = {
+        "HIGH": "HIGH",
+        "MEDIUM": "MEDIUM",
+        "LOW": "LOW",
+        "UNKNOWN": "UNKNOWN",
+        "USER": "UNKNOWN",
+    }
+    normalized_confidence = confidence_map.get((raw_confidence or "").upper(), "UNKNOWN")
+    meta_map["data_confidence"] = normalized_confidence
+
+    meta_map["trace_upstream"] = _normalize_trace_references(meta_map.get("trace_upstream"))
+    meta_map["trace_data"] = _normalize_trace_references(meta_map.get("trace_data"))
+    meta_map["trace_events"] = _normalize_trace_references(meta_map.get("trace_events"))
+    meta_map["notes"] = _as_str(meta_map.get("notes")) or ""
+
+    iso_week = _as_str(meta_map.get("iso_week")) or fallback_week_key
+    meta_map["iso_week"] = iso_week
+    meta_map["iso_week_range"] = _as_str(meta_map.get("iso_week_range")) or f"{iso_week}--{iso_week}"
+
+    temporal_scope = meta_map.get("temporal_scope")
+    if not isinstance(temporal_scope, dict):
+        bounds = _week_bounds_from_key(iso_week)
+        if bounds is None:
+            bounds = (created_date.isoformat(), created_date.isoformat())
+        temporal_scope = {"from": bounds[0], "to": bounds[1]}
+    meta_map["temporal_scope"] = temporal_scope
+
+    normalized["meta"] = meta_map
+    return normalized
 
 def utc_iso_now() -> str:
     """Return the current time in ISO-8601 UTC format."""
@@ -453,7 +538,7 @@ class LocalArtifactStore:
     def _read_json(self, path: Path) -> object:
         """Read JSON from a file."""
         with path.open("r", encoding="utf-8") as handle:
-            return json.load(handle)
+            return _normalize_loaded_meta(json.load(handle))
 
     def _atomic_write_json(self, target: Path, data: object) -> None:
         """Write JSON atomically by using a temporary file."""

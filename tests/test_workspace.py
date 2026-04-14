@@ -105,6 +105,99 @@ class LocalStoreTests(unittest.TestCase):
             )
             self.assertTrue(store.exists(athlete_id, ArtifactType.PHASE_GUARDRAILS, "2026-05--2026-08"))
 
+    def test_load_latest_normalizes_legacy_user_data_confidence(self) -> None:
+        """Verify legacy USER data_confidence is normalized on read."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_004"
+            store.ensure_workspace(athlete_id)
+            latest_path = store.latest_path(athlete_id, ArtifactType.LOGISTICS)
+            latest_path.write_text(
+                json.dumps(
+                    {
+                        "meta": {
+                            "artifact_type": "LOGISTICS",
+                            "schema_id": "LogisticsInterface",
+                            "schema_version": "1.0",
+                            "version": "1.0",
+                            "authority": "Informational",
+                            "owner_agent": "User",
+                            "run_id": "legacy_logistics",
+                            "created_at": "2026-04-13T21:41:00Z",
+                            "scope": "Context",
+                            "data_confidence": "USER",
+                            "trace_upstream": [],
+                            "notes": "",
+                        },
+                        "data": {"events": []},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            loaded = store.load_latest(athlete_id, ArtifactType.LOGISTICS)
+
+            self.assertIsInstance(loaded, dict)
+            meta = loaded["meta"]
+            self.assertEqual(meta["data_confidence"], "UNKNOWN")
+            self.assertEqual(meta["iso_week"], "2026-16")
+            self.assertEqual(meta["iso_week_range"], "2026-16--2026-16")
+            self.assertEqual(meta["temporal_scope"], {"from": "2026-04-13", "to": "2026-04-19"})
+            self.assertEqual(meta["trace_data"], [])
+            self.assertEqual(meta["trace_events"], [])
+
+    def test_load_latest_backfills_legacy_kpi_profile_meta(self) -> None:
+        """Verify shared KPI profiles get canonical traceability fields on read."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_005"
+            store.ensure_workspace(athlete_id)
+            latest_path = store.latest_path(athlete_id, ArtifactType.KPI_PROFILE)
+            latest_path.write_text(
+                json.dumps(
+                    {
+                        "meta": {
+                            "artifact_type": "KPI_PROFILE",
+                            "schema_id": "KPIProfileInterface",
+                            "schema_version": "1.0",
+                            "version": "1.0",
+                            "authority": "Binding",
+                            "owner_agent": "Policy-Owner",
+                            "run_id": "legacy_kpi_profile",
+                            "created_at": "2026-01-17T06:21:32.377139+00:00",
+                            "scope": "Shared",
+                            "data_confidence": "UNKNOWN",
+                            "trace_upstream": [
+                                {"artifact": "kpi_profile_des_brevet_600_km_masters.md", "version": "1.0"}
+                            ],
+                            "notes": "Converted from v1 markdown spec.",
+                        },
+                        "data": {"profile_metadata": {"profile_id": "sample"}},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            loaded = store.load_latest(athlete_id, ArtifactType.KPI_PROFILE)
+
+            self.assertIsInstance(loaded, dict)
+            meta = loaded["meta"]
+            self.assertEqual(meta["iso_week"], "2026-03")
+            self.assertEqual(meta["iso_week_range"], "2026-03--2026-03")
+            self.assertEqual(meta["temporal_scope"], {"from": "2026-01-12", "to": "2026-01-18"})
+            self.assertEqual(
+                meta["trace_upstream"],
+                [
+                    {
+                        "artifact": "kpi_profile_des_brevet_600_km_masters.md",
+                        "version": "1.0",
+                        "run_id": "legacy_trace_1",
+                    }
+                ],
+            )
+            self.assertEqual(meta["trace_data"], [])
+            self.assertEqual(meta["trace_events"], [])
+
 
 class GuardTests(unittest.TestCase):
     """Coverage for dependency guard behavior."""

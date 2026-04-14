@@ -842,6 +842,42 @@ def test_kpi_profile_page_defaults_to_saved_profile():
     assert any(f"Active KPI Profile: kpi_profile_{profile_key}" in info.value for info in at.info)
 
 
+def test_kpi_profile_page_saves_canonical_meta():
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+    latest_path = store.latest_path(athlete_id, ArtifactType.KPI_PROFILE)
+    if latest_path.exists():
+        latest_path.unlink()
+
+    at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
+    at.run()
+    assert len(at.error) == 0
+
+    at.button[0].click()
+    at.run()
+
+    saved = store.load_latest(athlete_id, ArtifactType.KPI_PROFILE)
+    assert isinstance(saved, dict)
+    meta = saved["meta"]
+    assert meta["artifact_type"] == "KPI_PROFILE"
+    assert meta["schema_id"] == "KPIProfileInterface"
+    assert meta["authority"] == "Binding"
+    assert meta["owner_agent"] == "Policy-Owner"
+    assert meta["scope"] == "Shared"
+    assert meta["data_confidence"] == "UNKNOWN"
+    assert meta["iso_week"]
+    assert meta["iso_week_range"] == f"{meta['iso_week']}--{meta['iso_week']}"
+    assert isinstance(meta["temporal_scope"], dict)
+    assert meta["temporal_scope"]["from"]
+    assert meta["temporal_scope"]["to"]
+    assert isinstance(meta["trace_upstream"], list)
+    assert meta["trace_upstream"]
+    assert "run_id" in meta["trace_upstream"][0]
+    assert meta["trace_data"] == []
+    assert meta["trace_events"] == []
+
+
 def test_data_operations_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/athlete_profile/data_operations.py")
     at.run()

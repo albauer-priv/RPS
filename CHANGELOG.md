@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Multi-output agent runs now treat explicit model blocker responses (`STOP_REASON`, missing binding artefacts, next actions) as terminal failures, so the runner no longer forces a fallback store after a compliant stop and reports the blocker back instead.
+- Workspace reads now backfill canonical artefact meta for legacy/shared input envelopes, normalizing stale `data_confidence` values like `USER` and deriving missing ISO-week, temporal-scope, and traceability fields so older `KPI_PROFILE`, `PLANNING_EVENTS`, and `LOGISTICS` inputs no longer hard-stop strict agent bindings on read.
+- Athlete Profile -> KPI Profile now stores a canonical workspace envelope on selection, including ISO-week scope and full traceability metadata, instead of copying the bundled spec JSON header through unchanged.
 - Internal type cleanup now covers `src/rps/workspace/api.py`, `src/rps/workspace/local_store.py`, `src/rps/workspace/index_manager.py`, `src/rps/workspace/index_exact.py`, and `src/rps/workspace/index_query.py`, tightening workspace payload/index metadata access across the storage and lookup layer.
 - Internal type cleanup now covers `src/rps/openai/reasoning.py`, `src/rps/openai/runtime.py`, and `src/rps/openai/vectorstore_state.py`, tightening small Responses/vectorstore helper payloads and state access without changing runtime behavior.
 - Stabilized `scripts/run_typecheck.sh` by switching the curated mypy commit gate from fragile per-file runs to grouped module/directory runs, avoiding the local `mypy` segfault seen on `src/rps/agents/runner.py` in single-file mode while preserving the same checked scope.
