@@ -50,4 +50,4 @@ target-version = "py314"
 extend-exclude = ["runtime"]
 
 [tool.ruff.lint]
-select = ["F", "I"]
+select = ["F", "I", "UP017", "UP031", "UP035", "UP037"]

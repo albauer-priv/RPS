@@ -771,6 +771,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intervals posting receipt helpers now use explicit receipt/payload row types instead of broad dynamic dict typing, including safer text normalization for generated external IDs.
 - A repo-managed `ruff` lint gate is now mandatory in `.githooks/pre-commit` via `scripts/run_lint.sh`, with a conservative initial rule set (`F`, `I`) and dev dependency/config stored in `pyproject.toml`.
 - The initial `ruff --fix` sweep normalized imports and removed low-risk unused-code issues across scripts, app modules, workspace helpers, and tests so the new hook starts green instead of landing as a broken gate.
+- Developer-facing docs now include the lint command and local hook activation step in `README.md`.
+- The mandatory `ruff` gate was expanded slightly with a small set of safe modernization checks (`UP017`, `UP031`, `UP035`, `UP037`) after verifying a green repo run.
 
 ## [0.1.0] - 2026-01-20
 

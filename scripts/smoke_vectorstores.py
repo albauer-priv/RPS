@@ -65,8 +65,7 @@ def main() -> int:
     project_id_set = bool(os.getenv("RPS_LLM_PROJECT_ID"))
     org_id_set = bool(os.getenv("RPS_LLM_ORG_ID"))
     print(
-        "LLM env preflight: RPS_LLM_API_KEY=%s RPS_LLM_PROJECT_ID=%s RPS_LLM_ORG_ID=%s"
-        % (
+        "LLM env preflight: RPS_LLM_API_KEY={} RPS_LLM_PROJECT_ID={} RPS_LLM_ORG_ID={}".format(
             "set" if api_key_set else "missing",
             "set" if project_id_set else "missing",
             "set" if org_id_set else "missing",

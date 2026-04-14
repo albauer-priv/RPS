@@ -190,6 +190,27 @@ It runs on manual dispatch and automatically on pushes to `main`.
 
 ---
 
+## 8) Developer checks
+
+Run these from the repo root:
+
+```bash
+python3 -m py_compile $(git ls-files '*.py')
+./scripts/run_lint.sh
+./scripts/run_typecheck.sh
+```
+
+Notes:
+- `./scripts/run_lint.sh` is the repo-standard `ruff` entrypoint.
+- The repo-managed `.githooks/pre-commit` hook runs syntax checks, `ruff`, and the curated `mypy` gate automatically for staged Python files.
+- If hooks are not active locally, set them once with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+---
+
 ## License
 
 See [LICENSE](LICENSE).
