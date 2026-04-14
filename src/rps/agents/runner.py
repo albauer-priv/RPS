@@ -21,6 +21,7 @@ from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read
 from rps.tools.workspace_tools import ToolContext, get_tool_defs, get_tool_handlers
 
 logger = logging.getLogger(__name__)
+MAX_TOOL_CALL_ITERATIONS = 20
 
 ToolDef = dict[str, object]
 AgentSessionResult = dict[str, object]
@@ -313,7 +314,7 @@ def run_agent_session(
     safety_counter = 0
     while True:
         safety_counter += 1
-        if safety_counter > 20:
+        if safety_counter > MAX_TOOL_CALL_ITERATIONS:
             raise RuntimeError("Too many tool call iterations; aborting.")
 
         function_calls = [item for item in response.output if _item_type(item) == "function_call"]

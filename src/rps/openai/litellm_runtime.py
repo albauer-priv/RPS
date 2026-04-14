@@ -17,6 +17,7 @@ import litellm
 from litellm import exceptions as litellm_exceptions
 
 LOGGER = logging.getLogger(__name__)
+TOOL_ARGS_PREVIEW_MAX_CHARS = 500
 _T = TypeVar("_T")
 UsageDict = dict[str, int]
 JsonValue: TypeAlias = object
@@ -178,8 +179,8 @@ def _messages_from_input(input_items: Iterable[object], instructions: str | None
                         continue
                     name = candidate.get("name") or call_name_by_id.get(call_id)
                     args_preview = call_args_by_id.get(call_id)
-                    if isinstance(args_preview, str) and len(args_preview) > 500:
-                        args_preview = args_preview[:500] + "…"
+                    if isinstance(args_preview, str) and len(args_preview) > TOOL_ARGS_PREVIEW_MAX_CHARS:
+                        args_preview = args_preview[:TOOL_ARGS_PREVIEW_MAX_CHARS] + "…"
                     if not name:
                         LOGGER.debug(
                             "LiteLLM tool output missing name; continuing with tool_call_id=%s args=%s output=%s",
@@ -215,8 +216,8 @@ def _messages_from_input(input_items: Iterable[object], instructions: str | None
                 continue
             name = item.get("name") or call_name_by_id.get(call_id)
             args_preview = call_args_by_id.get(call_id)
-            if isinstance(args_preview, str) and len(args_preview) > 500:
-                args_preview = args_preview[:500] + "…"
+            if isinstance(args_preview, str) and len(args_preview) > TOOL_ARGS_PREVIEW_MAX_CHARS:
+                args_preview = args_preview[:TOOL_ARGS_PREVIEW_MAX_CHARS] + "…"
             if not name:
                 LOGGER.debug(
                     "LiteLLM tool output missing name; continuing with tool_call_id=%s args=%s output=%s",

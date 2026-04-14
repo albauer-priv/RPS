@@ -6,6 +6,8 @@ from streamlit.testing.v1 import AppTest
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
+MIN_PHASE_PAGE_NUMBER_INPUTS = 2
+
 
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch):
@@ -56,4 +58,4 @@ def test_phase_page_renders(tmp_path, monkeypatch):
     assert len(at.error) == 0
     assert len(at.selectbox) >= 1
     assert len(at.text_input) >= 1
-    assert len(at.number_input) >= 2
+    assert len(at.number_input) >= MIN_PHASE_PAGE_NUMBER_INPUTS

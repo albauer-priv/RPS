@@ -5,6 +5,8 @@ from pathlib import Path
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs
 from rps.ui.run_store import clear_queue_folders, prune_run_history
 
+EXPECTED_CLEARED_QUEUE_FILES = 2
+
 
 def _write_run(root: Path, athlete_id: str, run_id: str, days_ago: int) -> None:
     run_dir = root / athlete_id / "runs" / run_id
@@ -32,6 +34,6 @@ def test_clear_queue_folders(tmp_path: Path) -> None:
     (queues.failed / "two.json").write_text("{}", encoding="utf-8")
 
     removed = clear_queue_folders(root)
-    assert removed == 2
+    assert removed == EXPECTED_CLEARED_QUEUE_FILES
     assert not any(queues.done.glob("*.json"))
     assert not any(queues.failed.glob("*.json"))

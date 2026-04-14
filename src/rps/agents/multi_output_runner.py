@@ -29,6 +29,7 @@ from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
+MAX_TOOL_ITERATIONS = 30
 
 _KNOWLEDGE_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "specs" / "knowledge" / "_shared" / "sources"
 ToolDef = dict[str, object]
@@ -944,7 +945,7 @@ def run_agent_multi_output(
         required_ready = not required_artifacts
     while True:
         safety += 1
-        if safety > 30:
+        if safety > MAX_TOOL_ITERATIONS:
             return {"ok": False, "error": "Too many tool iterations", "produced": produced}
 
         function_calls = [item for item in response.output if _item_type(item) == "function_call"]

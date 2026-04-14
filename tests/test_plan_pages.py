@@ -12,6 +12,10 @@ from rps.ui.shared import SETTINGS
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
+MIN_PHASE_SELECTBOX_COUNT = 2
+EXPECTED_SCOPED_ACTION_CALLS = 2
+MIN_PLAN_HUB_NUMBER_INPUTS = 2
+
 
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch, tmp_path):
@@ -364,7 +368,7 @@ def test_plan_hub_direct_action_buttons_render(tmp_path):
     assert labels.count("Run Week") >= 1
     assert labels.count("Run Workouts") >= 1
     select_labels = [select.label for select in at.selectbox]
-    assert select_labels.count("Phase") >= 2
+    assert select_labels.count("Phase") >= MIN_PHASE_SELECTBOX_COUNT
     assert "Week" in select_labels
     expander_labels = [expander.label for expander in at.expander]
     assert any("Phase" in label for label in expander_labels)
@@ -470,7 +474,7 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
         override_text="rerun season",
     )
 
-    assert len(calls) == 2
+    assert len(calls) == EXPECTED_SCOPED_ACTION_CALLS
 
 
 def test_create_season_plan_includes_selected_kpi_guidance(monkeypatch, tmp_path):
@@ -775,7 +779,7 @@ def test_week_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/plan/week.py")
     at.run()
     assert len(at.error) == 0
-    assert len(at.number_input) >= 2
+    assert len(at.number_input) >= MIN_PLAN_HUB_NUMBER_INPUTS
 
 
 def test_workouts_page_renders():

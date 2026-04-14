@@ -37,6 +37,7 @@ InputContentBlock: TypeAlias = dict[str, object]
 InputItem: TypeAlias = dict[str, object]
 ToolSpec: TypeAlias = dict[str, object]
 BlockContent: TypeAlias = str | bytes
+BLOCK_REPR_PREVIEW_MAX_CHARS = 30
 
 
 class _HasModelDump(Protocol):
@@ -982,8 +983,8 @@ class Chat:
         def __repr__(self) -> str:
             if self.category in ["text", "code", "reasoning"]:
                 content = _require_text(self.content)
-                if len(content) > 30:
-                    content = content[:30].strip() + "..."
+                if len(content) > BLOCK_REPR_PREVIEW_MAX_CHARS:
+                    content = content[:BLOCK_REPR_PREVIEW_MAX_CHARS].strip() + "..."
                 rendered_content = repr(content)
             else:
                 rendered_content = "Bytes"

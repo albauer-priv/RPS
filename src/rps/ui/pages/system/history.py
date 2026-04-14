@@ -22,6 +22,7 @@ from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 
 JsonMap = dict[str, object]
+YEAR_MONTH_PREFIX_LENGTH = 7
 
 
 def _as_map(value: object) -> JsonMap:
@@ -259,7 +260,7 @@ for row in rows:
         try:
             month_key = datetime.fromisoformat(created.replace("Z", "+00:00")).strftime("%Y-%m")
         except ValueError:
-            month_key = created[:7] if len(created) >= 7 else "unknown"
+            month_key = created[:YEAR_MONTH_PREFIX_LENGTH] if len(created) >= YEAR_MONTH_PREFIX_LENGTH else "unknown"
     month_map[month_key].append(row)
 
 for month_key in sorted(month_map.keys(), reverse=True):

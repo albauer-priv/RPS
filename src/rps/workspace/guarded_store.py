@@ -29,6 +29,7 @@ from rps.workspace.versioning import (
 JsonMap = dict[str, object]
 StringListMap = dict[str, list[str]]
 StoreResult = dict[str, object]
+INTEGER_ROUNDING_EPSILON = 1e-9
 
 
 class MissingDependenciesError(RuntimeError):
@@ -529,7 +530,7 @@ class GuardedValidatedStore:
             joined = _joined_path(path)
             if "integer" in types and "number" not in types:
                 return int(round(float(value)))
-            if "integer" in types and "number" in types and abs(float(value) - round(float(value))) < 1e-9:
+            if "integer" in types and "number" in types and abs(float(value) - round(float(value))) < INTEGER_ROUNDING_EPSILON:
                 return int(round(float(value)))
             if "number" in types or not types:
                 decimals = self._rounding_decimals(joined)

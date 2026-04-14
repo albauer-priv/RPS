@@ -1,6 +1,8 @@
 
 from rps.openai.litellm_runtime import LiteLLMResponses, LLMProviderConfig
 
+EXPECTED_TOOL_MESSAGE_COUNT = 2
+
 
 def test_litellm_previous_response_replays_tool_calls(monkeypatch):
     captured_messages = []
@@ -78,7 +80,7 @@ def test_litellm_previous_response_replays_tool_calls(monkeypatch):
     )
 
     assert second.output_text == "Coach final reply"
-    assert len(captured_messages) == 2
+    assert len(captured_messages) == EXPECTED_TOOL_MESSAGE_COUNT
     assert captured_messages[1][0]["role"] == "assistant"
     assert captured_messages[1][0]["tool_calls"][0]["id"] == "call_1"
     assert captured_messages[1][1]["role"] == "tool"

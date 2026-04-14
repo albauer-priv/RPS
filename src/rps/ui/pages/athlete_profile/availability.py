@@ -27,6 +27,7 @@ st.caption(f"Athlete: {athlete_id}")
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 TRAVEL_RISK_OPTIONS = ["LOW", "MED", "HIGH"]
+WEEKLY_HOURS_TOLERANCE = 0.1
 
 
 def _snap_half(value: float) -> float:
@@ -179,9 +180,9 @@ table_hours_min = round(sum(row.get("hours_min", 0.0) for row in availability_ta
 table_hours_typ = round(sum(row.get("hours_typical", 0.0) for row in availability_table), 1)
 table_hours_max = round(sum(row.get("hours_max", 0.0) for row in availability_table), 1)
 if (
-    abs(table_hours_min - weekly_min) > 0.1
-    or abs(table_hours_typ - weekly_typ) > 0.1
-    or abs(table_hours_max - weekly_max) > 0.1
+    abs(table_hours_min - weekly_min) > WEEKLY_HOURS_TOLERANCE
+    or abs(table_hours_typ - weekly_typ) > WEEKLY_HOURS_TOLERANCE
+    or abs(table_hours_max - weekly_max) > WEEKLY_HOURS_TOLERANCE
 ):
     st.warning(
         "Weekly hours do not match table totals. "

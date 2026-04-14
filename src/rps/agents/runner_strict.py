@@ -23,6 +23,7 @@ from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.schema_registry import SchemaValidationError
 
 logger = logging.getLogger(__name__)
+MAX_TOOL_ITERATIONS = 10
 
 ToolDef = dict[str, object]
 StrictTaskResult = dict[str, object]
@@ -197,7 +198,7 @@ def run_agent_task_strict(
     safety = 0
     while True:
         safety += 1
-        if safety > 10:
+        if safety > MAX_TOOL_ITERATIONS:
             raise RuntimeError("Too many tool iterations")
 
         function_calls = [

@@ -13,6 +13,7 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
+AMBITION_IF_RANGE_LENGTH = 2
 
 JsonMap = dict[str, object]
 OrchestratorResult = dict[str, object]
@@ -42,7 +43,7 @@ def _format_user_data_block(user_data: dict[str, object]) -> str:
         lines.append(f"endurance_anchor_w: {anchor} W")
     else:
         lines.append("endurance_anchor_w: n/a")
-    if isinstance(ambition, tuple) and len(ambition) == 2:
+    if isinstance(ambition, tuple) and len(ambition) == AMBITION_IF_RANGE_LENGTH:
         lines.append(f"ambition_if_range: [{ambition[0]}, {ambition[1]}]")
     else:
         lines.append("ambition_if_range: n/a")

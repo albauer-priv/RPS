@@ -2,6 +2,8 @@ from types import SimpleNamespace
 
 from rps.tools import knowledge_search
 
+EXPECTED_SEARCH_RETRIES = 2
+
 
 def test_search_knowledge_rebuilds_missing_collection(monkeypatch):
     calls = {"search": 0, "rebuild": 0}
@@ -30,7 +32,7 @@ def test_search_knowledge_rebuilds_missing_collection(monkeypatch):
 
     result = knowledge_search.search_knowledge("phase_architect", "phase guardrails", max_results=5)
 
-    assert calls["search"] == 2
+    assert calls["search"] == EXPECTED_SEARCH_RETRIES
     assert calls["rebuild"] == 1
     assert result[0]["text"] == "match"
 

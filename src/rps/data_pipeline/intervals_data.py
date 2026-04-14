@@ -42,6 +42,19 @@ SEPARATOR = ";"  # Intervals.icu export
 QUOTECHAR = '"'
 Z2_MIN_THRESHOLD_MIN = 90
 DEFAULT_WEEKS = 24
+ISO_SUNDAY_WEEKDAY = 7
+PERCENT_SCALE_THRESHOLD = 1.5
+PERCENT_INTEGER_EPSILON = 1e-6
+POWER_ZONE_COUNT = 7
+MIN_CONSECUTIVE_Z2_DAYS = 2
+LONG_RIDE_BASE_MINUTES = 150
+LONG_RIDE_BUILD_MINUTES = 180
+LONG_RIDE_BREVET_MINUTES = 240
+LOW_INTENSITY_FACTOR_THRESHOLD = 0.75
+ENDURANCE_INTENSITY_FACTOR_THRESHOLD = 0.80
+Z2_SHARE_BASE_THRESHOLD_PCT = 60
+Z2_SHARE_BREVET_THRESHOLD_PCT = 70
+DRIFT_VALID_Z2_MINUTES = 90
 REQUIRED_COLUMNS = [
     "Year",
     "ISO Week",
@@ -577,7 +590,7 @@ def last_iso_week(iso_year: int) -> int:
 
 def last_complete_week_end(today: date) -> date:
     """Return the last completed ISO week end (Sunday) before the given date."""
-    if today.isoweekday() == 7:
+    if today.isoweekday() == ISO_SUNDAY_WEEKDAY:
         return today
     return today - timedelta(days=today.isoweekday())
 
@@ -637,13 +650,13 @@ def get_wellness(athlete_id: str, base_url: str, start_date: date, end_date: dat
 def _as_percent(value: float | int | None) -> float | None:
     if value is None:
         return None
-    if value <= 1.5:
+    if value <= PERCENT_SCALE_THRESHOLD:
         return float(value) * 100.0
     return float(value)
 
 
 def _round_pct(value: float) -> float | int:
-    if abs(value - round(value)) < 1e-6:
+    if abs(value - round(value)) < PERCENT_INTEGER_EPSILON:
         return int(round(value))
     return round(value, 1)
 
@@ -773,9 +786,9 @@ def _extract_power_zone_bounds(setting: dict) -> list[float] | None:
 
 
 def _build_zone_ranges(bounds: list[float]) -> dict[str, tuple[float, float]]:
-    if len(bounds) < 7:
+    if len(bounds) < POWER_ZONE_COUNT:
         bounds = [float(bound) for bound in DEFAULT_POWER_ZONE_BOUNDS_PCT]
-    bounds = [float(b) for b in bounds[:7]]
+    bounds = [float(b) for b in bounds[:POWER_ZONE_COUNT]]
     ranges: dict[str, tuple[float, float]] = {}
     prev = 0.0
     for zone_id, max_pct in zip(["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"], bounds, strict=True):
@@ -1284,14 +1297,14 @@ def export_range(
     z2_share = df["Power TiZ Share Z2 (%)"]
     if_val = df["Intensity Factor (IF)"]
 
-    df["Flag Long Ride >=150min (bool)"] = move_min >= 150
-    df["Flag Long Ride >=180min (bool)"] = move_min >= 180
-    df["Flag Long Ride >=240min (bool)"] = move_min >= 240
-    df["Flag IF <= 0.75 (bool)"] = if_val <= 0.75
-    df["Flag IF <= 0.80 (bool)"] = if_val <= 0.80
-    df["Flag Z2 Share >= 60% (bool)"] = z2_share >= 60
-    df["Flag Z2 Share >= 70% (bool)"] = z2_share >= 70
-    df["Flag Drift Valid (Z2 >= 90min) (bool)"] = z2_min >= 90
+    df["Flag Long Ride >=150min (bool)"] = move_min >= LONG_RIDE_BASE_MINUTES
+    df["Flag Long Ride >=180min (bool)"] = move_min >= LONG_RIDE_BUILD_MINUTES
+    df["Flag Long Ride >=240min (bool)"] = move_min >= LONG_RIDE_BREVET_MINUTES
+    df["Flag IF <= 0.75 (bool)"] = if_val <= LOW_INTENSITY_FACTOR_THRESHOLD
+    df["Flag IF <= 0.80 (bool)"] = if_val <= ENDURANCE_INTENSITY_FACTOR_THRESHOLD
+    df["Flag Z2 Share >= 60% (bool)"] = z2_share >= Z2_SHARE_BASE_THRESHOLD_PCT
+    df["Flag Z2 Share >= 70% (bool)"] = z2_share >= Z2_SHARE_BREVET_THRESHOLD_PCT
+    df["Flag Drift Valid (Z2 >= 90min) (bool)"] = z2_min >= DRIFT_VALID_Z2_MINUTES
     df["Flag DES Long Base Candidate (bool)"] = (
         df["Flag Long Ride >=150min (bool)"]
         & df["Flag IF <= 0.75 (bool)"]
@@ -2024,7 +2037,7 @@ def compile_activities_trend(
         tmp["Z2_min"] = pd.to_numeric(tmp[z2_col], errors="coerce").fillna(0) / 60.0
         day_sum = tmp.groupby("Day")["Z2_min"].sum().sort_index()
         z2_days = day_sum[day_sum >= Z2_MIN_THRESHOLD_MIN].index.sort_values()
-        if len(z2_days) < 2:
+        if len(z2_days) < MIN_CONSECUTIVE_Z2_DAYS:
             return 0
         count = 0
         for d1, d2 in zip(z2_days, z2_days[1:], strict=False):
@@ -2106,9 +2119,15 @@ def compile_activities_trend(
         for c, key in FLAG_COLUMN_KEYS.items():
             if c in flag_columns_present:
                 if c == "Flag IF <= 0.75 (bool)" and col_if:
-                    mask = pd.to_numeric(g[col_if], errors="coerce").round(3) <= 0.75
+                    mask = (
+                        pd.to_numeric(g[col_if], errors="coerce").round(3)
+                        <= LOW_INTENSITY_FACTOR_THRESHOLD
+                    )
                 elif c == "Flag IF <= 0.80 (bool)" and col_if:
-                    mask = pd.to_numeric(g[col_if], errors="coerce").round(3) <= 0.80
+                    mask = (
+                        pd.to_numeric(g[col_if], errors="coerce").round(3)
+                        <= ENDURANCE_INTENSITY_FACTOR_THRESHOLD
+                    )
                 else:
                     mask = g[c].fillna(False).astype(bool)
                 count_val = int(mask.sum())

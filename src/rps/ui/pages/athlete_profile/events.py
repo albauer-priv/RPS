@@ -29,6 +29,9 @@ DEFAULT_EVENT_TYPES = [
     "TRAIL",
     "OTHER",
 ]
+MIN_PRIORITY_RANK = 1
+MAX_PRIORITY_RANK = 3
+MIN_A_EVENT_SPACING_DAYS = 84
 
 
 init_ui_state()
@@ -175,10 +178,14 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
         try:
             rank = int(str(rank_val))
         except (TypeError, ValueError):
-            missing_errors.append(f"Row {idx}: rank must be an integer 1-3.")
+            missing_errors.append(
+                f"Row {idx}: rank must be an integer {MIN_PRIORITY_RANK}-{MAX_PRIORITY_RANK}."
+            )
             continue
-        if rank < 1 or rank > 3:
-            missing_errors.append(f"Row {idx}: rank must be between 1 and 3.")
+        if rank < MIN_PRIORITY_RANK or rank > MAX_PRIORITY_RANK:
+            missing_errors.append(
+                f"Row {idx}: rank must be between {MIN_PRIORITY_RANK} and {MAX_PRIORITY_RANK}."
+            )
         rank_set = priority_rank_map.setdefault(priority, set())
         if rank in rank_set:
             missing_errors.append(
@@ -193,7 +200,7 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
             a_dates.append(parsed_date)
     a_dates = sorted(a_dates)
     for prev, current in zip(a_dates, a_dates[1:], strict=False):
-        if (current - prev).days < 84:
+        if (current - prev).days < MIN_A_EVENT_SPACING_DAYS:
             missing_errors.append(
                 "A events must be spaced at least 12 weeks apart."
             )

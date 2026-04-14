@@ -41,6 +41,9 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     pd = None
 
+DATE_PERIOD_MIN_TEXT_LENGTH = 21
+DATE_PERIOD_PART_COUNT = 6
+
 
 ROOT = SETTINGS.workspace_root
 _INTERVALS_JOB_PREFIX = "intervals_refresh_job"
@@ -686,9 +689,9 @@ def _weekly_trends_from_dataframe(df: pd.DataFrame) -> list[dict]:
         if raw is None or (isinstance(raw, float) and pd.isna(raw)):
             return None, None
         text = str(raw)
-        if "-" in text and len(text) >= 21:
+        if "-" in text and len(text) >= DATE_PERIOD_MIN_TEXT_LENGTH:
             parts = text.split("-")
-            if len(parts) >= 6:
+            if len(parts) >= DATE_PERIOD_PART_COUNT:
                 start = "-".join(parts[:3])
                 end = "-".join(parts[3:6])
                 return start, end
