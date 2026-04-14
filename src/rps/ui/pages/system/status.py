@@ -153,13 +153,20 @@ status_filter = st.selectbox(
     options=["All", "QUEUED", "RUNNING", "DONE", "FAILED", "CANCELLED", "SUPERSEDED"],
     index=1,
 )
-type_values = sorted({run.get("process_type") or "Unspecified" for run in runs})
+
+
+def _run_str(run: dict, key: str, default: str = "Unspecified") -> str:
+    value = run.get(key)
+    return value if isinstance(value, str) and value else default
+
+
+type_values = sorted({_run_str(run, "process_type") for run in runs})
 type_filter = st.selectbox(
     "Process type",
     options=["All", *type_values],
     index=0,
 )
-subtype_values = sorted({run.get("process_subtype") or "Unspecified" for run in runs})
+subtype_values = sorted({_run_str(run, "process_subtype") for run in runs})
 subtype_filter = st.selectbox(
     "Process subtype",
     options=["All", *subtype_values],
@@ -169,10 +176,10 @@ subtype_filter = st.selectbox(
 def _matches_filter(run: dict) -> bool:
     if status_filter != "All" and run.get("status") != status_filter:
         return False
-    process_type = run.get("process_type") or "Unspecified"
+    process_type = _run_str(run, "process_type")
     if type_filter != "All" and process_type != type_filter:
         return False
-    process_subtype = run.get("process_subtype") or "Unspecified"
+    process_subtype = _run_str(run, "process_subtype")
     if subtype_filter != "All" and process_subtype != subtype_filter:
         return False
     return True
@@ -205,7 +212,7 @@ if filtered_runs:
         key="status_runs_editor",
     )
     selected_run_ids = [
-        row.get("Run ID")
+        str(row.get("Run ID"))
         for row in edited
         if row.get("Select") and row.get("Status") in {"QUEUED", "RUNNING"}
     ]

@@ -17,6 +17,8 @@ from rps.ui.run_store import load_runs
 
 logger = logging.getLogger(__name__)
 
+QueueItem = dict[str, object]
+
 
 @dataclass(frozen=True)
 class QueuePaths:
@@ -58,7 +60,7 @@ def ensure_queue_dirs(root: Path) -> QueuePaths:
 def enqueue_run(
     root: Path,
     run_id: str,
-    payload: dict[str, Any],
+    payload: QueueItem,
 ) -> Path:
     """Enqueue a run by writing a queue item into pending."""
     paths = ensure_queue_dirs(root)
@@ -74,11 +76,11 @@ def _list_queue(paths: QueuePaths, folder: Path) -> list[Path]:
     return sorted(folder.glob("*.json"), key=lambda p: p.stat().st_mtime)
 
 
-def _read_queue_item(path: Path) -> dict[str, Any]:
+def _read_queue_item(path: Path) -> QueueItem:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _item_str(item: dict[str, Any], key: str) -> str | None:
+def _item_str(item: QueueItem, key: str) -> str | None:
     """Return a required queue item string field when present and non-empty."""
     value = item.get(key)
     if isinstance(value, str):
@@ -87,9 +89,9 @@ def _item_str(item: dict[str, Any], key: str) -> str | None:
     return None
 
 
-def _eligible(root: Path, item: dict[str, Any]) -> bool:
+def _eligible(root: Path, item: QueueItem) -> bool:
     """Return True if no other active run for the same athlete."""
-    athlete_id = item.get("athlete_id")
+    athlete_id = _item_str(item, "athlete_id")
     run_id = item.get("run_id")
     if not athlete_id:
         return False
@@ -121,7 +123,7 @@ def start_queue_scheduler(
     max_num_results: int,
     poll_seconds: int = 2,
     stop_event: threading.Event | None = None,
-) -> dict[str, Any]:
+) -> dict[str, object]:
     """Start a background scheduler that pulls from the queue and runs workers."""
     stop_event = stop_event or threading.Event()
     paths = ensure_queue_dirs(root)

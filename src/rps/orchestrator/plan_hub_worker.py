@@ -197,6 +197,22 @@ def _active_int(run_record: dict[str, Any], key: str) -> int | None:
     return None
 
 
+def _active_str(run_record: dict[str, Any], key: str) -> str | None:
+    """Return a string run-field value when present."""
+    value = run_record.get(key)
+    return value if isinstance(value, str) else None
+
+
+def _active_steps(run_record: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Return mutable step rows from a run record."""
+    if not isinstance(run_record, dict):
+        return []
+    steps = run_record.get("steps")
+    if not isinstance(steps, list):
+        return []
+    return [step for step in steps if isinstance(step, dict)]
+
+
 def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event) -> None:
     """Background worker to update run steps based on artifacts or response status."""
     logger.info("Plan hub worker started run_id=%s athlete=%s", config.run_id, config.athlete_id)
@@ -208,7 +224,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             (r for r in load_runs(config.root, config.athlete_id, limit=50) if r.get("run_id") == config.run_id),
             None,
         )
-        run_log_ref = (active or {}).get("log_ref")
+        run_log_ref = _active_str(active or {}, "log_ref")
     except Exception:
         run_log_ref = None
     handler = _attach_run_logger(run_log_ref)
@@ -216,7 +232,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
     if not acquired_lock:
         records = load_runs(config.root, config.athlete_id, limit=50)
         active = next((r for r in records if r.get("run_id") == config.run_id), None)
-        steps = (active or {}).get("steps") or []
+        steps = _active_steps(active)
         for step in steps:
             if step.get("Status") == "QUEUED":
                 step["Status"] = "BLOCKED"
@@ -252,7 +268,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     {
                         "status": "CANCELLED",
                         "finished_at": datetime.now(timezone.utc).isoformat(),
-                        "summary": _run_summary(active.get("steps") or []),
+                        "summary": _run_summary(_active_steps(active)),
                         "current_step": None,
                     },
                 )
@@ -263,7 +279,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     {"type": "RUN_CANCELLED", "reason": "cancel_requested"},
                 )
                 break
-            steps = active.get("steps") or []
+            steps = _active_steps(active)
             index = _load_index(config.root, config.athlete_id)
             running_found = any(step.get("Status") == "RUNNING" for step in steps)
 
@@ -351,7 +367,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     year=active_year,
                                     week=active_week,
                                     run_id=config.run_id,
-                                    override_text=active.get("override_text"),
+                                    override_text=_active_str(active, "override_text"),
                                     model_resolver=config.model_resolver,
                                     temperature_resolver=config.temperature_resolver,
                                     force_file_search=config.force_file_search,
@@ -372,7 +388,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     year=active_year,
                                     week=active_week,
                                     run_id=config.run_id,
-                                    override_text=active.get("override_text"),
+                                    override_text=_active_str(active, "override_text"),
                                     model_resolver=config.model_resolver,
                                     temperature_resolver=config.temperature_resolver,
                                     force_file_search=config.force_file_search,
@@ -389,7 +405,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     week=active_week,
                                     run_id=config.run_id,
                                     force_steps=[step_id] if step_id else None,
-                                    override_text=active.get("override_text"),
+                                    override_text=_active_str(active, "override_text"),
                                     model_resolver=config.model_resolver,
                                     temperature_resolver=config.temperature_resolver,
                                     reasoning_effort_resolver=config.reasoning_effort_resolver,
@@ -483,7 +499,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
         logger.exception("Plan hub worker failed run_id=%s athlete=%s: %s", config.run_id, config.athlete_id, exc)
         records = load_runs(config.root, config.athlete_id, limit=50)
         active = next((r for r in records if r.get("run_id") == config.run_id), None)
-        steps = (active or {}).get("steps") or []
+        steps = _active_steps(active)
         for step in steps:
             if step.get("Status") == "RUNNING":
                 step["Status"] = "FAILED"

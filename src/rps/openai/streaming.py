@@ -2,19 +2,38 @@
 
 from __future__ import annotations
 
-from typing import Any
 import datetime as dt
+import logging
 from pathlib import Path
 import os
 import re
 import sys
 import time
+from collections.abc import Iterable
+from typing import cast
+
+from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
 
 
-def _get_attr(obj: Any, key: str) -> Any:
+StreamHandlerMap = dict[str, object]
+
+
+def _get_attr(obj: object, key: str) -> object | None:
     if isinstance(obj, dict):
         return obj.get(key)
     return getattr(obj, key, None)
+
+
+def _as_text(value: object | None) -> str:
+    if isinstance(value, str):
+        return value
+    return ""
+
+
+def _as_response(value: object) -> LiteLLMResponse:
+    if isinstance(value, LiteLLMResponse):
+        return value
+    raise RuntimeError("Expected LiteLLMResponse.")
 
 
 def should_stream() -> bool:
@@ -110,11 +129,11 @@ def _rotate_reasoning_log(path: Path, max_bytes: int) -> bool:
 
 
 def create_response(
-    client: Any,
-    payload: dict[str, Any],
-    logger: Any | None,
-    stream_handlers: dict[str, Any] | None = None,
-):
+    client: LiteLLMClient,
+    payload: dict[str, object],
+    logger: logging.Logger | None,
+    stream_handlers: StreamHandlerMap | None = None,
+) -> LiteLLMResponse:
     """Create a response, optionally streaming deltas.
 
     When stream_handlers is provided, deltas are sent to callbacks instead of stdout.
@@ -148,7 +167,7 @@ def create_response(
             return None
         return _parse_retry_seconds(message) or 60.0
 
-    def _create_with_retry(stream: bool):
+    def _create_with_retry(stream: bool) -> object:
         attempts = 0
         retry_count = 1
         multiplier = 2.0
@@ -187,10 +206,10 @@ def create_response(
                 time.sleep(delay)
 
     if payload.get("stream") is False:
-        return _create_with_retry(stream=False)
+        return _as_response(_create_with_retry(stream=False))
 
     if stream_handlers is None and not should_stream():
-        return _create_with_retry(stream=False)
+        return _as_response(_create_with_retry(stream=False))
 
     stream = _create_with_retry(stream=True)
 
@@ -255,18 +274,26 @@ def create_response(
     if stream_handlers is not None:
         show_output = True
 
-    for event in stream:
+    if isinstance(stream, LiteLLMResponse):
+        return stream
+
+    for event in cast(Iterable[object], stream):
         event_type = _get_attr(event, "type")
         if debug_events and logger is not None:
             logger.info("Stream event type=%s", event_type)
-        if debug_file_search and logger is not None and event_type and event_type.startswith("response.file_search_call"):
+        if (
+            debug_file_search
+            and logger is not None
+            and isinstance(event_type, str)
+            and event_type.startswith("response.file_search_call")
+        ):
             logger.info("file_search stream event=%s payload=%s", event_type, event)
 
         if event_type == "response.reasoning_text.delta" and reasoning_mode == "full":
-            delta = _get_attr(event, "delta") or ""
+            delta = _as_text(_get_attr(event, "delta"))
             if delta:
                 _append_reasoning_log(delta)
-                if on_reasoning:
+                if callable(on_reasoning):
                     on_reasoning(delta)
                 elif stream_handlers is None:
                     if not wrote_reasoning_prefix:
@@ -278,10 +305,10 @@ def create_response(
                 saw_full_reasoning = True
                 reasoning_chunks.append(delta)
         elif event_type == "response.reasoning_summary_text.delta":
-            delta = _get_attr(event, "delta") or ""
+            delta = _as_text(_get_attr(event, "delta"))
             if delta and (reasoning_mode == "summary" or (reasoning_mode == "full" and not saw_full_reasoning)):
                 _append_reasoning_log(delta)
-                if on_summary:
+                if callable(on_summary):
                     on_summary(delta)
                 elif stream_handlers is None:
                     if not wrote_reasoning_prefix:
@@ -292,9 +319,9 @@ def create_response(
                 wrote_any = True
                 reasoning_chunks.append(delta)
         elif event_type == "response.output_text.delta" and show_output:
-            delta = _get_attr(event, "delta") or ""
+            delta = _as_text(_get_attr(event, "delta"))
             if delta:
-                if on_output:
+                if callable(on_output):
                     on_output(delta)
                 elif stream_handlers is None:
                     if not wrote_output_prefix:
@@ -306,11 +333,11 @@ def create_response(
         elif event_type == "response.output_item.delta":
             delta_obj = _get_attr(event, "delta")
             delta_type = _get_attr(delta_obj, "type")
-            delta_text = _get_attr(delta_obj, "text") or ""
+            delta_text = _as_text(_get_attr(delta_obj, "text"))
             if delta_type == "reasoning" and reasoning_mode != "none":
                 if delta_text:
                     _append_reasoning_log(delta_text)
-                    if on_reasoning:
+                    if callable(on_reasoning):
                         on_reasoning(delta_text)
                     elif stream_handlers is None:
                         if not wrote_reasoning_prefix:
@@ -322,7 +349,7 @@ def create_response(
                     reasoning_chunks.append(delta_text)
             elif delta_type == "text" and show_output:
                 if delta_text:
-                    if on_output:
+                    if callable(on_output):
                         on_output(delta_text)
                     elif stream_handlers is None:
                         if not wrote_output_prefix:
@@ -363,4 +390,4 @@ def create_response(
 
     if final_response is None:
         raise RuntimeError("Streaming response ended without response.completed.")
-    return final_response
+    return _as_response(final_response)

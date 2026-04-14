@@ -198,8 +198,10 @@ def _planning_block_reason(root: Path, athlete_id: str, desired_subtype: str) ->
         return None
     desired_priority = _planning_priority(desired_subtype)
     for run in active:
-        active_subtype = run.get("process_subtype") or "unknown"
-        run_id = run.get("run_id") or "—"
+        raw_active_subtype = run.get("process_subtype")
+        active_subtype = raw_active_subtype if isinstance(raw_active_subtype, str) and raw_active_subtype else "unknown"
+        raw_run_id = run.get("run_id")
+        run_id = raw_run_id if isinstance(raw_run_id, str) and raw_run_id else "—"
         if active_subtype == desired_subtype:
             return (
                 f"{desired_subtype.replace('_', ' ').title()} is already running "
@@ -1946,7 +1948,8 @@ if active_run:
             selected_filter = st.selectbox("Filter", options=filter_options, index=default_index)
             event_rows = []
             for event in events:
-                event_type = event.get("type") or ""
+                raw_event_type = event.get("type")
+                event_type = raw_event_type if isinstance(raw_event_type, str) else ""
                 if selected_filter == "STEP_*" and not event_type.startswith("STEP_"):
                     continue
                 if selected_filter == "RUN_*" and not event_type.startswith("RUN_"):

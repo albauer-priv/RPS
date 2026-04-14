@@ -8,12 +8,17 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 
 logger = logging.getLogger(__name__)
 
 ACTIVE_RUN_STATUSES = {"QUEUED", "RUNNING"}
+JsonMap = dict[str, object]
+JsonList = list[object]
+JsonPayload = JsonMap | JsonList
+RunRecord = dict[str, object]
+RunEvent = dict[str, object]
 
 @dataclass(frozen=True)
 class RunStoreConfig:
@@ -62,7 +67,7 @@ def _utc_timestamp() -> str:
     return _utc_iso_now()
 
 
-def _atomic_write_json(path: Path, payload: dict | list) -> None:
+def _atomic_write_json(path: Path, payload: JsonPayload) -> None:
     """Write JSON atomically to avoid partial reads."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -70,7 +75,7 @@ def _atomic_write_json(path: Path, payload: dict | list) -> None:
     os.replace(tmp_path, path)
 
 
-def _load_run_dir(root: Path, athlete_id: str, run_id: str) -> dict[str, Any] | None:
+def _load_run_dir(root: Path, athlete_id: str, run_id: str) -> RunRecord | None:
     """Load a run.json + steps.json for a run."""
     run_path = run_json_path(root, athlete_id, run_id)
     if not run_path.exists():
@@ -89,9 +94,15 @@ def _load_run_dir(root: Path, athlete_id: str, run_id: str) -> dict[str, Any] | 
     return run_record
 
 
-def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
+def _run_created_at(record: RunRecord) -> str:
+    """Return a sortable created_at value for a run record."""
+    created_at = record.get("created_at")
+    return created_at if isinstance(created_at, str) else ""
+
+
+def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[RunRecord]:
     """Load run records from per-run directories."""
-    records: list[dict[str, Any]] = []
+    records: list[RunRecord] = []
     run_root = _run_store_dir(root, athlete_id)
     if run_root.exists():
         for run_path in run_root.iterdir():
@@ -100,7 +111,7 @@ def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[dict[str,
             record = _load_run_dir(root, athlete_id, run_path.name)
             if record:
                 records.append(record)
-    records.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    records.sort(key=_run_created_at, reverse=True)
     return records[:limit]
 
 
@@ -111,11 +122,11 @@ def find_active_runs(
     process_type: str | None = None,
     process_subtype: str | None = None,
     statuses: set[str] | None = None,
-) -> list[dict[str, Any]]:
+) -> list[RunRecord]:
     """Return active runs optionally filtered by type/subtype."""
     active_statuses = statuses or ACTIVE_RUN_STATUSES
     runs = load_runs(root, athlete_id, limit=200)
-    results: list[dict[str, Any]] = []
+    results: list[RunRecord] = []
     for run in runs:
         if run.get("status") not in active_statuses:
             continue
@@ -138,11 +149,11 @@ def has_active_run(
     return bool(find_active_runs(root, athlete_id, process_type=process_type, process_subtype=process_subtype))
 
 
-def append_run(root: Path, athlete_id: str, record: dict[str, Any]) -> None:
+def append_run(root: Path, athlete_id: str, record: RunRecord) -> None:
     """Write a run.json + steps.json for the run (append-only)."""
     record = dict(record)
     run_id = record.get("run_id")
-    if not run_id:
+    if not isinstance(run_id, str) or not run_id:
         raise ValueError("run_id is required")
     record.setdefault("created_at", _utc_iso_now())
     steps = record.pop("steps", None)
@@ -152,10 +163,10 @@ def append_run(root: Path, athlete_id: str, record: dict[str, Any]) -> None:
     _atomic_write_json(run_path, record)
     if steps is not None:
         steps_path = steps_json_path(root, athlete_id, run_id)
-        _atomic_write_json(steps_path, steps)
+        _atomic_write_json(steps_path, cast(JsonPayload, steps))
 
 
-def update_run(root: Path, athlete_id: str, run_id: str, updates: dict[str, Any]) -> bool:
+def update_run(root: Path, athlete_id: str, run_id: str, updates: RunRecord) -> bool:
     """Update a run record in-place; returns True if updated."""
     run_path = run_json_path(root, athlete_id, run_id)
     if not run_path.exists():
@@ -164,17 +175,18 @@ def update_run(root: Path, athlete_id: str, run_id: str, updates: dict[str, Any]
         record = json.loads(run_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
-    steps = updates.pop("steps", None)
-    record.update(updates)
+    update_data = dict(updates)
+    steps = update_data.pop("steps", None)
+    record.update(update_data)
     logger.info("Updating run record run_id=%s athlete=%s", run_id, athlete_id)
     _atomic_write_json(run_path, record)
     if steps is not None:
         steps_path = steps_json_path(root, athlete_id, run_id)
-        _atomic_write_json(steps_path, steps)
+        _atomic_write_json(steps_path, cast(JsonPayload, steps))
     return True
 
 
-def append_event(root: Path, athlete_id: str, run_id: str, event: dict[str, Any]) -> None:
+def append_event(root: Path, athlete_id: str, run_id: str, event: RunEvent) -> None:
     """Append an event to the run events.jsonl."""
     path = events_jsonl_path(root, athlete_id, run_id)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -248,7 +260,7 @@ def start_background_run(
 ) -> str:
     """Create a run store record for a background process."""
     run_id = f"bg_{process_type}_{process_subtype}_{_utc_run_id_suffix()}"
-    record = {
+    record: RunRecord = {
         "run_id": run_id,
         "status": status,
         "mode": "BACKGROUND",
@@ -337,12 +349,12 @@ def release_athlete_lock(root: Path, athlete_id: str) -> None:
         lock_path.unlink()
 
 
-def load_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -> list[dict[str, Any]]:
+def load_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -> list[RunEvent]:
     """Load run events from events.jsonl."""
     path = events_jsonl_path(root, athlete_id, run_id)
     if not path.exists():
         return []
-    events: list[dict[str, Any]] = []
+    events: list[RunEvent] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue

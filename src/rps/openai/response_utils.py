@@ -2,24 +2,24 @@
 
 from __future__ import annotations
 
-from typing import Any
+from rps.openai.litellm_runtime import LiteLLMResponse
 
 
-def _item_type(item: Any) -> str | None:
+def _item_type(item: object) -> str | None:
     """Return the type field for a response output item."""
     if isinstance(item, dict):
         return item.get("type")
     return getattr(item, "type", None)
 
 
-def _item_field(item: Any, name: str) -> Any:
+def _item_field(item: object, name: str) -> object | None:
     """Safely read a field from a response output item."""
     if isinstance(item, dict):
         return item.get(name)
     return getattr(item, name, None)
 
 
-def extract_reasoning_summaries(response: Any) -> list[str]:
+def extract_reasoning_summaries(response: LiteLLMResponse) -> list[str]:
     """Return any reasoning summaries from a response output."""
     summaries: list[str] = []
     for item in getattr(response, "output", []) or []:
@@ -35,14 +35,14 @@ def extract_reasoning_summaries(response: Any) -> list[str]:
     return summaries
 
 
-def extract_file_search_results(response: Any) -> list[dict[str, Any]]:
+def extract_file_search_results(response: LiteLLMResponse) -> list[dict[str, object]]:
     """Return any file_search results from a response output."""
-    items: list[dict[str, Any]] = []
+    items: list[dict[str, object]] = []
     for item in getattr(response, "output", []) or []:
         if _item_type(item) not in ("file_search", "file_search_call"):
             continue
         results = _item_field(item, "results") or []
-        if not results:
+        if not isinstance(results, list) or not results:
             continue
         for result in results:
             items.append(
@@ -55,7 +55,7 @@ def extract_file_search_results(response: Any) -> list[dict[str, Any]]:
     return items
 
 
-def extract_text_output(response: Any) -> str:
+def extract_text_output(response: LiteLLMResponse) -> str:
     """Return any assistant text content from a response output."""
     chunks: list[str] = []
     for item in getattr(response, "output", []) or []:
@@ -66,6 +66,8 @@ def extract_text_output(response: Any) -> str:
             continue
         if isinstance(content, str):
             chunks.append(content)
+            continue
+        if not isinstance(content, list):
             continue
         for part in content:
             if isinstance(part, dict):

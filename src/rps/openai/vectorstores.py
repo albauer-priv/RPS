@@ -7,7 +7,7 @@ from pathlib import Path
 import hashlib
 import os
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -27,6 +27,12 @@ _ATTRIBUTE_ALLOWLIST = [
     "applies_to",
     "tags",
 ]
+
+AttributeMap = dict[str, str]
+RemoteIndexEntry = dict[str, object]
+ChunkPayload = dict[str, object]
+FrontMatter = dict[str, object]
+ChunkRecord = dict[str, str | ChunkPayload]
 
 
 @dataclass(frozen=True)
@@ -114,7 +120,7 @@ def compute_manifest_hash(manifest_path: Path) -> str:
     return digest.hexdigest()
 
 
-def _extract_front_matter(text: str) -> dict[str, Any] | None:
+def _extract_front_matter(text: str) -> FrontMatter | None:
     lines = text.splitlines()
     if not lines:
         return None
@@ -137,7 +143,7 @@ def _extract_front_matter(text: str) -> dict[str, Any] | None:
     return None
 
 
-def _join_list(values: Any) -> str | None:
+def _join_list(values: object) -> str | None:
     if not values:
         return None
     if isinstance(values, list):
@@ -149,7 +155,7 @@ def _join_list(values: Any) -> str | None:
     return "|".join(items)
 
 
-def _format_dependency(item: Any) -> str | None:
+def _format_dependency(item: object) -> str | None:
     if not isinstance(item, dict):
         text_value = str(item).strip()
         return text_value or None
@@ -163,17 +169,17 @@ def _format_dependency(item: Any) -> str | None:
     return None
 
 
-def _flatten_header_attributes(header: dict[str, Any]) -> dict[str, str]:
-    attrs: dict[str, str] = {}
+def _flatten_header_attributes(header: FrontMatter) -> AttributeMap:
+    attrs: AttributeMap = {}
 
-    def add(key: str, value: Any) -> None:
+    def add(key: str, value: object) -> None:
         if value is None:
             return
         text = str(value).strip()
         if text:
             attrs[key] = text
 
-    def add_list(key: str, value: Any) -> None:
+    def add_list(key: str, value: object) -> None:
         joined = _join_list(value)
         if joined:
             attrs[key] = joined
@@ -230,10 +236,10 @@ def _resolve_qdrant_vector_size(collection_info: Any) -> int | None:
     return getattr(vectors, "size", None)
 
 
-def _trim_attributes(attrs: dict[str, Any]) -> dict[str, Any]:
+def _trim_attributes(attrs: AttributeMap) -> AttributeMap:
     if len(attrs) <= _MAX_ATTRIBUTE_KEYS:
         return attrs
-    trimmed: dict[str, Any] = {}
+    trimmed: AttributeMap = {}
     for key in _ATTRIBUTE_ALLOWLIST:
         if key in attrs:
             trimmed[key] = attrs[key]
@@ -272,14 +278,14 @@ def _build_local_index(
     manifest: Manifest,
     reset: bool,
     client: Any | None = None,
-) -> tuple[str, dict[str, dict[str, Any]], dict[str, int]]:
+) -> tuple[str, dict[str, RemoteIndexEntry], dict[str, int]]:
     """(Re)build a local Qdrant collection for a manifest."""
     client = client or get_qdrant_client()
     config = resolve_embedding_config()
     collection = manifest.vector_store_name
 
-    chunks: list[dict[str, Any]] = []
-    remote_index: dict[str, dict[str, Any]] = {}
+    chunks: list[ChunkRecord] = []
+    remote_index: dict[str, RemoteIndexEntry] = {}
     stats = {"added": 0, "updated": 0, "removed": 0, "skipped": 0}
 
     for source in manifest.sources:
@@ -336,7 +342,7 @@ def _build_local_index(
         batch_size = 32
 
     first_batch = chunks[:batch_size]
-    first_vectors = embed_texts([item["text"] for item in first_batch], config)
+    first_vectors = embed_texts([cast(str, item["text"]) for item in first_batch], config)
     if not first_vectors:
         raise RuntimeError("Embedding model returned no vectors.")
 
@@ -364,9 +370,13 @@ def _build_local_index(
                 vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
 
-    def _upsert(batch: list[dict[str, Any]], vectors: list[list[float]]) -> None:
+    def _upsert(batch: list[ChunkRecord], vectors: list[list[float]]) -> None:
         points = [
-            PointStruct(id=item["id"], vector=vector, payload=item["payload"])
+            PointStruct(
+                id=str(item["id"]),
+                vector=vector,
+                payload=cast(dict[str, Any], item["payload"]),
+            )
             for item, vector in zip(batch, vectors)
         ]
         client.upsert(collection_name=collection, points=points, wait=True)
@@ -374,7 +384,7 @@ def _build_local_index(
     _upsert(first_batch, first_vectors)
     for idx in range(batch_size, len(chunks), batch_size):
         batch = chunks[idx : idx + batch_size]
-        vectors = embed_texts([item["text"] for item in batch], config)
+        vectors = embed_texts([cast(str, item["text"]) for item in batch], config)
         _upsert(batch, vectors)
 
     return collection, remote_index, stats
