@@ -8,7 +8,7 @@ import logging
 import json
 from pathlib import Path
 import re
-from typing import Any, cast
+from typing import cast
 
 from rps.agents.tasks import OutputSpec
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -21,6 +21,10 @@ from rps.workspace.types import ArtifactType
 from rps.workspace.versioning import derive_version_key_from_envelope, normalize_week_version_key, normalize_version_key
 from rps.workspace.local_store import LocalArtifactStore
 from rps.rendering.auto_render import render_sidecar
+
+JsonMap = dict[str, object]
+StringListMap = dict[str, list[str]]
+StoreResult = dict[str, object]
 
 
 class MissingDependenciesError(RuntimeError):
@@ -96,6 +100,18 @@ class GuardedValidatedStore:
         cleaned = re.sub(r"[^a-z0-9]+", " ", value.lower())
         return " ".join(cleaned.split())
 
+    def _as_map(self, value: object) -> JsonMap:
+        """Return a JSON object mapping when the value is a dict."""
+        return value if isinstance(value, dict) else {}
+
+    def _as_list(self, value: object) -> list[object]:
+        """Return a JSON array when the value is a list."""
+        return value if isinstance(value, list) else []
+
+    def _as_string_list(self, value: object) -> list[str]:
+        """Return stringified non-empty entries from a list-like value."""
+        return [str(item).strip() for item in self._as_list(value) if str(item).strip()]
+
     def _normalize_payload(self, payload: object) -> str:
         """Normalize a payload into a searchable text blob."""
         try:
@@ -118,38 +134,22 @@ class GuardedValidatedStore:
                 items.append(self._normalize_text(text))
         return items
 
-    def _season_constraints(self, season_plan: dict[str, Any]) -> dict[str, list[str]]:
+    def _season_constraints(self, season_plan: JsonMap) -> StringListMap:
         """Collect season plan constraints for propagation checks."""
-        data = season_plan.get("data", {})
-        global_constraints = data.get("global_constraints", {})
-        availability = [
-            str(item).strip()
-            for item in (global_constraints.get("availability_assumptions") or [])
-            if str(item).strip()
-        ]
-        risks = [
-            str(item).strip()
-            for item in (global_constraints.get("risk_constraints") or [])
-            if str(item).strip()
-        ]
-        planned = [
-            str(item).strip()
-            for item in (global_constraints.get("planned_event_windows") or [])
-            if str(item).strip()
-        ]
-        recovery = global_constraints.get("recovery_protection") or {}
-        fixed_days = [
-            str(item).strip()
-            for item in (recovery.get("fixed_rest_days") or [])
-            if str(item).strip()
-        ]
+        data = self._as_map(season_plan.get("data"))
+        global_constraints = self._as_map(data.get("global_constraints"))
+        availability = self._as_string_list(global_constraints.get("availability_assumptions"))
+        risks = self._as_string_list(global_constraints.get("risk_constraints"))
+        planned = self._as_string_list(global_constraints.get("planned_event_windows"))
+        recovery = self._as_map(global_constraints.get("recovery_protection"))
+        fixed_days = self._as_string_list(recovery.get("fixed_rest_days"))
         raw_notes = recovery.get("notes")
         if isinstance(raw_notes, str):
             notes = [raw_notes.strip()] if raw_notes.strip() else []
         else:
             notes = [
                 str(item).strip()
-                for item in (raw_notes or [])
+                for item in self._as_list(raw_notes)
                 if str(item).strip()
             ]
         return {
@@ -167,10 +167,11 @@ class GuardedValidatedStore:
             return None
         return match.group(1), match.group(2).upper()
 
-    def _guardrails_event_pairs(self, document: dict[str, Any]) -> set[tuple[str, str]]:
+    def _guardrails_event_pairs(self, document: JsonMap) -> set[tuple[str, str]]:
         """Return `(date, type)` pairs from guardrails event constraints."""
-        data = document.get("data", {})
-        events = ((data.get("events_constraints") or {}).get("events") or [])
+        data = self._as_map(document.get("data"))
+        events_constraints = self._as_map(data.get("events_constraints"))
+        events = self._as_list(events_constraints.get("events"))
         pairs: set[tuple[str, str]] = set()
         for event in events:
             if not isinstance(event, dict):
@@ -200,7 +201,7 @@ class GuardedValidatedStore:
     def _load_phase_guardrails_for_range(
         self,
         expected_range: object,
-    ) -> tuple[dict[str, Any], str]:
+    ) -> tuple[JsonMap, str]:
         """Load the phase guardrails matching the expected range."""
         range_spec = envelope_week_range({"meta": {"iso_week_range": expected_range}})
         if range_spec:
@@ -229,7 +230,7 @@ class GuardedValidatedStore:
     def _load_phase_structure_for_range(
         self,
         expected_range: object,
-    ) -> tuple[dict[str, Any], str]:
+    ) -> tuple[JsonMap, str]:
         """Load the phase structure matching the expected range."""
         range_spec = envelope_week_range({"meta": {"iso_week_range": expected_range}})
         if range_spec:
@@ -257,19 +258,20 @@ class GuardedValidatedStore:
 
     def _enforce_phase_guardrails_constraints(
         self,
-        document: dict[str, Any],
-        season_plan: dict[str, Any],
+        document: JsonMap,
+        season_plan: JsonMap,
     ) -> None:
         """Ensure season plan constraints are propagated into phase guardrails."""
         constraints = self._season_constraints(season_plan)
-        data = document.get("data", {})
+        data = self._as_map(document.get("data"))
         blob = self._normalize_payload(data)
         guardrails_events = self._guardrails_event_pairs(document)
-        phase_summary = data.get("phase_summary", {})
+        phase_summary = self._as_map(data.get("phase_summary"))
         non_negotiables = self._normalized_string_list(phase_summary.get("non_negotiables"))
         key_risks = self._normalized_string_list(phase_summary.get("key_risks_warnings"))
+        execution_non_negotiables = self._as_map(data.get("execution_non_negotiables"))
         recovery_rules = self._normalize_text(
-            str(((data.get("execution_non_negotiables") or {}).get("recovery_protection_rules") or "")).strip()
+            str(execution_non_negotiables.get("recovery_protection_rules") or "").strip()
         )
         errors: list[str] = []
 
@@ -317,13 +319,14 @@ class GuardedValidatedStore:
 
     def _enforce_phase_structure_constraints(
         self,
-        document: dict[str, Any],
-        season_plan: dict[str, Any],
+        document: JsonMap,
+        season_plan: JsonMap,
     ) -> None:
         """Ensure season plan constraints and load ranges are propagated into execution arch."""
         constraints = self._season_constraints(season_plan)
-        data = document.get("data", {})
-        upstream_constraints = data.get("upstream_intent", {}).get("constraints", [])
+        data = self._as_map(document.get("data"))
+        upstream_intent = self._as_map(data.get("upstream_intent"))
+        upstream_constraints = self._as_list(upstream_intent.get("constraints"))
         upstream_blob = self._normalize_text(" ".join(str(item) for item in upstream_constraints))
         upstream_items = self._normalized_string_list(upstream_constraints)
         errors: list[str] = []
@@ -345,30 +348,38 @@ class GuardedValidatedStore:
                 errors.append(f"Season plan planned_event_windows missing in upstream_intent.constraints: {item}")
 
         fixed_days = constraints["fixed_days"]
-        exec_days = (
-            data.get("execution_principles", {})
-            .get("recovery_protection", {})
-            .get("fixed_non_training_days", [])
-        )
+        execution_principles = self._as_map(data.get("execution_principles"))
+        recovery_protection = self._as_map(execution_principles.get("recovery_protection"))
+        exec_days = self._as_string_list(recovery_protection.get("fixed_non_training_days"))
         if fixed_days:
             if sorted(exec_days) != sorted(fixed_days):
                 errors.append(
                     "fixed_non_training_days must match season plan fixed_rest_days."
                 )
 
-        load_ranges = data.get("load_ranges", {})
-        expected_range = document.get("meta", {}).get("iso_week_range")
+        load_ranges = self._as_map(data.get("load_ranges"))
+        meta = self._as_map(document.get("meta"))
+        expected_range = meta.get("iso_week_range")
         try:
             phase_guardrails, bg_version_key = self._load_phase_guardrails_for_range(expected_range)
         except MissingDependenciesError as exc:
             raise SchemaValidationError("Season plan constraint propagation failed", [str(exc)]) from exc
 
-        bg_guardrails = phase_guardrails.get("data", {}).get("load_guardrails", {})
+        phase_guardrails_data = self._as_map(phase_guardrails.get("data"))
+        bg_guardrails = self._as_map(phase_guardrails_data.get("load_guardrails"))
         for label in ("weekly_kj_bands",):
-            expected = bg_guardrails.get(label) or []
-            actual = load_ranges.get(label) or []
-            expected_map = {entry.get("week"): entry.get("band") for entry in expected}
-            actual_map = {entry.get("week"): entry.get("band") for entry in actual}
+            expected = self._as_list(bg_guardrails.get(label))
+            actual = self._as_list(load_ranges.get(label))
+            expected_map = {
+                entry.get("week"): entry.get("band")
+                for entry in expected
+                if isinstance(entry, dict)
+            }
+            actual_map = {
+                entry.get("week"): entry.get("band")
+                for entry in actual
+                if isinstance(entry, dict)
+            }
             if expected_map != actual_map:
                 errors.append(f"load_ranges.{label} must match phase_guardrails.{label}.")
 
@@ -384,10 +395,11 @@ class GuardedValidatedStore:
 
     def _enforce_phase_preview_traceability(
         self,
-        document: dict[str, Any],
+        document: JsonMap,
     ) -> None:
         """Ensure execution preview references phase structure."""
-        expected_range = document.get("meta", {}).get("iso_week_range")
+        meta = self._as_map(document.get("meta"))
+        expected_range = meta.get("iso_week_range")
         try:
             _, arch_version_key = self._load_phase_structure_for_range(expected_range)
         except MissingDependenciesError as exc:
@@ -397,11 +409,9 @@ class GuardedValidatedStore:
             f"{ARTIFACT_PATHS[ArtifactType.PHASE_STRUCTURE].filename_prefix}_"
             f"{arch_version_key}.json"
         )
-        derived_from = (
-            document.get("data", {})
-            .get("traceability", {})
-            .get("derived_from", [])
-        )
+        data = self._as_map(document.get("data"))
+        traceability = self._as_map(data.get("traceability"))
+        derived_from = self._as_string_list(traceability.get("derived_from"))
         if expected_arch not in derived_from:
             raise SchemaValidationError(
                 "Preview traceability failed",
@@ -410,8 +420,8 @@ class GuardedValidatedStore:
 
     def _ensure_phase_range_matches_plan(
         self,
-        document: dict[str, Any],
-        season_plan_doc: dict[str, Any],
+        document: JsonMap,
+        season_plan_doc: JsonMap,
     ) -> None:
         """Normalize phase iso_week_range to the covering season plan phase."""
         range_spec = envelope_week_range(document)
@@ -431,13 +441,16 @@ class GuardedValidatedStore:
                 phase_info.phase_id or phase_info.phase_name or "unknown",
             )
             meta = document.setdefault("meta", {})
+            if not isinstance(meta, dict):
+                meta = {}
+                document["meta"] = meta
             meta["iso_week_range"] = phase_info.phase_range.key
 
     def _round_numeric_fields(
         self,
         value: object,
-        schema_node: dict[str, Any] | None,
-        root_schema: dict[str, Any],
+        schema_node: JsonMap | None,
+        root_schema: JsonMap,
         path: list[str] | None = None,
     ) -> object:
         """Apply consistent rounding to numeric values using schema hints when possible."""
@@ -447,7 +460,7 @@ class GuardedValidatedStore:
         def _joined_path(keys: list[str]) -> str:
             return "_".join(keys).lower()
 
-        def _resolve_schema(node: dict[str, Any] | None) -> dict[str, Any] | None:
+        def _resolve_schema(node: JsonMap | None) -> JsonMap | None:
             if not isinstance(node, dict):
                 return None
             ref = node.get("$ref")
@@ -476,7 +489,7 @@ class GuardedValidatedStore:
         if isinstance(value, dict):
             props = schema_node.get("properties") if isinstance(schema_node, dict) else None
             additional = schema_node.get("additionalProperties") if isinstance(schema_node, dict) else None
-            rounded: dict[str, Any] = {}
+            rounded: JsonMap = {}
             for k, v in value.items():
                 child_schema = None
                 if isinstance(props, dict) and k in props:
@@ -492,7 +505,8 @@ class GuardedValidatedStore:
             return rounded
 
         if isinstance(value, list):
-            items_schema = schema_node.get("items") if isinstance(schema_node, dict) else None
+            raw_items_schema = schema_node.get("items") if isinstance(schema_node, dict) else None
+            items_schema = raw_items_schema if isinstance(raw_items_schema, dict) else None
             return [
                 self._round_numeric_fields(item, items_schema, root_schema, path)
                 for item in value
@@ -539,7 +553,7 @@ class GuardedValidatedStore:
                 return round(float(value), decimals)
         return value
 
-    def _apply_rounding(self, document: object, schema: dict[str, Any]) -> object:
+    def _apply_rounding(self, document: object, schema: JsonMap) -> object:
         """Round numeric values on the document before validation/storage."""
         return self._round_numeric_fields(document, schema, schema, [])
 
@@ -551,7 +565,7 @@ class GuardedValidatedStore:
         run_id: str,
         producer_agent: str,
         update_latest: bool = True,
-    ) -> dict[str, Any]:
+    ) -> StoreResult:
         """Validate, derive version key, and persist a document with guards."""
         target = output_spec.artifact_type
         raw_document = document
@@ -573,18 +587,18 @@ class GuardedValidatedStore:
                 if isinstance(document.get("meta"), dict) and "data_confidence" not in document["meta"]:
                     document["meta"]["data_confidence"] = "UNKNOWN"
                 document = self._apply_rounding(document, schema)
-                envelope_document = cast(dict[str, Any], document)
+                envelope_document = cast(JsonMap, document)
                 validate_or_raise(validator, envelope_document)
                 version_key = derive_version_key_from_envelope(envelope_document, target)
             else:
                 document = self._apply_rounding(document, schema)
-                validate_or_raise(validator, cast(dict[str, Any], document))
+                validate_or_raise(validator, cast(JsonMap, document))
                 version_key = "raw"
             if target == ArtifactType.INTERVALS_WORKOUTS:
                 version_key = self._derive_intervals_version_key(document)
             version_key = normalize_version_key(version_key, artifact_type=target)
 
-            season_plan_doc: dict[str, Any] | None = None
+            season_plan_doc: JsonMap | None = None
             if target in (
                 ArtifactType.PHASE_GUARDRAILS,
                 ArtifactType.PHASE_STRUCTURE,
@@ -592,18 +606,18 @@ class GuardedValidatedStore:
                 ArtifactType.PHASE_FEED_FORWARD,
             ):
                 season_plan_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
-                self._ensure_phase_range_matches_plan(cast(dict[str, Any], document), season_plan_doc)
+                self._ensure_phase_range_matches_plan(cast(JsonMap, document), season_plan_doc)
             if target in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE):
                 if season_plan_doc is None:
                     season_plan_doc = self.store.load_latest(
                         self.athlete_id, ArtifactType.SEASON_PLAN
                     )
                 if target == ArtifactType.PHASE_GUARDRAILS:
-                    self._enforce_phase_guardrails_constraints(cast(dict[str, Any], document), season_plan_doc)
+                    self._enforce_phase_guardrails_constraints(cast(JsonMap, document), season_plan_doc)
                 else:
-                    self._enforce_phase_structure_constraints(cast(dict[str, Any], document), season_plan_doc)
+                    self._enforce_phase_structure_constraints(cast(JsonMap, document), season_plan_doc)
             elif target == ArtifactType.PHASE_PREVIEW:
-                self._enforce_phase_preview_traceability(cast(dict[str, Any], document))
+                self._enforce_phase_preview_traceability(cast(JsonMap, document))
 
             path = self.store.save_document(
                 athlete_id=self.athlete_id,

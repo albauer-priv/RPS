@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable, Any
+from typing import Callable
 
 from rps.agents.multi_output_runner import AgentRuntime
 from rps.orchestrator.plan_week import plan_week
@@ -18,6 +18,8 @@ from rps.orchestrator.plan_week import create_performance_report
 
 logger = logging.getLogger(__name__)
 
+ActionResult = dict[str, object]
+
 
 def execute_season_scenarios(
     runtime_for: Callable[[str], AgentRuntime],
@@ -31,7 +33,7 @@ def execute_season_scenarios(
     temperature_resolver: Callable[[str], float | None] | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
-) -> dict[str, Any]:
+) -> ActionResult:
     """Run Season Scenarios agent."""
     return create_season_scenarios(
         runtime_for,
@@ -47,7 +49,7 @@ def execute_season_scenarios(
     )
 
 
-def execute_scenario_selection(*_args, **_kwargs) -> dict[str, Any]:
+def execute_scenario_selection(*_args: object, **_kwargs: object) -> ActionResult:
     """Scenario selection is manual (performed on Season page)."""
     return {"ok": False, "error": "Scenario selection is manual. Use the Season page."}
 
@@ -64,7 +66,7 @@ def execute_season_plan(
     temperature_resolver: Callable[[str], float | None] | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
-) -> dict[str, Any]:
+) -> ActionResult:
     """Run Season Plan agent."""
     return create_season_plan(
         runtime_for,
@@ -96,7 +98,7 @@ def execute_plan_week(
     reasoning_summary_resolver: Callable[[str], str | None] | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
-) -> dict[str, Any]:
+) -> ActionResult:
     """Run the plan-week orchestrator (phase + week + export)."""
     result = plan_week(
         runtime_for("season_planner"),
@@ -123,7 +125,7 @@ def execute_performance_report(
     year: int,
     week: int,
     run_id: str,
-) -> dict[str, Any]:
+) -> ActionResult:
     """Run the performance report generation."""
     result = create_performance_report(
         runtime_for,
@@ -143,7 +145,7 @@ def execute_post_intervals(
     week: int,
     run_id: str,
     allow_delete: bool,
-) -> dict[str, Any]:
+) -> ActionResult:
     """Create idempotent posting receipts for Intervals workouts."""
     result = post_to_intervals_commit(
         store,

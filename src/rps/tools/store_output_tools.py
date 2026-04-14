@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
 
 from rps.agents.tasks import OutputSpec
 from rps.schemas.bundler import SchemaBundler
 
+ToolDef = dict[str, object]
+StoreResult = dict[str, object]
 
-def build_strict_store_tool(bundler: SchemaBundler, spec: OutputSpec) -> dict[str, Any]:
+
+def build_strict_store_tool(bundler: SchemaBundler, spec: OutputSpec) -> ToolDef:
     """Build a strict function tool schema for storing output."""
     bundled_schema = bundler.bundle(spec.schema_file)
 
@@ -40,4 +43,4 @@ class StoreToolContext:
     athlete_id: str
     run_id: str
     producer_agent: str
-    guard_put_validated: Callable[[str, Any, OutputSpec], dict[str, Any]]
+    guard_put_validated: Callable[..., StoreResult]

@@ -381,10 +381,15 @@ def run_agent_multi_output(
 
     bundler = SchemaBundler(runtime.schema_dir)
     store_tools = [build_strict_store_tool(bundler, spec) for spec in output_specs]
-    store_tools_by_name = {}
+    store_tools_by_name: dict[str, ToolDef] = {}
     for tool in store_tools:
-        name = tool.get("name") or tool.get("function", {}).get("name")
-        if name:
+        name = tool.get("name")
+        if not isinstance(name, str):
+            function_def = tool.get("function")
+            if isinstance(function_def, dict):
+                function_name = function_def.get("name")
+                name = function_name if isinstance(function_name, str) else None
+        if isinstance(name, str) and name:
             store_tools_by_name[name] = tool
 
     read_ctx = ReadToolContext(athlete_id=athlete_id, workspace_root=runtime.workspace_root, agent_name=agent_name)

@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 from rps.agents.multi_output_runner import AgentRuntime
 from rps.core.logging import DailySizeRotatingFileHandler
@@ -22,6 +22,7 @@ from rps.orchestrator.plan_hub_actions import (
     execute_season_scenarios,
 )
 from rps.ui.run_store import (
+    RunRecord,
     acquire_athlete_lock,
     append_event,
     load_runs,
@@ -33,6 +34,10 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
+
+StepRecord = dict[str, object]
+IndexRecord = dict[str, object]
+WorkerHandle = dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -52,6 +57,30 @@ class PlanHubWorkerConfig:
     allow_delete_intervals: bool
 
 
+def _step_str(step: StepRecord, key: str) -> str | None:
+    """Return a string field from a step record when present."""
+    value = step.get(key)
+    return value if isinstance(value, str) else None
+
+
+def _step_list(step: StepRecord, key: str) -> list[object]:
+    """Return a list field from a step record when present."""
+    value = step.get(key)
+    return value if isinstance(value, list) else []
+
+
+def _artefact_versions(index: IndexRecord, artifact_type: ArtifactType) -> dict[str, object]:
+    """Return version records for one artefact type from the workspace index."""
+    artefacts = index.get("artefacts")
+    if not isinstance(artefacts, dict):
+        return {}
+    entry = artefacts.get(artifact_type.value)
+    if not isinstance(entry, dict):
+        return {}
+    versions = entry.get("versions")
+    return versions if isinstance(versions, dict) else {}
+
+
 def _poll_response_status(response_id: str) -> str | None:
     """Poll OpenAI response status for a background response."""
     try:
@@ -68,10 +97,10 @@ def _poll_response_status(response_id: str) -> str | None:
         return None
 
 
-def _set_duration(step: dict[str, Any]) -> None:
+def _set_duration(step: StepRecord) -> None:
     """Set duration for a step if started/ended timestamps exist."""
-    started = step.get("Started")
-    ended = step.get("Ended")
+    started = _step_str(step, "Started")
+    ended = _step_str(step, "Ended")
     if not started or not ended:
         return
     try:
@@ -83,7 +112,7 @@ def _set_duration(step: dict[str, Any]) -> None:
     step["Duration"] = f"{max(seconds, 0)}s"
 
 
-def _run_summary(steps: list[dict[str, Any]]) -> dict[str, int]:
+def _run_summary(steps: list[StepRecord]) -> dict[str, int]:
     done = sum(1 for step in steps if step.get("Status") == "DONE")
     failed = sum(1 for step in steps if step.get("Status") == "FAILED")
     outputs = sum(1 for step in steps if step.get("Outputs"))
@@ -94,23 +123,23 @@ def _run_summary(steps: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
-def _load_index(root: Path, athlete_id: str) -> dict:
+def _load_index(root: Path, athlete_id: str) -> IndexRecord:
     return WorkspaceIndexManager(root=root, athlete_id=athlete_id).load()
 
 
-def _artifact_written_for_run(index: dict, artifact_type: ArtifactType, run_id: str) -> bool:
-    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
-    versions = entry.get("versions") or {}
+def _artifact_written_for_run(index: IndexRecord, artifact_type: ArtifactType, run_id: str) -> bool:
+    versions = _artefact_versions(index, artifact_type)
     for record in versions.values():
         if isinstance(record, dict) and record.get("run_id") == run_id:
             return True
     return False
 
 
-def _artifact_records_for_run(index: dict, artifact_type: ArtifactType, run_id: str) -> list[dict[str, Any]]:
-    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
-    versions = entry.get("versions") or {}
-    outputs = []
+def _artifact_records_for_run(
+    index: IndexRecord, artifact_type: ArtifactType, run_id: str
+) -> list[StepRecord]:
+    versions = _artefact_versions(index, artifact_type)
+    outputs: list[StepRecord] = []
     for version_key, record in versions.items():
         if not isinstance(record, dict):
             continue
@@ -162,14 +191,14 @@ def _is_blocked(step_id: str, failed_step_id: str, deps: dict[str, list[str]], v
     return any(_is_blocked(parent, failed_step_id, deps, visited) for parent in parents)
 
 
-def _mark_blocked(steps: list[dict[str, Any]], failed_step: dict[str, Any]) -> None:
+def _mark_blocked(steps: list[StepRecord], failed_step: StepRecord) -> None:
     """Mark queued steps as blocked when a failure prevents downstream steps."""
     failed_step_id = str(failed_step.get("step_id") or "")
     reason = f"Blocked by failed step: {failed_step.get('Step') or failed_step_id}"
     deps: dict[str, list[str]] = {}
     for step in steps:
         step_id = str(step.get("step_id") or "")
-        raw_deps = step.get("Deps") or []
+        raw_deps = _step_list(step, "Deps")
         deps[step_id] = [str(dep) for dep in raw_deps if dep is not None]
     for pending in steps:
         if pending.get("Status") != "QUEUED":
@@ -180,7 +209,7 @@ def _mark_blocked(steps: list[dict[str, Any]], failed_step: dict[str, Any]) -> N
             pending["Details"] = reason
 
 
-def _active_int(run_record: dict[str, Any], key: str) -> int | None:
+def _active_int(run_record: RunRecord, key: str) -> int | None:
     """Return an integer run-field value when present and parseable."""
     value = run_record.get(key)
     if isinstance(value, bool):
@@ -197,13 +226,13 @@ def _active_int(run_record: dict[str, Any], key: str) -> int | None:
     return None
 
 
-def _active_str(run_record: dict[str, Any], key: str) -> str | None:
+def _active_str(run_record: RunRecord, key: str) -> str | None:
     """Return a string run-field value when present."""
     value = run_record.get(key)
     return value if isinstance(value, str) else None
 
 
-def _active_steps(run_record: dict[str, Any] | None) -> list[dict[str, Any]]:
+def _active_steps(run_record: RunRecord | None) -> list[StepRecord]:
     """Return mutable step rows from a run record."""
     if not isinstance(run_record, dict):
         return []
@@ -319,15 +348,15 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     running_found = True
                     break
                 if step_status == "RUNNING":
-                    response_id = step.get("response_id")
+                    response_id = _step_str(step, "response_id")
                     response_status = _poll_response_status(response_id) if response_id else None
                     if response_status in {"completed"}:
                         step["Status"] = "DONE"
                         step["Ended"] = datetime.now(timezone.utc).isoformat()
                         _set_duration(step)
                         index = _load_index(config.root, config.athlete_id)
-                        outputs = []
-                        for artifact_type in step.get("write_types") or []:
+                        outputs: list[StepRecord] = []
+                        for artifact_type in _step_list(step, "write_types"):
                             outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
                         if outputs:
                             step["Outputs"] = outputs
@@ -431,29 +460,29 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             step["Ended"] = datetime.now(timezone.utc).isoformat()
                             _set_duration(step)
                             index = _load_index(config.root, config.athlete_id)
-                            outputs = []
+                            step_outputs: list[StepRecord] = []
                             raw_outputs = exec_result.get("outputs")
                             if isinstance(raw_outputs, list):
-                                outputs.extend(output for output in raw_outputs if isinstance(output, dict))
-                            for artifact_type in step.get("write_types") or []:
-                                outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
-                            if outputs:
-                                step["Outputs"] = outputs
-                                append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
+                                step_outputs.extend(output for output in raw_outputs if isinstance(output, dict))
+                            for artifact_type in _step_list(step, "write_types"):
+                                step_outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
+                            if step_outputs:
+                                step["Outputs"] = step_outputs
+                                append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": step_outputs})
                             append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
                         else:
                             index = _load_index(config.root, config.athlete_id)
-                            for artifact_type in step.get("write_types") or []:
+                            for artifact_type in _step_list(step, "write_types"):
                                 if _artifact_written_for_run(index, ArtifactType(artifact_type), config.run_id):
                                     step["Status"] = "DONE"
                                     step["Ended"] = datetime.now(timezone.utc).isoformat()
                                     _set_duration(step)
-                                    outputs = []
-                                    for artifact_type in step.get("write_types") or []:
-                                        outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
-                                    if outputs:
-                                        step["Outputs"] = outputs
-                                        append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
+                                    written_outputs: list[StepRecord] = []
+                                    for artifact_type in _step_list(step, "write_types"):
+                                        written_outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
+                                    if written_outputs:
+                                        step["Outputs"] = written_outputs
+                                        append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": written_outputs})
                                     append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
                                     break
                             if step.get("Status") != "DONE":
@@ -535,7 +564,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
     logger.info("Plan hub worker stopped run_id=%s athlete=%s", config.run_id, config.athlete_id)
 
 
-def start_plan_hub_worker(config: PlanHubWorkerConfig) -> dict[str, Any]:
+def start_plan_hub_worker(config: PlanHubWorkerConfig) -> WorkerHandle:
     """Start a background worker thread."""
     stop_event = threading.Event()
     thread = threading.Thread(
@@ -549,7 +578,7 @@ def start_plan_hub_worker(config: PlanHubWorkerConfig) -> dict[str, Any]:
 
 def start_plan_hub_worker_with_stop(
     config: PlanHubWorkerConfig, stop_event: threading.Event
-) -> dict[str, Any]:
+) -> WorkerHandle:
     """Start a background worker thread with a provided stop event."""
     thread = threading.Thread(
         target=run_plan_hub_worker,
@@ -560,7 +589,7 @@ def start_plan_hub_worker_with_stop(
     return {"run_id": config.run_id, "stop": stop_event, "thread": thread}
 
 
-def get_planning_run_status(root: Path, athlete_id: str) -> dict[str, Any] | None:
+def get_planning_run_status(root: Path, athlete_id: str) -> RunRecord | None:
     """Return the most recent planning run status for an athlete."""
     runs = load_runs(root, athlete_id, limit=10)
     planning = [run for run in runs if run.get("process_type") == "planning"]

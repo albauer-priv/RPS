@@ -13,6 +13,8 @@ from rps.orchestrator.plan_week import _mode_for_task
 
 logger = logging.getLogger(__name__)
 
+OrchestratorResult = dict[str, object]
+
 
 def revise_week_plan(
     runtime_for: Callable[[str], AgentRuntime],
@@ -26,7 +28,7 @@ def revise_week_plan(
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-) -> dict:
+) -> OrchestratorResult:
     """Revise a week plan based on a coach message.
 
     Purpose:

@@ -28,6 +28,10 @@ from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 
+JsonMap = dict[str, object]
+OrchestratorResult = dict[str, object]
+StepRecord = dict[str, object]
+
 
 def _format_screen_text(text: str) -> str:
     """Insert a blank line before markdown-style headings for readability."""
@@ -45,12 +49,16 @@ def _log(message: str, level: int = logging.INFO) -> None:
     log_and_print(logger, _format_screen_text(message), level)
 
 
-def _extract_profile_user_data(profile_payload: dict | None) -> dict[str, object]:
+def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
     """Extract optional Athlete Profile inputs for prompt injection."""
     if not isinstance(profile_payload, dict):
         return {"endurance_anchor_w": None, "ambition_if_range": None}
     data = profile_payload.get("data") or {}
+    if not isinstance(data, dict):
+        data = {}
     profile = data.get("profile") or {}
+    if not isinstance(profile, dict):
+        profile = {}
     anchor = profile.get("endurance_anchor_w")
     ambition = profile.get("ambition_if_range")
     return {"endurance_anchor_w": anchor, "ambition_if_range": ambition}
@@ -133,7 +141,7 @@ def create_performance_report(
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
     reasoning_summary_resolver: Callable[[str], str | None] | None = None,
     reasoning_stream_handler: Callable[[str], None] | None = None,
-) -> dict:
+) -> OrchestratorResult:
     """Create a DES analysis report for the requested ISO week."""
     agent_logger = logging.getLogger("rps.agents.multi_output_runner")
     summaries: list[str] = []
@@ -261,7 +269,7 @@ def create_performance_report(
 class PlanWeekResult:
     """Result summary for a plan-week orchestration."""
     ok: bool
-    steps: list[dict]
+    steps: list[StepRecord]
 
 
 def _normalize_force_steps(force_steps: Iterable[str] | None) -> set[str]:
@@ -314,7 +322,7 @@ def plan_week(
     forced_steps = _normalize_force_steps(force_steps)
     isolated_phase_force = bool(_required_phase_artefacts_for_forced_steps(forced_steps))
 
-    steps: list[dict] = []
+    steps: list[StepRecord] = []
     target_label = f"{year:04d}-{week:02d}"
 
     message = f"Plan-week start for ISO week {target_label} (athlete={athlete_id})."
@@ -408,7 +416,9 @@ def plan_week(
         entry = index.get("artefacts", {}).get(artifact_type.value)
         if not entry:
             return None, None, None
-        versions: dict = entry.get("versions", {})
+        versions = entry.get("versions", {})
+        if not isinstance(versions, dict):
+            versions = {}
         candidates: list[tuple[str, dict]] = []
         for record in versions.values():
             if not isinstance(record, dict):
@@ -686,8 +696,11 @@ def plan_week(
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
+    def _step_ok(step: StepRecord) -> bool:
+        result = step.get("result")
+        return isinstance(result, dict) and bool(result.get("ok"))
 
-    ok = all(step["result"].get("ok") for step in steps) if steps else True
+    ok = all(_step_ok(step) for step in steps) if steps else True
     message = f"Plan-week completed for ISO week {target_label} (ok={ok})."
     _log(message)
     return PlanWeekResult(ok=ok, steps=steps)

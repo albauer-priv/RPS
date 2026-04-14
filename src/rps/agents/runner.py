@@ -8,8 +8,9 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
+from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
 from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.response_utils import extract_reasoning_summaries, extract_text_output
@@ -21,11 +22,14 @@ from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read
 
 logger = logging.getLogger(__name__)
 
+ToolDef = dict[str, object]
+AgentSessionResult = dict[str, object]
+
 
 @dataclass(frozen=True)
 class AgentRuntime:
     """Runtime dependencies for running an agent."""
-    client: Any
+    client: LiteLLMClient
     model: str
     temperature: float | None
     reasoning_effort: str | None
@@ -42,8 +46,8 @@ def _parse_csv_env(name: str) -> set[str]:
     return {part.strip().lower() for part in raw.split(",") if part.strip()}
 
 
-def _build_web_search_tool() -> dict[str, Any]:
-    tool: dict[str, Any] = {
+def _build_web_search_tool() -> ToolDef:
+    tool: ToolDef = {
         "type": "web_search",
         "user_location": {
             "type": "approximate",
@@ -59,7 +63,9 @@ def _build_web_search_tool() -> dict[str, Any]:
         tool["filters"] = {"allowed_domains": [dom.strip() for dom in allowed_domains]}
     context_size = os.getenv("RPS_LLM_WEB_SEARCH_CONTEXT_SIZE", "").strip().lower()
     if context_size in {"low", "medium", "high"}:
-        tool.setdefault("filters", {})["search_context_size"] = context_size
+        filters = tool.setdefault("filters", {})
+        if isinstance(filters, dict):
+            filters["search_context_size"] = context_size
     external_access_raw = os.getenv("RPS_LLM_WEB_SEARCH_EXTERNAL_ACCESS")
     if external_access_raw is not None:
         tool["external_web_access"] = external_access_raw.strip().lower() in {
@@ -80,21 +86,21 @@ def _web_search_enabled(agent_name: str) -> bool:
     return True
 
 
-def _item_type(item: Any) -> Optional[str]:
+def _item_type(item: object) -> str | None:
     """Return the type field for response output items."""
     if isinstance(item, dict):
         return item.get("type")
     return getattr(item, "type", None)
 
 
-def _item_field(item: Any, name: str) -> Any:
+def _item_field(item: object, name: str) -> object | None:
     """Safely read a field from a response output item."""
     if isinstance(item, dict):
         return item.get(name)
     return getattr(item, name, None)
 
 
-def _log_knowledge_search(response: Any) -> None:
+def _log_knowledge_search(response: LiteLLMResponse) -> None:
     """Log knowledge_search calls when available."""
     items = getattr(response, "output", []) or []
     calls = [
@@ -172,7 +178,7 @@ def run_agent(
         max_num_results=max_num_results,
         run_id=run_id,
     )
-    return result["text"]
+    return str(result["text"])
 
 
 def run_agent_session(
@@ -192,8 +198,8 @@ def run_agent_session(
     run_id: str | None = None,
     previous_response_id: str | None = None,
     injection_text: str | None = None,
-    stream_handlers: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+    stream_handlers: dict[str, object] | None = None,
+) -> AgentSessionResult:
     """Run an agent and return both the text output and response id.
 
     This variant supports session-style chaining via `previous_response_id`
@@ -236,7 +242,7 @@ def run_agent_session(
 
     if max_num_results is None:
         max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 20
-    tools: list[dict[str, Any]] = []
+    tools: list[ToolDef] = []
     web_search_enabled = _web_search_enabled(agent_name)
     if web_search_enabled:
         tools.append(_build_web_search_tool())
@@ -262,8 +268,8 @@ def run_agent_session(
     force_search = force_file_search
     previous_id_for_request = previous_response_id
 
-    def _create_response(force_search_flag: bool):
-        payload: dict[str, Any] = {
+    def _create_response(force_search_flag: bool) -> LiteLLMResponse:
+        payload: dict[str, object] = {
             "model": model,
             "tools": tools,
             "input": input_list,
@@ -284,10 +290,11 @@ def run_agent_session(
         if runtime.max_completion_tokens is not None:
             payload["max_completion_tokens"] = runtime.max_completion_tokens
         if debug_knowledge_search:
+            tool_count = payload.get("tools")
             logger.info(
                 "responses.create: tool_choice=%s tools=%d",
                 payload.get("tool_choice"),
-                len(payload.get("tools") or []),
+                len(tool_count) if isinstance(tool_count, list) else 0,
             )
         return create_response(runtime.client, payload, logger, stream_handlers=stream_handlers)
 

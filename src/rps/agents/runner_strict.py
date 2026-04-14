@@ -7,9 +7,9 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from rps.agents.tasks import AgentTask, OUTPUT_SPECS
+from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.response_utils import extract_reasoning_summaries
@@ -24,10 +24,14 @@ from rps.workspace.guarded_store import GuardedValidatedStore
 
 logger = logging.getLogger(__name__)
 
+ToolDef = dict[str, object]
+StrictTaskResult = dict[str, object]
+
+
 @dataclass(frozen=True)
 class AgentRuntime:
     """Runtime dependencies for strict agent runs."""
-    client: Any
+    client: LiteLLMClient
     model: str
     temperature: float | None
     reasoning_effort: str | None
@@ -39,7 +43,23 @@ class AgentRuntime:
     workspace_root: Path
 
 
-def _knowledge_search_tool() -> dict[str, Any]:
+def _item_type(item: object) -> str | None:
+    """Return the type field for response output items."""
+    if isinstance(item, dict):
+        value = item.get("type")
+    else:
+        value = getattr(item, "type", None)
+    return value if isinstance(value, str) else None
+
+
+def _item_field(item: object, name: str) -> object | None:
+    """Safely read a field from a response output item."""
+    if isinstance(item, dict):
+        return item.get(name)
+    return getattr(item, name, None)
+
+
+def _knowledge_search_tool() -> ToolDef:
     """Build a knowledge_search tool payload for Responses API."""
     return {
         "type": "function",
@@ -70,6 +90,7 @@ def _parse_int(value: str | None) -> int | None:
     except ValueError:
         return None
 
+
 def _env_flag(name: str) -> bool:
     raw = os.getenv(name)
     if raw is None:
@@ -77,11 +98,13 @@ def _env_flag(name: str) -> bool:
     value = raw.strip().lower()
     return value in {"1", "true", "yes", "on"}
 
-def _log_knowledge_search(response: Any) -> None:
+
+def _log_knowledge_search(response: LiteLLMResponse) -> None:
     items = getattr(response, "output", []) or []
     calls = [
-        item for item in items
-        if getattr(item, "type", None) == "function_call" and getattr(item, "name", None) == "knowledge_search"
+        item
+        for item in items
+        if _item_type(item) == "function_call" and _item_field(item, "name") == "knowledge_search"
     ]
     if not calls:
         logger.info("knowledge_search calls: none")
@@ -101,7 +124,7 @@ def run_agent_task_strict(
     temperature_override: float | None = None,
     force_file_search: bool = True,
     max_num_results: int | None = None,
-) -> dict[str, Any]:
+) -> StrictTaskResult:
     """Run one strict task and persist the resulting artifact."""
     output_spec = OUTPUT_SPECS[task]
 
@@ -118,7 +141,7 @@ def run_agent_task_strict(
         max_num_results = _parse_int(os.getenv("RPS_LLM_FILE_SEARCH_MAX_RESULTS")) or 6
     debug_file_search = _env_flag("RPS_LLM_DEBUG") or logger.isEnabledFor(logging.DEBUG)
 
-    tools = [
+    tools: list[ToolDef] = [
         _knowledge_search_tool(),
         store_tool,
     ]
@@ -135,13 +158,13 @@ def run_agent_task_strict(
         workspace_root=runtime.workspace_root,
     )
 
-    input_list: list[dict[str, Any]] = [
+    input_list: list[dict[str, object]] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_input},
     ]
 
-    def _create_response(force_search_flag: bool):
-        payload: dict[str, Any] = {
+    def _create_response(force_search_flag: bool) -> LiteLLMResponse:
+        payload: dict[str, object] = {
             "model": model,
             "tools": tools,
             "input": input_list,
@@ -180,18 +203,29 @@ def run_agent_task_strict(
         if safety > 10:
             raise RuntimeError("Too many tool iterations")
 
-        function_calls = [item for item in response.output if getattr(item, "type", None) == "function_call"]
+        function_calls = [
+            item for item in response.output if _item_type(item) == "function_call"
+        ]
         if not function_calls:
+            output_text = response.output_text or ""
             return {
                 "ok": False,
-                "error": "Model did not call store tool. Output:\n" + response.output_text,
+                "error": "Model did not call store tool. Output:\n" + output_text,
             }
 
         handled_any = False
         for call in function_calls:
-            if call.name == "knowledge_search":
+            call_name = _item_field(call, "name")
+            call_args = _item_field(call, "arguments")
+            call_id = _item_field(call, "call_id")
+            if not isinstance(call_name, str):
+                continue
+            if not isinstance(call_id, str):
+                continue
+
+            if call_name == "knowledge_search":
                 try:
-                    args = json.loads(call.arguments or "{}")
+                    args = json.loads(call_args) if isinstance(call_args, str) else {}
                 except json.JSONDecodeError:
                     args = {}
                 results = search_knowledge(
@@ -203,20 +237,20 @@ def run_agent_task_strict(
                 input_list.append(
                     {
                         "type": "function_call_output",
-                        "call_id": call.call_id,
+                        "call_id": call_id,
                         "output": json.dumps({"ok": True, "results": results}, ensure_ascii=False),
                     }
                 )
                 handled_any = True
                 continue
 
-            if call.name != output_spec.tool_name:
+            if call_name != output_spec.tool_name:
                 continue
 
             handled_any = True
-            args = json.loads(call.arguments or "{}")
+            args = json.loads(call_args) if isinstance(call_args, str) else {}
             document = args if output_spec.envelope else args.get("workouts")
-            logger.debug("Tool call %s args=%s", call.name, args)
+            logger.debug("Tool call %s args=%s", call_name, args)
 
             try:
                 if output_spec.envelope and not (
@@ -233,7 +267,7 @@ def run_agent_task_strict(
                     input_list.append(
                         {
                             "type": "function_call_output",
-                            "call_id": call.call_id,
+                            "call_id": call_id,
                             "output": json.dumps(result, ensure_ascii=False),
                         }
                     )
@@ -266,7 +300,7 @@ def run_agent_task_strict(
             input_list.append(
                 {
                     "type": "function_call_output",
-                    "call_id": call.call_id,
+                    "call_id": call_id,
                     "output": json.dumps(result, ensure_ascii=False),
                 }
             )
@@ -274,9 +308,10 @@ def run_agent_task_strict(
             return result
 
         if not handled_any:
+            output_text = response.output_text or ""
             return {
                 "ok": False,
-                "error": "Model did not call knowledge_search or store tool. Output:\n" + response.output_text,
+                "error": "Model did not call knowledge_search or store tool. Output:\n" + output_text,
             }
 
         response = _create_response(force_search)

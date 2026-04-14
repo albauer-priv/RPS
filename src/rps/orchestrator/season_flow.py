@@ -14,13 +14,20 @@ from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 
+JsonMap = dict[str, object]
+OrchestratorResult = dict[str, object]
 
-def _extract_profile_user_data(profile_payload: dict | None) -> dict[str, object]:
+
+def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
     """Extract optional user-provided planning fields from Athlete Profile."""
     if not isinstance(profile_payload, dict):
         return {"endurance_anchor_w": None, "ambition_if_range": None}
     data = profile_payload.get("data") or {}
+    if not isinstance(data, dict):
+        data = {}
     profile = data.get("profile") or {}
+    if not isinstance(profile, dict):
+        profile = {}
     anchor = profile.get("endurance_anchor_w")
     ambition = profile.get("ambition_if_range")
     return {"endurance_anchor_w": anchor, "ambition_if_range": ambition}
@@ -55,7 +62,7 @@ def create_season_scenarios(
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-) -> dict:
+) -> OrchestratorResult:
     """Create season scenarios for the target ISO week."""
     spec = AGENTS["season_scenario"]
     injected_block = build_injection_block("season_scenario", mode="scenario")
@@ -94,12 +101,12 @@ def select_season_scenario(
     run_id: str,
     selected: str,
     rationale: str | None,
-    kpi_selection: dict | None = None,
+    kpi_selection: JsonMap | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-) -> dict:
+) -> OrchestratorResult:
     """Select a season scenario for the target ISO week."""
     spec = AGENTS["season_scenario"]
     injected_block = build_injection_block("season_scenario", mode="scenario")
@@ -109,12 +116,20 @@ def select_season_scenario(
         segment = kpi_selection.get("segment")
         w_per_kg = kpi_selection.get("w_per_kg") or {}
         kj_per_kg = kpi_selection.get("kj_per_kg_per_hour") or {}
-        if segment and w_per_kg and kj_per_kg:
+        if (
+            segment
+            and isinstance(w_per_kg, dict)
+            and isinstance(kj_per_kg, dict)
+            and w_per_kg
+            and kj_per_kg
+        ):
+            w_bounds: JsonMap = w_per_kg
+            kj_bounds: JsonMap = kj_per_kg
             kpi_line = (
                 "KPI moving_time_rate_guidance selection: "
                 f"{segment} "
-                f"(w_per_kg {w_per_kg.get('min')} - {w_per_kg.get('max')}, "
-                f"kj_per_kg_per_hour {kj_per_kg.get('min')} - {kj_per_kg.get('max')}). "
+                f"(w_per_kg {w_bounds.get('min')} - {w_bounds.get('max')}, "
+                f"kj_per_kg_per_hour {kj_bounds.get('min')} - {kj_bounds.get('max')}). "
             )
     user_input = (
         f"Select Scenario {selected.upper()} for ISO week {year}-{week:02d}. "
@@ -160,7 +175,7 @@ def create_season_plan(
     max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-) -> dict:
+) -> OrchestratorResult:
     """Create the season plan for the selected scenario."""
     spec = AGENTS["season_planner"]
     injected_block = build_injection_block("season_planner", mode="season_plan")
@@ -183,12 +198,20 @@ def create_season_plan(
             segment = kpi_sel.get("segment")
             w_per_kg = kpi_sel.get("w_per_kg") or {}
             kj_per_kg = kpi_sel.get("kj_per_kg_per_hour") or {}
-            if segment and w_per_kg and kj_per_kg:
+            if (
+                segment
+                and isinstance(w_per_kg, dict)
+                and isinstance(kj_per_kg, dict)
+                and w_per_kg
+                and kj_per_kg
+            ):
+                w_bounds: JsonMap = w_per_kg
+                kj_bounds: JsonMap = kj_per_kg
                 kpi_block = (
                     "Selected KPI guidance: "
                     f"kpi_rate_band_selector {segment} "
-                    f"(w_per_kg {w_per_kg.get('min')} - {w_per_kg.get('max')}, "
-                    f"kj_per_kg_per_hour {kj_per_kg.get('min')} - {kj_per_kg.get('max')}). "
+                    f"(w_per_kg {w_bounds.get('min')} - {w_bounds.get('max')}, "
+                    f"kj_per_kg_per_hour {kj_bounds.get('min')} - {kj_bounds.get('max')}). "
                 )
     except Exception:
         kpi_block = ""
