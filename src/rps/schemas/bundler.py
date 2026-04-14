@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from functools import lru_cache
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +14,9 @@ import jsonref
 class SchemaBundler:
     """Resolve local schema references into a single JSON schema object."""
     schema_dir: Path
+    _bundle_cache: dict[str, dict[str, Any]] = field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
 
     def load_raw(self, schema_file: str) -> dict[str, Any]:
         """Load a schema file from disk without resolving references."""
@@ -23,9 +25,12 @@ class SchemaBundler:
             raise FileNotFoundError(f"Schema not found: {path}")
         return json.loads(path.read_text(encoding="utf-8"))
 
-    @lru_cache(maxsize=256)
     def bundle(self, schema_file: str) -> dict[str, Any]:
         """Return a fully resolved schema with $ref replaced."""
+        cached = self._bundle_cache.get(schema_file)
+        if cached is not None:
+            return cached
+
         root = self.load_raw(schema_file)
 
         def loader(uri: str):
@@ -43,7 +48,9 @@ class SchemaBundler:
             raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
         resolved = json.loads(json.dumps(bundled, default=_to_builtin))
-        return self._strip_schema_ids(resolved, keep_root_id=True)
+        bundled_schema = self._strip_schema_ids(resolved, keep_root_id=True)
+        self._bundle_cache[schema_file] = bundled_schema
+        return bundled_schema
 
     def _strip_schema_ids(self, schema: Any, *, keep_root_id: bool) -> Any:
         """Remove nested $id values to avoid duplicate canonical URIs in bundled schemas."""
