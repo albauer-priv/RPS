@@ -783,6 +783,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The local `scripts/` tree now uses explicit package-style imports for `script_logging` and direct imports from `rps.data_pipeline.common`, which removes the last repoweight `mypy` import-resolution errors and restores a clean `python3 -m mypy --explicit-package-bases src tests scripts` run.
 - `scripts/run_typecheck.sh` now supports both the curated commit-gate scope and a documented `--full` mode for full-repository validation, and the central developer docs now reference both commands explicitly.
 - A first low-risk `PERF401` cleanup pass replaced manual append loops with comprehensions/extends in schema checks, OpenAI response helpers, renderer context builders, and several Plan/System run-history table helpers.
+- Additional low-risk lint cleanup replaced a few remaining parser/helper magic-number comparisons with named constants in logging, streaming, shared UI, and ISO helper modules, simplified the non-negative phase week offset clamp, and removed a repeated `split()` pattern in `intervals_data.py` without changing planning behavior.
 - A second low-risk `PERF401` cleanup pass converted remaining simple row/message/path collectors in the Plan Phase/Week pages, chatbot message filtering, and backup path collection to comprehensions or `extend(...)`.
 - The final `PERF401` cleanup pass simplified remaining constraint-mismatch error collection in `guarded_store.py`, leaving the full repository green for `ruff --select PERF401`.
 

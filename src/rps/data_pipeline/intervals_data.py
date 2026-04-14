@@ -1059,7 +1059,8 @@ def write_wellness(
 
     data_dir = athlete_data_dir(athlete_id)
     latest_dir = athlete_latest_dir(athlete_id)
-    out_dir = data_dir / end_week.split("-")[0] / end_week.split("-")[1]
+    end_week_year, end_week_number = end_week.split("-", 1)
+    out_dir = data_dir / end_week_year / end_week_number
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"wellness_{end_week}.json"
 

@@ -14,6 +14,8 @@ from typing import cast
 
 from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
 
+MIN_ROTATED_LOG_STEM_PARTS = 3
+
 StreamHandlerMap = dict[str, object]
 
 
@@ -112,7 +114,7 @@ def _rotate_reasoning_log(path: Path, max_bytes: int) -> bool:
     indices = []
     for existing in log_dir.glob(pattern):
         parts = existing.stem.split("-")
-        if len(parts) < 3:
+        if len(parts) < MIN_ROTATED_LOG_STEM_PARTS:
             continue
         try:
             indices.append(int(parts[-1]))

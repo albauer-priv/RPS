@@ -9,6 +9,8 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 
+MIN_ROTATED_LOG_STEM_PARTS = 3
+
 _LEVELS = {
     "CRITICAL": logging.CRITICAL,
     "ERROR": logging.ERROR,
@@ -103,7 +105,7 @@ class DailySizeRotatingFileHandler(logging.FileHandler):
         indices = []
         for path in log_dir.glob(pattern):
             parts = path.stem.split("-")
-            if len(parts) < 3:
+            if len(parts) < MIN_ROTATED_LOG_STEM_PARTS:
                 continue
             try:
                 indices.append(int(parts[-1]))

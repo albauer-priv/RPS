@@ -52,8 +52,7 @@ def resolve_phase_window_from_phase(
     phase_start = iso_week_monday(phase_range.start.year, phase_range.start.week)
     target_start = iso_week_monday(target.year, target.week)
     delta_weeks = (target_start - phase_start).days // 7
-    if delta_weeks < 0:
-        delta_weeks = 0
+    delta_weeks = max(delta_weeks, 0)
 
     phase_index = delta_weeks // phase_len
     start = add_weeks(phase_range.start, phase_index * phase_len)

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
+ISO_WEEK_PART_COUNT = 2
+
 
 @dataclass(frozen=True)
 class IsoWeek:
@@ -66,7 +68,7 @@ def parse_iso_week(value: Any) -> IsoWeek | None:
     if isinstance(value, str):
         key = value.strip().split("__", 1)[0]
         parts = key.split("-")
-        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+        if len(parts) == ISO_WEEK_PART_COUNT and parts[0].isdigit() and parts[1].isdigit():
             return IsoWeek(int(parts[0]), int(parts[1]))
     return None
 
@@ -85,7 +87,7 @@ def parse_iso_week_range(value: Any) -> IsoWeekRange | None:
     if isinstance(value, str):
         value = value.strip().split("__", 1)[0]
         parts = value.split("--")
-        if len(parts) != 2:
+        if len(parts) != ISO_WEEK_PART_COUNT:
             return None
         start = parse_iso_week(parts[0])
         end_part = parts[1].split("+", 1)[0]

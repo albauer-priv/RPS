@@ -22,6 +22,9 @@ from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
+
+HH_MM_SS_PARTS = 3
+HH_MM_PARTS = 2
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.types import ArtifactType
@@ -75,10 +78,10 @@ def parse_duration_minutes(value: str) -> int:
     Supports HH:MM:SS, HH:MM, or hours-only numeric strings.
     """
     parts = value.split(":")
-    if len(parts) == 3:
+    if len(parts) == HH_MM_SS_PARTS:
         hours, minutes, _seconds = parts
         return int(hours) * 60 + int(minutes)
-    if len(parts) == 2:
+    if len(parts) == HH_MM_PARTS:
         hours, minutes = parts
         return int(hours) * 60 + int(minutes)
     if len(parts) == 1 and parts[0].isdigit():
