@@ -185,9 +185,7 @@ def _matches_filter(run: dict) -> bool:
     if type_filter != "All" and process_type != type_filter:
         return False
     process_subtype = _run_str(run, "process_subtype")
-    if subtype_filter != "All" and process_subtype != subtype_filter:
-        return False
-    return True
+    return not (subtype_filter != "All" and process_subtype != subtype_filter)
 
 
 filtered_runs = [run for run in runs if _matches_filter(run)]

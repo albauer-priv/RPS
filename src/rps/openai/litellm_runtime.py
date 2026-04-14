@@ -333,9 +333,7 @@ def _function_name(tool: JsonMap) -> str | None:
 def _is_groq_model(model: str | None, api_base: str | None) -> bool:
     if model and model.lower().startswith("groq/"):
         return True
-    if api_base and "api.groq.com" in api_base:
-        return True
-    return False
+    return bool(api_base and "api.groq.com" in api_base)
 
 
 def _is_rate_limit_error(exc: Exception) -> bool:

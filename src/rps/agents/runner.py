@@ -81,9 +81,7 @@ def _web_search_enabled(agent_name: str) -> bool:
     if not _env_flag("RPS_LLM_ENABLE_WEB_SEARCH"):
         return False
     agents = _parse_csv_env("RPS_LLM_WEB_SEARCH_AGENTS")
-    if agents and agent_name.lower() not in agents:
-        return False
-    return True
+    return not (agents and agent_name.lower() not in agents)
 
 
 def _item_type(item: object) -> str | None:

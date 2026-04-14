@@ -2058,10 +2058,7 @@ def compile_activities_trend(
         )
 
         sst_sec_raw = sum_seconds(g[col_sst_s]) if col_sst_s else 0.0
-        if col_vo2_power_s:
-            vo2_p_sec_raw = sum_seconds(g[col_vo2_power_s])
-        else:
-            vo2_p_sec_raw = pz_sec_raw[5]
+        vo2_p_sec_raw = sum_seconds(g[col_vo2_power_s]) if col_vo2_power_s else pz_sec_raw[5]
         if col_vo2_hr_s:
             vo2_hr_sec_raw = sum_seconds(g[col_vo2_hr_s])
         else:

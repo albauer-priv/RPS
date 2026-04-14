@@ -46,10 +46,7 @@ def _normalize_authority(authority: Authority | str | None) -> str | None:
     """Normalize authority labels to schema-compatible values."""
     if authority is None:
         return None
-    if isinstance(authority, Authority):
-        value = authority.value
-    else:
-        value = str(authority)
+    value = authority.value if isinstance(authority, Authority) else str(authority)
     mapping = {
         "Structural": "Derived",
         "Advisory": "Informational",

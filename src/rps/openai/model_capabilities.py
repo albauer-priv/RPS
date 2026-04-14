@@ -8,6 +8,4 @@ def supports_temperature(model: str | None) -> bool:
     if not model:
         return True
     normalized = model.strip().lower()
-    if normalized.startswith("gpt-5"):
-        return False
-    return True
+    return not normalized.startswith("gpt-5")

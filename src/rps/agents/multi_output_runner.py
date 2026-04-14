@@ -110,9 +110,7 @@ def _web_search_enabled(agent_name: str) -> bool:
     if not _env_flag("RPS_LLM_ENABLE_WEB_SEARCH"):
         return False
     agents = _parse_csv_env("RPS_LLM_WEB_SEARCH_AGENTS")
-    if agents and agent_name.lower() not in agents:
-        return False
-    return True
+    return not (agents and agent_name.lower() not in agents)
 
 
 def _item_type(item: object) -> str | None:
@@ -836,10 +834,7 @@ def run_agent_multi_output(
     ):
         if forced_tool_name:
             selected_tool = store_tools_by_name.get(forced_tool_name)
-            if selected_tool:
-                tools_for_call = [selected_tool]
-            else:
-                tools_for_call = store_tools
+            tools_for_call = [selected_tool] if selected_tool else store_tools
         elif force_store_only:
             tools_for_call = store_tools
         elif force_read_only:

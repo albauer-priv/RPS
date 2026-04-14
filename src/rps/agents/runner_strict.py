@@ -45,10 +45,7 @@ class AgentRuntime:
 
 def _item_type(item: object) -> str | None:
     """Return the type field for response output items."""
-    if isinstance(item, dict):
-        value = item.get("type")
-    else:
-        value = getattr(item, "type", None)
+    value = item.get("type") if isinstance(item, dict) else getattr(item, "type", None)
     return value if isinstance(value, str) else None
 
 
