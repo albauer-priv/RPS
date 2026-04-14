@@ -281,13 +281,16 @@ class GuardedValidatedStore:
         )
         errors: list[str] = []
 
-        for item in constraints["availability"]:
-            if not self._contains_normalized_item(non_negotiables, item):
-                errors.append(f"Season plan availability_assumptions missing in phase_guardrails: {item}")
-
-        for item in constraints["risks"]:
-            if not self._contains_normalized_item(key_risks, item):
-                errors.append(f"Season plan risk_constraints missing in phase_guardrails: {item}")
+        errors.extend(
+            f"Season plan availability_assumptions missing in phase_guardrails: {item}"
+            for item in constraints["availability"]
+            if not self._contains_normalized_item(non_negotiables, item)
+        )
+        errors.extend(
+            f"Season plan risk_constraints missing in phase_guardrails: {item}"
+            for item in constraints["risks"]
+            if not self._contains_normalized_item(key_risks, item)
+        )
 
         for item in constraints["recovery_notes"]:
             normalized = self._normalize_text(item)
@@ -337,21 +340,26 @@ class GuardedValidatedStore:
         upstream_items = self._normalized_string_list(upstream_constraints)
         errors: list[str] = []
 
-        for item in constraints["availability"]:
-            if not self._contains_normalized_item(upstream_items, item):
-                errors.append(f"Season plan availability_assumptions missing in upstream_intent.constraints: {item}")
-
-        for item in constraints["risks"]:
-            if not self._contains_normalized_item(upstream_items, item):
-                errors.append(f"Season plan risk_constraints missing in upstream_intent.constraints: {item}")
-
-        for item in constraints["recovery_notes"]:
-            if not self._contains_normalized_item(upstream_items, item):
-                errors.append(f"Season plan recovery_notes missing in upstream_intent.constraints: {item}")
-
-        for item in constraints["planned"]:
-            if not self._structure_constraint_has_event_window(upstream_blob, item):
-                errors.append(f"Season plan planned_event_windows missing in upstream_intent.constraints: {item}")
+        errors.extend(
+            f"Season plan availability_assumptions missing in upstream_intent.constraints: {item}"
+            for item in constraints["availability"]
+            if not self._contains_normalized_item(upstream_items, item)
+        )
+        errors.extend(
+            f"Season plan risk_constraints missing in upstream_intent.constraints: {item}"
+            for item in constraints["risks"]
+            if not self._contains_normalized_item(upstream_items, item)
+        )
+        errors.extend(
+            f"Season plan recovery_notes missing in upstream_intent.constraints: {item}"
+            for item in constraints["recovery_notes"]
+            if not self._contains_normalized_item(upstream_items, item)
+        )
+        errors.extend(
+            f"Season plan planned_event_windows missing in upstream_intent.constraints: {item}"
+            for item in constraints["planned"]
+            if not self._structure_constraint_has_event_window(upstream_blob, item)
+        )
 
         fixed_days = constraints["fixed_days"]
         execution_principles = self._as_map(data.get("execution_principles"))
