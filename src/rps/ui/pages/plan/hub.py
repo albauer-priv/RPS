@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import NotRequired, TypedDict, cast
 import time
 import json
 import difflib
@@ -29,6 +29,7 @@ from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, pa
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from rps.ui.run_store import (
+    RunRecord,
     append_event,
     append_run,
     find_active_runs,
@@ -45,6 +46,11 @@ from rps.tools.knowledge_search import ensure_knowledge_store_ready, knowledge_s
 
 
 logger = logging.getLogger(__name__)
+
+JsonMap = dict[str, object]
+JsonList = list[object]
+OutputRecord = dict[str, object]
+PhaseRecord = dict[str, object]
 
 
 class StepDefinition(TypedDict):
@@ -78,7 +84,7 @@ ExecutionStep = TypedDict(
         "write_types": list[str],
         "writes": list[WriteDetail],
         "Deps": list[str],
-        "Outputs": list[dict[str, Any]],
+        "Outputs": list[OutputRecord],
         "Log": str,
         "Outputs Written": int,
     },
@@ -281,6 +287,16 @@ class ReadinessStep:
     fix_label: str | None = None
 
 
+def _as_map(value: object) -> JsonMap:
+    """Return a mapping when the value is dict-like."""
+    return value if isinstance(value, dict) else {}
+
+
+def _as_str(value: object) -> str | None:
+    """Return a string when the value is a string."""
+    return value if isinstance(value, str) else None
+
+
 def _parse_iso_datetime(value: str | None) -> datetime | None:
     """Parse ISO-8601 timestamps with optional Z suffix."""
     if not value:
@@ -304,21 +320,23 @@ def _latest_input(inputs_dir: Path, prefix: str) -> Path | None:
     return matches[-1] if matches else None
 
 
-def _load_index(athlete_id: str) -> dict:
+def _load_index(athlete_id: str) -> JsonMap:
     """Load the workspace index for an athlete."""
     mgr = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id)
     return mgr.load()
 
 
-def _latest_record(index: dict, artifact_type: ArtifactType) -> dict | None:
+def _latest_record(index: JsonMap, artifact_type: ArtifactType) -> JsonMap | None:
     """Return the latest record for an artifact type from index.json."""
-    entry = (index.get("artefacts") or {}).get(artifact_type.value)
+    artefacts = _as_map(index.get("artefacts"))
+    entry = artefacts.get(artifact_type.value)
     if isinstance(entry, dict):
-        return entry.get("latest")
+        latest = entry.get("latest")
+        return latest if isinstance(latest, dict) else None
     return None
 
 
-def _record_matches_context(record: dict | None, target_week: IsoWeek) -> bool:
+def _record_matches_context(record: JsonMap | None, target_week: IsoWeek) -> bool:
     """Check if a record's iso_week or iso_week_range matches the selected week."""
     if not isinstance(record, dict):
         return False
@@ -400,7 +418,7 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
     return step.status == "ready"
 
 
-def _load_season_phase_map(athlete_id: str) -> dict[str, dict]:
+def _load_season_phase_map(athlete_id: str) -> dict[str, PhaseRecord]:
     """Return the latest season-plan phase map keyed by UI phase label."""
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     if not store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
@@ -561,10 +579,10 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
         record = _latest_record(index, artifact_type)
         if not store.latest_exists(athlete_id, artifact_type):
             record = None
-        created_at = record.get("created_at") if record else None
+        created_at = _as_str(record.get("created_at")) if record else None
         latest_ts = _parse_iso_datetime(created_at)
-        latest_label = record.get("version_key") if record else None
-        run_id = record.get("run_id") if record else None
+        latest_label = _as_str(record.get("version_key")) if record else None
+        run_id = _as_str(record.get("run_id")) if record else None
 
         missing = record is None
         blocked = missing and any(status_map[r].status in {"missing", "blocked"} for r in required)
@@ -832,11 +850,11 @@ def _run_history(
     logger.info("Building run history athlete=%s", athlete_id)
     index = _load_index(athlete_id)
     entries: list[dict[str, str]] = []
-    artefacts = index.get("artefacts") or {}
+    artefacts = _as_map(index.get("artefacts"))
     for artifact_type, entry in artefacts.items():
         if allowed is not None and artifact_type not in allowed:
             continue
-        versions = (entry or {}).get("versions") or {}
+        versions = _as_map(_as_map(entry).get("versions"))
         for version_key, record in versions.items():
             if not isinstance(record, dict):
                 continue
@@ -881,21 +899,22 @@ def _style_superseded(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     return df.style.apply(_row_style, axis=1)
 
 
-def _version_records(index: dict, artifact_type: ArtifactType) -> list[dict]:
+def _version_records(index: JsonMap, artifact_type: ArtifactType) -> list[JsonMap]:
     """Return all version records for an artifact type."""
-    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
-    versions = entry.get("versions") or {}
-    records = []
+    artefacts = _as_map(index.get("artefacts"))
+    entry = _as_map(artefacts.get(artifact_type.value))
+    versions = _as_map(entry.get("versions"))
+    records: list[JsonMap] = []
     for version_key, record in versions.items():
         if isinstance(record, dict):
             record = dict(record)
             record["version_key"] = version_key
             records.append(record)
-    records.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    records.sort(key=lambda r: _as_str(r.get("created_at")) or "", reverse=True)
     return records
 
 
-def _load_artifact_json(athlete_id: str, record: dict) -> dict | list | None:
+def _load_artifact_json(athlete_id: str, record: JsonMap) -> JsonMap | JsonList | None:
     """Load an artifact JSON from a record path if possible."""
     path = record.get("path") or record.get("relative_path")
     if not isinstance(path, str):
@@ -909,7 +928,7 @@ def _load_artifact_json(athlete_id: str, record: dict) -> dict | list | None:
         return None
 
 
-def _diff_json(a: dict | list | None, b: dict | list | None) -> str:
+def _diff_json(a: JsonMap | JsonList | None, b: JsonMap | JsonList | None) -> str:
     """Return a unified diff between two JSON documents."""
     if a is None or b is None:
         return "No diff available."
@@ -1038,7 +1057,7 @@ def _ensure_worker(
 ) -> None:
     """Ensure scheduler is running and enqueue the run."""
     @st.cache_resource
-    def _get_scheduler() -> dict:
+    def _get_scheduler() -> JsonMap:
         return start_queue_scheduler(
             root=root,
             runtime_for_agent=_runtime_for_agent,
@@ -1052,7 +1071,8 @@ def _ensure_worker(
 
     ensure_queue_dirs(root)
     scheduler = _get_scheduler()
-    if not scheduler.get("thread") or not scheduler["thread"].is_alive():
+    thread = scheduler.get("thread")
+    if not hasattr(thread, "is_alive") or not thread.is_alive():
         _get_scheduler.clear()
         scheduler = _get_scheduler()
     enqueue_run(
@@ -1078,7 +1098,7 @@ def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_r
         )
 
 
-def _coerce_execution_steps(raw_steps: Any) -> list[ExecutionStep]:
+def _coerce_execution_steps(raw_steps: object) -> list[ExecutionStep]:
     """Return execution steps from stored run data when the shape is list-like."""
     if not isinstance(raw_steps, list):
         return []
@@ -1306,7 +1326,7 @@ with st.container():
 
 active_run_id = st.session_state.get("plan_hub_active_run_id")
 run_records = load_runs(SETTINGS.workspace_root, hub_scope["athlete_id"], limit=5)
-active_run: dict[str, Any] | None = None
+active_run: RunRecord | None = None
 if active_run_id:
     for record in run_records:
         if record.get("run_id") == active_run_id:
@@ -1548,10 +1568,11 @@ if missing_blocked_steps:
     if active_run and active_run.get("status") in {"QUEUED", "RUNNING"}:
         st.warning(f"Active run: {active_run.get('run_id')}")
         if st.button("Cancel active run"):
+            active_run_id_value = _as_str(active_run.get("run_id")) or ""
             update_run(
                 SETTINGS.workspace_root,
                 hub_scope["athlete_id"],
-                active_run.get("run_id") or "",
+                active_run_id_value,
                 {"cancel_requested": True},
             )
             st.info("Cancel requested. The worker will stop after the current step.")
@@ -1593,7 +1614,7 @@ if not has_blockers:
                 )
             )
 
-        phases: list[dict[str, Any]] = []
+        phases: list[PhaseRecord] = []
         season_plan = None
         try:
             season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
@@ -1870,7 +1891,7 @@ if active_run:
         store = LocalArtifactStore(root=SETTINGS.workspace_root)
         can_restart = store.latest_exists(hub_scope["athlete_id"], ArtifactType.SEASON_SCENARIO_SELECTION)
     if active_run.get("summary"):
-        summary = active_run.get("summary") or {}
+        summary = _as_map(active_run.get("summary"))
         st.caption(
             "Summary: "
             f"{summary.get('steps_done', 0)} done · "
