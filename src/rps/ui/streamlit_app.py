@@ -4,6 +4,7 @@ import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TypeAlias
 
 import streamlit as st
 
@@ -17,6 +18,12 @@ from rps.ui.shared import SETTINGS, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
 
 st.set_page_config(page_title="RPS - Randonneur Performance System", layout="wide")
+
+JsonMap: TypeAlias = dict[str, object]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
 
 
 def _cleanup_index_background(root: Path) -> None:
@@ -122,7 +129,12 @@ def _vectorstore_sync_background(root: Path, athlete_id: str, interval_minutes: 
         return
 
     state = load_state(DEFAULT_STATE_PATH)
-    store_entry = state.setdefault("vectorstores", {}).setdefault(manifest.vector_store_name, {})
+    vectorstores = state.setdefault("vectorstores", {})
+    if not isinstance(vectorstores, dict):
+        raise TypeError("vectorstores state must be a mapping")
+    store_entry = vectorstores.setdefault(manifest.vector_store_name, {})
+    if not isinstance(store_entry, dict):
+        raise TypeError(f"vectorstores[{manifest.vector_store_name}] must be a mapping")
     last_check_at = store_entry.get("last_check_at")
     if last_check_at:
         try:

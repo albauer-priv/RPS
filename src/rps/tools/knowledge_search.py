@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TypeAlias
 
 from qdrant_client.models import Filter
 
@@ -17,6 +17,12 @@ from rps.vectorstores.qdrant_local import (
     resolve_embedding_config,
     search_points,
 )
+
+JsonMap: TypeAlias = dict[str, object]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
 
 
 def _resolve_collection(agent_name: str) -> str:
@@ -36,7 +42,7 @@ def _manifest_for_store(store_name: str) -> Path:
     raise FileNotFoundError(f"Manifest not found for vector store {store_name}")
 
 
-def knowledge_store_status_for_agent(agent_name: str) -> dict[str, Any]:
+def knowledge_store_status_for_agent(agent_name: str) -> JsonMap:
     """Return readiness details for the agent's configured local knowledge store."""
     spec = AGENTS.get(agent_name)
     if not spec:
@@ -44,10 +50,11 @@ def knowledge_store_status_for_agent(agent_name: str) -> dict[str, Any]:
     store_name = spec.vector_store_name
     manifest_path = _manifest_for_store(store_name)
     state = load_state(DEFAULT_STATE_PATH)
-    store_entry = (state.get("vectorstores") or {}).get(store_name) or {}
-    collection_name = store_entry.get("vector_store_id") or store_name
+    vectorstores = _as_map(state.get("vectorstores"))
+    store_entry = _as_map(vectorstores.get(store_name))
+    collection_name = str(store_entry.get("vector_store_id") or store_name)
     client = get_qdrant_client()
-    status = {
+    status: JsonMap = {
         "agent_name": agent_name,
         "store_name": store_name,
         "collection_name": collection_name,
@@ -79,12 +86,17 @@ def _rebuild_collection_for_agent(agent_name: str) -> None:
         progress=False,
         state=state,
     )
-    store_entry = state.setdefault("vectorstores", {}).setdefault(spec.vector_store_name, {})
+    vectorstores = state.setdefault("vectorstores", {})
+    if not isinstance(vectorstores, dict):
+        raise TypeError("vectorstores state must be a mapping")
+    store_entry = vectorstores.setdefault(spec.vector_store_name, {})
+    if not isinstance(store_entry, dict):
+        raise TypeError(f"vectorstores[{spec.vector_store_name}] must be a mapping")
     store_entry["manifest_hash"] = compute_manifest_hash(manifest_path)
     write_state(DEFAULT_STATE_PATH, state)
 
 
-def ensure_knowledge_store_ready(agent_name: str) -> dict[str, Any]:
+def ensure_knowledge_store_ready(agent_name: str) -> JsonMap:
     """Ensure the local knowledge store for an agent exists, rebuilding if needed."""
     status = knowledge_store_status_for_agent(agent_name)
     if status.get("ready"):
@@ -106,7 +118,7 @@ def search_knowledge(
     query: str,
     max_results: int = 5,
     tags: list[str] | None = None,
-) -> list[dict[str, Any]]:
+) -> list[JsonMap]:
     """Search the local vectorstore for a query."""
     if not query or not query.strip():
         return []
@@ -138,7 +150,7 @@ def search_knowledge(
             with_payload=True,
             query_filter=tag_filter,
         )
-    output: list[dict[str, Any]] = []
+    output: list[JsonMap] = []
     for result in results:
         payload = result.payload or {}
         output.append(

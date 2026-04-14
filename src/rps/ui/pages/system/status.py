@@ -27,6 +27,12 @@ from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_sche
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 
+JsonMap = dict[str, object]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
 
 st.title("Status")
 
@@ -244,24 +250,25 @@ else:
 st.subheader("Latest Artefacts")
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()
 latest_rows = []
+artefacts = _as_map(index.get("artefacts"))
 for artifact_type in ArtifactType:
-    entry = (index.get("artefacts") or {}).get(artifact_type.value)
+    entry = _as_map(artefacts.get(artifact_type.value))
     if not entry or not isinstance(entry, dict):
         continue
-    latest = entry.get("latest")
-    if not isinstance(latest, dict):
+    latest = _as_map(entry.get("latest"))
+    if not latest:
         continue
-    created_at = latest.get("created_at")
+    created_at = str(latest.get("created_at") or "—")
     latest_rows.append(
         {
             "Artefact": artifact_type.value,
             "Version": latest.get("version_key") or "—",
             "Run": latest.get("run_id") or "—",
-            "Updated": created_at or "—",
+            "Updated": created_at,
         }
     )
 
-latest_rows.sort(key=lambda row: row.get("Updated") or "", reverse=True)
+latest_rows.sort(key=lambda row: str(row["Updated"]), reverse=True)
 if latest_rows:
     st.dataframe(latest_rows, width="stretch")
 else:

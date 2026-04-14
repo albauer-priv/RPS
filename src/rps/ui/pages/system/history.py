@@ -21,6 +21,12 @@ from rps.ui.run_store import load_runs
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.types import ArtifactType
 
+JsonMap = dict[str, object]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
 
 st.title("History")
 
@@ -38,7 +44,7 @@ st.caption(f"Athlete: {athlete_id}")
 status_slot = st.container()
 
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()
-artefacts = index.get("artefacts") or {}
+artefacts = _as_map(index.get("artefacts"))
 
 
 def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
@@ -52,7 +58,7 @@ def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
     ]
     rows = []
     for artifact_type, label in targets:
-        entry = (artefacts.get(artifact_type.value) or {}).get("latest") or {}
+        entry = _as_map(_as_map(artefacts.get(artifact_type.value)).get("latest"))
         rows.append(
             {
                 "Type": artifact_type.value,
@@ -70,7 +76,7 @@ def _run_history(*, limit: int = 20, allowed: set[str] | None = None) -> list[di
     for artifact_type, entry in artefacts.items():
         if allowed is not None and artifact_type not in allowed:
             continue
-        versions = (entry or {}).get("versions") or {}
+        versions = _as_map(_as_map(entry).get("versions"))
         for version_key, record in versions.items():
             if not isinstance(record, dict):
                 continue
@@ -114,7 +120,7 @@ def _style_superseded(df: pd.DataFrame) -> pd.io.formats.style.Styler:
 
 
 def _version_records(artifact_type: ArtifactType) -> list[dict]:
-    entry = (artefacts.get(artifact_type.value) or {}).get("versions") or {}
+    entry = _as_map(_as_map(artefacts.get(artifact_type.value)).get("versions"))
     records = []
     for version_key, record in entry.items():
         if isinstance(record, dict):

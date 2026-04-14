@@ -211,14 +211,15 @@ class GuardedValidatedStore:
                 range_spec,
             )
             if version_key:
-                return self.store.load_version(
+                loaded = self.store.load_version(
                     self.athlete_id,
                     ArtifactType.PHASE_GUARDRAILS,
                     version_key,
-                ), version_key
+                )
+                return self._as_map(loaded), version_key
 
-        latest = self.store.load_latest(self.athlete_id, ArtifactType.PHASE_GUARDRAILS)
-        latest_key = latest.get("meta", {}).get("version_key", "latest")
+        latest = self._as_map(self.store.load_latest(self.athlete_id, ArtifactType.PHASE_GUARDRAILS))
+        latest_key = self._as_map(latest.get("meta")).get("version_key", "latest")
         if range_spec:
             latest_range = envelope_week_range(latest)
             if latest_range and latest_range.key != range_spec.key:
@@ -240,14 +241,15 @@ class GuardedValidatedStore:
                 range_spec,
             )
             if version_key:
-                return self.store.load_version(
+                loaded = self.store.load_version(
                     self.athlete_id,
                     ArtifactType.PHASE_STRUCTURE,
                     version_key,
-                ), version_key
+                )
+                return self._as_map(loaded), version_key
 
-        latest = self.store.load_latest(self.athlete_id, ArtifactType.PHASE_STRUCTURE)
-        latest_key = latest.get("meta", {}).get("version_key", "latest")
+        latest = self._as_map(self.store.load_latest(self.athlete_id, ArtifactType.PHASE_STRUCTURE))
+        latest_key = self._as_map(latest.get("meta")).get("version_key", "latest")
         if range_spec:
             latest_range = envelope_week_range(latest)
             if latest_range and latest_range.key != range_spec.key:
@@ -605,12 +607,16 @@ class GuardedValidatedStore:
                 ArtifactType.PHASE_PREVIEW,
                 ArtifactType.PHASE_FEED_FORWARD,
             ):
-                season_plan_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+                season_plan_doc = self._as_map(
+                    self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+                )
                 self._ensure_phase_range_matches_plan(cast(JsonMap, document), season_plan_doc)
             if target in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE):
                 if season_plan_doc is None:
-                    season_plan_doc = self.store.load_latest(
-                        self.athlete_id, ArtifactType.SEASON_PLAN
+                    season_plan_doc = self._as_map(
+                        self.store.load_latest(
+                            self.athlete_id, ArtifactType.SEASON_PLAN
+                        )
                     )
                 if target == ArtifactType.PHASE_GUARDRAILS:
                     self._enforce_phase_guardrails_constraints(cast(JsonMap, document), season_plan_doc)

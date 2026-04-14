@@ -7,7 +7,7 @@ import logging
 import os
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import Optional, TypeAlias
 
 ROOT = Path(__file__).resolve().parents[3]
 SYS_PATH = str(ROOT / "src")
@@ -21,6 +21,7 @@ from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 from rps.rendering.auto_render import render_sidecar  # noqa: E402
 
 logger = logging.getLogger(__name__)
+JsonMap: TypeAlias = dict[str, object]
 
 def load_env(env_path: Optional[Path] = None) -> None:
     """Load environment variables from a .env file if it exists."""
@@ -135,6 +136,21 @@ def parse_iso_week_range(value: str | None) -> dict[str, dict[str, int]] | None:
     return {"start": start, "end": end}
 
 
+def _iso_week_meta(value: str | None) -> JsonMap | None:
+    parsed = parse_iso_week(value)
+    return dict(parsed) if parsed is not None else None
+
+
+def _iso_week_range_meta(value: str | None) -> JsonMap | None:
+    parsed = parse_iso_week_range(value)
+    if parsed is None:
+        return None
+    return {
+        "start": dict(parsed["start"]),
+        "end": dict(parsed["end"]),
+    }
+
+
 def record_index_write(
     *,
     athlete_id: str,
@@ -162,8 +178,8 @@ def record_index_write(
         run_id=run_id,
         producer_agent=producer_agent,
         created_at=created_at,
-        iso_week=parse_iso_week(iso_week),
-        iso_week_range=parse_iso_week_range(iso_week_range),
+        iso_week=_iso_week_meta(iso_week),
+        iso_week_range=_iso_week_range_meta(iso_week_range),
     )
     logger.info(
         "Recorded artifact write type=%s version_key=%s path=%s run_id=%s",

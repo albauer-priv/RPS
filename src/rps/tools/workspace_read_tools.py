@@ -19,6 +19,10 @@ JsonDict = dict[str, object]
 ToolHandler = Callable[[dict[str, Any]], object]
 
 
+def _as_map(value: object) -> JsonDict:
+    return value if isinstance(value, dict) else {}
+
+
 def _parse_artifact_type(value: str) -> ArtifactType:
     """Normalize a user-provided artifact type string."""
     if isinstance(value, ArtifactType):
@@ -278,7 +282,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         """Resolve the season plan phase covering the target week."""
         year = int(args["year"])
         week = int(args["week"])
-        season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+        season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
         info = resolve_season_plan_phase_info(season_plan, IsoWeek(year, week))
         if not info:
             return {"ok": False, "error": f"No season plan phase covers {year:04d}-{week:02d}"}
@@ -302,7 +306,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         week = int(args["week"])
         phase_len = int(args.get("phase_len", 4))
 
-        season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+        season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
         phase_range = resolve_phase_range_from_season_plan(
             season_plan, IsoWeek(year, week), phase_len=phase_len
         )
@@ -325,7 +329,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         phase_len = int(args.get("phase_len", 4))
 
         try:
-            season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+            season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
         except FileNotFoundError:
             return {
                 "ok": False,
@@ -349,7 +353,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
             target = add_weeks(target, offset_phases * phase_len)
 
         try:
-            season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+            season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
         except FileNotFoundError:
             return {
                 "ok": False,

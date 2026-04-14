@@ -29,6 +29,21 @@ from rps.workspace.iso_helpers import IsoWeek, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
+JsonMap = dict[str, object]
+FeedForwardRow = dict[str, str]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_str(value: object, default: str = "") -> str:
+    return value if isinstance(value, str) and value else default
+
+
+def _as_str_list(value: object) -> list[str]:
+    return [str(item) for item in value] if isinstance(value, list) else []
+
 
 st.title("Feed Forward")
 
@@ -266,21 +281,22 @@ except FileNotFoundError:
 st.subheader(f"Week Analysis · {selected_week_key}")
 summary_text = "N/A"
 if store.latest_exists(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD):
-    payload = store.load_latest(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD)
-    decision = (payload.get("data") or {}).get("decision_summary") or {}
-    summary_text = decision.get("conclusion") or "N/A"
+    payload = _as_map(store.load_latest(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD))
+    decision = _as_map(_as_map(payload.get("data")).get("decision_summary"))
+    summary_text = _as_str(decision.get("conclusion"), "N/A")
 elif store.latest_exists(athlete_id, ArtifactType.PHASE_FEED_FORWARD):
-    payload = store.load_latest(athlete_id, ArtifactType.PHASE_FEED_FORWARD)
-    reason = (payload.get("data") or {}).get("reason_context") or {}
-    summary_text = reason.get("intent_of_adjustment") or "N/A"
+    payload = _as_map(store.load_latest(athlete_id, ArtifactType.PHASE_FEED_FORWARD))
+    reason = _as_map(_as_map(payload.get("data")).get("reason_context"))
+    summary_text = _as_str(reason.get("intent_of_adjustment"), "N/A")
 st.markdown(f"**Summary:** {summary_text}")
 if not report_payload:
     st.info("No DES analysis report found for the selected week.")
 else:
-    recommendation = (report_payload.get("data") or {}).get("recommendation") or {}
+    report_payload_map = _as_map(report_payload)
+    recommendation = _as_map(_as_map(report_payload_map.get("data")).get("recommendation"))
     st.markdown("**Recommendation for Season Planner**")
-    st.markdown("- " + "\n- ".join(recommendation.get("suggested_considerations") or ["N/A"]))
-    st.caption("Rationale: " + "; ".join(recommendation.get("rationale") or ["N/A"]))
+    st.markdown("- " + "\n- ".join(_as_str_list(recommendation.get("suggested_considerations")) or ["N/A"]))
+    st.caption("Rationale: " + "; ".join(_as_str_list(recommendation.get("rationale")) or ["N/A"]))
 
 st.subheader("Feed Forward Summaries")
 latest_ff = []
@@ -289,15 +305,15 @@ for artifact_type, label in (
     (ArtifactType.PHASE_FEED_FORWARD, "Phase → Week"),
 ):
     if store.latest_exists(athlete_id, artifact_type):
-        payload = store.load_latest(athlete_id, artifact_type)
-        data = payload.get("data") if isinstance(payload, dict) else {}
+        latest_payload = _as_map(store.load_latest(athlete_id, artifact_type))
+        data = latest_payload.get("data") if isinstance(latest_payload, dict) else {}
         summary = "N/A"
         if artifact_type == ArtifactType.SEASON_PHASE_FEED_FORWARD:
-            decision = (data or {}).get("decision_summary") or {}
-            summary = decision.get("conclusion") or "N/A"
+            decision = _as_map(_as_map(data).get("decision_summary"))
+            summary = _as_str(decision.get("conclusion"), "N/A")
         if artifact_type == ArtifactType.PHASE_FEED_FORWARD:
-            reason = (data or {}).get("reason_context") or {}
-            summary = reason.get("intent_of_adjustment") or "N/A"
+            reason = _as_map(_as_map(data).get("reason_context"))
+            summary = _as_str(reason.get("intent_of_adjustment"), "N/A")
         latest_ff.append({"Type": label, "Summary": summary})
 
 if latest_ff:
@@ -307,40 +323,45 @@ else:
 
 st.subheader("Feed Forward Artefacts")
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()
-rows = []
+rows: list[FeedForwardRow] = []
+artefacts = _as_map(index.get("artefacts"))
 for artifact_type in (
     ArtifactType.DES_ANALYSIS_REPORT,
     ArtifactType.SEASON_PHASE_FEED_FORWARD,
     ArtifactType.PHASE_FEED_FORWARD,
 ):
-    entry = (index.get("artefacts") or {}).get(artifact_type.value) or {}
-    versions = entry.get("versions") or {}
+    entry = _as_map(artefacts.get(artifact_type.value))
+    versions = _as_map(entry.get("versions"))
     for version_key, record in versions.items():
         if not isinstance(record, dict):
             continue
-        recommendation = "—"
+        recommendation_text = "—"
         analysis_ref = "—"
         if artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
             try:
-                payload = store.load_version(athlete_id, artifact_type, str(version_key))
-                recommendation = ", ".join((payload.get("data") or {}).get("recommendation", {}).get("suggested_considerations", [])) or "—"
+                payload_map = _as_map(store.load_version(athlete_id, artifact_type, str(version_key)))
+                recommendation_text = ", ".join(
+                    _as_str_list(
+                        _as_map(_as_map(payload_map.get("data")).get("recommendation")).get("suggested_considerations")
+                    )
+                ) or "—"
                 analysis_ref = str(version_key)
             except FileNotFoundError:
                 pass
         if artifact_type == ArtifactType.SEASON_PHASE_FEED_FORWARD:
             try:
-                payload = store.load_version(athlete_id, artifact_type, str(version_key))
-                data = payload.get("data") or {}
-                recommendation = (data.get("decision_summary") or {}).get("conclusion") or "—"
-                analysis_ref = (data.get("source_context") or {}).get("des_analysis_report_ref") or "—"
+                payload_map = _as_map(store.load_version(athlete_id, artifact_type, str(version_key)))
+                data = _as_map(payload_map.get("data"))
+                recommendation_text = _as_str(_as_map(data.get("decision_summary")).get("conclusion"), "—")
+                analysis_ref = _as_str(_as_map(data.get("source_context")).get("des_analysis_report_ref"), "—")
             except FileNotFoundError:
                 pass
         if artifact_type == ArtifactType.PHASE_FEED_FORWARD:
             try:
-                payload = store.load_version(athlete_id, artifact_type, str(version_key))
-                data = payload.get("data") or {}
-                recommendation = (data.get("reason_context") or {}).get("intent_of_adjustment") or "—"
-                analysis_ref = (data.get("body_metadata") or {}).get("derived_from") or "—"
+                payload_map = _as_map(store.load_version(athlete_id, artifact_type, str(version_key)))
+                data = _as_map(payload_map.get("data"))
+                recommendation_text = _as_str(_as_map(data.get("reason_context")).get("intent_of_adjustment"), "—")
+                analysis_ref = _as_str(_as_map(data.get("body_metadata")).get("derived_from"), "—")
             except FileNotFoundError:
                 pass
         rows.append(
@@ -350,12 +371,12 @@ for artifact_type in (
                 "Validity": record.get("iso_week_range") or record.get("iso_week") or "—",
                 "Created": record.get("created_at") or "—",
                 "Producer": record.get("producer_agent") or "—",
-                "Recommendation": recommendation,
+                "Recommendation": recommendation_text,
                 "Analysis Report": analysis_ref,
             }
         )
 
-rows.sort(key=lambda row: row.get("Created") or "", reverse=True)
+rows.sort(key=lambda row: row["Created"], reverse=True)
 if rows:
     st.dataframe(rows, width="stretch")
 else:

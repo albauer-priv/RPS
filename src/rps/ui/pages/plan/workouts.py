@@ -31,6 +31,17 @@ from rps.ui.shared import (
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
+
+JsonMap = dict[str, object]
+HistoryWorkoutRow = dict[str, str]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: object) -> list[object]:
+    return value if isinstance(value, list) else []
 from rps.workspace.iso_helpers import parse_iso_week
 
 
@@ -144,7 +155,7 @@ except FileNotFoundError:
     except FileNotFoundError:
         intervals_payload = None
 
-if not intervals_payload:
+if not isinstance(intervals_payload, list) or not intervals_payload:
     st.info("No Intervals workouts found for this week.")
 else:
     week_plan_payload = None
@@ -154,23 +165,26 @@ else:
         week_plan_payload = None
     day_lookup: dict[str, list[dict[str, str]]] = {}
     if isinstance(week_plan_payload, dict):
-        agenda_rows = (week_plan_payload.get("data") or {}).get("agenda") or []
-        workout_rows = (week_plan_payload.get("data") or {}).get("workouts") or []
+        week_plan_data = _as_map(week_plan_payload.get("data"))
+        agenda_rows = _as_list(week_plan_data.get("agenda"))
+        workout_rows = _as_list(week_plan_data.get("workouts"))
         workout_map = {
-            workout.get("workout_id"): workout
+            _as_map(workout).get("workout_id"): _as_map(workout)
             for workout in workout_rows
-            if workout.get("workout_id")
+            if _as_map(workout).get("workout_id")
         }
         for row in agenda_rows:
-            workout_id = row.get("workout_id")
+            row_map = _as_map(row)
+            workout_id = row_map.get("workout_id")
             workout = workout_map.get(workout_id, {})
             name = workout.get("title") or workout_id or "Workout"
-            date = row.get("date") or ""
-            duration = row.get("planned_duration") or workout.get("duration") or ""
-            load_kj = str(row.get("planned_kj") or "")
-            day = str(row.get("day") or "")
-            if date:
-                day_lookup.setdefault(date, []).append(
+            date = row_map.get("date") or ""
+            duration = row_map.get("planned_duration") or workout.get("duration") or ""
+            load_kj = str(row_map.get("planned_kj") or "")
+            day = str(row_map.get("day") or "")
+            date_key = str(date)
+            if date_key:
+                day_lookup.setdefault(date_key, []).append(
                     {
                         "name": str(name),
                         "duration": str(duration),
@@ -240,7 +254,7 @@ workout_files = sorted(exports_dir.glob("workouts_*.json"), reverse=True)
 if not workout_files:
     st.info("No exported workouts found yet.")
 else:
-    month_map: dict[str, dict[str, list[dict[str, str]]]] = defaultdict(lambda: defaultdict(list))
+    month_map: dict[str, dict[str, list[HistoryWorkoutRow]]] = defaultdict(lambda: defaultdict(list))
     for path in workout_files:
         week_label = path.stem.replace("workouts_", "")
         iso_week = parse_iso_week(week_label)
@@ -271,10 +285,10 @@ else:
 
     for month_key in sorted(month_map.keys(), reverse=True):
         with st.expander(month_key, expanded=False):
-            weeks = month_map[month_key]
-            for week_label in sorted(weeks.keys(), reverse=True):
+            month_weeks = month_map[month_key]
+            for week_label in sorted(month_weeks.keys(), reverse=True):
                 with st.expander(f"Week {week_label}", expanded=False):
-                    for workout in weeks[week_label]:
-                        st.markdown(f"**{workout['name']}** · {workout['start']}")
-                        if workout["description"]:
-                            st.code(workout["description"])
+                    for workout_row in month_weeks[week_label]:
+                        st.markdown(f"**{workout_row['name']}** · {workout_row['start']}")
+                        if workout_row["description"]:
+                            st.code(workout_row["description"])

@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 JsonDict = dict[str, object]
 ToolHandler = Callable[[dict[str, Any]], object]
 
+
+def _as_map(value: object) -> JsonDict:
+    return value if isinstance(value, dict) else {}
+
 def _parse_artifact_type(value: str) -> ArtifactType:
     """Normalize a user-provided artifact type string."""
     if isinstance(value, ArtifactType):
@@ -208,7 +212,7 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, ToolHandler]:
             target = add_weeks(target, offset_phases * phase_len)
 
         try:
-            season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+            season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
         except FileNotFoundError:
             return {
                 "ok": False,
