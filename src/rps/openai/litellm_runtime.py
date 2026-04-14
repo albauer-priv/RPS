@@ -495,12 +495,12 @@ def _iter_stream_chunks(
                         entry["arguments"] = (entry.get("arguments") or "") + str(func.get("arguments") or "")
                 else:
                     if getattr(call, "id", None):
-                        entry["id"] = getattr(call, "id")
+                        entry["id"] = call.id
                     func = getattr(call, "function", None)
                     if func and getattr(func, "name", None):
-                        entry["name"] = getattr(func, "name")
+                        entry["name"] = func.name
                     if func and getattr(func, "arguments", None):
-                        entry["arguments"] = (entry.get("arguments") or "") + str(getattr(func, "arguments"))
+                        entry["arguments"] = (entry.get("arguments") or "") + str(func.arguments)
     tool_calls_out = []
     for idx in sorted(tool_accumulator):
         entry = tool_accumulator[idx]

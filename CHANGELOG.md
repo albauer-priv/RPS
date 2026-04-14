@@ -774,6 +774,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developer-facing docs now include the lint command and local hook activation step in `README.md`.
 - The mandatory `ruff` gate was expanded slightly with a small set of safe modernization checks (`UP017`, `UP031`, `UP035`, `UP037`) after verifying a green repo run.
 - The mandatory `ruff` gate now also covers low-risk `flake8-bugbear` checks `B904` and `B905`, with explicit `zip(..., strict=...)` handling and explicit exception chaining in CLI argument parsing.
+- LiteLLM tool-call normalization now avoids constant-name `getattr(...)` lookups in the runtime adapter, reducing another small `ruff` `B009` quality hotspot without changing behavior.
 
 ## [0.1.0] - 2026-01-20
 
