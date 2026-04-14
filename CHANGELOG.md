@@ -768,6 +768,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Groq default model now falls back to `groq/openai/gpt-oss-20b` when `RPS_LLM_BASE_URL` points to Groq.
 - Workspace state/index call sites now consistently narrow `object` payloads from the local store before reading artefact/index metadata, fixing the follow-on typing breakage from stricter store APIs.
 - Performance Feed Forward, Plan Workouts, System History, System Status, startup vectorstore sync, and workspace read/write helpers now use explicit JSON-map access patterns instead of unchecked `.get()` chains on dynamic objects.
+- Intervals posting receipt helpers now use explicit receipt/payload row types instead of broad dynamic dict typing, including safer text normalization for generated external IDs.
 
 ## [0.1.0] - 2026-01-20
 

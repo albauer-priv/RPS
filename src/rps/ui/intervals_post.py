@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import TypeAlias
 
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -18,6 +18,16 @@ from rps.data_pipeline.intervals_post import delete_events, post_events
 
 
 logger = logging.getLogger(__name__)
+JsonMap: TypeAlias = dict[str, object]
+ReceiptRow: TypeAlias = dict[str, str]
+
+
+def _as_text(value: object, default: str = "") -> str:
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return default
+    return str(value)
 
 
 @dataclass(frozen=True)
@@ -28,7 +38,7 @@ class ReceiptResult:
     posted: int
     skipped: int
     conflicts: list[str]
-    outputs: list[dict[str, Any]]
+    outputs: list[ReceiptRow]
     deleted: int = 0
     error: str | None = None
 
@@ -37,10 +47,10 @@ class ReceiptResult:
 class ReceiptStatus:
     """Status summary for Intervals receipts."""
 
-    unposted: list[dict[str, Any]]
-    updates: list[dict[str, Any]]
-    conflicts: list[dict[str, Any]]
-    posted: list[dict[str, Any]]
+    unposted: list[ReceiptRow]
+    updates: list[ReceiptRow]
+    conflicts: list[ReceiptRow]
+    posted: list[ReceiptRow]
     error: str | None = None
 
 
@@ -49,13 +59,13 @@ def _utc_iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _payload_hash(item: dict[str, Any]) -> str:
+def _payload_hash(item: JsonMap) -> str:
     """Compute a stable hash of a workout payload."""
     payload = json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _workout_uid(item: dict[str, Any]) -> str:
+def _workout_uid(item: JsonMap) -> str:
     """Derive a stable workout UID from payload fields."""
     base = f"{item.get('start_date_local', '')}|{item.get('name', '')}"
     if base.strip("|"):
@@ -63,10 +73,10 @@ def _workout_uid(item: dict[str, Any]) -> str:
     return hashlib.sha256(_payload_hash(item).encode("utf-8")).hexdigest()[:16]
 
 
-def _external_id(athlete_id: str, year: int, week: int, item: dict[str, Any]) -> str:
+def _external_id(athlete_id: str, year: int, week: int, item: JsonMap) -> str:
     """Derive a deterministic external_id for Intervals events."""
-    start_date = item.get("start_date_local") or "unknown"
-    name = (item.get("name") or "workout").strip().replace(" ", "_").lower()
+    start_date = _as_text(item.get("start_date_local"), "unknown")
+    name = _as_text(item.get("name"), "workout").strip().replace(" ", "_").lower()
     slot_key = name[:32]
     return f"rps:{athlete_id}:{year:04d}-W{week:02d}:{start_date}:{slot_key}"
 
@@ -96,10 +106,10 @@ def inspect_intervals_receipts(
     if not isinstance(payload, list) or not payload:
         return ReceiptStatus(unposted=[], updates=[], conflicts=[], posted=[], error="Intervals workouts payload invalid.")
 
-    unposted: list[dict[str, Any]] = []
-    updates: list[dict[str, Any]] = []
-    conflicts: list[dict[str, Any]] = []
-    posted: list[dict[str, Any]] = []
+    unposted: list[ReceiptRow] = []
+    updates: list[ReceiptRow] = []
+    conflicts: list[ReceiptRow] = []
+    posted: list[ReceiptRow] = []
     for item in payload:
         if not isinstance(item, dict):
             continue
@@ -226,7 +236,7 @@ def post_to_intervals_receipts(
             error="Intervals workouts payload is empty or invalid.",
         )
 
-    outputs: list[dict[str, Any]] = []
+    outputs: list[ReceiptRow] = []
     conflicts: list[str] = []
     posted = 0
     skipped = 0
@@ -354,14 +364,14 @@ def post_to_intervals_commit(
             error="Intervals workouts payload is empty or invalid.",
         )
 
-    to_post: list[dict[str, Any]] = []
-    outputs: list[dict[str, Any]] = []
+    to_post: list[JsonMap] = []
+    outputs: list[ReceiptRow] = []
     conflicts: list[str] = []
     posted = 0
     skipped = 0
     deleted = 0
 
-    receipt_map: dict[str, dict[str, Any]] = {}
+    receipt_map: dict[str, JsonMap] = {}
     receipt_paths: dict[str, Path] = {}
     receipt_dir = _receipt_dir(store.root, athlete_id, year, week)
     if receipt_dir.exists():
@@ -568,7 +578,7 @@ def delete_posted_workouts(
             error=f"Intervals delete error: {result.get('status')}",
         )
     deleted = 0
-    outputs: list[dict[str, Any]] = []
+    outputs: list[ReceiptRow] = []
     for external_id, path, record in receipts:
         tombstone = {
             "external_id": external_id,
