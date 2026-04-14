@@ -86,7 +86,7 @@ def _build_user_data_block(runtime_for: Callable[[str], AgentRuntime], athlete_i
     try:
         store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
         profile_payload = store.load_latest(athlete_id, ArtifactType.ATHLETE_PROFILE)
-        user_data = _extract_profile_user_data(profile_payload)
+        user_data = _extract_profile_user_data(profile_payload if isinstance(profile_payload, dict) else None)
         return _format_user_data_block(user_data)
     except Exception:
         return _format_user_data_block({})
@@ -97,17 +97,27 @@ def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athle
     try:
         store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
         selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        kpi_sel = (selection.get("data") or {}).get("kpi_moving_time_rate_guidance_selection")
+        selection_data = selection.get("data") if isinstance(selection, dict) else None
+        selection_map = selection_data if isinstance(selection_data, dict) else {}
+        kpi_sel = selection_map.get("kpi_moving_time_rate_guidance_selection")
         if isinstance(kpi_sel, dict):
             segment = kpi_sel.get("segment")
             w_per_kg = kpi_sel.get("w_per_kg") or {}
             kj_per_kg = kpi_sel.get("kj_per_kg_per_hour") or {}
-            if segment and w_per_kg and kj_per_kg:
+            if (
+                segment
+                and isinstance(w_per_kg, dict)
+                and isinstance(kj_per_kg, dict)
+                and w_per_kg
+                and kj_per_kg
+            ):
+                w_bounds: JsonMap = w_per_kg
+                kj_bounds: JsonMap = kj_per_kg
                 return (
                     "Selected KPI guidance: "
                     f"kpi_rate_band_selector {segment} "
-                    f"(w_per_kg {w_per_kg.get('min')} - {w_per_kg.get('max')}, "
-                    f"kj_per_kg_per_hour {kj_per_kg.get('min')} - {kj_per_kg.get('max')}). "
+                    f"(w_per_kg {w_bounds.get('min')} - {w_bounds.get('max')}, "
+                    f"kj_per_kg_per_hour {kj_bounds.get('min')} - {kj_bounds.get('max')}). "
                 )
     except Exception:
         return ""
@@ -165,7 +175,8 @@ def create_performance_report(
     season_range = None
     if workspace.latest_exists(ArtifactType.SEASON_PLAN):
         season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
-        season_range = envelope_week_range(season_plan)
+        if isinstance(season_plan, dict):
+            season_range = envelope_week_range(season_plan)
     report_label = f"{report_week.year:04d}-{report_week.week:02d}"
     if not season_range or not range_contains(season_range, report_week):
         message = (
@@ -191,10 +202,15 @@ def create_performance_report(
     analysis_tasks: list[AgentTask] = []
     if workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
         report = workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
-        week = envelope_week(report)
-        if week and week.year == report_week.year and week.week == report_week.week:
-            message = f"Found DES_ANALYSIS_REPORT for ISO week {report_label}."
-            _log(message)
+        if isinstance(report, dict):
+            week = envelope_week(report)
+            if week and week.year == report_week.year and week.week == report_week.week:
+                message = f"Found DES_ANALYSIS_REPORT for ISO week {report_label}."
+                _log(message)
+            else:
+                message = f"DES_ANALYSIS_REPORT missing for ISO week {report_label}. Will create."
+                _log(message)
+                analysis_tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
         else:
             message = f"DES_ANALYSIS_REPORT missing for ISO week {report_label}. Will create."
             _log(message)
@@ -354,6 +370,15 @@ def plan_week(
         return PlanWeekResult(ok=False, steps=steps)
 
     season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
+    if not isinstance(season_plan, dict):
+        steps.append(
+            {
+                "agent": "season_planner",
+                "tasks": [],
+                "result": {"ok": False, "error": "SEASON_PLAN has invalid payload shape"},
+            }
+        )
+        return PlanWeekResult(ok=False, steps=steps)
     season_range = envelope_week_range(season_plan)
     if not season_range or not range_contains(season_range, target):
         range_label = season_range.range_key if season_range else "missing"
@@ -413,8 +438,11 @@ def plan_week(
 
     def _latest_range_record(artifact_type: ArtifactType):
         index = index_query._index_manager.load()
-        entry = index.get("artefacts", {}).get(artifact_type.value)
-        if not entry:
+        artefacts = index.get("artefacts", {})
+        if not isinstance(artefacts, dict):
+            return None, None, None
+        entry = artefacts.get(artifact_type.value)
+        if not isinstance(entry, dict):
             return None, None, None
         versions = entry.get("versions", {})
         if not isinstance(versions, dict):
@@ -617,12 +645,16 @@ def plan_week(
     else:
         if workspace.latest_exists(ArtifactType.WEEK_PLAN):
             plan = workspace.get_latest(ArtifactType.WEEK_PLAN)
-            plan_week = envelope_week(plan)
-            if plan_week and (plan_week.year == target.year and plan_week.week == target.week):
-                message = (
-                    f"WEEK_PLAN matches ISO week {target_label} but is stale. Will create."
-                )
-                _log(message)
+            if isinstance(plan, dict):
+                plan_week = envelope_week(plan)
+                if plan_week and (plan_week.year == target.year and plan_week.week == target.week):
+                    message = (
+                        f"WEEK_PLAN matches ISO week {target_label} but is stale. Will create."
+                    )
+                    _log(message)
+                else:
+                    message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
+                    _log(message)
             else:
                 message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
                 _log(message)

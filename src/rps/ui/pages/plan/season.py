@@ -349,11 +349,13 @@ def _render_phase_panels(plan_payload: dict | None) -> None:
 
 scenarios_payload = None
 if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIOS):
-    scenarios_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+    raw_scenarios_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+    scenarios_payload = raw_scenarios_payload if isinstance(raw_scenarios_payload, dict) else None
 
 selection_payload = None
 if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
-    selection_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+    raw_selection_payload = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+    selection_payload = raw_selection_payload if isinstance(raw_selection_payload, dict) else None
 
 selected_default = None
 if selection_payload:
@@ -445,7 +447,8 @@ with st.expander("Actions", expanded=False):
 
 if has_plan:
     rendered = load_rendered_markdown(athlete_id, ArtifactType.SEASON_PLAN)
-    plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    raw_plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    plan_payload = raw_plan_payload if isinstance(raw_plan_payload, dict) else None
     if rendered:
         marker = "### Metadata"
         start = rendered.find(marker)

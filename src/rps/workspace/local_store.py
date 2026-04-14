@@ -9,7 +9,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from .index_manager import WorkspaceIndexManager
 from .paths import ARTIFACT_PATHS, ensure_dir
@@ -23,6 +23,20 @@ from .versioning import (
 )
 
 logger = logging.getLogger(__name__)
+
+JsonMap = dict[str, object]
+JsonList = list[object]
+JsonValue = JsonMap | JsonList
+
+
+def _as_map(value: object) -> JsonMap:
+    """Return a mapping when the value is dict-like."""
+    return value if isinstance(value, dict) else {}
+
+
+def _as_str(value: object) -> str | None:
+    """Return a string when the value is a string."""
+    return value if isinstance(value, str) else None
 
 def utc_iso_now() -> str:
     """Return the current time in ISO-8601 UTC format."""
@@ -107,7 +121,7 @@ class LocalArtifactStore:
         version_path: Path,
         run_id: str,
         producer_agent: str,
-        meta: Optional[dict[str, Any]] = None,
+        meta: Optional[JsonMap] = None,
     ) -> None:
         """Record a write in the per-athlete index.json."""
         rel_path = str(version_path.relative_to(self.athlete_root(athlete_id)))
@@ -115,9 +129,11 @@ class LocalArtifactStore:
         iso_week = None
         iso_week_range = None
         if meta:
-            created_at = meta.get("created_at")
-            iso_week = meta.get("iso_week")
-            iso_week_range = meta.get("iso_week_range")
+            created_at = _as_str(meta.get("created_at"))
+            iso_week_raw = meta.get("iso_week")
+            iso_week = iso_week_raw if isinstance(iso_week_raw, dict) else None
+            iso_week_range_raw = meta.get("iso_week_range")
+            iso_week_range = iso_week_range_raw if isinstance(iso_week_range_raw, dict) else None
 
         self._index_manager(athlete_id).record_write(
             artifact_type=artifact_type.value,
@@ -130,14 +146,14 @@ class LocalArtifactStore:
             iso_week_range=iso_week_range,
         )
 
-    def load_latest(self, athlete_id: str, artifact_type: ArtifactType) -> Any:
+    def load_latest(self, athlete_id: str, artifact_type: ArtifactType) -> object:
         """Load the latest artifact for the given type."""
         path = self.latest_path(athlete_id, artifact_type)
         if not path.exists():
             raise FileNotFoundError(f"No latest artifact found: {path}")
         return self._read_json(path)
 
-    def load_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Any:
+    def load_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> object:
         """Load a specific artifact version."""
         path = self._path_for_version(athlete_id, artifact_type, version_key)
         if not path.exists():
@@ -222,11 +238,12 @@ class LocalArtifactStore:
             version_key = self._resolve_week_version_key(athlete_id, artifact_type, version_key)
         root = self.athlete_root(athlete_id)
         index = self._index_manager(athlete_id).load()
-        artefacts = index.get("artefacts", {})
-        entry = artefacts.get(artifact_type.value, {})
-        version = entry.get("versions", {}).get(version_key)
+        artefacts = _as_map(index.get("artefacts"))
+        entry = _as_map(artefacts.get(artifact_type.value))
+        versions = _as_map(entry.get("versions"))
+        version = versions.get(version_key)
         if isinstance(version, dict):
-            relative = version.get("path")
+            relative = _as_str(version.get("path"))
             if isinstance(relative, str):
                 candidate = root / relative
                 if candidate.exists():
@@ -240,14 +257,16 @@ class LocalArtifactStore:
         base_week, suffix = split_week_version_key(version_key)
         if not base_week or suffix:
             return version_key
-        entry = self._index_manager(athlete_id).load().get("artefacts", {}).get(artifact_type.value) or {}
-        versions = entry.get("versions", {}) if isinstance(entry, dict) else {}
+        index = self._index_manager(athlete_id).load()
+        artefacts = _as_map(index.get("artefacts"))
+        entry = _as_map(artefacts.get(artifact_type.value))
+        versions = _as_map(entry.get("versions"))
         candidates: list[tuple[datetime, str, str]] = []
         for key, record in versions.items():
             cand_base, cand_suffix = split_week_version_key(key)
             if cand_base != base_week:
                 continue
-            created_raw = record.get("created_at") if isinstance(record, dict) else None
+            created_raw = _as_str(record.get("created_at")) if isinstance(record, dict) else None
             created_dt = _parse_created_at(created_raw)
             candidates.append((created_dt, cand_suffix or "", key))
         if candidates:
@@ -262,14 +281,16 @@ class LocalArtifactStore:
         base_range, suffix = split_range_version_key(version_key)
         if not base_range or suffix:
             return version_key
-        entry = self._index_manager(athlete_id).load().get("artefacts", {}).get(artifact_type.value) or {}
-        versions = entry.get("versions", {}) if isinstance(entry, dict) else {}
+        index = self._index_manager(athlete_id).load()
+        artefacts = _as_map(index.get("artefacts"))
+        entry = _as_map(artefacts.get(artifact_type.value))
+        versions = _as_map(entry.get("versions"))
         candidates: list[tuple[datetime, str, str]] = []
         for key, record in versions.items():
             cand_base, cand_suffix = split_range_version_key(key)
             if cand_base != base_range:
                 continue
-            created_raw = record.get("created_at") if isinstance(record, dict) else None
+            created_raw = _as_str(record.get("created_at")) if isinstance(record, dict) else None
             created_dt = _parse_created_at(created_raw)
             candidates.append((created_dt, cand_suffix or "", key))
         if candidates:
@@ -282,9 +303,9 @@ class LocalArtifactStore:
         athlete_id: str,
         artifact_type: ArtifactType,
         version_key: str,
-        payload: dict[str, Any],
+        payload: JsonMap,
         *,
-        payload_meta: Optional[dict[str, Any]] = None,
+        payload_meta: Optional[JsonMap] = None,
         authority: Authority = Authority.STRUCTURAL,
         producer_agent: str = "unknown_agent",
         run_id: str = "run_unknown",
@@ -307,8 +328,14 @@ class LocalArtifactStore:
         )
 
         payload_meta = payload_meta or {}
-        authority_value = _normalize_authority(payload_meta.get("authority", meta.authority))
-        meta_doc: dict[str, Any] = {
+        authority_raw = payload_meta.get("authority", meta.authority)
+        authority_value = (
+            _normalize_authority(authority_raw)
+            if authority_raw is None or isinstance(authority_raw, (Authority, str))
+            else _normalize_authority(str(authority_raw))
+        )
+        version_meta = _as_str(payload_meta.get("version_key")) or meta.version_key
+        meta_doc: JsonMap = {
             "artifact_type": meta.artifact_type.value,
             "schema_id": payload_meta.get("schema_id", f"{meta.artifact_type.value}Interface"),
             "schema_version": payload_meta.get("schema_version", "1.0"),
@@ -321,9 +348,10 @@ class LocalArtifactStore:
         }
 
         if "version_key" in payload_meta or not payload_meta:
+            created_meta = _as_str(meta_doc.get("created_at"))
             meta_doc["version_key"] = normalize_version_key(
-                payload_meta.get("version_key", meta.version_key),
-                meta_doc.get("created_at"),
+                version_meta,
+                created_meta,
                 artifact_type=artifact_type,
             )
 
@@ -426,7 +454,7 @@ class LocalArtifactStore:
         )
         return version_path
 
-    def _read_json(self, path: Path) -> Any:
+    def _read_json(self, path: Path) -> object:
         """Read JSON from a file."""
         with path.open("r", encoding="utf-8") as handle:
             return json.load(handle)

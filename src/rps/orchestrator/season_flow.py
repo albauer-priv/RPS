@@ -185,7 +185,7 @@ def create_season_plan(
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         profile_payload = store.load_latest(athlete_id, ArtifactType.ATHLETE_PROFILE)
-        user_data = _extract_profile_user_data(profile_payload)
+        user_data = _extract_profile_user_data(profile_payload if isinstance(profile_payload, dict) else None)
         user_data_block = _format_user_data_block(user_data)
     except Exception:
         user_data_block = _format_user_data_block({})
@@ -193,7 +193,9 @@ def create_season_plan(
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        kpi_sel = (selection.get("data") or {}).get("kpi_moving_time_rate_guidance_selection")
+        selection_data = selection.get("data") if isinstance(selection, dict) else None
+        selection_map = selection_data if isinstance(selection_data, dict) else {}
+        kpi_sel = selection_map.get("kpi_moving_time_rate_guidance_selection")
         if isinstance(kpi_sel, dict):
             segment = kpi_sel.get("segment")
             w_per_kg = kpi_sel.get("w_per_kg") or {}

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 import logging
 import os
 import re
@@ -20,6 +19,7 @@ from rps.prompts.loader import agent_system_prompt
 
 DEFAULT_KNOWLEDGE_ROOT = Path("specs/knowledge")
 logger = logging.getLogger(__name__)
+JsonMap = dict[str, object]
 
 
 def _load_vectorstore_name(manifest_path: Path) -> str:
@@ -69,7 +69,7 @@ def build_file_search_tool(
     knowledge_root: Path = DEFAULT_KNOWLEDGE_ROOT,
     state_path: Path = DEFAULT_STATE_PATH,
     max_num_results: int = 5,
-) -> dict[str, Any]:
+) -> JsonMap:
     """Build a knowledge_search tool payload for the Responses API."""
     resolve_vectorstore_ids(
         agent_name,
@@ -131,7 +131,7 @@ def run_agent(
     include_results: bool = False,
     force_file_search: bool = True,
     prompts_dir: Path = Path("prompts"),
-):
+) -> object:
     """Run a simple Responses API request with file_search attached."""
     if model is None:
         key = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).upper()
@@ -160,7 +160,7 @@ def run_agent(
         max_num_results=max_num_results,
     )
 
-    payload: dict[str, Any] = {
+    payload: JsonMap = {
         "model": model,
         "input": [
             {"role": "system", "content": system_prompt},

@@ -217,7 +217,7 @@ def _save_events_payload(
     run_ts = datetime.now(timezone.utc)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     storage_events = [_to_storage_event(event) for event in _sort_events(ui_events)]
-    payload = {"events": storage_events}
+    payload: dict[str, object] = {"events": storage_events}
     store.save_version(
         athlete_id,
         ArtifactType.PLANNING_EVENTS,

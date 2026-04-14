@@ -49,6 +49,8 @@ class AgentTaskRouter:
             return tasks
 
         season_plan = self.ctx.workspace.get_latest(ArtifactType.SEASON_PLAN)
+        if not isinstance(season_plan, dict):
+            return tasks
         phase_range = resolve_phase_range_from_season_plan(season_plan, target, phase_len=4)
 
         index_query = IndexExactQuery(
@@ -82,9 +84,10 @@ class AgentTaskRouter:
 
         if self.ctx.workspace.latest_exists(ArtifactType.WEEK_PLAN):
             plan = self.ctx.workspace.get_latest(ArtifactType.WEEK_PLAN)
-            week = envelope_week(plan)
-            if week and (week.year == target.year and week.week == target.week):
-                return tasks
+            if isinstance(plan, dict):
+                week = envelope_week(plan)
+                if week and (week.year == target.year and week.week == target.week):
+                    return tasks
 
         tasks.append(AgentTask.CREATE_WEEK_PLAN)
         return tasks
@@ -116,9 +119,10 @@ class AgentTaskRouter:
 
         if self.ctx.workspace.latest_exists(ArtifactType.DES_ANALYSIS_REPORT):
             report = self.ctx.workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
-            week = envelope_week(report)
-            if week and (week.year == target.year and week.week == target.week):
-                return tasks
+            if isinstance(report, dict):
+                week = envelope_week(report)
+                if week and (week.year == target.year and week.week == target.week):
+                    return tasks
 
         tasks.append(AgentTask.CREATE_DES_ANALYSIS_REPORT)
         return tasks

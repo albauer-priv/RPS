@@ -4,13 +4,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range
 
+JsonMap = dict[str, object]
 
-def _normalize_range(range_obj: Any) -> IsoWeekRange | None:
+
+def _as_map(value: object) -> JsonMap:
+    """Return a mapping when the value is dict-like."""
+    return value if isinstance(value, dict) else {}
+
+
+def _normalize_range(range_obj: object) -> IsoWeekRange | None:
     """Normalize a range into an IsoWeekRange."""
     return parse_iso_week_range(range_obj)
 
@@ -28,11 +35,14 @@ class IndexExactQuery:
     def has_exact_range(self, artifact_type: str, expected_range: IsoWeekRange) -> bool:
         """Return True if any version has exactly the expected range."""
         index = self._index_manager.load()
-        entry = index.get("artefacts", {}).get(artifact_type)
-        if not entry:
+        artefacts = _as_map(index.get("artefacts"))
+        entry = artefacts.get(artifact_type)
+        if not isinstance(entry, dict):
             return False
 
-        versions: dict[str, Any] = entry.get("versions", {})
+        versions = entry.get("versions", {})
+        if not isinstance(versions, dict):
+            versions = {}
         for record in versions.values():
             path = record.get("path") or record.get("relative_path")
             if not path:
@@ -55,11 +65,14 @@ class IndexExactQuery:
     ) -> Optional[str]:
         """Return the newest version_key matching the exact range."""
         index = self._index_manager.load()
-        entry = index.get("artefacts", {}).get(artifact_type)
-        if not entry:
+        artefacts = _as_map(index.get("artefacts"))
+        entry = artefacts.get(artifact_type)
+        if not isinstance(entry, dict):
             return None
 
-        versions: dict[str, Any] = entry.get("versions", {})
+        versions = entry.get("versions", {})
+        if not isinstance(versions, dict):
+            versions = {}
         candidates: list[tuple[str, str]] = []
 
         for version_key, record in versions.items():

@@ -5,12 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from .guards import DEFAULT_RULES, MissingDependenciesError
 from .helpers import PhaseRange, resolve_current_phase, resolve_current_week
 from .local_store import LocalArtifactStore
 from .types import ArtifactType, Authority
+
+JsonMap = dict[str, object]
 
 
 @dataclass
@@ -29,11 +31,11 @@ class Workspace:
         """Create the workspace directory structure if needed."""
         self.store.ensure_workspace(self.athlete_id)
 
-    def get_latest(self, artifact_type: ArtifactType) -> Any:
+    def get_latest(self, artifact_type: ArtifactType) -> object:
         """Return the latest artifact for a type."""
         return self.store.load_latest(self.athlete_id, artifact_type)
 
-    def get(self, artifact_type: ArtifactType, version_key: str) -> Any:
+    def get(self, artifact_type: ArtifactType, version_key: str) -> object:
         """Return a specific artifact version."""
         return self.store.load_version(self.athlete_id, artifact_type, version_key)
 
@@ -74,7 +76,7 @@ class Workspace:
         self,
         artifact_type: ArtifactType,
         version_key: str,
-        payload: dict[str, Any],
+        payload: JsonMap,
         *,
         producer_agent: str,
         run_id: str,
@@ -103,9 +105,9 @@ class Workspace:
         self,
         artifact_type: ArtifactType,
         version_key: str,
-        payload: Any,
+        payload: object,
         *,
-        payload_meta: Optional[dict[str, Any]] = None,
+        payload_meta: Optional[JsonMap] = None,
         producer_agent: str,
         run_id: str,
         update_latest: bool = True,
@@ -136,7 +138,7 @@ class Workspace:
         self,
         artifact_type: ArtifactType,
         version_key: str,
-        payload: dict[str, Any],
+        payload: JsonMap,
         *,
         authority: Authority = Authority.STRUCTURAL,
         producer_agent: str = "unknown_agent",

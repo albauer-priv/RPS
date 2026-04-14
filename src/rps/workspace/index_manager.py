@@ -6,8 +6,20 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 from datetime import datetime
+
+JsonMap = dict[str, object]
+
+
+def _as_map(value: object) -> JsonMap:
+    """Return a mapping when the value is dict-like."""
+    return value if isinstance(value, dict) else {}
+
+
+def _as_str(value: object) -> str | None:
+    """Return a string when the value is a string."""
+    return value if isinstance(value, str) else None
 
 
 def utc_iso_now() -> str:
@@ -31,7 +43,7 @@ class WorkspaceIndexManager:
         path.mkdir(parents=True, exist_ok=True)
         return path / "index.json"
 
-    def load(self) -> dict[str, Any]:
+    def load(self) -> JsonMap:
         """Load the index file, returning a default structure if missing."""
         path = self.index_path()
         if not path.exists():
@@ -43,7 +55,7 @@ class WorkspaceIndexManager:
         index = json.loads(path.read_text(encoding="utf-8"))
         return index
 
-    def save(self, index: dict[str, Any]) -> None:
+    def save(self, index: JsonMap) -> None:
         """Persist the index to disk with an updated timestamp."""
         index["updated_at"] = utc_iso_now()
         path = self.index_path()
@@ -54,7 +66,7 @@ class WorkspaceIndexManager:
     def prune_missing(self) -> dict[str, int]:
         """Remove index entries whose files are missing on disk."""
         index = self.load()
-        artefacts = index.get("artefacts", {})
+        artefacts = _as_map(index.get("artefacts"))
         removed_versions = 0
         removed_types = 0
         changed = False
@@ -73,14 +85,12 @@ class WorkspaceIndexManager:
             entry = artefacts.get(artifact_type)
             if not isinstance(entry, dict):
                 continue
-            versions = entry.get("versions", {})
-            if not isinstance(versions, dict):
-                continue
+            versions = _as_map(entry.get("versions"))
             for version_key in list(versions.keys()):
                 record = versions.get(version_key)
                 if not isinstance(record, dict):
                     continue
-                rel_path = record.get("path") or record.get("relative_path")
+                rel_path = _as_str(record.get("path")) or _as_str(record.get("relative_path"))
                 if not isinstance(rel_path, str):
                     continue
                 full_path = self.athlete_root() / rel_path
@@ -96,11 +106,11 @@ class WorkspaceIndexManager:
                 continue
 
             latest = entry.get("latest")
-            latest_key = latest.get("version_key") if isinstance(latest, dict) else None
+            latest_key = _as_str(latest.get("version_key")) if isinstance(latest, dict) else None
             if latest_key not in versions:
                 sorted_versions = sorted(
                     versions.values(),
-                    key=lambda rec: _parse_created(rec.get("created_at")) or datetime.min,
+                    key=lambda rec: _parse_created(_as_str(rec.get("created_at")) if isinstance(rec, dict) else None) or datetime.min,
                 )
                 entry["latest"] = sorted_versions[-1] if sorted_versions else None
                 changed = True
@@ -120,15 +130,19 @@ class WorkspaceIndexManager:
         run_id: str,
         producer_agent: str,
         created_at: str | None = None,
-        iso_week: Optional[dict[str, Any]] = None,
-        iso_week_range: Optional[dict[str, Any]] = None,
+        iso_week: Optional[JsonMap] = None,
+        iso_week_range: Optional[JsonMap] = None,
     ) -> None:
         """Record a write event and mark it as latest for the artifact type."""
         index = self.load()
         artefacts = index.setdefault("artefacts", {})
+        if not isinstance(artefacts, dict):
+            raise TypeError("index['artefacts'] must be a mapping")
         entry = artefacts.setdefault(artifact_type, {"latest": None, "versions": {}})
+        if not isinstance(entry, dict):
+            raise TypeError(f"index['artefacts'][{artifact_type!r}] must be a mapping")
 
-        record: dict[str, Any] = {
+        record: JsonMap = {
             "version_key": version_key,
             "path": relative_path,
             "run_id": run_id,
@@ -140,7 +154,10 @@ class WorkspaceIndexManager:
         if iso_week_range is not None:
             record["iso_week_range"] = iso_week_range
 
-        entry["versions"][version_key] = record
+        versions = entry.setdefault("versions", {})
+        if not isinstance(versions, dict):
+            raise TypeError(f"index['artefacts'][{artifact_type!r}]['versions'] must be a mapping")
+        versions[version_key] = record
         entry["latest"] = record
 
         self.save(index)
