@@ -346,16 +346,15 @@ def create_response(
                         sys.stdout.flush()
                     wrote_any = True
                     reasoning_chunks.append(delta_text)
-            elif delta_type == "text" and show_output:
-                if delta_text:
-                    if callable(on_output):
-                        on_output(delta_text)
-                    elif stream_handlers is None:
-                        if not wrote_output_prefix:
-                            sys.stdout.write("[output] ")
-                            wrote_output_prefix = True
-                        sys.stdout.write(delta_text)
-                        sys.stdout.flush()
+            elif delta_type == "text" and show_output and delta_text:
+                if callable(on_output):
+                    on_output(delta_text)
+                elif stream_handlers is None:
+                    if not wrote_output_prefix:
+                        sys.stdout.write("[output] ")
+                        wrote_output_prefix = True
+                    sys.stdout.write(delta_text)
+                    sys.stdout.flush()
                     wrote_any = True
         elif event_type == "response.completed":
             final_response = _get_attr(event, "response")

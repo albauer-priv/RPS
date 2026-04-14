@@ -1411,12 +1411,16 @@ if not knowledge_ready:
     st.info("Planning actions stay disabled until the knowledge store is ready.")
 phase_step = readiness_map.get("phase")
 week_plan_step = readiness_map.get("week_plan")
-if week_plan_step and week_plan_step.status in {"missing", "stale"}:
-    if phase_step and phase_step.status in {"missing", "stale", "blocked"}:
-        st.info(
-            "Plan Week will create missing or stale Phase artefacts before "
-            "generating the Week Plan for the selected ISO week."
-        )
+if (
+    week_plan_step
+    and week_plan_step.status in {"missing", "stale"}
+    and phase_step
+    and phase_step.status in {"missing", "stale", "blocked"}
+):
+    st.info(
+        "Plan Week will create missing or stale Phase artefacts before "
+        "generating the Week Plan for the selected ISO week."
+    )
 
 readiness_container = st.container()
 readiness_cols = readiness_container.columns(2)
@@ -1896,9 +1900,10 @@ if active_run:
         active_step["Outputs Written"] = len(outputs)
     if active_run.get("log_ref"):
         st.caption(f"Log file: {active_run.get('log_ref')}")
-    if active_run.get("status") == "FAILED":
-        if any(active_step.get("Details") == "Athlete lock busy." for active_step in active_steps):
-            st.info("Another run is active for this athlete. Try again after it finishes.")
+    if active_run.get("status") == "FAILED" and any(
+        active_step.get("Details") == "Athlete lock busy." for active_step in active_steps
+    ):
+        st.info("Another run is active for this athlete. Try again after it finishes.")
     can_restart = False
     if active_run.get("status") == "FAILED":
         store = LocalArtifactStore(root=SETTINGS.workspace_root)

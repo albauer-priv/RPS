@@ -664,10 +664,14 @@ def _extract_latest_weight_from_wellness(entries: list[dict]) -> float | None:
             continue
         weight = entry.get("weight")
         day = entry.get("id") or entry.get("date")
-        if isinstance(weight, (int, float)) and weight > 0 and isinstance(day, str):
-            if latest_date is None or day > latest_date:
-                latest_date = day
-                latest_weight = float(weight)
+        if (
+            isinstance(weight, (int, float))
+            and weight > 0
+            and isinstance(day, str)
+            and (latest_date is None or day > latest_date)
+        ):
+            latest_date = day
+            latest_weight = float(weight)
     return latest_weight
 
 

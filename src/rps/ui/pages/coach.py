@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import suppress
 
 import streamlit as st
 
@@ -154,10 +155,8 @@ if "coach_chat" not in st.session_state:
     temperature_value: float | None = None
     compact_turns = os.getenv("RPS_LLM_COACH_COMPACT_TURNS")
     if compact_turns:
-        try:
+        with suppress(ValueError):
             auto_compact_turns = int(compact_turns)
-        except ValueError:
-            pass
     compact_model = os.getenv("RPS_LLM_COACH_COMPACT_MODEL")
     if compact_model:
         compact_model = compact_model
@@ -186,9 +185,7 @@ ui_log(
 
 st.session_state.coach_chat.use_background = use_background
 if poll_interval:
-    try:
+    with suppress(ValueError):
         st.session_state.coach_chat.poll_interval_sec = float(poll_interval)
-    except ValueError:
-        pass
 
 st.session_state.coach_chat.run()
