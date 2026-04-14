@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 from rps.agents import multi_output_runner
 from rps.agents.knowledge_injection import (
@@ -94,3 +95,59 @@ def test_injection_mode_for_tasks_returns_expected_mode():
     mode = multi_output_runner.injection_mode_for_tasks([multi_output_runner.AgentTask.CREATE_PHASE_GUARDRAILS])
 
     assert mode == "phase_guardrails"
+
+
+def test_run_agent_multi_output_skips_forced_store_on_terminal_stop(monkeypatch):
+    create_calls: list[dict[str, object]] = []
+
+    def _fake_create_response(client, payload, logger, stream_handlers=None):
+        del client, logger, stream_handlers
+        create_calls.append(payload)
+        return multi_output_runner.LiteLLMResponse(
+            id="resp_1",
+            output=[],
+            output_text=(
+                "STOP_REASON: Required binding artefact invalid.\n"
+                'MISSING_BINDING_ARTEFACTS: ["KPI_PROFILE"]\n'
+                'NEXT_ACTION: ["Fix KPI profile metadata"]'
+            ),
+            usage=None,
+        )
+
+    def _fail_guard_put_validated(*args, **kwargs):
+        raise AssertionError("guard_put_validated must not run for terminal STOP responses")
+
+    monkeypatch.setattr(multi_output_runner, "create_response", _fake_create_response)
+    monkeypatch.setattr(
+        multi_output_runner.GuardedValidatedStore,
+        "guard_put_validated",
+        _fail_guard_put_validated,
+    )
+
+    runtime = multi_output_runner.AgentRuntime(
+        client=SimpleNamespace(config=None),
+        model="openai/gpt-5.4-mini",
+        temperature=None,
+        reasoning_effort=None,
+        reasoning_summary=None,
+        max_completion_tokens=None,
+        prompt_loader=SimpleNamespace(combined_system_prompt=lambda agent_name: f"prompt for {agent_name}"),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda store_name: store_name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime"),
+    )
+
+    result = multi_output_runner.run_agent_multi_output(
+        runtime,
+        agent_name="performance_analysis",
+        agent_vs_name="vs_rps_all_agents",
+        athlete_id="i150546",
+        tasks=[multi_output_runner.AgentTask.CREATE_DES_ANALYSIS_REPORT],
+        user_input="Analyze week 2026-15.",
+        run_id="run_123",
+    )
+
+    assert result["ok"] is False
+    assert result["error"] == "MODEL_STOPPED_ON_BLOCKER"
+    assert "produced" in result and result["produced"] == {}
+    assert len(create_calls) == 1

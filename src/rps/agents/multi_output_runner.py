@@ -826,6 +826,39 @@ def run_agent_multi_output(
         }
         logger.warning("No-tool-call summary: %s", json.dumps(summary, ensure_ascii=False))
 
+    def _is_terminal_stop_text(text: str) -> bool:
+        """Return True when the model text is an explicit stop/blocker response."""
+        normalized = text.strip().lower()
+        if not normalized:
+            return False
+        stop_markers = (
+            "stop_reason:",
+            "missing_binding_artefacts:",
+            "next_action:",
+            "schema-invalid",
+            "invalid/missing",
+            "required binding artefact",
+            "required predecessor artefact is missing",
+            "required exact-range",
+            "cannot proceed",
+        )
+        if any(marker in normalized for marker in stop_markers):
+            return True
+        return normalized.startswith("stop:")
+
+    def _terminal_stop_result(final_text: str) -> dict[str, object]:
+        """Return a terminal error result for explicit model stop responses."""
+        return {
+            "ok": False,
+            "produced": produced,
+            "final_text": final_text,
+            "error": "MODEL_STOPPED_ON_BLOCKER",
+            "details": [
+                "Model reported explicit blocking validation or dependency issues.",
+                "Forced store and fallback store were skipped.",
+            ],
+        }
+
     def _create_response(
         force_search_flag: bool,
         forced_tool_name: str | None = None,
@@ -952,6 +985,7 @@ def run_agent_multi_output(
         if not function_calls:
             all_done = wanted_tool_names.issubset(set(produced.keys()))
             final_text = response.output_text or last_text
+            terminal_stop = bool(final_text) and _is_terminal_stop_text(final_text)
             if final_text:
                 _log_response_content(response, label="no_tool_call")
             _log_no_tool_call_summary(
@@ -959,6 +993,9 @@ def run_agent_multi_output(
                 attempted_store=attempted_forced_store,
                 wanted_tools=wanted_tool_names,
             )
+            if not all_done and terminal_stop:
+                logger.warning("Terminal model stop detected; skipping forced store and fallback store.")
+                return _terminal_stop_result(final_text)
             if (
                 not all_done
                 and len(output_specs) == 1
