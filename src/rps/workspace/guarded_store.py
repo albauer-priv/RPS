@@ -357,11 +357,10 @@ class GuardedValidatedStore:
         execution_principles = self._as_map(data.get("execution_principles"))
         recovery_protection = self._as_map(execution_principles.get("recovery_protection"))
         exec_days = self._as_string_list(recovery_protection.get("fixed_non_training_days"))
-        if fixed_days:
-            if sorted(exec_days) != sorted(fixed_days):
-                errors.append(
-                    "fixed_non_training_days must match season plan fixed_rest_days."
-                )
+        if fixed_days and sorted(exec_days) != sorted(fixed_days):
+            errors.append(
+                "fixed_non_training_days must match season plan fixed_rest_days."
+            )
 
         load_ranges = self._as_map(data.get("load_ranges"))
         meta = self._as_map(document.get("meta"))
@@ -522,38 +521,10 @@ class GuardedValidatedStore:
             joined = _joined_path(path)
             if "integer" in types and "number" not in types:
                 return int(round(float(value)))
-            if "integer" in types and "number" in types:
-                if abs(float(value) - round(float(value))) < 1e-9:
-                    return int(round(float(value)))
+            if "integer" in types and "number" in types and abs(float(value) - round(float(value))) < 1e-9:
+                return int(round(float(value)))
             if "number" in types or not types:
-                decimals = 2
-                if "hours_typical" in joined or "hours_max" in joined or "weekly_hours" in joined:
-                    decimals = 1
-                elif "kg" in joined:
-                    decimals = 1
-                elif "seconds" in joined or joined.endswith("_seconds") or joined.endswith("_sec"):
-                    decimals = 0
-                elif "bpm" in joined:
-                    decimals = 0
-                elif "mm_hg" in joined or "mmhg" in joined:
-                    decimals = 0
-                elif "hrv_ms" in joined or joined.endswith("_ms"):
-                    decimals = 0
-                elif "if_adj" in joined:
-                    decimals = 2
-                if "kj_per_kg" in joined or "w_per_kg" in joined or "per_kg" in joined:
-                    decimals = 2
-                elif "percent" in joined or "pct" in joined:
-                    decimals = 1
-                elif "ratio" in joined or "index" in joined or "intensity_factor" in joined or joined.endswith("_if"):
-                    decimals = 2
-                elif "kj" in joined or joined.endswith("_kj") or joined.endswith("kj"):
-                    decimals = 0
-                elif "watts" in joined or joined.endswith("_w") or joined.endswith("w"):
-                    decimals = 0
-                elif joined.endswith("_min") or joined.endswith("_mins") or "minutes" in joined:
-                    decimals = 0
-
+                decimals = self._rounding_decimals(joined)
                 if decimals == 0:
                     return int(round(float(value)))
                 return round(float(value), decimals)
@@ -562,6 +533,51 @@ class GuardedValidatedStore:
     def _apply_rounding(self, document: object, schema: JsonMap) -> object:
         """Round numeric values on the document before validation/storage."""
         return self._round_numeric_fields(document, schema, schema, [])
+
+    @staticmethod
+    def _rounding_decimals(joined: str) -> int:
+        """Resolve decimal precision heuristics for numeric fields from their normalized path."""
+        if (
+            "hours_typical" in joined
+            or "hours_max" in joined
+            or "weekly_hours" in joined
+            or "kg" in joined
+        ):
+            return 1
+        if (
+            "seconds" in joined
+            or joined.endswith("_seconds")
+            or joined.endswith("_sec")
+            or "bpm" in joined
+            or "mm_hg" in joined
+            or "mmhg" in joined
+            or "hrv_ms" in joined
+            or joined.endswith("_ms")
+            or "kj" in joined
+            or joined.endswith("_kj")
+            or joined.endswith("kj")
+            or "watts" in joined
+            or joined.endswith("_w")
+            or joined.endswith("w")
+            or joined.endswith("_min")
+            or joined.endswith("_mins")
+            or "minutes" in joined
+        ):
+            return 0
+        if (
+            "if_adj" in joined
+            or "kj_per_kg" in joined
+            or "w_per_kg" in joined
+            or "per_kg" in joined
+            or "ratio" in joined
+            or "index" in joined
+            or "intensity_factor" in joined
+            or joined.endswith("_if")
+        ):
+            return 2
+        if "percent" in joined or "pct" in joined:
+            return 1
+        return 2
 
     def guard_put_validated(
         self,

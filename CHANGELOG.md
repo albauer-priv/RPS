@@ -779,6 +779,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SchemaBundler` now uses an explicit per-instance schema cache instead of `@lru_cache` on a bound method, keeping bundling reuse local to the bundler object and resolving the remaining `ruff` `B019` lifecycle warning cleanly.
 - The mandatory `ruff` gate now also includes the low-risk simplification rules `SIM103` and `SIM108`, with targeted cleanups in logging helpers, runner predicates, Groq/model detection helpers, and authority normalization.
 - Several remaining safe simplifications were applied outside the dense guarded-store normalization paths: `coach.py` now uses `contextlib.suppress` for optional numeric env parsing, while small nested-condition cleanups landed in `intervals_data.py`, `streaming.py`, and `plan/hub.py`.
+- `guarded_store.py` numeric rounding heuristics were refactored into an explicit `_rounding_decimals()` helper and small nested-condition checks were flattened, removing the remaining local `SIM102`/`SIM114` hotspots while making the validation/normalization path easier to read.
 
 ## [0.1.0] - 2026-01-20
 
