@@ -6,9 +6,9 @@ Owner: Overview
 ---
 # How to Plan
 
-Version: 2.3
+Version: 2.4
 Status: Updated
-Last-Updated: 2026-02-10
+Last-Updated: 2026-04-14
 
 ---
 
@@ -22,10 +22,10 @@ Last-Updated: 2026-02-10
 2) Select a KPI profile (UI: Athlete Profile → KPI Profile).
 3) Ensure Intervals data is fresh (zone model + wellness + activities) via
    UI auto-refresh or `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py`.
-4) Open the **Plan Hub** and confirm Scope (athlete, ISO year/week, phase).
+4) Open the **Plan Hub** and confirm Context (athlete, ISO year/week, phase).
 5) Run **Season Scenarios** from Plan Hub if missing.
 6) Select a scenario on **Plan -> Season** (manual decision).
-7) Run **Plan Week** from Plan Hub (or run scoped steps).
+7) Run **Plan Week** from Plan Hub, or use direct **Run Phase** / **Run Week** / **Run Workouts** actions when you need a targeted rerun.
 8) Optional: **Post to Intervals** from **Plan → Workouts** (commit step) after Export.
 9) Optional: **Performance Report** on Performance pages once activities are available.
 
@@ -41,9 +41,12 @@ available for manual, step-by-step runs.
 - Links into plan/performance pages.
 
 ### Plan Hub (primary orchestration)
-- Scope panel in header (athlete, ISO year/week, phase).
+- Context expander (athlete, ISO year/week, phase).
 - Readiness checklist with reasons + fix CTAs.
-- Run Planning with Orchestrated or Scoped runs (Scoped requires an override input).
+- Direct-action-first UI:
+  - `Run Phase` generates Phase Guardrails, Phase Structure, and Phase Preview together
+  - `Run Week` / `Run Workouts` remain direct actions on readiness cards
+- Advanced manual run keeps generic Orchestrated/Scoped execution for diagnostics and custom reruns.
 - Run Execution table (steps, statuses, outputs, events).
 - Latest Outputs + Run History.
 - Orchestrates planning only (posting happens on Workouts page).

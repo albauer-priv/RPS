@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-04-14
 Owner: UI
 ---
 # Plan Hub Proposal (UI + Readiness Rules)
@@ -10,15 +10,17 @@ This document captures the proposed **Plan Hub** layout and readiness logic, and
 
 ---
 
-## Implementation status (as of 2026-01-31)
+## Implementation status (as of 2026-04-14)
 
 **Implemented**
 
-- Plan Hub page with readiness checklist, run controls, run execution table, latest outputs, and run history.
+- Plan Hub page with readiness checklist, direct card actions, advanced manual run, run execution table, latest outputs, and run history.
 - KPI Profile is a readiness prerequisite for planning and feed-forward flows.
 - Run store (`runtime/athletes/<athlete_id>/runs/<run_id>/run.json`, `steps.json`, `events.jsonl`) with async worker execution.
 - Manual scenario selection handoff + restart run (superseded runs tracked).
 - Export/post separation with receipts and Intervals commit support.
+- Planning actions are blocked while the required local knowledge store is unavailable.
+- Phase readiness is shown as one user-facing `Phase` card; `Run Phase` creates Guardrails, Structure, and Preview together.
 
 **Partially implemented**
 
@@ -40,11 +42,11 @@ This document captures the proposed **Plan Hub** layout and readiness logic, and
 **Layout:**
 
 - `st.title("Plan Hub")`
-- `st.caption(context pills: athlete_id, ISO year/week, selected phase, run mode)`
-- `st.columns([1, 2])`
-  - **Left column:** Readiness Checklist + “Next action”
-  - **Right column:** Runner Panel + Latest Artefacts Cards
-- Bottom full-width: Run History / Activity Feed
+- status banner + knowledge-store state
+- `Context` expander (athlete, ISO year/week, selected phase)
+- `Quick Actions` with primary `Plan Week` CTA
+- `Advanced manual run` expander for generic scoped/orchestrated execution
+- Bottom full-width: Run Execution / Latest Outputs / Run History
 
 This follows the current UI contract: global sidebar + always-visible status banner, with the Hub as Summary/Orchestration Layer.
 
@@ -64,21 +66,23 @@ This follows the current UI contract: global sidebar + always-visible status ban
 2. Season Scenarios (`season_scenarios`)
 3. Scenario Selection (`season_scenario_selection`)
 4. **Season Plan** (`season_plan`)
-5. **Phase Guardrails** (`phase_guardrails`)
-6. **Phase Structure** (`phase_structure`)
-7. **Phase Preview** (`phase_preview`) *(optional / informational)*
-8. **Week Plan** (`week_plan`)
-9. Build Workouts (Intervals export) (`workouts_yyyy-ww.json`) *(optional)*
+5. **Phase** (`phase`) user-facing combined card backed by:
+   - `phase_guardrails`
+   - `phase_structure`
+   - `phase_preview`
+6. **Week Plan** (`week_plan`)
+7. Build Workouts (Intervals export) (`workouts_yyyy-ww.json`) *(optional)*
 
 **Per-step display:**
 
 - `status_badge` (✅ ready, ⚠️ stale, ❌ missing, 🔒 blocked)
 - “Latest version”: timestamp, run_id, iso_week / iso_week_range
 - “Upstream depends on”: short text (“requires Season Plan”, etc.)
+- Direct action buttons where applicable (`Run Phase`, `Run Week`, `Run Workouts`)
 
 ---
 
-### C) Right Column: **Quick Actions** (routine path) + **Advanced Manual Run**
+### C) Quick Actions (routine path) + **Advanced Manual Run**
 
 **Widget structure:**
 
@@ -89,7 +93,7 @@ This follows the current UI contract: global sidebar + always-visible status ban
   - the primary `Plan Week` CTA
 - `st.expander("Advanced manual run")`
   - `st.radio("Run mode", ["Orchestrated", "Scoped"])`
-  - if scoped: `st.selectbox("Scope", [...])`
+  - if scoped: `st.selectbox("Scope", ["Season Scenarios", "Selected Scenario", "Season Plan", "Phase", "Week Plan", "Build Workouts"])`
   - optional override text
   - custom `Run ID`
   - `Validate only (no write)`
@@ -102,16 +106,13 @@ This follows the current UI contract: global sidebar + always-visible status ban
 
 ---
 
-### D) Right Column: **Latest Artefacts Cards**
+### D) Latest Outputs
 
 **Widget structure:**
 
 - `st.subheader("Latest outputs")`
-- grid with `st.columns(2)` and per card:
-  - Title (Season Plan, Phase Guardrails, …)
-  - Badge: Binding / Informational / Advisory
-  - Key metrics (e.g., total kJ corridor / key sessions / build:deload pattern)
-  - Buttons: “Open” (deep link) + “Diff” + “Versions”
+- current implementation is a latest-outputs table
+- richer cards remain a future refinement
 
 Authority labels come directly from the artefact model.
 
@@ -147,7 +148,7 @@ Pipeline with hard dependencies (Binding) → deterministic UI checks:
 
 **Required (hard)**
 
-- Week Plan requires: Phase Guardrails + Phase Structure (+ availability, zones as info)
+- Week Plan requires: Phase artefacts (internally Guardrails + Structure; Preview is informational)
 - Phase artefacts require: Season Plan
 - Season Plan requires: scenario selection (or latest selection) + inputs
 - Scenario selection requires KPI guidance segment selection from the KPI Profile.
@@ -227,22 +228,23 @@ At least one of:
 - **blocked**: selection missing (when required)
 - **stale**: selection newer than season overview, or inputs newer (athlete_profile / wellness)
 
-#### Step 5/6: Phase Guardrails + Phase Structure
+#### Step 5: Phase
 
+- user-facing card is **combined**
+- internal readiness sources:
+  - `phase_guardrails`
+  - `phase_structure`
+  - `phase_preview`
 - **blocked**: season overview missing or does not cover target week
-- **stale**: season overview newer or zone_model newer (when relevant)
+- **stale**: any required internal phase artefact is stale
+- `Run Phase` queues all internal phase artefacts together
 
-#### Step 7: Phase Preview (optional)
-
-- **never blocks** downstream
-- **stale** only cosmetic (when arch/governance newer)
-
-#### Step 8: Week Plan
+#### Step 6: Week Plan
 
 - **blocked**: guardrails or structure missing
 - **stale**: guardrails/structure newer, or week mismatch
 
-#### Step 9: Export (workouts_yyyy-ww.json)
+#### Step 7: Export (workouts_yyyy-ww.json)
 
 - **blocked**: week plan missing
 - **stale**: workouts_plan newer than export

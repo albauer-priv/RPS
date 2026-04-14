@@ -194,6 +194,7 @@ def test_plan_hub_scoped_week_run_forces_rerun_when_ready():
         plan_hub.ReadinessStep("season_scenarios", "Season Scenarios", "ready", "", ""),
         plan_hub.ReadinessStep("scenario_selection", "Selected Scenario", "ready", "", ""),
         plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("phase", "Phase", "ready", "", ""),
         plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
         plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
         plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
@@ -222,11 +223,12 @@ def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
     assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
 
 
-def test_plan_hub_phase_guardrails_scope_is_isolated():
+def test_plan_hub_phase_scope_queues_all_phase_artefacts():
     from rps.ui.pages.plan import hub as plan_hub
 
     readiness = [
         plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("phase", "Phase", "ready", "", ""),
         plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
         plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
         plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
@@ -234,25 +236,9 @@ def test_plan_hub_phase_guardrails_scope_is_isolated():
         plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
     ]
 
-    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Phase Guardrails")
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Phase")
 
-    assert [step["step_id"] for step in steps] == ["PHASE_GUARDRAILS"]
-    assert steps[0]["Status"] == "QUEUED"
-
-
-def test_plan_hub_phase_structure_scope_also_queues_preview():
-    from rps.ui.pages.plan import hub as plan_hub
-
-    readiness = [
-        plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
-        plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
-        plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
-        plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
-    ]
-
-    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Phase Structure")
-
-    assert [step["step_id"] for step in steps] == ["PHASE_STRUCTURE", "PHASE_PREVIEW"]
+    assert [step["step_id"] for step in steps] == ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW"]
     assert all(step["Status"] == "QUEUED" for step in steps)
 
 
@@ -381,6 +367,11 @@ def test_plan_hub_direct_action_buttons_render(tmp_path):
     select_labels = [select.label for select in at.selectbox]
     assert select_labels.count("Phase") >= 2
     assert "Week" in select_labels
+    expander_labels = [expander.label for expander in at.expander]
+    assert any("Phase" in label for label in expander_labels)
+    assert all("Phase Guardrails" not in label for label in expander_labels)
+    assert all("Phase Structure" not in label for label in expander_labels)
+    assert all("Phase Preview" not in label for label in expander_labels)
 
 
 def test_plan_hub_shows_knowledge_store_status(tmp_path):

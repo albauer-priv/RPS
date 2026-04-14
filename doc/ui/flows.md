@@ -37,6 +37,7 @@ For each UI action, document:
 - **Writes:** Run Store
 - **UI feedback:** status banner + run table
 - **Agents:** subset depending on scope
+- **User-facing scopes:** `Season Scenarios`, `Selected Scenario`, `Season Plan`, `Phase`, `Week Plan`, `Build Workouts`
 
 ### Plan → Season — Create Scenarios
 Handled by **Plan Hub — Scoped Run** (scope: Season Scenarios). The Season page no longer triggers this action.
@@ -128,7 +129,7 @@ flowchart TD
         D -- "Yes" --> F{"Season Plan Current?"}:::step
         F -- "No" --> F1["Run Season Plan<br>Replace latest: season_plan"]:::orch
         F1 --> G
-        F -- "Yes" --> G{"Phase Guardrails + Structure Current?"}:::step
+        F -- "Yes" --> G{"Phase Current?"}:::step
         G -- "No" --> G1["Run Phase Planning<br>Replace latest: phase_guardrails,<br>phase_structure,<br>phase_preview"]:::orch
         G1 --> H
         G -- "Yes" --> H{"Week Plan Current?"}:::step
@@ -169,7 +170,7 @@ flowchart TD
 
 ### Flow: Plan (Scoped)
 
-- **Entry:** Plan Hub → “Run scoped”
+- **Entry:** Plan Hub → `Advanced manual run` → “Run scoped”
 - **Preconditions:** readiness not blocked (includes KPI Profile present)
 - **Steps:** select scope → optional override (only when modifying existing artefacts) → re-plan selected scope + all lower levels
 - **Orchestrator:** queue scheduler (planning run)
@@ -182,15 +183,16 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph "Plan Scoped"
-        S1["Open Plan Hub Page"]:::page --> S2["Select Run Mode: Scoped"]:::page
-        S2 --> S3["Select Scope"]:::page
-        S3 --> S4{"Override Needed?"}:::step
-        S4 -- "Yes" --> S5["Enter Override"]:::page
-        S4 -- "No" --> S6["Skip Override"]:::step
-        S5 --> S7["Enqueue Scoped Run<br>Scope + Override"]:::orch
-        S6 --> S7
-        S7 --> S8["Re-plan Scope + Lower Levels"]:::orch
-        S8 --> S9["Show Status"]:::page
+        S1["Open Plan Hub Page"]:::page --> S2["Open Advanced manual run"]:::page
+        S2 --> S3["Select Run Mode: Scoped"]:::page
+        S3 --> S4["Select Scope"]:::page
+        S4 --> S5{"Override Needed?"}:::step
+        S5 -- "Yes" --> S6["Enter Override"]:::page
+        S5 -- "No" --> S7["Skip Override"]:::step
+        S6 --> S8["Enqueue Scoped Run<br>Scope + Override"]:::orch
+        S7 --> S8
+        S8 --> S9["Re-plan Scope + Lower Levels"]:::orch
+        S9 --> S10["Show Status"]:::page
     end
 
     classDef page fill:#f8e79a,stroke:#8c7a2b,stroke-width:1px,color:#1f1a0a;
@@ -309,7 +311,7 @@ flowchart TD
 
 - **Entry:** Plan Hub → “Run scoped” (Week Plan)
 - **Preconditions:** current or next ISO week; within Season Plan range
-- **Behavior:** generates any missing upstream artefacts (Phase Guardrails/Structure) before week plan
+- **Behavior:** generates any missing upstream phase artefacts before week plan
 - **Outputs:** `week_plan`, `workouts_yyyy-ww.json`
 - **Writes:** replace `latest/` week plan + workouts export (and upstream artefacts if regenerated)
 - **UI feedback:** status banner + execution table

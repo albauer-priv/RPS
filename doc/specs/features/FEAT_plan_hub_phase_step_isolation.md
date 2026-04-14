@@ -19,13 +19,13 @@ Owner: UI / Orchestration
 **Current behavior**
 
 * Plan Hub direct action buttons for phase artefacts queue regular scoped runs.
-* The `Phase Guardrails` scope currently expands into downstream steps (`PHASE_STRUCTURE`, `PHASE_PREVIEW`, `WEEK_PLAN`, `EXPORT_WORKOUTS`).
+* Internal phase artefacts remain split into `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`.
 * `plan_week(...)` also auto-escalates from forced phase steps into later phase/week outputs.
 
 **Problem**
 
-* Clicking `Run Phase` on the `Phase Guardrails` card does not behave as an isolated guardrails rerun.
-* The run fails when downstream artefacts cannot be created, even though the user asked only for Guardrails.
+* Earlier user-facing phase actions exposed internal artefact boundaries too directly.
+* Guardrails-only reruns could fail because downstream phase artefacts were incorrectly pulled in.
 
 **Constraints**
 
@@ -39,9 +39,9 @@ Owner: UI / Orchestration
 
 **Goals**
 
-* [x] `Phase Guardrails` direct/scoped runs only rerun Guardrails.
-* [x] `Phase Structure` direct/scoped runs rerun Structure and Preview, adding Guardrails only when required.
-* [x] `Phase Preview` direct/scoped runs rerun Preview, adding missing predecessors only when required.
+* [x] Internal `PHASE_GUARDRAILS` forced runs stay isolated when explicitly requested by the system.
+* [x] User-facing `Phase` reruns create all required phase artefacts together.
+* [x] Internal phase dependency handling stays correct for week/workout planning.
 
 **Non-Goals**
 
@@ -54,10 +54,9 @@ Owner: UI / Orchestration
 
 **User/System behavior**
 
-* A scoped run for `Phase Guardrails` queues only the `PHASE_GUARDRAILS` step.
-* A forced `PHASE_GUARDRAILS` execution inside `plan_week(...)` stops successfully after Guardrails exists for the exact phase range.
-* Direct actions for later phase steps remain dependency-aware, but only for prerequisites, not unrelated downstream outputs.
-* A scoped `Phase Structure` run also produces `Phase Preview`, because Preview is the immediate dependent phase artefact and should stay aligned with the rerun structure output.
+* A user-facing scoped run for `Phase` queues `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`.
+* A forced internal `PHASE_GUARDRAILS` execution inside `plan_week(...)` still stops successfully after Guardrails exists for the exact phase range.
+* Direct actions for week/workout steps remain dependency-aware, but only for prerequisites, not unrelated downstream outputs.
 
 **UI impact**
 
@@ -69,9 +68,9 @@ Owner: UI / Orchestration
 ```mermaid
 flowchart TD
   A["Plan Hub Phase Card"] --> B{"Selected scope"}
-  B -->|Phase Guardrails| C["Queue only PHASE_GUARDRAILS"]
-  B -->|Phase Structure| D["Queue PHASE_STRUCTURE and PHASE_PREVIEW plus missing PHASE_GUARDRAILS"]
-  B -->|Phase Preview| E["Queue PHASE_PREVIEW plus missing predecessors"]
+  B -->|Phase| C["Queue PHASE_GUARDRAILS, PHASE_STRUCTURE, PHASE_PREVIEW"]
+  B -->|Week Plan| D["Queue WEEK_PLAN plus missing phase prerequisites"]
+  B -->|Build Workouts| E["Queue EXPORT_WORKOUTS plus missing week/phase prerequisites"]
   C --> F["Worker executes isolated phase run"]
   D --> F
   E --> F
@@ -88,8 +87,8 @@ flowchart TD
 
 **Components / Modules**
 
-* `src/rps/ui/pages/plan/hub.py`: narrow phase-scoped step lists and keep `Phase Structure` coupled to `Phase Preview`.
-* `src/rps/orchestrator/plan_week.py`: treat isolated forced phase steps as valid terminal runs once their requested artefacts exist, and require Preview for explicit structure reruns.
+* `src/rps/ui/pages/plan/hub.py`: present one user-facing `Phase` scope while keeping internal phase readiness available for dependency checks.
+* `src/rps/orchestrator/plan_week.py`: treat isolated forced internal phase steps as valid terminal runs once their requested artefacts exist.
 * `tests/test_plan_pages.py`: add regression tests for both queue composition and isolated plan-week execution.
 
 **Data flow**
@@ -176,8 +175,7 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [x] `Phase Guardrails` scoped runs queue only `PHASE_GUARDRAILS`.
-* [x] `Phase Structure` scoped runs queue `PHASE_STRUCTURE` and `PHASE_PREVIEW`.
+* [x] User-facing `Phase` scoped runs queue `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`.
 * [x] Isolated `force_steps=["PHASE_GUARDRAILS"]` runs can succeed without creating structure/preview/week artefacts.
 * [x] Existing `Week Plan` and `Build Workouts` dependency behavior remains intact.
 * [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
@@ -219,7 +217,7 @@ flowchart TD
 **New/changed events**
 
 * no new event types
-* existing `plan_week` logs should show that isolated `Phase Structure` reruns include `Phase Preview`
+* existing `plan_week` logs should still distinguish isolated internal phase reruns from full user-facing phase runs
 
 **Diagnostics**
 

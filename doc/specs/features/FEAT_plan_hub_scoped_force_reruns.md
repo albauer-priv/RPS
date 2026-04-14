@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Implemented
-Last-Updated: 2026-03-16
+Last-Updated: 2026-04-14
 Owner: UI
 ---
 # FEAT: Plan Hub Scoped Force Reruns
@@ -53,7 +53,7 @@ Owner: UI
 **User/System behavior**
 
 * Scoped `Season Scenarios` and `Season Plan` runs execute even when artifacts already exist.
-* Scoped phase/phase-preview/week/workout steps explicitly rerun when selected from Plan Hub.
+* Scoped `Phase` / week / workout steps explicitly rerun when selected from Plan Hub.
 * Scoped `Selected Scenario` stays manual and redirects to the Season page workflow.
 
 **UI impact**

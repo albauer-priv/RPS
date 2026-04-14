@@ -170,10 +170,7 @@ PLANNING_SCOPE_SUBTYPE: dict[str, str] = {
     "Season Scenarios": "season_scenarios",
     "Selected Scenario": "scenario_selection",
     "Season Plan": "season_plan",
-    "Phase (Guardrails + Structure)": "phase",
-    "Phase Guardrails": "phase",
-    "Phase Structure": "phase",
-    "Phase Preview": "phase",
+    "Phase": "phase",
     "Week Plan": "week_plan",
     "Build Workouts": "export_workouts",
 }
@@ -231,10 +228,11 @@ READINESS_DEPENDENCIES: dict[str, list[str]] = {
     "season_scenarios": ["inputs"],
     "scenario_selection": ["season_scenarios"],
     "season_plan": ["scenario_selection"],
+    "phase": ["season_plan"],
     "phase_guardrails": ["season_plan"],
     "phase_structure": ["season_plan"],
     "phase_preview": ["phase_structure"],
-    "week_plan": ["phase_guardrails", "phase_structure"],
+    "week_plan": ["phase"],
     "intervals_workouts": ["week_plan"],
 }
 
@@ -242,10 +240,7 @@ SCOPE_STEPS: dict[str, list[str]] = {
     "Season Scenarios": ["SEASON_SCENARIOS"],
     "Selected Scenario": ["SCENARIO_SELECTION"],
     "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
-    "Phase (Guardrails + Structure)": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
-    "Phase Guardrails": ["PHASE_GUARDRAILS"],
-    "Phase Structure": ["PHASE_STRUCTURE", "PHASE_PREVIEW"],
-    "Phase Preview": ["PHASE_PREVIEW"],
+    "Phase": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW"],
     "Week Plan": ["WEEK_PLAN", "EXPORT_WORKOUTS"],
     "Build Workouts": ["EXPORT_WORKOUTS"],
 }
@@ -389,7 +384,7 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
         "Season Scenarios": "season_scenarios",
         "Selected Scenario": "scenario_selection",
         "Season Plan": "season_plan",
-        "Phase (Guardrails + Structure)": "phase_guardrails",
+        "Phase": "phase",
         "Week Plan": "week_plan",
         "Build Workouts": "intervals_workouts",
     }
@@ -675,6 +670,66 @@ def _compute_readiness(athlete_id: str, year: int, week: int) -> list[ReadinessS
     return steps
 
 
+def _display_readiness_steps(readiness: list[ReadinessStep]) -> list[ReadinessStep]:
+    """Collapse internal phase artefacts into a single user-facing phase readiness step."""
+    readiness_map = {step.key: step for step in readiness}
+    phase_parts = [
+        readiness_map.get("phase_guardrails"),
+        readiness_map.get("phase_structure"),
+        readiness_map.get("phase_preview"),
+    ]
+    phase_steps = [step for step in phase_parts if step is not None]
+    phase_status = "ready"
+    if any(step.status == "blocked" for step in phase_steps):
+        phase_status = "blocked"
+    elif any(step.status == "missing" for step in phase_steps):
+        phase_status = "missing"
+    elif any(step.status == "stale" for step in phase_steps):
+        phase_status = "stale"
+
+    issue_labels = [
+        step.label.replace(" (optional)", "")
+        for step in phase_steps
+        if step.status in {"missing", "blocked", "stale"}
+    ]
+    latest_versions = [
+        f"{step.label.replace(' (optional)', '')}: {step.latest}"
+        for step in phase_steps
+        if step.latest
+    ]
+    phase_summary = {
+        "ready": "Ready",
+        "stale": "Stale",
+        "missing": "Missing",
+        "blocked": "Blocked",
+    }[phase_status]
+    if phase_status == "ready":
+        phase_reason = "All phase artefacts are current."
+    elif issue_labels:
+        phase_reason = "Attention needed: " + ", ".join(issue_labels)
+    else:
+        phase_reason = "Phase artefacts need attention."
+    display_steps: list[ReadinessStep] = []
+    for step in readiness:
+        if step.key == "phase_guardrails":
+            display_steps.append(
+                ReadinessStep(
+                    key="phase",
+                    label="Phase",
+                    status=phase_status,
+                    summary=phase_summary,
+                    reason=phase_reason,
+                    latest=" | ".join(latest_versions) if latest_versions else None,
+                    fix_label="Run Phase",
+                )
+            )
+            continue
+        if step.key in {"phase_structure", "phase_preview"}:
+            continue
+        display_steps.append(step)
+    return display_steps
+
+
 def _show_reset_delete_actions(athlete_id: str) -> None:
     """Render reset/delete season plan actions with confirmation."""
     with st.form("plan_hub_season_actions"):
@@ -878,7 +933,7 @@ def _build_execution_steps(
         phase_guardrails = readiness_map.get("phase_guardrails")
         phase_structure = readiness_map.get("phase_structure")
         week_plan = readiness_map.get("week_plan")
-        if scope in {"Phase Structure", "Phase Preview", "Week Plan", "Build Workouts"}:
+        if scope in {"Phase", "Week Plan", "Build Workouts"}:
             if phase_guardrails and phase_guardrails.status in {"missing", "stale"}:
                 selected_steps = [
                     "PHASE_GUARDRAILS",
@@ -1099,25 +1154,18 @@ def _render_direct_step_actions(
 ) -> bool:
     """Render selector-driven direct action controls for readiness cards."""
     if step.key not in {
-        "phase_guardrails",
-        "phase_structure",
-        "phase_preview",
+        "phase",
         "week_plan",
         "intervals_workouts",
     }:
         return False
 
-    phase_scope_map = {
-        "phase_guardrails": "Phase Guardrails",
-        "phase_structure": "Phase Structure",
-        "phase_preview": "Phase Preview",
-    }
     week_scope_map = {
         "week_plan": "Week Plan",
         "intervals_workouts": "Build Workouts",
     }
 
-    if step.key in phase_scope_map:
+    if step.key == "phase":
         phase_options, _phase_map = _phase_options_for_athlete(athlete_id)
         selected_phase = _default_phase_label(athlete_id, base_week, default_phase_label)
         if not phase_options or selected_phase not in phase_options:
@@ -1142,7 +1190,7 @@ def _render_direct_step_actions(
             block_reason = _planning_block_reason(
                 SETTINGS.workspace_root,
                 athlete_id,
-                PLANNING_SCOPE_SUBTYPE[phase_scope_map[step.key]],
+                PLANNING_SCOPE_SUBTYPE["Phase"],
             )
             if block_reason:
                 st.warning(block_reason)
@@ -1152,8 +1200,8 @@ def _render_direct_step_actions(
                 iso_year=target_week.year,
                 iso_week=target_week.week,
                 phase_label=selected_phase,
-                scope=phase_scope_map[step.key],
-                run_id_prefix=f"plan_hub_{step.key}",
+                scope="Phase",
+                run_id_prefix="plan_hub_phase",
             )
             st.info("Run requested.")
             st.rerun()
@@ -1287,8 +1335,9 @@ if active_run_id and active_run is not None:
     )
 
 readiness = _compute_readiness(hub_scope["athlete_id"], hub_scope["iso_year"], hub_scope["iso_week"])
-readiness_map = {step.key: step for step in readiness}
-required_steps = [step for step in readiness if not step.optional]
+display_readiness = _display_readiness_steps(readiness)
+readiness_map = {step.key: step for step in display_readiness}
+required_steps = [step for step in display_readiness if not step.optional]
 total_required = len(required_steps)
 ready_required = sum(1 for step in required_steps if step.status == "ready")
 has_attention = any(step.status in {"missing", "blocked", "stale"} for step in required_steps)
@@ -1329,25 +1378,19 @@ st.caption("Review required artefacts and resolve missing or stale steps before 
 st.caption(overall_message)
 if not knowledge_ready:
     st.info("Planning actions stay disabled until the knowledge store is ready.")
-phase_guardrails_step = readiness_map.get("phase_guardrails")
-phase_structure_step = readiness_map.get("phase_structure")
+phase_step = readiness_map.get("phase")
 week_plan_step = readiness_map.get("week_plan")
 if week_plan_step and week_plan_step.status in {"missing", "stale"}:
-    if phase_guardrails_step and phase_guardrails_step.status in {"missing", "stale"}:
+    if phase_step and phase_step.status in {"missing", "stale", "blocked"}:
         st.info(
-            "Plan Week will create missing or stale Phase Guardrails/Structure (and Preview) before "
-            "generating the Week Plan for the selected ISO week."
-        )
-    elif phase_structure_step and phase_structure_step.status in {"missing", "stale"}:
-        st.info(
-            "Plan Week will create missing or stale Phase Structure (and Preview) before "
+            "Plan Week will create missing or stale Phase artefacts before "
             "generating the Week Plan for the selected ISO week."
         )
 
 readiness_container = st.container()
 readiness_cols = readiness_container.columns(2)
-split_idx = (len(readiness) + 1) // 2
-for col, steps in zip(readiness_cols, [readiness[:split_idx], readiness[split_idx:]]):
+split_idx = (len(display_readiness) + 1) // 2
+for col, steps in zip(readiness_cols, [display_readiness[:split_idx], display_readiness[split_idx:]]):
     with col:
         for step in steps:
             header = f"{_status_badge(step.status)} {step.label}"
@@ -1588,14 +1631,11 @@ if not has_blockers:
     cta_disabled = planning_locked
 
     scope_summary = {
-        None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Week Plan, Build Workouts",
+        None: "Will write: Season Plan, Phase Guardrails, Phase Structure, Phase Preview, Week Plan, Build Workouts",
         "Season Scenarios": "Will write: Season Scenarios",
         "Selected Scenario": "Will write: Selected Scenario",
         "Season Plan": "Will write: Season Plan",
-        "Phase (Guardrails + Structure)": "Will write: Phase Guardrails, Phase Structure",
-        "Phase Guardrails": "Will write: Phase Guardrails",
-        "Phase Structure": "Will write: Phase Structure",
-        "Phase Preview": "Will write: Phase Preview",
+        "Phase": "Will write: Phase Guardrails, Phase Structure, Phase Preview",
         "Week Plan": "Will write: Week Plan",
         "Build Workouts": "Will write: Build Workouts",
     }
@@ -1625,7 +1665,7 @@ if not has_blockers:
                     "Season Scenarios",
                     "Selected Scenario",
                     "Season Plan",
-                    "Phase (Guardrails + Structure)",
+                    "Phase",
                     "Week Plan",
                     "Build Workouts",
                 ],

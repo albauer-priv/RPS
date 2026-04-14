@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Implemented
-Last-Updated: 2026-04-13
+Last-Updated: 2026-04-14
 Owner: UI
 ---
 # FEAT: Plan Hub Direct Step Actions
@@ -40,7 +40,7 @@ Owner: UI
 
 **Goals**
 
-* [x] Add direct action buttons on Plan Hub readiness cards for `Phase Guardrails`, `Phase Structure`, `Phase Preview`, `Week Plan`, and `Build Workouts`.
+* [x] Add direct action buttons on Plan Hub readiness cards for `Phase`, `Week Plan`, and `Build Workouts`.
 * [x] Allow users to trigger runs for the current and next valid phase/week target from those cards.
 * [x] Reuse the existing queue/worker execution path so behavior stays consistent with other Plan Hub runs.
 
@@ -55,10 +55,8 @@ Owner: UI
 
 **User/System behavior**
 
-* Each affected readiness card exposes one or two direct action buttons:
-  * current target
-  * next target, when the next ISO week is in scope and maps to a valid season phase
-* Phase actions queue the corresponding scoped phase run.
+* Each affected readiness card exposes direct action buttons where appropriate.
+* Phase actions queue one scoped `Phase` run that creates Guardrails, Structure, and Preview together.
 * Week actions queue the corresponding scoped week or workout run.
 * Direct card actions act as explicit rerun intent and therefore do not require additional override text.
 * Button clicks create regular Plan Hub run records and start the worker through the existing scheduler helper.
@@ -73,7 +71,7 @@ Owner: UI
 ```mermaid
 flowchart TD
   A["Plan Hub Readiness"] --> B{"Card type"}
-  B -->|Phase artefact| C["Show current/next phase buttons"]
+  B -->|Phase| C["Show phase selector + Run Phase"]
   B -->|Week artefact| D["Show current/next week buttons"]
   C --> E["Queue scoped phase run"]
   D --> F["Queue scoped week/workout run"]
@@ -183,7 +181,7 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [x] Plan Hub readiness cards for `Phase Guardrails`, `Phase Structure`, `Phase Preview`, `Week Plan`, and `Build Workouts` show direct actions where a valid target exists.
+* [x] Plan Hub readiness cards for `Phase`, `Week Plan`, and `Build Workouts` show direct actions where a valid target exists.
 * [x] Direct actions queue regular run-store entries and reuse the worker scheduler.
 * [x] Current and next valid targets are distinguished in button labels.
 * [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`

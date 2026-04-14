@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-04-14
 Owner: UI
 ---
 # Streamlit UI (RPS)
@@ -77,15 +77,17 @@ Title -> Context -> Action Panel -> Status Panel -> Main Content -> Details/Debu
 
 **Header**
 
-- Scope panel (athlete, ISO year/week, phase) + primary CTA (Plan this Week).
+- Context expander (athlete, ISO year/week, phase) + primary CTA (Plan this Week).
 - CTA preselects **Plan Next Week** if the current week is fully ready; otherwise **Plan Week**.
 - Status banner summarizing readiness/run state.
 
 **Body**
 
 - Readiness checklist with reasons + fix CTAs (planning-only; performance report readiness is on Performance pages).
+- Readiness exposes a single user-facing `Phase` card, even though the underlying artefacts remain `Phase Guardrails`, `Phase Structure`, and `Phase Preview`.
+- Routine planning uses readiness-card direct actions plus the main `Plan Week` CTA.
 - KPI Profile is a readiness prerequisite for planning and feed-forward flows.
-- Run planning panel (mode, scope, run id, validate-only, scoped override input).
+- `Advanced manual run` expander contains run mode, scope, run id, validate-only, and scoped override input.
 - Run execution table (steps, status, outputs, events).
 - Scheduler guards block overlapping runs (same type/subtype) and prevent lower-priority planning runs while higher-priority runs are active.
 - Reset/Delete actions remove latest artefacts; delete also clears scenarios + selection while reset keeps them.
