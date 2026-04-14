@@ -1024,7 +1024,9 @@ def _build_execution_steps(
             status = "SKIPPED"
             details = "Already up-to-date."
         writes_detail: list[WriteDetail] = []
-        for artifact_type, authority in zip(definition["writes"], definition["authority"]):
+        for artifact_type, authority in zip(
+            definition["writes"], definition["authority"], strict=True
+        ):
             writes_detail.append(
                 {
                     "artifact_key": artifact_type.value,
@@ -1419,7 +1421,11 @@ if week_plan_step and week_plan_step.status in {"missing", "stale"}:
 readiness_container = st.container()
 readiness_cols = readiness_container.columns(2)
 split_idx = (len(display_readiness) + 1) // 2
-for col, steps in zip(readiness_cols, [display_readiness[:split_idx], display_readiness[split_idx:]]):
+for col, steps in zip(
+    readiness_cols,
+    [display_readiness[:split_idx], display_readiness[split_idx:]],
+    strict=True,
+):
     with col:
         for step in steps:
             header = f"{_status_badge(step.status)} {step.label}"

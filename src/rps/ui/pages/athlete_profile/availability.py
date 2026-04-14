@@ -201,7 +201,7 @@ if st.button("Save Availability", width="content"):
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
     normalized_table = [
         _normalize_entry(row if isinstance(row, dict) else None, day)
-        for day, row in zip(WEEKDAYS, availability_table)
+        for day, row in zip(WEEKDAYS, availability_table, strict=True)
     ]
     fixed_rest_days_set = {day for day in fixed_rest_days}
     for row in normalized_table:

@@ -41,7 +41,7 @@ Owner: Tooling
 * [x] Add repo-local `ruff` configuration.
 * [x] Add a reusable lint entrypoint script.
 * [x] Make `ruff` mandatory in the existing repo-managed pre-commit hook.
-* [x] Start with a conservative rule set focused on correctness, imports, and a very small set of safe modernization rules.
+* [x] Start with a conservative rule set focused on correctness, imports, a very small set of safe modernization rules, and low-risk bug-prevention checks.
 
 **Non-Goals**
 
@@ -145,7 +145,7 @@ Owner: Tooling
 
 **Summary**
 
-* Start with low-noise rules for correctness, imports, and only a few low-risk modernization checks.
+* Start with low-noise rules for correctness, imports, a few low-risk modernization checks, and only the safest bug-prevention checks.
 
 **Pros**
 

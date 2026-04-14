@@ -192,7 +192,7 @@ def _validate_events(rows: list[dict[str, object]]) -> list[str]:
         if priority == "A" and parsed_date:
             a_dates.append(parsed_date)
     a_dates = sorted(a_dates)
-    for prev, current in zip(a_dates, a_dates[1:]):
+    for prev, current in zip(a_dates, a_dates[1:], strict=False):
         if (current - prev).days < 84:
             missing_errors.append(
                 "A events must be spaced at least 12 weeks apart."

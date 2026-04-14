@@ -774,7 +774,7 @@ def _build_zone_ranges(bounds: list[float]) -> dict[str, tuple[float, float]]:
     bounds = [float(b) for b in bounds[:7]]
     ranges: dict[str, tuple[float, float]] = {}
     prev = 0.0
-    for zone_id, max_pct in zip(["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"], bounds):
+    for zone_id, max_pct in zip(["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"], bounds, strict=True):
         ranges[zone_id] = (prev, max_pct)
         prev = max_pct
     return ranges
@@ -2022,7 +2022,7 @@ def compile_activities_trend(
         if len(z2_days) < 2:
             return 0
         count = 0
-        for d1, d2 in zip(z2_days, z2_days[1:]):
+        for d1, d2 in zip(z2_days, z2_days[1:], strict=False):
             if (d2 - d1).days == 1:
                 count += 1
         return int(count)
@@ -2628,8 +2628,8 @@ def run_pipeline(args: argparse.Namespace, logger: logging.Logger | None = None)
         try:
             from_date = parse_ymd(args.from_date)
             to_date = parse_ymd(args.to_date)
-        except ValueError:
-            raise SystemExit("Invalid date format. Expected YYYY-MM-DD, e.g. --from 2025-10-28")
+        except ValueError as err:
+            raise SystemExit("Invalid date format. Expected YYYY-MM-DD, e.g. --from 2025-10-28") from err
         if from_date > to_date:
             raise SystemExit(f"--from {from_date} is after --to {to_date}.")
     else:

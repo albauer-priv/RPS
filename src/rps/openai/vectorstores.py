@@ -377,7 +377,7 @@ def _build_local_index(
                 vector=vector,
                 payload=cast(dict[str, Any], item["payload"]),
             )
-            for item, vector in zip(batch, vectors)
+            for item, vector in zip(batch, vectors, strict=True)
         ]
         client.upsert(collection_name=collection, points=points, wait=True)
 

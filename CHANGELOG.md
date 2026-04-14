@@ -773,6 +773,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The initial `ruff --fix` sweep normalized imports and removed low-risk unused-code issues across scripts, app modules, workspace helpers, and tests so the new hook starts green instead of landing as a broken gate.
 - Developer-facing docs now include the lint command and local hook activation step in `README.md`.
 - The mandatory `ruff` gate was expanded slightly with a small set of safe modernization checks (`UP017`, `UP031`, `UP035`, `UP037`) after verifying a green repo run.
+- The mandatory `ruff` gate now also covers low-risk `flake8-bugbear` checks `B904` and `B905`, with explicit `zip(..., strict=...)` handling and explicit exception chaining in CLI argument parsing.
 
 ## [0.1.0] - 2026-01-20
 
