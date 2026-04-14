@@ -477,7 +477,9 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
     assert len(calls) == EXPECTED_SCOPED_ACTION_CALLS
 
 
-def test_create_season_plan_includes_selected_kpi_guidance(monkeypatch, tmp_path):
+def test_create_season_plan_includes_selected_kpi_guidance(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured_inputs: list[str] = []
 
     def _fake_runtime_for(_agent_name):
@@ -598,7 +600,9 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
     assert any(run_id.endswith("_phase_create_phase_preview") for run_id in run_ids)
 
 
-def test_plan_week_force_phase_guardrails_runs_in_isolation(monkeypatch, tmp_path):
+def test_plan_week_force_phase_guardrails_runs_in_isolation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     athlete_id = "test_athlete"
     year = 2026
     week = 12
@@ -682,7 +686,9 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(monkeypatch, tmp_pat
     assert written_types == [ArtifactType.PHASE_GUARDRAILS]
 
 
-def test_plan_week_phase_architect_omits_direct_kpi_guidance(monkeypatch, tmp_path):
+def test_plan_week_phase_architect_omits_direct_kpi_guidance(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     athlete_id = "test_athlete"
     captured_inputs: list[str] = []
 

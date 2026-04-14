@@ -785,6 +785,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A first low-risk `PERF401` cleanup pass replaced manual append loops with comprehensions/extends in schema checks, OpenAI response helpers, renderer context builders, and several Plan/System run-history table helpers.
 - Additional low-risk lint cleanup replaced a few remaining parser/helper magic-number comparisons with named constants in logging, streaming, shared UI, and ISO helper modules, simplified the non-negative phase week offset clamp, and removed a repeated `split()` pattern in `intervals_data.py` without changing planning behavior.
 - Repo-wide `PLR2004` cleanup is now complete: remaining runner, orchestrator, UI, workspace, data-pipeline, and test comparisons use named constants instead of scattered literal thresholds, including the activity-trend KPI flag thresholds in `intervals_data.py`.
+- The final full-repo `mypy` cleanup pass typed the remaining `tests/test_plan_pages.py` fixtures/functions that still triggered `annotation-unchecked` notes, leaving `./scripts/run_typecheck.sh --full` fully clean.
 - A second low-risk `PERF401` cleanup pass converted remaining simple row/message/path collectors in the Plan Phase/Week pages, chatbot message filtering, and backup path collection to comprehensions or `extend(...)`.
 - The final `PERF401` cleanup pass simplified remaining constraint-mismatch error collection in `guarded_store.py`, leaving the full repository green for `ruff --select PERF401`.
 
