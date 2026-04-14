@@ -6,16 +6,17 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SYS_PATH = str(ROOT / "src")
 if SYS_PATH not in sys.path:
     # Allow running this script directly without installing the package.
     sys.path.insert(0, SYS_PATH)
 
-from script_logging import configure_logging  # noqa: E402
-
 from rps.core.config import load_env_file  # noqa: E402
 from rps.openai.client import get_client  # noqa: E402
 from rps.openai.vectorstores import list_vector_stores  # noqa: E402
+from scripts.script_logging import configure_logging  # noqa: E402
 
 
 def main() -> None:

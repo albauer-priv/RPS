@@ -12,19 +12,21 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     # Allow running the script directly without installing the package.
     sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
-from rps.workspace.schema_registry import (  # noqa: E402
-    SchemaRegistry,
-    SchemaValidationError,
-    validate_or_raise,
-)
-from scripts.data_pipeline.common import (  # noqa: E402
+from rps.data_pipeline.common import (  # noqa: E402
     athlete_data_dir,
     athlete_latest_dir,
     configure_logging,
     load_env,
     resolve_athlete_id,
     resolve_schema_dir,
+)
+from rps.workspace.schema_registry import (  # noqa: E402
+    SchemaRegistry,
+    SchemaValidationError,
+    validate_or_raise,
 )
 
 

@@ -8,13 +8,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from script_logging import configure_logging  # noqa: E402
-
 from rps.core.config import load_env_file  # noqa: E402
 from rps.schemas.bundler import SchemaBundler  # noqa: E402
+from scripts.script_logging import configure_logging  # noqa: E402
 
 
 def main() -> int:

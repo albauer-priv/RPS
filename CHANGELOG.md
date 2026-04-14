@@ -780,6 +780,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The mandatory `ruff` gate now also includes the low-risk simplification rules `SIM103` and `SIM108`, with targeted cleanups in logging helpers, runner predicates, Groq/model detection helpers, and authority normalization.
 - Several remaining safe simplifications were applied outside the dense guarded-store normalization paths: `coach.py` now uses `contextlib.suppress` for optional numeric env parsing, while small nested-condition cleanups landed in `intervals_data.py`, `streaming.py`, and `plan/hub.py`.
 - `guarded_store.py` numeric rounding heuristics were refactored into an explicit `_rounding_decimals()` helper and small nested-condition checks were flattened, removing the remaining local `SIM102`/`SIM114` hotspots while making the validation/normalization path easier to read.
+- The local `scripts/` tree now uses explicit package-style imports for `script_logging` and direct imports from `rps.data_pipeline.common`, which removes the last repoweight `mypy` import-resolution errors and restores a clean `python3 -m mypy --explicit-package-bases src tests scripts` run.
 
 ## [0.1.0] - 2026-01-20
 
