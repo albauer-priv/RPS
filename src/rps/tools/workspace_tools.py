@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rps.workspace.api import Workspace
+from rps.workspace.iso_helpers import IsoWeekRange
 from rps.workspace.phase_from_season_plan import IsoWeek
 from rps.workspace.phase_resolution import add_weeks
 from rps.workspace.index_exact import IndexExactQuery
@@ -19,6 +20,9 @@ from rps.workspace.types import ArtifactType
 from rps.tools.knowledge_search import search_knowledge
 
 logger = logging.getLogger(__name__)
+
+JsonDict = dict[str, object]
+ToolHandler = Callable[[dict[str, Any]], object]
 
 def _parse_artifact_type(value: str) -> ArtifactType:
     """Normalize a user-provided artifact type string."""
@@ -34,7 +38,7 @@ def _parse_artifact_type(value: str) -> ArtifactType:
         return ArtifactType[key]
 
 
-def get_tool_defs() -> list[dict[str, Any]]:
+def get_tool_defs() -> list[JsonDict]:
     """Return function tool definitions for workspace access."""
     return [
         {
@@ -143,7 +147,7 @@ class ToolContext:
         return Workspace.for_athlete(self.athlete_id, root=self.workspace_root)
 
 
-def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], Any]]:
+def get_tool_handlers(ctx: ToolContext) -> dict[str, ToolHandler]:
     """Return tool handler callables bound to the context."""
     workspace = ctx.workspace()
     index_query = IndexExactQuery(
@@ -151,7 +155,7 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
         athlete_id=workspace.athlete_id,
     )
 
-    def _best_exact_range_doc(artifact_type: ArtifactType, phase_range) -> dict[str, Any]:
+    def _best_exact_range_doc(artifact_type: ArtifactType, phase_range: IsoWeekRange) -> JsonDict:
         """Load the newest exact-range artifact for a phase range."""
         best_vk = index_query.best_exact_range_version(artifact_type.value, phase_range)
         if not best_vk:
@@ -177,22 +181,22 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             "document": doc,
         }
 
-    def workspace_get_latest(args: dict[str, Any]) -> Any:
+    def workspace_get_latest(args: dict[str, Any]) -> object:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.get_latest(artifact_type)
 
-    def workspace_get(args: dict[str, Any]) -> Any:
+    def workspace_get(args: dict[str, Any]) -> object:
         """Load a specific artifact version."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.get(artifact_type, args["version_key"])
 
-    def workspace_list_versions(args: dict[str, Any]) -> Any:
+    def workspace_list_versions(args: dict[str, Any]) -> object:
         """List known versions for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.list_versions(artifact_type)
 
-    def workspace_get_phase_context(args: dict[str, Any]) -> Any:
+    def workspace_get_phase_context(args: dict[str, Any]) -> object:
         """Resolve a phase range and return the newest exact-range phase artifacts."""
         year = int(args["year"])
         week = int(args["week"])
@@ -236,7 +240,7 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             },
         }
 
-    def workspace_put_validated(args: dict[str, Any]) -> Any:
+    def workspace_put_validated(args: dict[str, Any]) -> object:
         """Validate and persist an artifact using the schema registry."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         schema_file = args.get("schema_file")
@@ -318,7 +322,7 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, Callable[[dict[str, Any]], 
             logger.exception("Auto-render failed for %s", path)
         return {"ok": True, "path": path}
 
-    def knowledge_search(args: dict[str, Any]) -> Any:
+    def knowledge_search(args: dict[str, Any]) -> object:
         """Search the local knowledge vectorstore."""
         query = str(args.get("query", "")).strip()
         max_results = args.get("max_results", 5)

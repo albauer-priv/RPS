@@ -14,6 +14,7 @@ from typing import Any, Callable
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.tasks import AgentTask, OUTPUT_SPECS, OutputSpec
+from rps.openai.litellm_runtime import LiteLLMClient, LiteLLMResponse
 from rps.openai.reasoning import build_reasoning_payload
 from rps.openai.model_capabilities import supports_temperature
 from rps.openai.response_utils import extract_reasoning_summaries, extract_text_output
@@ -30,11 +31,13 @@ from rps.workspace.types import ArtifactType
 logger = logging.getLogger(__name__)
 
 _KNOWLEDGE_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "specs" / "knowledge" / "_shared" / "sources"
+ToolDef = dict[str, object]
+UsageSummary = dict[str, int | None]
 
 @dataclass(frozen=True)
 class AgentRuntime:
     """Runtime dependencies for multi-output agent runs."""
-    client: Any
+    client: LiteLLMClient
     model: str
     temperature: float | None
     reasoning_effort: str | None
@@ -46,7 +49,7 @@ class AgentRuntime:
     workspace_root: Path
 
 
-def _file_search_tool(agent_vs_id: str, max_num_results: int) -> dict[str, Any]:
+def _file_search_tool(agent_vs_id: str, max_num_results: int) -> ToolDef:
     """Build a knowledge_search tool payload for Responses API."""
     return {
         "type": "function",
@@ -72,8 +75,8 @@ def _parse_csv_env(name: str) -> set[str]:
     return {part.strip().lower() for part in raw.split(",") if part.strip()}
 
 
-def _web_search_tool() -> dict[str, Any]:
-    tool: dict[str, Any] = {
+def _web_search_tool() -> ToolDef:
+    tool: ToolDef = {
         "type": "web_search",
         "user_location": {
             "type": "approximate",
@@ -89,7 +92,9 @@ def _web_search_tool() -> dict[str, Any]:
         tool["filters"] = {"allowed_domains": [dom.strip() for dom in allowed_domains]}
     context_size = os.getenv("RPS_LLM_WEB_SEARCH_CONTEXT_SIZE", "").strip().lower()
     if context_size in {"low", "medium", "high"}:
-        tool.setdefault("filters", {})["search_context_size"] = context_size
+            filters = tool.setdefault("filters", {})
+            if isinstance(filters, dict):
+                filters["search_context_size"] = context_size
     external_access_raw = os.getenv("RPS_LLM_WEB_SEARCH_EXTERNAL_ACCESS")
     if external_access_raw is not None:
         tool["external_web_access"] = external_access_raw.strip().lower() in {
@@ -110,14 +115,14 @@ def _web_search_enabled(agent_name: str) -> bool:
     return True
 
 
-def _item_type(item: Any) -> str | None:
+def _item_type(item: object) -> str | None:
     """Return the type field for response output items."""
     if isinstance(item, dict):
         return item.get("type")
     return getattr(item, "type", None)
 
 
-def _item_field(item: Any, name: str) -> Any:
+def _item_field(item: object, name: str) -> object | None:
     """Safely read a field from a response output item."""
     if isinstance(item, dict):
         return item.get(name)
@@ -183,7 +188,7 @@ def normalize_phase_guardrails_document(document: dict[str, Any]) -> dict[str, A
     return document
 
 
-def _log_file_search_results(response: Any) -> None:
+def _log_file_search_results(response: LiteLLMResponse) -> None:
     """Log knowledge_search calls for debugging."""
     items = getattr(response, "output", []) or []
     calls = [
@@ -202,7 +207,7 @@ def _log_file_search_results(response: Any) -> None:
             _item_field(call, "arguments"),
         )
 
-def _log_file_search_calls(response: Any) -> None:
+def _log_file_search_calls(response: LiteLLMResponse) -> None:
     """Log knowledge_search call details when available."""
     items = getattr(response, "output", []) or []
     calls = [
@@ -221,7 +226,7 @@ def _log_file_search_calls(response: Any) -> None:
             list(item.keys()) if isinstance(item, dict) else None,
         )
 
-def _has_knowledge_search_calls(response: Any) -> bool:
+def _has_knowledge_search_calls(response: LiteLLMResponse) -> bool:
     items = getattr(response, "output", []) or []
     return any(
         _item_type(item) == "function_call" and _item_field(item, "name") == "knowledge_search"
@@ -247,7 +252,7 @@ def _env_flag(name: str) -> bool:
     value = raw.strip().lower()
     return value in {"1", "true", "yes", "on"}
 
-def _extract_usage(response: Any) -> dict[str, Any]:
+def _extract_usage(response: LiteLLMResponse) -> UsageSummary:
     """Best-effort extraction of token usage from a response."""
     usage = getattr(response, "usage", None)
     if isinstance(usage, dict):
@@ -290,7 +295,7 @@ def injection_mode_for_tasks(tasks: list[AgentTask]) -> str | None:
     return next(iter(modes))
 
 
-def _log_response_diagnostics(response: Any, *, label: str, elapsed_s: float) -> None:
+def _log_response_diagnostics(response: LiteLLMResponse, *, label: str, elapsed_s: float) -> None:
     """Log timing + shape info for a response."""
     try:
         outputs = response.output or []
@@ -323,8 +328,8 @@ def run_agent_multi_output(
     include_debug_file_search: bool = False,
     force_file_search: bool = True,
     max_num_results: int | None = None,
-    stream_handlers: dict[str, Callable[[str], Any]] | None = None,
-) -> dict[str, Any]:
+    stream_handlers: dict[str, object] | None = None,
+) -> dict[str, object]:
     """Run an agent that can emit multiple strict tool outputs."""
     output_specs: list[OutputSpec] = [OUTPUT_SPECS[task] for task in tasks]
 
@@ -400,7 +405,7 @@ def run_agent_multi_output(
         or logger.isEnabledFor(logging.DEBUG)
     )
 
-    tools_read: list[dict[str, Any]] = []
+    tools_read: list[ToolDef] = []
     web_search_enabled = _web_search_enabled(agent_name)
     if web_search_enabled:
         tools_read.append(_web_search_tool())
@@ -428,7 +433,7 @@ def run_agent_multi_output(
         if "meta" in args and "document" in args and isinstance(args.get("document"), dict):
             return {"meta": args.get("meta"), "data": args.get("document")}
 
-        def _maybe_parse(value: Any) -> dict[str, Any] | None:
+        def _maybe_parse(value: object) -> dict[str, Any] | None:
             if isinstance(value, dict) and "meta" in value and "data" in value:
                 return value
             if isinstance(value, str):
@@ -549,21 +554,21 @@ def run_agent_multi_output(
                     "unknowns",
                 }
                 guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
-                def _as_positive_int(value: Any) -> int | None:
+                def _as_positive_int(value: object) -> int | None:
                     if isinstance(value, bool):
                         return None
                     if isinstance(value, int) and value > 0:
                         return value
                     return None
 
-                def _as_non_negative_int(value: Any) -> int | None:
+                def _as_non_negative_int(value: object) -> int | None:
                     if isinstance(value, bool):
                         return None
                     if isinstance(value, int) and value >= 0:
                         return value
                     return None
 
-                def _iso_week_range_weeks(range_str: Any) -> int | None:
+                def _iso_week_range_weeks(range_str: object) -> int | None:
                     if not isinstance(range_str, str) or "--" not in range_str:
                         return None
                     start_str, end_str = range_str.split("--", 1)
@@ -784,7 +789,7 @@ def run_agent_multi_output(
         document["data"] = data
         return document
 
-    def _is_envelope(value: Any) -> bool:
+    def _is_envelope(value: object) -> bool:
         return isinstance(value, dict) and "meta" in value and "data" in value
 
     def _format_heading_for_log(text: str) -> str:
@@ -793,7 +798,7 @@ def run_agent_multi_output(
             return f"\n{text}"
         return text
 
-    def _log_response_content(response_obj: Any, *, label: str) -> None:
+    def _log_response_content(response_obj: LiteLLMResponse, *, label: str) -> None:
         text_out = response_obj.output_text or extract_text_output(response_obj) or ""
         if not text_out:
             return
@@ -804,7 +809,7 @@ def run_agent_multi_output(
         logger.warning("Model response text (%s): %s", label, _format_heading_for_log(trimmed))
 
     def _log_no_tool_call_summary(
-        response_obj: Any,
+        response_obj: LiteLLMResponse,
         *,
         attempted_store: bool,
         wanted_tools: set[str],
@@ -872,7 +877,7 @@ def run_agent_multi_output(
         if runtime.max_completion_tokens is not None:
             payload["max_completion_tokens"] = runtime.max_completion_tokens
         start = time.perf_counter()
-        local_handlers: dict[str, Any] = dict(stream_handlers) if stream_handlers else {}
+        local_handlers: dict[str, object] = dict(stream_handlers) if stream_handlers else {}
         if "reasoning_log_meta" not in local_handlers:
             local_handlers["reasoning_log_meta"] = {
                 "agent": agent_name,
@@ -885,7 +890,7 @@ def run_agent_multi_output(
         _log_response_diagnostics(response, label=label, elapsed_s=elapsed)
         return response
 
-    produced: dict[str, Any] = {}
+    produced: dict[str, object] = {}
     wanted_tool_names = {spec.tool_name for spec in output_specs}
 
     force_search = force_file_search
@@ -922,7 +927,7 @@ def run_agent_multi_output(
             "WELLNESS",
         }
 
-    def _mark_required_loaded(tool_name: str | None, args: dict[str, Any], result: Any) -> None:
+    def _mark_required_loaded(tool_name: str | None, args: dict[str, Any], result: object) -> None:
         nonlocal required_ready
         if not required_artifacts:
             return
@@ -1101,8 +1106,10 @@ def run_agent_multi_output(
             return {"ok": all_done, "produced": produced, "final_text": final_text}
 
         for call in function_calls:
-            name = _item_field(call, "name")
-            args_raw = _item_field(call, "arguments") or "{}"
+            raw_name = _item_field(call, "name")
+            name = raw_name if isinstance(raw_name, str) else None
+            args_raw_obj = _item_field(call, "arguments")
+            args_raw = args_raw_obj if isinstance(args_raw_obj, str) else "{}"
             call_id = _item_field(call, "call_id")
             try:
                 args = json.loads(args_raw)
@@ -1177,7 +1184,8 @@ def run_agent_multi_output(
                     producer_agent=agent_name,
                     update_latest=True,
                 )
-                produced[name] = saved
+                if name is not None:
+                    produced[name] = saved
                 result = saved
             except SchemaValidationError as exc:
                 details = list(exc.errors or [])

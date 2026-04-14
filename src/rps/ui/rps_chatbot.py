@@ -10,6 +10,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Callable, Literal, cast
 
 import openai
@@ -21,8 +22,9 @@ except Exception:  # pragma: no cover - optional dependency
     _tiktoken = None
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from rps.openai.response_utils import extract_text_output
 from rps.openai.client import get_client
+from rps.openai.litellm_runtime import LiteLLMResponse
+from rps.openai.response_utils import extract_text_output
 
 tiktoken: Any = _tiktoken
 LOGGER = logging.getLogger(__name__)
@@ -108,6 +110,20 @@ class CustomFunction:
 
     def __repr__(self) -> str:
         return f"CustomFunction(name='{self.name}')"
+
+
+def _require_response(result: LiteLLMResponse | object) -> LiteLLMResponse:
+    """Return a non-streaming response object or fail fast for invalid runtime output."""
+    if isinstance(result, LiteLLMResponse):
+        return result
+    raise RuntimeError("Expected non-streaming LiteLLM response.")
+
+
+def _require_event_stream(result: LiteLLMResponse | object) -> list[SimpleNamespace]:
+    """Return a materialized event stream or fail fast for invalid runtime output."""
+    if isinstance(result, LiteLLMResponse):
+        raise RuntimeError("Expected streaming LiteLLM response events.")
+    return list(cast(Any, result))
 
 
 class RemoteMCP:
@@ -307,13 +323,13 @@ class Chat():
                 or os.getenv("RPS_LLM_MODEL_SUMMARY")
                 or self.model
             )
-            response = self._client.responses.create(
+            response = _require_response(self._client.responses.create(
                 model=summary_model,
                 input=[
                     {"role": "developer", "content": SUMMARY_INSTRUCTIONS},
                     {"role": "user", "content": json.dumps(sections, indent=2)},
                 ],
-            )
+            ))
             self.summary = response.output_text or extract_text_output(response) or "New Chat"
 
     def _get_model_limits(self, model: str) -> dict[str, int] | None:
@@ -593,7 +609,7 @@ class Chat():
                     tool["container"] = self._container_id or ""
         self._ensure_token_budget()
         input_items = self._message_items(self._conversation_items) + self._input
-        events1 = self._client.responses.create(
+        events1 = _require_event_stream(self._client.responses.create(
             model=self.model,
             input=input_items,
             instructions=self.instructions,
@@ -601,15 +617,16 @@ class Chat():
             tools=self._tools,
             stream=True,
             reasoning={"summary": "auto"},
-        )
+        ))
         tool_call_events = []
         assistant_text = ""
         response1_text = ""
         for event1 in events1:
             if event1.type == "response.completed":
                 self._previous_response_id = event1.response.id
-                self.input_tokens += event1.response.usage.input_tokens
-                self.output_tokens += event1.response.usage.output_tokens
+                usage = event1.response.usage or {}
+                self.input_tokens += int(usage.get("input_tokens", 0))
+                self.output_tokens += int(usage.get("output_tokens", 0))
                 final_text = event1.response.output_text or extract_text_output(event1.response) or ""
                 response1_text = final_text
                 if final_text and not assistant_text:
@@ -710,7 +727,7 @@ class Chat():
                     "name": item.name,
                     "output": output
                 })
-            events2 = self._client.responses.create(
+            events2 = _require_event_stream(self._client.responses.create(
                 model=self.model,
                 input=self._input,
                 instructions=self.instructions,
@@ -718,7 +735,7 @@ class Chat():
                 tools=self._tools,
                 previous_response_id=self._previous_response_id,
                 stream=True,
-            )
+            ))
             assistant_text = ""
             response2_text = ""
             for event2 in events2:

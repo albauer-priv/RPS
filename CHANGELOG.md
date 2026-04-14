@@ -730,6 +730,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Plan Hub now collapses `Phase Guardrails`, `Phase Structure`, and `Phase Preview` into a single user-facing `Phase` card and scope; `Run Phase` now creates all three phase artefacts for the selected phase.
 - Full-project `mypy` now passes across `src/`; queue/worker payload handling, plan pages, Intervals posting, historical baseline rendering, and performance metric flag access were tightened with explicit type narrowing instead of permissive `Any` flows.
+- Typing boundaries across the LiteLLM adapter, agent runners, coach tool wiring, workspace read/write tools, guarded store validation, and renderer sorting were tightened further; full-project `mypy --check-untyped-defs src` now also passes.
 - Week page now treats a missing Season Plan as a warning-state readiness hint instead of a hard page error, so the page still renders cleanly before planning inputs are complete.
 - Plan Hub scoped `Phase Structure` runs now always rerun `Phase Preview` immediately after `Phase Structure`, keeping both phase artefacts aligned without requiring a separate manual preview run.
 - User-authored input artefacts now use valid metadata semantics: `owner_agent` allows `User`, manual UI inputs no longer write `data_confidence: "USER"`, and bundled schemas were rebuilt accordingly.

@@ -316,8 +316,10 @@ def run_agent_session(
             break
 
         for call in function_calls:
-            name = _item_field(call, "name")
-            args_raw = _item_field(call, "arguments") or "{}"
+            raw_name = _item_field(call, "name")
+            name = raw_name if isinstance(raw_name, str) else None
+            args_raw_obj = _item_field(call, "arguments")
+            args_raw = args_raw_obj if isinstance(args_raw_obj, str) else "{}"
             call_id = _item_field(call, "call_id")
             try:
                 args = json.loads(args_raw)
@@ -326,7 +328,8 @@ def run_agent_session(
 
             logger.debug("Tool call %s args=%s", name, args)
 
-            if name not in tool_handlers:
+            result: object
+            if name is None or name not in tool_handlers:
                 result = {"ok": False, "error": f"Unknown tool: {name}"}
             else:
                 try:

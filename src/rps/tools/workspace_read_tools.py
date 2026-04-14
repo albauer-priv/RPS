@@ -7,12 +7,16 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rps.workspace.api import Workspace
+from rps.workspace.iso_helpers import IsoWeekRange
 from rps.workspace.phase_from_season_plan import IsoWeek
 from rps.workspace.phase_resolution import add_weeks
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.season_plan_service import resolve_phase_range_from_season_plan, resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 from rps.tools.knowledge_search import search_knowledge
+
+JsonDict = dict[str, object]
+ToolHandler = Callable[[dict[str, Any]], object]
 
 
 def _parse_artifact_type(value: str) -> ArtifactType:
@@ -61,7 +65,7 @@ def _find_input_file(
     return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
-def read_tool_defs() -> list[dict[str, Any]]:
+def read_tool_defs() -> list[JsonDict]:
     """Return function tool definitions for workspace reads."""
     return [
         {
@@ -213,7 +217,7 @@ def read_tool_defs() -> list[dict[str, Any]]:
 class ReadToolContext:
     """Context object for workspace read tools."""
     athlete_id: str
-    workspace_root: Any
+    workspace_root: Path
     agent_name: str = "coach"
 
     def workspace(self) -> Workspace:
@@ -221,7 +225,7 @@ class ReadToolContext:
         return Workspace.for_athlete(self.athlete_id, root=self.workspace_root)
 
 
-def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, Any]], Any]]:
+def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
     """Return read tool handlers bound to a workspace."""
     workspace = ctx.workspace()
     index_query = IndexExactQuery(
@@ -229,7 +233,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         athlete_id=workspace.athlete_id,
     )
 
-    def _best_exact_range_doc(artifact_type: ArtifactType, phase_range) -> dict[str, Any]:
+    def _best_exact_range_doc(artifact_type: ArtifactType, phase_range: IsoWeekRange) -> JsonDict:
         """Load the newest exact-range artifact for a phase range."""
         best_vk = index_query.best_exact_range_version(artifact_type.value, phase_range)
         if not best_vk:
@@ -255,22 +259,22 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             "document": doc,
         }
 
-    def workspace_get_latest(args: dict[str, Any]) -> Any:
+    def workspace_get_latest(args: dict[str, Any]) -> object:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.get_latest(artifact_type)
 
-    def workspace_get_version(args: dict[str, Any]) -> Any:
+    def workspace_get_version(args: dict[str, Any]) -> object:
         """Load a specific artifact version."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.get(artifact_type, args["version_key"])
 
-    def workspace_list_versions(args: dict[str, Any]) -> Any:
+    def workspace_list_versions(args: dict[str, Any]) -> object:
         """List known versions for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.list_versions(artifact_type)
 
-    def workspace_resolve_season_phase(args: dict[str, Any]) -> Any:
+    def workspace_resolve_season_phase(args: dict[str, Any]) -> object:
         """Resolve the season plan phase covering the target week."""
         year = int(args["year"])
         week = int(args["week"])
@@ -292,7 +296,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             },
         }
 
-    def workspace_resolve_phase_range(args: dict[str, Any]) -> Any:
+    def workspace_resolve_phase_range(args: dict[str, Any]) -> object:
         """Resolve the phase range covering the target week."""
         year = int(args["year"])
         week = int(args["week"])
@@ -313,7 +317,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             "range_key": phase_range.key,
         }
 
-    def workspace_find_best_phase_artefact(args: dict[str, Any]) -> Any:
+    def workspace_find_best_phase_artefact(args: dict[str, Any]) -> object:
         """Find and load the newest exact-range phase artifact."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         year = int(args["year"])
@@ -333,7 +337,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
         )
         return _best_exact_range_doc(artifact_type, phase_range)
 
-    def workspace_get_phase_context(args: dict[str, Any]) -> Any:
+    def workspace_get_phase_context(args: dict[str, Any]) -> object:
         """Resolve a phase range and return the newest exact-range phase artifacts."""
         year = int(args["year"])
         week = int(args["week"])
@@ -377,7 +381,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             },
         }
 
-    def workspace_get_input(args: dict[str, Any]) -> Any:
+    def workspace_get_input(args: dict[str, Any]) -> object:
         input_type = str(args["input_type"]).strip()
         year = int(args["year"]) if args.get("year") is not None else None
         path = _find_input_file(workspace.store.athlete_root(workspace.athlete_id), input_type, year=year)
@@ -388,7 +392,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, Callable[[dict[str, An
             "content": path.read_text(encoding="utf-8"),
         }
 
-    def knowledge_search(args: dict[str, Any]) -> Any:
+    def knowledge_search(args: dict[str, Any]) -> object:
         query = str(args.get("query", "")).strip()
         max_results = args.get("max_results", 5)
         tags = args.get("tags")

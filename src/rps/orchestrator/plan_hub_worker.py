@@ -57,7 +57,13 @@ def _poll_response_status(response_id: str) -> str | None:
     try:
         client = get_client()
         resp = client.responses.retrieve(response_id)
-        return getattr(resp, "status", None) or resp.get("status")
+        status = getattr(resp, "status", None)
+        if status is not None:
+            return str(status)
+        if isinstance(resp, dict):
+            raw_status = resp.get("status")
+            return str(raw_status) if raw_status is not None else None
+        return None
     except Exception:
         return None
 

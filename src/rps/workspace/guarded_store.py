@@ -8,7 +8,7 @@ import logging
 import json
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, cast
 
 from rps.agents.tasks import OutputSpec
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -96,7 +96,7 @@ class GuardedValidatedStore:
         cleaned = re.sub(r"[^a-z0-9]+", " ", value.lower())
         return " ".join(cleaned.split())
 
-    def _normalize_payload(self, payload: Any) -> str:
+    def _normalize_payload(self, payload: object) -> str:
         """Normalize a payload into a searchable text blob."""
         try:
             raw = json.dumps(payload, ensure_ascii=False)
@@ -104,7 +104,7 @@ class GuardedValidatedStore:
             raw = str(payload)
         return self._normalize_text(raw)
 
-    def _normalized_string_list(self, value: Any) -> list[str]:
+    def _normalized_string_list(self, value: object) -> list[str]:
         """Return normalized non-empty strings from a list-like or scalar input."""
         if isinstance(value, str):
             stripped = value.strip()
@@ -199,7 +199,7 @@ class GuardedValidatedStore:
 
     def _load_phase_guardrails_for_range(
         self,
-        expected_range: Any,
+        expected_range: object,
     ) -> tuple[dict[str, Any], str]:
         """Load the phase guardrails matching the expected range."""
         range_spec = envelope_week_range({"meta": {"iso_week_range": expected_range}})
@@ -228,7 +228,7 @@ class GuardedValidatedStore:
 
     def _load_phase_structure_for_range(
         self,
-        expected_range: Any,
+        expected_range: object,
     ) -> tuple[dict[str, Any], str]:
         """Load the phase structure matching the expected range."""
         range_spec = envelope_week_range({"meta": {"iso_week_range": expected_range}})
@@ -435,11 +435,11 @@ class GuardedValidatedStore:
 
     def _round_numeric_fields(
         self,
-        value: Any,
+        value: object,
         schema_node: dict[str, Any] | None,
         root_schema: dict[str, Any],
         path: list[str] | None = None,
-    ) -> Any:
+    ) -> object:
         """Apply consistent rounding to numeric values using schema hints when possible."""
         if path is None:
             path = []
@@ -454,7 +454,7 @@ class GuardedValidatedStore:
             if not ref or not isinstance(ref, str) or not ref.startswith("#/"):
                 return node
             parts = ref.lstrip("#/").split("/")
-            cur: Any = root_schema
+            cur: object = root_schema
             for part in parts:
                 if not isinstance(cur, dict):
                     return node
@@ -539,7 +539,7 @@ class GuardedValidatedStore:
                 return round(float(value), decimals)
         return value
 
-    def _apply_rounding(self, document: Any, schema: dict[str, Any]) -> Any:
+    def _apply_rounding(self, document: object, schema: dict[str, Any]) -> object:
         """Round numeric values on the document before validation/storage."""
         return self._round_numeric_fields(document, schema, schema, [])
 
@@ -547,7 +547,7 @@ class GuardedValidatedStore:
         self,
         *,
         output_spec: OutputSpec,
-        document: Any,
+        document: object,
         run_id: str,
         producer_agent: str,
         update_latest: bool = True,
@@ -573,11 +573,12 @@ class GuardedValidatedStore:
                 if isinstance(document.get("meta"), dict) and "data_confidence" not in document["meta"]:
                     document["meta"]["data_confidence"] = "UNKNOWN"
                 document = self._apply_rounding(document, schema)
-                validate_or_raise(validator, document)
-                version_key = derive_version_key_from_envelope(document, target)
+                envelope_document = cast(dict[str, Any], document)
+                validate_or_raise(validator, envelope_document)
+                version_key = derive_version_key_from_envelope(envelope_document, target)
             else:
                 document = self._apply_rounding(document, schema)
-                validate_or_raise(validator, document)
+                validate_or_raise(validator, cast(dict[str, Any], document))
                 version_key = "raw"
             if target == ArtifactType.INTERVALS_WORKOUTS:
                 version_key = self._derive_intervals_version_key(document)
@@ -591,18 +592,18 @@ class GuardedValidatedStore:
                 ArtifactType.PHASE_FEED_FORWARD,
             ):
                 season_plan_doc = self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
-                self._ensure_phase_range_matches_plan(document, season_plan_doc)
+                self._ensure_phase_range_matches_plan(cast(dict[str, Any], document), season_plan_doc)
             if target in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE):
                 if season_plan_doc is None:
                     season_plan_doc = self.store.load_latest(
                         self.athlete_id, ArtifactType.SEASON_PLAN
                     )
                 if target == ArtifactType.PHASE_GUARDRAILS:
-                    self._enforce_phase_guardrails_constraints(document, season_plan_doc)
+                    self._enforce_phase_guardrails_constraints(cast(dict[str, Any], document), season_plan_doc)
                 else:
-                    self._enforce_phase_structure_constraints(document, season_plan_doc)
+                    self._enforce_phase_structure_constraints(cast(dict[str, Any], document), season_plan_doc)
             elif target == ArtifactType.PHASE_PREVIEW:
-                self._enforce_phase_preview_traceability(document)
+                self._enforce_phase_preview_traceability(cast(dict[str, Any], document))
 
             path = self.store.save_document(
                 athlete_id=self.athlete_id,
@@ -643,14 +644,14 @@ class GuardedValidatedStore:
             )
             raise
 
-    def _format_payload(self, document: Any) -> str:
+    def _format_payload(self, document: object) -> str:
         """Return a formatted payload string for logging."""
         try:
             return json.dumps(document, ensure_ascii=False, indent=2)
         except TypeError:
             return repr(document)
 
-    def _derive_intervals_version_key(self, document: Any) -> str:
+    def _derive_intervals_version_key(self, document: object) -> str:
         """Derive ISO week version key from Intervals workouts payload."""
         if not isinstance(document, list):
             return "raw"
@@ -675,7 +676,7 @@ class GuardedValidatedStore:
 
     def _log_store_attempt(
         self,
-        document: Any,
+        document: object,
         *,
         output_spec: OutputSpec,
         run_id: str,
@@ -701,7 +702,7 @@ class GuardedValidatedStore:
 
     def _log_failed_payload(
         self,
-        document: Any,
+        document: object,
         *,
         output_spec: OutputSpec,
         run_id: str,

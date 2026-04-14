@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any, Callable, Iterable, TypeVar
@@ -20,6 +21,7 @@ from rps.core.config import normalize_agent_name
 
 LOGGER = logging.getLogger(__name__)
 _T = TypeVar("_T")
+UsageDict = dict[str, int]
 
 
 @dataclass(frozen=True)
@@ -39,7 +41,7 @@ class LiteLLMResponse:
     id: str
     output: list[dict[str, Any]]
     output_text: str | None
-    usage: dict[str, Any] | None
+    usage: UsageDict | None
 
 
 def _agent_env_key(agent_name: str) -> str:
@@ -352,21 +354,25 @@ def _with_retry(fn: Callable[[], _T], *, label: str) -> _T:
             attempt += 1
 
 
-def _usage_from_response(response: Any) -> Any:
+def _empty_usage() -> UsageDict:
+    return {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+
+
+def _usage_from_response(response: Any) -> UsageDict:
     usage = getattr(response, "usage", None) or (response.get("usage") if isinstance(response, dict) else None)
     if not usage:
-        return SimpleNamespace(input_tokens=0, output_tokens=0, total_tokens=0)
+        return _empty_usage()
     if isinstance(usage, dict):
-        return SimpleNamespace(
-            input_tokens=usage.get("prompt_tokens"),
-            output_tokens=usage.get("completion_tokens"),
-            total_tokens=usage.get("total_tokens"),
-        )
-    return SimpleNamespace(
-        input_tokens=getattr(usage, "prompt_tokens", None),
-        output_tokens=getattr(usage, "completion_tokens", None),
-        total_tokens=getattr(usage, "total_tokens", None),
-    )
+        return {
+            "input_tokens": int(usage.get("prompt_tokens") or 0),
+            "output_tokens": int(usage.get("completion_tokens") or 0),
+            "total_tokens": int(usage.get("total_tokens") or 0),
+        }
+    return {
+        "input_tokens": int(getattr(usage, "prompt_tokens", 0) or 0),
+        "output_tokens": int(getattr(usage, "completion_tokens", 0) or 0),
+        "total_tokens": int(getattr(usage, "total_tokens", 0) or 0),
+    }
 
 
 def _extract_choice(response: Any) -> Any:
@@ -501,12 +507,12 @@ class _Unsupported:
 class LiteLLMResponses:
     """Responses-like wrapper around LiteLLM chat completions."""
 
-    def __init__(self, config: LLMProviderConfig, logger: Any | None = None) -> None:
+    def __init__(self, config: LLMProviderConfig, logger: logging.Logger | None = None) -> None:
         self._config = config
         self._logger = logger
         self._responses: dict[str, LiteLLMResponse] = {}
 
-    def create(self, **payload: Any):
+    def create(self, **payload: Any) -> LiteLLMResponse | Iterator[SimpleNamespace]:
         model = payload.get("model")
         if not model:
             raise RuntimeError("LiteLLM create requires model")
@@ -629,7 +635,7 @@ class LiteLLMResponses:
             self._responses[response_obj.id] = response_obj
             return response_obj
 
-        def _event_stream():
+        def _event_stream() -> Iterator[SimpleNamespace]:
             stream_resp = _with_retry(
                 lambda: litellm.completion(**kwargs),
                 label=f"{model}:stream",
@@ -656,14 +662,14 @@ class LiteLLMResponses:
                 id=str(uuid.uuid4()),
                 output=_build_output_items(collected_text or None, collected_calls),
                 output_text=collected_text or None,
-                usage=SimpleNamespace(input_tokens=0, output_tokens=0, total_tokens=0),
+                usage=_empty_usage(),
             )
             self._responses[response_obj.id] = response_obj
             yield SimpleNamespace(type="response.completed", response=response_obj)
 
         return _event_stream()
 
-    def compact(self, **payload: Any):
+    def compact(self, **payload: Any) -> LiteLLMResponse:
         input_items = payload.get("input") or []
         model = payload.get("model")
         instructions = payload.get("instructions") or ""
@@ -699,14 +705,14 @@ class LiteLLMResponses:
             usage=_usage_from_response(response),
         )
 
-    def retrieve(self, response_id: str):  # pragma: no cover - compatibility
+    def retrieve(self, response_id: str) -> LiteLLMResponse:  # pragma: no cover - compatibility
         raise RuntimeError("responses.retrieve is not supported with LiteLLM runtime.")
 
 
 class LiteLLMClient:
     """Minimal client wrapper to emulate the OpenAI SDK surface."""
 
-    def __init__(self, config: LLMProviderConfig, logger: Any | None = None) -> None:
+    def __init__(self, config: LLMProviderConfig, logger: logging.Logger | None = None) -> None:
         self._config = config
         self.responses = LiteLLMResponses(config, logger=logger)
         self.files = _Unsupported("files")

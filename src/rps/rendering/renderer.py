@@ -1221,7 +1221,7 @@ def build_zone_model_context(doc):
                 "training_intent": zone.get("training_intent", ""),
             }
         )
-    zones.sort(key=lambda entry: zone_order.get(entry.get("zone_id"), 99))
+    zones.sort(key=lambda entry: zone_order.get(str(entry.get("zone_id") or ""), 99))
 
     examples = []
     for example in data.get("examples", []):

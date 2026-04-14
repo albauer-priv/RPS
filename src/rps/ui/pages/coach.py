@@ -56,10 +56,19 @@ ctx = ReadToolContext(
 handlers = read_tool_handlers(ctx)
 functions: list[CustomFunction] = []
 for spec in read_tool_defs():
-    name = spec["name"]
+    raw_name = spec.get("name")
+    if not isinstance(raw_name, str):
+        continue
+    name = raw_name
     handler = handlers.get(name)
     if handler is None:
         continue
+    description = spec.get("description", "")
+    if not isinstance(description, str):
+        description = ""
+    parameters = spec.get("parameters", {})
+    if not isinstance(parameters, dict):
+        parameters = {}
 
     def _wrap(h=handler):
         return lambda **kwargs: h(kwargs)
@@ -67,8 +76,8 @@ for spec in read_tool_defs():
     functions.append(
         CustomFunction(
             name=name,
-            description=spec.get("description", ""),
-            parameters=spec.get("parameters", {}),
+            description=description,
+            parameters=parameters,
             handler=_wrap(),
         )
     )
