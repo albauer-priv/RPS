@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Callable, Iterable, Protocol, TypeAlias, TypeVar, cast
 import json
 import logging
 import os
@@ -22,6 +22,9 @@ from rps.core.config import normalize_agent_name
 LOGGER = logging.getLogger(__name__)
 _T = TypeVar("_T")
 UsageDict = dict[str, int]
+JsonValue: TypeAlias = object
+JsonMap: TypeAlias = dict[str, object]
+ToolCallMap: TypeAlias = dict[str, str | None]
 
 
 @dataclass(frozen=True)
@@ -39,7 +42,7 @@ class LiteLLMResponse:
     """Minimal Responses-compatible response wrapper."""
 
     id: str
-    output: list[dict[str, Any]]
+    output: list[JsonMap]
     output_text: str | None
     usage: UsageDict | None
 
@@ -71,7 +74,7 @@ def resolve_provider_config(agent_name: str | None = None) -> LLMProviderConfig:
     )
 
 
-def _coerce_content(content: Any) -> str:
+def _coerce_content(content: object) -> str:
     if isinstance(content, list):
         parts: list[str] = []
         for part in content:
@@ -92,8 +95,8 @@ def _coerce_content(content: Any) -> str:
     return str(content)
 
 
-def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -> list[dict[str, Any]]:
-    messages: list[dict[str, Any]] = []
+def _messages_from_input(input_items: Iterable[object], instructions: str | None) -> list[JsonMap]:
+    messages: list[JsonMap] = []
     call_name_by_id: dict[str, str] = {}
     call_args_by_id: dict[str, str] = {}
     call_output_ids: set[str] = set()
@@ -122,7 +125,7 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
             idx += 1
             continue
         if isinstance(item, dict) and item.get("type") == "function_call":
-            batch: list[dict[str, Any]] = []
+            batch: list[JsonMap] = []
             while idx < len(items):
                 candidate = items[idx]
                 if not isinstance(candidate, dict) or candidate.get("type") != "function_call":
@@ -187,7 +190,7 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
                             args_preview,
                             _coerce_content(candidate.get("output"))[:200],
                         )
-                    message: dict[str, Any] = {
+                    message: JsonMap = {
                         "role": "tool",
                         "tool_call_id": call_id,
                         "content": _coerce_content(candidate.get("output")),
@@ -224,7 +227,7 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
                     args_preview,
                     _coerce_content(item.get("output"))[:200],
                 )
-            tool_message: dict[str, Any] = {
+            tool_message: JsonMap = {
                 "role": "tool",
                 "tool_call_id": call_id,
                 "content": _coerce_content(item.get("output")),
@@ -238,17 +241,17 @@ def _messages_from_input(input_items: Iterable[Any], instructions: str | None) -
     return messages
 
 
-def _summarize_message(message: dict[str, Any]) -> dict[str, Any]:
+def _summarize_message(message: JsonMap) -> JsonMap:
     role = message.get("role")
     name = message.get("name")
-    summary: dict[str, Any] = {"role": role}
+    summary: JsonMap = {"role": role}
     if name:
         summary["name"] = name
     if "tool_call_id" in message:
         summary["tool_call_id"] = message.get("tool_call_id")
     content = message.get("content")
     if isinstance(content, list):
-        parts: list[dict[str, Any]] = []
+        parts: list[JsonMap] = []
         for item in content:
             if isinstance(item, dict):
                 text = item.get("text")
@@ -266,18 +269,18 @@ def _summarize_message(message: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def _summarize_messages(messages: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+def _summarize_messages(messages: Iterable[JsonMap]) -> list[JsonMap]:
     return [_summarize_message(message) for message in messages]
 
 
-def _tools_from_payload(tools: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
-    converted: list[dict[str, Any]] = []
+def _tools_from_payload(tools: list[JsonMap] | None) -> list[JsonMap]:
+    converted: list[JsonMap] = []
     for tool in tools or []:
         if tool.get("type") != "function":
             continue
         name = tool.get("name")
         raw_function = tool.get("function")
-        function: dict[str, Any] = raw_function if isinstance(raw_function, dict) else {}
+        function: JsonMap = raw_function if isinstance(raw_function, dict) else {}
         if not name:
             name = function.get("name")
         if not name:
@@ -302,7 +305,7 @@ def _tools_from_payload(tools: list[dict[str, Any]] | None) -> list[dict[str, An
     return converted
 
 
-def _tool_choice_from_payload(tool_choice: dict[str, Any] | str | None) -> dict[str, Any] | str | None:
+def _tool_choice_from_payload(tool_choice: JsonMap | str | None) -> JsonMap | str | None:
     if not tool_choice:
         return None
     if isinstance(tool_choice, str):
@@ -311,6 +314,24 @@ def _tool_choice_from_payload(tool_choice: dict[str, Any] | str | None) -> dict[
         return {"type": "function", "function": {"name": tool_choice["name"]}}
     return tool_choice
 
+
+
+
+def _as_str(value: object) -> str | None:
+    return value if isinstance(value, str) else None
+
+
+def _as_list(value: object) -> list[object] | None:
+    return value if isinstance(value, list) else None
+
+
+def _as_map(value: object) -> JsonMap | None:
+    return value if isinstance(value, dict) else None
+
+
+def _function_name(tool: JsonMap) -> str | None:
+    function = _as_map(tool.get("function"))
+    return _as_str(function.get("name")) if function else None
 
 def _is_groq_model(model: str | None, api_base: str | None) -> bool:
     if model and model.lower().startswith("groq/"):
@@ -358,7 +379,7 @@ def _empty_usage() -> UsageDict:
     return {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
 
 
-def _usage_from_response(response: Any) -> UsageDict:
+def _usage_from_response(response: object) -> UsageDict:
     usage = getattr(response, "usage", None) or (response.get("usage") if isinstance(response, dict) else None)
     if not usage:
         return _empty_usage()
@@ -375,24 +396,24 @@ def _usage_from_response(response: Any) -> UsageDict:
     }
 
 
-def _extract_choice(response: Any) -> Any:
+def _extract_choice(response: object) -> object:
     choices = response.get("choices") if isinstance(response, dict) else getattr(response, "choices", None)
     if not choices:
         return None
     return choices[0]
 
 
-def _choice_message(choice: Any) -> Any:
+def _choice_message(choice: object) -> object:
     if isinstance(choice, dict):
         return choice.get("message")
     return getattr(choice, "message", None)
 
 
-def _collect_tool_calls(message: Any) -> list[dict[str, Any]]:
+def _collect_tool_calls(message: object) -> list[ToolCallMap]:
     tool_calls = message.get("tool_calls") if isinstance(message, dict) else getattr(message, "tool_calls", None)
     if not tool_calls:
         return []
-    calls: list[dict[str, Any]] = []
+    calls: list[ToolCallMap] = []
     for call in tool_calls:
         if isinstance(call, dict):
             func = call.get("function") or {}
@@ -415,8 +436,8 @@ def _collect_tool_calls(message: Any) -> list[dict[str, Any]]:
     return calls
 
 
-def _build_output_items(text: str | None, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    output: list[dict[str, Any]] = []
+def _build_output_items(text: str | None, tool_calls: list[ToolCallMap]) -> list[JsonMap]:
+    output: list[JsonMap] = []
     for call in tool_calls:
         output.append(
             {
@@ -436,16 +457,16 @@ def _build_output_items(text: str | None, tool_calls: list[dict[str, Any]]) -> l
     return output
 
 
-def _get_delta_attr(delta: Any, key: str) -> Any:
+def _get_delta_attr(delta: object, key: str) -> object:
     if isinstance(delta, dict):
         return delta.get(key)
     return getattr(delta, key, None)
 
 
 def _iter_stream_chunks(
-    stream: Iterable[Any],
-) -> Iterable[tuple[str, list[dict[str, Any]], str]]:
-    tool_accumulator: dict[int, dict[str, Any]] = {}
+    stream: Iterable[object],
+) -> Iterable[tuple[str, list[ToolCallMap], str]]:
+    tool_accumulator: dict[int, ToolCallMap] = {}
     for chunk in stream:
         choice = _extract_choice(chunk)
         if not choice:
@@ -453,8 +474,8 @@ def _iter_stream_chunks(
         delta = choice.get("delta") if isinstance(choice, dict) else getattr(choice, "delta", None)
         if not delta:
             continue
-        text = _get_delta_attr(delta, "content")
-        reasoning = _get_delta_attr(delta, "reasoning_content") or _get_delta_attr(delta, "reasoning")
+        text = _as_str(_get_delta_attr(delta, "content"))
+        reasoning = _as_str(_get_delta_attr(delta, "reasoning_content")) or _as_str(_get_delta_attr(delta, "reasoning"))
         if text:
             yield text, [], ""
         if reasoning:
@@ -474,7 +495,7 @@ def _iter_stream_chunks(
                     if func.get("name"):
                         entry["name"] = func.get("name")
                     if func.get("arguments"):
-                        entry["arguments"] += func.get("arguments") or ""
+                        entry["arguments"] = (entry.get("arguments") or "") + str(func.get("arguments") or "")
                 else:
                     if getattr(call, "id", None):
                         entry["id"] = getattr(call, "id")
@@ -482,7 +503,7 @@ def _iter_stream_chunks(
                     if func and getattr(func, "name", None):
                         entry["name"] = getattr(func, "name")
                     if func and getattr(func, "arguments", None):
-                        entry["arguments"] += getattr(func, "arguments")
+                        entry["arguments"] = (entry.get("arguments") or "") + str(getattr(func, "arguments"))
     tool_calls_out = []
     for idx in sorted(tool_accumulator):
         entry = tool_accumulator[idx]
@@ -500,7 +521,7 @@ class _Unsupported:
     def __init__(self, name: str) -> None:
         self._name = name
 
-    def __getattr__(self, item: str) -> Any:  # pragma: no cover - defensive
+    def __getattr__(self, item: str) -> object:  # pragma: no cover - defensive
         raise RuntimeError(f"{self._name}.{item} is not supported with LiteLLM runtime.")
 
 
@@ -512,22 +533,24 @@ class LiteLLMResponses:
         self._logger = logger
         self._responses: dict[str, LiteLLMResponse] = {}
 
-    def create(self, **payload: Any) -> LiteLLMResponse | Iterator[SimpleNamespace]:
-        model = payload.get("model")
+    def create(self, **payload: object) -> LiteLLMResponse | Iterator[SimpleNamespace]:
+        model = _as_str(payload.get("model"))
         if not model:
             raise RuntimeError("LiteLLM create requires model")
         if isinstance(model, str) and "gpt-5" in model:
             litellm.drop_params = True
-        input_items = list(payload.get("input") or [])
+        input_items = list(_as_list(payload.get("input")) or [])
         previous_response_id = payload.get("previous_response_id")
         if previous_response_id:
             previous = self._responses.get(str(previous_response_id))
             if previous:
                 input_items = list(previous.output or []) + input_items
-        instructions = payload.get("instructions")
+        instructions = _as_str(payload.get("instructions"))
         messages = _messages_from_input(input_items, instructions)
-        tools = _tools_from_payload(payload.get("tools"))
-        tool_choice = _tool_choice_from_payload(payload.get("tool_choice"))
+        raw_tools = _as_list(payload.get("tools"))
+        tools = _tools_from_payload([tool for tool in raw_tools if isinstance(tool, dict)] if raw_tools else None)
+        raw_tool_choice = payload.get("tool_choice")
+        tool_choice = _tool_choice_from_payload(raw_tool_choice if isinstance(raw_tool_choice, (dict, str)) else None)
         force_tool_choice = os.getenv("RPS_LLM_GROQ_FORCE_TOOL_CHOICE", "0").strip().lower() in (
             "1",
             "true",
@@ -535,28 +558,17 @@ class LiteLLMResponses:
             "on",
         )
         if tools:
-            tool_names = [
-                tool["function"]["name"]
-                for tool in tools
-                if tool.get("function") and tool["function"].get("name")
-            ]
+            tool_names = [name for tool in tools if (name := _function_name(tool))]
             LOGGER.info(
                 "LiteLLM tools prepared count=%d names=%s",
                 len(tool_names),
                 tool_names,
             )
         if tools:
-            valid_names = {
-                tool["function"]["name"]
-                for tool in tools
-                if tool.get("function") and tool["function"].get("name")
-            }
+            valid_names = {name for tool in tools if (name := _function_name(tool))}
             if tool_choice and isinstance(tool_choice, dict):
-                choice_name = (
-                    tool_choice.get("function", {}).get("name")
-                    if isinstance(tool_choice.get("function"), dict)
-                    else None
-                )
+                choice_function = _as_map(tool_choice.get("function"))
+                choice_name = _as_str(choice_function.get("name")) if choice_function else None
                 if choice_name and choice_name not in valid_names:
                     LOGGER.warning(
                         "LiteLLM tool_choice dropped: name not in tools name=%s",
@@ -576,7 +588,7 @@ class LiteLLMResponses:
         temperature = payload.get("temperature")
         max_completion_tokens = payload.get("max_completion_tokens")
         stream = bool(payload.get("stream"))
-        kwargs: dict[str, Any] = {
+        kwargs: JsonMap = {
             "model": model,
             "messages": messages,
             "stream": stream,
@@ -609,7 +621,7 @@ class LiteLLMResponses:
                 model,
                 self._config.base_url,
                 stream,
-                [tool.get("function", {}).get("name") for tool in tools] if tools else [],
+                [_function_name(tool) for tool in tools] if tools else [],
                 tool_choice,
                 _summarize_messages(messages),
             )
@@ -641,7 +653,7 @@ class LiteLLMResponses:
                 label=f"{model}:stream",
             )
             collected_text = ""
-            collected_calls: list[dict[str, Any]] = []
+            collected_calls: list[ToolCallMap] = []
             for text_delta, tool_calls, reasoning_delta in _iter_stream_chunks(stream_resp):
                 if reasoning_delta:
                     yield SimpleNamespace(type="response.reasoning_text.delta", delta=reasoning_delta)
@@ -669,9 +681,9 @@ class LiteLLMResponses:
 
         return _event_stream()
 
-    def compact(self, **payload: Any) -> LiteLLMResponse:
+    def compact(self, **payload: object) -> LiteLLMResponse:
         input_items = payload.get("input") or []
-        model = payload.get("model")
+        model = _as_str(payload.get("model"))
         instructions = payload.get("instructions") or ""
         if not model:
             raise RuntimeError("LiteLLM compact requires model")
@@ -684,7 +696,7 @@ class LiteLLMResponses:
             {"role": "system", "content": compact_prompt},
             {"role": "user", "content": json.dumps(input_items, ensure_ascii=False)},
         ]
-        compact_kwargs: dict[str, Any] = {
+        compact_kwargs: JsonMap = {
             "model": model,
             "messages": messages,
             "api_key": self._config.api_key,
