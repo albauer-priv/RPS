@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs
-from rps.ui.run_store import clear_queue_folders, prune_run_history
+from rps.ui.run_store import clear_queue_folders, find_active_runs, load_runs, prune_run_history
 
 EXPECTED_CLEARED_QUEUE_FILES = 2
 
@@ -37,3 +37,49 @@ def test_clear_queue_folders(tmp_path: Path) -> None:
     assert removed == EXPECTED_CLEARED_QUEUE_FILES
     assert not any(queues.done.glob("*.json"))
     assert not any(queues.failed.glob("*.json"))
+
+
+def test_load_runs_and_find_active_runs_sort_by_record_created_at(tmp_path: Path) -> None:
+    root = tmp_path
+    athlete_id = "athlete_2"
+    run_root = root / athlete_id / "runs"
+    newer = run_root / "newer_run"
+    older = run_root / "older_run"
+    newer.mkdir(parents=True, exist_ok=True)
+    older.mkdir(parents=True, exist_ok=True)
+
+    (older / "run.json").write_text(
+        json.dumps(
+            {
+                "run_id": "older_run",
+                "status": "QUEUED",
+                "process_type": "data_pipeline",
+                "process_subtype": "intervals_fetch",
+                "created_at": "2026-04-15T10:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (newer / "run.json").write_text(
+        json.dumps(
+            {
+                "run_id": "newer_run",
+                "status": "RUNNING",
+                "process_type": "data_pipeline",
+                "process_subtype": "intervals_fetch",
+                "created_at": "2026-04-15T11:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    runs = load_runs(root, athlete_id, limit=10)
+    assert [run["run_id"] for run in runs] == ["newer_run", "older_run"]
+
+    active = find_active_runs(
+        root,
+        athlete_id,
+        process_type="data_pipeline",
+        process_subtype="intervals_fetch",
+    )
+    assert [run["run_id"] for run in active] == ["newer_run", "older_run"]

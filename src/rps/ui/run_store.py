@@ -93,7 +93,7 @@ def _load_run_dir(root: Path, athlete_id: str, run_id: str) -> RunRecord | None:
     return run_record
 
 
-def _run_created_at(record: RunRecord) -> str:
+def _record_created_at(record: RunRecord) -> str:
     """Return a sortable created_at value for a run record."""
     created_at = record.get("created_at")
     return created_at if isinstance(created_at, str) else ""
@@ -110,7 +110,7 @@ def load_runs(root: Path, athlete_id: str, *, limit: int = 50) -> list[RunRecord
             record = _load_run_dir(root, athlete_id, run_path.name)
             if record:
                 records.append(record)
-    records.sort(key=_run_created_at, reverse=True)
+    records.sort(key=_record_created_at, reverse=True)
     return records[:limit]
 
 
@@ -207,7 +207,7 @@ def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
     for run_path in run_root.iterdir():
         if not run_path.is_dir():
             continue
-        created_dt = _run_created_at(run_path)
+        created_dt = _run_path_created_at(run_path)
         if created_dt is None:
             continue
         if created_dt < cutoff:
@@ -222,7 +222,7 @@ def prune_run_history(root: Path, athlete_id: str, retention_days: int) -> int:
     return removed
 
 
-def _run_created_at(run_path: Path) -> datetime | None:
+def _run_path_created_at(run_path: Path) -> datetime | None:
     """Resolve the creation timestamp for a run directory."""
     run_path_json = run_path / "run.json"
     try:
