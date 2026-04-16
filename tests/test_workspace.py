@@ -13,7 +13,10 @@ if str(SRC) not in sys.path:
     # Allow running tests without installing the package.
     sys.path.insert(0, str(SRC))
 
+from rps.agents.task_router import AgentTaskRouter, RouterContext  # noqa: E402
+from rps.agents.tasks import AgentTask  # noqa: E402
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers  # noqa: E402
+from rps.tools.workspace_tools import ToolContext, get_tool_handlers  # noqa: E402
 from rps.workspace.api import Workspace  # noqa: E402
 from rps.workspace.guards import MissingDependenciesError  # noqa: E402
 from rps.workspace.helpers import (  # noqa: E402
@@ -21,6 +24,7 @@ from rps.workspace.helpers import (  # noqa: E402
     resolve_current_week,
     upstream_ref,
 )
+from rps.workspace.iso_helpers import IsoWeek  # noqa: E402
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
 
@@ -281,6 +285,175 @@ class WorkspaceReadToolTests(unittest.TestCase):
             self.assertEqual(result["phase_info"]["phase_focus"], "Build 1")
             self.assertEqual(result["phase_info"]["phase_week"], 2)
             self.assertEqual(result["phase_info"]["range_key"], "2026-14--2026-16")
+
+    def test_workspace_get_latest_warns_for_week_sensitive_artifact(self) -> None:
+        """Verify latest reads expose a warning for week-sensitive artefacts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_007"
+            store.ensure_workspace(athlete_id)
+            store.save_document(
+                athlete_id,
+                ArtifactType.ACTIVITIES_TREND,
+                "2026-15",
+                {"meta": {"artifact_type": "ACTIVITIES_TREND"}, "data": {}},
+                producer_agent="test",
+                run_id="activities_trend_test",
+                update_latest=True,
+            )
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="coach",
+                )
+            )
+
+            result = handlers["workspace_get_latest"]({"artifact_type": "ACTIVITIES_TREND"})
+
+            self.assertIsInstance(result, dict)
+            self.assertIn("_tool_warning", result)
+            self.assertIn("week-sensitive", result["_tool_warning"])
+
+    def test_workspace_tools_get_latest_warns_for_week_sensitive_artifact(self) -> None:
+        """Verify validated workspace tools expose the same latest-warning guidance."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_010"
+            store.ensure_workspace(athlete_id)
+            store.save_document(
+                athlete_id,
+                ArtifactType.DES_ANALYSIS_REPORT,
+                "2026-15",
+                {"meta": {"artifact_type": "DES_ANALYSIS_REPORT"}, "data": {}},
+                producer_agent="test",
+                run_id="des_analysis_report_test",
+                update_latest=True,
+            )
+            handlers = get_tool_handlers(
+                ToolContext(
+                    athlete_id=athlete_id,
+                    agent_name="performance_analysis",
+                    workspace_root=root,
+                    schema_dir=ROOT / "specs" / "schemas",
+                )
+            )
+
+            result = handlers["workspace_get_latest"]({"artifact_type": "DES_ANALYSIS_REPORT"})
+
+            self.assertIsInstance(result, dict)
+            self.assertIn("_tool_warning", result)
+            self.assertIn("week-sensitive", result["_tool_warning"])
+
+
+class TaskRouterTests(unittest.TestCase):
+    """Coverage for task router week-scoped decisions."""
+
+    def test_route_analysis_requires_target_week_activity_versions(self) -> None:
+        """Verify analysis routing does not rely on unrelated latest week artefacts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_008"
+            store.ensure_workspace(athlete_id)
+            season_plan = {
+                "meta": {
+                    "artifact_type": "SEASON_PLAN",
+                    "schema_id": "SeasonPlanInterface",
+                    "schema_version": "1.0",
+                    "version": "1.0",
+                    "authority": "Binding",
+                    "owner_agent": "Season-Planner",
+                    "run_id": "season_plan_test",
+                    "created_at": "2026-04-01T00:00:00Z",
+                    "scope": "Season",
+                    "iso_week": "2026-14",
+                    "iso_week_range": "2026-14--2026-20",
+                    "temporal_scope": {"from": "2026-03-30", "to": "2026-05-17"},
+                    "trace_upstream": [],
+                    "trace_data": [],
+                    "trace_events": [],
+                    "data_confidence": "UNKNOWN",
+                    "notes": "",
+                },
+                "data": {"phases": []},
+            }
+            generic = {"meta": {"artifact_type": "TEST"}, "data": {}}
+            for artifact_type, version_key, payload in (
+                (ArtifactType.SEASON_PLAN, "2026-14--2026-20", season_plan),
+                (ArtifactType.KPI_PROFILE, "sample_profile", generic),
+                (ArtifactType.ACTIVITIES_ACTUAL, "2026-15", generic),
+                (ArtifactType.ACTIVITIES_TREND, "2026-15", generic),
+            ):
+                store.save_document(
+                    athlete_id,
+                    artifact_type,
+                    version_key,
+                    payload,
+                    producer_agent="test",
+                    run_id=f"store_{artifact_type.value.lower()}",
+                    update_latest=True,
+                )
+
+            router = AgentTaskRouter(RouterContext(Workspace.for_athlete(athlete_id, root=root)))
+            tasks = router.route_analysis(IsoWeek(2026, 14))
+
+            self.assertEqual(tasks, [])
+
+    def test_route_analysis_creates_report_for_target_week_when_inputs_exist(self) -> None:
+        """Verify analysis routing schedules DES report when target-week inputs are available."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_009"
+            store.ensure_workspace(athlete_id)
+            season_plan = {
+                "meta": {
+                    "artifact_type": "SEASON_PLAN",
+                    "schema_id": "SeasonPlanInterface",
+                    "schema_version": "1.0",
+                    "version": "1.0",
+                    "authority": "Binding",
+                    "owner_agent": "Season-Planner",
+                    "run_id": "season_plan_test",
+                    "created_at": "2026-04-01T00:00:00Z",
+                    "scope": "Season",
+                    "iso_week": "2026-14",
+                    "iso_week_range": "2026-14--2026-20",
+                    "temporal_scope": {"from": "2026-03-30", "to": "2026-05-17"},
+                    "trace_upstream": [],
+                    "trace_data": [],
+                    "trace_events": [],
+                    "data_confidence": "UNKNOWN",
+                    "notes": "",
+                },
+                "data": {"phases": []},
+            }
+            generic = {"meta": {"artifact_type": "TEST"}, "data": {}}
+            for artifact_type, version_key, payload, update_latest in (
+                (ArtifactType.SEASON_PLAN, "2026-14--2026-20", season_plan, True),
+                (ArtifactType.KPI_PROFILE, "sample_profile", generic, True),
+                (ArtifactType.ACTIVITIES_ACTUAL, "2026-15", generic, True),
+                (ArtifactType.ACTIVITIES_TREND, "2026-15", generic, True),
+                (ArtifactType.ACTIVITIES_ACTUAL, "2026-14", generic, False),
+                (ArtifactType.ACTIVITIES_TREND, "2026-14", generic, False),
+            ):
+                store.save_document(
+                    athlete_id,
+                    artifact_type,
+                    version_key,
+                    payload,
+                    producer_agent="test",
+                    run_id=f"store_{artifact_type.value.lower()}_{version_key}",
+                    update_latest=update_latest,
+                )
+
+            router = AgentTaskRouter(RouterContext(Workspace.for_athlete(athlete_id, root=root)))
+            tasks = router.route_analysis(IsoWeek(2026, 14))
+
+            self.assertEqual(tasks, [AgentTask.CREATE_DES_ANALYSIS_REPORT])
 
 
 class SchemaRegistryTests(unittest.TestCase):

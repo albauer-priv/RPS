@@ -22,6 +22,15 @@ from rps.workspace.types import ArtifactType
 
 JsonDict = dict[str, object]
 ToolHandler = Callable[[dict[str, Any]], object]
+WEEK_SENSITIVE_ARTIFACTS = {
+    ArtifactType.ACTIVITIES_ACTUAL,
+    ArtifactType.ACTIVITIES_TREND,
+    ArtifactType.WEEK_PLAN,
+    ArtifactType.INTERVALS_WORKOUTS,
+    ArtifactType.DES_ANALYSIS_REPORT,
+    ArtifactType.SEASON_PHASE_FEED_FORWARD,
+    ArtifactType.PHASE_FEED_FORWARD,
+}
 
 
 def _as_map(value: object) -> JsonDict:
@@ -40,6 +49,16 @@ def _parse_artifact_type(value: str) -> ArtifactType:
     except ValueError:
         key = "".join([ch if ch.isalnum() else "_" for ch in cleaned]).upper()
         return ArtifactType[key]
+
+
+def _week_sensitive_latest_warning(artifact_type: ArtifactType) -> str | None:
+    """Return a guidance warning when latest is ambiguous for week-scoped artefacts."""
+    if artifact_type not in WEEK_SENSITIVE_ARTIFACTS:
+        return None
+    return (
+        f"{artifact_type.value} is week-sensitive. "
+        "Prefer workspace_get_version with an explicit ISO week version_key."
+    )
 
 
 def _find_input_file(
@@ -80,7 +99,11 @@ def read_tool_defs() -> list[JsonDict]:
         {
             "type": "function",
             "name": "workspace_get_latest",
-            "description": "Load latest artifact JSON from athlete workspace.",
+            "description": (
+                "Load latest artifact JSON from athlete workspace. "
+                "Do not use this for week-sensitive artefacts when a specific ISO week is required; "
+                "prefer workspace_get_version."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {"artifact_type": {"type": "string"}},
@@ -271,7 +294,13 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
     def workspace_get_latest(args: dict[str, Any]) -> object:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
-        return workspace.get_latest(artifact_type)
+        payload = workspace.get_latest(artifact_type)
+        warning = _week_sensitive_latest_warning(artifact_type)
+        if warning and isinstance(payload, dict):
+            result = dict(payload)
+            result.setdefault("_tool_warning", warning)
+            return result
+        return payload
 
     def workspace_get_version(args: dict[str, Any]) -> object:
         """Load a specific artifact version."""
