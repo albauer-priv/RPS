@@ -166,11 +166,11 @@ Set G0 = true.
 Load in this exact order:
 1) `workspace_get_input("planning_events")`
 2) `workspace_get_input("logistics")`
-2) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
-3) `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
-4) `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
-5) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` (optional; load attempt)
-6) `workspace_get_phase_context({ "year": YYYY, "week": WW })` (optional; if available)
+3) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
+4) `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+5) `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
+6) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })` (optional; load attempt)
+7) `workspace_get_phase_context({ "year": YYYY, "week": WW })` (optional; if available)
 
 If any required artefact is missing or does not cover the target week: STOP.
 Set G1 = true.

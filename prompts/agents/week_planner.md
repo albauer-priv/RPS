@@ -188,7 +188,7 @@ Load in this order:
 3) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 4) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
-6) `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` (optional attempt)
+6) `workspace_get_version({ "artifact_type": "PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
 7) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` (required)
 8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
 

@@ -203,7 +203,7 @@ Load in this exact order:
 1) `workspace_get_input("planning_events")`
 2) `workspace_get_input("logistics")`
 2) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
-3) `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })` (optional attempt)
+3) `workspace_get_version({ "artifact_type": "SEASON_PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
 4) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 5) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 6) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`

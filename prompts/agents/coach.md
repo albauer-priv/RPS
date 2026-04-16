@@ -100,15 +100,13 @@ Load in this exact order:
 5. `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 6. `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 7. `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
-8. `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`
-9. `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`
-10. `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`
-11. `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`
-12. `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`
-13. `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`
-14. `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`
-15. `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })` (optional attempt)
-16. `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+8. `workspace_get_phase_context({ "year": YYYY, "week": WW })` for phase-scoped context
+9. `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
+10. `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+11. `workspace_get_version({ "artifact_type": "WEEK_PLAN", "version_key": "YYYY-WW" })` (optional attempt)
+12. `workspace_get_version({ "artifact_type": "DES_ANALYSIS_REPORT", "version_key": "YYYY-WW" })` (optional attempt)
+13. `workspace_get_version({ "artifact_type": "SEASON_PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt)
+14. `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
 
 Phase-range resolution:
 
@@ -132,13 +130,11 @@ Use this checklist to ensure you didn’t miss essential context:
 | 5        | Availability        | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`           | Weekly capacity + constraints.                           |
 | 6        | Wellness            | `workspace_get_latest({ "artifact_type": "WELLNESS" })`               | Readiness flags.                                         |
 | 7        | Season Plan         | `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`            | Phase intent; event alignment.                           |
-| 8        | Phase Guardrails    | `workspace_get_latest({ "artifact_type": "PHASE_GUARDRAILS" })`       | Phase-level limits and constraints.                      |
-| 9        | Phase Structure     | `workspace_get_latest({ "artifact_type": "PHASE_STRUCTURE" })`        | Planned weekly structure.                                |
-| 10       | Phase Preview       | `workspace_get_latest({ "artifact_type": "PHASE_PREVIEW" })`          | Execution snapshot for the phase.                        |
-| 11       | Activities Trend    | `workspace_get_latest({ "artifact_type": "ACTIVITIES_TREND" })`       | Recent workload trends & durability indicators.          |
-| 12       | Activities Actual   | `workspace_get_latest({ "artifact_type": "ACTIVITIES_ACTUAL" })`      | Most recent week actuals.                                |
-| 13       | Week Plan           | `workspace_get_latest({ "artifact_type": "WEEK_PLAN" })`              | Current week plan (if present).                          |
-| 14       | DES Analysis Report | `workspace_get_latest({ "artifact_type": "DES_ANALYSIS_REPORT" })`    | Latest durability/efficiency summary.                    |
+| 8        | Phase Context       | `workspace_get_phase_context({ "year": YYYY, "week": WW })`           | Exact-range phase guardrails/structure/preview context.  |
+| 9        | Activities Trend    | `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })` | Target-week workload trends & durability indicators.     |
+| 10       | Activities Actual   | `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })` | Target-week actuals.                                     |
+| 11       | Week Plan           | `workspace_get_version({ "artifact_type": "WEEK_PLAN", "version_key": "YYYY-WW" })` | Selected week plan (if present).                         |
+| 12       | DES Analysis Report | `workspace_get_version({ "artifact_type": "DES_ANALYSIS_REPORT", "version_key": "YYYY-WW" })` | Selected-week durability/efficiency summary.             |
 
 ---
 

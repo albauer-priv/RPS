@@ -976,6 +976,20 @@ def run_agent_multi_output(
             if isinstance(key, str):
                 required_artifacts.discard(key)
         required_ready = not required_artifacts
+
+    def _log_tool_warning(tool_name: str | None, args: dict[str, Any], result: object) -> None:
+        """Log workspace tool warnings surfaced by read handlers."""
+        if not isinstance(result, dict):
+            return
+        warning = result.get("_tool_warning")
+        if not isinstance(warning, str) or not warning.strip():
+            return
+        logger.warning(
+            "Tool warning %s artifact=%s: %s",
+            tool_name,
+            args.get("artifact_type"),
+            warning.strip(),
+        )
     while True:
         safety += 1
         if safety > MAX_TOOL_ITERATIONS:
@@ -1162,6 +1176,7 @@ def run_agent_multi_output(
                 except Exception as exc:
                     result = {"ok": False, "error": str(exc)}
                     logger.warning("Read tool failed %s: %s", name, exc)
+                _log_tool_warning(name, args, result)
                 _mark_required_loaded(name, args, result)
 
                 input_list.append(

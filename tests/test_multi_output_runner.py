@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -151,3 +152,71 @@ def test_run_agent_multi_output_skips_forced_store_on_terminal_stop(monkeypatch)
     assert result["error"] == "MODEL_STOPPED_ON_BLOCKER"
     assert "produced" in result and result["produced"] == {}
     assert len(create_calls) == 1
+
+
+def test_run_agent_multi_output_logs_week_sensitive_tool_warnings(monkeypatch, caplog):
+    responses = [
+        multi_output_runner.LiteLLMResponse(
+            id="resp_warn_1",
+            output=[
+                {
+                    "type": "function_call",
+                    "name": "workspace_get_latest",
+                    "arguments": '{"artifact_type":"ACTIVITIES_TREND"}',
+                    "call_id": "call_1",
+                }
+            ],
+            output_text="",
+            usage=None,
+        ),
+        multi_output_runner.LiteLLMResponse(
+            id="resp_warn_2",
+            output=[],
+            output_text="",
+            usage=None,
+        ),
+    ]
+
+    def _fake_create_response(client, payload, logger, stream_handlers=None):
+        del client, payload, logger, stream_handlers
+        return responses.pop(0)
+
+    monkeypatch.setattr(multi_output_runner, "create_response", _fake_create_response)
+    monkeypatch.setattr(
+        multi_output_runner,
+        "read_tool_handlers",
+        lambda ctx: {
+            "workspace_get_latest": lambda args: {
+                "ok": True,
+                "artifact_type": args["artifact_type"],
+                "_tool_warning": "ACTIVITIES_TREND is week-sensitive. Prefer workspace_get_version.",
+            }
+        },
+    )
+
+    runtime = multi_output_runner.AgentRuntime(
+        client=SimpleNamespace(config=None),
+        model="openai/gpt-5.4-mini",
+        temperature=None,
+        reasoning_effort=None,
+        reasoning_summary=None,
+        max_completion_tokens=None,
+        prompt_loader=SimpleNamespace(combined_system_prompt=lambda agent_name: f"prompt for {agent_name}"),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda store_name: store_name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime"),
+    )
+
+    with caplog.at_level(logging.WARNING, logger="rps.agents.multi_output_runner"):
+        result = multi_output_runner.run_agent_multi_output(
+            runtime,
+            agent_name="coach",
+            agent_vs_name="vs_rps_all_agents",
+            athlete_id="i150546",
+            tasks=[],
+            user_input="Summarize current status.",
+            run_id="run_warn",
+        )
+
+    assert result["ok"] is True
+    assert "week-sensitive" in caplog.text
