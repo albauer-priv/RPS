@@ -152,11 +152,14 @@ st.table(
 run_cols = st.columns(1)
 current_week = IsoWeek(*date.today().isocalendar()[:2])
 allowed_scope = selected_week in {current_week, previous_iso_week(current_week)}
+can_run_feed_forward = allowed_scope and report_for_selected_week
 if not allowed_scope:
     st.caption("Feed Forward can only run for the current or previous ISO week.")
+elif not report_for_selected_week:
+    st.caption("Feed Forward requires a DES analysis report for the selected ISO week.")
 
 run_label = f"Run Feed Forward (Report → Season → Phase → Week) · {selected_week_key}"
-if run_cols[0].button(run_label, disabled=not allowed_scope):
+if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
     report_run_id = make_ui_run_id(f"feed_forward_report_{year}_{week:02d}")
     set_status(
         status_state="running",
@@ -273,10 +276,7 @@ report_payload = None
 try:
     report_payload = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
 except FileNotFoundError:
-    try:
-        report_payload = store.load_latest(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
-    except FileNotFoundError:
-        report_payload = None
+    report_payload = None
 
 st.subheader(f"Week Analysis · {selected_week_key}")
 summary_text = "N/A"

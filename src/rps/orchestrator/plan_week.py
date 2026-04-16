@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
+import os
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -12,6 +14,7 @@ from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
+from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
@@ -145,6 +148,39 @@ def _required_workspace_input_exists(root: Path, athlete_id: str, input_type: st
     return False
 
 
+def _resolve_required_week_versions(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    week_key: str,
+) -> dict[ArtifactType, str]:
+    """Resolve the newest stored week-scoped versions for required analysis artefacts."""
+    resolved: dict[ArtifactType, str] = {}
+    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
+        version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
+        if version_key:
+            resolved[artifact_type] = version_key
+    return resolved
+
+
+def _refresh_required_week_versions(
+    athlete_id: str,
+    report_week: IsoWeek,
+) -> None:
+    """Run the Intervals pipeline for the target ISO week to backfill missing activity artefacts."""
+    historical_years = int(os.getenv("RPS_HISTORICAL_YEARS", "3"))
+    args = argparse.Namespace(
+        year=report_week.year,
+        week=report_week.week,
+        from_date=None,
+        to_date=None,
+        athlete=athlete_id,
+        skip_validate=False,
+        historical_years=historical_years,
+    )
+    pipeline_logger = logging.getLogger("rps.ui.performance")
+    run_intervals_pipeline(args, logger=pipeline_logger)
+
+
 def _mode_for_task(task: AgentTask) -> str | None:
     """Return an injection mode label for a given task."""
     mapping = {
@@ -206,13 +242,43 @@ def create_performance_report(
         )
         _log(message, logging.WARNING)
 
-    required = [
-        ArtifactType.ACTIVITIES_ACTUAL,
-        ArtifactType.ACTIVITIES_TREND,
+    report_week_key = report_label
+    resolved_week_versions = _resolve_required_week_versions(
+        workspace.store,
+        athlete_id,
+        report_week_key,
+    )
+    missing_week_versions = [
+        artifact_type
+        for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND)
+        if artifact_type not in resolved_week_versions
+    ]
+    if missing_week_versions:
+        _log(
+            "Performance analysis target-week activity data missing for "
+            f"{report_label}; refreshing Intervals data first."
+        )
+        try:
+            _refresh_required_week_versions(athlete_id, report_week)
+        except Exception as exc:
+            _log(
+                "Intervals refresh before performance analysis failed for "
+                f"{report_label}: {exc}",
+                logging.WARNING,
+            )
+        resolved_week_versions = _resolve_required_week_versions(
+            workspace.store,
+            athlete_id,
+            report_week_key,
+        )
+    required_latest = [
         ArtifactType.KPI_PROFILE,
         ArtifactType.SEASON_PLAN,
     ]
-    missing_required = [item for item in required if not workspace.latest_exists(item)]
+    missing_required = [item for item in required_latest if not workspace.latest_exists(item)]
+    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
+        if artifact_type not in resolved_week_versions:
+            missing_required.append(artifact_type)
     missing_context_inputs = [
         input_name
         for input_name in ("planning_events", "logistics")
@@ -278,7 +344,11 @@ def create_performance_report(
             user_input=(
                 f"Create des_analysis_report for ISO week {report_label} "
                 f"(planning week reference). "
-                "Read activities_actual, activities_trend, KPI profile, season plan, phase artefacts from workspace. "
+                "Use workspace_get_version for target-week activity artefacts before any latest fallback. "
+                f"Load ACTIVITIES_ACTUAL version_key {resolved_week_versions[ArtifactType.ACTIVITIES_ACTUAL]} "
+                f"and ACTIVITIES_TREND version_key {resolved_week_versions[ArtifactType.ACTIVITIES_TREND]} "
+                f"for ISO week {report_label}. "
+                "Read KPI profile, season plan, and phase context from workspace. "
                 f"{injected_block}"
             ),
             run_id=f"{run_id_prefix}_{report_label}",

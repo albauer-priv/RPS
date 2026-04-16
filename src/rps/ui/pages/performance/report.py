@@ -10,6 +10,7 @@ import streamlit as st
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
 from rps.orchestrator.plan_week import create_performance_report
+from rps.ui.intervals_refresh import request_intervals_refresh
 from rps.ui.run_store import find_active_runs, start_background_tracker
 from rps.ui.shared import (
     SETTINGS,
@@ -26,6 +27,20 @@ from rps.ui.shared import (
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
+
+
+def _resolve_report_activity_versions(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    report_key: str,
+) -> dict[ArtifactType, str]:
+    """Return week-specific activity artefact versions available for the selected report week."""
+    resolved: dict[ArtifactType, str] = {}
+    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
+        version_key = store.resolve_week_version_key(athlete_id, artifact_type, report_key)
+        if version_key:
+            resolved[artifact_type] = version_key
+    return resolved
 
 
 def _report_job_key(athlete_id: str, year: int, week: int) -> str:
@@ -179,37 +194,85 @@ else:
     )
 
 report_key = f"{year:04d}-{week:02d}"
+report_versions = _resolve_report_activity_versions(store, athlete_id, report_key)
+has_week_actual = ArtifactType.ACTIVITIES_ACTUAL in report_versions
+has_week_trend = ArtifactType.ACTIVITIES_TREND in report_versions
+report_inputs_ready = has_week_actual and has_week_trend
+
 st.subheader("Performance Report Readiness")
 report_for_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, report_key)
 report_latest = store.latest_exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)
-if report_for_week:
-    report_status = "Ready"
-    report_detail = f"Report available for {report_key}."
-elif report_latest:
-    report_status = "Stale"
-    report_detail = "Latest DES report is from another week."
-else:
-    report_status = "Missing"
-    report_detail = "No DES analysis report found."
 st.table(
     [
         {
+            "Check": "Activities Actual",
+            "Status": "Ready" if has_week_actual else "Missing",
+            "Details": (
+                f"Week-scoped activities_actual available for {report_key}."
+                if has_week_actual
+                else f"No activities_actual found for {report_key}."
+            ),
+        },
+        {
+            "Check": "Activities Trend",
+            "Status": "Ready" if has_week_trend else "Missing",
+            "Details": (
+                f"Week-scoped activities_trend available for {report_key}."
+                if has_week_trend
+                else f"No activities_trend found for {report_key}."
+            ),
+        },
+        {
             "Check": "Performance Report (DES Analysis)",
-            "Status": report_status,
-            "Details": report_detail,
+            "Status": (
+                "Ready"
+                if report_for_week
+                else "Stale"
+                if report_latest
+                else "Missing"
+            ),
+            "Details": (
+                f"Report available for {report_key}."
+                if report_for_week
+                else "Latest DES report is from another week."
+                if report_latest
+                else "No DES analysis report found."
+            ),
         }
     ]
 )
 
 st.markdown(
     "Report can only be generated for current or past weeks covered by `activities_trend`. "
-    "If `activities_actual` is missing for the selection, run the intervals pipeline first."
+    "If week-specific activity data is missing, refresh the selected week first."
 )
 
 job_key = _report_job_key(athlete_id, year, week)
 job = st.session_state.get(job_key)
 with st.expander("Actions", expanded=False):
-    create_button = st.button("Create Report")
+    fetch_week_button = st.button(
+        f"Fetch Week Data: {year:04d}-W{week:02d}",
+        disabled=bool(job and job["status"] == "running"),
+    )
+    create_button = st.button(
+        "Create Report",
+        disabled=not trend_options or not report_inputs_ready,
+    )
+if fetch_week_button:
+    status_state, message, run_id = request_intervals_refresh(
+        athlete_id,
+        year=year,
+        week=week,
+    )
+    if message:
+        st.info(message)
+    set_status(
+        status_state=status_state,
+        title="Report",
+        message=message or f"Queued Intervals refresh for {report_key}.",
+        last_action="Fetch Week Data",
+        run_id=run_id,
+    )
 if create_button:
     if job and job["status"] == "running":
         st.info("Report creation already requested; please wait for completion.")
@@ -262,6 +325,22 @@ elif not trend_options:
         status_state="idle",
         title="Report",
         message="Select a week covered by activities_trend.",
+    )
+elif not report_inputs_ready:
+    missing_parts: list[str] = []
+    if not has_week_actual:
+        missing_parts.append("activities_actual")
+    if not has_week_trend:
+        missing_parts.append("activities_trend")
+    st.warning(
+        "Create Report is disabled because the selected week is missing: "
+        + ", ".join(missing_parts)
+        + "."
+    )
+    set_status(
+        status_state="idle",
+        title="Report",
+        message=f"Fetch week data for {report_key} before creating the report.",
     )
 
 store = LocalArtifactStore(root=SETTINGS.workspace_root)

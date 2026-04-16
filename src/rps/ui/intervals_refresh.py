@@ -50,7 +50,14 @@ def _intervals_job_key(athlete_id: str) -> str:
     return f"{_INTERVALS_JOB_PREFIX}_{athlete_id}"
 
 
-def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key: str) -> dict:
+def _schedule_intervals_refresh(
+    athlete_id: str,
+    logger: logging.Logger,
+    job_key: str,
+    *,
+    year: int | None = None,
+    week: int | None = None,
+) -> dict:
     active = find_active_runs(
         SETTINGS.workspace_root,
         athlete_id,
@@ -68,8 +75,8 @@ def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key
         }
     historical_years = int(os.getenv("RPS_HISTORICAL_YEARS", "3"))
     args = argparse.Namespace(
-        year=None,
-        week=None,
+        year=year,
+        week=week,
         from_date=None,
         to_date=None,
         athlete=athlete_id,
@@ -91,15 +98,23 @@ def _schedule_intervals_refresh(athlete_id: str, logger: logging.Logger, job_key
         "exception": None,
         "run_id": tracker.run_id,
     }
+    if year is not None and week is not None:
+        job["message"] = f"Intervals refresh queued for {year:04d}-W{week:02d}."
 
     def worker() -> None:
         job["status"] = "running"
-        job["message"] = "Running Intervals pipeline..."
+        if year is not None and week is not None:
+            job["message"] = f"Running Intervals pipeline for {year:04d}-W{week:02d}..."
+        else:
+            job["message"] = "Running Intervals pipeline..."
         tracker.mark_running(job["message"])
         try:
             run_intervals_pipeline(args, logger=logger)
             job["status"] = "done"
-            job["message"] = "Intervals data refreshed."
+            if year is not None and week is not None:
+                job["message"] = f"Intervals data refreshed for {year:04d}-W{week:02d}."
+            else:
+                job["message"] = "Intervals data refreshed."
             tracker.mark_done(job["message"])
         except Exception as exc:  # pragma: no cover - thread fallback
             job["status"] = "failed"
@@ -146,14 +161,19 @@ def ensure_intervals_data(athlete_id: str, max_age_hours: float) -> tuple[bool, 
     return False, str(job.get("message") or "Intervals pipeline is running...")
 
 
-def request_intervals_refresh(athlete_id: str) -> tuple[str, str | None, str | None]:
-    """Force a background Intervals refresh regardless of staleness."""
+def request_intervals_refresh(
+    athlete_id: str,
+    *,
+    year: int | None = None,
+    week: int | None = None,
+) -> tuple[str, str | None, str | None]:
+    """Force a background Intervals refresh, optionally scoped to one ISO week."""
     if os.getenv("RPS_DISABLE_INTERVALS_REFRESH") == "1":
         return "done", "Intervals refresh disabled by config.", None
 
     logger = logging.getLogger("rps.ui.performance")
     job_key = _intervals_job_key(athlete_id)
-    job = _schedule_intervals_refresh(athlete_id, logger, job_key)
+    job = _schedule_intervals_refresh(athlete_id, logger, job_key, year=year, week=week)
     status = job.get("status", "running")
     message = job.get("message")
     run_id = job.get("run_id")
