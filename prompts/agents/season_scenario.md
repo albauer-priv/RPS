@@ -45,8 +45,8 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 | Athlete Profile | `workspace_get_input("athlete_profile")` | Required |
 | Planning Events | `workspace_get_input("planning_events")` | Required (A/B/C events) Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required (context only) |
-| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one latest required |
-| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required |
+| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one shared latest required |
+| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required shared latest |
 
 ---
 
@@ -91,7 +91,7 @@ This instruction set + the injected Mandatory Output Chapter are the sole author
 ## SECTION: Input/Output Contract (Binding)
 
 ### Required inputs (must exist or STOP)
-- `athlete_profile`, `planning_events`, `logistics`, latest `KPI_PROFILE` (single), latest `AVAILABILITY`
+- `athlete_profile`, `planning_events`, `logistics`, shared latest `KPI_PROFILE` (single), shared latest `AVAILABILITY`
 
 ### Output contract (HARD)
 - Produce a single top-level object with only `{ "meta": ..., "data": ... }`.
@@ -147,7 +147,7 @@ Load in order:
 5) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 
 If any required artefact is missing: STOP and request it.
-If KPI_PROFILE cannot be resolved as a single latest artefact: STOP and request a data/registry fix.
+If KPI_PROFILE cannot be resolved as a single shared latest artefact: STOP and request a data/registry fix.
 Set G1 = true.
 
 #### Step 2 — Load binding knowledge (Gate: G2)
@@ -213,7 +213,7 @@ Set P3 = true.
 - Do not introduce new artefact types or downstream commitments.
 
 ### KPI usage rule
-- Use only the single latest KPI Profile.
+- Use only the single shared latest KPI Profile.
 - Use KPI Profile to frame “fit” and risk/assumptions qualitatively; no KPI steering decisions.
 
 ---
@@ -222,7 +222,7 @@ Set P3 = true.
 
 STOP if:
 - any required workspace artefact missing
-- KPI_PROFILE not resolvable as single latest
+- KPI_PROFILE not resolvable as single shared latest
 - any required schema field cannot be filled without guessing
 - any required string would be empty
 - schema validation fails

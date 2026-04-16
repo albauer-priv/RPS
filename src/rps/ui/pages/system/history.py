@@ -67,6 +67,7 @@ def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
                 "Version": str(entry.get("version_key") or "—"),
                 "Run": str(entry.get("run_id") or "—"),
                 "Updated": str(entry.get("created_at") or "—"),
+                "Validity": str(entry.get("iso_week_range") or entry.get("iso_week") or "—"),
             }
         )
     return rows
@@ -187,14 +188,16 @@ with status_slot:
 st.subheader("Overview")
 st.caption("Latest outputs and run history (planning + data).")
 
-st.subheader("Latest Outputs")
+st.subheader("Latest Snapshots")
+st.caption("Newest stored artefact per type. For week-/phase-scoped artefacts this is not a selected-week view.")
 latest_rows = _latest_outputs(athlete_id)
-table_header = st.columns([2, 1, 1, 1, 1])
+table_header = st.columns([2, 1, 1, 1, 1, 1])
 table_header[0].markdown("**Artefact**")
 table_header[1].markdown("**Authority**")
 table_header[2].markdown("**Version**")
 table_header[3].markdown("**Run**")
 table_header[4].markdown("**Updated**")
+table_header[5].markdown("**Validity**")
 
 authority_map = {
     ArtifactType.SEASON_PLAN.value: "Binding",
@@ -205,12 +208,13 @@ authority_map = {
     ArtifactType.DES_ANALYSIS_REPORT.value: "Advisory",
 }
 for row in latest_rows:
-    cols = st.columns([2, 1, 1, 1, 1])
+    cols = st.columns([2, 1, 1, 1, 1, 1])
     cols[0].write(row["Title"])
     cols[1].write(authority_map.get(row["Type"], "—"))
     cols[2].write(row["Version"])
     cols[3].write(row["Run"])
     cols[4].write(row["Updated"])
+    cols[5].write(row["Validity"])
 
 st.subheader("Run History")
 planning_types = {

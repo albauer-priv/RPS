@@ -53,12 +53,12 @@ Runtime artefacts (workspace; load via tools):
 | Athlete Profile | `workspace_get_input("athlete_profile")` | Required (Mode A/B) |
 | Planning Events | `workspace_get_input("planning_events")` | Required (all modes; A/B/C events) Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required (all modes; context only) |
-| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one required (Mode A/B) |
-| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |
-| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required (Mode A/B) |
-| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required (Mode A/B; body_mass_kg) |
-| Season Scenarios (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` | If present, use scenario guidance |
-| Scenario Selection (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` | If present, align to selected_scenario_id |
+| KPI Profile | `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` | Exactly one shared latest required (Mode A/B) |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required shared latest (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |
+| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required shared latest (Mode A/B) |
+| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required shared latest (Mode A/B; body_mass_kg) |
+| Season Scenarios (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` | Optional season-level latest; use as advisory scenario context |
+| Scenario Selection (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` | Optional season-level latest; align to selected_scenario_id if present |
 
 ---
 
@@ -173,7 +173,7 @@ Load in this order (skip non-applicable items):
 9) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
 
 If any required artefact is missing: STOP and request it.
-If KPI_PROFILE cannot be resolved as exactly one latest: STOP and request a data/registry fix.
+If KPI_PROFILE cannot be resolved as exactly one shared latest: STOP and request a data/registry fix.
 If WELLNESS missing body_mass_kg (Mode A/B): STOP and request a data-pipeline refresh.
 Set G1 = true.
 

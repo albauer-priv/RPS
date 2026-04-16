@@ -72,7 +72,7 @@ def create_season_scenarios(
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use workspace_get_input for Athlete Profile, Planning Events, and Logistics. "
-        "Use workspace_get_latest for Availability, KPI Profile, and Wellness. "
+        "Use workspace_get_latest only for shared latest inputs Availability, KPI Profile, and Wellness. "
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
@@ -134,7 +134,7 @@ def select_season_scenario(
             )
     user_input = (
         f"Select Scenario {selected.upper()} for ISO week {year}-{week:02d}. "
-        "Use the latest SEASON_SCENARIOS as context. "
+        "Use the latest season-level SEASON_SCENARIOS as context. "
         f"{rationale_line}"
         f"{kpi_line}"
         f"{injected_block}"
@@ -221,7 +221,7 @@ def create_season_plan(
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
-        "Use the latest SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
+        "Use the latest season-level SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
         f"{user_data_block}"
         f"{kpi_block}"
         f"{override_line}"
