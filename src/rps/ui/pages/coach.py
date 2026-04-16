@@ -28,9 +28,29 @@ from rps.ui.shared import (
     ui_log,
 )
 
+
+def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str, object]]]:
+    """Return the auto-preloaded Coach workspace artefacts and inputs."""
+    week_key = f"{year:04d}-{week:02d}"
+    return [
+        ("athlete_profile", "workspace_get_input", {"input_type": "athlete_profile"}),
+        ("planning_events", "workspace_get_input", {"input_type": "planning_events"}),
+        ("logistics", "workspace_get_input", {"input_type": "logistics"}),
+        ("availability", "workspace_get_input", {"input_type": "availability"}),
+        ("activities_trend", "workspace_get_version", {"artifact_type": "ACTIVITIES_TREND", "version_key": week_key}),
+        ("activities_actual", "workspace_get_version", {"artifact_type": "ACTIVITIES_ACTUAL", "version_key": week_key}),
+        ("season_plan", "workspace_get_latest", {"artifact_type": "SEASON_PLAN"}),
+        ("phase_preview", "workspace_get_version", {"artifact_type": "PHASE_PREVIEW", "version_key": week_key}),
+        ("phase_guardrails", "workspace_get_version", {"artifact_type": "PHASE_GUARDRAILS", "version_key": week_key}),
+        ("kpi_profile", "workspace_get_latest", {"artifact_type": "KPI_PROFILE"}),
+        ("zone_model", "workspace_get_latest", {"artifact_type": "ZONE_MODEL"}),
+        ("wellness", "workspace_get_latest", {"artifact_type": "WELLNESS"}),
+    ]
+
+
 init_ui_state()
 athlete_id = get_athlete_id()
-year, _ = get_iso_year_week()
+year, week = get_iso_year_week()
 
 st.title("Coach")
 st.caption(f"Athlete: {athlete_id}")
@@ -109,18 +129,8 @@ if preload_enabled:
             result = {"ok": False, "error": str(exc)}
         context_chunks.append(f"{label}:\n{_stringify(result)}")
 
-    _append_context("athlete_profile", handlers["workspace_get_input"], {"input_type": "athlete_profile"})
-    _append_context("planning_events", handlers["workspace_get_input"], {"input_type": "planning_events"})
-    _append_context("logistics", handlers["workspace_get_input"], {"input_type": "logistics"})
-    _append_context("availability", handlers["workspace_get_input"], {"input_type": "availability"})
-    _append_context("activities_trend", handlers["workspace_get_latest"], {"artifact_type": "ACTIVITIES_TREND"})
-    _append_context("activities_actual", handlers["workspace_get_latest"], {"artifact_type": "ACTIVITIES_ACTUAL"})
-    _append_context("season_plan", handlers["workspace_get_latest"], {"artifact_type": "SEASON_PLAN"})
-    _append_context("phase_preview", handlers["workspace_get_latest"], {"artifact_type": "PHASE_PREVIEW"})
-    _append_context("phase_guardrails", handlers["workspace_get_latest"], {"artifact_type": "PHASE_GUARDRAILS"})
-    _append_context("kpi_profile", handlers["workspace_get_latest"], {"artifact_type": "KPI_PROFILE"})
-    _append_context("zone_model", handlers["workspace_get_latest"], {"artifact_type": "ZONE_MODEL"})
-    _append_context("wellness", handlers["workspace_get_latest"], {"artifact_type": "WELLNESS"})
+    for label, handler_name, args in _coach_preload_specs(year, week):
+        _append_context(label, handlers[handler_name], args)
 
     if context_chunks:
         instructions = (

@@ -1296,6 +1296,18 @@ def test_feed_forward_requires_selected_week_report():
     assert button.disabled is True
 
 
+def test_feed_forward_source_uses_selected_week_report_versions():
+    source = Path("src/rps/ui/pages/performance/feed_forward.py").read_text(encoding="utf-8")
+    assert 'Use DES_ANALYSIS_REPORT version_key {selected_week_key}' in source
+    assert 'store.load_latest(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)' not in source
+
+
+def test_coach_source_preloads_week_scoped_activity_versions():
+    source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
+    assert '"workspace_get_version", {"artifact_type": "ACTIVITIES_TREND", "version_key": week_key}' in source
+    assert '"workspace_get_version", {"artifact_type": "ACTIVITIES_ACTUAL", "version_key": week_key}' in source
+
+
 def test_performance_report_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/performance/report.py")
     at.run(timeout=10)

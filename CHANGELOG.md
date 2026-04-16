@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Performance Report creation now resolves and enforces week-scoped `ACTIVITIES_ACTUAL` / `ACTIVITIES_TREND` coverage for the selected ISO week, auto-attempts a targeted Intervals backfill before running DES analysis, and the Report/Feed Forward pages no longer fall back to stale `latest` artefacts from another week.
+- Performance Report creation now resolves and enforces week-scoped `ACTIVITIES_ACTUAL` / `ACTIVITIES_TREND` coverage for the selected ISO week, auto-attempts a targeted Intervals backfill before running DES analysis, and the Report, Feed Forward, and Coach preload paths no longer fall back to stale `latest` artefacts from another week where week-scoped context is required.
 - Multi-output agent runs now treat explicit model blocker responses (`STOP_REASON`, missing binding artefacts, next actions) as terminal failures, so the runner no longer forces a fallback store after a compliant stop and reports the blocker back instead.
 - Workspace reads now backfill canonical artefact meta for legacy/shared input envelopes, normalizing stale `data_confidence` values like `USER` and deriving missing ISO-week, temporal-scope, and traceability fields so older `KPI_PROFILE`, `PLANNING_EVENTS`, and `LOGISTICS` inputs no longer hard-stop strict agent bindings on read.
 - Athlete Profile -> KPI Profile now stores a canonical workspace envelope on selection, including ISO-week scope and full traceability metadata, instead of copying the bundled spec JSON header through unchanged.

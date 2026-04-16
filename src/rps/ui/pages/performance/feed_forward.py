@@ -45,6 +45,23 @@ def _as_str_list(value: object) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
+def _load_selected_week_artifact(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    artifact_type: ArtifactType,
+    week_key: str,
+) -> JsonMap | None:
+    """Load a week-scoped artifact payload for the selected ISO week when available."""
+    version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
+    if not version_key:
+        return None
+    try:
+        payload = store.load_version(athlete_id, artifact_type, version_key)
+    except FileNotFoundError:
+        return None
+    return _as_map(payload)
+
+
 st.title("Feed Forward")
 
 # CHECKLIST (Analyse -> Feed Forward)
@@ -212,7 +229,8 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
                 user_input=(
                     f"Target ISO week: {year}-{week:02d}. "
-                    "Use latest DES analysis report to produce SEASON_PHASE_FEED_FORWARD. "
+                    f"Use DES_ANALYSIS_REPORT version_key {selected_week_key} for this ISO week "
+                    "to produce SEASON_PHASE_FEED_FORWARD. "
                     f"{injected_block}"
                 ),
                 run_id=run_id,
@@ -252,7 +270,8 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                     tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
                     user_input=(
                         f"Target ISO week: {year}-{week:02d}. "
-                        "Use latest SEASON_PHASE_FEED_FORWARD and DES analysis report to produce PHASE_FEED_FORWARD. "
+                        "Use the selected-week DES analysis report and the selected-week "
+                        "SEASON_PHASE_FEED_FORWARD context to produce PHASE_FEED_FORWARD. "
                         f"{injected_block}"
                     ),
                     run_id=run_id,
@@ -272,21 +291,32 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 last_run_id=run_id,
             )
 
-report_payload = None
-try:
-    report_payload = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
-except FileNotFoundError:
-    report_payload = None
+report_payload = _load_selected_week_artifact(
+    store,
+    athlete_id,
+    ArtifactType.DES_ANALYSIS_REPORT,
+    selected_week_key,
+)
+season_phase_feed_forward_payload = _load_selected_week_artifact(
+    store,
+    athlete_id,
+    ArtifactType.SEASON_PHASE_FEED_FORWARD,
+    selected_week_key,
+)
+phase_feed_forward_payload = _load_selected_week_artifact(
+    store,
+    athlete_id,
+    ArtifactType.PHASE_FEED_FORWARD,
+    selected_week_key,
+)
 
 st.subheader(f"Week Analysis · {selected_week_key}")
 summary_text = "N/A"
-if store.latest_exists(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD):
-    payload = _as_map(store.load_latest(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD))
-    decision = _as_map(_as_map(payload.get("data")).get("decision_summary"))
+if season_phase_feed_forward_payload:
+    decision = _as_map(_as_map(season_phase_feed_forward_payload.get("data")).get("decision_summary"))
     summary_text = _as_str(decision.get("conclusion"), "N/A")
-elif store.latest_exists(athlete_id, ArtifactType.PHASE_FEED_FORWARD):
-    payload = _as_map(store.load_latest(athlete_id, ArtifactType.PHASE_FEED_FORWARD))
-    reason = _as_map(_as_map(payload.get("data")).get("reason_context"))
+elif phase_feed_forward_payload:
+    reason = _as_map(_as_map(phase_feed_forward_payload.get("data")).get("reason_context"))
     summary_text = _as_str(reason.get("intent_of_adjustment"), "N/A")
 st.markdown(f"**Summary:** {summary_text}")
 if not report_payload:
@@ -300,13 +330,12 @@ else:
 
 st.subheader("Feed Forward Summaries")
 latest_ff = []
-for artifact_type, label in (
-    (ArtifactType.SEASON_PHASE_FEED_FORWARD, "Season → Phase"),
-    (ArtifactType.PHASE_FEED_FORWARD, "Phase → Week"),
+for artifact_type, label, payload in (
+    (ArtifactType.SEASON_PHASE_FEED_FORWARD, "Season → Phase", season_phase_feed_forward_payload),
+    (ArtifactType.PHASE_FEED_FORWARD, "Phase → Week", phase_feed_forward_payload),
 ):
-    if store.latest_exists(athlete_id, artifact_type):
-        latest_payload = _as_map(store.load_latest(athlete_id, artifact_type))
-        data = latest_payload.get("data") if isinstance(latest_payload, dict) else {}
+    if payload:
+        data = payload.get("data") if isinstance(payload, dict) else {}
         summary = "N/A"
         if artifact_type == ArtifactType.SEASON_PHASE_FEED_FORWARD:
             decision = _as_map(_as_map(data).get("decision_summary"))
@@ -319,7 +348,7 @@ for artifact_type, label in (
 if latest_ff:
     st.table(latest_ff)
 else:
-    st.info("No feed forward artefacts found.")
+    st.info("No selected-week feed forward artefacts found.")
 
 st.subheader("Feed Forward Artefacts")
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()
