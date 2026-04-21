@@ -490,17 +490,17 @@ class LocalArtifactStore:
         self.ensure_workspace(athlete_id)
 
         normalized_key = normalize_version_key(version_key, artifact_type=artifact_type)
+        stored_created_at = utc_iso_now()
         meta_doc = None
         if isinstance(document, dict):
             candidate = document.get("meta")
             if isinstance(candidate, dict):
-                meta_doc = candidate
-                if "version_key" in meta_doc:
-                    meta_doc["version_key"] = normalize_version_key(
-                        str(meta_doc.get("version_key")),
-                        meta_doc.get("created_at"),
-                        artifact_type=artifact_type,
-                    )
+                meta_doc = dict(candidate)
+                meta_doc["created_at"] = stored_created_at
+                meta_doc["run_id"] = run_id
+                meta_doc["version_key"] = normalized_key
+                document = dict(document)
+                document["meta"] = meta_doc
         version_path = self.versioned_path(athlete_id, artifact_type, normalized_key)
         ensure_dir(version_path.parent)
         self._atomic_write_json(version_path, document)

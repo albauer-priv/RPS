@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Envelope writes now canonicalize `created_at`, `run_id`, and `version_key` at store time, so freshly stored phase artefacts no longer keep stale model timestamps that make later artefacts appear older than their actual write order.
 - Week-Planner guidance now treats `AVAILABILITY` as shared latest user state instead of falsely requiring target-week coverage, and the Availability/Data-Pipeline contracts now state that the latest valid availability artefact remains authoritative until replaced.
 - Phase Guardrails storage now rejects weekly kJ bands that contradict an explicit `feasible max` stated in the band notes, and the runner no longer widens degenerate S5 fallback bands after the model has emitted them.
 - Phase-Architect guidance now binds `PHASE_STRUCTURE.load_ranges.source` to the exact stored `PHASE_GUARDRAILS` filename including the timestamped `version_key`, and the shared file-naming / traceability specs now reflect timestamped filenames for versioned season/phase/week artefacts.

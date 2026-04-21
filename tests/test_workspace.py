@@ -141,6 +141,38 @@ class LocalStoreTests(unittest.TestCase):
             record = next(iter(versions.values()))
             self.assertEqual(record["iso_week_range"], "2026-05--2026-08")
 
+    def test_save_document_canonicalizes_envelope_meta_to_store_write(self) -> None:
+        """Verify envelope writes replace stale model timestamps with the actual store write metadata."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_003c"
+            payload = {
+                "meta": {
+                    "artifact_type": "PHASE_STRUCTURE",
+                    "version_key": "2026-17--2026-18__20260421_143228",
+                    "iso_week_range": "2026-17--2026-18",
+                    "created_at": "2026-04-21T14:32:28Z",
+                    "run_id": "stale_model_run",
+                },
+                "data": {},
+            }
+
+            path = store.save_document(
+                athlete_id,
+                ArtifactType.PHASE_STRUCTURE,
+                "2026-17--2026-18__20260421_143500",
+                payload,
+                producer_agent="phase_architect",
+                run_id="actual_store_run",
+                update_latest=True,
+            )
+
+            written = json.loads(Path(path).read_text(encoding="utf-8"))
+            meta = written["meta"]
+            self.assertEqual(meta["version_key"], "2026-17--2026-18__20260421_143500")
+            self.assertEqual(meta["run_id"], "actual_store_run")
+            self.assertNotEqual(meta["created_at"], "2026-04-21T14:32:28Z")
+
     def test_load_latest_normalizes_legacy_user_data_confidence(self) -> None:
         """Verify legacy USER data_confidence is normalized on read."""
         with tempfile.TemporaryDirectory() as tmpdir:
