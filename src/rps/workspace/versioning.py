@@ -179,7 +179,7 @@ def _version_key_from_iso_week_range(
 ) -> str | None:
     if not isinstance(meta, dict) or "iso_week_range" not in meta:
         return None
-    if artifact_type not in RANGE_SCOPED_ARTIFACTS and "iso_week_range" not in meta:
+    if artifact_type is not None and artifact_type not in RANGE_SCOPED_ARTIFACTS:
         return None
     range_key = _coerce_range(meta["iso_week_range"])
     if not range_key:

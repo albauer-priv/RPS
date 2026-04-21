@@ -28,6 +28,7 @@ from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 from rps.workspace.iso_helpers import IsoWeek  # noqa: E402
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
+from rps.workspace.versioning import derive_version_key_from_envelope  # noqa: E402
 
 
 class WorkspaceHelperTests(unittest.TestCase):
@@ -46,6 +47,23 @@ class WorkspaceHelperTests(unittest.TestCase):
     def test_upstream_ref(self) -> None:
         """Verify upstream reference formatting."""
         self.assertEqual(upstream_ref("PHASE_STRUCTURE", "2026-06--2026-09"), "PHASE_STRUCTURE:2026-06--2026-09")
+
+    def test_week_plan_version_key_prefers_iso_week_over_iso_week_range(self) -> None:
+        """Verify non-range artefacts do not derive their version key from iso_week_range."""
+        envelope = {
+            "meta": {
+                "artifact_type": "WEEK_PLAN",
+                "iso_week": "2026-17",
+                "iso_week_range": "2026-17--2026-17",
+                "created_at": "2026-04-21T14:39:45Z",
+            },
+            "data": {},
+        }
+
+        version_key = derive_version_key_from_envelope(envelope, ArtifactType.WEEK_PLAN)
+
+        self.assertTrue(version_key.startswith("2026-17__"))
+        self.assertNotIn("--", version_key)
 
 
 class LocalStoreTests(unittest.TestCase):

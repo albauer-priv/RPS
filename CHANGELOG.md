@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Version-key derivation now ignores `meta.iso_week_range` for non-range artefacts such as `WEEK_PLAN`, preventing week plans from being stored under bogus keys like `2026-17--2026-17` and avoiding redundant second `plan_week` runs.
 - Envelope writes now canonicalize `created_at`, `run_id`, and `version_key` at store time, so freshly stored phase artefacts no longer keep stale model timestamps that make later artefacts appear older than their actual write order.
 - Week-Planner guidance now treats `AVAILABILITY` as shared latest user state instead of falsely requiring target-week coverage, and the Availability/Data-Pipeline contracts now state that the latest valid availability artefact remains authoritative until replaced.
 - Phase Guardrails storage now rejects weekly kJ bands that contradict an explicit `feasible max` stated in the band notes, and the runner no longer widens degenerate S5 fallback bands after the model has emitted them.
