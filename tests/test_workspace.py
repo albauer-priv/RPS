@@ -24,6 +24,7 @@ from rps.workspace.helpers import (  # noqa: E402
     resolve_current_week,
     upstream_ref,
 )
+from rps.workspace.index_manager import WorkspaceIndexManager  # noqa: E402
 from rps.workspace.iso_helpers import IsoWeek  # noqa: E402
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
@@ -109,6 +110,36 @@ class LocalStoreTests(unittest.TestCase):
                 payload={"foo": "baz"},
             )
             self.assertTrue(store.exists(athlete_id, ArtifactType.PHASE_GUARDRAILS, "2026-05--2026-08"))
+
+    def test_range_version_index_records_string_iso_week_range(self) -> None:
+        """Verify index writes preserve string iso_week_range metadata for exact-range lookups."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_003b"
+            payload = {
+                "meta": {
+                    "artifact_type": "PHASE_GUARDRAILS",
+                    "version_key": "2026-05--2026-08",
+                    "iso_week_range": "2026-05--2026-08",
+                    "created_at": "2026-02-01T12:00:00Z",
+                },
+                "data": {},
+            }
+            store.save_document(
+                athlete_id,
+                ArtifactType.PHASE_GUARDRAILS,
+                "2026-05--2026-08",
+                payload,
+                producer_agent="phase_architect",
+                run_id="test_run",
+                update_latest=True,
+            )
+
+            index = WorkspaceIndexManager(root=root, athlete_id=athlete_id).load()
+            versions = index["artefacts"][ArtifactType.PHASE_GUARDRAILS.value]["versions"]
+            record = next(iter(versions.values()))
+            self.assertEqual(record["iso_week_range"], "2026-05--2026-08")
 
     def test_load_latest_normalizes_legacy_user_data_confidence(self) -> None:
         """Verify legacy USER data_confidence is normalized on read."""

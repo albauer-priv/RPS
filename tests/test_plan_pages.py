@@ -10,6 +10,7 @@ from rps.orchestrator import season_flow
 from rps.orchestrator.plan_week import create_performance_report, plan_week
 from rps.orchestrator.workout_export import create_intervals_workouts_export
 from rps.ui.shared import SETTINGS
+from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -685,6 +686,10 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(
 
     assert result.ok is True
     assert written_types == [ArtifactType.PHASE_GUARDRAILS]
+    index = WorkspaceIndexManager(root=tmp_path, athlete_id=athlete_id).load()
+    versions = index["artefacts"][ArtifactType.PHASE_GUARDRAILS.value]["versions"]
+    record = next(iter(versions.values()))
+    assert record["iso_week_range"] == "2026-11--2026-13"
 
 
 def test_plan_week_phase_architect_omits_direct_kpi_guidance(

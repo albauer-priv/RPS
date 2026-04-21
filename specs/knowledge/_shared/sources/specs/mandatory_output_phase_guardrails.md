@@ -72,11 +72,14 @@ Always import `season_plan.data.global_constraints`:
 Planned event windows MUST be fully represented in `data.events_constraints.events[]`.
 To avoid validation errors, follow this **exact** procedure:
 1) Prefer `season_plan.data.global_constraints.planned_event_windows` as the source of truth.
+   When the season plan stores compact strings such as `"2026-04-11 (B)"`, treat them as a
+   compact source format that MUST be transformed into structured event objects. "Source of truth"
+   means the event must be preserved semantically, not copied as a raw string.
 2) If `planned_event_windows` is missing or empty, **derive it** from
    `season_plan.data.phases[].events_constraints[]` across **all phases** (not just the current phase).
 3) After building the list, **each window must appear** in `events_constraints.events[]`
    with matching date, correct ISO week string, and the A/B/C type from the
-   season plan phase constraints.
+   season plan phase constraints or the compact `planned_event_windows` marker when present.
 4) Do **not** omit events that fall outside the current phase range; they must still be listed
    to satisfy cross‑validation.
 
@@ -91,6 +94,13 @@ Mapping (must include, do not omit):
   using the A/B/C types already defined in `season_plan.data.phases[].events_constraints`.
   Include **all** entries from `season_plan.data.global_constraints.planned_event_windows`
   (even if they fall outside the phase range).
+  If a window is stored as a compact string such as `"YYYY-MM-DD (A|B|C)"`, convert it into a
+  structured object:
+  - `date`: the `YYYY-MM-DD` part
+  - `week`: the ISO week derived from that date
+  - `type`: the A/B/C marker
+  - `constraint`: a concise preservation note
+  Do not emit the compact raw string in place of the structured object.
   Do NOT source A/B/C event types from logistics (logistics is context-only). Use planning_events.
   Also add a single summary line to `phase_summary.non_negotiables`:
   `"Planned A/B/C windows included in events_constraints (from season_plan)."`

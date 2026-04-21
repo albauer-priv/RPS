@@ -119,8 +119,16 @@ KPI-agnostic rule:
 Produce stable, coherent, enforceable phase governance that enables Week-Planner execution without ambiguity.
 
 Planned event windows (binding):
-- Always copy every entry from `season_plan.data.global_constraints.planned_event_windows`
-  into `events_constraints.events[]` (even if outside the phase range).
+- Always fully represent every entry from
+  `season_plan.data.global_constraints.planned_event_windows` in
+  `events_constraints.events[]` (even if outside the phase range).
+- If the season plan stores compact strings such as `"YYYY-MM-DD (B)"`, transform them into
+  structured event objects with:
+  - `date` = `YYYY-MM-DD`
+  - `week` = derived ISO week string for that date
+  - `type` = the A/B/C marker from the compact window or matching season-plan phase constraint
+- Do not copy the compact string verbatim into `events_constraints.events[]`; emit the
+  schema-valid structured representation instead.
 
 ### Core Outputs (by contract; one per run)
 Depending on the user request / injected Mandatory Output Chapter, produce exactly ONE of:

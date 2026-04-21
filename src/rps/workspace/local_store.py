@@ -212,9 +212,11 @@ class LocalArtifactStore:
         if meta:
             created_at = _as_str(meta.get("created_at"))
             iso_week_raw = meta.get("iso_week")
-            iso_week = iso_week_raw if isinstance(iso_week_raw, dict) else None
+            if isinstance(iso_week_raw, (dict, str)):
+                iso_week = iso_week_raw
             iso_week_range_raw = meta.get("iso_week_range")
-            iso_week_range = iso_week_range_raw if isinstance(iso_week_range_raw, dict) else None
+            if isinstance(iso_week_range_raw, (dict, str)):
+                iso_week_range = iso_week_range_raw
 
         self._index_manager(athlete_id).record_write(
             artifact_type=artifact_type.value,

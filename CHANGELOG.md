@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Range-scoped artefact writes now persist string `iso_week_range` metadata into the workspace index, so exact-range checks immediately recognize freshly stored `PHASE_GUARDRAILS` / `PHASE_STRUCTURE` / `PHASE_PREVIEW` artefacts during isolated phase runs.
+- Phase Guardrails binding guidance now explicitly treats season-plan `planned_event_windows` entries like `"YYYY-MM-DD (B)"` as compact source strings that must be transformed into structured `events_constraints.events[]` items, avoiding false model stops that demanded an unnecessary Season Plan rewrite.
 - Performance Report creation now resolves and enforces week-scoped `ACTIVITIES_ACTUAL` / `ACTIVITIES_TREND` coverage for the selected ISO week, auto-attempts a targeted Intervals backfill before running DES analysis, and the Report, Feed Forward, and Coach preload paths no longer fall back to stale `latest` artefacts from another week where week-scoped context is required.
 - Agent task routing now treats week- and phase-scoped artefacts explicitly by target ISO week/range instead of relying on unrelated `latest` artefacts, and workspace read tools now warn when `workspace_get_latest` is used on week-sensitive artefact types.
 - Multi-output agent runs now log week-sensitive workspace tool warnings from read handlers, and the Coach / Performance / Feed-Forward prompt guidance now explicitly prefers week-scoped `workspace_get_version(...)` reads for week-sensitive artefacts instead of ambiguous `latest` instructions.
