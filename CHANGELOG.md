@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Week-Planner guidance now treats `AVAILABILITY` as shared latest user state instead of falsely requiring target-week coverage, and the Availability/Data-Pipeline contracts now state that the latest valid availability artefact remains authoritative until replaced.
 - Phase Guardrails storage now rejects weekly kJ bands that contradict an explicit `feasible max` stated in the band notes, and the runner no longer widens degenerate S5 fallback bands after the model has emitted them.
 - Phase-Architect guidance now binds `PHASE_STRUCTURE.load_ranges.source` to the exact stored `PHASE_GUARDRAILS` filename including the timestamped `version_key`, and the shared file-naming / traceability specs now reflect timestamped filenames for versioned season/phase/week artefacts.
 - Multi-output runner now logs missing optional `SEASON_PHASE_FEED_FORWARD` / `PHASE_FEED_FORWARD` version reads as informational context misses instead of warning-level read failures.

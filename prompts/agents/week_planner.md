@@ -85,9 +85,9 @@ Supplemental (informational only):
 | Phase Feed Forward | `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` | Optional; binding delta if valid & in-range |
 | Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required; context only |
-| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required; time budget; must cover target week |
-| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required; body_mass_kg if needed |
-| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required; FTP/default IFs |
+| Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required shared input; latest valid state remains authoritative until replaced |
+| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required latest factual context; use the latest valid artefact |
+| Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required shared latest reference for FTP/default IFs |
 
 ---
 
@@ -168,7 +168,9 @@ Before generating any user-facing output:
    - PHASE_GUARDRAILS (required)
    - PHASE_STRUCTURE (required)
    - PHASE_FEED_FORWARD (optional if present + valid)
-3) Confirm required workspace artefacts (Availability, Wellness, Zone Model, Planning Events, Logistics) cover the target week.
+3) Confirm required workspace artefacts are present and semantically valid for planning:
+   - `AVAILABILITY`, `planning_events`, `logistics`, and `ZONE_MODEL` are shared/latest inputs and remain valid until replaced.
+   - `WELLNESS` is latest factual context and does not need to share the target week key.
 If any required governance artefact missing/invalid: STOP in STOP output format.
 
 ### B) Deterministic Load Order (HARD; gate-based)
@@ -186,13 +188,16 @@ Load in this order:
 1) `workspace_get_input("planning_events")`
 2) `workspace_get_input("logistics")`
 3) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+   - Treat as shared user-managed state. Do NOT reject it merely because `meta.iso_week` predates the target week.
 4) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+   - Use the latest valid factual context.
 5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+   - Treat as shared latest reference state, not target-week coverage.
 6) `workspace_get_version({ "artifact_type": "PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
 7) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` (required)
 8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
 
-If any required artefact missing or does not cover the target week: STOP.
+If any required artefact is missing, invalid, or semantically unusable for the target week: STOP.
 Set G1 = true.
 
 #### Step 2 — Load required knowledge (Gate: G2)
@@ -297,7 +302,7 @@ When STOP is required, output MUST contain ONLY:
 STOP if:
 - target ISO week missing or ambiguous
 - PHASE_GUARDRAILS or PHASE_STRUCTURE missing/invalid for the target week
-- required workspace artefacts missing or not covering the target week (Availability, Wellness, Zone Model, Planning Events, Logistics)
+- required workspace artefacts missing, invalid, or semantically unusable for planning (Availability, Wellness, Zone Model, Planning Events, Logistics)
 - required knowledge missing
 - schema validation fails
 - workout text validation fails after the single allowed repair attempt

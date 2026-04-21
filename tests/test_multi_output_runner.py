@@ -61,6 +61,14 @@ def test_build_injection_block_for_phase_architect_includes_required_docs():
     assert "zone_model.schema.json" in combined
 
 
+def test_week_planner_prompt_treats_availability_as_shared_latest():
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "agents" / "week_planner.md"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert "latest valid state remains authoritative until replaced" in prompt_text
+    assert "must cover target week" not in prompt_text
+
+
 def test_build_injection_block_for_season_planner_uses_season_section():
     combined = build_injection_block("season_planner", mode="season_plan")
     items = resolve_agent_injection_items("season_planner", mode="season_plan")

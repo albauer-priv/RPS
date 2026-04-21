@@ -22,6 +22,13 @@ Outputs-To:
 Provide a user-managed availability artefact that planners can use for
 load plausibility checks and daily constraints.
 
+Interpretation note (binding):
+- `AVAILABILITY` is a shared user-managed state artefact.
+- The latest valid stored artefact remains authoritative until the user updates it.
+- `meta.iso_week` / `meta.iso_week_range` identify the update version, not an expiry boundary.
+- Consumers MUST NOT reject the latest valid availability artefact solely because its
+  stored week key predates the target planning week.
+
 ## 2) Required Meta (Binding)
 The artefact MUST include a valid `meta` envelope (`artefact_meta.schema.json`) with:
 - `artifact_type`: `AVAILABILITY`

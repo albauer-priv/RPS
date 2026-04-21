@@ -47,6 +47,9 @@ Provide validated factual artefacts (activities, wellness, zone model) to the We
 - MUST validate input JSON before use and STOP on invalid artefacts.
 - MUST treat activities artefacts as informational only.
 - MUST use `wellness.body_mass_kg` for any body-mass scaling in load or plausibility checks.
+- MUST treat `AVAILABILITY` as shared latest user state:
+  the latest valid availability artefact remains authoritative until replaced and MUST NOT
+  be rejected solely because its `meta.iso_week` predates the target planning week.
 
 ## 4) Artefacts and Schemas (Binding)
 
