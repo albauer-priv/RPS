@@ -32,6 +32,25 @@ def test_normalize_phase_guardrails_flattens_recovery_rules_list():
     )
 
 
+def test_normalize_phase_guardrails_preserves_degenerate_band():
+    document = {
+        "meta": {"artifact_type": "PHASE_GUARDRAILS"},
+        "data": {
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-17", "band": {"min": 8470, "max": 8470, "notes": "S5 Level 5"}}
+                ]
+            }
+        },
+    }
+
+    normalized = multi_output_runner.normalize_phase_guardrails_document(document)
+
+    band = normalized["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]
+    assert band["min"] == 8470.0
+    assert band["max"] == 8470.0
+
+
 def test_build_injection_block_for_phase_architect_includes_required_docs():
     combined = build_injection_block("phase_architect", mode="phase_guardrails")
 

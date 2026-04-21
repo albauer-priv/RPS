@@ -187,6 +187,23 @@ class GuardedValidatedStore:
                 pairs.add((date_value, type_value))
         return pairs
 
+    def _extract_feasible_max_from_notes(self, notes: object) -> float | None:
+        """Return an explicitly stated feasible max from notes when present."""
+        if not isinstance(notes, str):
+            return None
+        match = re.search(
+            r"feasible(?:[_ ]band)?\s*max(?:imum)?\s*(?:is|=|:)?\s*([0-9]+(?:[.,][0-9]+)?)",
+            notes,
+            re.IGNORECASE,
+        )
+        if match is None:
+            return None
+        raw = match.group(1).replace(",", ".")
+        try:
+            return float(raw)
+        except ValueError:
+            return None
+
     def _contains_normalized_item(self, haystack: list[str], item: str) -> bool:
         """Return whether a normalized item exists in a normalized string list."""
         normalized = self._normalize_text(item)
@@ -323,6 +340,26 @@ class GuardedValidatedStore:
                 aliases = day_aliases.get(day, [day.lower()])
                 if not any(alias in words for alias in aliases):
                     errors.append(f"Fixed rest day missing in phase_guardrails: {day}")
+
+        load_guardrails = self._as_map(data.get("load_guardrails"))
+        for entry in self._as_list(load_guardrails.get("weekly_kj_bands")):
+            if not isinstance(entry, dict):
+                continue
+            week = str(entry.get("week") or "").strip() or "unknown"
+            band = self._as_map(entry.get("band"))
+            min_val = band.get("min")
+            max_val = band.get("max")
+            feasible_max = self._extract_feasible_max_from_notes(band.get("notes"))
+            if feasible_max is None:
+                continue
+            if isinstance(min_val, (int, float)) and float(min_val) > feasible_max:
+                errors.append(
+                    f"weekly_kj_bands[{week}] min {float(min_val):g} exceeds explicit feasible max {feasible_max:g} stated in notes."
+                )
+            if isinstance(max_val, (int, float)) and float(max_val) > feasible_max:
+                errors.append(
+                    f"weekly_kj_bands[{week}] max {float(max_val):g} exceeds explicit feasible max {feasible_max:g} stated in notes."
+                )
 
         if errors:
             raise SchemaValidationError("Season plan constraint propagation failed", errors)

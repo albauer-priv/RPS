@@ -185,6 +185,11 @@ Additional hard stops (binding):
   - If any **S5.5** hard stop is triggered (e.g., `feasible_band` empty, `override_band` empty), STOP.
   - Otherwise accept the S5 output band (including degenerate/override outputs) even if it
     does not lie inside the raw Season∩Feasible∩KPI intersection.
+- The stored `weekly_kj_bands` MUST be the final S5 output band, not the raw Season corridor.
+  If S5 Level 4 or Level 5 yields a degenerate band, emit that degenerate band exactly.
+  Do not widen, smooth, or narratively re-expand it in post-processing.
+- `band.notes` must not contradict the emitted numeric band. If notes state an explicit feasible
+  maximum, both `band.min` and `band.max` must be less than or equal to that feasible maximum.
 
 ---
 

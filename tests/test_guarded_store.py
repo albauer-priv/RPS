@@ -97,6 +97,44 @@ def test_phase_guardrails_accepts_recovery_notes_string(tmp_path):
     store._enforce_phase_guardrails_constraints(document, season_plan)
 
 
+def test_phase_guardrails_rejects_band_above_explicit_feasible_max(tmp_path):
+    store = _store(tmp_path)
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [],
+                "risk_constraints": [],
+                "planned_event_windows": [],
+                "recovery_protection": {"fixed_rest_days": [], "notes": []},
+            }
+        }
+    }
+    document = {
+        "data": {
+            "phase_summary": {"non_negotiables": [], "key_risks_warnings": []},
+            "events_constraints": {"events": []},
+            "execution_non_negotiables": {"recovery_protection_rules": ""},
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {
+                        "week": "2026-17",
+                        "band": {
+                            "min": 9000,
+                            "max": 10600,
+                            "notes": "Execution impossible because feasible max is 8470 planned_Load_kJ/week.",
+                        },
+                    }
+                ]
+            },
+        }
+    }
+
+    with pytest.raises(SchemaValidationError) as exc:
+        store._enforce_phase_guardrails_constraints(document, season_plan)
+
+    assert any("explicit feasible max 8470" in err for err in exc.value.errors)
+
+
 def test_phase_structure_event_window_matches_semantically(tmp_path):
     store = _store(tmp_path)
     season_plan = {

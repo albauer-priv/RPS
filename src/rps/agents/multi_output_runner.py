@@ -163,21 +163,8 @@ def normalize_phase_guardrails_document(document: dict[str, Any]) -> dict[str, A
         if isinstance(min_val, (int, float)) and isinstance(max_val, (int, float)):
             if min_val > max_val:
                 min_val, max_val = max_val, min_val
-            if min_val == max_val:
-                base = float(min_val)
-                width = max(1.0, base * 0.05)
-                note = str(band.get("notes", "")).lower()
-                if "deload" in note or "taper" in note:
-                    new_min = max(0.0, base - width)
-                    new_max = base
-                else:
-                    new_min = max(0.0, base - width / 2)
-                    new_max = base + width / 2
-                band["min"] = round(new_min, 2)
-                band["max"] = round(new_max, 2)
-            else:
-                band["min"] = float(min_val)
-                band["max"] = float(max_val)
+            band["min"] = float(min_val)
+            band["max"] = float(max_val)
 
     for key in ("weekly_kj_bands",):
         rows = load_guardrails.get(key)

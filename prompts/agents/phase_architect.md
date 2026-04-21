@@ -239,6 +239,12 @@ Before composing output, confirm the exact-range inputs are loaded:
   - Read KPI guidance for corridor/load-band derivation from `season_plan.data.body_metadata.moving_time_rate_guidance`
     when present.
   - A missing or non-applicable `SEASON_PHASE_FEED_FORWARD` must not block `PHASE_GUARDRAILS`.
+  - Apply LoadEstimationSpec S5 exactly. Never preserve or restate the raw season corridor as the
+    final `weekly_kj_bands` output when S5 reduces or overrides it.
+  - If S5 Level 4 or Level 5 produces a degenerate band, emit that degenerate band exactly. Do not
+    widen it for readability, progression, or narrative smoothing.
+  - `band.notes` must not contradict the emitted band. If notes state an explicit feasible maximum,
+    both `band.min` and `band.max` must be less than or equal to that value.
 - For `PHASE_STRUCTURE`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS`.
   - Capture the stored guardrails `meta.version_key` and set
     `load_ranges.source = "phase_guardrails_<meta.version_key>.json"`.
