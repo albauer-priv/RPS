@@ -1356,6 +1356,16 @@ def _render_direct_step_actions(
     return True
 
 
+def _scope_requires_knowledge(scope: str | None) -> bool:
+    """Return whether the given planning scope still depends on the knowledge store."""
+    return scope != "Build Workouts"
+
+
+def _step_requires_knowledge(step_key: str) -> bool:
+    """Return whether the readiness-card direct action for a step depends on the knowledge store."""
+    return step_key != "intervals_workouts"
+
+
 state = init_ui_state()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
@@ -1474,7 +1484,10 @@ st.markdown("`Auto-creates phase artifacts`")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 st.caption(overall_message)
 if not knowledge_ready:
-    st.info("Planning actions stay disabled until the knowledge store is ready.")
+    st.info(
+        "Agent-backed planning actions stay disabled until the knowledge store is ready. "
+        "Build Workouts remains available because it now runs locally."
+    )
 phase_step = readiness_map.get("phase")
 week_plan_step = readiness_map.get("week_plan")
 if (
@@ -1629,7 +1642,7 @@ for col, steps in zip(
                     step,
                     athlete_id=hub_scope["athlete_id"],
                     base_week=IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"]),
-                    scope_lock=planning_locked,
+                    scope_lock=scope_lock or (not knowledge_ready and _step_requires_knowledge(step.key)),
                     default_phase_label=hub_scope.get("phase_label"),
                 )
 
@@ -1800,7 +1813,7 @@ if not has_blockers:
         col_scoped, col_orchestrated = st.columns(2)
         run_scoped = col_scoped.button(
             "Run scoped",
-            disabled=planning_locked or run_mode != "Scoped",
+            disabled=scope_lock or (run_mode != "Scoped") or (not knowledge_ready and _scope_requires_knowledge(scope)),
         )
         run_orchestrated = col_orchestrated.button(
             "Run orchestrated",
@@ -1903,7 +1916,7 @@ if not has_blockers:
         st.info("Run requested.")
 
     if run_scoped:
-        if not knowledge_ready:
+        if not knowledge_ready and _scope_requires_knowledge(scope):
             st.warning("Knowledge store is not ready. Rebuild it before planning.")
             st.stop()
         desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope or "", "scoped")

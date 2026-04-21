@@ -396,31 +396,149 @@ def test_plan_hub_shows_knowledge_store_status(tmp_path):
     assert "Ready: `vs_rps_all_agents`" in success_text
 
 
-def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):
-    class _Runtime:
-        def __init__(self, workspace_root):
-            self.workspace_root = workspace_root
+def test_plan_hub_build_workouts_scope_does_not_require_knowledge():
+    from rps.ui.pages.plan import hub as plan_hub
 
+    assert plan_hub._scope_requires_knowledge("Week Plan") is True
+    assert plan_hub._scope_requires_knowledge("Phase") is True
+    assert plan_hub._scope_requires_knowledge("Build Workouts") is False
+    assert plan_hub._step_requires_knowledge("week_plan") is True
+    assert plan_hub._step_requires_knowledge("intervals_workouts") is False
+
+
+def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):
     store = LocalArtifactStore(root=tmp_path)
     athlete_id = "test_athlete"
     store.ensure_workspace(athlete_id)
     week_key = "2026-12"
-    store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, week_key).write_text("{}", encoding="utf-8")
-    store.versioned_path(athlete_id, ArtifactType.INTERVALS_WORKOUTS, week_key).write_text("{}", encoding="utf-8")
-
-    calls = []
-
-    def _runtime_for(_agent_name):
-        return _Runtime(tmp_path)
-
-    def _fake_run_agent_multi_output(*args, **kwargs):
-        calls.append(kwargs)
-        return {"ok": True, "produced": True}
-
-    monkeypatch.setattr("rps.orchestrator.workout_export.run_agent_multi_output", _fake_run_agent_multi_output)
+    week_plan = {
+        "meta": {
+            "artifact_type": "WEEK_PLAN",
+            "schema_id": "WeekPlanInterface",
+            "schema_version": "1.2",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Week-Planner",
+            "run_id": "week_plan_test",
+            "created_at": "2026-04-21T14:53:19Z",
+            "scope": "Week",
+            "iso_week": "2026-12",
+            "iso_week_range": "2026-12--2026-12",
+            "temporal_scope": {"from": "2026-03-16", "to": "2026-03-22"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "HIGH",
+            "notes": "",
+        },
+        "data": {
+            "week_summary": {
+                "week_objective": "Test objective",
+                "weekly_load_corridor_kj": {"min": 1, "max": 2, "notes": ""},
+                "planned_weekly_load_kj": 1,
+                "notes": "",
+            },
+            "agenda": [
+                {
+                    "day": "Mon",
+                    "date": "2026-03-16",
+                    "day_role": "ENDURANCE",
+                    "planned_duration": "01:00",
+                    "planned_kj": 500,
+                    "workout_id": "W-2026-12-MON",
+                },
+                {
+                    "day": "Tue",
+                    "date": "2026-03-17",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Wed",
+                    "date": "2026-03-18",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Thu",
+                    "date": "2026-03-19",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Fri",
+                    "date": "2026-03-20",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Sat",
+                    "date": "2026-03-21",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Sun",
+                    "date": "2026-03-22",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+            ],
+            "workouts": [
+                {
+                    "workout_id": "W-2026-12-MON",
+                    "title": "Endurance Ride",
+                    "date": "2026-03-16",
+                    "start": "07:00",
+                    "duration": "01:00:00",
+                    "workout_text": "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 44m 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm",
+                    "notes": "",
+                }
+            ],
+        },
+    }
+    store.save_document(
+        athlete_id,
+        ArtifactType.PHASE_STRUCTURE,
+        "2026-12--2026-12__20260315_120000",
+        {"meta": {"artifact_type": "PHASE_STRUCTURE"}, "data": {}},
+        producer_agent="phase_architect",
+        run_id="phase_structure_test",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.WEEK_PLAN,
+        f"{week_key}__20260315_120000",
+        week_plan,
+        producer_agent="week_planner",
+        run_id="week_plan_test",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.INTERVALS_WORKOUTS,
+        f"{week_key}__20260315_120000",
+        [],
+        producer_agent="workout_builder",
+        run_id="intervals_test",
+        update_latest=True,
+    )
 
     result = create_intervals_workouts_export(
-        _runtime_for,
+        lambda _agent_name: None,  # type: ignore[arg-type]
         store=store,
         athlete_id=athlete_id,
         year=2026,
@@ -434,7 +552,10 @@ def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatc
     )
 
     assert result["ran"] is True
-    assert calls
+    assert result["ok"] is True
+    payload = store.load_version(athlete_id, ArtifactType.INTERVALS_WORKOUTS, week_key)
+    assert isinstance(payload, list)
+    assert payload
 
 
 def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
