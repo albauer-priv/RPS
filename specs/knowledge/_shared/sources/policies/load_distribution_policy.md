@@ -9,7 +9,7 @@ Authority: Informational
 
 Applies-To:
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Notes: >
   Optional, non-binding guidance for distributing weekly planned_Load_kJ

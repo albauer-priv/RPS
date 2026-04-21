@@ -70,7 +70,7 @@ flowchart TD
   A["Plan Hub Phase Card"] --> B{"Selected scope"}
   B -->|Phase| C["Queue PHASE_GUARDRAILS, PHASE_STRUCTURE, PHASE_PREVIEW"]
   B -->|Week Plan| D["Queue WEEK_PLAN plus missing phase prerequisites"]
-  B -->|Build Workouts| E["Queue EXPORT_WORKOUTS plus missing week/phase prerequisites"]
+  B -->|Build Workouts| E["Queue WORKOUT_EXPORT plus missing week/phase prerequisites"]
   C --> F["Worker executes isolated phase run"]
   D --> F
   E --> F

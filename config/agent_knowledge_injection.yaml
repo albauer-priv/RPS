@@ -167,7 +167,7 @@ agents:
     - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
     - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: specs/knowledge/_shared/sources/contracts/phase__week_contract.md
-    - path: specs/knowledge/_shared/sources/contracts/week__builder_contract.md
+    - path: specs/knowledge/_shared/sources/contracts/week__workout_export_contract.md
     - path: specs/knowledge/_shared/sources/specs/mandatory_output_week_plan.md
     - path: specs/knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
     - path: specs/knowledge/_shared/sources/schemas/bundled/phase_guardrails.schema.json

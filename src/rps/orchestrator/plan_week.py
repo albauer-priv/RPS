@@ -808,7 +808,7 @@ def plan_week(
         run_id=run_id,
         plan_mtime=plan_mtime,
         needs_week_plan=needs_week_plan,
-        force_export="EXPORT_WORKOUTS" in forced_steps,
+        force_export="WORKOUT_EXPORT" in forced_steps,
         log_fn=_log,
     )
     if export_result.get("ran"):
@@ -816,7 +816,7 @@ def plan_week(
         steps.append(
             {
                 "agent": "workout_export",
-                "tasks": [AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT.value],
+                "tasks": [AgentTask.BUILD_WORKOUT_EXPORT.value],
                 "result": out,
             }
         )

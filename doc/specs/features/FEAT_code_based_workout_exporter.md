@@ -71,7 +71,7 @@ Owner: Planning Pipeline
   * `src/rps/orchestrator/workout_export.py`
   * new `src/rps/workouts/*`
 * Contracts touched:
-  * `week__builder_contract.md`
+  * `week__workout_export_contract.md`
   * `workout_json_spec.md`
   * `intervals_workout_ebnf.md`
   * `workout_syntax_and_validation.md`
@@ -183,7 +183,7 @@ Owner: Planning Pipeline
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [x] `create_intervals_workouts_export(...)` no longer calls the `workout_builder` LLM path.
+* [x] `create_intervals_workouts_export(...)` no longer calls any LLM path.
 * [x] Valid `WEEK_PLAN` workout texts convert to schema-valid `INTERVALS_WORKOUTS`.
 * [x] Invalid workout text yields deterministic validation errors.
 * [x] Validation passes: `py_compile`, `ruff`, `mypy`, targeted pytest
@@ -253,7 +253,7 @@ Update these docs as part of implementation:
   * `specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md`
   * `specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md`
   * `specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md`
-  * `specs/knowledge/_shared/sources/contracts/week__builder_contract.md`
+  * `specs/knowledge/_shared/sources/contracts/week__workout_export_contract.md`
 
 ---
 

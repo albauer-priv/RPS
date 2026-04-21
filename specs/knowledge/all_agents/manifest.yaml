@@ -10,7 +10,7 @@ sources:
 - path: ../_shared/sources/contracts/data_pipeline__scenario_contract.md
 - path: ../_shared/sources/contracts/season__phase_contract.md
 - path: ../_shared/sources/contracts/phase__week_contract.md
-- path: ../_shared/sources/contracts/week__builder_contract.md
+- path: ../_shared/sources/contracts/week__workout_export_contract.md
 - path: ../_shared/sources/evidence/durability_bibliography.md
 - path: ../_shared/sources/evidence/evidence_manifest.md
 - path: ../_shared/sources/policies/des_evaluation_policy.md
@@ -67,7 +67,6 @@ sources:
 - path: ../_shared/sources/specs/mandatory_output_phase_feed_forward.md
 - path: ../_shared/sources/specs/mandatory_output_phase_guardrails.md
 - path: ../_shared/sources/specs/mandatory_output_des_analysis_report.md
-- path: ../_shared/sources/specs/mandatory_output_intervals_workouts.md
 - path: ../_shared/sources/specs/mandatory_output_season_phase_feed_forward.md
 - path: ../_shared/sources/specs/mandatory_output_season_plan.md
 - path: ../_shared/sources/specs/mandatory_output_season_scenarios.md

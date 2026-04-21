@@ -109,14 +109,14 @@ class AgentTaskRouter:
         tasks.append(AgentTask.CREATE_WEEK_PLAN)
         return tasks
 
-    def route_builder(self, target: IsoWeek) -> list[AgentTask]:
-        """Return builder tasks required for the target week."""
+    def route_workout_export(self, target: IsoWeek) -> list[AgentTask]:
+        """Return workout-export tasks required for the target week."""
         tasks: list[AgentTask] = []
 
         if not self._week_version_exists(ArtifactType.WEEK_PLAN, target):
             return tasks
 
-        tasks.append(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT)
+        tasks.append(AgentTask.BUILD_WORKOUT_EXPORT)
         return tasks
 
     def route_analysis(self, target: IsoWeek) -> list[AgentTask]:

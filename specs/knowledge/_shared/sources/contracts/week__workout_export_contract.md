@@ -1,6 +1,6 @@
 ---
 Type: Contract
-Contract-Name: week__builder
+Contract-Name: week__workout_export
 Version: 1.2
 Status: Active
 
@@ -8,7 +8,7 @@ Scope: Shared
 Authority: Binding
 
 From-Agent: Week-Planner
-To-Agent: Workout-Builder
+To-Agent: Workout Export
 
 Dependencies:
   - ID: IntervalsWorkoutEBNF
@@ -25,11 +25,11 @@ Dependencies:
     Version: 1.0
 ---
 
-# Contract: Week-Planner -> Workout-Builder (v1.2)
+# Contract: Week-Planner -> Workout Export (v1.2)
 
 ## 1) Purpose (Binding)
 Define the binding interface between workout design (Week-Planner)
-and technical transformation/validation (Workout-Builder).
+and technical transformation/validation (Workout Export).
 
 ## 2) Producer Responsibilities (Week-Planner)
 - MUST design workouts and encode them in EBNF-compliant workout text.
@@ -41,7 +41,7 @@ and technical transformation/validation (Workout-Builder).
   - `workout_policy.md`
 - MUST NOT emit Intervals.icu JSON.
 
-## 3) Consumer Responsibilities (Workout-Builder)
+## 3) Consumer Responsibilities (Workout Export)
 - MUST validate input JSON (`week_plan_yyyy-ww.json`) before use and STOP on invalid artefacts.
 - MUST validate workout text per the binding rules and validation order.
 - MUST convert workout text to Intervals.icu-compatible JSON per `workout_json_spec.md`.
@@ -50,10 +50,10 @@ and technical transformation/validation (Workout-Builder).
 
 ## 4) Artefacts and Schemas (Binding)
 
-### Input (Workout-Builder consumes)
+### Input (Workout Export consumes)
 - `week_plan_yyyy-ww.json` -> `week_plan.schema.json`
 
-### Outputs (Workout-Builder produces)
+### Outputs (Workout Export produces)
 - `workouts_yyyy-ww.json` -> `workouts.schema.json`
 - ERROR output (text) when validation fails
 
@@ -105,7 +105,7 @@ On any failure: output a Validation Fail Report and do not emit workout outputs.
 
 ## 9) Traceability
 - Outputs MUST reference input `week_plan_yyyy-ww.json` filename + version.
-- Outputs MUST reference Workout-ID and Builder Run-ID.
+- Outputs MUST reference Workout-ID and Export Run-ID.
 
 ## 10) Precedence
 - Not specified.

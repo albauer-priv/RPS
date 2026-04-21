@@ -11,7 +11,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Notes: >
   Defines the canonical agenda vocabulary and allowed combinations

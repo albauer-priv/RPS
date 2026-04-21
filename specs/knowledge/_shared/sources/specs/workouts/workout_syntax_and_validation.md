@@ -11,7 +11,7 @@ Normative-Role: StructuralRules
 Decision-Authority: None
 
 Applies-To:
-  - Workout-Builder
+  - Workout Export
   - Week-Planner
 
 Dependencies:

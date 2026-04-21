@@ -471,7 +471,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     force_file_search=config.force_file_search,
                                     max_num_results=config.max_num_results,
                                 )
-                        elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"}:
+                        elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "WORKOUT_EXPORT"}:
                             if active_year is None or active_week is None:
                                 exec_result = {"ok": False, "error": "Missing ISO year/week on queued run."}
                             else:

@@ -12,7 +12,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Notes: >
   Defines binding precedence and conflict-resolution rules between

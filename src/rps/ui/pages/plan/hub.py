@@ -181,9 +181,9 @@ STEP_DEFINITIONS: list[StepDefinition] = [
         "authority": ["Binding"],
     },
     {
-        "step_id": "EXPORT_WORKOUTS",
+        "step_id": "WORKOUT_EXPORT",
         "label": "Build Workouts",
-        "agent": "Workout Builder",
+        "agent": "Workout Export",
         "writes": [ArtifactType.INTERVALS_WORKOUTS],
         "authority": ["Raw"],
     },
@@ -264,7 +264,7 @@ ARTIFACT_READINESS_SPECS: list[ArtifactReadinessSpec] = [
         "fix_label": None,
     },
     {
-        "key": "intervals_workouts",
+        "key": "workout_export",
         "label": "Build Workouts (optional)",
         "artifact_type": ArtifactType.INTERVALS_WORKOUTS,
         "required": ["week_plan"],
@@ -280,7 +280,7 @@ PLANNING_SCOPE_SUBTYPE: dict[str, str] = {
     "Season Plan": "season_plan",
     "Phase": "phase",
     "Week Plan": "week_plan",
-    "Build Workouts": "export_workouts",
+    "Build Workouts": "workout_export",
 }
 
 PLANNING_PRIORITY: dict[str, int] = {
@@ -290,7 +290,7 @@ PLANNING_PRIORITY: dict[str, int] = {
     "season_plan": 3,
     "phase": 2,
     "week_plan": 1,
-    "export_workouts": 0,
+    "workout_export": 0,
 }
 
 
@@ -331,7 +331,7 @@ STEP_DEPS: dict[str, list[str]] = {
     "PHASE_STRUCTURE": ["SEASON_PLAN", "PHASE_GUARDRAILS"],
     "PHASE_PREVIEW": ["PHASE_STRUCTURE"],
     "WEEK_PLAN": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
-    "EXPORT_WORKOUTS": ["WEEK_PLAN"],
+    "WORKOUT_EXPORT": ["WEEK_PLAN"],
 }
 
 READINESS_DEPENDENCIES: dict[str, list[str]] = {
@@ -343,16 +343,16 @@ READINESS_DEPENDENCIES: dict[str, list[str]] = {
     "phase_structure": ["season_plan"],
     "phase_preview": ["phase_structure"],
     "week_plan": ["phase"],
-    "intervals_workouts": ["week_plan"],
+    "workout_export": ["week_plan"],
 }
 
 SCOPE_STEPS: dict[str, list[str]] = {
     "Season Scenarios": ["SEASON_SCENARIOS"],
     "Selected Scenario": ["SCENARIO_SELECTION"],
-    "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "EXPORT_WORKOUTS"],
+    "Season Plan": ["SEASON_PLAN", "PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "WORKOUT_EXPORT"],
     "Phase": ["PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW"],
-    "Week Plan": ["WEEK_PLAN", "EXPORT_WORKOUTS"],
-    "Build Workouts": ["EXPORT_WORKOUTS"],
+    "Week Plan": ["WEEK_PLAN", "WORKOUT_EXPORT"],
+    "Build Workouts": ["WORKOUT_EXPORT"],
 }
 
 
@@ -508,7 +508,7 @@ def _override_required(scope: str | None, readiness: list[ReadinessStep]) -> boo
         "Season Plan": "season_plan",
         "Phase": "phase",
         "Week Plan": "week_plan",
-        "Build Workouts": "intervals_workouts",
+        "Build Workouts": "workout_export",
     }
     readiness_key = key_map.get(scope)
     if not readiness_key:
@@ -1095,7 +1095,7 @@ def _build_execution_steps(
             "PHASE_STRUCTURE": "phase_structure",
             "PHASE_PREVIEW": "phase_preview",
             "WEEK_PLAN": "week_plan",
-            "EXPORT_WORKOUTS": "intervals_workouts",
+            "WORKOUT_EXPORT": "workout_export",
         }.get(step_id)
         readiness_step = (
             readiness_map.get(readiness_key, ReadinessStep("", "", "missing", "", ""))
@@ -1253,13 +1253,13 @@ def _render_direct_step_actions(
     if step.key not in {
         "phase",
         "week_plan",
-        "intervals_workouts",
+        "workout_export",
     }:
         return False
 
     week_scope_map = {
         "week_plan": "Week Plan",
-        "intervals_workouts": "Build Workouts",
+        "workout_export": "Build Workouts",
     }
 
     if step.key == "phase":
@@ -1363,7 +1363,7 @@ def _scope_requires_knowledge(scope: str | None) -> bool:
 
 def _step_requires_knowledge(step_key: str) -> bool:
     """Return whether the readiness-card direct action for a step depends on the knowledge store."""
-    return step_key != "intervals_workouts"
+    return step_key != "workout_export"
 
 
 state = init_ui_state()

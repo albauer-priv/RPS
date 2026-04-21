@@ -12,7 +12,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Notes: >
   Defines mandatory traceability, Run-ID semantics, upstream reference rules,
@@ -51,7 +51,7 @@ If an artefact has no upstream (e.g., Data-Pipeline raw outputs), it MUST includ
 - MUST reference exactly one `phase_guardrails_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json` in `trace_upstream`.
 - If a `phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json` is applied, it MUST also be referenced.
 
-### Workout-Builder outputs
+### Workout Export outputs
 - MUST reference the input `week_plan_yyyy-ww__yyyymmdd_HHMMSS.json` (or `workout_request_*` if introduced later).
 
 ## 5. Precedence & “Latest Valid” Rules

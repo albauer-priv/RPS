@@ -11,7 +11,7 @@ Normative-Role: Execution
 Decision-Authority: None
 
 Applies-To:
-  - Workout-Builder
+  - Workout Export
   - Week-Planner
 
 Notes: >
@@ -23,9 +23,9 @@ Notes: >
 
 
 
-# ⚙️ Workout Guideline - Workout-Builder (JSON / intervals.icu)
+# ⚙️ Workout Guideline - Workout Export (JSON / intervals.icu)
 
-This guideline defines how the **Workout-Builder** turns the planner-produced  
+This guideline defines how the **Workout Export** turns the planner-produced  
 `week_plan_yyyy-ww.json` into an **Intervals.icu-compatible JSON file**.
 
 Goal:
@@ -36,9 +36,9 @@ Goal:
 
 ---
 
-## 🧂 Role of the Workout-Builder
+## 🧂 Role of the Workout Export
 
-The Workout-Builder:
+The Workout Export:
 
 1. receives the planner-produced `week_plan_yyyy-ww.json` (JSON),
 2. extracts **all workouts**,
@@ -52,7 +52,7 @@ only ensuring **technically clean, compatible output**.
 
 ## 1️⃣ Input Format: `week_plan_yyyy-ww.json`
 
-The Workout-Builder expects JSON validated against:
+The Workout Export expects JSON validated against:
 - `week_plan.schema.json` (input)
 - `workouts.schema.json` (output)
 
@@ -65,7 +65,7 @@ Each `workout_id` in the agenda must appear exactly once in `data.workouts`.
 
 ## 2️⃣ JSON Output Format
 
-The Workout-Builder outputs exactly one **JSON list** of objects:
+The Workout Export outputs exactly one **JSON list** of objects:
 
 ```json
 [
@@ -136,7 +136,7 @@ From the workout object:
 
 The description section is the content of `workout_text`.
 
-The Workout-Builder:
+The Workout Export:
 
 1. Removes extra blank lines at the start and end of the description.
 2. Preserves section headings **exactly**, in particular:
@@ -226,7 +226,7 @@ For `description`:
 
 ## 6️⃣ Error Handling
 
-If a workout in `week_plan_yyyy-ww.json` does not comply, the Workout-Builder must:
+If a workout in `week_plan_yyyy-ww.json` does not comply, the Workout Export must:
 
 1. **Not** include the affected workout in the JSON list.
 
@@ -256,4 +256,4 @@ If a workout in `week_plan_yyyy-ww.json` does not comply, the Workout-Builder mu
    - blank lines
 6. Each line in `description` matches the regex rules or is empty.
 7. No metadata, backticks, or additional Markdown structures in `description`.
-8. If all workouts are valid, the Workout-Builder outputs **only** the JSON list - no extra explanations.
+8. If all workouts are valid, the Workout Export outputs **only** the JSON list - no extra explanations.

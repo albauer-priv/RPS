@@ -204,14 +204,14 @@ def test_plan_hub_scoped_week_run_forces_rerun_when_ready():
         plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
         plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
         plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
-        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("workout_export", "Build Workouts", "ready", "", "", optional=True),
     ]
 
     steps = plan_hub._build_execution_steps(readiness, "Scoped", "Week Plan")
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
     assert status_by_id["WEEK_PLAN"] == "QUEUED"
-    assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+    assert status_by_id["WORKOUT_EXPORT"] == "QUEUED"
 
 
 def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
@@ -219,13 +219,13 @@ def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
 
     readiness = [
         plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
-        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("workout_export", "Build Workouts", "ready", "", "", optional=True),
     ]
 
     steps = plan_hub._build_execution_steps(readiness, "Scoped", "Build Workouts")
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
-    assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+    assert status_by_id["WORKOUT_EXPORT"] == "QUEUED"
 
 
 def test_plan_hub_phase_scope_queues_all_phase_artefacts():
@@ -238,7 +238,7 @@ def test_plan_hub_phase_scope_queues_all_phase_artefacts():
         plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
         plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
         plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
-        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("workout_export", "Build Workouts", "ready", "", "", optional=True),
     ]
 
     steps = plan_hub._build_execution_steps(readiness, "Scoped", "Phase")
@@ -255,14 +255,14 @@ def test_plan_hub_build_workouts_adds_missing_week_dependencies():
         plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
         plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
         plan_hub.ReadinessStep("week_plan", "Week Plan", "missing", "", ""),
-        plan_hub.ReadinessStep("intervals_workouts", "Build Workouts", "missing", "", "", optional=True),
+        plan_hub.ReadinessStep("workout_export", "Build Workouts", "missing", "", "", optional=True),
     ]
 
     steps = plan_hub._build_execution_steps(readiness, "Scoped", "Build Workouts")
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
     assert status_by_id["WEEK_PLAN"] == "QUEUED"
-    assert status_by_id["EXPORT_WORKOUTS"] == "QUEUED"
+    assert status_by_id["WORKOUT_EXPORT"] == "QUEUED"
 
 
 def test_plan_hub_phase_week_selector_helpers_follow_current_week(tmp_path):
@@ -403,7 +403,7 @@ def test_plan_hub_build_workouts_scope_does_not_require_knowledge():
     assert plan_hub._scope_requires_knowledge("Phase") is True
     assert plan_hub._scope_requires_knowledge("Build Workouts") is False
     assert plan_hub._step_requires_knowledge("week_plan") is True
-    assert plan_hub._step_requires_knowledge("intervals_workouts") is False
+    assert plan_hub._step_requires_knowledge("workout_export") is False
 
 
 def test_workout_export_force_export_runs_even_when_current(tmp_path):

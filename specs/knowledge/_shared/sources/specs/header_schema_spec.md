@@ -12,7 +12,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
   - Performance-Analyst
   - Policy-Owner
 
@@ -271,7 +271,7 @@ Notes: <text>
 ```
 ---
 Type: Contract
-Contract-Name: week__builder
+Contract-Name: week__workout_export
 Version: 1.2
 Status: Active
 
@@ -279,7 +279,7 @@ Scope: Shared
 Authority: Binding
 
 From-Agent: Week-Planner
-To-Agent: Workout-Builder
+To-Agent: Workout Export
 
 Dependencies:
   - ID: LoadEstimationSpec

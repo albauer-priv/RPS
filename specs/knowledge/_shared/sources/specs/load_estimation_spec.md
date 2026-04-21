@@ -11,7 +11,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Dependencies:
   - Interface-ID: ZoneModelInterface

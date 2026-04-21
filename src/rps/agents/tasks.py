@@ -23,7 +23,7 @@ class AgentTask(str, Enum):
 
     CREATE_WEEK_PLAN = "CREATE_WEEK_PLAN"
 
-    CREATE_INTERVALS_WORKOUTS_EXPORT = "CREATE_INTERVALS_WORKOUTS_EXPORT"
+    BUILD_WORKOUT_EXPORT = "BUILD_WORKOUT_EXPORT"
 
     CREATE_ACTIVITIES_TREND = "CREATE_ACTIVITIES_TREND"
     CREATE_DES_ANALYSIS_REPORT = "CREATE_DES_ANALYSIS_REPORT"
@@ -110,8 +110,8 @@ OUTPUT_SPECS: dict[AgentTask, OutputSpec] = {
         tool_name="store_week_plan",
         envelope=True,
     ),
-    AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: OutputSpec(
-        task=AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT,
+    AgentTask.BUILD_WORKOUT_EXPORT: OutputSpec(
+        task=AgentTask.BUILD_WORKOUT_EXPORT,
         artifact_type=ArtifactType.INTERVALS_WORKOUTS,
         schema_file="workouts.schema.json",
         tool_name="store_intervals_workouts_export",

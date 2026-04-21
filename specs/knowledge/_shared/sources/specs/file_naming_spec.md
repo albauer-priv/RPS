@@ -13,7 +13,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Notes: >
   Defines mandatory filename patterns and allowed characters for all artefacts.
@@ -64,7 +64,7 @@ Define consistent filenames for all artefacts to support:
 ### Week-Planner
 - `week_plan_yyyy-ww__yyyymmdd_HHMMSS.json`
 
-### Workout-Builder (post-workout export)
+### Workout Export (post-workout export)
 - `workouts_yyyy-ww__yyyymmdd_HHMMSS.json`
 
 ### Performance-Analyst

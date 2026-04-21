@@ -12,7 +12,7 @@ Decision-Authority: GuardrailOnly
 
 Applies-To:
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
 
 Explicitly-Not-For:
   - Season-Planner
@@ -321,7 +321,7 @@ Normative status:
 - Binding Effect: Required when explicit QUALITY intent is declared upstream
 
 Validation note:
-- This rule is enforced by the Week-Planner and is not required to be validated by the Workout-Builder.
+- This rule is enforced by the Week-Planner and is not required to be validated by the Workout Export.
 
 This section provides a lookup heuristic for Week-Planners to parameterize workouts
 within already permitted intensity domains, based on the QUALITY intent declared via:
@@ -889,7 +889,7 @@ All workouts MUST:
 - Obey agenda mapping
 - Stay within parameter ranges
 
-Workout-Builder MUST reject invalid workouts.
+Workout Export MUST reject invalid workouts.
 
 ---
 
@@ -898,7 +898,7 @@ Workout-Builder MUST reject invalid workouts.
 | Agent | Usage |
 |------|------|
 | Week-Planner | Design & parameterize workouts |
-| Workout-Builder | Validate & convert |
+| Workout Export | Validate & convert |
 | Phase-Architect | ❌ |
 | Season-Planner | ❌ |
 

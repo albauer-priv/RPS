@@ -12,7 +12,7 @@ Applies-To:
   - Season-Planner
   - Phase-Architect
   - Week-Planner
-  - Workout-Builder
+  - Workout Export
   - Performance-Analyst
   - Policy-Owner
 
@@ -65,7 +65,7 @@ Sidecars are informational only and MUST NOT be used as agent inputs.
 - `phase_feed_forward.schema.json`
 - `zone_model.schema.json`
 - `week_plan.schema.json`
-- `workouts.schema.json` (Workout-Builder output)
+- `workouts.schema.json` (Workout Export output)
 - `activities_actual.schema.json`
 - `activities_trend.schema.json`
 - `wellness.schema.json`
