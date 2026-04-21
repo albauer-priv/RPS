@@ -593,15 +593,25 @@ def plan_week(
     if needs_phase_structure and not isolated_phase_force:
         needs_phase_preview = True
 
-    if forced_steps == {"PHASE_GUARDRAILS"}:
+    if isolated_phase_force and forced_steps == {"PHASE_GUARDRAILS"}:
         _log(
             f"Scoped phase guardrails run requested for range {phase_range_label}; "
             "PHASE_STRUCTURE and PHASE_PREVIEW will be reused if present and will not be rerun."
         )
-    elif forced_steps == {"PHASE_STRUCTURE"}:
+    elif isolated_phase_force and forced_steps == {"PHASE_STRUCTURE"}:
         _log(
             f"Scoped phase structure run requested for range {phase_range_label}; "
             "PHASE_PREVIEW is included in this scoped run and will be rerun after PHASE_STRUCTURE."
+        )
+    elif isolated_phase_force and forced_steps == {"PHASE_PREVIEW"}:
+        _log(
+            f"Scoped phase preview run requested for range {phase_range_label}; "
+            "only PHASE_PREVIEW will be rerun."
+        )
+    elif isolated_phase_force and forced_steps:
+        _log(
+            f"Scoped phase run requested for range {phase_range_label}; "
+            f"bundled phase artefacts: {', '.join(sorted(forced_steps))}."
         )
 
     phase_tasks: list[AgentTask] = []
@@ -696,8 +706,9 @@ def plan_week(
                 }
             )
             return PlanWeekResult(ok=False, steps=steps)
+        label = "Scoped phase run" if len(forced_steps) > 1 else "Isolated phase run"
         _log(
-            f"Isolated phase run completed for range {phase_range_label} "
+            f"{label} completed for range {phase_range_label} "
             f"(forced_steps={sorted(forced_steps)})."
         )
         return PlanWeekResult(ok=True, steps=steps)

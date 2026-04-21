@@ -148,6 +148,12 @@ def start_queue_scheduler(
                     logger.warning("Queue item missing athlete_id/run_id %s", active_path)
                     _move(active_path, paths.failed)
                     continue
+                runs = load_runs(root, athlete_id, limit=5)
+                active_run = next((r for r in runs if r.get("run_id") == run_id), None)
+                if active_run and active_run.get("status") in {"DONE", "FAILED", "CANCELLED"}:
+                    target_dir = paths.done if active_run.get("status") == "DONE" else paths.failed
+                    _move(active_path, target_dir)
+                    continue
                 config = PlanHubWorkerConfig(
                     root=root,
                     athlete_id=athlete_id,

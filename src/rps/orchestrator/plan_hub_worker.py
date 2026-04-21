@@ -284,7 +284,6 @@ def _mark_bundled_steps_done(
 
 def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event) -> None:
     """Background worker to update run steps based on artifacts or response status."""
-    logger.info("Plan hub worker started run_id=%s athlete=%s", config.run_id, config.athlete_id)
     store = LocalArtifactStore(root=config.root)
     handler: logging.Handler | None = None
     run_log_ref = None
@@ -293,6 +292,15 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             (r for r in load_runs(config.root, config.athlete_id, limit=50) if r.get("run_id") == config.run_id),
             None,
         )
+        if isinstance(active, dict) and active.get("status") in {"DONE", "FAILED", "CANCELLED"}:
+            logger.info(
+                "Plan hub worker skipped terminal run_id=%s athlete=%s status=%s",
+                config.run_id,
+                config.athlete_id,
+                active.get("status"),
+            )
+            return
+        logger.info("Plan hub worker started run_id=%s athlete=%s", config.run_id, config.athlete_id)
         run_log_ref = _active_str(active or {}, "log_ref")
     except Exception:
         run_log_ref = None
