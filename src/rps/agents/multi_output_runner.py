@@ -25,6 +25,7 @@ from rps.schemas.bundler import SchemaBundler
 from rps.tools.store_output_tools import build_strict_store_tool
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.types import ArtifactType
 
@@ -496,7 +497,21 @@ def normalize_season_scenarios_document(
             guidance.setdefault("decision_notes", [])
             guidance.setdefault("assumptions", [])
             guidance.setdefault("unknowns", [])
-            guidance.setdefault("intensity_guidance", {"allowed_domains": [], "avoid_domains": []})
+            intensity_guidance = guidance.get("intensity_guidance")
+            if not isinstance(intensity_guidance, dict):
+                intensity_guidance = {}
+            allowed_domains = normalize_intensity_domain_list(
+                intensity_guidance.get("allowed_domains")
+            )
+            avoid_domains = normalize_intensity_domain_list(
+                intensity_guidance.get("avoid_domains")
+            )
+            if not allowed_domains:
+                allowed_domains = ["ENDURANCE_LOW"]
+            avoid_domains = [domain for domain in avoid_domains if domain not in set(allowed_domains)]
+            intensity_guidance["allowed_domains"] = allowed_domains
+            intensity_guidance["avoid_domains"] = avoid_domains
+            guidance["intensity_guidance"] = intensity_guidance
             scenario["scenario_guidance"] = guidance
             cleaned_scenarios.append(scenario)
     data["scenarios"] = cleaned_scenarios

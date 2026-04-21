@@ -72,6 +72,10 @@ Each scenario MUST include `scenario_guidance` with:
 - `kpi_guardrail_notes` (array)
 - `decision_notes` (array)
 - `intensity_guidance` with `allowed_domains` and `avoid_domains` (arrays)
+  using canonical agenda intensity domains only
+  (`NONE`, `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`,
+  `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`; legacy `ENDURANCE` normalizes to
+  `ENDURANCE_LOW`)
 - `assumptions` (array)
 - `unknowns` (array)
 

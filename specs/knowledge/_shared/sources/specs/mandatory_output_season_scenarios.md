@@ -80,6 +80,14 @@ Notes:
 - `deload_cadence` and `phase_length_weeks` must be consistent with
   `progressive_overload_policy.md`. Scenarios must not define numeric weekly kJ
   targets or cadence overrides outside that policy.
+- `intensity_guidance.allowed_domains` / `avoid_domains` MUST use canonical
+  agenda intensity domains only:
+  `NONE`, `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`,
+  `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`.
+- Legacy alias `ENDURANCE` is normalized to `ENDURANCE_LOW`.
+- Proxy labels like `HIGH_INTENSITY_DENSITY`, `LIMITED_VO2MAX`, or
+  `EXTRA_BUILD_OVERLAY` are invalid in intensity guidance and belong in
+  `risk_flags` or `decision_notes` instead.
 - Runtime canonicalizes deterministic horizon/math fields before store:
   - `meta.iso_week_range`
   - `meta.temporal_scope`

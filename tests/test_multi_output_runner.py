@@ -141,6 +141,43 @@ def test_normalize_season_scenarios_uses_last_planning_event_week():
     assert scenario_c["phase_plan_summary"] == {"full_phases": 7, "shortened_phases": []}
 
 
+def test_normalize_season_scenarios_canonicalizes_intensity_domains():
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIOS",
+            "iso_week": "2026-17",
+            "iso_week_range": "2026-17--2026-19",
+        },
+        "data": {
+            "planning_horizon_weeks": 3,
+            "scenarios": [
+                {
+                    "scenario_id": "A",
+                    "scenario_guidance": {
+                        "deload_cadence": "2:1",
+                        "phase_length_weeks": 3,
+                        "intensity_guidance": {
+                            "allowed_domains": [
+                                "ENDURANCE",
+                                "HIGH_INTENSITY_DENSITY",
+                                "TEMPO",
+                                "TEMPO",
+                            ],
+                            "avoid_domains": ["LIMITED_VO2MAX", "VO2MAX", "ENDURANCE"],
+                        },
+                    },
+                }
+            ],
+        },
+    }
+
+    normalized = multi_output_runner.normalize_season_scenarios_document(document)
+    guidance = normalized["data"]["scenarios"][0]["scenario_guidance"]["intensity_guidance"]
+
+    assert guidance["allowed_domains"] == ["ENDURANCE_LOW", "TEMPO"]
+    assert guidance["avoid_domains"] == ["VO2MAX"]
+
+
 def test_season_scenario_prompt_delegates_calendar_math_to_runtime():
     prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "agents" / "season_scenario.md"
     prompt_text = prompt_path.read_text(encoding="utf-8")
@@ -154,6 +191,7 @@ def test_build_injection_block_for_season_scenario_excludes_selection_schema_noi
 
     assert "season_scenario_selection_interface_spec.md" not in combined
     assert "season_scenario_selection.schema.json" not in combined
+    assert "agenda_enum_spec.md" not in combined
 
 
 def test_build_injection_block_for_season_planner_uses_season_section():

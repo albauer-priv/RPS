@@ -186,14 +186,34 @@
                   "minItems": 1,
                   "items": {
                     "type": "string",
-                    "minLength": 1
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "ENDURANCE_LOW",
+                      "ENDURANCE_HIGH",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
                   }
                 },
                 "avoid_domains": {
                   "type": "array",
                   "items": {
                     "type": "string",
-                    "minLength": 1
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "ENDURANCE_LOW",
+                      "ENDURANCE_HIGH",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
                   }
                 }
               }
@@ -420,14 +440,34 @@
                         "minItems": 1,
                         "items": {
                           "type": "string",
-                          "minLength": 1
+                          "enum": [
+                            "NONE",
+                            "RECOVERY",
+                            "ENDURANCE",
+                            "ENDURANCE_LOW",
+                            "ENDURANCE_HIGH",
+                            "TEMPO",
+                            "SWEET_SPOT",
+                            "THRESHOLD",
+                            "VO2MAX"
+                          ]
                         }
                       },
                       "avoid_domains": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "minLength": 1
+                          "enum": [
+                            "NONE",
+                            "RECOVERY",
+                            "ENDURANCE",
+                            "ENDURANCE_LOW",
+                            "ENDURANCE_HIGH",
+                            "TEMPO",
+                            "SWEET_SPOT",
+                            "THRESHOLD",
+                            "VO2MAX"
+                          ]
                         }
                       }
                     }
@@ -880,14 +920,34 @@
                         "minItems": 1,
                         "items": {
                           "type": "string",
-                          "minLength": 1
+                          "enum": [
+                            "NONE",
+                            "RECOVERY",
+                            "ENDURANCE",
+                            "ENDURANCE_LOW",
+                            "ENDURANCE_HIGH",
+                            "TEMPO",
+                            "SWEET_SPOT",
+                            "THRESHOLD",
+                            "VO2MAX"
+                          ]
                         }
                       },
                       "avoid_domains": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "minLength": 1
+                          "enum": [
+                            "NONE",
+                            "RECOVERY",
+                            "ENDURANCE",
+                            "ENDURANCE_LOW",
+                            "ENDURANCE_HIGH",
+                            "TEMPO",
+                            "SWEET_SPOT",
+                            "THRESHOLD",
+                            "VO2MAX"
+                          ]
                         }
                       }
                     }

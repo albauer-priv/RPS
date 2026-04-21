@@ -213,6 +213,10 @@ Set P3 = true.
   - distinct load philosophy + risk profile + key differences + best suited if
   - event_alignment_notes / risk_flags / constraint_summary capturing logistics/feasibility
   - intensity_guidance.allowed_domains array must have >= 1 entry; avoid_domains may be empty
+  - intensity_guidance MUST use only canonical agenda intensity domains:
+    `NONE`, `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`
+  - Do NOT invent proxy labels such as `HIGH_INTENSITY_DENSITY`, `LIMITED_VO2MAX`, or `EXTRA_BUILD_OVERLAY`;
+    those belong in `risk_flags` or `decision_notes`, not intensity-domain fields
 - Do not introduce new artefact types or downstream commitments.
 
 ### KPI usage rule
