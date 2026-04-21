@@ -202,11 +202,14 @@ def _version_key_from_iso_week(
         return None
     version_key = meta.get("version_key")
     if isinstance(version_key, str):
-        return normalize_version_key(
+        normalized_version_key = normalize_version_key(
             version_key,
             meta.get("created_at"),
             artifact_type=artifact_type,
         )
+        normalized_base, _ = split_week_version_key(normalized_version_key)
+        if normalized_base == wk_key:
+            return normalized_version_key
     return normalize_version_key(
         wk_key,
         meta.get("created_at"),

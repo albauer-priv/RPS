@@ -65,6 +65,24 @@ class WorkspaceHelperTests(unittest.TestCase):
         self.assertTrue(version_key.startswith("2026-17__"))
         self.assertNotIn("--", version_key)
 
+    def test_week_plan_version_key_ignores_range_shaped_meta_version_key(self) -> None:
+        """Verify week-scoped artefacts ignore stale range-shaped meta.version_key values."""
+        envelope = {
+            "meta": {
+                "artifact_type": "WEEK_PLAN",
+                "iso_week": "2026-17",
+                "iso_week_range": "2026-17--2026-17",
+                "version_key": "2026-17--2026-17",
+                "created_at": "2026-04-21T14:48:13Z",
+            },
+            "data": {},
+        }
+
+        version_key = derive_version_key_from_envelope(envelope, ArtifactType.WEEK_PLAN)
+
+        self.assertTrue(version_key.startswith("2026-17__"))
+        self.assertNotIn("--", version_key)
+
 
 class LocalStoreTests(unittest.TestCase):
     """Coverage for local store behaviors."""
