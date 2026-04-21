@@ -242,6 +242,46 @@ def _active_steps(run_record: RunRecord | None) -> list[StepRecord]:
     return [step for step in steps if isinstance(step, dict)]
 
 
+_PHASE_STEP_IDS = ("PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW")
+
+
+def _bundled_phase_force_steps(steps: list[StepRecord], current_step_id: str | None) -> list[str]:
+    """Return the phase step ids that should execute together for a phase-scoped run."""
+    if current_step_id not in _PHASE_STEP_IDS:
+        return []
+    start_index = _PHASE_STEP_IDS.index(current_step_id)
+    wanted = _PHASE_STEP_IDS[start_index:]
+    queued = {
+        str(step.get("step_id")): step
+        for step in steps
+        if isinstance(step.get("step_id"), str) and step.get("Status") in {"QUEUED", "RUNNING"}
+    }
+    return [step_id for step_id in wanted if step_id in queued]
+
+
+def _mark_bundled_steps_done(
+    *,
+    bundled_step_ids: list[str],
+    steps: list[StepRecord],
+    index: IndexRecord,
+    run_id: str,
+) -> None:
+    """Mark all bundled phase steps complete after a combined execution."""
+    now = datetime.now(UTC).isoformat()
+    for bundled_step_id in bundled_step_ids:
+        step = next((item for item in steps if item.get("step_id") == bundled_step_id), None)
+        if not isinstance(step, dict):
+            continue
+        step["Status"] = "DONE"
+        step["Ended"] = now
+        _set_duration(step)
+        outputs: list[StepRecord] = []
+        for artifact_type in _step_list(step, "write_types"):
+            outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), run_id))
+        if outputs:
+            step["Outputs"] = outputs
+
+
 def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event) -> None:
     """Background worker to update run steps based on artifacts or response status."""
     logger.info("Plan hub worker started run_id=%s athlete=%s", config.run_id, config.athlete_id)
@@ -427,13 +467,18 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             if active_year is None or active_week is None:
                                 exec_result = {"ok": False, "error": "Missing ISO year/week on queued run."}
                             else:
+                                force_steps = [step_id] if step_id else None
+                                if step_id in _PHASE_STEP_IDS:
+                                    bundled_phase_steps = _bundled_phase_force_steps(steps, step_id)
+                                    if bundled_phase_steps:
+                                        force_steps = bundled_phase_steps
                                 exec_result = execute_plan_week(
                                     config.runtime_for_agent,
                                     athlete_id=config.athlete_id,
                                     year=active_year,
                                     week=active_week,
                                     run_id=config.run_id,
-                                    force_steps=[step_id] if step_id else None,
+                                    force_steps=force_steps,
                                     override_text=_active_str(active, "override_text"),
                                     model_resolver=config.model_resolver,
                                     temperature_resolver=config.temperature_resolver,
@@ -456,20 +501,59 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                 )
 
                         if exec_result and exec_result.get("ok"):
-                            step["Status"] = "DONE"
-                            step["Ended"] = datetime.now(UTC).isoformat()
-                            _set_duration(step)
                             index = _load_index(config.root, config.athlete_id)
-                            step_outputs: list[StepRecord] = []
-                            raw_outputs = exec_result.get("outputs")
-                            if isinstance(raw_outputs, list):
-                                step_outputs.extend(output for output in raw_outputs if isinstance(output, dict))
-                            for artifact_type in _step_list(step, "write_types"):
-                                step_outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
-                            if step_outputs:
-                                step["Outputs"] = step_outputs
-                                append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": step_outputs})
-                            append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                            if step_id in _PHASE_STEP_IDS:
+                                bundled_phase_steps = _bundled_phase_force_steps(steps, step_id)
+                                if bundled_phase_steps:
+                                    _mark_bundled_steps_done(
+                                        bundled_step_ids=bundled_phase_steps,
+                                        steps=steps,
+                                        index=index,
+                                        run_id=config.run_id,
+                                    )
+                                    for bundled_step_id in bundled_phase_steps:
+                                        bundled_step = next(
+                                            (item for item in steps if item.get("step_id") == bundled_step_id),
+                                            None,
+                                        )
+                                        if not isinstance(bundled_step, dict):
+                                            continue
+                                        bundled_outputs = bundled_step.get("Outputs")
+                                        if isinstance(bundled_outputs, list) and bundled_outputs:
+                                            append_event(
+                                                config.root,
+                                                config.athlete_id,
+                                                config.run_id,
+                                                {
+                                                    "type": "ARTEFACT_WRITTEN",
+                                                    "step_id": bundled_step_id,
+                                                    "outputs": bundled_outputs,
+                                                },
+                                            )
+                                        append_event(
+                                            config.root,
+                                            config.athlete_id,
+                                            config.run_id,
+                                            {"type": "STEP_FINISHED", "step_id": bundled_step_id},
+                                        )
+                                else:
+                                    step["Status"] = "DONE"
+                                    step["Ended"] = datetime.now(UTC).isoformat()
+                                    _set_duration(step)
+                            else:
+                                step["Status"] = "DONE"
+                                step["Ended"] = datetime.now(UTC).isoformat()
+                                _set_duration(step)
+                                step_outputs: list[StepRecord] = []
+                                raw_outputs = exec_result.get("outputs")
+                                if isinstance(raw_outputs, list):
+                                    step_outputs.extend(output for output in raw_outputs if isinstance(output, dict))
+                                for artifact_type in _step_list(step, "write_types"):
+                                    step_outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
+                                if step_outputs:
+                                    step["Outputs"] = step_outputs
+                                    append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": step_outputs})
+                                append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
                         else:
                             index = _load_index(config.root, config.athlete_id)
                             for artifact_type in _step_list(step, "write_types"):

@@ -45,18 +45,18 @@ If an artefact has no upstream (e.g., Data-Pipeline raw outputs), it MUST includ
 - MUST reference Athlete Profile and Planning Events (and Logistics when used) in `trace_upstream`.
 
 ### Phase outputs (Phase-Architect)
-- MUST reference exactly one `season_plan_yyyy-ww--yyyy-ww.json` in `trace_upstream`.
+- MUST reference exactly one `season_plan_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json` in `trace_upstream`.
 
 ### Week outputs (Week-Planner)
-- MUST reference exactly one `phase_guardrails_yyyy-ww--yyyy-ww.json` in `trace_upstream`.
-- If a `phase_feed_forward_yyyy-ww.json` is applied, it MUST also be referenced.
+- MUST reference exactly one `phase_guardrails_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json` in `trace_upstream`.
+- If a `phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json` is applied, it MUST also be referenced.
 
 ### Workout-Builder outputs
-- MUST reference the input `week_plan_yyyy-ww.json` (or `workout_request_*` if introduced later).
+- MUST reference the input `week_plan_yyyy-ww__yyyymmdd_HHMMSS.json` (or `workout_request_*` if introduced later).
 
 ## 5. Precedence & “Latest Valid” Rules
-### phase_feed_forward_yyyy-ww.json precedence
-If multiple `phase_feed_forward_yyyy-ww.json` artefacts exist:
+### phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json precedence
+If multiple `phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json` artefacts exist:
 - Apply the one with:
   1) scope covering the target week, AND
   2) `Valid-Until` not expired, AND

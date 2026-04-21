@@ -61,9 +61,11 @@ Required:
 - `load_ranges.source` MUST be the **stored phase guardrails filename** (not a guessed name).
   To avoid validation errors, follow this exact procedure:
   1) Read the **stored** PHASE_GUARDRAILS artefact metadata.
-  2) Use the real filename returned by the store (or latest path in workspace).
-  3) Set `load_ranges.source` to that exact filename string.
+  2) Capture the exact stored `meta.version_key` for that artefact.
+  3) Build the filename as `phase_guardrails_<meta.version_key>.json`.
+  4) Set `load_ranges.source` to that exact filename string.
   Do NOT construct the name from `iso_week_range` or `iso_week` if you have the stored path.
+  Do NOT drop the timestamp suffix from `meta.version_key`.
 - `load_ranges` MUST NOT include any fields beyond `weekly_kj_bands` and `source`.
 
 #### 5) `data.execution_principles`
@@ -192,7 +194,7 @@ Additional hard stops (binding):
       "weekly_kj_bands": [
         { "week": "2026-04", "band": { "min": 7000, "max": 8500, "notes": "Example band." } }
       ],
-      "source": "phase_guardrails_2026-04.json"
+      "source": "phase_guardrails_2026-04--2026-05__20260126_090000.json"
     },
     "execution_principles": {
       "load_intensity_handling": {

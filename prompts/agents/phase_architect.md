@@ -81,7 +81,7 @@ Required baseline inputs (load every run):
 - Zone Model: `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
 
 Optional inputs (load attempt; binding when present):
-- Season→Phase Feed Forward: `workspace_get_latest({ "artifact_type": "SEASON_PHASE_FEED_FORWARD" })`
+- Season→Phase Feed Forward: `workspace_get_version({ "artifact_type": "SEASON_PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })`
   - Treat this artefact as optional context only.
   - For `PHASE_GUARDRAILS`, use it only when it explicitly applies to the requested target ISO week or `iso_week_range`.
   - If it is missing, stale, or applies to a different phase range, ignore it and continue from Season Plan baseline inputs.
@@ -240,6 +240,10 @@ Before composing output, confirm the exact-range inputs are loaded:
     when present.
   - A missing or non-applicable `SEASON_PHASE_FEED_FORWARD` must not block `PHASE_GUARDRAILS`.
 - For `PHASE_STRUCTURE`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS`.
+  - Capture the stored guardrails `meta.version_key` and set
+    `load_ranges.source = "phase_guardrails_<meta.version_key>.json"`.
+  - Never shorten this to `phase_guardrails_<iso_week_range>.json` when the stored artefact is
+    timestamped.
 - For `PHASE_PREVIEW`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE`.
 - For `PHASE_FEED_FORWARD`: baseline inputs only (plus optional feed-forward if present).
 If any required exact-range artefact is missing: STOP and request it.

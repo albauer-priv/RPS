@@ -51,24 +51,24 @@ Define consistent filenames for all artefacts to support:
 - `wellness_yyyy-ww.json`
 
 ### Season-Planner
-- `season_plan_yyyy-ww--yyyy-ww.json` (range may be 8–32 weeks)
-- `season_phase_feed_forward_yyyy-ww.json`
+- `season_plan_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json` (range may be 8–32 weeks)
+- `season_phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json`
 
 ### Phase-Architect
-- `phase_guardrails_yyyy-ww--yyyy-ww.json`
-- `phase_feed_forward_yyyy-ww.json`
-- `phase_structure_yyyy-ww--yyyy-ww.json`
-- `phase_preview_yyyy-ww--yyyy-ww.json`
+- `phase_guardrails_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json`
+- `phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json`
+- `phase_structure_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json`
+- `phase_preview_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json`
 - `zone_model_power_<FTP>W.json`
 
 ### Week-Planner
-- `week_plan_yyyy-ww.json`
+- `week_plan_yyyy-ww__yyyymmdd_HHMMSS.json`
 
 ### Workout-Builder (post-workout export)
-- `workouts_yyyy-ww.json`
+- `workouts_yyyy-ww__yyyymmdd_HHMMSS.json`
 
 ### Performance-Analyst
-- `des_analysis_report_yyyy-ww.json`
+- `des_analysis_report_yyyy-ww__yyyymmdd_HHMMSS.json`
 
 ### KPI Profiles (Policy Specs)
 - `kpi_profile_des_<event>_<distance_or_duration>_<athlete_class>.json`
@@ -85,8 +85,8 @@ For any JSON artefact, an optional human-readable sidecar is allowed:
 - `<basename>.rendered.md`
 
 Examples:
-- `phase_guardrails_2026-01--2026-04.rendered.md`
-- `activities_actual_2026-01.rendered.md`
+- `phase_guardrails_2026-01--2026-04__20260126_090000.rendered.md`
+- `activities_actual_2026-01__20260126_090000.rendered.md`
 
 Sidecars are informational only and MUST NOT be used as agent inputs.
 

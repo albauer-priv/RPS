@@ -220,3 +220,72 @@ def test_run_agent_multi_output_logs_week_sensitive_tool_warnings(monkeypatch, c
 
     assert result["ok"] is True
     assert "week-sensitive" in caplog.text
+
+
+def test_optional_missing_feed_forward_reads_log_at_info(monkeypatch, caplog):
+    responses = [
+        multi_output_runner.LiteLLMResponse(
+            id="resp_optional_1",
+            output=[
+                {
+                    "type": "function_call",
+                    "name": "workspace_get_version",
+                    "arguments": '{"artifact_type":"SEASON_PHASE_FEED_FORWARD","version_key":"2026-17"}',
+                    "call_id": "call_optional_1",
+                }
+            ],
+            output_text="",
+            usage=None,
+        ),
+        multi_output_runner.LiteLLMResponse(
+            id="resp_optional_2",
+            output=[],
+            output_text="",
+            usage=None,
+        ),
+    ]
+
+    def _fake_create_response(client, payload, logger, stream_handlers=None):
+        del client, payload, logger, stream_handlers
+        return responses.pop(0)
+
+    monkeypatch.setattr(multi_output_runner, "create_response", _fake_create_response)
+    monkeypatch.setattr(
+        multi_output_runner,
+        "read_tool_handlers",
+        lambda ctx: {
+            "workspace_get_version": lambda args: (_ for _ in ()).throw(
+                FileNotFoundError(
+                    f"No artifact version found: runtime/athletes/i150546/data/plans/season/season_phase_feed_forward_{args['version_key']}.json"
+                )
+            )
+        },
+    )
+
+    runtime = multi_output_runner.AgentRuntime(
+        client=SimpleNamespace(config=None),
+        model="openai/gpt-5.4-mini",
+        temperature=None,
+        reasoning_effort=None,
+        reasoning_summary=None,
+        max_completion_tokens=None,
+        prompt_loader=SimpleNamespace(combined_system_prompt=lambda agent_name: f"prompt for {agent_name}"),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda store_name: store_name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime"),
+    )
+
+    with caplog.at_level(logging.INFO, logger="rps.agents.multi_output_runner"):
+        result = multi_output_runner.run_agent_multi_output(
+            runtime,
+            agent_name="phase_architect",
+            agent_vs_name="vs_rps_all_agents",
+            athlete_id="i150546",
+            tasks=[],
+            user_input="Load optional feed forward context.",
+            run_id="run_optional",
+        )
+
+    assert result["ok"] is True
+    assert "Optional read tool missing workspace_get_version" in caplog.text
+    assert "Read tool failed workspace_get_version" not in caplog.text

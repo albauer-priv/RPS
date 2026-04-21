@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Phase-Architect guidance now binds `PHASE_STRUCTURE.load_ranges.source` to the exact stored `PHASE_GUARDRAILS` filename including the timestamped `version_key`, and the shared file-naming / traceability specs now reflect timestamped filenames for versioned season/phase/week artefacts.
+- Multi-output runner now logs missing optional `SEASON_PHASE_FEED_FORWARD` / `PHASE_FEED_FORWARD` version reads as informational context misses instead of warning-level read failures.
+- Plan Hub worker now bundles scoped phase runs so a single `Run Phase` execution can produce the requested phase artefact set in one combined `plan_week` call instead of queueing three redundant isolated subruns.
 - Range-scoped artefact writes now persist string `iso_week_range` metadata into the workspace index, so exact-range checks immediately recognize freshly stored `PHASE_GUARDRAILS` / `PHASE_STRUCTURE` / `PHASE_PREVIEW` artefacts during isolated phase runs.
 - Phase Guardrails binding guidance now explicitly treats season-plan `planned_event_windows` entries like `"YYYY-MM-DD (B)"` as compact source strings that must be transformed into structured `events_constraints.events[]` items, avoiding false model stops that demanded an unnecessary Season Plan rewrite.
 - Performance Report creation now resolves and enforces week-scoped `ACTIVITIES_ACTUAL` / `ACTIVITIES_TREND` coverage for the selected ISO week, auto-attempts a targeted Intervals backfill before running DES analysis, and the Report, Feed Forward, and Coach preload paths no longer fall back to stale `latest` artefacts from another week where week-scoped context is required.

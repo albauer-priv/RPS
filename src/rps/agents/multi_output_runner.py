@@ -30,6 +30,10 @@ from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
 MAX_TOOL_ITERATIONS = 30
+_OPTIONAL_MISSING_VERSION_ARTIFACTS = {
+    ArtifactType.SEASON_PHASE_FEED_FORWARD.value,
+    ArtifactType.PHASE_FEED_FORWARD.value,
+}
 
 _KNOWLEDGE_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "specs" / "knowledge" / "_shared" / "sources"
 ToolDef = dict[str, object]
@@ -263,6 +267,20 @@ def _extract_usage(response: LiteLLMResponse) -> UsageSummary:
         "output_tokens": getattr(usage, "output_tokens", None),
         "total_tokens": getattr(usage, "total_tokens", None),
     }
+
+
+def _is_optional_missing_read(
+    tool_name: str | None,
+    args: dict[str, Any],
+    exc: Exception,
+) -> bool:
+    """Return True when a read-tool miss is expected optional context, not a warning-worthy failure."""
+    if tool_name != "workspace_get_version":
+        return False
+    artifact_type = args.get("artifact_type")
+    if not isinstance(artifact_type, str) or artifact_type not in _OPTIONAL_MISSING_VERSION_ARTIFACTS:
+        return False
+    return isinstance(exc, FileNotFoundError)
 
 
 def _load_knowledge_source(relative_dir: str, filename: str) -> str | None:
@@ -1175,7 +1193,10 @@ def run_agent_multi_output(
                     result = read_handlers[name](args)
                 except Exception as exc:
                     result = {"ok": False, "error": str(exc)}
-                    logger.warning("Read tool failed %s: %s", name, exc)
+                    if _is_optional_missing_read(name, args, exc):
+                        logger.info("Optional read tool missing %s: %s", name, exc)
+                    else:
+                        logger.warning("Read tool failed %s: %s", name, exc)
                 _log_tool_warning(name, args, result)
                 _mark_required_loaded(name, args, result)
 
