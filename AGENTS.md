@@ -26,6 +26,7 @@ This file is the **README for coding agents** working in this repository. It con
   * Plan-week: smoke via UI (Plan → Week page).
 
 **Rule:** Before marking a task “done”, run at least **syntax check + lint + type check + one relevant smoke run** (UI or CLI), and fix failures.
+**Deployment rule:** If the user validates behavior via the Docker image / GitHub Action build, `commit` and `push` the relevant changes before asking for server-side verification; otherwise the running `/app` instance may still reflect old code.
 
 ---
 

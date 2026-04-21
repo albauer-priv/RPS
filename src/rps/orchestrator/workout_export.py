@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from copy import deepcopy
 from pathlib import Path
 
-from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
-from rps.agents.registry import AGENTS
-from rps.agents.tasks import AgentTask
+from rps.agents.multi_output_runner import AgentRuntime
+from rps.workouts.exporter import build_intervals_workouts_export
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 from rps.workspace.types import ArtifactType
+from rps.workspace.validated_api import ValidatedWorkspace
 
 logger = logging.getLogger(__name__)
 
@@ -98,26 +100,63 @@ def create_intervals_workouts_export(
 
     message = f"Running Workout-Builder for ISO week {year:04d}-{week:02d}."
     _log(message)
-    spec = AGENTS["workout_builder"]
-    override_line = f"Override: {override_text.strip()}. " if override_text else ""
-    out = run_agent_multi_output(
-        runtime_for(spec.name),
-        agent_name=spec.name,
-        agent_vs_name=spec.vector_store_name,
-        athlete_id=athlete_id,
-        tasks=[AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT],
-        user_input=(
-            f"Convert week_plan into Intervals.icu workouts JSON for ISO week {year:04d}-{week:02d}. "
-            "Read week_plan from workspace. "
-            f"{override_line}"
-            f"{injected_block}"
-        ),
-        run_id=f"{run_id}_builder",
-        model_override=model_resolver(spec.name) if model_resolver else None,
-        temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
-    )
+    try:
+        _ = runtime_for  # retained for interface compatibility with caller
+        _ = injected_block
+        _ = override_text
+        _ = force_file_search
+        _ = max_num_results
+        _ = model_resolver
+        _ = temperature_resolver
+
+        week_plan = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+        if not isinstance(week_plan, dict):
+            raise ValueError("WEEK_PLAN payload is not an object")
+
+        schema_dir = Path("specs/schemas")
+        schemas = SchemaRegistry(schema_dir=schema_dir)
+        week_plan_validator = schemas.validator_for("week_plan.schema.json")
+        week_plan_for_validation = deepcopy(week_plan)
+        meta = week_plan_for_validation.get("meta")
+        if isinstance(meta, dict):
+            meta.pop("version_key", None)
+        validate_or_raise(week_plan_validator, week_plan_for_validation)
+
+        export_payload = build_intervals_workouts_export(week_plan)
+
+        workspace = ValidatedWorkspace.for_athlete(
+            athlete_id,
+            schema_dir=schema_dir,
+            root=store.root,
+        )
+        path = workspace.put_validated(
+            ArtifactType.INTERVALS_WORKOUTS,
+            version_key,
+            export_payload,
+            payload_meta=None,
+            producer_agent="workout_builder",
+            run_id=f"{run_id}_builder",
+            update_latest=True,
+        )
+        out = {
+            "ok": True,
+            "produced": [ArtifactType.INTERVALS_WORKOUTS.value],
+            "artifact_type": ArtifactType.INTERVALS_WORKOUTS.value,
+            "version_key": version_key,
+            "path": path,
+            "run_id": f"{run_id}_builder",
+            "producer_agent": "workout_builder",
+        }
+    except Exception as exc:
+        _log(f"Workout-Builder failed for ISO week {year:04d}-{week:02d}: {exc}", logging.ERROR)
+        out = {
+            "ok": False,
+            "produced": [],
+            "error": str(exc),
+            "artifact_type": ArtifactType.INTERVALS_WORKOUTS.value,
+            "run_id": f"{run_id}_builder",
+            "producer_agent": "workout_builder",
+        }
     return {
         "ran": True,
         "ok": out.get("ok", False),
