@@ -178,23 +178,6 @@ agents:
     modes:
       week_plan:
         inject:
-  workout_builder:
-    inject:
-    - path: specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
-    - path: specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
-    - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md
-    - path: specs/knowledge/_shared/sources/policies/workout_policy.md
-    - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
-    - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
-    - path: specs/knowledge/_shared/sources/contracts/week__builder_contract.md
-    - path: specs/knowledge/_shared/sources/specs/mandatory_output_intervals_workouts.md
-    - path: specs/knowledge/_shared/sources/schemas/bundled/week_plan.schema.json
-    - path: specs/knowledge/_shared/sources/schemas/bundled/workouts.schema.json
-    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
-    - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
-    modes:
-      intervals_workouts:
-        inject:
   performance_analysis:
     inject:
     - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md

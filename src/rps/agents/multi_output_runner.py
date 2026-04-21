@@ -290,7 +290,6 @@ def injection_mode_for_tasks(tasks: list[AgentTask]) -> str | None:
         AgentTask.CREATE_PHASE_PREVIEW: "phase_preview",
         AgentTask.CREATE_PHASE_FEED_FORWARD: "phase_feed_forward",
         AgentTask.CREATE_WEEK_PLAN: "week_plan",
-        AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: "intervals_workouts",
         AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
     }
     modes = {mapping[task] for task in tasks if task in mapping}
@@ -360,7 +359,6 @@ def run_agent_multi_output(
         "phase_preview.schema.json": "mandatory_output_phase_preview.md",
         "phase_feed_forward.schema.json": "mandatory_output_phase_feed_forward.md",
         "week_plan.schema.json": "mandatory_output_week_plan.md",
-        "workouts.schema.json": "mandatory_output_intervals_workouts.md",
         "des_analysis_report.schema.json": "mandatory_output_des_analysis_report.md",
     }
 

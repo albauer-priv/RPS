@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Plan Hub now keeps `Build Workouts` available when the knowledge store is unavailable, because the workout export path runs locally; knowledge-store gating remains in place for agent-backed scopes such as `Week Plan`, `Phase`, and orchestrated planning.
 - `INTERVALS_WORKOUTS` export generation now runs as a deterministic local code path instead of the `workout_builder` LLM step: `WEEK_PLAN` input schema is validated locally, workout text is checked against the cycling subset, the Intervals export array is mapped in code, and the result is stored via the existing week-scoped artefact path.
+- Removed the legacy `workout_builder` agent wiring and prompt files; the export path now records `producer_agent=workout_export` in run/index metadata.
 
 ## [0.10.5] - 2026-04-21
 

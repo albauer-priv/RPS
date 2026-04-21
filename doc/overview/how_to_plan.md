@@ -101,7 +101,7 @@ flowchart TD
   PG --> WEEK["Week-Planner"]
   PS --> WEEK
   WEEK --> WP[week_plan]
-  WP --> WB["Workout-Builder"]
+  WP --> WB["Local Workout Export"]
   WB --> WJ["workouts_yyyy-ww.json"]
   WJ --> POST["post_to_intervals (commit)"]
 

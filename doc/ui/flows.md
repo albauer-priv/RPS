@@ -29,7 +29,7 @@ For each UI action, document:
 - **Orchestrator call:** enqueue run via queue scheduler
 - **Writes:** Run Store (`run.json`, `steps.json`, `events.jsonl`)
 - **UI feedback:** status banner + run table
-- **Agents:** season_scenario, season_planner, phase_architect, week_planner, workout_builder
+- **Agents/Workers:** season_scenario, season_planner, phase_architect, week_planner, local workout export
 
 ### Plan Hub — Scoped Run
 - **Preconditions:** readiness not blocked (inputs present, within Season Plan range)

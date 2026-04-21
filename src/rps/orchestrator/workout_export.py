@@ -7,7 +7,6 @@ from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
 
-from rps.agents.multi_output_runner import AgentRuntime
 from rps.workouts.exporter import build_intervals_workouts_export
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
@@ -24,22 +23,14 @@ def _mtime(path: Path | None) -> float | None:
 
 
 def create_intervals_workouts_export(
-    runtime_for: Callable[[str], AgentRuntime],
-    *,
     store: LocalArtifactStore,
     athlete_id: str,
     year: int,
     week: int,
     run_id: str,
-    injected_block: str,
     plan_mtime: float | None,
     needs_week_plan: bool,
     force_export: bool = False,
-    override_text: str | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
-    model_resolver: Callable[[str], str] | None = None,
-    temperature_resolver: Callable[[str], float | None] | None = None,
     log_fn: Callable[[str, int], None] | None = None,
 ) -> dict:
     """Create Intervals workouts export when missing or stale.
@@ -47,18 +38,13 @@ def create_intervals_workouts_export(
     Purpose:
         Ensure Intervals export is generated when week plan changes.
     Inputs:
-        runtime_for: runtime factory for agent execution.
         store: workspace artifact store.
         athlete_id: athlete identifier.
         year/week: ISO week to export.
         run_id: run identifier prefix.
-        injected_block: mandatory knowledge injection block (already built).
         plan_mtime: week plan modified time.
         needs_week_plan: whether week plan was regenerated this run.
         force_export: whether this export was explicitly requested by the caller.
-        override_text: optional override text appended to the export prompt.
-        force_file_search/max_num_results: agent settings.
-        model_resolver/temperature_resolver: optional model overrides.
         log_fn: optional logger callback (message, level).
     Outputs:
         dict with keys: ran, ok, produced, result, message.
@@ -74,7 +60,7 @@ def create_intervals_workouts_export(
 
     version_key = f"{year:04d}-{week:02d}"
     if not store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key):
-        message = f"Workout-Builder skipped: WEEK_PLAN {version_key} not found."
+        message = f"Workout export skipped: WEEK_PLAN {version_key} not found."
         _log(message)
         return {"ran": False, "ok": True, "produced": False, "result": None, "message": message}
 
@@ -98,17 +84,9 @@ def create_intervals_workouts_export(
         _log(message)
         return {"ran": False, "ok": True, "produced": False, "result": None, "message": message}
 
-    message = f"Running Workout-Builder for ISO week {year:04d}-{week:02d}."
+    message = f"Running local workout export for ISO week {year:04d}-{week:02d}."
     _log(message)
     try:
-        _ = runtime_for  # retained for interface compatibility with caller
-        _ = injected_block
-        _ = override_text
-        _ = force_file_search
-        _ = max_num_results
-        _ = model_resolver
-        _ = temperature_resolver
-
         week_plan = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version_key)
         if not isinstance(week_plan, dict):
             raise ValueError("WEEK_PLAN payload is not an object")
@@ -134,8 +112,8 @@ def create_intervals_workouts_export(
             version_key,
             export_payload,
             payload_meta=None,
-            producer_agent="workout_builder",
-            run_id=f"{run_id}_builder",
+            producer_agent="workout_export",
+            run_id=f"{run_id}_export",
             update_latest=True,
         )
         out = {
@@ -144,18 +122,18 @@ def create_intervals_workouts_export(
             "artifact_type": ArtifactType.INTERVALS_WORKOUTS.value,
             "version_key": version_key,
             "path": path,
-            "run_id": f"{run_id}_builder",
-            "producer_agent": "workout_builder",
+            "run_id": f"{run_id}_export",
+            "producer_agent": "workout_export",
         }
     except Exception as exc:
-        _log(f"Workout-Builder failed for ISO week {year:04d}-{week:02d}: {exc}", logging.ERROR)
+        _log(f"Local workout export failed for ISO week {year:04d}-{week:02d}: {exc}", logging.ERROR)
         out = {
             "ok": False,
             "produced": [],
             "error": str(exc),
             "artifact_type": ArtifactType.INTERVALS_WORKOUTS.value,
-            "run_id": f"{run_id}_builder",
-            "producer_agent": "workout_builder",
+            "run_id": f"{run_id}_export",
+            "producer_agent": "workout_export",
         }
     return {
         "ran": True,

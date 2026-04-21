@@ -189,7 +189,6 @@ def _mode_for_task(task: AgentTask) -> str | None:
         AgentTask.CREATE_PHASE_PREVIEW: "phase_preview",
         AgentTask.CREATE_PHASE_FEED_FORWARD: "phase_feed_forward",
         AgentTask.CREATE_WEEK_PLAN: "week_plan",
-        AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT: "intervals_workouts",
         AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
     }
     return mapping.get(task)
@@ -801,33 +800,22 @@ def plan_week(
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
-    injected_block = build_injection_block(
-        "workout_builder",
-        mode=_mode_for_task(AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT),
-    )
     export_result = create_intervals_workouts_export(
-        runtime_for,
         store=store,
         athlete_id=athlete_id,
         year=year,
         week=week,
         run_id=run_id,
-        injected_block=injected_block,
         plan_mtime=plan_mtime,
         needs_week_plan=needs_week_plan,
         force_export="EXPORT_WORKOUTS" in forced_steps,
-        override_text=override_text,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
-        model_resolver=model_resolver,
-        temperature_resolver=temperature_resolver,
         log_fn=_log,
     )
     if export_result.get("ran"):
         out = export_result.get("result") or {}
         steps.append(
             {
-                "agent": "workout_builder",
+                "agent": "workout_export",
                 "tasks": [AgentTask.CREATE_INTERVALS_WORKOUTS_EXPORT.value],
                 "result": out,
             }

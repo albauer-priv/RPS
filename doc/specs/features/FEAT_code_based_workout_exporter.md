@@ -10,7 +10,7 @@ Owner: Planning Pipeline
 * **Status:** Implemented
 * **Owner/Area:** Planning / Workout Export
 * **Last-Updated:** 2026-04-21
-* **Related:** `src/rps/orchestrator/workout_export.py`, `prompts/agents/workout_builder.md`
+* **Related:** `src/rps/orchestrator/workout_export.py`, `src/rps/workouts/exporter.py`
 
 ---
 
@@ -18,12 +18,12 @@ Owner: Planning Pipeline
 
 **Current behavior**
 
-* `plan_week(...)` delegates Intervals export generation to the `workout_builder` LLM agent.
+* `plan_week(...)` delegated Intervals export generation to the `workout_builder` LLM agent.
 * The agent is instructed to do deterministic conversion only: validate `WEEK_PLAN.workout_text`, map it into `INTERVALS_WORKOUTS`, and store the export.
 
 **Problem**
 
-* The current builder can false-stop on valid `workout_text`, because validation is still model-judged instead of deterministically enforced in code.
+* The former builder could false-stop on valid `workout_text`, because validation was model-judged instead of deterministically enforced in code.
 * The output contract is simple enough that an LLM adds failure surface without adding useful decision quality.
 
 **Constraints**
@@ -112,7 +112,7 @@ Owner: Planning Pipeline
 **Compatibility**
 
 * Backward compatible: Yes
-* Breaking changes: the `workout_builder` agent is no longer used on the export path
+* Breaking changes: the `workout_builder` agent and prompt are no longer used on the export path
 * Fallback behavior: export fails with explicit deterministic validation errors instead of model STOP text
 
 **Conflicts with ADRs / Principles**
@@ -223,7 +223,7 @@ Owner: Planning Pipeline
 
 **New/changed events**
 
-* `Running Workout-Builder for ISO week ...` remains for continuity, but now represents the local export step.
+* `Running local workout export for ISO week ...` is emitted by the local exporter path.
 * deterministic validation failures include explicit invalid workout ids / lines.
 
 **Diagnostics**
@@ -259,7 +259,7 @@ Update these docs as part of implementation:
 
 ## Open Questions
 
-* Should the old `workout_builder` prompt be deleted once the code path proves stable?
+* none
 
 ---
 

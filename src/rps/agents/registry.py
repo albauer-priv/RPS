@@ -27,12 +27,6 @@ AGENTS: dict[str, AgentSpec] = {
         vector_store_name="vs_rps_all_agents",
         prompt_file_stem="week_planner",
     ),
-    "workout_builder": AgentSpec(
-        name="workout_builder",
-        display_name="Workout-Builder",
-        vector_store_name="vs_rps_all_agents",
-        prompt_file_stem="workout_builder",
-    ),
     "performance_analysis": AgentSpec(
         name="performance_analysis",
         display_name="Performance-Analyst",

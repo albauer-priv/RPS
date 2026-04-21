@@ -59,7 +59,7 @@ flowchart TD
   BG --> MI["Week-Planner"]
   BEA --> MI
   MI --> WP[week_plan]
-  WP --> WB["Workout-Builder"]
+  WP --> WB["Local Workout Export"]
   WB --> WJ["workouts_yyyy-ww.json"]
   WJ --> POST["Post to Intervals (commit)"]
 
@@ -162,7 +162,7 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 - Produces weekly execution plan (`week_plan`).
 - Must comply with governance + phase structure.
 
-### 3.6 Workout-Builder
+### 3.6 Workout Export
 - Deterministic conversion into Intervals.icu JSON (raw export payload).
 - No planning decisions.
 
@@ -271,7 +271,7 @@ Performance-Analyst
 - Required: `ACTIVITIES_ACTUAL`, `ACTIVITIES_TREND`, `KPI_PROFILE` via `workspace_get_latest`.
 - Optional: `SEASON_PLAN`, `workspace_get_phase_context`, planning events/logistics.
 
-Workout-Builder
+Workout Export
 - Required: `WEEK_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
 
 #### 4.1.5 Per-Agent Mapping and Available Tools

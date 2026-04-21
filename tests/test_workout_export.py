@@ -152,13 +152,11 @@ class WorkoutExportTests(unittest.TestCase):
             )
 
             result = create_intervals_workouts_export(
-                lambda _name: None,  # type: ignore[arg-type]
                 store=store,
                 athlete_id=athlete_id,
                 year=2026,
                 week=17,
                 run_id="plan_hub_week_plan_2026W17_test",
-                injected_block="",
                 plan_mtime=None,
                 needs_week_plan=False,
             )
@@ -201,13 +199,11 @@ class WorkoutExportTests(unittest.TestCase):
             )
 
             result = create_intervals_workouts_export(
-                lambda _name: None,  # type: ignore[arg-type]
                 store=store,
                 athlete_id=athlete_id,
                 year=2026,
                 week=17,
                 run_id="plan_hub_week_plan_2026W17_test",
-                injected_block="",
                 plan_mtime=None,
                 needs_week_plan=False,
             )

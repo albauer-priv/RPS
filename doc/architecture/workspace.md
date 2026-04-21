@@ -78,7 +78,7 @@ Templates are available under:
 | `data/plans/phase/` | Phase-Architect (plus Data-Pipeline for `zone_model_*`) | `phase_guardrails_*`, `phase_structure_*`, `phase_preview_*`, `phase_feed_forward_*`, `zone_model_*` |
 | `data/plans/week/` | Week-Planner | `week_plan_*` |
 | `data/analysis/` | Performance-Analyst | `des_analysis_report_*` |
-| `data/exports/` | Workout-Builder | `workouts_*` |
+| `data/exports/` | Workout Export | `workouts_*` |
 | `data/YYYY/WW/` | Data Pipeline | `activities_actual_*`, `activities_trend_*`, `availability_*`, `wellness_*` (+ CSV mirrors) |
 | `latest/` | System | Latest copy of each artefact type (mirrors versioned writes) |
 | `logs/` | System | Single `rps.log` (rotated) + log sidecars |

@@ -23,7 +23,7 @@ flowchart TD
   MA["Season-Planner"]:::agent
   ME["Phase-Architect"]:::agent
   MI["Week-Planner"]:::agent
-  WB["Workout-Builder"]:::agent
+  WB["Local Workout Export"]:::component
   PA["Performance-Analyst"]:::agent
   I["Intervals.icu"]:::external
   EXP["intervals_data.py"]:::script
@@ -298,7 +298,7 @@ flowchart LR
 
 ---
 
-### 2.5 Workout-Builder + Posting Detail Flow
+### 2.5 Workout Export + Posting Detail Flow
 
 **Inputs (Artefacts)**
 - `week_plan_yyyy-ww.json`
@@ -315,7 +315,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  WP["week_plan_yyyy-ww.json"]:::artefact --> WB["Workout-Builder"]:::agent
+  WP["week_plan_yyyy-ww.json"]:::artefact --> WB["Local Workout Export"]:::component
   WB --> WJ["workouts_yyyy-ww.json"]:::artefact --> POST["post_to_intervals (commit)"]:::script
   POST --> RCPT["post_receipts_yyyy-ww.json"]:::artefact --> CAL["Planned Activities<br/>in Calendar"]:::artefact --> I["Intervals.icu"]:::external
 
@@ -471,7 +471,7 @@ See [doc/architecture/agents.md](../architecture/agents.md) for the canonical ag
 ### 3.5 Week-Planner
 - `week_plan_yyyy-ww.json`
 
-### 3.6 Workout-Builder / Posting
+### 3.6 Workout Export / Posting
 - `workouts_yyyy-ww.json`
 - Planned calendar activities (Intervals.icu)
 

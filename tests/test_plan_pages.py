@@ -406,7 +406,7 @@ def test_plan_hub_build_workouts_scope_does_not_require_knowledge():
     assert plan_hub._step_requires_knowledge("intervals_workouts") is False
 
 
-def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatch):
+def test_workout_export_force_export_runs_even_when_current(tmp_path):
     store = LocalArtifactStore(root=tmp_path)
     athlete_id = "test_athlete"
     store.ensure_workspace(athlete_id)
@@ -532,23 +532,20 @@ def test_workout_export_force_export_runs_even_when_current(tmp_path, monkeypatc
         ArtifactType.INTERVALS_WORKOUTS,
         f"{week_key}__20260315_120000",
         [],
-        producer_agent="workout_builder",
+        producer_agent="workout_export",
         run_id="intervals_test",
         update_latest=True,
     )
 
     result = create_intervals_workouts_export(
-        lambda _agent_name: None,  # type: ignore[arg-type]
         store=store,
         athlete_id=athlete_id,
         year=2026,
         week=12,
         run_id="test_run",
-        injected_block="",
         plan_mtime=None,
         needs_week_plan=False,
         force_export=True,
-        override_text="rebuild export",
     )
 
     assert result["ran"] is True
