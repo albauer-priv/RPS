@@ -39,6 +39,9 @@ Optional fields:
 
 `planning_horizon_weeks` MUST match the total weeks covered by `meta.iso_week_range`
 (inclusive). Derive it from `iso_week_range` if needed.
+Runtime may canonicalize `meta.iso_week_range`, `meta.temporal_scope`,
+`planning_horizon_weeks`, and scenario planning-math fields from the authoritative
+planning-event horizon before store.
 
 #### Scenario object
 Each scenario MUST include:

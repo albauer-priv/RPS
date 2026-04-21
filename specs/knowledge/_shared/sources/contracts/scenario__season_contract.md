@@ -41,6 +41,9 @@ Season-Planner retains binding decision authority.
 - `SEASON_SCENARIOS` is **Informational** authority.
 - `SEASON_SCENARIO_SELECTION` is **Informational** authority.
 - `SEASON_PLAN` is **Binding** authority.
+- Runtime may canonicalize deterministic scenario horizon and planning math
+  before storing `SEASON_SCENARIOS`; qualitative scenario intent remains
+  model-authored advisory content.
 
 ## 4) Required Fields
 The `SEASON_SCENARIOS` artefact MUST include:

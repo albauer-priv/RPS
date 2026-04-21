@@ -80,6 +80,14 @@ Notes:
 - `deload_cadence` and `phase_length_weeks` must be consistent with
   `progressive_overload_policy.md`. Scenarios must not define numeric weekly kJ
   targets or cadence overrides outside that policy.
+- Runtime canonicalizes deterministic horizon/math fields before store:
+  - `meta.iso_week_range`
+  - `meta.temporal_scope`
+  - `data.planning_horizon_weeks`
+  - `scenario_guidance.phase_count_expected`
+  - `scenario_guidance.shortening_budget_weeks`
+  - `scenario_guidance.phase_plan_summary`
+  Emit best-effort schema-valid values, but qualitative scenario content is the primary agent responsibility.
 
 ---
 

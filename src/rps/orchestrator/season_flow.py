@@ -73,6 +73,7 @@ def create_season_scenarios(
         f"Target ISO week: {year}-{week:02d}. "
         "Use workspace_get_input for Athlete Profile, Planning Events, and Logistics. "
         "Use workspace_get_latest only for shared latest inputs Availability, KPI Profile, and Wellness. "
+        "Focus on qualitative scenario differences; runtime will canonicalize horizon and phase math from planning events. "
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."

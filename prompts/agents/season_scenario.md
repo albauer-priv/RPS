@@ -120,6 +120,14 @@ This instruction set + the injected Mandatory Output Chapter are the sole author
   - notes (array of non-empty strings, at least 1)
 - Each `data.scenarios[]` MUST include required fields and `scenario_guidance` object with all required subfields.
 - `deload_cadence` and `phase_length_weeks` MUST be consistent with `progressive_overload_policy.md`.
+- Runtime canonicalizes deterministic calendar/math fields before store:
+  - `meta.iso_week_range`
+  - `meta.temporal_scope`
+  - `data.planning_horizon_weeks`
+  - `scenario_guidance.phase_count_expected`
+  - `scenario_guidance.shortening_budget_weeks`
+  - `scenario_guidance.phase_plan_summary`
+  Provide best-effort schema-valid values, but do not spend reasoning budget on exact calendar arithmetic.
 - MUST NOT define numeric weekly kJ targets anywhere.
 
 ### Output channel constraint (HARD)
@@ -178,12 +186,7 @@ Verify:
   - `3:1` → `phase_length_weeks = 4`
   - `2:1` → `phase_length_weeks = 3`
   - `2:1:1` → `phase_length_weeks = 4`
-- Planning math (advisory only) is computed and included:
-  - `phase_count_expected = ceil(planning_horizon_weeks / phase_length_weeks)`
-  - `shortening_budget_weeks = (phase_count_expected * phase_length_weeks) - planning_horizon_weeks`
-  - `max_shortened_phases = 2` (unless user explicitly specifies otherwise)
-  - If `planning_horizon_weeks` is missing, derive it from `meta.iso_week_range`.
-- `phase_plan_summary` is present and coherent (full phases + shortened phases summary).
+- Planning math fields are present and plausible; runtime will canonicalize them from planning events and `phase_length_weeks`.
 - Do NOT include per‑phase recommendations or date ranges.
 - Planning horizon ends at the ISO week containing the last A/B/C event in Planning Events.
   If Planning Events has no A/B/C events: STOP and request them.

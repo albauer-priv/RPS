@@ -178,6 +178,333 @@ def normalize_phase_guardrails_document(document: dict[str, Any]) -> dict[str, A
     return document
 
 
+_CADENCE_PHASE_LENGTHS = {
+    "3:1": 4,
+    "2:1": 3,
+    "2:1:1": 4,
+}
+
+
+def _as_positive_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value > 0:
+        return value
+    return None
+
+
+def _as_non_negative_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value >= 0:
+        return value
+    return None
+
+
+def _iso_week_range_weeks(range_str: object) -> int | None:
+    if not isinstance(range_str, str) or "--" not in range_str:
+        return None
+    start_str, end_str = range_str.split("--", 1)
+    try:
+        sy, sw = (int(part) for part in start_str.split("-", 1))
+        ey, ew = (int(part) for part in end_str.split("-", 1))
+        start_date = datetime.date.fromisocalendar(sy, sw, 1)
+        end_date = datetime.date.fromisocalendar(ey, ew, 7)
+    except ValueError:
+        return None
+    return ((end_date - start_date).days // 7) + 1
+
+
+def _extract_planning_events_document(raw: object) -> dict[str, Any] | None:
+    """Return parsed planning_events content from a runner read result or raw mapping."""
+    if isinstance(raw, dict) and isinstance(raw.get("data"), dict):
+        return raw
+    if isinstance(raw, dict) and raw.get("ok") is True:
+        content = raw.get("content")
+        if isinstance(content, str):
+            try:
+                parsed = json.loads(content)
+            except json.JSONDecodeError:
+                return None
+            if isinstance(parsed, dict):
+                return parsed
+    return None
+
+
+def _derive_planning_horizon_from_events(
+    meta: dict[str, Any],
+    planning_events_document: dict[str, Any] | None,
+) -> tuple[str, dict[str, str], int] | None:
+    """Derive the season planning horizon from the last A/B/C planning event date."""
+    if not isinstance(planning_events_document, dict):
+        return None
+    data = planning_events_document.get("data")
+    if not isinstance(data, dict):
+        data = planning_events_document
+    events = data.get("events")
+    if not isinstance(events, list):
+        return None
+
+    last_event_date: datetime.date | None = None
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        event_type = str(event.get("type") or "").strip().upper()
+        if event_type not in {"A", "B", "C"}:
+            continue
+        raw_date = event.get("date")
+        if not isinstance(raw_date, str):
+            continue
+        try:
+            parsed_date = datetime.date.fromisoformat(raw_date)
+        except ValueError:
+            continue
+        if last_event_date is None or parsed_date > last_event_date:
+            last_event_date = parsed_date
+
+    start_week = str(meta.get("iso_week") or "").strip()
+    if not start_week or last_event_date is None:
+        return None
+    try:
+        start_year, start_iso_week = (int(part) for part in start_week.split("-", 1))
+        start_date = datetime.date.fromisocalendar(start_year, start_iso_week, 1)
+    except ValueError:
+        return None
+
+    end_year, end_iso_week, _ = last_event_date.isocalendar()
+    end_date = datetime.date.fromisocalendar(end_year, end_iso_week, 7)
+    if end_date < start_date:
+        end_date = start_date + datetime.timedelta(days=6)
+        end_year, end_iso_week, _ = end_date.isocalendar()
+    planning_horizon_weeks = ((end_date - start_date).days // 7) + 1
+    range_key = f"{start_year:04d}-{start_iso_week:02d}--{end_year:04d}-{end_iso_week:02d}"
+    temporal_scope = {"from": start_date.isoformat(), "to": end_date.isoformat()}
+    return range_key, temporal_scope, planning_horizon_weeks
+
+
+def _normalized_phase_length(guidance: dict[str, Any]) -> int:
+    """Resolve a valid phase length from cadence and existing guidance."""
+    cadence = str(guidance.get("deload_cadence") or "").strip()
+    mapped = _CADENCE_PHASE_LENGTHS.get(cadence)
+    if mapped is not None:
+        return mapped
+    return _as_positive_int(guidance.get("phase_length_weeks")) or 4
+
+
+def _build_phase_plan_summary(
+    planning_horizon_weeks: int,
+    phase_length_weeks: int,
+    max_shortened_phases: int,
+) -> tuple[int, int, list[dict[str, int]]]:
+    """Build a coherent advisory phase summary for a horizon/phase-length pair."""
+    phase_count = math.ceil(planning_horizon_weeks / phase_length_weeks)
+    shortening_budget = max(0, (phase_count * phase_length_weeks) - planning_horizon_weeks)
+    if shortening_budget == 0:
+        return phase_count, 0, []
+
+    shortened_count = min(max(1, max_shortened_phases), min(2, shortening_budget))
+    base_reduction = shortening_budget // shortened_count
+    remainder = shortening_budget % shortened_count
+    reductions = [base_reduction + (1 if idx < remainder else 0) for idx in range(shortened_count)]
+
+    shortened_lengths: dict[int, int] = {}
+    for reduction in reductions:
+        length = max(1, phase_length_weeks - reduction)
+        shortened_lengths[length] = shortened_lengths.get(length, 0) + 1
+
+    shortened_phases = [
+        {"len": length, "count": count}
+        for length, count in sorted(shortened_lengths.items(), reverse=True)
+    ]
+    full_phases = phase_count - shortened_count
+    return full_phases, shortening_budget, shortened_phases
+
+
+def normalize_season_scenarios_document(
+    document: dict[str, Any],
+    *,
+    planning_events_document: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Normalize season scenario horizon and phase math before guarded store validation."""
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta") or {}
+    artifact_type = str(meta.get("artifact_type", "")).upper()
+    if artifact_type == "SEASON_SCENARIO_SELECTION":
+        if meta.get("authority") != "Informational":
+            meta["authority"] = "Informational"
+        if meta.get("owner_agent") != "Season-Scenario-Agent":
+            meta["owner_agent"] = "Season-Scenario-Agent"
+        if meta.get("schema_id") != "SeasonScenarioSelectionInterface":
+            meta["schema_id"] = "SeasonScenarioSelectionInterface"
+        if meta.get("schema_version") != "1.0":
+            meta["schema_version"] = "1.0"
+        if "notes" not in meta:
+            meta["notes"] = ""
+        else:
+            notes_value = meta.get("notes")
+            if isinstance(notes_value, list):
+                meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
+        document["meta"] = meta
+        data = document.get("data") or {}
+        if not isinstance(data, dict):
+            data = {}
+        data.setdefault("selection_rationale", "")
+        data.setdefault("notes", [])
+        document["data"] = data
+        return document
+    if artifact_type != "SEASON_SCENARIOS":
+        return document
+
+    if meta.get("authority") != "Informational":
+        meta["authority"] = "Informational"
+    if meta.get("owner_agent") != "Season-Scenario-Agent":
+        meta["owner_agent"] = "Season-Scenario-Agent"
+    if meta.get("schema_id") != "SeasonScenariosInterface":
+        meta["schema_id"] = "SeasonScenariosInterface"
+    if meta.get("schema_version") != "1.0":
+        meta["schema_version"] = "1.0"
+    if "notes" not in meta:
+        meta["notes"] = ""
+    else:
+        notes_value = meta.get("notes")
+        if isinstance(notes_value, list):
+            meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
+
+    data = document.get("data") or {}
+    if not isinstance(data, dict):
+        data = {}
+    allowed_data_keys = {
+        "kpi_profile_ref",
+        "athlete_profile_ref",
+        "planning_horizon_weeks",
+        "scenarios",
+        "notes",
+    }
+    data = {key: value for key, value in data.items() if key in allowed_data_keys}
+    data.setdefault("notes", [])
+
+    previous_range = meta.get("iso_week_range")
+    previous_horizon = data.get("planning_horizon_weeks")
+    planning_horizon_weeks: int | None = None
+    derived_horizon = _derive_planning_horizon_from_events(meta, planning_events_document)
+    if derived_horizon is not None:
+        range_key, temporal_scope, planning_horizon_weeks = derived_horizon
+        meta["iso_week_range"] = range_key
+        meta["temporal_scope"] = temporal_scope
+        data["planning_horizon_weeks"] = planning_horizon_weeks
+        if previous_range != range_key or previous_horizon != planning_horizon_weeks:
+            logger.info(
+                "Season scenarios horizon normalized from range=%s horizon=%s to range=%s horizon=%s",
+                previous_range,
+                previous_horizon,
+                range_key,
+                planning_horizon_weeks,
+            )
+    else:
+        planning_horizon_weeks = _as_positive_int(data.get("planning_horizon_weeks"))
+        if planning_horizon_weeks is None:
+            planning_horizon_weeks = _as_positive_int(_iso_week_range_weeks(meta.get("iso_week_range")))
+        if planning_horizon_weeks is not None:
+            data["planning_horizon_weeks"] = planning_horizon_weeks
+
+    scenarios = data.get("scenarios") or []
+    cleaned_scenarios: list[dict[str, Any]] = []
+    if isinstance(scenarios, list):
+        for scenario in scenarios:
+            if not isinstance(scenario, dict):
+                continue
+            allowed_scenario_keys = {
+                "scenario_id",
+                "name",
+                "core_idea",
+                "load_philosophy",
+                "risk_profile",
+                "key_differences",
+                "best_suited_if",
+                "scenario_guidance",
+            }
+            scenario = {key: value for key, value in scenario.items() if key in allowed_scenario_keys}
+            guidance = scenario.get("scenario_guidance") or {}
+            if not isinstance(guidance, dict):
+                guidance = {}
+            allowed_guidance_keys = {
+                "deload_cadence",
+                "phase_length_weeks",
+                "phase_count_expected",
+                "max_shortened_phases",
+                "shortening_budget_weeks",
+                "phase_plan_summary",
+                "event_alignment_notes",
+                "risk_flags",
+                "fixed_rest_days",
+                "constraint_summary",
+                "kpi_guardrail_notes",
+                "decision_notes",
+                "intensity_guidance",
+                "assumptions",
+                "unknowns",
+            }
+            guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
+            phase_length_weeks = _normalized_phase_length(guidance)
+            guidance["phase_length_weeks"] = phase_length_weeks
+
+            if planning_horizon_weeks is not None:
+                max_shortened_phases = _as_non_negative_int(guidance.get("max_shortened_phases"))
+                if max_shortened_phases is None:
+                    max_shortened_phases = 2
+                full_phases, shortening_budget_weeks, shortened_phases = _build_phase_plan_summary(
+                    planning_horizon_weeks,
+                    phase_length_weeks,
+                    max_shortened_phases,
+                )
+                guidance["phase_count_expected"] = math.ceil(planning_horizon_weeks / phase_length_weeks)
+                guidance["shortening_budget_weeks"] = shortening_budget_weeks
+                guidance["max_shortened_phases"] = max(
+                    max_shortened_phases,
+                    sum(item["count"] for item in shortened_phases),
+                )
+                guidance["phase_plan_summary"] = {
+                    "full_phases": full_phases,
+                    "shortened_phases": shortened_phases,
+                }
+                logger.info(
+                    "Season scenarios phase math normalized scenario=%s phase_length=%s horizon=%s summary=%s",
+                    scenario.get("scenario_id"),
+                    phase_length_weeks,
+                    planning_horizon_weeks,
+                    guidance["phase_plan_summary"],
+                )
+            else:
+                guidance["phase_count_expected"] = _as_positive_int(guidance.get("phase_count_expected")) or 1
+                guidance["max_shortened_phases"] = _as_non_negative_int(
+                    guidance.get("max_shortened_phases")
+                ) or 2
+                guidance["shortening_budget_weeks"] = _as_non_negative_int(
+                    guidance.get("shortening_budget_weeks")
+                ) or 0
+                guidance["phase_plan_summary"] = {
+                    "full_phases": guidance["phase_count_expected"],
+                    "shortened_phases": [],
+                }
+
+            guidance.setdefault("event_alignment_notes", [])
+            guidance.setdefault("risk_flags", [])
+            guidance.setdefault("fixed_rest_days", [])
+            guidance.setdefault("constraint_summary", [])
+            guidance.setdefault("kpi_guardrail_notes", [])
+            guidance.setdefault("decision_notes", [])
+            guidance.setdefault("assumptions", [])
+            guidance.setdefault("unknowns", [])
+            guidance.setdefault("intensity_guidance", {"allowed_domains": [], "avoid_domains": []})
+            scenario["scenario_guidance"] = guidance
+            cleaned_scenarios.append(scenario)
+    data["scenarios"] = cleaned_scenarios
+    document["meta"] = meta
+    document["data"] = data
+    return document
+
+
 def _log_file_search_results(response: LiteLLMResponse) -> None:
     """Log knowledge_search calls for debugging."""
     items = getattr(response, "output", []) or []
@@ -466,186 +793,13 @@ def run_agent_multi_output(
         return args
 
     def _fill_season_scenarios(document: dict[str, Any]) -> dict[str, Any]:
-        """Ensure required season_scenarios fields exist to satisfy strict schema."""
-        if not isinstance(document, dict):
-            return document
-        meta = document.get("meta") or {}
-        artifact_type = str(meta.get("artifact_type", "")).upper()
-        if artifact_type == "SEASON_SCENARIO_SELECTION":
-            if meta.get("authority") != "Informational":
-                meta["authority"] = "Informational"
-            if meta.get("owner_agent") != "Season-Scenario-Agent":
-                meta["owner_agent"] = "Season-Scenario-Agent"
-            if meta.get("schema_id") != "SeasonScenarioSelectionInterface":
-                meta["schema_id"] = "SeasonScenarioSelectionInterface"
-            if meta.get("schema_version") != "1.0":
-                meta["schema_version"] = "1.0"
-            if "notes" not in meta:
-                meta["notes"] = ""
-            else:
-                notes_value = meta.get("notes")
-                if isinstance(notes_value, list):
-                    meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
-            document["meta"] = meta
-            data = document.get("data") or {}
-            if not isinstance(data, dict):
-                data = {}
-            data.setdefault("selection_rationale", "")
-            data.setdefault("notes", [])
-            document["data"] = data
-            return document
-        if artifact_type != "SEASON_SCENARIOS":
-            return document
-        if meta.get("authority") != "Informational":
-            meta["authority"] = "Informational"
-        if meta.get("owner_agent") != "Season-Scenario-Agent":
-            meta["owner_agent"] = "Season-Scenario-Agent"
-        if meta.get("schema_id") != "SeasonScenariosInterface":
-            meta["schema_id"] = "SeasonScenariosInterface"
-        if meta.get("schema_version") != "1.0":
-            meta["schema_version"] = "1.0"
-        if "notes" not in meta:
-            meta["notes"] = ""
-        else:
-            notes_value = meta.get("notes")
-            if isinstance(notes_value, list):
-                meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
-        document["meta"] = meta
-        data = document.get("data") or {}
-        if not isinstance(data, dict):
-            data = {}
-        allowed_data_keys = {
-            "kpi_profile_ref",
-            "athlete_profile_ref",
-            "planning_horizon_weeks",
-            "scenarios",
-            "notes",
-        }
-        data = {key: value for key, value in data.items() if key in allowed_data_keys}
-        data.setdefault("notes", [])
-        scenarios = data.get("scenarios") or []
-        cleaned_scenarios: list[dict[str, Any]] = []
-        if isinstance(scenarios, list):
-            for scenario in scenarios:
-                if not isinstance(scenario, dict):
-                    continue
-                allowed_scenario_keys = {
-                    "scenario_id",
-                    "name",
-                    "core_idea",
-                    "load_philosophy",
-                    "risk_profile",
-                    "key_differences",
-                    "best_suited_if",
-                    "scenario_guidance",
-                }
-                scenario = {key: value for key, value in scenario.items() if key in allowed_scenario_keys}
-                guidance = scenario.get("scenario_guidance") or {}
-                if not isinstance(guidance, dict):
-                    guidance = {}
-                allowed_guidance_keys = {
-                    "deload_cadence",
-                    "phase_length_weeks",
-                    "phase_count_expected",
-                    "max_shortened_phases",
-                    "shortening_budget_weeks",
-                    "phase_plan_summary",
-                    "event_alignment_notes",
-                    "risk_flags",
-                    "fixed_rest_days",
-                    "constraint_summary",
-                    "kpi_guardrail_notes",
-                    "decision_notes",
-                    "intensity_guidance",
-                    "assumptions",
-                    "unknowns",
-                }
-                guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
-                def _as_positive_int(value: object) -> int | None:
-                    if isinstance(value, bool):
-                        return None
-                    if isinstance(value, int) and value > 0:
-                        return value
-                    return None
-
-                def _as_non_negative_int(value: object) -> int | None:
-                    if isinstance(value, bool):
-                        return None
-                    if isinstance(value, int) and value >= 0:
-                        return value
-                    return None
-
-                def _iso_week_range_weeks(range_str: object) -> int | None:
-                    if not isinstance(range_str, str) or "--" not in range_str:
-                        return None
-                    start_str, end_str = range_str.split("--", 1)
-                    try:
-                        sy, sw = (int(part) for part in start_str.split("-", 1))
-                        ey, ew = (int(part) for part in end_str.split("-", 1))
-                    except ValueError:
-                        return None
-                    try:
-                        start_date = datetime.date.fromisocalendar(sy, sw, 1)
-                        end_date = datetime.date.fromisocalendar(ey, ew, 7)
-                    except ValueError:
-                        return None
-                    return ((end_date - start_date).days // 7) + 1
-
-                phase_len = _as_positive_int(guidance.get("phase_length_weeks"))
-                planning_weeks = _as_positive_int(data.get("planning_horizon_weeks"))
-                if planning_weeks is None:
-                    planning_weeks = _as_positive_int(_iso_week_range_weeks(meta.get("iso_week_range")))
-                if phase_len and planning_weeks:
-                    phase_count_default = math.ceil(planning_weeks / phase_len)
-                    shortening_budget_default = max(0, (phase_count_default * phase_len) - planning_weeks)
-                else:
-                    phase_count_default = 1
-                    shortening_budget_default = 0
-
-                guidance["phase_count_expected"] = _as_positive_int(
-                    guidance.get("phase_count_expected")
-                ) or phase_count_default
-                guidance["max_shortened_phases"] = _as_non_negative_int(
-                    guidance.get("max_shortened_phases")
-                ) or 2
-                guidance["shortening_budget_weeks"] = _as_non_negative_int(
-                    guidance.get("shortening_budget_weeks")
-                ) or shortening_budget_default
-                phase_summary = guidance.get("phase_plan_summary")
-                if not isinstance(phase_summary, dict):
-                    phase_summary = {}
-                full_phases = phase_summary.get("full_phases")
-                if not isinstance(full_phases, int) or full_phases < 0:
-                    full_phases = guidance["phase_count_expected"]
-                shortened = phase_summary.get("shortened_phases")
-                if not isinstance(shortened, list):
-                    shortened = []
-                cleaned_shortened = []
-                for item in shortened:
-                    if not isinstance(item, dict):
-                        continue
-                    length = item.get("len")
-                    count = item.get("count")
-                    if isinstance(length, int) and length > 0 and isinstance(count, int) and count > 0:
-                        cleaned_shortened.append({"len": length, "count": count})
-                guidance["phase_plan_summary"] = {
-                    "full_phases": full_phases,
-                    "shortened_phases": cleaned_shortened,
-                }
-                guidance.setdefault("event_alignment_notes", [])
-                guidance.setdefault("risk_flags", [])
-                guidance.setdefault("fixed_rest_days", [])
-                guidance.setdefault("constraint_summary", [])
-                guidance.setdefault("kpi_guardrail_notes", [])
-                guidance.setdefault("decision_notes", [])
-                guidance.setdefault("assumptions", [])
-                guidance.setdefault("unknowns", [])
-                guidance.setdefault("intensity_guidance", {"allowed_domains": [], "avoid_domains": []})
-                scenario["scenario_guidance"] = guidance
-                cleaned_scenarios.append(scenario)
-        data["scenarios"] = cleaned_scenarios
-        document["data"] = data
-        return document
+        """Normalize season scenario outputs using loaded planning-events context when available."""
+        return normalize_season_scenarios_document(
+            document,
+            planning_events_document=_extract_planning_events_document(
+                loaded_inputs.get("planning_events")
+            ),
+        )
 
     def _normalize_week_plan_meta(document: dict[str, Any]) -> dict[str, Any]:
         """Coerce week_plan meta fields to match schema constants."""
@@ -932,6 +1086,7 @@ def run_agent_multi_output(
 
     force_search = force_file_search
     seen_summaries: set[str] = set()
+    loaded_inputs: dict[str, object] = {}
     response = _create_response(force_search)
     last_text = response.output_text or extract_text_output(response) or ""
     if debug_file_search:
@@ -979,6 +1134,15 @@ def run_agent_multi_output(
             if isinstance(key, str):
                 required_artifacts.discard(key)
         required_ready = not required_artifacts
+
+    def _capture_loaded_input(tool_name: str | None, args: dict[str, Any], result: object) -> None:
+        if tool_name != "workspace_get_input":
+            return
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            return
+        key = args.get("input_type") or args.get("input_name")
+        if isinstance(key, str):
+            loaded_inputs[key] = result
 
     def _log_tool_warning(tool_name: str | None, args: dict[str, Any], result: object) -> None:
         """Log workspace tool warnings surfaced by read handlers."""
@@ -1184,6 +1348,7 @@ def run_agent_multi_output(
                         logger.warning("Read tool failed %s: %s", name, exc)
                 _log_tool_warning(name, args, result)
                 _mark_required_loaded(name, args, result)
+                _capture_loaded_input(name, args, result)
 
                 input_list.append(
                     {

@@ -62,13 +62,11 @@ agents:
     - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
     - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
     - path: specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
-    - path: specs/knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
     - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
     - path: specs/knowledge/_shared/sources/specs/traceability_spec.md
     - path: specs/knowledge/_shared/sources/specs/file_naming_spec.md
     - path: specs/knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md
     - path: specs/knowledge/_shared/sources/schemas/bundled/season_scenarios.schema.json
-    - path: specs/knowledge/_shared/sources/schemas/bundled/season_scenario_selection.schema.json
     - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_meta.schema.json
     - path: specs/knowledge/_shared/sources/schemas/bundled/artefact_envelope.schema.json
     modes:

@@ -69,6 +69,93 @@ def test_week_planner_prompt_treats_availability_as_shared_latest():
     assert "must cover target week" not in prompt_text
 
 
+def test_normalize_season_scenarios_uses_last_planning_event_week():
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIOS",
+            "iso_week": "2026-17",
+            "iso_week_range": "2026-17--2026-34",
+            "temporal_scope": {"from": "2026-04-20", "to": "2026-08-23"},
+        },
+        "data": {
+            "planning_horizon_weeks": 18,
+            "scenarios": [
+                {
+                    "scenario_id": "B",
+                    "scenario_guidance": {
+                        "deload_cadence": "3:1",
+                        "phase_length_weeks": 4,
+                        "phase_count_expected": 5,
+                        "max_shortened_phases": 2,
+                        "shortening_budget_weeks": 2,
+                        "phase_plan_summary": {
+                            "full_phases": 4,
+                            "shortened_phases": [{"len": 3, "count": 2}],
+                        },
+                    },
+                },
+                {
+                    "scenario_id": "C",
+                    "scenario_guidance": {
+                        "deload_cadence": "2:1",
+                        "phase_length_weeks": 3,
+                        "phase_count_expected": 6,
+                        "max_shortened_phases": 2,
+                        "shortening_budget_weeks": 0,
+                        "phase_plan_summary": {"full_phases": 6, "shortened_phases": []},
+                    },
+                },
+            ],
+        },
+    }
+    planning_events = {
+        "data": {
+            "events": [
+                {"type": "B", "date": "2026-04-25"},
+                {"type": "A", "date": "2026-05-16"},
+                {"type": "A", "date": "2026-09-12"},
+            ]
+        }
+    }
+
+    normalized = multi_output_runner.normalize_season_scenarios_document(
+        document,
+        planning_events_document=planning_events,
+    )
+
+    assert normalized["meta"]["iso_week_range"] == "2026-17--2026-37"
+    assert normalized["meta"]["temporal_scope"] == {"from": "2026-04-20", "to": "2026-09-13"}
+    assert normalized["data"]["planning_horizon_weeks"] == 21
+
+    scenario_b = normalized["data"]["scenarios"][0]["scenario_guidance"]
+    assert scenario_b["phase_count_expected"] == 6
+    assert scenario_b["shortening_budget_weeks"] == 3
+    assert scenario_b["phase_plan_summary"] == {
+        "full_phases": 4,
+        "shortened_phases": [{"len": 3, "count": 1}, {"len": 2, "count": 1}],
+    }
+
+    scenario_c = normalized["data"]["scenarios"][1]["scenario_guidance"]
+    assert scenario_c["phase_count_expected"] == 7
+    assert scenario_c["shortening_budget_weeks"] == 0
+    assert scenario_c["phase_plan_summary"] == {"full_phases": 7, "shortened_phases": []}
+
+
+def test_season_scenario_prompt_delegates_calendar_math_to_runtime():
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "agents" / "season_scenario.md"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert "runtime canonicalizes deterministic calendar/math fields before store" in prompt_text.lower()
+    assert "phase_count_expected = ceil(planning_horizon_weeks / phase_length_weeks)" not in prompt_text
+
+
+def test_build_injection_block_for_season_scenario_excludes_selection_schema_noise():
+    combined = build_injection_block("season_scenario", mode="scenario")
+
+    assert "season_scenario_selection_interface_spec.md" not in combined
+    assert "season_scenario_selection.schema.json" not in combined
+
+
 def test_build_injection_block_for_season_planner_uses_season_section():
     combined = build_injection_block("season_planner", mode="season_plan")
     items = resolve_agent_injection_items("season_planner", mode="season_plan")
