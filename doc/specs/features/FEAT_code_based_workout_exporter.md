@@ -183,7 +183,7 @@ Owner: Planning Pipeline
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [x] `create_intervals_workouts_export(...)` no longer calls any LLM path.
+* [x] `run_workout_export(...)` no longer calls any LLM path.
 * [x] Valid `WEEK_PLAN` workout texts convert to schema-valid `INTERVALS_WORKOUTS`.
 * [x] Invalid workout text yields deterministic validation errors.
 * [x] Validation passes: `py_compile`, `ruff`, `mypy`, targeted pytest

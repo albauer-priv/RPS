@@ -10,8 +10,8 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from rps.orchestrator.workout_export import create_intervals_workouts_export  # noqa: E402
-from rps.workouts.exporter import build_intervals_workouts_export  # noqa: E402
+from rps.orchestrator.workout_export import run_workout_export  # noqa: E402
+from rps.workouts.exporter import build_workout_export_payload  # noqa: E402
 from rps.workouts.validator import (  # noqa: E402
     WorkoutValidationError,
     validate_week_plan_exportability,
@@ -114,7 +114,7 @@ class WorkoutExportTests(unittest.TestCase):
             "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n2x\n- 20m 84% 88-92rpm\n- 5m 60% 85rpm\n\nCooldown\n- 8m ramp 60%-45% 80rpm"
         )
 
-        payload = build_intervals_workouts_export(week_plan)
+        payload = build_workout_export_payload(week_plan)
 
         self.assertEqual(len(payload), 1)
         self.assertEqual(payload[0]["start_date_local"], "2026-04-21T07:00:00")
@@ -123,7 +123,7 @@ class WorkoutExportTests(unittest.TestCase):
         self.assertEqual(payload[0]["name"], "Endurance Re-Entry")
         self.assertIn("2x", payload[0]["description"])
 
-    def test_create_intervals_workouts_export_stores_week_scoped_payload(self) -> None:
+    def test_run_workout_export_stores_week_scoped_payload(self) -> None:
         week_plan = _sample_week_plan(
             "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 89m 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
         )
@@ -151,7 +151,7 @@ class WorkoutExportTests(unittest.TestCase):
                 update_latest=True,
             )
 
-            result = create_intervals_workouts_export(
+            result = run_workout_export(
                 store=store,
                 athlete_id=athlete_id,
                 year=2026,
@@ -170,7 +170,7 @@ class WorkoutExportTests(unittest.TestCase):
             self.assertEqual(len(versions), 1)
             self.assertTrue(versions[0].startswith("2026-17__"))
 
-    def test_create_intervals_workouts_export_returns_error_for_invalid_text(self) -> None:
+    def test_run_workout_export_returns_error_for_invalid_text(self) -> None:
         week_plan = _sample_week_plan(
             "Warmup\n- 8m ramp 50%-70%\n\nMain Set\n- 89m 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
         )
@@ -198,7 +198,7 @@ class WorkoutExportTests(unittest.TestCase):
                 update_latest=True,
             )
 
-            result = create_intervals_workouts_export(
+            result = run_workout_export(
                 store=store,
                 athlete_id=athlete_id,
                 year=2026,

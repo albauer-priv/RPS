@@ -8,7 +8,7 @@ from streamlit.testing.v1 import AppTest
 from rps.agents.tasks import AgentTask
 from rps.orchestrator import season_flow
 from rps.orchestrator.plan_week import create_performance_report, plan_week
-from rps.orchestrator.workout_export import create_intervals_workouts_export
+from rps.orchestrator.workout_export import run_workout_export
 from rps.ui.shared import SETTINGS
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.local_store import LocalArtifactStore
@@ -537,7 +537,7 @@ def test_workout_export_force_export_runs_even_when_current(tmp_path):
         update_latest=True,
     )
 
-    result = create_intervals_workouts_export(
+    result = run_workout_export(
         store=store,
         athlete_id=athlete_id,
         year=2026,
@@ -702,7 +702,7 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
         lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},
     )
     monkeypatch.setattr(
-        "rps.orchestrator.plan_week.create_intervals_workouts_export",
+        "rps.orchestrator.plan_week.run_workout_export",
         lambda *_args, **_kwargs: {"ran": False, "ok": True, "produced": False, "result": None},
     )
 
@@ -789,7 +789,7 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(
 
     monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
     monkeypatch.setattr(
-        "rps.orchestrator.plan_week.create_intervals_workouts_export",
+        "rps.orchestrator.plan_week.run_workout_export",
         lambda *_args, **_kwargs: pytest.fail("Isolated PHASE_GUARDRAILS run must not reach workout export."),
     )
 
@@ -887,7 +887,7 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
 
     monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
     monkeypatch.setattr(
-        "rps.orchestrator.plan_week.create_intervals_workouts_export",
+        "rps.orchestrator.plan_week.run_workout_export",
         lambda *_args, **_kwargs: pytest.fail("Isolated PHASE_GUARDRAILS run must not reach workout export."),
     )
 

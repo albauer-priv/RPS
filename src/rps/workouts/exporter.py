@@ -1,4 +1,4 @@
-"""Deterministic conversion from WEEK_PLAN to INTERVALS_WORKOUTS."""
+"""Deterministic conversion from WEEK_PLAN to the workout export payload."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ JsonMap: TypeAlias = dict[str, object]
 JsonList: TypeAlias = list[object]
 
 
-def build_intervals_workouts_export(week_plan: JsonMap) -> list[JsonMap]:
-    """Convert a validated week plan into the Intervals workouts export array."""
+def build_workout_export_payload(week_plan: JsonMap) -> list[JsonMap]:
+    """Convert a validated week plan into the workout export payload."""
     validate_week_plan_exportability(week_plan)
     data = week_plan["data"]
     assert isinstance(data, dict)  # validated above

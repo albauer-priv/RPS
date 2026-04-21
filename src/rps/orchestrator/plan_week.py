@@ -15,7 +15,7 @@ from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
-from rps.orchestrator.workout_export import create_intervals_workouts_export
+from rps.orchestrator.workout_export import run_workout_export
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import (
@@ -800,7 +800,7 @@ def plan_week(
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
-    export_result = create_intervals_workouts_export(
+    export_result = run_workout_export(
         store=store,
         athlete_id=athlete_id,
         year=year,

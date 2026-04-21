@@ -1,4 +1,4 @@
-"""Helpers for generating Intervals workouts exports."""
+"""Helpers for generating the local workout export payload."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
 
-from rps.workouts.exporter import build_intervals_workouts_export
+from rps.workouts.exporter import build_workout_export_payload
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 from rps.workspace.types import ArtifactType
@@ -22,7 +22,7 @@ def _mtime(path: Path | None) -> float | None:
     return path.stat().st_mtime
 
 
-def create_intervals_workouts_export(
+def run_workout_export(
     store: LocalArtifactStore,
     athlete_id: str,
     year: int,
@@ -33,10 +33,10 @@ def create_intervals_workouts_export(
     force_export: bool = False,
     log_fn: Callable[[str, int], None] | None = None,
 ) -> dict:
-    """Create Intervals workouts export when missing or stale.
+    """Create workout export when missing or stale.
 
     Purpose:
-        Ensure Intervals export is generated when week plan changes.
+        Ensure workout export is generated when week plan changes.
     Inputs:
         store: workspace artifact store.
         athlete_id: athlete identifier.
@@ -49,7 +49,7 @@ def create_intervals_workouts_export(
     Outputs:
         dict with keys: ran, ok, produced, result, message.
     Side effects:
-        Writes Intervals workouts export JSON under the workspace.
+        Writes workout export JSON under the workspace.
     """
 
     def _log(message: str, level: int = logging.INFO) -> None:
@@ -100,7 +100,7 @@ def create_intervals_workouts_export(
             meta.pop("version_key", None)
         validate_or_raise(week_plan_validator, week_plan_for_validation)
 
-        export_payload = build_intervals_workouts_export(week_plan)
+        export_payload = build_workout_export_payload(week_plan)
 
         workspace = ValidatedWorkspace.for_athlete(
             athlete_id,
@@ -142,3 +142,7 @@ def create_intervals_workouts_export(
         "result": out,
         "message": message,
     }
+
+
+# Backward-compatible alias for older imports during migration.
+create_intervals_workouts_export = run_workout_export
