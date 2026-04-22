@@ -646,6 +646,10 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     assert captured_inputs
     assert "Selected KPI guidance:" in captured_inputs[0]
     assert "kpi_rate_band_selector fast_competitive" in captured_inputs[0]
+    assert (
+        "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12"
+        in captured_inputs[0]
+    )
 
 
 def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):

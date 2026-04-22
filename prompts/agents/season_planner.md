@@ -57,6 +57,8 @@ Runtime artefacts (workspace; load via tools):
 | Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required shared latest (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required shared latest (Mode A/B) |
 | Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required shared latest (Mode A/B; body_mass_kg) |
+| Activities Actual (optional) | `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })` | Optional target-week context only; never use `workspace_get_latest` |
+| Activities Trend (optional) | `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })` | Optional target-week context only; never use `workspace_get_latest` |
 | Season Scenarios (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` | Optional season-level latest; use as advisory scenario context |
 | Scenario Selection (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` | Optional season-level latest; align to selected_scenario_id if present |
 
@@ -122,8 +124,12 @@ Note:
   5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
   6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   7) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
-  8) Optional: `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
-  9) Optional: `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
+  8) Optional target-week activity context only via:
+     `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+     and/or
+     `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
+  9) Optional: `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })`
+  10) Optional: `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })`
 
 ### Output contract (HARD)
 - Produce exactly one output allowed by the active mode.
@@ -169,12 +175,19 @@ Load in this order (skip non-applicable items):
 5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
 6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
 7) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
-8) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
-9) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
+8) Optional target-week activity context only via:
+   `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+   and/or
+   `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
+9) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
+10) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
 
 If any required artefact is missing: STOP and request it.
 If KPI_PROFILE cannot be resolved as exactly one shared latest: STOP and request a data/registry fix.
 If WELLNESS missing body_mass_kg (Mode A/B): STOP and request a data-pipeline refresh.
+Never call `workspace_get_latest` for `ACTIVITIES_ACTUAL` or `ACTIVITIES_TREND`.
+These artefacts are week-sensitive and must always use an explicit `version_key`
+if loaded at all.
 Set G1 = true.
 
 #### Step 2 — Load REQUIRED knowledge files (Gate: G2)
