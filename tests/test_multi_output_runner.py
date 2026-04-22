@@ -141,6 +141,37 @@ def test_normalize_season_scenarios_uses_last_planning_event_week():
     assert scenario_c["phase_plan_summary"] == {"full_phases": 7, "shortened_phases": []}
 
 
+def test_normalize_season_scenarios_never_emits_one_week_shortened_phase():
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIOS",
+            "iso_week": "2026-17",
+            "iso_week_range": "2026-17--2026-20",
+        },
+        "data": {
+            "planning_horizon_weeks": 21,
+            "scenarios": [
+                {
+                    "scenario_id": "A",
+                    "scenario_guidance": {
+                        "deload_cadence": "3:1",
+                        "phase_length_weeks": 4,
+                        "max_shortened_phases": 1,
+                    },
+                }
+            ],
+        },
+    }
+
+    normalized = multi_output_runner.normalize_season_scenarios_document(document)
+    summary = normalized["data"]["scenarios"][0]["scenario_guidance"]["phase_plan_summary"]
+
+    assert summary == {
+        "full_phases": 4,
+        "shortened_phases": [{"len": 3, "count": 1}, {"len": 2, "count": 1}],
+    }
+
+
 def test_normalize_season_scenarios_canonicalizes_intensity_domains():
     document = {
         "meta": {

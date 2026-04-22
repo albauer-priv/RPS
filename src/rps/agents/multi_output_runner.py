@@ -184,6 +184,7 @@ _CADENCE_PHASE_LENGTHS = {
     "2:1": 3,
     "2:1:1": 4,
 }
+_MIN_SHORTENED_PHASE_LENGTH = 2
 
 
 def _as_positive_int(value: object) -> int | None:
@@ -303,14 +304,20 @@ def _build_phase_plan_summary(
     if shortening_budget == 0:
         return phase_count, 0, []
 
-    shortened_count = min(max(1, max_shortened_phases), min(2, shortening_budget))
+    max_supported_shortened = min(2, phase_count)
+    max_reduction_per_shortened = max(1, phase_length_weeks - _MIN_SHORTENED_PHASE_LENGTH)
+    required_shortened = math.ceil(shortening_budget / max_reduction_per_shortened)
+    shortened_count = min(
+        max_supported_shortened,
+        max(max(1, max_shortened_phases), required_shortened),
+    )
     base_reduction = shortening_budget // shortened_count
     remainder = shortening_budget % shortened_count
     reductions = [base_reduction + (1 if idx < remainder else 0) for idx in range(shortened_count)]
 
     shortened_lengths: dict[int, int] = {}
     for reduction in reductions:
-        length = max(1, phase_length_weeks - reduction)
+        length = max(_MIN_SHORTENED_PHASE_LENGTH, phase_length_weeks - reduction)
         shortened_lengths[length] = shortened_lengths.get(length, 0) + 1
 
     shortened_phases = [

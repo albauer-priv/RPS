@@ -183,7 +183,7 @@ Owner: Planning Pipeline
 * [ ] `SEASON_SCENARIOS.meta.temporal_scope` matches the normalized week range.
 * [ ] `SEASON_SCENARIOS.data.planning_horizon_weeks` equals inclusive weeks in `meta.iso_week_range`.
 * [ ] For every scenario, `phase_plan_summary` exactly matches `planning_horizon_weeks`.
-* [ ] `shortened_phases[].len` is always `< phase_length_weeks`.
+* [ ] `shortened_phases[].len` is always `< phase_length_weeks` and never emits 1-week phases.
 * [ ] Prompt/injection content no longer requires the model to compute or preserve authoritative planning math.
 * [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted pytest.
 * [ ] No regressions in season scenario generation / season plan gating tests.
