@@ -100,6 +100,18 @@ class WorkspaceHelperTests(unittest.TestCase):
 
         self.assertEqual(version_key, "2026-17__20260422_105935")
 
+    def test_normalize_week_version_key_refreshes_existing_suffix_for_week_scoped_artifact(self) -> None:
+        """Verify stale suffixed week keys are re-canonicalized from the provided timestamp."""
+        from rps.workspace.versioning import normalize_version_key
+
+        version_key = normalize_version_key(
+            "2026-17__20260422_100346",
+            "2026-04-22T11:17:03Z",
+            artifact_type=ArtifactType.SEASON_SCENARIOS,
+        )
+
+        self.assertEqual(version_key, "2026-17__20260422_111703")
+
 
 class LocalStoreTests(unittest.TestCase):
     """Coverage for local store behaviors."""

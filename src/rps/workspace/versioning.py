@@ -66,10 +66,10 @@ def normalize_week_version_key(
     base = _normalize_week_key(value)
     if not base:
         return value
-    if "__" in value:
-        return value
     if artifact_type is not None and artifact_type not in WEEK_SCOPED_ARTIFACTS:
         return value
+    if "__" in value:
+        return f"{base}__{_format_timestamp(created_at)}"
     return f"{base}__{_format_timestamp(created_at)}"
 
 
@@ -82,11 +82,10 @@ def normalize_range_version_key(
     """Ensure a range version key includes a timestamp suffix when required."""
     if "--" not in value:
         return value
-    if "__" in value:
-        return value
     if artifact_type is not None and artifact_type not in RANGE_SCOPED_ARTIFACTS:
         return value
-    return f"{value}__{_format_timestamp(created_at)}"
+    base = value.split("__", 1)[0]
+    return f"{base}__{_format_timestamp(created_at)}"
 
 
 def normalize_version_key(
