@@ -398,7 +398,12 @@ class LocalArtifactStore:
         """Write a schema-style {meta,data} envelope to disk."""
         self.ensure_workspace(athlete_id)
 
-        normalized_key = normalize_version_key(version_key, artifact_type=artifact_type)
+        stored_created_at = utc_iso_now()
+        normalized_key = normalize_version_key(
+            version_key,
+            stored_created_at,
+            artifact_type=artifact_type,
+        )
         meta = ArtifactMeta(
             artifact_type=artifact_type,
             athlete_id=athlete_id,
@@ -406,7 +411,7 @@ class LocalArtifactStore:
             authority=authority,
             producer_agent=producer_agent,
             run_id=run_id,
-            created_at=utc_iso_now(),
+            created_at=stored_created_at,
             trace_upstream=trace_upstream or [],
         )
 
@@ -417,7 +422,6 @@ class LocalArtifactStore:
             if authority_raw is None or isinstance(authority_raw, (Authority, str))
             else _normalize_authority(str(authority_raw))
         )
-        version_meta = _as_str(payload_meta.get("version_key")) or meta.version_key
         meta_doc: JsonMap = {
             "artifact_type": meta.artifact_type.value,
             "schema_id": payload_meta.get("schema_id", f"{meta.artifact_type.value}Interface"),
@@ -426,17 +430,12 @@ class LocalArtifactStore:
             "authority": authority_value,
             "owner_agent": payload_meta.get("owner_agent", meta.producer_agent),
             "run_id": meta.run_id,
-            "created_at": payload_meta.get("created_at", meta.created_at),
+            "created_at": meta.created_at,
             "trace_upstream": payload_meta.get("trace_upstream", meta.trace_upstream),
         }
 
         if "version_key" in payload_meta or not payload_meta:
-            created_meta = _as_str(meta_doc.get("created_at"))
-            meta_doc["version_key"] = normalize_version_key(
-                version_meta,
-                created_meta,
-                artifact_type=artifact_type,
-            )
+            meta_doc["version_key"] = meta.version_key
 
         for key, value in payload_meta.items():
             if key in meta_doc or value is None:
@@ -489,8 +488,12 @@ class LocalArtifactStore:
         """Write a validated document (envelope or raw) to disk."""
         self.ensure_workspace(athlete_id)
 
-        normalized_key = normalize_version_key(version_key, artifact_type=artifact_type)
         stored_created_at = utc_iso_now()
+        normalized_key = normalize_version_key(
+            version_key,
+            stored_created_at,
+            artifact_type=artifact_type,
+        )
         meta_doc = None
         if isinstance(document, dict):
             candidate = document.get("meta")
