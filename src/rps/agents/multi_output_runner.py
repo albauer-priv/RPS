@@ -185,6 +185,15 @@ _CADENCE_PHASE_LENGTHS = {
     "2:1:1": 4,
 }
 _MIN_SHORTENED_PHASE_LENGTH = 2
+_SEASON_SCENARIO_TRACE_EVENT_ARTIFACTS = {"PLANNING_EVENTS"}
+_SEASON_SCENARIO_TRACE_DATA_ARTIFACTS = {
+    "ATHLETE_PROFILE",
+    "LOGISTICS",
+    "KPI_PROFILE",
+    "AVAILABILITY",
+    "WELLNESS",
+}
+_DISALLOWED_AVOID_DOMAINS = {"NONE", "RECOVERY"}
 
 
 def _as_positive_int(value: object) -> int | None:
@@ -328,6 +337,30 @@ def _build_phase_plan_summary(
     return full_phases, shortening_budget, shortened_phases
 
 
+def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[str, str]]:
+    """Keep only normalized trace entries for the allowed artifact names."""
+    if not isinstance(value, list):
+        return []
+    normalized: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        artifact = str(item.get("artifact") or "").strip().upper()
+        if artifact not in allowed:
+            continue
+        version = str(item.get("version") or "").strip() or "1.0"
+        run_id = str(item.get("run_id") or "").strip()
+        if not run_id:
+            continue
+        token = (artifact, version, run_id)
+        if token in seen:
+            continue
+        seen.add(token)
+        normalized.append({"artifact": artifact, "version": version, "run_id": run_id})
+    return normalized
+
+
 def normalize_season_scenarios_document(
     document: dict[str, Any],
     *,
@@ -378,6 +411,12 @@ def normalize_season_scenarios_document(
         notes_value = meta.get("notes")
         if isinstance(notes_value, list):
             meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
+    meta["trace_events"] = _normalize_trace_entries(
+        meta.get("trace_events"), allowed=_SEASON_SCENARIO_TRACE_EVENT_ARTIFACTS
+    )
+    meta["trace_data"] = _normalize_trace_entries(
+        meta.get("trace_data"), allowed=_SEASON_SCENARIO_TRACE_DATA_ARTIFACTS
+    )
 
     data = document.get("data") or {}
     if not isinstance(data, dict):
@@ -468,9 +507,10 @@ def normalize_season_scenarios_document(
                 )
                 guidance["phase_count_expected"] = math.ceil(planning_horizon_weeks / phase_length_weeks)
                 guidance["shortening_budget_weeks"] = shortening_budget_weeks
-                guidance["max_shortened_phases"] = max(
-                    max_shortened_phases,
-                    sum(item["count"] for item in shortened_phases),
+                guidance["max_shortened_phases"] = (
+                    max(max_shortened_phases, sum(item["count"] for item in shortened_phases))
+                    if shortening_budget_weeks > 0
+                    else 0
                 )
                 guidance["phase_plan_summary"] = {
                     "full_phases": full_phases,
@@ -515,7 +555,11 @@ def normalize_season_scenarios_document(
             )
             if not allowed_domains:
                 allowed_domains = ["ENDURANCE_LOW"]
-            avoid_domains = [domain for domain in avoid_domains if domain not in set(allowed_domains)]
+            avoid_domains = [
+                domain
+                for domain in avoid_domains
+                if domain not in set(allowed_domains) and domain not in _DISALLOWED_AVOID_DOMAINS
+            ]
             intensity_guidance["allowed_domains"] = allowed_domains
             intensity_guidance["avoid_domains"] = avoid_domains
             guidance["intensity_guidance"] = intensity_guidance

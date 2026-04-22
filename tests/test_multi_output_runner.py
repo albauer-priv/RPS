@@ -76,6 +76,15 @@ def test_normalize_season_scenarios_uses_last_planning_event_week():
             "iso_week": "2026-17",
             "iso_week_range": "2026-17--2026-34",
             "temporal_scope": {"from": "2026-04-20", "to": "2026-08-23"},
+            "trace_data": [
+                {"artifact": "ATHLETE_PROFILE", "run_id": "athlete"},
+                {"artifact": "PLANNING_EVENTS", "run_id": "events"},
+                {"artifact": "LOGISTICS", "run_id": "logistics"},
+            ],
+            "trace_events": [
+                {"artifact": "PLANNING_EVENTS", "run_id": "events"},
+                {"artifact": "LOGISTICS", "run_id": "logistics"},
+            ],
         },
         "data": {
             "planning_horizon_weeks": 18,
@@ -126,6 +135,13 @@ def test_normalize_season_scenarios_uses_last_planning_event_week():
     assert normalized["meta"]["iso_week_range"] == "2026-17--2026-37"
     assert normalized["meta"]["temporal_scope"] == {"from": "2026-04-20", "to": "2026-09-13"}
     assert normalized["data"]["planning_horizon_weeks"] == 21
+    assert normalized["meta"]["trace_data"] == [
+        {"artifact": "ATHLETE_PROFILE", "version": "1.0", "run_id": "athlete"},
+        {"artifact": "LOGISTICS", "version": "1.0", "run_id": "logistics"},
+    ]
+    assert normalized["meta"]["trace_events"] == [
+        {"artifact": "PLANNING_EVENTS", "version": "1.0", "run_id": "events"},
+    ]
 
     scenario_b = normalized["data"]["scenarios"][0]["scenario_guidance"]
     assert scenario_b["phase_count_expected"] == 6
@@ -137,6 +153,7 @@ def test_normalize_season_scenarios_uses_last_planning_event_week():
 
     scenario_c = normalized["data"]["scenarios"][1]["scenario_guidance"]
     assert scenario_c["phase_count_expected"] == 7
+    assert scenario_c["max_shortened_phases"] == 0
     assert scenario_c["shortening_budget_weeks"] == 0
     assert scenario_c["phase_plan_summary"] == {"full_phases": 7, "shortened_phases": []}
 
@@ -194,7 +211,13 @@ def test_normalize_season_scenarios_canonicalizes_intensity_domains():
                                 "TEMPO",
                                 "TEMPO",
                             ],
-                            "avoid_domains": ["LIMITED_VO2MAX", "VO2MAX", "ENDURANCE"],
+                            "avoid_domains": [
+                                "LIMITED_VO2MAX",
+                                "VO2MAX",
+                                "ENDURANCE",
+                                "RECOVERY",
+                                "NONE",
+                            ],
                         },
                     },
                 }

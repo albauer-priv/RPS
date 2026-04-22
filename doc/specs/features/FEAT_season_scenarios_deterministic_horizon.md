@@ -223,6 +223,9 @@ Owner: Planning Pipeline
 
 * `Season scenarios horizon normalized`: emitted when code adjusts range/temporal scope/horizon from planning events.
 * `Season scenarios phase math normalized`: emitted when code rewrites phase summary fields.
+* Season-scenario normalization also drops invalid `avoid_domains` values such
+  as `NONE` / `RECOVERY`, zeros `max_shortened_phases` when no shortening budget
+  exists, and normalizes `trace_data` / `trace_events` buckets.
 
 **Diagnostics**
 

@@ -76,8 +76,17 @@ Each scenario MUST include `scenario_guidance` with:
   (`NONE`, `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`,
   `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`; legacy `ENDURANCE` normalizes to
   `ENDURANCE_LOW`)
+  - `avoid_domains` is for canonical training domains to suppress in planning;
+    it must not include `NONE` or `RECOVERY`
 - `assumptions` (array)
 - `unknowns` (array)
+
+Runtime canonicalizes deterministic season-scenario fields before store:
+- planning horizon and temporal scope from the last A/B/C planning event
+- phase-count / shortening math from `planning_horizon_weeks` and
+  `phase_length_weeks`
+- `max_shortened_phases = 0` when `shortening_budget_weeks = 0`
+- `trace_data` / `trace_events` into data-vs-event artefact buckets
 
 ## Authority Notes
 `SEASON_SCENARIOS` is **informational**; Season-Planner must treat it as advisory

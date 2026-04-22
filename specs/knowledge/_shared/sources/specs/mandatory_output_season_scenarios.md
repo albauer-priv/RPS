@@ -36,7 +36,9 @@ required schema, field sources, and a minimal valid example.
 - `iso_week_range`: `YYYY-WW--YYYY-WW` (string, inclusive)
 - `temporal_scope`: `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
 - `trace_upstream`: include ATHLETE_PROFILE + PLANNING_EVENTS + LOGISTICS + KPI_PROFILE + AVAILABILITY (if loaded)
-- `trace_data`, `trace_events`: include inputs if used
+- `trace_data`: include data inputs if used (`ATHLETE_PROFILE`, `LOGISTICS`,
+  `KPI_PROFILE`, `AVAILABILITY`, `WELLNESS`)
+- `trace_events`: include event inputs if used (`PLANNING_EVENTS`)
 - `notes`: non‑empty string
 
 #### 3) `data` (required fields)
@@ -88,6 +90,9 @@ Notes:
 - Proxy labels like `HIGH_INTENSITY_DENSITY`, `LIMITED_VO2MAX`, or
   `EXTRA_BUILD_OVERLAY` are invalid in intensity guidance and belong in
   `risk_flags` or `decision_notes` instead.
+- `intensity_guidance.avoid_domains` must not contain `NONE` or `RECOVERY`;
+  use `risk_flags` / `decision_notes` to express "avoid overusing recovery" or
+  similar qualitative intent.
 - Runtime canonicalizes deterministic horizon/math fields before store:
   - `meta.iso_week_range`
   - `meta.temporal_scope`
@@ -95,6 +100,11 @@ Notes:
   - `scenario_guidance.phase_count_expected`
   - `scenario_guidance.shortening_budget_weeks`
   - `scenario_guidance.phase_plan_summary`
+  - `scenario_guidance.max_shortened_phases`
+  - `meta.trace_data`
+  - `meta.trace_events`
+  Runtime sets `max_shortened_phases = 0` whenever
+  `shortening_budget_weeks = 0`.
   Emit best-effort schema-valid values, but qualitative scenario content is the primary agent responsibility.
 
 ---
