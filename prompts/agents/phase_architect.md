@@ -79,6 +79,8 @@ Required baseline inputs (load every run):
 - Availability: `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 - Wellness: `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 - Zone Model: `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+- Activities Actual (target week only): `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+- Activities Trend (target week only): `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
 
 Optional inputs (load attempt; binding when present):
 - Season→Phase Feed Forward: `workspace_get_version({ "artifact_type": "SEASON_PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })`
@@ -215,12 +217,17 @@ Load in this exact order:
 4) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
 5) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
 6) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+7) `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+8) `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
 
 Phase-range resolution:
 - If user provided `iso_week_range`: do NOT call `workspace_get_phase_context`.
 - Else call `workspace_get_phase_context({ "year": YYYY, "week": WW })` (and offsets only if needed).
 
 If any required artefact is missing: STOP and request it.
+Never call `workspace_get_latest` for `ACTIVITIES_ACTUAL` or `ACTIVITIES_TREND`.
+They are week-sensitive and must be loaded with the explicit target-week `version_key`
+before any STOP decision about missing activity context.
 Set G1 = true.
 
 #### Step 2 — Determine conditional artefact dependencies (Gate: G2)

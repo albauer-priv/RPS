@@ -907,6 +907,8 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     assert result.ok is True
     assert captured_inputs
     assert all("Selected KPI guidance:" not in user_input for user_input in captured_inputs)
+    assert all("ACTIVITIES_ACTUAL version_key 2026-12" in user_input for user_input in captured_inputs)
+    assert all("ACTIVITIES_TREND version_key 2026-12" in user_input for user_input in captured_inputs)
 
 
 def test_week_page_renders():
