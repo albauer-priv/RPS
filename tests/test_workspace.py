@@ -83,6 +83,22 @@ class WorkspaceHelperTests(unittest.TestCase):
         self.assertTrue(version_key.startswith("2026-17__"))
         self.assertNotIn("--", version_key)
 
+    def test_season_scenarios_version_key_uses_created_at_not_stale_meta_suffix(self) -> None:
+        """Verify season-scenarios ignore stale timestamp suffixes in meta.version_key."""
+        envelope = {
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "iso_week": "2026-17",
+                "version_key": "2026-17__20260422_100346",
+                "created_at": "2026-04-22T10:59:35Z",
+            },
+            "data": {},
+        }
+
+        version_key = derive_version_key_from_envelope(envelope, ArtifactType.SEASON_SCENARIOS)
+
+        self.assertEqual(version_key, "2026-17__20260422_105935")
+
 
 class LocalStoreTests(unittest.TestCase):
     """Coverage for local store behaviors."""

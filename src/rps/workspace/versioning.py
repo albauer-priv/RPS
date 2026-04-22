@@ -209,6 +209,12 @@ def _version_key_from_iso_week(
         )
         normalized_base, _ = split_week_version_key(normalized_version_key)
         if normalized_base == wk_key:
+            if artifact_type in WEEK_SCOPED_ARTIFACTS:
+                return normalize_version_key(
+                    wk_key,
+                    meta.get("created_at"),
+                    artifact_type=artifact_type,
+                )
             return normalized_version_key
     return normalize_version_key(
         wk_key,
