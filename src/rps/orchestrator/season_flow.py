@@ -10,6 +10,7 @@ from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.orchestrator.resolved_context import (
+    build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
     build_resolved_kpi_context_block,
@@ -17,7 +18,7 @@ from rps.orchestrator.resolved_context import (
     build_resolved_planning_events_context_block,
     build_resolved_zone_model_context_block,
 )
-from rps.workspace.iso_helpers import IsoWeek
+from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -58,6 +59,31 @@ def _format_user_data_block(user_data: dict[str, object]) -> str:
         lines.append("ambition_if_range: n/a")
     lines.append("kpi_profile: xxx")
     return "\n".join(lines) + "\n"
+
+
+def _resolve_latest_historical_week_versions(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    target_week: IsoWeek,
+) -> dict[ArtifactType, str]:
+    """Return the latest available week-scoped activity versions before the target week."""
+    resolved: dict[ArtifactType, str] = {}
+    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
+        latest_version: str | None = None
+        latest_week_index: int | None = None
+        for version_key in store.list_versions(athlete_id, artifact_type):
+            version_week = parse_iso_week(version_key)
+            if version_week is None:
+                continue
+            version_index = week_index(version_week)
+            if version_index >= week_index(target_week):
+                continue
+            if latest_week_index is None or version_index > latest_week_index:
+                latest_version = version_key
+                latest_week_index = version_index
+        if latest_version:
+            resolved[artifact_type] = latest_version
+    return resolved
 
 
 def create_season_scenarios(
@@ -237,22 +263,49 @@ def create_season_plan(
     logistics_block = ""
     planning_events_block = ""
     zone_model_block = ""
+    resolved_activity_block = ""
+    historical_context_line = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
+        target_week = IsoWeek(year=year, week=week)
         athlete_block = build_resolved_athlete_context_block(store, athlete_id)
         kpi_block = build_resolved_kpi_context_block(store, athlete_id)
         availability_block = build_resolved_availability_context_block(store, athlete_id)
         logistics_block = build_resolved_logistics_context_block(
             store,
             athlete_id,
-            IsoWeek(year=year, week=week),
+            target_week,
         )
         planning_events_block = build_resolved_planning_events_context_block(
             store,
             athlete_id,
-            IsoWeek(year=year, week=week),
+            target_week,
         )
         zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
+        historical_activity_versions = _resolve_latest_historical_week_versions(
+            store,
+            athlete_id,
+            target_week,
+        )
+        if (
+            ArtifactType.ACTIVITIES_ACTUAL in historical_activity_versions
+            and ArtifactType.ACTIVITIES_TREND in historical_activity_versions
+        ):
+            actual_version = historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]
+            trend_version = historical_activity_versions[ArtifactType.ACTIVITIES_TREND]
+            resolved_activity_block = build_resolved_activity_context_block(
+                store,
+                athlete_id,
+                target_week=target_week,
+                activities_actual_version=actual_version,
+                activities_trend_version=trend_version,
+            )
+            historical_context_line = (
+                f"If activity context is needed, use workspace_get_version for ACTIVITIES_ACTUAL and "
+                f"ACTIVITIES_TREND with the latest historical version_key before target week {year}-{week:02d}: "
+                f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
+                "activity artefacts. "
+            )
     except Exception:
         athlete_block = ""
         kpi_block = ""
@@ -260,13 +313,13 @@ def create_season_plan(
         logistics_block = ""
         planning_events_block = ""
         zone_model_block = ""
+        resolved_activity_block = ""
+        historical_context_line = ""
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use the latest season-level SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
-        f"If activity context is needed, use workspace_get_version for ACTIVITIES_ACTUAL and "
-        f"ACTIVITIES_TREND with version_key {year}-{week:02d}; never use workspace_get_latest "
-        "for week-sensitive activity artefacts. "
+        f"{historical_context_line}"
         f"{athlete_block}"
         f"{user_data_block}"
         f"{kpi_block}"
@@ -274,6 +327,7 @@ def create_season_plan(
         f"{logistics_block}"
         f"{planning_events_block}"
         f"{zone_model_block}"
+        f"{resolved_activity_block}"
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_PLAN."

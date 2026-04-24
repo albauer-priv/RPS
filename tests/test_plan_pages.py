@@ -780,10 +780,7 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     assert "fixed_rest_days: Mon, Fri" in captured_inputs[0]
     assert "**Resolved Planning Event Context**" in captured_inputs[0]
     assert "Spring 200" in captured_inputs[0]
-    assert (
-        "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12"
-        in captured_inputs[0]
-    )
+    assert "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12" not in captured_inputs[0]
 
 
 def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
@@ -1527,6 +1524,84 @@ def test_create_season_plan_injects_resolved_logistics_and_zone_context(
     assert "Business trip" in captured_inputs[0]
     assert "**Resolved Zone Model Context**" in captured_inputs[0]
     assert "ftp_watts: 300" in captured_inputs[0]
+
+
+def test_create_season_plan_uses_historical_activity_versions(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured_inputs: list[str] = []
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps({"data": {"weekly_hours": {"min": 10, "typical": 12, "max": 14}, "fixed_rest_days": ["Mon"], "availability_table": []}}),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps({"data": {"events": []}}),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.ZONE_MODEL).write_text(
+        json.dumps({"data": {"model_metadata": {"ftp_watts": 300}, "zones": []}}),
+        encoding="utf-8",
+    )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-16",
+        {"data": {"activities": []}},
+        producer_agent="user",
+        run_id="activities_actual_202616",
+        update_latest=True,
+    )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.ACTIVITIES_TREND,
+        "2026-16",
+        {
+            "data": {
+                "weekly_trends": [
+                    {
+                        "year": 2026,
+                        "iso_week": 16,
+                        "weekly_aggregates": {"activity_count": 5, "moving_time": "13:48", "work_kj": 7760},
+                        "intensity_load_metrics": {"durability_index": 0.94},
+                    }
+                ]
+            }
+        },
+        producer_agent="user",
+        run_id="activities_trend_202616",
+        update_latest=True,
+    )
+
+    season_flow.create_season_plan(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=17,
+        run_id="run_plan",
+        selected=None,
+        override_text=None,
+    )
+
+    assert captured_inputs
+    assert "latest historical version_key before target week 2026-17: 2026-16 and 2026-16" in captured_inputs[0]
+    assert "**Resolved Activity Context**" in captured_inputs[0]
+    assert "historical_reference_week: 2026-16" in captured_inputs[0]
+    assert "activities_actual_version: 2026-16" in captured_inputs[0]
+    assert "activities_trend_version: 2026-16" in captured_inputs[0]
 
 
 def test_create_season_scenarios_injects_resolved_context(

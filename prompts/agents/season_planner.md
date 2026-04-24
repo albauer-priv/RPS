@@ -68,8 +68,8 @@ Runtime artefacts (workspace; load via tools):
 | Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required shared latest (Mode A/B; FTP from `data.model_metadata.ftp_watts`) |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required shared latest (Mode A/B) |
 | Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required shared latest (Mode A/B; body_mass_kg) |
-| Activities Actual (optional) | `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })` | Optional target-week context only; never use `workspace_get_latest` |
-| Activities Trend (optional) | `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })` | Optional target-week context only; never use `workspace_get_latest` |
+| Activities Actual (optional) | `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })` | Optional latest historical context before target week; never use `workspace_get_latest` |
+| Activities Trend (optional) | `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })` | Optional latest historical context before target week; never use `workspace_get_latest` |
 | Season Scenarios (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` | Optional season-level latest; use as advisory scenario context |
 | Scenario Selection (optional) | `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` | Optional season-level latest; align to selected_scenario_id if present |
 
@@ -135,7 +135,7 @@ Note:
   5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
   6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
   7) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
-  8) Optional target-week activity context only via:
+8) Optional latest historical activity context before the target week only via:
      `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
      and/or
      `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
@@ -186,7 +186,7 @@ Load only the artefacts still needed after considering any `Resolved ... Context
 5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
 6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
 7) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
-8) Optional target-week activity context only via:
+8) Optional latest historical activity context before the target week only via:
    `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
    and/or
    `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
@@ -198,7 +198,7 @@ If KPI_PROFILE cannot be resolved as exactly one shared latest: STOP and request
 If WELLNESS missing body_mass_kg (Mode A/B): STOP and request a data-pipeline refresh.
 Never call `workspace_get_latest` for `ACTIVITIES_ACTUAL` or `ACTIVITIES_TREND`.
 These artefacts are week-sensitive and must always use an explicit `version_key`
-if loaded at all.
+for the latest available historical week strictly before the target week, if loaded at all.
 When `Resolved ... Context` blocks are present:
 - prefer those resolved values for deterministic facts such as KPI ranges, weekly hours, fixed rest days, target-week events, logistics membership, FTP, and body mass
 - do not call tools just to rediscover those exact same facts
