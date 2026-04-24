@@ -3,7 +3,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import UTC, datetime
 
-from rps.workspace.iso_helpers import IsoWeek, next_iso_week, parse_iso_week, parse_iso_week_range
+from rps.workspace.iso_helpers import (
+    IsoWeek,
+    next_iso_week,
+    parse_iso_week,
+    parse_iso_week_range,
+    previous_iso_week,
+)
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -72,6 +78,21 @@ def sorted_labels(*series_maps: Mapping[str, object]) -> list[str]:
             int(label.split("-W")[1]),
         ),
     )
+
+
+def trim_past_labels(labels: list[str], current_week: IsoWeek, history_weeks: int) -> list[str]:
+    """Keep all future labels but limit past labels to the requested lookback window."""
+    if history_weeks <= 0:
+        return labels
+    earliest_week = current_week
+    for _ in range(history_weeks - 1):
+        earliest_week = previous_iso_week(earliest_week)
+    earliest_order = (earliest_week.year, earliest_week.week)
+    return [
+        label
+        for label in labels
+        if (label_order(label) or (0, 0)) >= earliest_order
+    ]
 
 
 def label_order(label: str) -> tuple[int, int] | None:

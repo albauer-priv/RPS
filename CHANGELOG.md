@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Harmonized the local workout-export naming: orchestrator/exporter helpers now use `run_workout_export(...)` and `build_workout_export_payload(...)`, and the validation runbook links were cleaned up.
 - Performance corridor charts now derive phase bands from the latest relevant `PHASE_GUARDRAILS` version per week instead of intersecting every historical version, and the chart x-axis is now built from all plotted series rather than only the season corridor.
 - Performance corridor charts now also derive `Week Plan Min/Max` and `Planned Weekly kJ` from the latest stored `WEEK_PLAN` payload per ISO week, preventing stale rerun data from leaking into the overview chart.
+- Performance corridor charts now trim their past window to the most recent 12 ISO weeks while keeping the future season/phase horizon visible, reducing visual noise from older historical bars.
 
 ## [0.10.5] - 2026-04-21
 

@@ -6,8 +6,10 @@ from rps.ui.performance_corridors import (
     phase_guardrails_by_week,
     planned_weekly_kj_by_week,
     sorted_labels,
+    trim_past_labels,
     week_plan_corridor_by_week,
 )
+from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -115,6 +117,47 @@ def test_sorted_labels_includes_all_series_not_only_season():
 def test_normalize_iso_label_accepts_both_week_formats():
     assert normalize_iso_label("2026-17") == "2026-W17"
     assert normalize_iso_label("2026-W17") == "2026-W17"
+
+
+def test_trim_past_labels_limits_history_but_keeps_future():
+    labels = [
+        "2026-W03",
+        "2026-W04",
+        "2026-W05",
+        "2026-W06",
+        "2026-W07",
+        "2026-W08",
+        "2026-W09",
+        "2026-W10",
+        "2026-W11",
+        "2026-W12",
+        "2026-W13",
+        "2026-W14",
+        "2026-W15",
+        "2026-W16",
+        "2026-W17",
+        "2026-W18",
+        "2026-W19",
+    ]
+
+    trimmed = trim_past_labels(labels, IsoWeek(2026, 17), 12)
+
+    assert trimmed == [
+        "2026-W06",
+        "2026-W07",
+        "2026-W08",
+        "2026-W09",
+        "2026-W10",
+        "2026-W11",
+        "2026-W12",
+        "2026-W13",
+        "2026-W14",
+        "2026-W15",
+        "2026-W16",
+        "2026-W17",
+        "2026-W18",
+        "2026-W19",
+    ]
 
 
 def test_week_plan_helpers_use_latest_version_per_week(tmp_path):

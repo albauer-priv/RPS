@@ -25,6 +25,7 @@ from rps.ui.performance_corridors import (
     planned_weekly_kj_by_week,
     season_corridor_by_week,
     sorted_labels,
+    trim_past_labels,
     week_plan_corridor_by_week,
 )
 from rps.ui.shared import (
@@ -52,6 +53,7 @@ DATE_PERIOD_PART_COUNT = 6
 ROOT = SETTINGS.workspace_root
 _INTERVALS_JOB_PREFIX = "intervals_refresh_job"
 _ACTIVITY_WINDOW_WEEKS = 52
+_CORRIDOR_HISTORY_WEEKS = 12
 
 
 
@@ -84,6 +86,7 @@ def _build_corridor_overview_chart(
     week_corridor: dict[str, dict[str, float]],
     actual_weekly_kj: dict[str, float],
     planned_weekly_kj: dict[str, float],
+    current_week: IsoWeek,
 ):
     if go is None:
         return None
@@ -97,6 +100,7 @@ def _build_corridor_overview_chart(
         actual_weekly_kj,
         planned_weekly_kj,
     )
+    labels = trim_past_labels(labels, current_week, _CORRIDOR_HISTORY_WEEKS)
     if not labels:
         return None
 
@@ -740,6 +744,7 @@ with st.container():
                 week_corridor,
                 actual_weekly_kj,
                 planned_weekly_kj,
+                IsoWeek(current_year, current_week),
             )
             if corridor_fig is None:
                 st.info("No corridor data available yet.")
