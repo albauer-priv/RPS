@@ -13,9 +13,20 @@ try:
     from plotly.subplots import make_subplots
 except Exception:  # pragma: no cover - optional dependency
     make_subplots = None
+
 import streamlit as st
 
 from rps.ui.intervals_refresh import ensure_intervals_data, request_intervals_refresh
+from rps.ui.performance_corridors import (
+    label_order,
+    normalize_corridor,
+    normalize_iso_label,
+    phase_guardrails_by_week,
+    planned_weekly_kj_by_week,
+    season_corridor_by_week,
+    sorted_labels,
+    week_plan_corridor_by_week,
+)
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -26,15 +37,8 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
-from rps.workspace.iso_helpers import (
-    IsoWeek,
-    next_iso_week,
-    parse_iso_week,
-    parse_iso_week_range,
-    previous_iso_week,
-)
+from rps.workspace.iso_helpers import IsoWeek, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
-from rps.workspace.types import ArtifactType
 
 try:
     import pandas as pd
@@ -64,19 +68,6 @@ def _axis_domain(series, pad: float = 0.1) -> tuple[float, float] | None:
 
 
 
-def _iter_weeks_in_range(range_spec):
-    if not range_spec:
-        return []
-    weeks = []
-    current = range_spec.start
-    while True:
-        weeks.append(current)
-        if current == range_spec.end:
-            break
-        current = next_iso_week(current)
-    return weeks
-
-
 def _last_n_weeks(current: IsoWeek, count: int) -> list[IsoWeek]:
     if count <= 0:
         return []
@@ -85,148 +76,6 @@ def _last_n_weeks(current: IsoWeek, count: int) -> list[IsoWeek]:
         current = previous_iso_week(current)
         weeks.append(current)
     return list(reversed(weeks))
-
-
-def _season_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
-    if not store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
-        return {}
-    payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
-    if not isinstance(payload, dict):
-        return {}
-    phases = (payload.get("data") or {}).get("phases", []) or []
-    corridors: dict[str, dict[str, float]] = {}
-    for phase in phases:
-        iso_range = phase.get("iso_week_range")
-        weekly_kj = (phase.get("weekly_load_corridor") or {}).get("weekly_kj") or {}
-        minimum = weekly_kj.get("min")
-        maximum = weekly_kj.get("max")
-        range_spec = parse_iso_week_range(iso_range)
-        if not range_spec and iso_range and "--" in iso_range:
-            start, end = iso_range.split("--", maxsplit=1)
-            start_label = _normalize_iso_label(start.strip())
-            end_label = _normalize_iso_label(end.strip())
-            if start_label and end_label:
-                range_spec = parse_iso_week_range(f"{start_label}--{end_label}")
-        if minimum is None or maximum is None or not range_spec:
-            continue
-        for week in _iter_weeks_in_range(range_spec):
-            label = f"{week.year}-W{week.week:02d}"
-            corridors[label] = {"min": minimum, "max": maximum}
-    return corridors
-
-
-def _phase_guardrails_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
-    corridors: dict[str, dict[str, float]] = {}
-    for version in store.list_versions(athlete_id, ArtifactType.PHASE_GUARDRAILS):
-        payload = store.load_version(athlete_id, ArtifactType.PHASE_GUARDRAILS, version)
-        if not isinstance(payload, dict):
-            continue
-        bands = (payload.get("data") or {}).get("load_guardrails", {}).get("weekly_kj_bands", []) or []
-        for band in bands:
-            week = band.get("week")
-            limits = (band.get("band") or {})
-            minimum = limits.get("min")
-            maximum = limits.get("max")
-            if not week or minimum is None or maximum is None:
-                continue
-            label = f"{week}"
-            existing = corridors.get(label)
-            if existing:
-                corridors[label] = {
-                    "min": max(existing.get("min", minimum), minimum),
-                    "max": min(existing.get("max", maximum), maximum),
-                }
-            else:
-                corridors[label] = {"min": minimum, "max": maximum}
-    return corridors
-
-
-def _week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
-    corridors: dict[str, dict[str, float]] = {}
-    for version in store.list_versions(athlete_id, ArtifactType.WEEK_PLAN):
-        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version)
-        if not isinstance(payload, dict):
-            continue
-        meta = payload.get("meta") or {}
-        iso_week = meta.get("iso_week")
-        if not iso_week:
-            continue
-        week = parse_iso_week(iso_week)
-        if not week:
-            continue
-        corridor = (payload.get("data") or {}).get("week_summary", {}).get("weekly_load_corridor_kj") or {}
-        minimum = corridor.get("min")
-        maximum = corridor.get("max")
-        if minimum is None or maximum is None:
-            continue
-        label = f"{week.year}-W{week.week:02d}"
-        corridors[label] = {"min": minimum, "max": maximum}
-    return corridors
-
-
-def _planned_weekly_kj_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, float]:
-    planned: dict[str, float] = {}
-    for version in store.list_versions(athlete_id, ArtifactType.WEEK_PLAN):
-        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version)
-        if not isinstance(payload, dict):
-            continue
-        meta = payload.get("meta") or {}
-        iso_week = meta.get("iso_week")
-        if not iso_week:
-            continue
-        normalized = _normalize_iso_label(iso_week)
-        if not normalized:
-            continue
-        summary = (payload.get("data") or {}).get("week_summary") or {}
-        value = summary.get("planned_weekly_load_kj")
-        if value is None:
-            continue
-        planned[normalized] = float(value)
-    return planned
-
-
-
-def _normalize_iso_label(label: str) -> str | None:
-    if not label:
-        return None
-    candidate = label
-    if "-W" in candidate:
-        candidate = candidate.replace("-W", "-")
-    week = parse_iso_week(candidate)
-    if not week:
-        return None
-    return f"{week.year}-W{week.week:02d}"
-
-
-def _normalize_corridor(corridor: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
-    normalized: dict[str, dict[str, float]] = {}
-    for key, value in corridor.items():
-        label = _normalize_iso_label(str(key))
-        if not label:
-            continue
-        normalized[label] = value
-    return normalized
-
-
-def _sorted_labels(*corridors: dict[str, dict[str, float]]) -> list[str]:
-    labels: set[str] = set()
-    for corridor in corridors:
-        labels.update(_normalize_corridor(corridor).keys())
-    return sorted(
-        labels,
-        key=lambda label: (
-            int(label.split("-W")[0]),
-            int(label.split("-W")[1]),
-        ),
-    )
-
-
-def _label_order(label: str) -> tuple[int, int] | None:
-    normalized = _normalize_iso_label(label)
-    if not normalized:
-        return None
-    year_str, week_str = normalized.split("-W")
-    return int(year_str), int(week_str)
 
 
 def _build_corridor_overview_chart(
@@ -238,10 +87,16 @@ def _build_corridor_overview_chart(
 ):
     if go is None:
         return None
-    season_corridor = _normalize_corridor(season_corridor)
-    phase_corridor = _normalize_corridor(phase_corridor)
-    week_corridor = _normalize_corridor(week_corridor)
-    labels = _sorted_labels(season_corridor)
+    season_corridor = normalize_corridor(season_corridor)
+    phase_corridor = normalize_corridor(phase_corridor)
+    week_corridor = normalize_corridor(week_corridor)
+    labels = sorted_labels(
+        season_corridor,
+        phase_corridor,
+        week_corridor,
+        actual_weekly_kj,
+        planned_weekly_kj,
+    )
     if not labels:
         return None
 
@@ -844,10 +699,10 @@ weekly_trends, trend_notes, trend_used_cache = _load_weekly_trends_cached(
     trend_parquet_path,
 )
 store = LocalArtifactStore(root=SETTINGS.workspace_root)
-season_corridor = _season_corridor_by_week(store, athlete_id)
-phase_corridor = _phase_guardrails_by_week(store, athlete_id)
-week_corridor = _week_plan_corridor_by_week(store, athlete_id)
-planned_weekly_kj = _planned_weekly_kj_by_week(store, athlete_id)
+season_corridor = season_corridor_by_week(store, athlete_id)
+phase_corridor = phase_guardrails_by_week(store, athlete_id)
+week_corridor = week_plan_corridor_by_week(store, athlete_id)
+planned_weekly_kj = planned_weekly_kj_by_week(store, athlete_id)
 current_year, current_week = get_iso_year_week()
 recent_activity_weeks = _last_n_weeks(IsoWeek(current_year, current_week), _ACTIVITY_WINDOW_WEEKS)
 
@@ -867,7 +722,7 @@ with st.container():
                     continue
                 if (int(year), int(iso_week)) > (current_year, current_week):
                     continue
-                label = _normalize_iso_label(f"{int(year)}-{int(iso_week):02d}")
+                label = normalize_iso_label(f"{int(year)}-{int(iso_week):02d}")
                 if not label:
                     continue
                 weekly_kj = (entry.get("weekly_aggregates") or {}).get("work_kj")
@@ -877,7 +732,7 @@ with st.container():
             planned_weekly_kj = {
                 label: value
                 for label, value in planned_weekly_kj.items()
-                if (_label_order(label) or (9999, 99)) <= (current_year, current_week)
+                if (label_order(label) or (9999, 99)) <= (current_year, current_week)
             }
             corridor_fig = _build_corridor_overview_chart(
                 season_corridor,

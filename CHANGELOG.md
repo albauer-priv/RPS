@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the legacy `workout_builder` agent wiring and prompt files; the export path now records `producer_agent=workout_export` in run/index metadata.
 - Renamed the remaining workout-export task and Plan Hub step identifiers to neutral `BUILD_WORKOUT_EXPORT` / `WORKOUT_EXPORT` names, deleted the old mandatory-output chapter, and renamed the shared contract to `week__workout_export_contract.md`.
 - Harmonized the local workout-export naming: orchestrator/exporter helpers now use `run_workout_export(...)` and `build_workout_export_payload(...)`, and the validation runbook links were cleaned up.
+- Performance corridor charts now derive phase bands from the latest relevant `PHASE_GUARDRAILS` version per week instead of intersecting every historical version, and the chart x-axis is now built from all plotted series rather than only the season corridor.
 
 ## [0.10.5] - 2026-04-21
 
