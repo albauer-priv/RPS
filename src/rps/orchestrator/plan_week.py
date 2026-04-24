@@ -15,7 +15,12 @@ from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
-from rps.orchestrator.resolved_context import build_resolved_kpi_context_block
+from rps.orchestrator.resolved_context import (
+    build_resolved_availability_context_block,
+    build_resolved_kpi_context_block,
+    build_resolved_phase_context_block,
+    build_resolved_planning_events_context_block,
+)
 from rps.orchestrator.workout_export import run_workout_export
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
@@ -533,6 +538,12 @@ def plan_week(
     phase_raw = phase_info.raw
     phase_name = phase_raw.get("name") or phase_info.phase_name or phase_info.phase_id
     phase_type = phase_raw.get("cycle") or phase_info.phase_type
+    resolved_phase_block = build_resolved_phase_context_block(
+        target,
+        phase_info,
+        phase_name_override=str(phase_name),
+        phase_type_override=str(phase_type),
+    )
     message = (
         "Matching Phase found in Season Plan: "
         f"Phase {phase_info.phase_id} ({phase_name or phase_type or 'unknown'}) "
@@ -674,6 +685,13 @@ def plan_week(
         phase_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
 
     if phase_tasks:
+        resolved_availability_block = build_resolved_availability_context_block(store, athlete_id)
+        resolved_events_block = build_resolved_planning_events_context_block(
+            store,
+            athlete_id,
+            target,
+            phase_range=phase_range,
+        )
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -710,6 +728,9 @@ def plan_week(
                     "Use this phase range as the iso_week_range for the artefact. "
                     "Read season_plan first and use explicit week/range-scoped workspace tools for any "
                     "week-sensitive or exact-range dependencies. "
+                    f"{resolved_phase_block}"
+                    f"{resolved_availability_block}"
+                    f"{resolved_events_block}"
                     f"{historical_context_line}"
                     f"{user_data_block}"
                     f"{override_line}"
@@ -813,6 +834,13 @@ def plan_week(
 
     week_run_ok: bool | None = None
     if week_tasks:
+        resolved_availability_block = build_resolved_availability_context_block(store, athlete_id)
+        resolved_events_block = build_resolved_planning_events_context_block(
+            store,
+            athlete_id,
+            target,
+            phase_range=phase_range,
+        )
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -855,6 +883,9 @@ def plan_week(
                 f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
+                f"{resolved_phase_block}"
+                f"{resolved_availability_block}"
+                f"{resolved_events_block}"
                 f"{historical_context_line}"
                 f"{body_mass_context_line}"
                 f"{user_data_block}"

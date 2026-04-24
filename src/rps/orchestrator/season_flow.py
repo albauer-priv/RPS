@@ -9,7 +9,12 @@ from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
-from rps.orchestrator.resolved_context import build_resolved_kpi_context_block
+from rps.orchestrator.resolved_context import (
+    build_resolved_availability_context_block,
+    build_resolved_kpi_context_block,
+    build_resolved_planning_events_context_block,
+)
+from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -193,11 +198,21 @@ def create_season_plan(
     except Exception:
         user_data_block = _format_user_data_block({})
     kpi_block = ""
+    availability_block = ""
+    planning_events_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         kpi_block = build_resolved_kpi_context_block(store, athlete_id)
+        availability_block = build_resolved_availability_context_block(store, athlete_id)
+        planning_events_block = build_resolved_planning_events_context_block(
+            store,
+            athlete_id,
+            IsoWeek(year=year, week=week),
+        )
     except Exception:
         kpi_block = ""
+        availability_block = ""
+        planning_events_block = ""
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -207,6 +222,8 @@ def create_season_plan(
         "for week-sensitive activity artefacts. "
         f"{user_data_block}"
         f"{kpi_block}"
+        f"{availability_block}"
+        f"{planning_events_block}"
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_PLAN."

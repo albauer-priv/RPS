@@ -571,6 +571,54 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
     store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [
+                        {
+                            "weekday": "Tue",
+                            "hours_min": 1.5,
+                            "hours_typical": 2.0,
+                            "hours_max": 2.5,
+                            "indoor_possible": True,
+                            "travel_risk": "LOW",
+                            "locked": False,
+                        }
+                    ],
+                    "source_type": "manual",
+                    "source_ref": "ui",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     store.latest_path("test_athlete", ArtifactType.SEASON_SCENARIO_SELECTION).write_text(
         json.dumps({"data": {"kpi_moving_time_rate_guidance_selection": None}}),
         encoding="utf-8",
@@ -615,6 +663,54 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
     store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [
+                        {
+                            "weekday": "Tue",
+                            "hours_min": 1.5,
+                            "hours_typical": 2.0,
+                            "hours_max": 2.5,
+                            "indoor_possible": True,
+                            "travel_risk": "LOW",
+                            "locked": False,
+                        }
+                    ],
+                    "source_type": "manual",
+                    "source_ref": "ui",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     store.save_document(
         "test_athlete",
         ArtifactType.SEASON_SCENARIO_SELECTION,
@@ -680,6 +776,10 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     assert "selected_kpi_rate_band_selector: fast_competitive" in captured_inputs[0]
     assert "kj_per_kg_per_hour 20 - 24" in captured_inputs[0]
     assert "kpi_profile_moving_time_rate_guidance.available_bands:" in captured_inputs[0]
+    assert "**Resolved Availability Context**" in captured_inputs[0]
+    assert "fixed_rest_days: Mon, Fri" in captured_inputs[0]
+    assert "**Resolved Planning Event Context**" in captured_inputs[0]
+    assert "Spring 200" in captured_inputs[0]
     assert (
         "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12"
         in captured_inputs[0]
@@ -910,6 +1010,54 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
         run_id="store_activities_trend_202611",
         update_latest=False,
     )
+    store.latest_path(athlete_id, ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [
+                        {
+                            "weekday": "Tue",
+                            "hours_min": 1.5,
+                            "hours_typical": 2.0,
+                            "hours_max": 2.5,
+                            "indoor_possible": True,
+                            "travel_risk": "LOW",
+                            "locked": False,
+                        }
+                    ],
+                    "source_type": "manual",
+                    "source_ref": "ui",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path(athlete_id, ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
 
     runtime = SimpleNamespace(
         workspace_root=tmp_path,
@@ -962,6 +1110,12 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     assert all("Selected KPI guidance:" not in user_input for user_input in captured_inputs)
     assert all("ACTIVITIES_ACTUAL version_key 2026-11" in user_input for user_input in captured_inputs)
     assert all("ACTIVITIES_TREND version_key 2026-11" in user_input for user_input in captured_inputs)
+    assert all("**Resolved Phase Context**" in user_input for user_input in captured_inputs)
+    assert all("phase_iso_week_range: 2026-11--2026-13" in user_input for user_input in captured_inputs)
+    assert all("**Resolved Availability Context**" in user_input for user_input in captured_inputs)
+    assert all("fixed_rest_days: Mon, Fri" in user_input for user_input in captured_inputs)
+    assert all("**Resolved Planning Event Context**" in user_input for user_input in captured_inputs)
+    assert all("Spring 200" in user_input for user_input in captured_inputs)
 
 
 def test_plan_week_week_planner_uses_historical_activity_versions(
@@ -1144,6 +1298,54 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
         run_id="store_selection_202612",
         update_latest=True,
     )
+    store.latest_path(athlete_id, ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [
+                        {
+                            "weekday": "Tue",
+                            "hours_min": 1.5,
+                            "hours_typical": 2.0,
+                            "hours_max": 2.5,
+                            "indoor_possible": True,
+                            "travel_risk": "LOW",
+                            "locked": False,
+                        }
+                    ],
+                    "source_type": "manual",
+                    "source_ref": "ui",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path(athlete_id, ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     store.save_document(
         athlete_id,
         ArtifactType.KPI_PROFILE,
@@ -1205,6 +1407,12 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
     assert any("**Resolved KPI Context**" in user_input for user_input in captured_inputs)
     assert any("selected_kpi_rate_band_selector: fast_competitive" in user_input for user_input in captured_inputs)
     assert any("kpi_profile_moving_time_rate_guidance.available_bands:" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Phase Context**" in user_input for user_input in captured_inputs)
+    assert any("phase_iso_week_range: 2026-11--2026-13" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Availability Context**" in user_input for user_input in captured_inputs)
+    assert any("fixed_rest_days: Mon, Fri" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Planning Event Context**" in user_input for user_input in captured_inputs)
+    assert any("Spring 200" in user_input for user_input in captured_inputs)
 
 
 def test_plan_week_skips_export_when_week_plan_creation_fails(
