@@ -18,8 +18,10 @@ from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipel
 from rps.orchestrator.resolved_context import (
     build_resolved_availability_context_block,
     build_resolved_kpi_context_block,
+    build_resolved_logistics_context_block,
     build_resolved_phase_context_block,
     build_resolved_planning_events_context_block,
+    build_resolved_zone_model_context_block,
 )
 from rps.orchestrator.workout_export import run_workout_export
 from rps.workspace.api import Workspace
@@ -686,12 +688,19 @@ def plan_week(
 
     if phase_tasks:
         resolved_availability_block = build_resolved_availability_context_block(store, athlete_id)
+        resolved_logistics_block = build_resolved_logistics_context_block(
+            store,
+            athlete_id,
+            target,
+            phase_range=phase_range,
+        )
         resolved_events_block = build_resolved_planning_events_context_block(
             store,
             athlete_id,
             target,
             phase_range=phase_range,
         )
+        resolved_zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -730,7 +739,9 @@ def plan_week(
                     "week-sensitive or exact-range dependencies. "
                     f"{resolved_phase_block}"
                     f"{resolved_availability_block}"
+                    f"{resolved_logistics_block}"
                     f"{resolved_events_block}"
+                    f"{resolved_zone_model_block}"
                     f"{historical_context_line}"
                     f"{user_data_block}"
                     f"{override_line}"
@@ -835,12 +846,19 @@ def plan_week(
     week_run_ok: bool | None = None
     if week_tasks:
         resolved_availability_block = build_resolved_availability_context_block(store, athlete_id)
+        resolved_logistics_block = build_resolved_logistics_context_block(
+            store,
+            athlete_id,
+            target,
+            phase_range=phase_range,
+        )
         resolved_events_block = build_resolved_planning_events_context_block(
             store,
             athlete_id,
             target,
             phase_range=phase_range,
         )
+        resolved_zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -885,7 +903,9 @@ def plan_week(
                 "Read phase_guardrails and phase_structure from workspace. "
                 f"{resolved_phase_block}"
                 f"{resolved_availability_block}"
+                f"{resolved_logistics_block}"
                 f"{resolved_events_block}"
+                f"{resolved_zone_model_block}"
                 f"{historical_context_line}"
                 f"{body_mass_context_line}"
                 f"{user_data_block}"

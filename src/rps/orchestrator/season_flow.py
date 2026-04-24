@@ -12,7 +12,9 @@ from rps.agents.tasks import AgentTask
 from rps.orchestrator.resolved_context import (
     build_resolved_availability_context_block,
     build_resolved_kpi_context_block,
+    build_resolved_logistics_context_block,
     build_resolved_planning_events_context_block,
+    build_resolved_zone_model_context_block,
 )
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
@@ -199,20 +201,30 @@ def create_season_plan(
         user_data_block = _format_user_data_block({})
     kpi_block = ""
     availability_block = ""
+    logistics_block = ""
     planning_events_block = ""
+    zone_model_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         kpi_block = build_resolved_kpi_context_block(store, athlete_id)
         availability_block = build_resolved_availability_context_block(store, athlete_id)
+        logistics_block = build_resolved_logistics_context_block(
+            store,
+            athlete_id,
+            IsoWeek(year=year, week=week),
+        )
         planning_events_block = build_resolved_planning_events_context_block(
             store,
             athlete_id,
             IsoWeek(year=year, week=week),
         )
+        zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
     except Exception:
         kpi_block = ""
         availability_block = ""
+        logistics_block = ""
         planning_events_block = ""
+        zone_model_block = ""
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -223,7 +235,9 @@ def create_season_plan(
         f"{user_data_block}"
         f"{kpi_block}"
         f"{availability_block}"
+        f"{logistics_block}"
         f"{planning_events_block}"
+        f"{zone_model_block}"
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_PLAN."

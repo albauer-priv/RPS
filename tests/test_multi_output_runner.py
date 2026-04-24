@@ -85,6 +85,14 @@ def test_week_planner_prompt_uses_wellness_body_mass_for_kpi_gating():
     assert "authoritative and required body-mass value" in prompt_text
 
 
+def test_planner_prompts_honor_resolved_context_blocks():
+    prompts_dir = Path(__file__).resolve().parents[1] / "prompts" / "agents"
+    for name in ("week_planner.md", "phase_architect.md", "season_planner.md"):
+        prompt_text = (prompts_dir / name).read_text(encoding="utf-8")
+        assert "Resolved ... Context" in prompt_text
+        assert "Do NOT search, infer, or reinterpret the same facts again" in prompt_text
+
+
 def test_normalize_season_scenarios_uses_last_planning_event_week():
     document = {
         "meta": {

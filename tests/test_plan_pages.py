@@ -1407,6 +1407,305 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
     assert any("**Resolved KPI Context**" in user_input for user_input in captured_inputs)
     assert any("selected_kpi_rate_band_selector: fast_competitive" in user_input for user_input in captured_inputs)
     assert any("kpi_profile_moving_time_rate_guidance.available_bands:" in user_input for user_input in captured_inputs)
+
+
+def test_create_season_plan_injects_resolved_logistics_and_zone_context(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured_inputs: list[str] = []
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.LOGISTICS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "date": "2026-03-19",
+                            "event_id": "LOG-1",
+                            "event_type": "TRAVEL",
+                            "status": "PLANNED",
+                            "impact": "AVAILABILITY",
+                            "description": "Business trip",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [],
+                    "source_type": "manual",
+                    "source_ref": "ui",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.ZONE_MODEL).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "model_metadata": {
+                        "valid_from": "2026-01-01",
+                        "ftp_watts": 300,
+                        "purpose": "planning",
+                        "filename": "zone_model_power_300W.json",
+                    },
+                    "zones": [
+                        {
+                            "zone_id": "Z2",
+                            "name": "Endurance",
+                            "ftp_percent_range": {"min": 56, "max": 75},
+                            "watt_range": {"min": 168, "max": 225},
+                            "training_intent": "endurance",
+                            "typical_if": 0.68,
+                        }
+                    ],
+                    "examples": [],
+                    "versioning_usage": [],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    season_flow.create_season_plan(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_plan",
+        selected=None,
+        override_text=None,
+    )
+
+    assert captured_inputs
+    assert "**Resolved Logistics Context**" in captured_inputs[0]
+    assert "Business trip" in captured_inputs[0]
+    assert "**Resolved Zone Model Context**" in captured_inputs[0]
+    assert "ftp_watts: 300" in captured_inputs[0]
+
+
+def test_plan_week_injects_resolved_logistics_and_zone_context(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    athlete_id = "test_athlete"
+    captured_inputs: list[str] = []
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "meta": {"iso_week_range": "2026-11--2026-13"},
+                "data": {
+                    "phases": [
+                        {
+                            "id": "P01",
+                            "name": "Base 1",
+                            "cycle": "Base",
+                            "iso_week_range": "2026-11--2026-13",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    for artifact_type in (
+        ArtifactType.PHASE_GUARDRAILS,
+        ArtifactType.PHASE_STRUCTURE,
+        ArtifactType.PHASE_PREVIEW,
+    ):
+        store.save_document(
+            athlete_id,
+            artifact_type,
+            "2026-11--2026-13",
+            {"meta": {"artifact_type": artifact_type.value, "iso_week_range": "2026-11--2026-13"}, "data": {}},
+            producer_agent="phase_architect",
+            run_id=f"store_{artifact_type.value.lower()}",
+            update_latest=True,
+        )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-11",
+        {"meta": {"artifact_type": "ACTIVITIES_ACTUAL", "iso_week": "2026-11"}, "data": {}},
+        producer_agent="pipeline",
+        run_id="store_activities_actual_202611",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_TREND,
+        "2026-11",
+        {"meta": {"artifact_type": "ACTIVITIES_TREND", "iso_week": "2026-11"}, "data": {}},
+        producer_agent="pipeline",
+        run_id="store_activities_trend_202611",
+        update_latest=True,
+    )
+    store.latest_path(athlete_id, ArtifactType.LOGISTICS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "date": "2026-03-19",
+                            "event_id": "LOG-1",
+                            "event_type": "TRAVEL",
+                            "status": "PLANNED",
+                            "impact": "AVAILABILITY",
+                            "description": "Business trip",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path(athlete_id, ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path(athlete_id, ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [],
+                    "source_type": "manual",
+                    "source_ref": "ui",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path(athlete_id, ArtifactType.ZONE_MODEL).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "model_metadata": {
+                        "valid_from": "2026-01-01",
+                        "ftp_watts": 300,
+                        "purpose": "planning",
+                        "filename": "zone_model_power_300W.json",
+                    },
+                    "zones": [
+                        {
+                            "zone_id": "Z2",
+                            "name": "Endurance",
+                            "ftp_percent_range": {"min": 56, "max": 75},
+                            "watt_range": {"min": 168, "max": 225},
+                            "training_intent": "endurance",
+                            "typical_if": 0.68,
+                        }
+                    ],
+                    "examples": [],
+                    "versioning_usage": [],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    runtime = SimpleNamespace(
+        workspace_root=tmp_path,
+        reasoning_effort=None,
+        reasoning_summary=None,
+    )
+
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.run_workout_export",
+        lambda *_args, **_kwargs: {"ran": False, "ok": True, "produced": False, "result": None},
+    )
+
+    result = plan_week(
+        runtime,
+        athlete_id=athlete_id,
+        year=2026,
+        week=12,
+        run_id="test_run",
+    )
+
+    assert result.ok is True
+    assert captured_inputs
+    assert any("**Resolved Logistics Context**" in user_input for user_input in captured_inputs)
+    assert any("Business trip" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Zone Model Context**" in user_input for user_input in captured_inputs)
+    assert any("ftp_watts: 300" in user_input for user_input in captured_inputs)
     assert any("**Resolved Phase Context**" in user_input for user_input in captured_inputs)
     assert any("phase_iso_week_range: 2026-11--2026-13" in user_input for user_input in captured_inputs)
     assert any("**Resolved Availability Context**" in user_input for user_input in captured_inputs)

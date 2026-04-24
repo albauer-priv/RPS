@@ -21,6 +21,12 @@ Load-order rule:
 
 ## Binding Knowledge (Binding)
 
+### resolved_context_authority (HARD)
+- If the user input contains any `Resolved ... Context` blocks, treat those blocks as authoritative deterministic facts already resolved from workspace artefacts.
+- Do NOT search, infer, or reinterpret the same facts again from raw artefacts when a resolved block already provides them.
+- Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
+- A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
+
 ### Binding enforcement (HARD)
 - Binding content is any instruction explicitly labeled Binding / Mandatory / Non-Negotiable / MUST / MUST NOT,
   plus any governance hierarchy and artefact precedence rule.
@@ -219,6 +225,11 @@ Load in this exact order:
 6) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
 7) `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
 8) `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
+
+When `Resolved ... Context` blocks are present:
+- prefer those resolved values for deterministic facts such as phase identity/range, weekly hours, fixed rest days, target-week events, phase-range events, logistics membership, FTP, and historical activity version keys
+- do not call tools just to rediscover those exact same facts
+- call tools only for details not already resolved or for required exact-range predecessor artefacts
 
 Phase-range resolution:
 - If user provided `iso_week_range`: do NOT call `workspace_get_phase_context`.

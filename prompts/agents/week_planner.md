@@ -25,6 +25,12 @@ ISO week labels are not calendar months (e.g., `YYYY-WW` is ISO week number, not
 
 ## Binding Knowledge (Binding)
 
+### resolved_context_authority (HARD)
+- If the user input contains any `Resolved ... Context` blocks, treat those blocks as authoritative deterministic facts already resolved from workspace artefacts.
+- Do NOT search, infer, or reinterpret the same facts again from raw artefacts when a resolved block already provides them.
+- Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
+- A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
+
 ### runtime_context (Binding)
 This instruction set is consolidated into this file.
 All binding knowledge sources listed below are available at runtime.
@@ -177,6 +183,7 @@ Before generating any user-facing output:
    - `AVAILABILITY`, `planning_events`, `logistics`, and `ZONE_MODEL` are shared/latest inputs and remain valid until replaced.
    - `WELLNESS` is latest factual context and does not need to share the target week key.
    - If KPI gating is active, `WELLNESS.data.body_mass_kg` is the authoritative and required body-mass value; do not ignore it when present.
+   - If `Resolved ... Context` blocks are provided, use them directly for the fields they name instead of rediscovering the same facts from raw artefacts.
 If any required governance artefact missing/invalid: STOP in STOP output format.
 
 ### B) Deterministic Load Order (HARD; gate-based)
@@ -203,6 +210,11 @@ Load in this order:
 6) `workspace_get_version({ "artifact_type": "PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
 7) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` (required)
 8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
+
+When `Resolved ... Context` blocks are present:
+- prefer those resolved values for deterministic facts such as phase identity/range, weekly hours, fixed rest days, target-week events, logistics membership, FTP, KPI ranges, and body mass
+- do not call tools just to rediscover those exact same facts
+- call tools only for details not already resolved or for required exact-range predecessor artefacts
 
 If any required artefact is missing, invalid, or semantically unusable for the target week: STOP.
 Set G1 = true.

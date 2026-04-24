@@ -288,3 +288,152 @@ def build_resolved_planning_events_context_block(
     lines.append("all_planned_events:")
     lines.extend(all_lines)
     return "\n".join(lines) + "\n"
+
+
+def build_resolved_zone_model_context_block(store: LocalArtifactStore, athlete_id: str) -> str:
+    """Build a deterministic zone-model summary from the latest zone model artefact."""
+    try:
+        zone_model = store.load_latest(athlete_id, ArtifactType.ZONE_MODEL)
+    except Exception:
+        return ""
+    data = zone_model.get("data") if isinstance(zone_model, dict) else None
+    zone_data = data if isinstance(data, dict) else {}
+    metadata = zone_data.get("model_metadata") or {}
+    zones = zone_data.get("zones") or []
+    if not isinstance(metadata, dict):
+        metadata = {}
+    if not isinstance(zones, list):
+        zones = []
+
+    lines: list[str] = []
+    ftp_watts = metadata.get("ftp_watts")
+    if isinstance(ftp_watts, (int, float)):
+        lines.extend(
+            [
+                "**Resolved Zone Model Context**",
+                "Use these zone-model facts directly; do not search the raw zone table to rediscover FTP or load anchors when they are provided here.",
+                f"ftp_watts: {ftp_watts}",
+            ]
+        )
+    valid_from = metadata.get("valid_from")
+    if isinstance(valid_from, str) and valid_from:
+        if not lines:
+            lines.extend(
+                [
+                    "**Resolved Zone Model Context**",
+                    "Use these zone-model facts directly; do not search the raw zone table to rediscover FTP or load anchors when they are provided here.",
+                ]
+            )
+        lines.append(f"valid_from: {valid_from}")
+    filename = metadata.get("filename")
+    if isinstance(filename, str) and filename:
+        if not lines:
+            lines.extend(
+                [
+                    "**Resolved Zone Model Context**",
+                    "Use these zone-model facts directly; do not search the raw zone table to rediscover FTP or load anchors when they are provided here.",
+                ]
+            )
+        lines.append(f"filename: {filename}")
+
+    zone_lines: list[str] = []
+    for zone in zones:
+        if not isinstance(zone, dict):
+            continue
+        zone_id = zone.get("zone_id")
+        if zone_id not in {"Z2", "Z3", "SS", "Z4"}:
+            continue
+        zone_lines.append(
+            f"- {zone_id}: typical_if {zone.get('typical_if')}, training_intent {zone.get('training_intent')}"
+        )
+    if zone_lines:
+        if not lines:
+            lines.extend(
+                [
+                    "**Resolved Zone Model Context**",
+                    "Use these zone-model facts directly; do not search the raw zone table to rediscover FTP or load anchors when they are provided here.",
+                ]
+            )
+        lines.append("key_zone_defaults:")
+        lines.extend(zone_lines)
+
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
+def build_resolved_logistics_context_block(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    target_week: IsoWeek,
+    *,
+    phase_range: IsoWeekRange | None = None,
+) -> str:
+    """Build a deterministic logistics summary for the target week and optional phase range."""
+    try:
+        logistics = store.load_latest(athlete_id, ArtifactType.LOGISTICS)
+    except Exception:
+        return ""
+    data = logistics.get("data") if isinstance(logistics, dict) else None
+    logistics_data = data if isinstance(data, dict) else {}
+    events = logistics_data.get("events") or []
+    if not isinstance(events, list):
+        return ""
+
+    def _event_week(event: dict[str, object]) -> IsoWeek | None:
+        raw_date = event.get("date")
+        if not isinstance(raw_date, str):
+            return None
+        try:
+            return date_to_iso_week(date.fromisoformat(raw_date))
+        except ValueError:
+            return None
+
+    def _event_line(event: dict[str, object]) -> str | None:
+        raw_date = event.get("date")
+        event_week = _event_week(event)
+        if not isinstance(raw_date, str) or event_week is None:
+            return None
+        return (
+            f"- {raw_date} ({event_week.year:04d}-{event_week.week:02d}) "
+            f"{event.get('event_type')}, status {event.get('status')}, "
+            f"impact {event.get('impact')}, description {event.get('description')}"
+        )
+
+    target_key = f"{target_week.year:04d}-{target_week.week:02d}"
+    target_lines: list[str] = []
+    phase_lines: list[str] = []
+    all_lines: list[str] = []
+    for raw in events:
+        if not isinstance(raw, dict):
+            continue
+        line = _event_line(raw)
+        event_week = _event_week(raw)
+        if not line or event_week is None:
+            continue
+        all_lines.append(line)
+        event_key = f"{event_week.year:04d}-{event_week.week:02d}"
+        if event_key == target_key:
+            target_lines.append(line)
+        if phase_range and week_index(phase_range.start) <= week_index(event_week) <= week_index(phase_range.end):
+            phase_lines.append(line)
+
+    if not all_lines:
+        return ""
+
+    lines = [
+        "**Resolved Logistics Context**",
+        "Use these logistics facts directly; do not recompute target-week or phase-range logistics membership when they are provided here.",
+    ]
+    if target_lines:
+        lines.append(f"target_week_logistics ({target_key}):")
+        lines.extend(target_lines)
+    else:
+        lines.append(f"target_week_logistics ({target_key}): none")
+    if phase_range:
+        if phase_lines:
+            lines.append(f"phase_range_logistics ({phase_range.key}):")
+            lines.extend(phase_lines)
+        else:
+            lines.append(f"phase_range_logistics ({phase_range.key}): none")
+    lines.append("all_logistics_events:")
+    lines.extend(all_lines)
+    return "\n".join(lines) + "\n"
