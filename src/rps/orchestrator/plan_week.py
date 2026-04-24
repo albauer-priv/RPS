@@ -19,10 +19,14 @@ from rps.orchestrator.resolved_context import (
     build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
+    build_resolved_event_priority_context_block,
+    build_resolved_feed_forward_applicability_context_block,
     build_resolved_kpi_context_block,
+    build_resolved_load_governance_context_block,
     build_resolved_logistics_context_block,
     build_resolved_phase_context_block,
     build_resolved_planning_events_context_block,
+    build_resolved_recovery_context_block,
     build_resolved_zone_model_context_block,
 )
 from rps.orchestrator.workout_export import run_workout_export
@@ -569,6 +573,16 @@ def plan_week(
             return None
         return path.stat().st_mtime
 
+    def _load_exact_range_payload(artifact_type: ArtifactType):
+        version_key = index_query.best_exact_range_version(artifact_type.value, phase_range)
+        if not version_key:
+            return None
+        try:
+            payload = store.load_version(athlete_id, artifact_type, version_key)
+        except Exception:
+            return None
+        return payload if isinstance(payload, dict) else None
+
     def _latest_range_record(artifact_type: ArtifactType):
         index = index_query._index_manager.load()
         artefacts = index.get("artefacts", {})
@@ -691,12 +705,23 @@ def plan_week(
 
     if phase_tasks:
         resolved_availability_block = build_resolved_availability_context_block(store, athlete_id)
+        availability_payload = None
+        try:
+            loaded_availability = store.load_latest(athlete_id, ArtifactType.AVAILABILITY)
+            availability_payload = loaded_availability if isinstance(loaded_availability, dict) else None
+        except Exception:
+            availability_payload = None
         resolved_logistics_block = build_resolved_logistics_context_block(
             store,
             athlete_id,
             target,
             phase_range=phase_range,
         )
+        planning_events_payload = None
+        try:
+            planning_events_payload = store.load_latest(athlete_id, ArtifactType.PLANNING_EVENTS)
+        except Exception:
+            planning_events_payload = None
         resolved_events_block = build_resolved_planning_events_context_block(
             store,
             athlete_id,
@@ -704,6 +729,32 @@ def plan_week(
             phase_range=phase_range,
         )
         resolved_zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
+        season_phase_feed_forward_payload = None
+        try:
+            ff_version = store.resolve_week_version_key(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD, target_label)
+            if ff_version:
+                loaded = store.load_version(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD, ff_version)
+                season_phase_feed_forward_payload = loaded if isinstance(loaded, dict) else None
+        except Exception:
+            season_phase_feed_forward_payload = None
+        resolved_recovery_block = build_resolved_recovery_context_block(
+            availability_payload=availability_payload,
+            season_plan_payload=season_plan,
+        )
+        resolved_event_priority_block = build_resolved_event_priority_context_block(
+            target_week=target,
+            season_plan_payload=season_plan,
+            planning_events_payload=planning_events_payload if isinstance(planning_events_payload, dict) else None,
+        )
+        resolved_load_governance_block = build_resolved_load_governance_context_block(
+            target_week=target,
+            season_plan_payload=season_plan,
+        )
+        resolved_feed_forward_block = build_resolved_feed_forward_applicability_context_block(
+            label="season_phase_feed_forward",
+            feed_forward_payload=season_phase_feed_forward_payload,
+            target_week=target,
+        )
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -753,6 +804,10 @@ def plan_week(
                     f"{resolved_logistics_block}"
                     f"{resolved_events_block}"
                     f"{resolved_zone_model_block}"
+                    f"{resolved_recovery_block}"
+                    f"{resolved_event_priority_block}"
+                    f"{resolved_load_governance_block}"
+                    f"{resolved_feed_forward_block}"
                     f"{resolved_activity_block}"
                     f"{historical_context_line}"
                     f"{user_data_block}"
@@ -858,12 +913,23 @@ def plan_week(
     week_run_ok: bool | None = None
     if week_tasks:
         resolved_availability_block = build_resolved_availability_context_block(store, athlete_id)
+        availability_payload = None
+        try:
+            loaded_availability = store.load_latest(athlete_id, ArtifactType.AVAILABILITY)
+            availability_payload = loaded_availability if isinstance(loaded_availability, dict) else None
+        except Exception:
+            availability_payload = None
         resolved_logistics_block = build_resolved_logistics_context_block(
             store,
             athlete_id,
             target,
             phase_range=phase_range,
         )
+        planning_events_payload = None
+        try:
+            planning_events_payload = store.load_latest(athlete_id, ArtifactType.PLANNING_EVENTS)
+        except Exception:
+            planning_events_payload = None
         resolved_events_block = build_resolved_planning_events_context_block(
             store,
             athlete_id,
@@ -871,6 +937,39 @@ def plan_week(
             phase_range=phase_range,
         )
         resolved_zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
+        phase_guardrails_payload = _load_exact_range_payload(ArtifactType.PHASE_GUARDRAILS)
+        phase_structure_payload = _load_exact_range_payload(ArtifactType.PHASE_STRUCTURE)
+        phase_feed_forward_payload = None
+        try:
+            ff_version = store.resolve_week_version_key(athlete_id, ArtifactType.PHASE_FEED_FORWARD, target_label)
+            if ff_version:
+                loaded = store.load_version(athlete_id, ArtifactType.PHASE_FEED_FORWARD, ff_version)
+                phase_feed_forward_payload = loaded if isinstance(loaded, dict) else None
+        except Exception:
+            phase_feed_forward_payload = None
+        resolved_recovery_block = build_resolved_recovery_context_block(
+            availability_payload=availability_payload,
+            season_plan_payload=season_plan,
+            phase_guardrails_payload=phase_guardrails_payload,
+            phase_structure_payload=phase_structure_payload,
+        )
+        resolved_event_priority_block = build_resolved_event_priority_context_block(
+            target_week=target,
+            season_plan_payload=season_plan,
+            phase_guardrails_payload=phase_guardrails_payload,
+            planning_events_payload=planning_events_payload if isinstance(planning_events_payload, dict) else None,
+        )
+        resolved_load_governance_block = build_resolved_load_governance_context_block(
+            target_week=target,
+            season_plan_payload=season_plan,
+            phase_guardrails_payload=phase_guardrails_payload,
+            phase_structure_payload=phase_structure_payload,
+        )
+        resolved_feed_forward_block = build_resolved_feed_forward_applicability_context_block(
+            label="phase_feed_forward",
+            feed_forward_payload=phase_feed_forward_payload,
+            target_week=target,
+        )
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -926,6 +1025,10 @@ def plan_week(
                 f"{resolved_logistics_block}"
                 f"{resolved_events_block}"
                 f"{resolved_zone_model_block}"
+                f"{resolved_recovery_block}"
+                f"{resolved_event_priority_block}"
+                f"{resolved_load_governance_block}"
+                f"{resolved_feed_forward_block}"
                 f"{resolved_activity_block}"
                 f"{historical_context_line}"
                 f"{body_mass_context_line}"

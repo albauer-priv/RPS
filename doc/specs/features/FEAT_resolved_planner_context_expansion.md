@@ -59,11 +59,19 @@ Owner: Planning
   * resolved phase context
   * resolved availability summary
   * resolved planning-event summary
+  * resolved recovery context
+  * resolved event-priority context
+  * resolved load-governance context
+  * resolved feed-forward applicability
   * historical activity versions
 * `week_planner` receives:
   * resolved phase context
   * resolved availability summary
   * resolved planning-event summary
+  * resolved recovery context
+  * resolved event-priority context
+  * resolved load-governance context
+  * resolved feed-forward applicability
   * resolved KPI context
   * resolved body mass
   * historical activity versions
@@ -87,6 +95,10 @@ Owner: Planning
   * add resolved availability block
   * add resolved planning-event block
   * add resolved phase block
+  * add resolved recovery block
+  * add resolved event-priority block
+  * add resolved load-governance block
+  * add resolved feed-forward applicability block
 * `src/rps/orchestrator/season_flow.py`
   * inject resolved availability + planning events
 * `src/rps/orchestrator/plan_week.py`
@@ -94,7 +106,7 @@ Owner: Planning
 
 **Data flow**
 
-* Inputs: latest `AVAILABILITY`, latest `PLANNING_EVENTS`, target week, resolved phase info
+* Inputs: latest `AVAILABILITY`, latest `PLANNING_EVENTS`, target week, resolved phase info, optional exact-range `PHASE_GUARDRAILS` / `PHASE_STRUCTURE`, optional week-scoped feed-forward artefacts
 * Processing: summarize and normalize deterministic facts
 * Outputs: compact planner input blocks
 
@@ -124,7 +136,7 @@ Owner: Planning
 * UI: none
 * Pipeline/data: none
 * Renderer: none
-* Workspace/run-store: read latest availability/planning-events artefacts
+* Workspace/run-store: read latest availability/planning-events artefacts, exact-range phase artefacts, optional feed-forward artefacts
 * Validation/tooling: orchestrator tests only
 * Deployment/config: none
 
@@ -176,8 +188,8 @@ Owner: Planning
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [x] Season planning input includes resolved availability and planning-event context
-* [x] Phase planning input includes resolved phase, availability, and planning-event context
-* [x] Week planning input includes resolved phase, availability, and planning-event context
+* [x] Phase planning input includes resolved phase, availability, planning-event, recovery, event-priority, load-governance, and feed-forward-applicability context
+* [x] Week planning input includes resolved phase, availability, planning-event, recovery, event-priority, load-governance, and feed-forward-applicability context
 * [x] Validation passes: targeted pytest, `py_compile`, lint, type check
 
 ---

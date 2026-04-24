@@ -406,6 +406,264 @@ def build_resolved_availability_context_block(store: LocalArtifactStore, athlete
     return "\n".join(lines) + ("\n" if lines else "")
 
 
+def _as_map(value: object) -> dict[str, object]:
+    """Return a dict-like value or an empty mapping."""
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: object) -> list[object]:
+    """Return a list-like value or an empty list."""
+    return value if isinstance(value, list) else []
+
+
+def _find_week_band(entries: object, target_week: IsoWeek) -> dict[str, object] | None:
+    """Return the weekly band entry matching the target week."""
+    target_key = f"{target_week.year:04d}-{target_week.week:02d}"
+    for entry in _as_list(entries):
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("week") == target_key:
+            return entry
+    return None
+
+
+def build_resolved_recovery_context_block(
+    *,
+    availability_payload: dict[str, object] | None = None,
+    season_plan_payload: dict[str, object] | None = None,
+    phase_guardrails_payload: dict[str, object] | None = None,
+    phase_structure_payload: dict[str, object] | None = None,
+) -> str:
+    """Build a compact recovery and recovery-protection summary."""
+    availability_data = _as_map((availability_payload or {}).get("data"))
+    season_data = _as_map((season_plan_payload or {}).get("data"))
+    season_global = _as_map(season_data.get("global_constraints"))
+    season_recovery = _as_map(season_global.get("recovery_protection"))
+    guardrails_data = _as_map((phase_guardrails_payload or {}).get("data"))
+    execution_non_negotiables = _as_map(guardrails_data.get("execution_non_negotiables"))
+    structure_data = _as_map((phase_structure_payload or {}).get("data"))
+    execution_principles = _as_map(structure_data.get("execution_principles"))
+    structure_recovery = _as_map(execution_principles.get("recovery_protection"))
+
+    fixed_rest_days = [str(x) for x in _as_list(availability_data.get("fixed_rest_days")) if str(x).strip()]
+    season_fixed_rest_days = [str(x) for x in _as_list(season_recovery.get("fixed_rest_days")) if str(x).strip()]
+    season_notes = [str(x) for x in _as_list(season_recovery.get("notes")) if str(x).strip()]
+    structure_fixed_days = [str(x) for x in _as_list(structure_recovery.get("fixed_non_training_days")) if str(x).strip()]
+    spacing_rules = [str(x) for x in _as_list(structure_recovery.get("mandatory_recovery_spacing_rules")) if str(x).strip()]
+    forbidden_sequences = [str(x) for x in _as_list(structure_recovery.get("forbidden_sequences")) if str(x).strip()]
+
+    lines: list[str] = []
+    if any((fixed_rest_days, season_fixed_rest_days, season_notes, structure_fixed_days, spacing_rules, forbidden_sequences)):
+        lines.extend([
+            "**Resolved Recovery Context**",
+            "Use these recovery-protection facts directly; do not reconstruct recovery anchors or spacing rules from raw season/phase text when they are provided here.",
+        ])
+    if fixed_rest_days:
+        lines.append("availability.fixed_rest_days: " + ", ".join(fixed_rest_days))
+    if season_fixed_rest_days:
+        lines.append("season.recovery_protection.fixed_rest_days: " + ", ".join(season_fixed_rest_days))
+    if season_notes:
+        lines.append("season.recovery_protection.notes:")
+        lines.extend(f"- {note}" for note in season_notes)
+    minimum_recovery = execution_non_negotiables.get("minimum_recovery_opportunities")
+    if isinstance(minimum_recovery, str) and minimum_recovery.strip():
+        lines.append(f"phase.minimum_recovery_opportunities: {minimum_recovery}")
+    no_catch_up = execution_non_negotiables.get("no_catch_up_rule")
+    if isinstance(no_catch_up, str) and no_catch_up.strip():
+        lines.append(f"phase.no_catch_up_rule: {no_catch_up}")
+    if structure_fixed_days:
+        lines.append("structure.fixed_non_training_days: " + ", ".join(structure_fixed_days))
+    if spacing_rules:
+        lines.append("structure.mandatory_recovery_spacing_rules:")
+        lines.extend(f"- {rule}" for rule in spacing_rules)
+    if forbidden_sequences:
+        lines.append("structure.forbidden_sequences:")
+        lines.extend(f"- {rule}" for rule in forbidden_sequences)
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
+def build_resolved_load_governance_context_block(
+    *,
+    target_week: IsoWeek,
+    season_plan_payload: dict[str, object] | None = None,
+    phase_guardrails_payload: dict[str, object] | None = None,
+    phase_structure_payload: dict[str, object] | None = None,
+) -> str:
+    """Build a compact active load-governance summary for the target week."""
+    season_data = _as_map((season_plan_payload or {}).get("data"))
+    season_phases = _as_list(season_data.get("phases"))
+    season_band = None
+    target_key = f"{target_week.year:04d}-{target_week.week:02d}"
+    for phase in season_phases:
+        phase_map = _as_map(phase)
+        if phase_map.get("iso_week_range") and isinstance(phase_map.get("weekly_load_corridor"), dict):
+            weekly_kj = _as_map(phase_map.get("weekly_load_corridor")).get("weekly_kj")
+            if isinstance(weekly_kj, dict) and target_key in str(phase_map.get("iso_week_range")):
+                season_band = weekly_kj
+                break
+
+    guardrails_data = _as_map((phase_guardrails_payload or {}).get("data"))
+    load_guardrails = _as_map(guardrails_data.get("load_guardrails"))
+    active_band_entry = _find_week_band(load_guardrails.get("weekly_kj_bands"), target_week)
+    active_band = _as_map(active_band_entry.get("band")) if isinstance(active_band_entry, dict) else {}
+    semantics = _as_map(guardrails_data.get("allowed_forbidden_semantics"))
+    structure_data = _as_map((phase_structure_payload or {}).get("data"))
+    execution_principles = _as_map(structure_data.get("execution_principles"))
+    load_intensity = _as_map(execution_principles.get("load_intensity_handling"))
+
+    lines: list[str] = []
+    if season_band or active_band or semantics or load_intensity:
+        lines.extend([
+            "**Resolved Load Governance Context**",
+            "Use these active governance facts directly; do not reconstruct corridor, quality-density, or allowed-domain semantics from raw artefact prose when they are provided here.",
+        ])
+    if isinstance(season_band, dict) and season_band:
+        lines.append(
+            f"season_phase.weekly_load_corridor.weekly_kj: min {season_band.get('min')}, max {season_band.get('max')}, notes {season_band.get('notes')}"
+        )
+    if active_band:
+        lines.append(
+            f"phase_guardrails.active_weekly_kj_band ({target_key}): min {active_band.get('min')}, max {active_band.get('max')}, notes {active_band.get('notes')}"
+        )
+    allowed_domains = [str(x) for x in _as_list(semantics.get("allowed_intensity_domains")) if str(x).strip()]
+    allowed_modalities = [str(x) for x in _as_list(semantics.get("allowed_load_modalities")) if str(x).strip()]
+    quality_density = _as_map(semantics.get("quality_density"))
+    if allowed_domains:
+        lines.append("phase_guardrails.allowed_intensity_domains: " + ", ".join(allowed_domains))
+    if allowed_modalities:
+        lines.append("phase_guardrails.allowed_load_modalities: " + ", ".join(allowed_modalities))
+    if quality_density:
+        lines.append(
+            f"phase_guardrails.quality_density: max_quality_days_per_week {quality_density.get('max_quality_days_per_week')}, quality_intent {quality_density.get('quality_intent')}"
+        )
+    forbidden_patterns = [str(x) for x in _as_list(quality_density.get("forbidden_patterns")) if str(x).strip()]
+    if forbidden_patterns:
+        lines.append("phase_guardrails.quality_density.forbidden_patterns:")
+        lines.extend(f"- {item}" for item in forbidden_patterns)
+    if load_intensity:
+        lines.append(
+            f"phase_structure.load_intensity_handling: max_quality_days_per_week {load_intensity.get('max_quality_days_per_week')}, quality_intent {load_intensity.get('quality_intent')}"
+        )
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
+def build_resolved_event_priority_context_block(
+    *,
+    target_week: IsoWeek,
+    season_plan_payload: dict[str, object] | None = None,
+    phase_guardrails_payload: dict[str, object] | None = None,
+    planning_events_payload: dict[str, object] | None = None,
+) -> str:
+    """Build a compact event-priority summary for the target week."""
+    season_data = _as_map((season_plan_payload or {}).get("data"))
+    global_constraints = _as_map(season_data.get("global_constraints"))
+    planned_windows = [str(x) for x in _as_list(global_constraints.get("planned_event_windows")) if str(x).strip()]
+    guardrails_data = _as_map((phase_guardrails_payload or {}).get("data"))
+    guardrail_events = _as_list(_as_map(guardrails_data.get("events_constraints")).get("events"))
+    planning_events_data = _as_map((planning_events_payload or {}).get("data"))
+    planning_events = _as_list(planning_events_data.get("events"))
+    target_key = f"{target_week.year:04d}-{target_week.week:02d}"
+
+    target_planning_lines: list[str] = []
+    upcoming_a = None
+    for event in planning_events:
+        event_map = _as_map(event)
+        raw_date = event_map.get("date")
+        event_type = event_map.get("type")
+        if not isinstance(raw_date, str) or not isinstance(event_type, str):
+            continue
+        try:
+            event_week = date_to_iso_week(date.fromisoformat(raw_date))
+        except ValueError:
+            continue
+        event_key = f"{event_week.year:04d}-{event_week.week:02d}"
+        if event_key == target_key:
+            target_planning_lines.append(f"- {raw_date} {event_type} {event_map.get('event_name') or ''}".rstrip())
+        if event_type == 'A' and week_index(event_week) >= week_index(target_week):
+            if upcoming_a is None or week_index(event_week) < week_index(upcoming_a[0]):
+                upcoming_a = (event_week, event_map)
+
+    guardrail_lines = []
+    for event in guardrail_events:
+        event_map = _as_map(event)
+        raw_date = event_map.get('date')
+        event_type = event_map.get('type')
+        constraint = event_map.get('constraint')
+        if isinstance(raw_date, str) and isinstance(event_type, str):
+            guardrail_lines.append(f"- {raw_date} {event_type}: {constraint}")
+
+    lines: list[str] = []
+    if planned_windows or target_planning_lines or upcoming_a or guardrail_lines:
+        lines.extend([
+            "**Resolved Event Priority Context**",
+            "Use these event-priority facts directly; do not reconstruct protected event semantics or target-week event roles from scattered raw event text when they are provided here.",
+        ])
+    if planned_windows:
+        lines.append("season.planned_event_windows:")
+        lines.extend(f"- {item}" for item in planned_windows)
+    if target_planning_lines:
+        lines.append(f"target_week_priority_events ({target_key}):")
+        lines.extend(target_planning_lines)
+    else:
+        lines.append(f"target_week_priority_events ({target_key}): none") if lines else None
+    if upcoming_a is not None:
+        week_obj, event_map = upcoming_a
+        lines.append(
+            f"next_protected_a_event: {event_map.get('date')} ({week_obj.year:04d}-{week_obj.week:02d}) {event_map.get('event_name') or ''}".rstrip()
+        )
+    if guardrail_lines:
+        lines.append("phase_guardrails.events_constraints:")
+        lines.extend(guardrail_lines)
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
+def build_resolved_feed_forward_applicability_context_block(
+    *,
+    label: str,
+    feed_forward_payload: dict[str, object] | None,
+    target_week: IsoWeek,
+) -> str:
+    """Build a compact applicability summary for an optional feed-forward artefact."""
+    target_key = f"{target_week.year:04d}-{target_week.week:02d}"
+    if not isinstance(feed_forward_payload, dict):
+        return (
+            "**Resolved Feed-Forward Applicability Context**\n"
+            "Use this applicability result directly; do not spend tool calls deciding whether an optional feed-forward artefact exists when that has already been resolved here.\n"
+            f"{label}.status: none_for_target_week {target_key}\n"
+        )
+    meta = _as_map(feed_forward_payload.get("meta"))
+    data = _as_map(feed_forward_payload.get("data"))
+    body_metadata = _as_map(data.get("body_metadata"))
+    applies = [str(x) for x in _as_list(body_metadata.get("applies_to_weeks")) if str(x).strip()]
+    valid_until = body_metadata.get("valid_until")
+    change_type = body_metadata.get("change_type")
+    lines = [
+        "**Resolved Feed-Forward Applicability Context**",
+        "Use this applicability result directly; do not spend tool calls deciding whether an optional feed-forward artefact exists when that has already been resolved here.",
+        f"{label}.status: applicable_for_target_week {target_key}",
+    ]
+    version_key = meta.get("version_key")
+    if isinstance(version_key, str) and version_key:
+        lines.append(f"{label}.version_key: {version_key}")
+    if applies:
+        lines.append(f"{label}.applies_to_weeks: {', '.join(applies)}")
+    if isinstance(valid_until, str) and valid_until:
+        lines.append(f"{label}.valid_until: {valid_until}")
+    if isinstance(change_type, str) and change_type:
+        lines.append(f"{label}.change_type: {change_type}")
+    semantic_overrides = _as_map(data.get("temporary_semantic_overrides"))
+    quality_override = _as_map(semantic_overrides.get("quality_density_override"))
+    if quality_override:
+        lines.append(
+            f"{label}.quality_density_override: max_quality_days_per_week {quality_override.get('max_quality_days_per_week')}"
+        )
+    non_negotiables = _as_map(data.get("temporary_non_negotiables"))
+    recovery_changes = non_negotiables.get("recovery_protection_changes")
+    if isinstance(recovery_changes, str) and recovery_changes.strip():
+        lines.append(f"{label}.recovery_protection_changes: {recovery_changes}")
+    return "\n".join(lines) + "\n"
+
+
 def build_resolved_phase_context_block(
     target_week: IsoWeek,
     phase_info: SeasonPlanPhaseInfo | None,

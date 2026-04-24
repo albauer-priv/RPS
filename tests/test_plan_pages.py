@@ -1688,12 +1688,32 @@ def test_plan_week_injects_resolved_activity_context(
                 "iso_week_range": "2026-17--2026-20",
             },
             "data": {
+                "global_constraints": {
+                    "planned_event_windows": [
+                        "2026-04-25 B event rehearsal window",
+                        "2026-05-16 A event peak window",
+                    ],
+                    "recovery_protection": {
+                        "fixed_rest_days": ["Mon", "Fri"],
+                        "notes": [
+                            "Fixed rest days from AVAILABILITY are non-negotiable and must be preserved downstream.",
+                            "When travel compresses the week, reduce ambition before reducing recovery protection.",
+                        ],
+                    },
+                },
                 "phases": [
                     {
                         "phase_id": "P01",
                         "name": "Build",
                         "cycle": "Build",
                         "iso_week_range": "2026-17--2026-19",
+                        "weekly_load_corridor": {
+                            "weekly_kj": {
+                                "min": 7200,
+                                "max": 8600,
+                                "notes": "Season corridor",
+                            }
+                        },
                     }
                 ]
             },
@@ -1713,7 +1733,61 @@ def test_plan_week_injects_resolved_activity_context(
                     "iso_week": "2026-17",
                     "iso_week_range": "2026-17--2026-19",
                 },
-                "data": {},
+                "data": (
+                    {
+                        "load_guardrails": {
+                            "weekly_kj_bands": [
+                                {
+                                    "week": "2026-17",
+                                    "band": {"min": 7200, "max": 8600, "notes": "Phase corridor"},
+                                }
+                            ]
+                        },
+                        "allowed_forbidden_semantics": {
+                            "allowed_intensity_domains": ["ENDURANCE_LOW", "TEMPO"],
+                            "allowed_load_modalities": ["NONE", "K3"],
+                            "quality_density": {
+                                "max_quality_days_per_week": 2,
+                                "quality_intent": "Build",
+                                "forbidden_patterns": ["Back-to-back quality days"],
+                            },
+                        },
+                        "execution_non_negotiables": {
+                            "minimum_recovery_opportunities": "Preserve at least two fixed recovery opportunities.",
+                            "no_catch_up_rule": "Missed load is never made up later in the week.",
+                        },
+                        "events_constraints": {
+                            "events": [
+                                {
+                                    "date": "2026-04-25",
+                                    "week": "2026-17",
+                                    "type": "B",
+                                    "constraint": "Use as rehearsal only.",
+                                }
+                            ]
+                        },
+                    }
+                    if artifact_type == ArtifactType.PHASE_GUARDRAILS
+                    else (
+                        {
+                            "execution_principles": {
+                                "recovery_protection": {
+                                    "fixed_non_training_days": ["Mon", "Fri"],
+                                    "mandatory_recovery_spacing_rules": [
+                                        "Keep Monday and Friday protected.",
+                                    ],
+                                    "forbidden_sequences": ["Back-to-back quality days"],
+                                },
+                                "load_intensity_handling": {
+                                    "max_quality_days_per_week": 2,
+                                    "quality_intent": "Build",
+                                },
+                            }
+                        }
+                        if artifact_type == ArtifactType.PHASE_STRUCTURE
+                        else {}
+                    )
+                ),
             },
             producer_agent="test",
             run_id=f"{artifact_type.value}_run",
@@ -1723,7 +1797,13 @@ def test_plan_week_injects_resolved_activity_context(
         athlete_id,
         ArtifactType.AVAILABILITY,
         "2026-10",
-        {"data": {"weekly_hours": {"min": 10, "typical": 12, "max": 14}, "fixed_rest_days": ["Mon"], "availability_table": []}},
+        {
+            "data": {
+                "weekly_hours": {"min": 10, "typical": 12, "max": 14},
+                "fixed_rest_days": ["Mon", "Fri"],
+                "availability_table": [],
+            }
+        },
         producer_agent="test",
         run_id="availability",
         update_latest=True,
@@ -1747,7 +1827,27 @@ def test_plan_week_injects_resolved_activity_context(
         update_latest=True,
     )
     (tmp_path / athlete_id / "inputs").mkdir(parents=True, exist_ok=True)
-    (tmp_path / athlete_id / "inputs" / "planning_events.json").write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+    (tmp_path / athlete_id / "inputs" / "planning_events.json").write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "date": "2026-04-25",
+                            "type": "B",
+                            "event_name": "Spring 200",
+                        },
+                        {
+                            "date": "2026-05-16",
+                            "type": "A",
+                            "event_name": "Main 400",
+                        },
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     (tmp_path / athlete_id / "inputs" / "logistics.json").write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
 
     store.save_document(
@@ -1850,6 +1950,10 @@ def test_plan_week_injects_resolved_activity_context(
     assert any("activities_trend_version: 2026-16" in user_input for user_input in captured_inputs)
     assert any("intensity_load_metrics.durability_index: 0.94" in user_input for user_input in captured_inputs)
     assert any("key_actual_sessions:" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Recovery Context**" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Event Priority Context**" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Load Governance Context**" in user_input for user_input in captured_inputs)
+    assert any("**Resolved Feed-Forward Applicability Context**" in user_input for user_input in captured_inputs)
 
 
 def test_plan_week_injects_resolved_logistics_and_zone_context(
