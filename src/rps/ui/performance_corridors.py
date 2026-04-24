@@ -146,44 +146,44 @@ def phase_guardrails_by_week(store: LocalArtifactStore, athlete_id: str) -> dict
     return {label: values for label, (_created_at, values) in corridors.items()}
 
 
-def week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
-    """Build per-week week-plan corridors from stored week plans."""
-    corridors: dict[str, dict[str, float]] = {}
+def _latest_week_plan_payloads_by_week(
+    store: LocalArtifactStore,
+    athlete_id: str,
+) -> dict[str, dict[str, object]]:
+    """Return the latest stored week-plan payload per ISO week."""
+    latest_payloads: dict[str, tuple[datetime, dict[str, object]]] = {}
     for version in store.list_versions(athlete_id, ArtifactType.WEEK_PLAN):
         payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version)
         if not isinstance(payload, dict):
             continue
         meta = payload.get("meta") or {}
-        iso_week = meta.get("iso_week")
-        if not iso_week:
+        normalized = normalize_iso_label(str(meta.get("iso_week") or ""))
+        if not normalized:
             continue
-        week = parse_iso_week(iso_week)
-        if not week:
-            continue
+        created_at = _parse_created_at(meta.get("created_at"))
+        existing = latest_payloads.get(normalized)
+        if existing is None or created_at >= existing[0]:
+            latest_payloads[normalized] = (created_at, payload)
+    return {label: payload for label, (_created_at, payload) in latest_payloads.items()}
+
+
+def week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, dict[str, float]]:
+    """Build per-week week-plan corridors from the latest stored week plan per week."""
+    corridors: dict[str, dict[str, float]] = {}
+    for label, payload in _latest_week_plan_payloads_by_week(store, athlete_id).items():
         corridor = (payload.get("data") or {}).get("week_summary", {}).get("weekly_load_corridor_kj") or {}
         minimum = corridor.get("min")
         maximum = corridor.get("max")
         if minimum is None or maximum is None:
             continue
-        label = f"{week.year}-W{week.week:02d}"
         corridors[label] = {"min": minimum, "max": maximum}
     return corridors
 
 
 def planned_weekly_kj_by_week(store: LocalArtifactStore, athlete_id: str) -> dict[str, float]:
-    """Build per-week planned kJ values from stored week plans."""
+    """Build per-week planned kJ values from the latest stored week plan per week."""
     planned: dict[str, float] = {}
-    for version in store.list_versions(athlete_id, ArtifactType.WEEK_PLAN):
-        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version)
-        if not isinstance(payload, dict):
-            continue
-        meta = payload.get("meta") or {}
-        iso_week = meta.get("iso_week")
-        if not iso_week:
-            continue
-        normalized = normalize_iso_label(str(iso_week))
-        if not normalized:
-            continue
+    for normalized, payload in _latest_week_plan_payloads_by_week(store, athlete_id).items():
         summary = (payload.get("data") or {}).get("week_summary") or {}
         value = summary.get("planned_weekly_load_kj")
         if value is None:

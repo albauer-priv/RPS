@@ -4,7 +4,9 @@ from pathlib import Path
 from rps.ui.performance_corridors import (
     normalize_iso_label,
     phase_guardrails_by_week,
+    planned_weekly_kj_by_week,
     sorted_labels,
+    week_plan_corridor_by_week,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -113,3 +115,91 @@ def test_sorted_labels_includes_all_series_not_only_season():
 def test_normalize_iso_label_accepts_both_week_formats():
     assert normalize_iso_label("2026-17") == "2026-W17"
     assert normalize_iso_label("2026-W17") == "2026-W17"
+
+
+def test_week_plan_helpers_use_latest_version_per_week(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+
+    _write_json(
+        store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, "2026-17__20260424_120000"),
+        {
+            "meta": {"iso_week": "2026-17", "created_at": "2026-04-24T12:00:00Z"},
+            "data": {
+                "week_summary": {
+                    "weekly_load_corridor_kj": {"min": 7000, "max": 8200},
+                    "planned_weekly_load_kj": 7600,
+                }
+            },
+        },
+    )
+    _write_json(
+        store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, "2026-17__20260424_160000"),
+        {
+            "meta": {"iso_week": "2026-W17", "created_at": "2026-04-24T16:00:00Z"},
+            "data": {
+                "week_summary": {
+                    "weekly_load_corridor_kj": {"min": 7200, "max": 8600},
+                    "planned_weekly_load_kj": 7800,
+                }
+            },
+        },
+    )
+    _write_json(
+        store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, "2026-18__20260424_160000"),
+        {
+            "meta": {"iso_week": "2026-18", "created_at": "2026-04-24T16:00:00Z"},
+            "data": {
+                "week_summary": {
+                    "weekly_load_corridor_kj": {"min": 7100, "max": 8400},
+                    "planned_weekly_load_kj": 7750,
+                }
+            },
+        },
+    )
+
+    corridors = week_plan_corridor_by_week(store, athlete_id)
+    planned = planned_weekly_kj_by_week(store, athlete_id)
+
+    assert corridors["2026-W17"] == {"min": 7200, "max": 8600}
+    assert planned["2026-W17"] == 7800.0
+    assert corridors["2026-W18"] == {"min": 7100, "max": 8400}
+    assert planned["2026-W18"] == 7750.0
+
+
+def test_week_plan_helpers_handle_missing_created_at(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "test_athlete"
+    store.ensure_workspace(athlete_id)
+
+    _write_json(
+        store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, "2026-17__20260424_120000"),
+        {
+            "meta": {"iso_week": "2026-17"},
+            "data": {
+                "week_summary": {
+                    "weekly_load_corridor_kj": {"min": 7000, "max": 8200},
+                    "planned_weekly_load_kj": 7600,
+                }
+            },
+        },
+    )
+    _write_json(
+        store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, "2026-17__20260424_160000"),
+        {
+            "meta": {"iso_week": "2026-17", "created_at": "2026-04-24T16:00:00Z"},
+            "data": {
+                "week_summary": {
+                    "weekly_load_corridor_kj": {"min": 7200, "max": 8600},
+                    "planned_weekly_load_kj": 7800,
+                }
+            },
+        },
+    )
+
+    corridors = week_plan_corridor_by_week(store, athlete_id)
+    planned = planned_weekly_kj_by_week(store, athlete_id)
+
+    assert corridors["2026-W17"] == {"min": 7200, "max": 8600}
+    assert planned["2026-W17"] == 7800.0
