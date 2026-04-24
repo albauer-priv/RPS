@@ -11,6 +11,61 @@ from rps.workspace.season_plan_service import SeasonPlanPhaseInfo
 from rps.workspace.types import ArtifactType
 
 
+def build_resolved_athlete_context_block(store: LocalArtifactStore, athlete_id: str) -> str:
+    """Build a deterministic athlete-profile summary from the latest athlete profile."""
+    try:
+        athlete_profile = store.load_latest(athlete_id, ArtifactType.ATHLETE_PROFILE)
+    except Exception:
+        return ""
+    data = athlete_profile.get("data") if isinstance(athlete_profile, dict) else None
+    profile_data = data if isinstance(data, dict) else {}
+    profile = profile_data.get("profile") or {}
+    objectives = profile_data.get("objectives") or {}
+    if not isinstance(profile, dict):
+        profile = {}
+    if not isinstance(objectives, dict):
+        objectives = {}
+
+    lines: list[str] = []
+    identity_lines: list[str] = []
+    for key in ("athlete_id", "athlete_name", "location_time_zone", "sex", "age_group"):
+        value = profile.get(key)
+        if isinstance(value, str) and value:
+            identity_lines.append(f"{key}: {value}")
+    age = profile.get("age")
+    if isinstance(age, (int, float)):
+        identity_lines.append(f"age: {age}")
+    body_mass = profile.get("body_mass_kg")
+    if isinstance(body_mass, (int, float)):
+        identity_lines.append(f"body_mass_kg: {body_mass}")
+    training_age = profile.get("training_age_years")
+    if isinstance(training_age, (int, float)):
+        identity_lines.append(f"training_age_years: {training_age}")
+    disciplines = profile.get("primary_disciplines")
+    if isinstance(disciplines, list) and disciplines:
+        identity_lines.append(
+            "primary_disciplines: " + ", ".join(str(item) for item in disciplines if str(item).strip())
+        )
+    anchor = profile.get("endurance_anchor_w")
+    if isinstance(anchor, (int, float)):
+        identity_lines.append(f"endurance_anchor_w: {anchor}")
+    ambition = profile.get("ambition_if_range")
+    if isinstance(ambition, list | tuple) and len(ambition) == 2:
+        identity_lines.append(f"ambition_if_range: [{ambition[0]}, {ambition[1]}]")
+    primary_objective = objectives.get("primary")
+    if isinstance(primary_objective, str) and primary_objective:
+        identity_lines.append(f"primary_objective: {primary_objective}")
+
+    if identity_lines:
+        lines.append("**Resolved Athlete Context**")
+        lines.append(
+            "Use these athlete facts directly; do not search or reinterpret the same profile fields again when they are provided here."
+        )
+        lines.extend(identity_lines)
+
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
 def build_resolved_kpi_context_block(store: LocalArtifactStore, athlete_id: str) -> str:
     """Build a deterministic KPI context block from latest KPI profile + selection."""
     try:

@@ -87,7 +87,7 @@ def test_week_planner_prompt_uses_wellness_body_mass_for_kpi_gating():
 
 def test_planner_prompts_honor_resolved_context_blocks():
     prompts_dir = Path(__file__).resolve().parents[1] / "prompts" / "agents"
-    for name in ("week_planner.md", "phase_architect.md", "season_planner.md"):
+    for name in ("week_planner.md", "phase_architect.md", "season_planner.md", "season_scenario.md"):
         prompt_text = (prompts_dir / name).read_text(encoding="utf-8")
         assert "Resolved ... Context" in prompt_text
         assert "Do NOT search, infer, or reinterpret the same facts again" in prompt_text

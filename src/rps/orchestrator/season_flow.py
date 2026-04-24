@@ -10,6 +10,7 @@ from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.orchestrator.resolved_context import (
+    build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
     build_resolved_kpi_context_block,
     build_resolved_logistics_context_block,
@@ -76,12 +77,43 @@ def create_season_scenarios(
     spec = AGENTS["season_scenario"]
     injected_block = build_injection_block("season_scenario", mode="scenario")
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
+    athlete_block = ""
+    kpi_block = ""
+    availability_block = ""
+    logistics_block = ""
+    planning_events_block = ""
+    try:
+        store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
+        athlete_block = build_resolved_athlete_context_block(store, athlete_id)
+        kpi_block = build_resolved_kpi_context_block(store, athlete_id)
+        availability_block = build_resolved_availability_context_block(store, athlete_id)
+        logistics_block = build_resolved_logistics_context_block(
+            store,
+            athlete_id,
+            IsoWeek(year=year, week=week),
+        )
+        planning_events_block = build_resolved_planning_events_context_block(
+            store,
+            athlete_id,
+            IsoWeek(year=year, week=week),
+        )
+    except Exception:
+        athlete_block = ""
+        kpi_block = ""
+        availability_block = ""
+        logistics_block = ""
+        planning_events_block = ""
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use workspace_get_input for Athlete Profile, Planning Events, and Logistics. "
         "Use workspace_get_latest only for shared latest inputs Availability, KPI Profile, and Wellness. "
         "Focus on qualitative scenario differences; runtime will canonicalize horizon and phase math from planning events. "
+        f"{athlete_block}"
+        f"{kpi_block}"
+        f"{availability_block}"
+        f"{logistics_block}"
+        f"{planning_events_block}"
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
@@ -199,6 +231,7 @@ def create_season_plan(
         user_data_block = _format_user_data_block(user_data)
     except Exception:
         user_data_block = _format_user_data_block({})
+    athlete_block = ""
     kpi_block = ""
     availability_block = ""
     logistics_block = ""
@@ -206,6 +239,7 @@ def create_season_plan(
     zone_model_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
+        athlete_block = build_resolved_athlete_context_block(store, athlete_id)
         kpi_block = build_resolved_kpi_context_block(store, athlete_id)
         availability_block = build_resolved_availability_context_block(store, athlete_id)
         logistics_block = build_resolved_logistics_context_block(
@@ -220,6 +254,7 @@ def create_season_plan(
         )
         zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
     except Exception:
+        athlete_block = ""
         kpi_block = ""
         availability_block = ""
         logistics_block = ""
@@ -232,6 +267,7 @@ def create_season_plan(
         f"If activity context is needed, use workspace_get_version for ACTIVITIES_ACTUAL and "
         f"ACTIVITIES_TREND with version_key {year}-{week:02d}; never use workspace_get_latest "
         "for week-sensitive activity artefacts. "
+        f"{athlete_block}"
         f"{user_data_block}"
         f"{kpi_block}"
         f"{availability_block}"

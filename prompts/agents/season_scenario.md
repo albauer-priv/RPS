@@ -20,6 +20,12 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 
 ## Binding Knowledge (Binding)
 
+### resolved_context_authority (HARD)
+- If the user input contains any `Resolved ... Context` blocks, treat those blocks as authoritative deterministic facts already resolved from workspace artefacts.
+- Do NOT search, infer, or reinterpret the same facts again from raw artefacts when a resolved block already provides them.
+- Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
+- A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
+
 ### Binding enforcement (HARD)
 - Binding content is any instruction explicitly labeled Binding / Mandatory / Non-Negotiable / MUST / MUST NOT,
   plus any precedence rule, stop condition, schema requirement, and load order rule.
@@ -153,6 +159,11 @@ Load in order:
 3) `workspace_get_input("logistics")`
 4) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })`
 5) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+
+When `Resolved ... Context` blocks are present:
+- prefer those resolved values for deterministic facts such as athlete profile facts, KPI ranges, weekly hours, fixed rest days, target-week events, and logistics membership
+- do not call tools just to rediscover those exact same facts
+- call tools only for details not already resolved or for traceability that the resolved block does not cover
 
 If any required artefact is missing: STOP and request it.
 If KPI_PROFILE cannot be resolved as a single shared latest artefact: STOP and request a data/registry fix.

@@ -1529,6 +1529,133 @@ def test_create_season_plan_injects_resolved_logistics_and_zone_context(
     assert "ftp_watts: 300" in captured_inputs[0]
 
 
+def test_create_season_scenarios_injects_resolved_context(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured_inputs: list[str] = []
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "profile": {
+                        "athlete_id": "test_athlete",
+                        "year": 2026,
+                        "athlete_name": "Test Rider",
+                        "athlete_story": "Long-distance rider",
+                        "location_time_zone": "Europe/Berlin",
+                        "primary_disciplines": ["Randonneuring"],
+                        "training_age_years": 8,
+                        "age": 45,
+                        "body_mass_kg": 82.4,
+                        "sex": "M",
+                        "age_group": "Masters",
+                        "endurance_anchor_w": 210,
+                        "ambition_if_range": [0.68, 0.75],
+                    },
+                    "objectives": {"primary": "Finish 400 km A event", "secondary": [], "priority_order": []},
+                    "constraints": {},
+                    "strengths": [],
+                    "limitations": [],
+                    "risk_flags": [],
+                    "success_criteria": [],
+                    "measurement_assumptions": {},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.LOGISTICS).write_text(
+        json.dumps(
+            {"data": {"events": [{"date": "2026-03-19", "event_id": "LOG-1", "event_type": "TRAVEL", "status": "PLANNED", "impact": "AVAILABILITY", "description": "Business trip"}]}}
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "events": [
+                        {
+                            "type": "B",
+                            "priority_rank": 2,
+                            "event_name": "Spring 200",
+                            "date": "2026-03-18",
+                            "event_type": "Brevet",
+                            "goal": "rehearsal",
+                            "distance_km": 200,
+                            "elevation_m": 1800,
+                            "expected_duration": "08:00",
+                            "time_limit": "13:30",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps({"data": {"weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5}, "fixed_rest_days": ["Mon", "Fri"], "availability_table": [], "source_type": "manual", "source_ref": "ui", "notes": ""}}),
+        encoding="utf-8",
+    )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.KPI_PROFILE,
+        "sample_profile",
+        {
+            "data": {
+                "durability": {
+                    "moving_time_rate_guidance": {
+                        "derived_from": "kpi_profile_v1",
+                        "notes": "Use selected segment directly.",
+                        "bands": [
+                            {
+                                "segment": "fast_competitive",
+                                "w_per_kg": {"min": 2.5, "max": 3.0},
+                                "kj_per_kg_per_hour": {"min": 20, "max": 24},
+                                "basis": "validated",
+                            }
+                        ],
+                    }
+                }
+            }
+        },
+        producer_agent="user",
+        run_id="test_kpi_profile",
+        update_latest=True,
+    )
+
+    season_flow.create_season_scenarios(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_scenarios",
+        override_text=None,
+    )
+
+    assert captured_inputs
+    assert "**Resolved Athlete Context**" in captured_inputs[0]
+    assert "athlete_name: Test Rider" in captured_inputs[0]
+    assert "endurance_anchor_w: 210" in captured_inputs[0]
+    assert "**Resolved KPI Context**" in captured_inputs[0]
+    assert "**Resolved Availability Context**" in captured_inputs[0]
+    assert "**Resolved Logistics Context**" in captured_inputs[0]
+    assert "**Resolved Planning Event Context**" in captured_inputs[0]
+
+
 def test_plan_week_injects_resolved_logistics_and_zone_context(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

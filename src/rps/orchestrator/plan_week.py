@@ -16,6 +16,7 @@ from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.resolved_context import (
+    build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
     build_resolved_kpi_context_block,
     build_resolved_logistics_context_block,
@@ -99,9 +100,10 @@ def _build_user_data_block(runtime_for: Callable[[str], AgentRuntime], athlete_i
     """Load Athlete Profile and format user data for prompt injection."""
     try:
         store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
+        athlete_block = build_resolved_athlete_context_block(store, athlete_id)
         profile_payload = store.load_latest(athlete_id, ArtifactType.ATHLETE_PROFILE)
         user_data = _extract_profile_user_data(profile_payload if isinstance(profile_payload, dict) else None)
-        return _format_user_data_block(user_data)
+        return athlete_block + _format_user_data_block(user_data)
     except Exception:
         return _format_user_data_block({})
 
