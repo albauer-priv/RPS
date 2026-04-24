@@ -15,6 +15,7 @@ from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
+from rps.orchestrator.resolved_context import build_resolved_kpi_context_block
 from rps.orchestrator.workout_export import run_workout_export
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
@@ -99,33 +100,10 @@ def _build_user_data_block(runtime_for: Callable[[str], AgentRuntime], athlete_i
 
 
 def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athlete_id: str) -> str:
-    """Format selected KPI guidance (segment + bounds) for prompt injection."""
+    """Format resolved KPI guidance for prompt injection."""
     try:
         store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
-        selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        selection_data = selection.get("data") if isinstance(selection, dict) else None
-        selection_map = selection_data if isinstance(selection_data, dict) else {}
-        kpi_sel = selection_map.get("kpi_moving_time_rate_guidance_selection")
-        if isinstance(kpi_sel, dict):
-            segment = kpi_sel.get("segment")
-            w_per_kg = kpi_sel.get("w_per_kg") or {}
-            kj_per_kg = kpi_sel.get("kj_per_kg_per_hour") or {}
-            if (
-                segment
-                and isinstance(w_per_kg, dict)
-                and isinstance(kj_per_kg, dict)
-                and w_per_kg
-                and kj_per_kg
-            ):
-                w_bounds: JsonMap = w_per_kg
-                kj_bounds: JsonMap = kj_per_kg
-                return (
-                    "Selected KPI guidance: "
-                    f"kpi_rate_band_selector {segment} "
-                    f"(w_per_kg {w_bounds.get('min')} - {w_bounds.get('max')}, "
-                    f"kj_per_kg_per_hour {kj_bounds.get('min')} - {kj_bounds.get('max')}). "
-                )
-        return ""
+        return build_resolved_kpi_context_block(store, athlete_id)
     except Exception:
         return ""
 

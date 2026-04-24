@@ -9,6 +9,7 @@ from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
+from rps.orchestrator.resolved_context import build_resolved_kpi_context_block
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -194,29 +195,7 @@ def create_season_plan(
     kpi_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
-        selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        selection_data = selection.get("data") if isinstance(selection, dict) else None
-        selection_map = selection_data if isinstance(selection_data, dict) else {}
-        kpi_sel = selection_map.get("kpi_moving_time_rate_guidance_selection")
-        if isinstance(kpi_sel, dict):
-            segment = kpi_sel.get("segment")
-            w_per_kg = kpi_sel.get("w_per_kg") or {}
-            kj_per_kg = kpi_sel.get("kj_per_kg_per_hour") or {}
-            if (
-                segment
-                and isinstance(w_per_kg, dict)
-                and isinstance(kj_per_kg, dict)
-                and w_per_kg
-                and kj_per_kg
-            ):
-                w_bounds: JsonMap = w_per_kg
-                kj_bounds: JsonMap = kj_per_kg
-                kpi_block = (
-                    "Selected KPI guidance: "
-                    f"kpi_rate_band_selector {segment} "
-                    f"(w_per_kg {w_bounds.get('min')} - {w_bounds.get('max')}, "
-                    f"kj_per_kg_per_hour {kj_bounds.get('min')} - {kj_bounds.get('max')}). "
-                )
+        kpi_block = build_resolved_kpi_context_block(store, athlete_id)
     except Exception:
         kpi_block = ""
     user_input = (

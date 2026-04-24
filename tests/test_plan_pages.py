@@ -632,6 +632,38 @@ def test_create_season_plan_includes_selected_kpi_guidance(
         run_id="test_selection",
         update_latest=True,
     )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.KPI_PROFILE,
+        "sample_profile",
+        {
+            "data": {
+                "durability": {
+                    "moving_time_rate_guidance": {
+                        "derived_from": "kpi_profile_v1",
+                        "notes": "Use selected segment directly.",
+                        "bands": [
+                            {
+                                "segment": "fast_competitive",
+                                "w_per_kg": {"min": 2.5, "max": 3.0},
+                                "kj_per_kg_per_hour": {"min": 20, "max": 24},
+                                "basis": "validated",
+                            },
+                            {
+                                "segment": "steady_endurance",
+                                "w_per_kg": {"min": 2.0, "max": 2.4},
+                                "kj_per_kg_per_hour": {"min": 16, "max": 19},
+                                "basis": "validated",
+                            },
+                        ],
+                    }
+                }
+            }
+        },
+        producer_agent="user",
+        run_id="test_kpi_profile",
+        update_latest=True,
+    )
 
     season_flow.create_season_plan(
         _fake_runtime_for,
@@ -644,8 +676,10 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     )
 
     assert captured_inputs
-    assert "Selected KPI guidance:" in captured_inputs[0]
-    assert "kpi_rate_band_selector fast_competitive" in captured_inputs[0]
+    assert "**Resolved KPI Context**" in captured_inputs[0]
+    assert "selected_kpi_rate_band_selector: fast_competitive" in captured_inputs[0]
+    assert "kj_per_kg_per_hour 20 - 24" in captured_inputs[0]
+    assert "kpi_profile_moving_time_rate_guidance.available_bands:" in captured_inputs[0]
     assert (
         "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12"
         in captured_inputs[0]
@@ -1110,6 +1144,32 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
         run_id="store_selection_202612",
         update_latest=True,
     )
+    store.save_document(
+        athlete_id,
+        ArtifactType.KPI_PROFILE,
+        "sample_profile",
+        {
+            "data": {
+                "durability": {
+                    "moving_time_rate_guidance": {
+                        "derived_from": "kpi_profile_v1",
+                        "notes": "Use selected segment directly.",
+                        "bands": [
+                            {
+                                "segment": "fast_competitive",
+                                "w_per_kg": {"min": 2.5, "max": 3.0},
+                                "kj_per_kg_per_hour": {"min": 20, "max": 24},
+                                "basis": "validated",
+                            }
+                        ],
+                    }
+                }
+            }
+        },
+        producer_agent="user",
+        run_id="store_kpi_profile_202612",
+        update_latest=True,
+    )
 
     runtime = SimpleNamespace(
         workspace_root=tmp_path,
@@ -1142,6 +1202,9 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
     assert captured_inputs
     assert any("WELLNESS.data.body_mass_kg is present and authoritative for KPI gating: 82.4 kg." in user_input for user_input in captured_inputs)
     assert any("Use WELLNESS.data.body_mass_kg for any kJ/kg/h or W/kg gating" in user_input for user_input in captured_inputs)
+    assert any("**Resolved KPI Context**" in user_input for user_input in captured_inputs)
+    assert any("selected_kpi_rate_band_selector: fast_competitive" in user_input for user_input in captured_inputs)
+    assert any("kpi_profile_moving_time_rate_guidance.available_bands:" in user_input for user_input in captured_inputs)
 
 
 def test_plan_week_skips_export_when_week_plan_creation_fails(
