@@ -10,13 +10,16 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from rps.agents.tasks import AgentTask, OutputSpec  # noqa: E402
 from rps.orchestrator.workout_export import run_workout_export  # noqa: E402
 from rps.workouts.exporter import build_workout_export_payload  # noqa: E402
 from rps.workouts.validator import (  # noqa: E402
     WorkoutValidationError,
     validate_week_plan_exportability,
 )
+from rps.workspace.guarded_store import GuardedValidatedStore  # noqa: E402
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
+from rps.workspace.schema_registry import SchemaValidationError  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
 
 
@@ -212,3 +215,47 @@ class WorkoutExportTests(unittest.TestCase):
             self.assertIn("W-2026-17-TUE", result["result"]["error"])
             with self.assertRaises(FileNotFoundError):
                 store.load_version(athlete_id, ArtifactType.INTERVALS_WORKOUTS, "2026-17")
+
+    def test_guarded_store_rejects_non_exportable_week_plan(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 3x\n- 10m 84% 88-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            guarded = GuardedValidatedStore(
+                athlete_id="ath_003",
+                schema_dir=Path("specs/schemas"),
+                workspace_root=root,
+            )
+            guarded.store.ensure_workspace("ath_003")
+            guarded.store.save_document(
+                "ath_003",
+                ArtifactType.PHASE_STRUCTURE,
+                "2026-17--2026-19__20260424_094939",
+                {"meta": {"artifact_type": "PHASE_STRUCTURE"}, "data": {}},
+                producer_agent="phase_architect",
+                run_id="phase_structure_test",
+                update_latest=True,
+            )
+
+            with self.assertRaises(SchemaValidationError) as exc:
+                guarded.guard_put_validated(
+                    output_spec=OutputSpec(
+                        task=AgentTask.CREATE_WEEK_PLAN,
+                        artifact_type=ArtifactType.WEEK_PLAN,
+                        schema_file="week_plan.schema.json",
+                        tool_name="store_week_plan",
+                        envelope=True,
+                    ),
+                    document=week_plan,
+                    run_id="week_plan_test",
+                    producer_agent="week_planner",
+                    update_latest=True,
+                )
+
+            self.assertTrue(
+                any(
+                    "step line does not match the cycling workout subset" in error
+                    for error in exc.exception.errors
+                )
+            )

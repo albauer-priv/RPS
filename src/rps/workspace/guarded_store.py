@@ -12,6 +12,7 @@ from typing import cast
 
 from rps.agents.tasks import OutputSpec
 from rps.rendering.auto_render import render_sidecar
+from rps.workouts.validator import collect_week_plan_export_issues
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import envelope_week_range
 from rps.workspace.local_store import LocalArtifactStore
@@ -698,6 +699,8 @@ class GuardedValidatedStore:
             version_key = normalize_version_key(version_key, artifact_type=target)
 
             self._apply_phase_store_constraints(target, cast(JsonMap, document))
+            if target == ArtifactType.WEEK_PLAN:
+                self._enforce_week_plan_exportability(cast(JsonMap, document))
 
             path = self.store.save_document(
                 athlete_id=self.athlete_id,
@@ -787,6 +790,16 @@ class GuardedValidatedStore:
             return
         if target == ArtifactType.PHASE_PREVIEW:
             self._enforce_phase_preview_traceability(document)
+
+    def _enforce_week_plan_exportability(self, document: JsonMap) -> None:
+        """Ensure WEEK_PLAN workout definitions pass the deterministic local export validator."""
+        issues = collect_week_plan_export_issues(document)
+        if not issues:
+            return
+        raise SchemaValidationError(
+            "Week plan exportability failed",
+            [issue.format() for issue in issues],
+        )
 
     def _format_payload(self, document: object) -> str:
         """Return a formatted payload string for logging."""

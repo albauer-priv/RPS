@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
-Last-Updated: 2026-04-21
+Last-Updated: 2026-04-24
 Owner: Planning Pipeline
 ---
 # FEAT: Code-Based Workout Exporter
@@ -60,6 +60,7 @@ Owner: Planning Pipeline
 * `plan_week(...)` still generates `WEEK_PLAN` first.
 * The subsequent export step no longer calls the `workout_builder` LLM.
 * A local exporter loads `WEEK_PLAN`, validates it, validates each `workout_text` against the project workout subset, maps workouts to the Intervals JSON array, validates the output schema, and stores `INTERVALS_WORKOUTS`.
+* The same deterministic exportability validation is also enforced before `WEEK_PLAN` is stored, so the week planner cannot persist a plan whose workout text would later fail the local exporter.
 
 **UI impact**
 
@@ -85,6 +86,7 @@ Owner: Planning Pipeline
 * `src/rps/workouts/validator.py`: local workout-text validation and agenda consistency checks.
 * `src/rps/workouts/exporter.py`: deterministic `WEEK_PLAN` -> `INTERVALS_WORKOUTS` mapping.
 * `src/rps/orchestrator/workout_export.py`: swap agent execution for local exporter/store path.
+* `src/rps/workspace/guarded_store.py`: reject `WEEK_PLAN` writes that fail deterministic workout export validation.
 
 **Data flow**
 
@@ -186,6 +188,7 @@ Owner: Planning Pipeline
 * [x] `run_workout_export(...)` no longer calls any LLM path.
 * [x] Valid `WEEK_PLAN` workout texts convert to schema-valid `INTERVALS_WORKOUTS`.
 * [x] Invalid workout text yields deterministic validation errors.
+* [x] Invalid workout text also blocks `WEEK_PLAN` storage, preventing stale/invalid saved plans.
 * [x] Validation passes: `py_compile`, `ruff`, `mypy`, targeted pytest
 * [x] No regressions in `INTERVALS_WORKOUTS` storage path or version resolution
 * [x] Performance guardrail: no additional network/model call for export generation
