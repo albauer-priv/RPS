@@ -31,6 +31,11 @@ ISO week labels are not calendar months (e.g., `YYYY-WW` is ISO week number, not
 - Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
 - A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
 
+### resolved_context_fetch_policy (HARD)
+- If a required planning fact is already present in a `Resolved ... Context` block, do not load another artefact just to rediscover that same fact.
+- Only load additional workspace artefacts when you still need unresolved fields, exact source/version traceability, or optional advisory context not already provided.
+- Exact-range predecessor artefacts and explicit week-sensitive version reads remain mandatory when the contract requires them.
+
 ### runtime_context (Binding)
 This instruction set is consolidated into this file.
 All binding knowledge sources listed below are available at runtime.
@@ -197,7 +202,7 @@ Set G0 = true.
 If user provided `iso_week_range`, use it and skip phase context resolution.
 Otherwise resolve phase context via `workspace_get_phase_context({ "year": YYYY, "week": WW })` to obtain the phase range start week/version key.
 
-Load in this order:
+Load only the artefacts still needed after considering any `Resolved ... Context` blocks. Use this order for unresolved items; exact-range predecessors remain mandatory:
 1) `workspace_get_input("planning_events")`
 2) `workspace_get_input("logistics")`
 3) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`

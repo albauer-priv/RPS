@@ -91,6 +91,7 @@ def test_planner_prompts_honor_resolved_context_blocks():
         prompt_text = (prompts_dir / name).read_text(encoding="utf-8")
         assert "Resolved ... Context" in prompt_text
         assert "Do NOT search, infer, or reinterpret the same facts again" in prompt_text
+        assert "do not load another artefact just to rediscover that same fact" in prompt_text
 
 
 def test_normalize_season_scenarios_uses_last_planning_event_week():

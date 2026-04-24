@@ -28,6 +28,11 @@ ISO week labels are not calendar months (e.g., `2026-04` is ISO week 4, not Apri
 - Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
 - A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
 
+### resolved_context_fetch_policy (HARD)
+- If a required planning fact is already present in a `Resolved ... Context` block, do not load another artefact just to rediscover that same fact.
+- Only load additional workspace artefacts when you still need unresolved fields, exact source/version traceability, or optional advisory context not already provided.
+- Exact-range predecessor artefacts and explicit week-sensitive version reads remain mandatory when the contract requires them.
+
 ### Binding enforcement (HARD)
 - Binding content is any instruction explicitly labeled Binding / Mandatory / Non-Negotiable / MUST / MUST NOT, and any schema compliance clause.
 - Non-binding content is explicitly labeled informational only.
@@ -120,8 +125,8 @@ Note:
 - `season_brief_ref` is a legacy field name in the Season Plan schema. Populate it with the Athlete Profile run_id/version key.
 
 ### Mandatory fetch-before-stop rule (HARD)
-- You MUST call the workspace tools to load all required artefacts before deciding they are missing.
-- Do NOT STOP based on assumptions; only STOP after tool calls return missing/None/empty.
+- You MUST call the workspace tools before STOP only for required artefacts or fields that are not already sufficiently covered by `Resolved ... Context` blocks.
+- Do NOT STOP based on assumptions; only STOP after the relevant tool calls needed for unresolved facts return missing/None/empty.
 - Required fetch sequence for Mode A/B:
   1) `workspace_get_input("athlete_profile")`
   2) `workspace_get_input("planning_events")`
@@ -173,7 +178,7 @@ If ambiguous or multiple outputs requested: STOP and request one mode/output.
 Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
-Load in this order (skip non-applicable items):
+Load only the artefacts still needed after considering any `Resolved ... Context` blocks. Use this order for unresolved items (skip non-applicable or already-resolved duplicate reads):
 1) `workspace_get_input("planning_events")` (required all modes)
 2) `workspace_get_input("athlete_profile")` (required Mode A/B)
 3) `workspace_get_input("logistics")` (required all modes)

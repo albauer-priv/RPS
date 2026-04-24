@@ -26,6 +26,11 @@ Execution Protocol -> Domain Rules -> Stop & Validation.
 - Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
 - A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
 
+### resolved_context_fetch_policy (HARD)
+- If a required planning fact is already present in a `Resolved ... Context` block, do not load another artefact just to rediscover that same fact.
+- Only load additional workspace artefacts when you still need unresolved fields, exact source/version traceability, or optional advisory context not already provided.
+- Exact-range predecessor artefacts and explicit week-sensitive version reads remain mandatory when the contract requires them.
+
 ### Binding enforcement (HARD)
 - Binding content is any instruction explicitly labeled Binding / Mandatory / Non-Negotiable / MUST / MUST NOT,
   plus any precedence rule, stop condition, schema requirement, and load order rule.
@@ -153,7 +158,7 @@ You MUST follow this exact sequence.
 Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
-Load in order:
+Load only the artefacts still needed after considering any `Resolved ... Context` blocks. Use this order for unresolved items (skip already-resolved duplicate reads):
 1) `workspace_get_input("athlete_profile")`
 2) `workspace_get_input("planning_events")`
 3) `workspace_get_input("logistics")`
