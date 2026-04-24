@@ -814,7 +814,26 @@ def plan_week(
             _log(message)
         week_tasks.append(AgentTask.CREATE_WEEK_PLAN)
 
+    week_run_ok: bool | None = None
     if week_tasks:
+        historical_activity_versions = _resolve_latest_historical_week_versions(
+            store,
+            athlete_id,
+            target,
+        )
+        historical_context_line = ""
+        if (
+            ArtifactType.ACTIVITIES_ACTUAL in historical_activity_versions
+            and ArtifactType.ACTIVITIES_TREND in historical_activity_versions
+        ):
+            historical_context_line = (
+                f"Load historical ACTIVITIES_ACTUAL version_key "
+                f"{historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]} and "
+                f"ACTIVITIES_TREND version_key "
+                f"{historical_activity_versions[ArtifactType.ACTIVITIES_TREND]} "
+                "with workspace_get_version before any STOP about missing activity context; "
+                "never use workspace_get_latest for these activity artefacts. "
+            )
         spec = AGENTS["week_planner"]
         message = f"Running Week-Planner for ISO week {target_label}."
         _log(message)
@@ -830,6 +849,7 @@ def plan_week(
                 f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
+                f"{historical_context_line}"
                 f"{user_data_block}"
                 f"{kpi_block}"
                 f"{override_line}"
@@ -842,31 +862,38 @@ def plan_week(
             max_num_results=max_num_results,
         )
         steps.append({"agent": "week_planner", "tasks": [t.value for t in week_tasks], "result": out})
+        week_run_ok = bool(out.get("ok") and out.get("produced"))
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
-    export_result = run_workout_export(
-        store=store,
-        athlete_id=athlete_id,
-        year=year,
-        week=week,
-        run_id=run_id,
-        plan_mtime=plan_mtime,
-        needs_week_plan=needs_week_plan,
-        force_export="WORKOUT_EXPORT" in forced_steps,
-        log_fn=_log,
-    )
-    if export_result.get("ran"):
-        out = export_result.get("result") or {}
-        steps.append(
-            {
-                "agent": "workout_export",
-                "tasks": [AgentTask.BUILD_WORKOUT_EXPORT.value],
-                "result": out,
-            }
+    if needs_week_plan and week_tasks and week_run_ok is False:
+        _log(
+            f"Skipping local workout export for ISO week {target_label} because WEEK_PLAN creation failed.",
+            logging.WARNING,
         )
-        if out.get("ok") and out.get("produced"):
-            _log("Done.")
+    else:
+        export_result = run_workout_export(
+            store=store,
+            athlete_id=athlete_id,
+            year=year,
+            week=week,
+            run_id=run_id,
+            plan_mtime=plan_mtime,
+            needs_week_plan=needs_week_plan,
+            force_export="WORKOUT_EXPORT" in forced_steps,
+            log_fn=_log,
+        )
+        if export_result.get("ran"):
+            out = export_result.get("result") or {}
+            steps.append(
+                {
+                    "agent": "workout_export",
+                    "tasks": [AgentTask.BUILD_WORKOUT_EXPORT.value],
+                    "result": out,
+                }
+            )
+            if out.get("ok") and out.get("produced"):
+                _log("Done.")
 
     def _step_ok(step: StepRecord) -> bool:
         result = step.get("result")
