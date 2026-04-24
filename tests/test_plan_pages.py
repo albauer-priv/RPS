@@ -1023,6 +1023,127 @@ def test_plan_week_week_planner_uses_historical_activity_versions(
     assert any("ACTIVITIES_TREND version_key 2026-11" in user_input for user_input in captured_inputs)
 
 
+def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    athlete_id = "test_athlete"
+    captured_inputs: list[str] = []
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "meta": {"iso_week_range": "2026-11--2026-13"},
+                "data": {
+                    "phases": [
+                        {
+                            "id": "P01",
+                            "name": "Base 1",
+                            "cycle": "Base",
+                            "iso_week_range": "2026-11--2026-13",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    for artifact_type in (
+        ArtifactType.PHASE_GUARDRAILS,
+        ArtifactType.PHASE_STRUCTURE,
+        ArtifactType.PHASE_PREVIEW,
+    ):
+        store.save_document(
+            athlete_id,
+            artifact_type,
+            "2026-11--2026-13",
+            {"meta": {"artifact_type": artifact_type.value, "iso_week_range": "2026-11--2026-13"}, "data": {}},
+            producer_agent="phase_architect",
+            run_id=f"store_{artifact_type.value.lower()}",
+            update_latest=True,
+        )
+    store.save_document(
+        athlete_id,
+        ArtifactType.WELLNESS,
+        "2026-11",
+        {
+            "meta": {"artifact_type": "WELLNESS", "iso_week": "2026-11"},
+            "data": {"body_mass_kg": 82.4},
+        },
+        producer_agent="pipeline",
+        run_id="store_wellness_202611",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-11",
+        {"meta": {"artifact_type": "ACTIVITIES_ACTUAL", "iso_week": "2026-11"}, "data": {}},
+        producer_agent="pipeline",
+        run_id="store_activities_actual_202611",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_TREND,
+        "2026-11",
+        {"meta": {"artifact_type": "ACTIVITIES_TREND", "iso_week": "2026-11"}, "data": {}},
+        producer_agent="pipeline",
+        run_id="store_activities_trend_202611",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        "2026-12",
+        {
+            "data": {
+                "kpi_moving_time_rate_guidance_selection": {
+                    "segment": "fast_competitive",
+                    "w_per_kg": {"min": 2.5, "max": 3.0},
+                    "kj_per_kg_per_hour": {"min": 20, "max": 24},
+                }
+            }
+        },
+        producer_agent="user",
+        run_id="store_selection_202612",
+        update_latest=True,
+    )
+
+    runtime = SimpleNamespace(
+        workspace_root=tmp_path,
+        reasoning_effort=None,
+        reasoning_summary=None,
+    )
+
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.run_workout_export",
+        lambda *_args, **_kwargs: {"ran": False, "ok": True, "produced": False, "result": None},
+    )
+
+    result = plan_week(
+        runtime,
+        athlete_id=athlete_id,
+        year=2026,
+        week=12,
+        run_id="test_run",
+    )
+
+    assert result.ok is True
+    assert captured_inputs
+    assert any("WELLNESS.data.body_mass_kg is present and authoritative for KPI gating: 82.4 kg." in user_input for user_input in captured_inputs)
+    assert any("Use WELLNESS.data.body_mass_kg for any kJ/kg/h or W/kg gating" in user_input for user_input in captured_inputs)
+
+
 def test_plan_week_skips_export_when_week_plan_creation_fails(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

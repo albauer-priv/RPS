@@ -130,6 +130,25 @@ def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athle
         return ""
 
 
+def _resolve_latest_wellness_body_mass_kg(
+    runtime_for: Callable[[str], AgentRuntime],
+    athlete_id: str,
+) -> float | None:
+    """Return the latest authoritative body mass from WELLNESS when available."""
+    try:
+        store = LocalArtifactStore(root=runtime_for("week_planner").workspace_root)
+        wellness = store.load_latest(athlete_id, ArtifactType.WELLNESS)
+    except Exception:
+        return None
+    if not isinstance(wellness, dict):
+        return None
+    data = wellness.get("data")
+    if not isinstance(data, dict):
+        return None
+    body_mass = data.get("body_mass_kg")
+    return float(body_mass) if isinstance(body_mass, (int, float)) else None
+
+
 def _required_workspace_input_exists(root: Path, athlete_id: str, input_type: str) -> bool:
     """Return whether a required shared input exists in inputs/ or latest/."""
     athlete_root = root / athlete_id
@@ -834,6 +853,15 @@ def plan_week(
                 "with workspace_get_version before any STOP about missing activity context; "
                 "never use workspace_get_latest for these activity artefacts. "
             )
+        wellness_body_mass = _resolve_latest_wellness_body_mass_kg(runtime_for, athlete_id)
+        body_mass_context_line = ""
+        if wellness_body_mass is not None:
+            body_mass_context_line = (
+                f"WELLNESS.data.body_mass_kg is present and authoritative for KPI gating: "
+                f"{wellness_body_mass:.1f} kg. "
+                "Use WELLNESS.data.body_mass_kg for any kJ/kg/h or W/kg gating before any STOP "
+                "about missing or semantically unusable body mass. "
+            )
         spec = AGENTS["week_planner"]
         message = f"Running Week-Planner for ISO week {target_label}."
         _log(message)
@@ -850,6 +878,7 @@ def plan_week(
                 "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
                 f"{historical_context_line}"
+                f"{body_mass_context_line}"
                 f"{user_data_block}"
                 f"{kpi_block}"
                 f"{override_line}"

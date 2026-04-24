@@ -77,6 +77,14 @@ def test_week_planner_prompt_forbids_hyphenated_loop_headers():
     assert "invalid loop header: `- 3x`" in prompt_text
 
 
+def test_week_planner_prompt_uses_wellness_body_mass_for_kpi_gating():
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "agents" / "week_planner.md"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert "WELLNESS.data.body_mass_kg" in prompt_text
+    assert "authoritative and required body-mass value" in prompt_text
+
+
 def test_normalize_season_scenarios_uses_last_planning_event_week():
     document = {
         "meta": {

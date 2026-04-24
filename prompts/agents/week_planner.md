@@ -91,7 +91,7 @@ Supplemental (informational only):
 | Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required; context only |
 | Availability | `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` | Required shared input; latest valid state remains authoritative until replaced |
-| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required latest factual context; use the latest valid artefact |
+| Wellness | `workspace_get_latest({ "artifact_type": "WELLNESS" })` | Required latest factual context; use the latest valid artefact and treat `WELLNESS.data.body_mass_kg` as the authoritative body-mass field for any KPI kJ/kg/h gating |
 | Zone Model | `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` | Required shared latest reference for FTP/default IFs |
 
 ---
@@ -176,6 +176,7 @@ Before generating any user-facing output:
 3) Confirm required workspace artefacts are present and semantically valid for planning:
    - `AVAILABILITY`, `planning_events`, `logistics`, and `ZONE_MODEL` are shared/latest inputs and remain valid until replaced.
    - `WELLNESS` is latest factual context and does not need to share the target week key.
+   - If KPI gating is active, `WELLNESS.data.body_mass_kg` is the authoritative and required body-mass value; do not ignore it when present.
 If any required governance artefact missing/invalid: STOP in STOP output format.
 
 ### B) Deterministic Load Order (HARD; gate-based)
@@ -196,6 +197,7 @@ Load in this order:
    - Treat as shared user-managed state. Do NOT reject it merely because `meta.iso_week` predates the target week.
 4) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
    - Use the latest valid factual context.
+   - If KPI gating is active, read `WELLNESS.data.body_mass_kg` and use that exact field for body-mass scaling before any STOP about missing body mass.
 5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
    - Treat as shared latest reference state, not target-week coverage.
 6) `workspace_get_version({ "artifact_type": "PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
