@@ -857,6 +857,25 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
         run_id="test_selection",
         update_latest=True,
     )
+    generic_input = {"meta": {"artifact_type": "GENERIC"}, "data": {}}
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-11",
+        generic_input,
+        producer_agent="test",
+        run_id="store_activities_actual_202611",
+        update_latest=False,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_TREND,
+        "2026-11",
+        generic_input,
+        producer_agent="test",
+        run_id="store_activities_trend_202611",
+        update_latest=False,
+    )
 
     runtime = SimpleNamespace(
         workspace_root=tmp_path,
@@ -907,8 +926,8 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     assert result.ok is True
     assert captured_inputs
     assert all("Selected KPI guidance:" not in user_input for user_input in captured_inputs)
-    assert all("ACTIVITIES_ACTUAL version_key 2026-12" in user_input for user_input in captured_inputs)
-    assert all("ACTIVITIES_TREND version_key 2026-12" in user_input for user_input in captured_inputs)
+    assert all("ACTIVITIES_ACTUAL version_key 2026-11" in user_input for user_input in captured_inputs)
+    assert all("ACTIVITIES_TREND version_key 2026-11" in user_input for user_input in captured_inputs)
 
 
 def test_week_page_renders():

@@ -22,8 +22,10 @@ from rps.workspace.iso_helpers import (
     IsoWeek,
     envelope_week,
     envelope_week_range,
+    parse_iso_week,
     parse_iso_week_range,
     range_contains,
+    week_index,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.season_plan_service import resolve_season_plan_phase_info
@@ -159,6 +161,30 @@ def _resolve_required_week_versions(
         version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
         if version_key:
             resolved[artifact_type] = version_key
+    return resolved
+
+
+def _resolve_latest_historical_week_versions(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    target_week: IsoWeek,
+) -> dict[ArtifactType, str]:
+    """Resolve the newest stored activity artefacts strictly before the target week."""
+    resolved: dict[ArtifactType, str] = {}
+    target_index = week_index(target_week)
+    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
+        candidates: list[tuple[int, str]] = []
+        for version_key in store.list_versions(athlete_id, artifact_type):
+            version_week = parse_iso_week(version_key)
+            if not version_week:
+                continue
+            version_index = week_index(version_week)
+            if version_index >= target_index:
+                continue
+            candidates.append((version_index, version_key))
+        if candidates:
+            candidates.sort()
+            resolved[artifact_type] = candidates[-1][1]
     return resolved
 
 
@@ -651,6 +677,24 @@ def plan_week(
         phase_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
 
     if phase_tasks:
+        historical_activity_versions = _resolve_latest_historical_week_versions(
+            store,
+            athlete_id,
+            target,
+        )
+        historical_context_line = ""
+        if (
+            ArtifactType.ACTIVITIES_ACTUAL in historical_activity_versions
+            and ArtifactType.ACTIVITIES_TREND in historical_activity_versions
+        ):
+            historical_context_line = (
+                f"Load historical ACTIVITIES_ACTUAL version_key "
+                f"{historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]} and "
+                f"ACTIVITIES_TREND version_key "
+                f"{historical_activity_versions[ArtifactType.ACTIVITIES_TREND]} "
+                "with workspace_get_version before any STOP about missing activity context; "
+                "never use workspace_get_latest for these activity artefacts. "
+            )
         spec = AGENTS["phase_architect"]
         for task in phase_tasks:
             mode = _mode_for_task(task)
@@ -669,9 +713,7 @@ def plan_week(
                     "Use this phase range as the iso_week_range for the artefact. "
                     "Read season_plan first and use explicit week/range-scoped workspace tools for any "
                     "week-sensitive or exact-range dependencies. "
-                    f"Load ACTIVITIES_ACTUAL version_key {target_label} and ACTIVITIES_TREND version_key {target_label} "
-                    "with workspace_get_version before any STOP about missing activity context; "
-                    "never use workspace_get_latest for these activity artefacts. "
+                    f"{historical_context_line}"
                     f"{user_data_block}"
                     f"{override_line}"
                     f"{injected_block}"
