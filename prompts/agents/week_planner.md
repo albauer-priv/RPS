@@ -47,6 +47,11 @@ Assume the mandatory_load_order applies to this single file.
   - This spec may only RESTRICT the EBNF; if conflict, Subset wins.
 - Construction authority: `WorkoutPolicy` (`workout_policy.md`)
 - Gatekeeper rule: validate workout text BEFORE emitting; on failure, STOP and output Validation Fail Report (no invalid plan output).
+- Loop headers are NOT step lines:
+  - valid loop header: `3x`
+  - invalid loop header: `- 3x`
+- Step lines MUST start with `-` and then contain a real step payload such as duration + target + cadence.
+- Never prefix a repeat count or section marker with `-`.
 
 ### Required knowledge files (must read in full) — Binding
 Specs / policies:
@@ -226,6 +231,13 @@ Set G2 = true.
   - `data.week_summary` with corridor values copied from active governance corridor (per Mandatory Chapter).
   - `data.agenda` with exactly 7 entries Mon..Sun and valid `day_role` enums.
   - `data.workouts` with workout_text step lines conforming to EBNF + Subset + WorkoutPolicy.
+    - Loop example:
+      - valid:
+        `3x`
+        `- 10m 84% 88-92rpm`
+        `- 5m 60% 85rpm`
+      - invalid:
+        `- 3x`
   - Planned load numbers MUST be derived deterministically from workout structure using LoadEstimationSpec (no manual “set numbers then fit workouts”).
 Set P1 = true.
 

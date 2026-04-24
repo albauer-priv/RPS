@@ -69,6 +69,14 @@ def test_week_planner_prompt_treats_availability_as_shared_latest():
     assert "must cover target week" not in prompt_text
 
 
+def test_week_planner_prompt_forbids_hyphenated_loop_headers():
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "agents" / "week_planner.md"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert "valid loop header: `3x`" in prompt_text
+    assert "invalid loop header: `- 3x`" in prompt_text
+
+
 def test_normalize_season_scenarios_uses_last_planning_event_week():
     document = {
         "meta": {
