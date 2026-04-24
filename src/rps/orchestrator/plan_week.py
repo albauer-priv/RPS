@@ -1022,6 +1022,8 @@ def plan_week(
                 f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
                 "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
                 "Read phase_guardrails and phase_structure from workspace. "
+                f"For exact-range predecessor reads, use workspace_get_version with version_key {phase_range_label} "
+                "for both PHASE_GUARDRAILS and PHASE_STRUCTURE; never use the single-week key for these range-scoped artefacts. "
                 f"{resolved_phase_block}"
                 f"{resolved_availability_block}"
                 f"{resolved_logistics_block}"

@@ -1314,6 +1314,11 @@ def test_plan_week_week_planner_uses_historical_activity_versions(
     assert captured_inputs
     assert any("ACTIVITIES_ACTUAL version_key 2026-11" in user_input for user_input in captured_inputs)
     assert any("ACTIVITIES_TREND version_key 2026-11" in user_input for user_input in captured_inputs)
+    assert any(
+        "use workspace_get_version with version_key 2026-11--2026-13 for both PHASE_GUARDRAILS and PHASE_STRUCTURE"
+        in user_input
+        for user_input in captured_inputs
+    )
 
 
 def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(

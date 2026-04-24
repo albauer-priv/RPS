@@ -96,8 +96,8 @@ Supplemental (informational only):
 ### Runtime artefacts (workspace; load via tools) — Binding
 | Artifact | Tool | Notes |
 |---|---|---|
-| Phase Guardrails | `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` | Required; load corridor + constraints |
-| Phase Structure | `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` | Required; day-role + intensity guardrails |
+| Phase Guardrails | `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<exact_iso_week_range>" })` | Required exact-range predecessor; use full `YYYY-WW--YYYY-WW` key |
+| Phase Structure | `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<exact_iso_week_range>" })` | Required exact-range predecessor; use full `YYYY-WW--YYYY-WW` key |
 | Phase Feed Forward | `workspace_get_latest({ "artifact_type": "PHASE_FEED_FORWARD" })` | Optional; binding delta if valid & in-range |
 | Planning Events | `workspace_get_input("planning_events")` | Required; A/B/C events Dates are YYYY-MM-DD; do not confuse month with ISO week. Compute ISO week from date if needed. |
 | Logistics | `workspace_get_input("logistics")` | Required; context only |
@@ -200,7 +200,7 @@ Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
 If user provided `iso_week_range`, use it and skip phase context resolution.
-Otherwise resolve phase context via `workspace_get_phase_context({ "year": YYYY, "week": WW })` to obtain the phase range start week/version key.
+Otherwise resolve phase context via `workspace_get_phase_context({ "year": YYYY, "week": WW })` to obtain the exact phase `iso_week_range`.
 
 Load only the artefacts still needed after considering any `Resolved ... Context` blocks. Use this order for unresolved items; exact-range predecessors remain mandatory:
 1) `workspace_get_input("planning_events")`
@@ -213,13 +213,14 @@ Load only the artefacts still needed after considering any `Resolved ... Context
 5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
    - Treat as shared latest reference state, not target-week coverage.
 6) `workspace_get_version({ "artifact_type": "PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
-7) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<range_start_week>" })` (required)
-8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
+7) `workspace_get_version({ "artifact_type": "PHASE_GUARDRAILS", "version_key": "<exact_iso_week_range>" })` (required exact-range predecessor)
+8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<exact_iso_week_range>" })` (required exact-range predecessor)
 
 When `Resolved ... Context` blocks are present:
 - prefer those resolved values for deterministic facts such as phase identity/range, weekly hours, fixed rest days, target-week events, logistics membership, FTP, KPI ranges, body mass, historical activity version keys, and historical activity summary signals
 - do not call tools just to rediscover those exact same facts
 - call tools only for details not already resolved or for required exact-range predecessor artefacts
+- For `PHASE_GUARDRAILS` and `PHASE_STRUCTURE`, the required predecessor `version_key` is the exact phase range key `YYYY-WW--YYYY-WW`, never the single target week `YYYY-WW`.
 
 If any required artefact is missing, invalid, or semantically unusable for the target week: STOP.
 Set G1 = true.

@@ -85,6 +85,14 @@ def test_week_planner_prompt_uses_wellness_body_mass_for_kpi_gating():
     assert "authoritative and required body-mass value" in prompt_text
 
 
+def test_week_planner_prompt_requires_exact_range_phase_predecessors():
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "agents" / "week_planner.md"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert '<exact_iso_week_range>' in prompt_text
+    assert "never the single target week `YYYY-WW`" in prompt_text
+
+
 def test_planner_prompts_honor_resolved_context_blocks():
     prompts_dir = Path(__file__).resolve().parents[1] / "prompts" / "agents"
     for name in ("week_planner.md", "phase_architect.md", "season_planner.md", "season_scenario.md"):
