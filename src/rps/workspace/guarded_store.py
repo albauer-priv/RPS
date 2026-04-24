@@ -227,6 +227,18 @@ class GuardedValidatedStore:
         type_token = self._normalize_text(event_type)
         return bool(date_token and type_token and date_token in upstream_blob and type_token in upstream_blob)
 
+    def _structure_constraint_has_recovery_note(
+        self,
+        upstream_items: list[str],
+        upstream_blob: str,
+        raw_item: str,
+    ) -> bool:
+        """Return whether a recovery note is present as either a list item or a combined constraint string."""
+        if self._contains_normalized_item(upstream_items, raw_item):
+            return True
+        normalized = self._normalize_text(raw_item)
+        return bool(normalized and normalized in upstream_blob)
+
     def _load_phase_guardrails_for_range(
         self,
         expected_range: object,
@@ -398,7 +410,7 @@ class GuardedValidatedStore:
         errors.extend(
             f"Season plan recovery_notes missing in upstream_intent.constraints: {item}"
             for item in constraints["recovery_notes"]
-            if not self._contains_normalized_item(upstream_items, item)
+            if not self._structure_constraint_has_recovery_note(upstream_items, upstream_blob, item)
         )
         errors.extend(
             f"Season plan planned_event_windows missing in upstream_intent.constraints: {item}"

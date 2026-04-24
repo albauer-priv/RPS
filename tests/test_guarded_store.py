@@ -296,6 +296,59 @@ def test_phase_structure_matches_constraints_as_list_items(tmp_path):
     store._enforce_phase_structure_constraints(document, season_plan)
 
 
+def test_phase_structure_accepts_combined_recovery_notes_constraint(tmp_path):
+    store = _store(tmp_path)
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [],
+                "risk_constraints": [],
+                "planned_event_windows": [],
+                "recovery_protection": {
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "notes": [
+                        "Fixed rest days from AVAILABILITY are non-negotiable and must be preserved downstream.",
+                        "When travel compresses the week, reduce ambition before reducing recovery protection.",
+                        "After each A event, recovery and re-entry must be baseline-anchored rather than peak-anchored.",
+                    ],
+                },
+            }
+        }
+    }
+    document = {
+        "meta": {"iso_week_range": "2026-17--2026-19"},
+        "data": {
+            "upstream_intent": {
+                "constraints": [
+                    "Fixed rest days from AVAILABILITY are non-negotiable and must be preserved downstream. | "
+                    "When travel compresses the week, reduce ambition before reducing recovery protection. | "
+                    "After each A event, recovery and re-entry must be baseline-anchored rather than peak-anchored."
+                ]
+            },
+            "execution_principles": {
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [],
+                "source": "phase_guardrails_2026-17--2026-19.json",
+            },
+        },
+    }
+
+    store._load_phase_guardrails_for_range = lambda _expected: (
+        {
+            "data": {
+                "load_guardrails": {
+                    "weekly_kj_bands": [],
+                }
+            }
+        },
+        "2026-17--2026-19",
+    )
+
+    store._enforce_phase_structure_constraints(document, season_plan)
+
+
 def test_phase_guardrails_missing_structured_event_still_fails(tmp_path):
     store = _store(tmp_path)
     season_plan = {

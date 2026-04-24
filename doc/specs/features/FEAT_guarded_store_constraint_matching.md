@@ -50,6 +50,7 @@ Owner: Workspace
 * `PHASE_STRUCTURE` validation uses relaxed semantic matching for planned-event window markers in `upstream_intent.constraints` instead of exact raw-string matching.
 * Planned-event parsing accepts both compact `YYYY-MM-DD (A|B|C)` markers and free-text season-plan markers such as `YYYY-MM-DD B event rehearsal window`.
 * Recovery-protection notes normalize from string or list form before propagation checks.
+* `PHASE_STRUCTURE.upstream_intent.constraints` may preserve recovery notes either as separate list items or as a single combined summary string, as long as each upstream note remains semantically present.
 
 ## 4) Implementation Analysis
 
