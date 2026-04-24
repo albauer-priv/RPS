@@ -1656,6 +1656,202 @@ def test_create_season_scenarios_injects_resolved_context(
     assert "**Resolved Planning Event Context**" in captured_inputs[0]
 
 
+def test_plan_week_injects_resolved_activity_context(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured_inputs: list[str] = []
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        task_values = [task.value for task in kwargs["tasks"]]
+        return {"ok": True, "produced": True, "tasks": task_values}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.run_workout_export",
+        lambda **_kwargs: {"ran": False, "result": {"ok": True, "produced": False}},
+    )
+
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "athlete1"
+    store.ensure_workspace(athlete_id)
+
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-17",
+        {
+            "meta": {
+                "scope": "Season",
+                "iso_week": "2026-17",
+                "iso_week_range": "2026-17--2026-20",
+            },
+            "data": {
+                "phases": [
+                    {
+                        "phase_id": "P01",
+                        "name": "Build",
+                        "cycle": "Build",
+                        "iso_week_range": "2026-17--2026-19",
+                    }
+                ]
+            },
+        },
+        producer_agent="test",
+        run_id="season_plan",
+        update_latest=True,
+    )
+    for artifact_type in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE, ArtifactType.PHASE_PREVIEW):
+        store.save_document(
+            athlete_id,
+            artifact_type,
+            "2026-17--2026-19",
+            {
+                "meta": {
+                    "scope": "Phase",
+                    "iso_week": "2026-17",
+                    "iso_week_range": "2026-17--2026-19",
+                },
+                "data": {},
+            },
+            producer_agent="test",
+            run_id=f"{artifact_type.value}_run",
+            update_latest=True,
+        )
+    store.save_document(
+        athlete_id,
+        ArtifactType.AVAILABILITY,
+        "2026-10",
+        {"data": {"weekly_hours": {"min": 10, "typical": 12, "max": 14}, "fixed_rest_days": ["Mon"], "availability_table": []}},
+        producer_agent="test",
+        run_id="availability",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.WELLNESS,
+        "2026-16",
+        {"data": {"body_mass_kg": 82.4}},
+        producer_agent="test",
+        run_id="wellness",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ZONE_MODEL,
+        "zone_model",
+        {"data": {"model_metadata": {"ftp_watts": 300}, "zones": []}},
+        producer_agent="test",
+        run_id="zone_model",
+        update_latest=True,
+    )
+    (tmp_path / athlete_id / "inputs").mkdir(parents=True, exist_ok=True)
+    (tmp_path / athlete_id / "inputs" / "planning_events.json").write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+    (tmp_path / athlete_id / "inputs" / "logistics.json").write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-16",
+        {
+            "data": {
+                "activities": [
+                    {
+                        "day": "2026-04-18",
+                        "type": "Ride",
+                        "moving_time": "04:54:00",
+                        "work_kj": 3200,
+                        "load_tss": 180,
+                        "intensity_factor": 0.72,
+                        "flags": {
+                            "flag_long_ride_180min_bool": True,
+                            "flag_long_ride_240min_bool": True,
+                            "flag_des_long_build_candidate_bool": True,
+                            "flag_des_long_base_candidate_bool": False,
+                            "flag_brevet_long_candidate_bool": False,
+                        },
+                    }
+                ]
+            }
+        },
+        producer_agent="test",
+        run_id="activities_actual",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_TREND,
+        "2026-16",
+        {
+            "data": {
+                "weekly_trends": [
+                    {
+                        "year": 2026,
+                        "iso_week": 16,
+                        "weekly_aggregates": {
+                            "activity_count": 5,
+                            "moving_time": "13:48",
+                            "distance_km": 302.4,
+                            "work_kj": 7760,
+                            "load_tss": 525,
+                        },
+                        "intensity_load_metrics": {
+                            "intensity_factor": 0.71,
+                            "decoupling_percent": 6.1,
+                            "durability_index": 0.94,
+                            "efficiency_factor": 1.23,
+                            "ftp_estimated_w": 295,
+                        },
+                        "distribution_metrics": {
+                            "z1_z2_time_percent": 84.0,
+                            "z5_time_percent": 2.0,
+                            "z2_share_power_percent": 68.0,
+                            "back_to_back_z2_days_count": 1,
+                        },
+                        "flag_any": {
+                            "flag_long_ride_180min_bool": True,
+                            "flag_long_ride_240min_bool": True,
+                            "flag_des_long_base_candidate_bool": False,
+                            "flag_des_long_build_candidate_bool": True,
+                            "flag_brevet_long_candidate_bool": False,
+                        },
+                        "metrics": {
+                            "weekly_moving_time_total_min": 828,
+                            "weekly_z2_time_total_min": 460,
+                            "weekly_moving_time_max_min": 294,
+                            "weekly_z2_time_max_min": 210,
+                            "weekly_moving_time_180min_sum_min": 294,
+                            "weekly_moving_time_240min_sum_min": 294,
+                            "weekly_z2_time_180min_sum_min": 210,
+                            "weekly_z2_time_240min_sum_min": 210,
+                            "weekly_moving_time_des_base_sum_min": 0,
+                            "weekly_moving_time_des_build_sum_min": 294,
+                            "weekly_z2_time_des_base_sum_min": 0,
+                            "weekly_z2_time_des_build_sum_min": 210,
+                        },
+                    }
+                ]
+            }
+        },
+        producer_agent="test",
+        run_id="activities_trend",
+        update_latest=True,
+    )
+
+    runtime = SimpleNamespace(workspace_root=tmp_path)
+    result = plan_week(runtime, athlete_id=athlete_id, year=2026, week=17, run_id="week_run")
+
+    assert result.ok
+    assert captured_inputs
+    assert any("**Resolved Activity Context**" in user_input for user_input in captured_inputs)
+    assert any("historical_reference_week: 2026-16" in user_input for user_input in captured_inputs)
+    assert any("activities_actual_version: 2026-16" in user_input for user_input in captured_inputs)
+    assert any("activities_trend_version: 2026-16" in user_input for user_input in captured_inputs)
+    assert any("intensity_load_metrics.durability_index: 0.94" in user_input for user_input in captured_inputs)
+    assert any("key_actual_sessions:" in user_input for user_input in captured_inputs)
+
+
 def test_plan_week_injects_resolved_logistics_and_zone_context(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

@@ -16,6 +16,7 @@ from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.resolved_context import (
+    build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
     build_resolved_kpi_context_block,
@@ -708,16 +709,24 @@ def plan_week(
             athlete_id,
             target,
         )
+        resolved_activity_block = ""
         historical_context_line = ""
         if (
             ArtifactType.ACTIVITIES_ACTUAL in historical_activity_versions
             and ArtifactType.ACTIVITIES_TREND in historical_activity_versions
         ):
+            actual_version = historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]
+            trend_version = historical_activity_versions[ArtifactType.ACTIVITIES_TREND]
+            resolved_activity_block = build_resolved_activity_context_block(
+                store,
+                athlete_id,
+                target_week=target,
+                activities_actual_version=actual_version,
+                activities_trend_version=trend_version,
+            )
             historical_context_line = (
-                f"Load historical ACTIVITIES_ACTUAL version_key "
-                f"{historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]} and "
-                f"ACTIVITIES_TREND version_key "
-                f"{historical_activity_versions[ArtifactType.ACTIVITIES_TREND]} "
+                f"Load historical ACTIVITIES_ACTUAL version_key {actual_version} and "
+                f"ACTIVITIES_TREND version_key {trend_version} "
                 "with workspace_get_version before any STOP about missing activity context; "
                 "never use workspace_get_latest for these activity artefacts. "
             )
@@ -744,6 +753,7 @@ def plan_week(
                     f"{resolved_logistics_block}"
                     f"{resolved_events_block}"
                     f"{resolved_zone_model_block}"
+                    f"{resolved_activity_block}"
                     f"{historical_context_line}"
                     f"{user_data_block}"
                     f"{override_line}"
@@ -866,16 +876,24 @@ def plan_week(
             athlete_id,
             target,
         )
+        resolved_activity_block = ""
         historical_context_line = ""
         if (
             ArtifactType.ACTIVITIES_ACTUAL in historical_activity_versions
             and ArtifactType.ACTIVITIES_TREND in historical_activity_versions
         ):
+            actual_version = historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]
+            trend_version = historical_activity_versions[ArtifactType.ACTIVITIES_TREND]
+            resolved_activity_block = build_resolved_activity_context_block(
+                store,
+                athlete_id,
+                target_week=target,
+                activities_actual_version=actual_version,
+                activities_trend_version=trend_version,
+            )
             historical_context_line = (
-                f"Load historical ACTIVITIES_ACTUAL version_key "
-                f"{historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]} and "
-                f"ACTIVITIES_TREND version_key "
-                f"{historical_activity_versions[ArtifactType.ACTIVITIES_TREND]} "
+                f"Load historical ACTIVITIES_ACTUAL version_key {actual_version} and "
+                f"ACTIVITIES_TREND version_key {trend_version} "
                 "with workspace_get_version before any STOP about missing activity context; "
                 "never use workspace_get_latest for these activity artefacts. "
             )
@@ -908,6 +926,7 @@ def plan_week(
                 f"{resolved_logistics_block}"
                 f"{resolved_events_block}"
                 f"{resolved_zone_model_block}"
+                f"{resolved_activity_block}"
                 f"{historical_context_line}"
                 f"{body_mass_context_line}"
                 f"{user_data_block}"

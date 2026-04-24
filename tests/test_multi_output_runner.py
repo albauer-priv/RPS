@@ -92,6 +92,8 @@ def test_planner_prompts_honor_resolved_context_blocks():
         assert "Resolved ... Context" in prompt_text
         assert "Do NOT search, infer, or reinterpret the same facts again" in prompt_text
         assert "do not load another artefact just to rediscover that same fact" in prompt_text
+        if name in ("phase_architect.md", "week_planner.md"):
+            assert "historical activity version keys" in prompt_text or "historical activity" in prompt_text
 
 
 def test_normalize_season_scenarios_uses_last_planning_event_week():

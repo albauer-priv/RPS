@@ -4,11 +4,179 @@ from __future__ import annotations
 
 from datetime import date
 
-from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, week_index
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.phase_resolution import date_to_iso_week
 from rps.workspace.season_plan_service import SeasonPlanPhaseInfo
 from rps.workspace.types import ArtifactType
+
+
+def _format_activity_session_line(activity: dict[str, object]) -> str | None:
+    """Return a compact line for a key activity session."""
+    day = activity.get("day")
+    activity_type = activity.get("type")
+    moving_time = activity.get("moving_time")
+    work_kj = activity.get("work_kj")
+    load_tss = activity.get("load_tss")
+    intensity_factor = activity.get("intensity_factor")
+    if not isinstance(day, str) or not day:
+        return None
+    if not isinstance(activity_type, str) or not activity_type:
+        activity_type = "activity"
+    parts = [f"- {day} {activity_type}"]
+    if isinstance(moving_time, str) and moving_time:
+        parts.append(f"moving_time {moving_time}")
+    if isinstance(work_kj, (int, float)):
+        parts.append(f"work_kj {work_kj}")
+    if isinstance(load_tss, (int, float)):
+        parts.append(f"load_tss {load_tss}")
+    if isinstance(intensity_factor, (int, float)):
+        parts.append(f"if {intensity_factor}")
+    return ", ".join(parts)
+
+
+def build_resolved_activity_context_block(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    activities_actual_version: str | None = None,
+    activities_trend_version: str | None = None,
+) -> str:
+    """Build a compact historical activity context block for planners."""
+    if not activities_actual_version or not activities_trend_version:
+        return ""
+    try:
+        trend_payload = store.load_version(athlete_id, ArtifactType.ACTIVITIES_TREND, activities_trend_version)
+        actual_payload = store.load_version(athlete_id, ArtifactType.ACTIVITIES_ACTUAL, activities_actual_version)
+    except Exception:
+        return ""
+    if not isinstance(trend_payload, dict) or not isinstance(actual_payload, dict):
+        return ""
+
+    trend_data = trend_payload.get("data")
+    weekly_trends = trend_data.get("weekly_trends") if isinstance(trend_data, dict) else None
+    trend_week = parse_iso_week(activities_trend_version)
+    trend_entry = None
+    if isinstance(weekly_trends, list) and trend_week is not None:
+        for item in weekly_trends:
+            if not isinstance(item, dict):
+                continue
+            if item.get("year") == trend_week.year and item.get("iso_week") == trend_week.week:
+                trend_entry = item
+                break
+        if trend_entry is None and weekly_trends:
+            trend_entry = weekly_trends[-1] if isinstance(weekly_trends[-1], dict) else None
+
+    actual_data = actual_payload.get("data")
+    activities = actual_data.get("activities") if isinstance(actual_data, dict) else None
+    if not isinstance(activities, list):
+        activities = []
+
+    lines = [
+        "**Resolved Activity Context**",
+        "Use these historical activity facts directly; do not reload raw activity artefacts just to rediscover the same recent load, durability, or long-ride signals when they are provided here.",
+        f"target_iso_week: {target_week.year:04d}-{target_week.week:02d}",
+        f"historical_reference_week: {activities_trend_version}",
+        f"activities_actual_version: {activities_actual_version}",
+        f"activities_trend_version: {activities_trend_version}",
+    ]
+
+    if isinstance(trend_entry, dict):
+        weekly_aggregates = trend_entry.get("weekly_aggregates")
+        if isinstance(weekly_aggregates, dict):
+            for key in ("activity_count", "moving_time", "distance_km", "work_kj", "load_tss"):
+                value = weekly_aggregates.get(key)
+                if value is not None:
+                    lines.append(f"weekly_aggregates.{key}: {value}")
+        intensity = trend_entry.get("intensity_load_metrics")
+        if isinstance(intensity, dict):
+            for key in (
+                "intensity_factor",
+                "decoupling_percent",
+                "durability_index",
+                "efficiency_factor",
+                "ftp_estimated_w",
+            ):
+                value = intensity.get(key)
+                if value is not None:
+                    lines.append(f"intensity_load_metrics.{key}: {value}")
+        distribution = trend_entry.get("distribution_metrics")
+        if isinstance(distribution, dict):
+            for key in (
+                "z1_z2_time_percent",
+                "z5_time_percent",
+                "z2_share_power_percent",
+                "back_to_back_z2_days_count",
+            ):
+                value = distribution.get(key)
+                if value is not None:
+                    lines.append(f"distribution_metrics.{key}: {value}")
+        metrics = trend_entry.get("metrics")
+        if isinstance(metrics, dict):
+            for key in (
+                "weekly_moving_time_total_min",
+                "weekly_z2_time_total_min",
+                "weekly_moving_time_max_min",
+                "weekly_z2_time_max_min",
+                "weekly_moving_time_180min_sum_min",
+                "weekly_moving_time_240min_sum_min",
+                "weekly_z2_time_180min_sum_min",
+                "weekly_z2_time_240min_sum_min",
+                "weekly_moving_time_des_base_sum_min",
+                "weekly_moving_time_des_build_sum_min",
+                "weekly_z2_time_des_base_sum_min",
+                "weekly_z2_time_des_build_sum_min",
+            ):
+                value = metrics.get(key)
+                if value is not None:
+                    lines.append(f"metrics.{key}: {value}")
+        flag_any = trend_entry.get("flag_any")
+        if isinstance(flag_any, dict):
+            for key in (
+                "flag_long_ride_180min_bool",
+                "flag_long_ride_240min_bool",
+                "flag_des_long_base_candidate_bool",
+                "flag_des_long_build_candidate_bool",
+                "flag_brevet_long_candidate_bool",
+            ):
+                value = flag_any.get(key)
+                if value is not None:
+                    lines.append(f"flag_any.{key}: {value}")
+
+    key_activities: list[tuple[float, dict[str, object]]] = []
+    for activity in activities:
+        if not isinstance(activity, dict):
+            continue
+        flags = activity.get("flags")
+        if not isinstance(flags, dict):
+            flags = {}
+        score = 0.0
+        if flags.get("flag_long_ride_240min_bool") is True:
+            score += 5
+        if flags.get("flag_long_ride_180min_bool") is True:
+            score += 4
+        if flags.get("flag_des_long_build_candidate_bool") is True:
+            score += 3
+        if flags.get("flag_des_long_base_candidate_bool") is True:
+            score += 2
+        if flags.get("flag_brevet_long_candidate_bool") is True:
+            score += 2
+        work_kj = activity.get("work_kj")
+        if isinstance(work_kj, (int, float)):
+            score += float(work_kj) / 10000.0
+        key_activities.append((score, activity))
+    key_activities.sort(key=lambda item: item[0], reverse=True)
+    rendered = []
+    for _, activity in key_activities[:3]:
+        line = _format_activity_session_line(activity)
+        if line:
+            rendered.append(line)
+    if rendered:
+        lines.append("key_actual_sessions:")
+        lines.extend(rendered)
+
+    return "\n".join(lines) + "\n"
 
 
 def build_resolved_athlete_context_block(store: LocalArtifactStore, athlete_id: str) -> str:

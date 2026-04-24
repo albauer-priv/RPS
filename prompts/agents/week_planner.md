@@ -217,7 +217,7 @@ Load only the artefacts still needed after considering any `Resolved ... Context
 8) `workspace_get_version({ "artifact_type": "PHASE_STRUCTURE", "version_key": "<range_start_week>" })` (required)
 
 When `Resolved ... Context` blocks are present:
-- prefer those resolved values for deterministic facts such as phase identity/range, weekly hours, fixed rest days, target-week events, logistics membership, FTP, KPI ranges, and body mass
+- prefer those resolved values for deterministic facts such as phase identity/range, weekly hours, fixed rest days, target-week events, logistics membership, FTP, KPI ranges, body mass, historical activity version keys, and historical activity summary signals
 - do not call tools just to rediscover those exact same facts
 - call tools only for details not already resolved or for required exact-range predecessor artefacts
 
