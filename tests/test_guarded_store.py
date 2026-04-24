@@ -45,6 +45,37 @@ def test_phase_guardrails_event_window_matches_structured_events(tmp_path):
     store._enforce_phase_guardrails_constraints(document, season_plan)
 
 
+def test_phase_guardrails_accepts_free_text_event_window_markers(tmp_path):
+    store = _store(tmp_path)
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [],
+                "risk_constraints": [],
+                "planned_event_windows": [
+                    "2026-04-25 B event rehearsal window",
+                    "2026-05-16 A event peak window",
+                ],
+                "recovery_protection": {"fixed_rest_days": [], "notes": []},
+            }
+        }
+    }
+    document = {
+        "data": {
+            "phase_summary": {"non_negotiables": [], "key_risks_warnings": []},
+            "events_constraints": {
+                "events": [
+                    {"date": "2026-04-25", "week": "2026-17", "type": "B", "constraint": "B event"},
+                    {"date": "2026-05-16", "week": "2026-20", "type": "A", "constraint": "A event"},
+                ]
+            },
+            "execution_non_negotiables": {"recovery_protection_rules": ""},
+        }
+    }
+
+    store._enforce_phase_guardrails_constraints(document, season_plan)
+
+
 def test_phase_guardrails_matches_structured_assumptions_and_risks(tmp_path):
     store = _store(tmp_path)
     season_plan = {
@@ -172,6 +203,48 @@ def test_phase_structure_event_window_matches_semantically(tmp_path):
             }
         },
         "2026-14--2026-16",
+    )
+
+    store._enforce_phase_structure_constraints(document, season_plan)
+
+
+def test_phase_structure_accepts_free_text_event_window_markers(tmp_path):
+    store = _store(tmp_path)
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [],
+                "risk_constraints": [],
+                "planned_event_windows": ["2026-04-25 B event rehearsal window"],
+                "recovery_protection": {"fixed_rest_days": [], "notes": []},
+            }
+        }
+    }
+    document = {
+        "meta": {"iso_week_range": "2026-17--2026-19"},
+        "data": {
+            "upstream_intent": {
+                "constraints": [
+                    "Preserve the planned event on 2026-04-25 with type B as a controlled rehearsal.",
+                ]
+            },
+            "execution_principles": {"recovery_protection": {"fixed_non_training_days": []}},
+            "load_ranges": {
+                "weekly_kj_bands": [],
+                "source": "phase_guardrails_2026-17--2026-19.json",
+            },
+        },
+    }
+
+    store._load_phase_guardrails_for_range = lambda _expected: (
+        {
+            "data": {
+                "load_guardrails": {
+                    "weekly_kj_bands": [],
+                }
+            }
+        },
+        "2026-17--2026-19",
     )
 
     store._enforce_phase_structure_constraints(document, season_plan)

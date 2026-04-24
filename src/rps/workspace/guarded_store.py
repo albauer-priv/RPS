@@ -167,10 +167,17 @@ class GuardedValidatedStore:
 
     def _parse_planned_event_window(self, value: str) -> tuple[str, str] | None:
         """Extract `(date, type)` from a planned-event-window string when possible."""
-        match = re.search(r"(\d{4}-\d{2}-\d{2})\s*\((A|B|C)\)", value, re.IGNORECASE)
+        match = re.search(
+            r"(\d{4}-\d{2}-\d{2})\s*(?:\((A|B|C)\)|([ABC])\b)",
+            value,
+            re.IGNORECASE,
+        )
         if not match:
             return None
-        return match.group(1), match.group(2).upper()
+        event_type = (match.group(2) or match.group(3) or "").upper()
+        if not event_type:
+            return None
+        return match.group(1), event_type
 
     def _guardrails_event_pairs(self, document: JsonMap) -> set[tuple[str, str]]:
         """Return `(date, type)` pairs from guardrails event constraints."""

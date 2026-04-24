@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
-Last-Updated: 2026-04-13
+Last-Updated: 2026-04-24
 Owner: Workspace
 ---
 # FEAT: Guarded Store Constraint Matching Hardening
@@ -23,6 +23,7 @@ Owner: Workspace
 
 * `season_plan.data.global_constraints.planned_event_windows` is stored as strings in `SEASON_PLAN`, but represented as structured event objects in `PHASE_GUARDRAILS.data.events_constraints.events[]`.
 * Blob matching treats correctly represented events as missing when the exact string form does not occur in serialized guardrails JSON.
+* The compact parser initially only accepted `YYYY-MM-DD (A|B|C)` markers, but current season plans also store free-text entries such as `YYYY-MM-DD B event rehearsal window`.
 * `recovery_protection.notes` handling is also fragile because the validator currently assumes iterable list semantics although season-plan specs define a string.
 
 **Constraints**
@@ -47,6 +48,7 @@ Owner: Workspace
 
 * `PHASE_GUARDRAILS` validation checks each expected planned-event window against `events_constraints.events[]` using `date` + `type`.
 * `PHASE_STRUCTURE` validation uses relaxed semantic matching for planned-event window markers in `upstream_intent.constraints` instead of exact raw-string matching.
+* Planned-event parsing accepts both compact `YYYY-MM-DD (A|B|C)` markers and free-text season-plan markers such as `YYYY-MM-DD B event rehearsal window`.
 * Recovery-protection notes normalize from string or list form before propagation checks.
 
 ## 4) Implementation Analysis
@@ -57,6 +59,7 @@ Owner: Workspace
   * update guardrails/structure enforcement logic
 * `tests/`
   * add validator regression tests for planned-event matching and recovery-note normalization
+* `PHASE_PREVIEW` validation remains traceability-only and does not cross-check `planned_event_windows`.
 
 ## 5) Impact Analysis
 
@@ -70,9 +73,10 @@ Owner: Workspace
 
 ## 7) Acceptance Criteria
 
-* [ ] Guardrails with correctly represented event objects pass guarded-store validation.
-* [ ] String-only shape differences between season-plan and guardrails no longer produce false missing-event errors.
-* [ ] `recovery_protection.notes` as string no longer degrades into character-wise matching.
+* [x] Guardrails with correctly represented event objects pass guarded-store validation.
+* [x] String-only shape differences between season-plan and guardrails no longer produce false missing-event errors.
+* [x] Free-text planned-event markers such as `YYYY-MM-DD B event rehearsal window` are accepted for guardrails and phase-structure propagation checks.
+* [x] `recovery_protection.notes` as string no longer degrades into character-wise matching.
 
 ## 8) Documentation Updates
 
