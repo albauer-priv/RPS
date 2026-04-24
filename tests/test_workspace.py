@@ -136,6 +136,32 @@ class LocalStoreTests(unittest.TestCase):
             versions = store.list_versions(athlete_id, ArtifactType.WEEK_PLAN)
             self.assertEqual(versions, ["2026-04__20260201_090000", "2026-06__20260201_120000"])
 
+    def test_activities_versioned_path_uses_partitioned_week_directory(self) -> None:
+        """Verify ACTIVITIES_* artefacts resolve to data/YYYY/WW/ rather than data/analysis/."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+
+            path = store.versioned_path("ath_001", ArtifactType.ACTIVITIES_TREND, "2026-16")
+
+            self.assertEqual(
+                path,
+                store.athlete_root("ath_001") / "data" / "2026" / "16" / "activities_trend_2026-16.json",
+            )
+
+    def test_list_versions_reads_partitioned_week_activity_files(self) -> None:
+        """Verify version listing discovers ACTIVITY artefacts under data/YYYY/WW/."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_001"
+            week_dir = Path(tmpdir) / athlete_id / "data" / "2026" / "16"
+            week_dir.mkdir(parents=True, exist_ok=True)
+            (week_dir / "activities_actual_2026-16.json").write_text("{}", encoding="utf-8")
+            (week_dir / "activities_actual_2026-15.json").write_text("{}", encoding="utf-8")
+
+            versions = store.list_versions(athlete_id, ArtifactType.ACTIVITIES_ACTUAL)
+
+            self.assertEqual(versions, ["2026-15", "2026-16"])
+
     def test_exists_and_latest_version_key(self) -> None:
         """Verify existence checks and latest version key lookup."""
         with tempfile.TemporaryDirectory() as tmpdir:

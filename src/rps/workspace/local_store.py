@@ -11,6 +11,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from .index_manager import WorkspaceIndexManager
+from .iso_helpers import parse_iso_week
 from .paths import ARTIFACT_PATHS, ensure_dir
 from .types import ArtifactMeta, ArtifactType, Authority
 from .versioning import (
@@ -26,6 +27,12 @@ logger = logging.getLogger(__name__)
 JsonMap = dict[str, object]
 JsonList = list[object]
 JsonValue = JsonMap | JsonList
+
+PARTITIONED_WEEK_ARTIFACTS = {
+    ArtifactType.ACTIVITIES_ACTUAL,
+    ArtifactType.ACTIVITIES_TREND,
+    ArtifactType.WELLNESS,
+}
 
 
 def _as_map(value: object) -> JsonMap:
@@ -164,9 +171,21 @@ class LocalArtifactStore:
         cfg = ARTIFACT_PATHS[artifact_type]
         return self.athlete_root(athlete_id) / cfg.folder
 
+    def _partitioned_week_dir(self, athlete_id: str, version_key: str) -> Path | None:
+        """Return the data/YYYY/WW directory for week-partitioned artefacts."""
+        week = parse_iso_week(version_key)
+        if not week:
+            return None
+        return self.athlete_root(athlete_id) / "data" / f"{week.year:04d}" / f"{week.week:02d}"
+
     def versioned_path(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Path:
         """Return the path for a versioned artifact file."""
         cfg = ARTIFACT_PATHS[artifact_type]
+        if artifact_type in PARTITIONED_WEEK_ARTIFACTS:
+            partition_dir = self._partitioned_week_dir(athlete_id, version_key)
+            if partition_dir is not None:
+                filename = f"{cfg.filename_prefix}_{version_key}.json"
+                return partition_dir / filename
         filename = f"{cfg.filename_prefix}_{version_key}.json"
         return self.type_dir(athlete_id, artifact_type) / filename
 
@@ -186,6 +205,7 @@ class LocalArtifactStore:
         ensure_dir(base / "data/plans/week")
         ensure_dir(base / "data/exports")
         ensure_dir(base / "data/analysis")
+        ensure_dir(base / "data")
         ensure_dir(base / "logs")
         ensure_dir(base / "latest")
 
@@ -297,6 +317,10 @@ class LocalArtifactStore:
         self.ensure_workspace(athlete_id)
 
         cfg = ARTIFACT_PATHS[artifact_type]
+        if artifact_type in PARTITIONED_WEEK_ARTIFACTS:
+            versions = self._list_partitioned_week_versions(athlete_id, cfg.filename_prefix)
+            if versions:
+                return sorted(versions, key=_version_sort_key)
         folder = self.type_dir(athlete_id, artifact_type)
         if not folder.exists():
             return []
@@ -312,6 +336,26 @@ class LocalArtifactStore:
             versions.append(version_key)
 
         return sorted(versions, key=_version_sort_key)
+
+    def _list_partitioned_week_versions(self, athlete_id: str, filename_prefix: str) -> list[str]:
+        """List versions stored under data/YYYY/WW for partitioned weekly artefacts."""
+        data_root = self.athlete_root(athlete_id) / "data"
+        if not data_root.exists():
+            return []
+        prefix = filename_prefix + "_"
+        versions: list[str] = []
+        for year_dir in data_root.iterdir():
+            if not year_dir.is_dir() or not year_dir.name.isdigit():
+                continue
+            for week_dir in year_dir.iterdir():
+                if not week_dir.is_dir() or not week_dir.name.isdigit():
+                    continue
+                for path in week_dir.glob(f"{filename_prefix}_*.json"):
+                    name = path.name
+                    if not name.startswith(prefix):
+                        continue
+                    versions.append(name[len(prefix):-5])
+        return versions
 
     def _path_for_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> Path:
         """Return the path for a recorded version, falling back to the canonical layout."""
