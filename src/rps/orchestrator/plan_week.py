@@ -638,6 +638,8 @@ def plan_week(
     if forced_steps == {"PHASE_GUARDRAILS"}:
         needs_phase_structure = False
         needs_phase_preview = False
+    elif "PHASE_GUARDRAILS" in forced_steps or "PHASE_STRUCTURE" in forced_steps:
+        needs_phase_preview = True
 
     if needs_phase_guardrails and not isolated_phase_force:
         needs_phase_structure = True

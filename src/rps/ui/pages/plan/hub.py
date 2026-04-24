@@ -757,13 +757,17 @@ def _display_readiness_steps(readiness: list[ReadinessStep]) -> list[ReadinessSt
         readiness_map.get("phase_preview"),
     ]
     phase_steps = [step for step in phase_parts if step is not None]
+    required_phase_steps = [step for step in phase_steps if not step.optional]
+    optional_phase_steps = [step for step in phase_steps if step.optional]
     phase_status = "ready"
-    if any(step.status == "blocked" for step in phase_steps):
+    if any(step.status == "blocked" for step in required_phase_steps):
         phase_status = "blocked"
-    elif any(step.status == "missing" for step in phase_steps):
+    elif any(step.status == "missing" for step in required_phase_steps):
         phase_status = "missing"
-    elif any(step.status == "stale" for step in phase_steps):
+    elif any(step.status == "stale" for step in required_phase_steps):
         phase_status = "stale"
+    elif any(step.status in {"missing", "blocked", "stale"} for step in optional_phase_steps):
+        phase_status = "ready"
 
     issue_labels = [
         step.label.replace(" (optional)", "")
@@ -782,7 +786,10 @@ def _display_readiness_steps(readiness: list[ReadinessStep]) -> list[ReadinessSt
         "blocked": "Blocked",
     }[phase_status]
     if phase_status == "ready":
-        phase_reason = "All phase artefacts are current."
+        if any(step.status in {"missing", "blocked", "stale"} for step in optional_phase_steps):
+            phase_reason = "Optional attention: " + ", ".join(issue_labels)
+        else:
+            phase_reason = "All phase artefacts are current."
     elif issue_labels:
         phase_reason = "Attention needed: " + ", ".join(issue_labels)
     else:
