@@ -2916,8 +2916,16 @@ def test_feed_forward_requires_selected_week_report():
 
 def test_feed_forward_source_uses_selected_week_report_versions():
     source = Path("src/rps/ui/pages/performance/feed_forward.py").read_text(encoding="utf-8")
-    assert 'Use DES_ANALYSIS_REPORT version_key {selected_week_key}' in source
+    assert 'workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}})' in source
     assert 'store.load_latest(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)' not in source
+
+
+def test_feed_forward_source_injects_resolved_selected_week_context():
+    source = Path("src/rps/ui/pages/performance/feed_forward.py").read_text(encoding="utf-8")
+    assert "build_resolved_des_evaluation_context" in source
+    assert "build_resolved_season_phase_feed_forward_context" in source
+    assert 'workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}})' in source
+    assert 'workspace_get_version({{"artifact_type":"SEASON_PHASE_FEED_FORWARD","version_key":"{selected_week_key}"}})' in source
 
 
 def test_coach_source_preloads_week_scoped_activity_versions():

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Feed Forward runs now inject resolved selected-week DES evaluation context and selected-week Season→Phase feed-forward context directly from workspace artefacts, and the `season_planner` / `phase_architect` prompts now bind explicit Mode C `workspace_get_version(...)` reads for `DES_ANALYSIS_REPORT` and feed-forward context where required.
 - `SEASON_SCENARIOS` now normalizes its planning horizon deterministically from the last A/B/C `PLANNING_EVENTS` date before store, rewriting `meta.iso_week_range`, `meta.temporal_scope`, and `data.planning_horizon_weeks` so season replanning no longer truncates at a stale pre-September horizon when newer events exist.
 - Season-scenario planning math is now code-normalized from the authoritative horizon and each scenario's `phase_length_weeks`: `phase_count_expected`, `shortening_budget_weeks`, and `phase_plan_summary` no longer rely on model arithmetic, and the `season_scenario` prompt/injection set was simplified accordingly.
 - Season-scenario `intensity_guidance` is now normalized to the canonical agenda intensity domains; invalid proxy labels are dropped, legacy `ENDURANCE` is normalized to `ENDURANCE_LOW`, and the season-scenarios schema now uses the same intensity-domain enum contract as season/phase artefacts.

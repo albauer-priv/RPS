@@ -10,6 +10,10 @@ from rps.agents.multi_output_runner import run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.orchestrator.plan_week import _mode_for_task, create_performance_report
+from rps.ui.feed_forward_context import (
+    build_resolved_des_evaluation_context,
+    build_resolved_season_phase_feed_forward_context,
+)
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -27,6 +31,7 @@ from rps.ui.shared import (
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.iso_helpers import IsoWeek, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
 JsonMap = dict[str, object]
@@ -143,6 +148,21 @@ else:
 
 selected_week = IsoWeek(year=year, week=week)
 selected_week_key = f"{selected_week.year:04d}-{selected_week.week:02d}"
+season_plan_payload = _load_selected_week_artifact(
+    store,
+    athlete_id,
+    ArtifactType.SEASON_PLAN,
+    selected_week_key,
+)
+if not season_plan_payload and store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
+    latest_season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    season_plan_payload = _as_map(latest_season_plan)
+season_plan_ref = ""
+try:
+    season_plan_ref = f"season_plan_{store.get_latest_version_key(athlete_id, ArtifactType.SEASON_PLAN)}.json"
+except Exception:
+    season_plan_ref = ""
+phase_info = resolve_season_plan_phase_info(season_plan_payload or {}, selected_week)
 
 st.subheader("Feed Forward Readiness")
 report_for_selected_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
@@ -209,6 +229,28 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
         )
         st.error(message)
     else:
+        selected_report_payload = _load_selected_week_artifact(
+            store,
+            athlete_id,
+            ArtifactType.DES_ANALYSIS_REPORT,
+            selected_week_key,
+        )
+        selected_report_ref = ""
+        selected_report_version = store.resolve_week_version_key(
+            athlete_id,
+            ArtifactType.DES_ANALYSIS_REPORT,
+            selected_week_key,
+        )
+        if selected_report_version:
+            selected_report_ref = f"des_analysis_report_{selected_report_version}.json"
+        des_context_block = build_resolved_des_evaluation_context(
+            selected_week=selected_week,
+            report_payload=selected_report_payload,
+            report_ref=selected_report_ref,
+            season_plan_ref=season_plan_ref,
+            affected_phase_id=phase_info.phase_id if phase_info else "",
+            phase_range_key=phase_info.phase_range.key if phase_info else "",
+        )
         runtime = multi_runtime_for("season_planner")
         spec = AGENTS["season_planner"]
         injected_block = build_injection_block("season_planner", mode=_mode_for_task(AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD))
@@ -229,8 +271,10 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
                 user_input=(
                     f"Target ISO week: {year}-{week:02d}. "
-                    f"Use DES_ANALYSIS_REPORT version_key {selected_week_key} for this ISO week "
+                    f'Use workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}}) '
+                    "for the selected week if further report detail is needed. "
                     "to produce SEASON_PHASE_FEED_FORWARD. "
+                    f"{des_context_block}\n\n"
                     f"{injected_block}"
                 ),
                 run_id=run_id,
@@ -250,6 +294,27 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
             last_run_id=run_id,
         )
         if status == "done":
+            selected_season_phase_ff_payload = _load_selected_week_artifact(
+                store,
+                athlete_id,
+                ArtifactType.SEASON_PHASE_FEED_FORWARD,
+                selected_week_key,
+            )
+            selected_season_phase_ff_ref = ""
+            selected_season_phase_ff_version = store.resolve_week_version_key(
+                athlete_id,
+                ArtifactType.SEASON_PHASE_FEED_FORWARD,
+                selected_week_key,
+            )
+            if selected_season_phase_ff_version:
+                selected_season_phase_ff_ref = (
+                    f"season_phase_feed_forward_{selected_season_phase_ff_version}.json"
+                )
+            season_phase_context_block = build_resolved_season_phase_feed_forward_context(
+                selected_week=selected_week,
+                feed_forward_payload=selected_season_phase_ff_payload,
+                feed_forward_ref=selected_season_phase_ff_ref,
+            )
             runtime = multi_runtime_for("phase_architect")
             spec = AGENTS["phase_architect"]
             injected_block = build_injection_block("phase_architect", mode=_mode_for_task(AgentTask.CREATE_PHASE_FEED_FORWARD))
@@ -270,8 +335,14 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                     tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
                     user_input=(
                         f"Target ISO week: {year}-{week:02d}. "
+                        f'Use workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}}) '
+                        "and "
+                        f'workspace_get_version({{"artifact_type":"SEASON_PHASE_FEED_FORWARD","version_key":"{selected_week_key}"}}) '
+                        "for the selected week if further detail is needed. "
                         "Use the selected-week DES analysis report and the selected-week "
                         "SEASON_PHASE_FEED_FORWARD context to produce PHASE_FEED_FORWARD. "
+                        f"{des_context_block}\n\n"
+                        f"{season_phase_context_block}\n\n"
                         f"{injected_block}"
                     ),
                     run_id=run_id,

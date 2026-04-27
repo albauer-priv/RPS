@@ -179,19 +179,20 @@ Set G0 = true.
 
 #### Step 1 — Load workspace artefacts FIRST (Gate: G1)
 Load only the artefacts still needed after considering any `Resolved ... Context` blocks. Use this order for unresolved items (skip non-applicable or already-resolved duplicate reads):
-1) `workspace_get_input("planning_events")` (required all modes)
-2) `workspace_get_input("athlete_profile")` (required Mode A/B)
-3) `workspace_get_input("logistics")` (required all modes)
-4) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` (required Mode A/B; single latest)
-5) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
-6) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
-7) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
-8) Optional latest historical activity context before the target week only via:
+1) `workspace_get_version({ "artifact_type": "DES_ANALYSIS_REPORT", "version_key": "YYYY-WW" })` (required Mode C for the selected ISO week)
+2) `workspace_get_input("planning_events")` (required all modes)
+3) `workspace_get_input("athlete_profile")` (required Mode A/B)
+4) `workspace_get_input("logistics")` (required all modes)
+5) `workspace_get_latest({ "artifact_type": "KPI_PROFILE" })` (required Mode A/B; single latest)
+6) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })` (required Mode A/B; FTP in `data.model_metadata.ftp_watts`)
+7) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })` (required Mode A/B)
+8) `workspace_get_latest({ "artifact_type": "WELLNESS" })` (required Mode A/B; body_mass_kg)
+9) Optional latest historical activity context before the target week only via:
    `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
    and/or
    `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
-9) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
-10) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
+10) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIOS" })` (optional)
+11) `workspace_get_latest({ "artifact_type": "SEASON_SCENARIO_SELECTION" })` (optional)
 
 If any required artefact is missing: STOP and request it.
 If KPI_PROFILE cannot be resolved as exactly one shared latest: STOP and request a data/registry fix.
@@ -201,6 +202,7 @@ These artefacts are week-sensitive and must always use an explicit `version_key`
 for the latest available historical week strictly before the target week, if loaded at all.
 When `Resolved ... Context` blocks are present:
 - prefer those resolved values for deterministic facts such as KPI ranges, weekly hours, fixed rest days, target-week events, logistics membership, FTP, and body mass
+- for Mode C also prefer `Resolved DES Evaluation Context` as authoritative selected-week evidence context
 - do not call tools just to rediscover those exact same facts
 - call tools only for details not already resolved or for traceability that the resolved block does not cover
 Set G1 = true.
@@ -248,6 +250,7 @@ Mode A/B:
 
 Mode C:
 - Produce `SEASON_PHASE_FEED_FORWARD` OR decide `no_change` (as requested / required), strictly per injected chapter.
+- Base the decision on the selected-week `DES_ANALYSIS_REPORT` or an injected `Resolved DES Evaluation Context`.
 Set P1_DRAFT_OK = true.
 
 #### Pass 2 — Review & Compliance (Gate: P2_REVIEW_OK)

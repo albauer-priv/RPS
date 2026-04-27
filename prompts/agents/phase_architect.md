@@ -225,14 +225,16 @@ Load only the artefacts still needed after considering any `Resolved ... Context
 2) `workspace_get_input("logistics")`
 2) `workspace_get_latest({ "artifact_type": "SEASON_PLAN" })`
 3) `workspace_get_version({ "artifact_type": "SEASON_PHASE_FEED_FORWARD", "version_key": "YYYY-WW" })` (optional attempt for the target week)
-4) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
-5) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
-6) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
-7) `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
-8) `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
+4) `workspace_get_version({ "artifact_type": "DES_ANALYSIS_REPORT", "version_key": "YYYY-WW" })` (required for `PHASE_FEED_FORWARD`; optional otherwise)
+5) `workspace_get_latest({ "artifact_type": "AVAILABILITY" })`
+6) `workspace_get_latest({ "artifact_type": "WELLNESS" })`
+7) `workspace_get_latest({ "artifact_type": "ZONE_MODEL" })`
+8) `workspace_get_version({ "artifact_type": "ACTIVITIES_ACTUAL", "version_key": "YYYY-WW" })`
+9) `workspace_get_version({ "artifact_type": "ACTIVITIES_TREND", "version_key": "YYYY-WW" })`
 
 When `Resolved ... Context` blocks are present:
 - prefer those resolved values for deterministic facts such as phase identity/range, weekly hours, fixed rest days, target-week events, phase-range events, logistics membership, FTP, historical activity version keys, and historical activity summary signals
+- for `PHASE_FEED_FORWARD` also prefer injected `Resolved DES Evaluation Context` and `Resolved Season->Phase Feed Forward Context` blocks as authoritative selected-week context
 - do not call tools just to rediscover those exact same facts
 - call tools only for details not already resolved or for required exact-range predecessor artefacts
 
@@ -277,6 +279,8 @@ Before composing output, confirm the exact-range inputs are loaded:
     timestamped.
 - For `PHASE_PREVIEW`: baseline inputs PLUS exact-range `PHASE_GUARDRAILS` AND `PHASE_STRUCTURE`.
 - For `PHASE_FEED_FORWARD`: baseline inputs only (plus optional feed-forward if present).
+  - Use selected-week `SEASON_PHASE_FEED_FORWARD` as binding upstream context when present.
+  - Use selected-week `DES_ANALYSIS_REPORT` or an injected `Resolved DES Evaluation Context` as the evidence basis for the temporary delta.
 If any required exact-range artefact is missing: STOP and request it.
 
 #### Step 3 — Load REQUIRED knowledge files in full (Gate: G3)
