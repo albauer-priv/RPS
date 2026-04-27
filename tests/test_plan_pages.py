@@ -211,7 +211,7 @@ def test_plan_hub_scoped_week_run_forces_rerun_when_ready():
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
     assert status_by_id["WEEK_PLAN"] == "QUEUED"
-    assert status_by_id["WORKOUT_EXPORT"] == "QUEUED"
+    assert "WORKOUT_EXPORT" not in status_by_id
 
 
 def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
@@ -226,6 +226,29 @@ def test_plan_hub_scoped_build_workouts_forces_rerun_when_ready():
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
     assert status_by_id["WORKOUT_EXPORT"] == "QUEUED"
+
+
+def test_plan_hub_season_plan_scope_drops_redundant_workout_export_when_week_plan_is_selected():
+    from rps.ui.pages.plan import hub as plan_hub
+
+    readiness = [
+        plan_hub.ReadinessStep("inputs", "Inputs", "ready", "", ""),
+        plan_hub.ReadinessStep("season_scenarios", "Season Scenarios", "ready", "", ""),
+        plan_hub.ReadinessStep("scenario_selection", "Selected Scenario", "ready", "", ""),
+        plan_hub.ReadinessStep("season_plan", "Season Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("phase", "Phase", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_guardrails", "Phase Guardrails", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_structure", "Phase Structure", "ready", "", ""),
+        plan_hub.ReadinessStep("phase_preview", "Phase Preview", "ready", "", "", optional=True),
+        plan_hub.ReadinessStep("week_plan", "Week Plan", "ready", "", ""),
+        plan_hub.ReadinessStep("workout_export", "Build Workouts", "ready", "", "", optional=True),
+    ]
+
+    steps = plan_hub._build_execution_steps(readiness, "Scoped", "Season Plan")
+    step_ids = [step["step_id"] for step in steps]
+
+    assert "WEEK_PLAN" in step_ids
+    assert "WORKOUT_EXPORT" not in step_ids
 
 
 def test_plan_hub_phase_scope_queues_all_phase_artefacts():
@@ -284,7 +307,7 @@ def test_plan_hub_build_workouts_adds_missing_week_dependencies():
     status_by_id = {step["step_id"]: step["Status"] for step in steps}
 
     assert status_by_id["WEEK_PLAN"] == "QUEUED"
-    assert status_by_id["WORKOUT_EXPORT"] == "QUEUED"
+    assert "WORKOUT_EXPORT" not in status_by_id
 
 
 def test_plan_hub_phase_week_selector_helpers_follow_current_week(tmp_path):

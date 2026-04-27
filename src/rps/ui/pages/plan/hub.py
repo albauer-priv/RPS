@@ -1039,6 +1039,8 @@ def _resolve_scoped_step_selection(
     if scope == "Build Workouts" and week_plan and week_plan.status in {"missing", "stale"}:
         selected_steps = ["WEEK_PLAN", *selected_steps]
     selected_steps = _dedupe_step_ids(selected_steps)
+    if "WEEK_PLAN" in selected_steps and "WORKOUT_EXPORT" in selected_steps:
+        selected_steps = [step_id for step_id in selected_steps if step_id != "WORKOUT_EXPORT"]
     return selected_steps, set(selected_steps)
 
 
