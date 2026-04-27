@@ -2934,6 +2934,12 @@ def test_coach_source_preloads_week_scoped_activity_versions():
     assert '"workspace_get_version", {"artifact_type": "ACTIVITIES_ACTUAL", "version_key": week_key}' in source
 
 
+def test_week_planner_prompt_requires_percent_on_both_sides_of_ranges():
+    source = Path("prompts/agents/week_planner.md").read_text(encoding="utf-8")
+    assert "valid: `68%-72%`, `80%-82%`" in source
+    assert "invalid: `68-72%`, `80-82%`" in source
+
+
 def test_performance_report_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/performance/report.py")
     at.run(timeout=10)

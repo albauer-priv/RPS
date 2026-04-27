@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `WEEK_PLAN` normalization now rewrites malformed percent ranges like `68-72%` to the project-required `68%-72%` inside workout step lines before guarded validation, and the `week_planner` prompt now states this range rule explicitly alongside valid hour-duration examples.
 - Feed Forward runs now inject resolved selected-week DES evaluation context and selected-week Season→Phase feed-forward context directly from workspace artefacts, and the `season_planner` / `phase_architect` prompts now bind explicit Mode C `workspace_get_version(...)` reads for `DES_ANALYSIS_REPORT` and feed-forward context where required.
 - `SEASON_SCENARIOS` now normalizes its planning horizon deterministically from the last A/B/C `PLANNING_EVENTS` date before store, rewriting `meta.iso_week_range`, `meta.temporal_scope`, and `data.planning_horizon_weeks` so season replanning no longer truncates at a stale pre-September horizon when newer events exist.
 - Season-scenario planning math is now code-normalized from the authoritative horizon and each scenario's `phase_length_weeks`: `phase_count_expected`, `shortening_budget_weeks`, and `phase_plan_summary` no longer rely on model arithmetic, and the `season_scenario` prompt/injection set was simplified accordingly.

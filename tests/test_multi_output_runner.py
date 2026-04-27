@@ -530,3 +530,18 @@ def test_optional_missing_feed_forward_reads_log_at_info(monkeypatch, caplog):
     assert result["ok"] is True
     assert "Optional read tool missing workspace_get_version" in caplog.text
     assert "Read tool failed workspace_get_version" not in caplog.text
+
+
+def test_normalize_workout_percent_ranges_fixes_missing_percent_on_range_start():
+    text = (
+        "Warmup\n"
+        "- 8m ramp 50%-70% 85-90rpm\n\n"
+        "Main Set\n"
+        "- 1h 68-72% 85-90rpm\n"
+        "- 25m 80-82% 88-92rpm\n"
+    )
+
+    normalized = multi_output_runner.normalize_workout_percent_ranges(text)
+
+    assert "- 1h 68%-72% 85-90rpm" in normalized
+    assert "- 25m 80%-82% 88-92rpm" in normalized

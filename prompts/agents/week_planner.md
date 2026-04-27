@@ -63,6 +63,10 @@ Assume the mandatory_load_order applies to this single file.
   - invalid loop header: `- 3x`
 - Step lines MUST start with `-` and then contain a real step payload such as duration + target + cadence.
 - Never prefix a repeat count or section marker with `-`.
+- Percent ranges in step lines MUST repeat `%` on both ends of the range:
+  - valid: `68%-72%`, `80%-82%`
+  - invalid: `68-72%`, `80-82%`
+- `1h`, `1h30m`, `2h35m`, and `1m30` are valid duration forms in this project subset.
 
 ### Required knowledge files (must read in full) — Binding
 Specs / policies:

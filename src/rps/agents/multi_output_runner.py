@@ -7,6 +7,7 @@ import json
 import logging
 import math
 import os
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,6 +39,15 @@ _OPTIONAL_MISSING_VERSION_ARTIFACTS = {
 
 _KNOWLEDGE_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "specs" / "knowledge" / "_shared" / "sources"
 ToolDef = dict[str, object]
+
+
+def normalize_workout_percent_ranges(text: str) -> str:
+    """Normalize malformed power ranges like ``68-72%`` to ``68%-72%``."""
+    return re.sub(
+        r"(?<![%\d])(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)%(?!\S)",
+        r"\1%-\2%",
+        text,
+    )
 UsageSummary = dict[str, int | None]
 
 @dataclass(frozen=True)
@@ -882,6 +892,18 @@ def run_agent_multi_output(
         if "notes" not in meta or meta.get("notes") is None:
             meta["notes"] = ""
         document["meta"] = meta
+        data = document.get("data")
+        if isinstance(data, dict):
+            workouts = data.get("workouts")
+            if isinstance(workouts, list):
+                for workout in workouts:
+                    if not isinstance(workout, dict):
+                        continue
+                    workout_text = workout.get("workout_text")
+                    if isinstance(workout_text, str):
+                        workout["workout_text"] = normalize_workout_percent_ranges(workout_text)
+                data["workouts"] = workouts
+            document["data"] = data
         return document
 
     def _normalize_des_analysis_report(document: dict[str, Any]) -> dict[str, Any]:
