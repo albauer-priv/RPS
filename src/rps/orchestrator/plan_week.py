@@ -18,6 +18,7 @@ from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipel
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
     build_planning_context_snapshot_prompt_block,
+    save_advisory_memory,
     save_athlete_state_snapshot,
     save_planning_context_snapshot,
 )
@@ -377,6 +378,19 @@ def create_performance_report(
             "result": out,
         }
         if out.get("ok") and out.get("produced"):
+            try:
+                season_plan_payload = workspace.get_latest(ArtifactType.SEASON_PLAN)
+                report_payload = workspace.get_latest(ArtifactType.DES_ANALYSIS_REPORT)
+                save_advisory_memory(
+                    workspace.store,
+                    athlete_id,
+                    target_week=report_week,
+                    run_id=f"{run_id_prefix}_{report_label}",
+                    season_plan_payload=season_plan_payload if isinstance(season_plan_payload, dict) else {},
+                    des_analysis_payload=report_payload if isinstance(report_payload, dict) else {},
+                )
+            except Exception:
+                logger.debug("Advisory memory refresh after DES analysis failed.", exc_info=True)
             _log("Done.")
         return {
             "ok": out.get("ok", False),
@@ -1066,6 +1080,23 @@ def plan_week(
         return isinstance(result, dict) and bool(result.get("ok"))
 
     ok = all(_step_ok(step) for step in steps) if steps else True
+    if ok:
+        try:
+            week_plan_payload = (
+                store.load_version(athlete_id, ArtifactType.WEEK_PLAN, target_label)
+                if store.exists(athlete_id, ArtifactType.WEEK_PLAN, target_label)
+                else None
+            )
+            save_advisory_memory(
+                store,
+                athlete_id,
+                target_week=target,
+                run_id=run_id,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                week_plan_payload=week_plan_payload if isinstance(week_plan_payload, dict) else {},
+            )
+        except Exception:
+            logger.debug("Advisory memory refresh after plan_week failed.", exc_info=True)
     message = f"Plan-week completed for ISO week {target_label} (ok={ok})."
     _log(message)
     return PlanWeekResult(ok=ok, steps=steps)

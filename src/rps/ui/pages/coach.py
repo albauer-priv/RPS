@@ -14,6 +14,11 @@ except Exception as exc:  # pragma: no cover - UI fallback
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
+from rps.orchestrator.context_snapshots import (
+    build_advisory_memory_prompt_block,
+    build_athlete_state_snapshot_prompt_block,
+    build_planning_context_snapshot_prompt_block,
+)
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.ui.rps_chatbot import Chat
@@ -27,6 +32,8 @@ from rps.ui.shared import (
     set_status,
     ui_log,
 )
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
 
 
 def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str, object]]]:
@@ -46,6 +53,55 @@ def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str,
         ("zone_model", "workspace_get_latest", {"artifact_type": "ZONE_MODEL"}),
         ("wellness", "workspace_get_latest", {"artifact_type": "WELLNESS"}),
     ]
+
+
+def _as_map(value: object) -> dict[str, object]:
+    return value if isinstance(value, dict) else {}
+
+
+def _load_latest_payload(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    artifact_type: ArtifactType,
+) -> dict[str, object] | None:
+    try:
+        return _as_map(store.load_latest(athlete_id, artifact_type))
+    except Exception:
+        return None
+
+
+def _load_selected_week_artifact(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    artifact_type: ArtifactType,
+    week_key: str,
+) -> dict[str, object] | None:
+    version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
+    if not version_key:
+        return None
+    try:
+        return _as_map(store.load_version(athlete_id, artifact_type, version_key))
+    except FileNotFoundError:
+        return None
+
+
+def _coach_memory_blocks(athlete_id: str, year: int, week: int) -> list[str]:
+    """Load preferred snapshot/advisory memory blocks for Coach."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    week_key = f"{year:04d}-{week:02d}"
+    blocks: list[str] = []
+    athlete_snapshot = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT)
+    if athlete_snapshot:
+        blocks.append(build_athlete_state_snapshot_prompt_block(athlete_snapshot))
+    planning_snapshot = _load_selected_week_artifact(
+        store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
+    )
+    if planning_snapshot:
+        blocks.append(build_planning_context_snapshot_prompt_block(planning_snapshot))
+    advisory_memory = _load_selected_week_artifact(store, athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
+    if advisory_memory:
+        blocks.append(build_advisory_memory_prompt_block(advisory_memory))
+    return [block for block in blocks if block.strip()]
 
 
 init_ui_state()
@@ -114,6 +170,7 @@ if injected:
 preload_enabled = os.getenv("RPS_COACH_PRELOAD_ARTIFACTS", "1").lower() in {"1", "true", "yes"}
 if preload_enabled:
     per_artifact_max = int(os.getenv("RPS_COACH_PRELOAD_MAX_CHARS", "12000"))
+    snapshot_blocks: list[str] = []
     context_chunks: list[str] = []
 
     def _stringify(value: object) -> str:
@@ -129,15 +186,25 @@ if preload_enabled:
             result = {"ok": False, "error": str(exc)}
         context_chunks.append(f"{label}:\n{_stringify(result)}")
 
-    for label, handler_name, args in _coach_preload_specs(year, week):
-        _append_context(label, handlers[handler_name], args)
+    with suppress(Exception):
+        snapshot_blocks = _coach_memory_blocks(athlete_id, year, week)
 
-    if context_chunks:
+    if snapshot_blocks:
         instructions = (
             f"{instructions}\n\n"
-            "Workspace artifacts (auto-loaded). Use these instead of asking for missing artifacts:\n"
-            + "\n\n".join(context_chunks)
+            "Workspace memory (auto-loaded, preferred). Use these derived blocks before raw artefact reads:\n"
+            + "\n\n".join(snapshot_blocks)
         )
+    else:
+        for label, handler_name, args in _coach_preload_specs(year, week):
+            _append_context(label, handlers[handler_name], args)
+
+        if context_chunks:
+            instructions = (
+                f"{instructions}\n\n"
+                "Workspace artifacts (auto-loaded fallback). Use these instead of asking for missing artifacts:\n"
+                + "\n\n".join(context_chunks)
+            )
 
 allow_web_search = False
 if os.getenv("RPS_LLM_ENABLE_WEB_SEARCH", "").lower() in {"1", "true", "yes"}:

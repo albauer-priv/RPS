@@ -9,6 +9,13 @@ from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
+from rps.orchestrator.context_snapshots import (
+    build_athlete_state_snapshot_prompt_block,
+    build_planning_context_snapshot_prompt_block,
+    save_advisory_memory,
+    save_athlete_state_snapshot,
+    save_planning_context_snapshot,
+)
 from rps.orchestrator.plan_week import _mode_for_task, create_performance_report
 from rps.ui.feed_forward_context import (
     build_resolved_des_evaluation_context,
@@ -63,6 +70,18 @@ def _load_selected_week_artifact(
     try:
         payload = store.load_version(athlete_id, artifact_type, version_key)
     except FileNotFoundError:
+        return None
+    return _as_map(payload)
+
+
+def _load_latest_payload(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    artifact_type: ArtifactType,
+) -> JsonMap | None:
+    try:
+        payload = store.load_latest(athlete_id, artifact_type)
+    except Exception:
         return None
     return _as_map(payload)
 
@@ -229,6 +248,14 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
         )
         st.error(message)
     else:
+        athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
+        kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
+        availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
+        planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
+        logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
+        selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
+        wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
         selected_report_payload = _load_selected_week_artifact(
             store,
             athlete_id,
@@ -243,6 +270,45 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
         )
         if selected_report_version:
             selected_report_ref = f"des_analysis_report_{selected_report_version}.json"
+        athlete_state_snapshot = save_athlete_state_snapshot(
+            store,
+            athlete_id,
+            target_week=selected_week,
+            run_id=report_run_id,
+            athlete_profile_payload=athlete_profile_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            wellness_payload=wellness_payload or {},
+        )
+        athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(athlete_state_snapshot)
+        planning_context_snapshot_block = ""
+        if season_plan_payload and phase_info:
+            planning_context_snapshot = save_planning_context_snapshot(
+                store,
+                athlete_id,
+                target_week=selected_week,
+                phase_info=phase_info,
+                season_plan_payload=_as_map(season_plan_payload),
+                phase_range=phase_info.phase_range,
+                run_id=report_run_id,
+                availability_payload=availability_payload or {},
+                planning_events_payload=planning_events_payload or {},
+            )
+            planning_context_snapshot_block = build_planning_context_snapshot_prompt_block(
+                planning_context_snapshot
+            )
+        save_advisory_memory(
+            store,
+            athlete_id,
+            target_week=selected_week,
+            run_id=report_run_id,
+            season_plan_payload=_as_map(season_plan_payload),
+            des_analysis_payload=selected_report_payload or {},
+        )
         des_context_block = build_resolved_des_evaluation_context(
             selected_week=selected_week,
             report_payload=selected_report_payload,
@@ -274,6 +340,8 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                     f'Use workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}}) '
                     "for the selected week if further report detail is needed. "
                     "to produce SEASON_PHASE_FEED_FORWARD. "
+                    f"{athlete_state_snapshot_block}\n"
+                    f"{planning_context_snapshot_block}\n"
                     f"{des_context_block}\n\n"
                     f"{injected_block}"
                 ),
@@ -310,6 +378,31 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 selected_season_phase_ff_ref = (
                     f"season_phase_feed_forward_{selected_season_phase_ff_version}.json"
                 )
+            if season_plan_payload and phase_info:
+                planning_context_snapshot = save_planning_context_snapshot(
+                    store,
+                    athlete_id,
+                    target_week=selected_week,
+                    phase_info=phase_info,
+                    season_plan_payload=_as_map(season_plan_payload),
+                    phase_range=phase_info.phase_range,
+                    run_id=run_id,
+                    availability_payload=availability_payload or {},
+                    planning_events_payload=planning_events_payload or {},
+                    season_phase_feed_forward_payload=selected_season_phase_ff_payload or {},
+                )
+                planning_context_snapshot_block = build_planning_context_snapshot_prompt_block(
+                    planning_context_snapshot
+                )
+            save_advisory_memory(
+                store,
+                athlete_id,
+                target_week=selected_week,
+                run_id=run_id,
+                season_plan_payload=_as_map(season_plan_payload),
+                des_analysis_payload=selected_report_payload or {},
+                season_phase_feed_forward_payload=selected_season_phase_ff_payload or {},
+            )
             season_phase_context_block = build_resolved_season_phase_feed_forward_context(
                 selected_week=selected_week,
                 feed_forward_payload=selected_season_phase_ff_payload,
@@ -341,6 +434,8 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                         "for the selected week if further detail is needed. "
                         "Use the selected-week DES analysis report and the selected-week "
                         "SEASON_PHASE_FEED_FORWARD context to produce PHASE_FEED_FORWARD. "
+                        f"{athlete_state_snapshot_block}\n"
+                        f"{planning_context_snapshot_block}\n"
                         f"{des_context_block}\n\n"
                         f"{season_phase_context_block}\n\n"
                         f"{injected_block}"
@@ -361,6 +456,23 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 last_action="Phase → Week Feed Forward",
                 last_run_id=run_id,
             )
+            if status == "done":
+                selected_phase_ff_payload = _load_selected_week_artifact(
+                    store,
+                    athlete_id,
+                    ArtifactType.PHASE_FEED_FORWARD,
+                    selected_week_key,
+                )
+                save_advisory_memory(
+                    store,
+                    athlete_id,
+                    target_week=selected_week,
+                    run_id=run_id,
+                    season_plan_payload=_as_map(season_plan_payload),
+                    des_analysis_payload=selected_report_payload or {},
+                    season_phase_feed_forward_payload=selected_season_phase_ff_payload or {},
+                    phase_feed_forward_payload=selected_phase_ff_payload or {},
+                )
 
 report_payload = _load_selected_week_artifact(
     store,

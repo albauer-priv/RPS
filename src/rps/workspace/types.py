@@ -56,6 +56,7 @@ class ArtifactType(str, Enum):
     # Derived runtime context snapshots
     ATHLETE_STATE_SNAPSHOT = "ATHLETE_STATE_SNAPSHOT"
     PLANNING_CONTEXT_SNAPSHOT = "PLANNING_CONTEXT_SNAPSHOT"
+    ADVISORY_MEMORY = "ADVISORY_MEMORY"
 
 
 @dataclass(frozen=True)

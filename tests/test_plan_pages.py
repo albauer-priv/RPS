@@ -2953,12 +2953,18 @@ def test_feed_forward_source_injects_resolved_selected_week_context():
     source = Path("src/rps/ui/pages/performance/feed_forward.py").read_text(encoding="utf-8")
     assert "build_resolved_des_evaluation_context" in source
     assert "build_resolved_season_phase_feed_forward_context" in source
+    assert "save_athlete_state_snapshot" in source
+    assert "save_planning_context_snapshot" in source
+    assert "save_advisory_memory" in source
     assert 'workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}})' in source
     assert 'workspace_get_version({{"artifact_type":"SEASON_PHASE_FEED_FORWARD","version_key":"{selected_week_key}"}})' in source
 
 
 def test_coach_source_preloads_week_scoped_activity_versions():
     source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
+    assert "_coach_memory_blocks" in source
+    assert "Workspace memory (auto-loaded, preferred)." in source
+    assert "ArtifactType.ADVISORY_MEMORY" in source
     assert '"workspace_get_version", {"artifact_type": "ACTIVITIES_TREND", "version_key": week_key}' in source
     assert '"workspace_get_version", {"artifact_type": "ACTIVITIES_ACTUAL", "version_key": week_key}' in source
 

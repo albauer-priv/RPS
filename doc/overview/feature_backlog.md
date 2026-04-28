@@ -39,6 +39,8 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_user_input_examples — example Profile/Goals + Logistics + Events inputs.
 - [x] FEAT_backup_restore_cli — backup/restore tooling (UI + helper).
 - [x] BUG_user_inputs_polish — Events columns/rank/priority, Logistics enums, Availability rounding, guidance.
+- [x] FEAT_central_planner_context_snapshots — code-owned planner memory snapshots.
+- [x] FEAT_snapshot_memory_expansion — feed-forward + coach snapshot-first memory and advisory memory.
 
 ## Unlock Graph (dependencies)
 

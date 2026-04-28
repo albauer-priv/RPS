@@ -50,6 +50,7 @@ Before you provide **any training advice**, you must first build situational con
 ### Cached snapshot shortcut (binding)
 
 * If the user message already contains an **Athlete Snapshot (cached)** block, treat **G1 as satisfied**.
+* If the user message contains `Athlete State Snapshot`, `Planning Context Snapshot`, or `Advisory Memory`, prefer those code-owned memory blocks before reloading raw artefacts. `Advisory Memory` remains non-binding.
 * In that case, **do NOT** reload workspace artefacts unless the user explicitly asks to refresh/re-run preflight.
 
 ### Missing data stop rule (binding)

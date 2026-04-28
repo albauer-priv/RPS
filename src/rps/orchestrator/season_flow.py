@@ -11,6 +11,7 @@ from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
+    save_advisory_memory,
     save_athlete_state_snapshot,
 )
 from rps.orchestrator.resolved_context import (
@@ -347,7 +348,7 @@ def create_season_plan(
         week,
         selected or "latest",
     )
-    return run_agent_multi_output(
+    result = run_agent_multi_output(
         runtime_for(spec.name),
         agent_name=spec.name,
         agent_vs_name=spec.vector_store_name,
@@ -360,3 +361,17 @@ def create_season_plan(
         force_file_search=force_file_search,
         max_num_results=max_num_results,
     )
+    try:
+        if result.get("ok") and result.get("produced"):
+            store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
+            season_plan_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_PLAN)
+            save_advisory_memory(
+                store,
+                athlete_id,
+                target_week=IsoWeek(year=year, week=week),
+                run_id=run_id,
+                season_plan_payload=season_plan_payload or {},
+            )
+    except Exception:
+        logger.debug("Advisory memory refresh after season plan failed.", exc_info=True)
+    return result

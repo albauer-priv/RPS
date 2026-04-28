@@ -296,6 +296,42 @@ flowchart LR
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
 ```
 
+### 2.4a Runtime Memory Snapshot Flow
+
+**Inputs (Authoritative Sources)**
+- athlete/profile + availability + logistics + planning events
+- KPI / zone model / wellness
+- season / phase / week / report / feed-forward artefacts as available
+
+**Processing (Conceptual)**
+- Orchestrator resolves deterministic facts into code-owned memory artefacts.
+- Binding planner memory is split into:
+  - `athlete_state_snapshot_yyyy-ww.json`
+  - `planning_context_snapshot_yyyy-ww.json`
+- Non-binding narrative memory is stored as:
+  - `advisory_memory_yyyy-ww.json`
+- Planners and Coach consume snapshot memory first and use raw artefacts only for missing detail or traceability.
+
+**Outputs (Artefacts)**
+- `athlete_state_snapshot_yyyy-ww.json` (derived)
+- `planning_context_snapshot_yyyy-ww.json` (derived)
+- `advisory_memory_yyyy-ww.json` (advisory)
+
+```mermaid
+flowchart LR
+  SRC["Authoritative Inputs + Outputs"]:::artefact --> ORCH["Orchestrator Snapshot Builders"]:::component
+  ORCH --> ASS["athlete_state_snapshot_yyyy-ww.json"]:::artefact
+  ORCH --> PCS["planning_context_snapshot_yyyy-ww.json"]:::artefact
+  ORCH --> ADM["advisory_memory_yyyy-ww.json"]:::artefact
+  ASS --> PL["Planner / Coach Injection"]:::agent
+  PCS --> PL
+  ADM -. non-binding .-> PL
+
+  classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
+  classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+  classDef component fill:#eef8ee,stroke:#2f6b2f,stroke-width:1px;
+```
+
 ---
 
 ### 2.5 Workout Export + Posting Detail Flow

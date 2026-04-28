@@ -96,6 +96,109 @@ def _build_wellness_prompt_block(wellness_payload: JsonMap | None) -> str:
     )
 
 
+def _as_data(payload: JsonMap | None) -> JsonMap:
+    if not isinstance(payload, dict):
+        return {}
+    data = payload.get("data")
+    return data if isinstance(data, dict) else {}
+
+
+def _as_str(value: object) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _as_str_list(value: object) -> list[str]:
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+
+
+def _build_advisory_season_block(season_plan_payload: JsonMap | None) -> str:
+    data = _as_data(season_plan_payload)
+    phases = data.get("phases")
+    if not isinstance(phases, list) or not phases:
+        return ""
+    first = phases[0] if isinstance(phases[0], dict) else {}
+    return (
+        "**Season Advisory Summary**\n"
+        f"season_objective: {_as_str(data.get('season_objective')) or 'n/a'}\n"
+        f"current_phase_seed: {_as_str(first.get('phase_type')) or _as_str(first.get('label')) or 'n/a'}\n"
+    )
+
+
+def _build_advisory_week_block(week_plan_payload: JsonMap | None) -> str:
+    data = _as_data(week_plan_payload)
+    summary = data.get("week_summary")
+    summary_map = summary if isinstance(summary, dict) else {}
+    objective = _as_str(summary_map.get("week_objective"))
+    load = summary_map.get("planned_weekly_load_kj")
+    if not objective and not isinstance(load, (int, float)):
+        return ""
+    lines = ["**Week Advisory Summary**"]
+    if objective:
+        lines.append(f"week_objective: {objective}")
+    if isinstance(load, (int, float)):
+        lines.append(f"planned_weekly_load_kj: {int(load)}")
+    return "\n".join(lines) + "\n"
+
+
+def _build_advisory_report_block(des_analysis_payload: JsonMap | None) -> str:
+    data = _as_data(des_analysis_payload)
+    recommendation = data.get("recommendation")
+    recommendation_map = recommendation if isinstance(recommendation, dict) else {}
+    considerations = _as_str_list(recommendation_map.get("suggested_considerations"))
+    rationale = _as_str_list(recommendation_map.get("rationale"))
+    if not considerations and not rationale:
+        return ""
+    lines = ["**Performance Advisory Summary**"]
+    if considerations:
+        lines.append("suggested_considerations: " + " | ".join(considerations))
+    if rationale:
+        lines.append("rationale: " + " | ".join(rationale))
+    return "\n".join(lines) + "\n"
+
+
+def _build_advisory_season_ff_block(season_phase_feed_forward_payload: JsonMap | None) -> str:
+    data = _as_data(season_phase_feed_forward_payload)
+    decision = data.get("decision_summary")
+    adjustment = data.get("phase_adjustment")
+    decision_map = decision if isinstance(decision, dict) else {}
+    adjustment_map = adjustment if isinstance(adjustment, dict) else {}
+    adjustments = adjustment_map.get("adjustments")
+    adjustments_map = adjustments if isinstance(adjustments, dict) else {}
+    kj_corridor = adjustments_map.get("kj_corridor")
+    quality_density = adjustments_map.get("quality_density")
+    kj_map = kj_corridor if isinstance(kj_corridor, dict) else {}
+    quality_map = quality_density if isinstance(quality_density, dict) else {}
+    conclusion = _as_str(decision_map.get("conclusion"))
+    if not conclusion and not kj_map and not quality_map:
+        return ""
+    lines = ["**Season Feed Forward Advisory**"]
+    if conclusion:
+        lines.append(f"conclusion: {conclusion}")
+    direction = _as_str(kj_map.get("direction"))
+    if direction:
+        percent = kj_map.get("percent")
+        suffix = f" ({percent}%)" if isinstance(percent, (int, float)) else ""
+        lines.append(f"kj_corridor_adjustment: {direction}{suffix}")
+    action = _as_str(quality_map.get("action"))
+    if action:
+        details = _as_str(quality_map.get("details"))
+        lines.append(f"quality_density: {action}" + (f" | {details}" if details else ""))
+    return "\n".join(lines) + "\n"
+
+
+def _build_advisory_phase_ff_block(phase_feed_forward_payload: JsonMap | None) -> str:
+    data = _as_data(phase_feed_forward_payload)
+    reason = data.get("reason_context")
+    reason_map = reason if isinstance(reason, dict) else {}
+    intent = _as_str(reason_map.get("intent_of_adjustment"))
+    if not intent:
+        return ""
+    return (
+        "**Phase Feed Forward Advisory**\n"
+        f"intent_of_adjustment: {intent}\n"
+    )
+
+
 def _load_latest_snapshot(
     store: LocalArtifactStore, athlete_id: str, artifact_type: ArtifactType
 ) -> JsonMap:
@@ -464,6 +567,114 @@ def save_planning_context_snapshot(
     return _load_latest_snapshot(store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT)
 
 
+def build_advisory_memory_document(
+    *,
+    target_week: IsoWeek,
+    season_plan_payload: JsonMap | None = None,
+    week_plan_payload: JsonMap | None = None,
+    des_analysis_payload: JsonMap | None = None,
+    season_phase_feed_forward_payload: JsonMap | None = None,
+    phase_feed_forward_payload: JsonMap | None = None,
+) -> JsonMap:
+    """Build a non-binding narrative memory snapshot from recent planning outputs."""
+    prompt_blocks = _non_empty_prompt_blocks(
+        {
+            "season": _build_advisory_season_block(season_plan_payload),
+            "week": _build_advisory_week_block(week_plan_payload),
+            "des_report": _build_advisory_report_block(des_analysis_payload),
+            "season_phase_feed_forward": _build_advisory_season_ff_block(season_phase_feed_forward_payload),
+            "phase_feed_forward": _build_advisory_phase_ff_block(phase_feed_forward_payload),
+        }
+    )
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    source_versions = _source_versions_map(
+        [
+            ("season_plan", ArtifactType.SEASON_PLAN, season_plan_payload or {}),
+            ("week_plan", ArtifactType.WEEK_PLAN, week_plan_payload or {}),
+            ("des_analysis_report", ArtifactType.DES_ANALYSIS_REPORT, des_analysis_payload or {}),
+            (
+                "season_phase_feed_forward",
+                ArtifactType.SEASON_PHASE_FEED_FORWARD,
+                season_phase_feed_forward_payload or {},
+            ),
+            ("phase_feed_forward", ArtifactType.PHASE_FEED_FORWARD, phase_feed_forward_payload or {}),
+        ]
+    )
+    trace_upstream = [
+        ref
+        for ref in (
+            _trace_ref(ArtifactType.SEASON_PLAN, season_plan_payload or {}),
+            _trace_ref(ArtifactType.WEEK_PLAN, week_plan_payload or {}),
+            _trace_ref(ArtifactType.DES_ANALYSIS_REPORT, des_analysis_payload or {}),
+            _trace_ref(
+                ArtifactType.SEASON_PHASE_FEED_FORWARD,
+                season_phase_feed_forward_payload or {},
+            ),
+            _trace_ref(ArtifactType.PHASE_FEED_FORWARD, phase_feed_forward_payload or {}),
+        )
+        if ref is not None
+    ]
+    return {
+        "meta": {
+            "artifact_type": ArtifactType.ADVISORY_MEMORY.value,
+            "schema_id": "AdvisoryMemoryInterface",
+            "schema_version": SNAPSHOT_SCHEMA_VERSION,
+            "version": SNAPSHOT_VERSION,
+            "authority": "Advisory",
+            "owner_agent": SNAPSHOT_OWNER_AGENT,
+            "run_id": "pending",
+            "created_at": "1970-01-01T00:00:00Z",
+            "scope": "Context",
+            "iso_week": target_label,
+            "iso_week_range": f"{target_label}--{target_label}",
+            "temporal_scope": _temporal_scope_for_week(target_week),
+            "trace_upstream": trace_upstream,
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "MEDIUM",
+            "notes": f"Non-binding narrative memory derived from latest planning outputs for target week {target_label}.",
+        },
+        "data": {
+            "target_iso_week": target_label,
+            "source_versions": source_versions,
+            "prompt_blocks": prompt_blocks,
+        },
+    }
+
+
+def save_advisory_memory(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    run_id: str,
+    season_plan_payload: JsonMap | None = None,
+    week_plan_payload: JsonMap | None = None,
+    des_analysis_payload: JsonMap | None = None,
+    season_phase_feed_forward_payload: JsonMap | None = None,
+    phase_feed_forward_payload: JsonMap | None = None,
+) -> JsonMap:
+    snapshot = build_advisory_memory_document(
+        target_week=target_week,
+        season_plan_payload=season_plan_payload,
+        week_plan_payload=week_plan_payload,
+        des_analysis_payload=des_analysis_payload,
+        season_phase_feed_forward_payload=season_phase_feed_forward_payload,
+        phase_feed_forward_payload=phase_feed_forward_payload,
+    )
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    store.save_document(
+        athlete_id,
+        ArtifactType.ADVISORY_MEMORY,
+        target_label,
+        snapshot,
+        producer_agent=SNAPSHOT_PRODUCER_AGENT,
+        run_id=run_id,
+        update_latest=True,
+    )
+    return _load_latest_snapshot(store, athlete_id, ArtifactType.ADVISORY_MEMORY)
+
+
 def build_athlete_state_snapshot_prompt_block(snapshot: JsonMap) -> str:
     """Render snapshot content for planner injection."""
     return _join_prompt_blocks("Athlete State Snapshot", ArtifactType.ATHLETE_STATE_SNAPSHOT, snapshot)
@@ -472,3 +683,29 @@ def build_athlete_state_snapshot_prompt_block(snapshot: JsonMap) -> str:
 def build_planning_context_snapshot_prompt_block(snapshot: JsonMap) -> str:
     """Render target-week planning snapshot content for planner injection."""
     return _join_prompt_blocks("Planning Context Snapshot", ArtifactType.PLANNING_CONTEXT_SNAPSHOT, snapshot)
+
+
+def build_advisory_memory_prompt_block(snapshot: JsonMap) -> str:
+    """Render non-binding advisory memory for coach/conversational contexts."""
+    meta = _as_meta(snapshot)
+    data = snapshot.get("data") if isinstance(snapshot, dict) else None
+    data_map = data if isinstance(data, dict) else {}
+    prompt_blocks = data_map.get("prompt_blocks")
+    if not isinstance(prompt_blocks, dict) or not prompt_blocks:
+        return ""
+    lines = [
+        "**Advisory Memory**",
+        (
+            "Use this code-owned derived memory as non-binding narrative context. "
+            "It may summarize recent plans and reports, but it never overrides authoritative artefacts or snapshots."
+        ),
+    ]
+    version_key = meta.get("version_key")
+    if isinstance(version_key, str):
+        lines.append(f"snapshot_ref: {ARTIFACT_PATHS[ArtifactType.ADVISORY_MEMORY].filename_prefix}_{version_key}.json")
+    lines.append("")
+    for key in prompt_blocks:
+        value = prompt_blocks[key]
+        if isinstance(value, str) and value.strip():
+            lines.append(value.rstrip())
+    return "\n".join(lines).rstrip() + "\n"

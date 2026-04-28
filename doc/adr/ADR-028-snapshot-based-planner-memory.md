@@ -27,6 +27,8 @@ Two code-owned derived artefacts are introduced:
    - stable deterministic state from athlete inputs and Intervals/data-pipeline artefacts
 2. `PLANNING_CONTEXT_SNAPSHOT`
    - target-week planning context derived from season/phase/week predecessors and scoped planning facts
+3. `ADVISORY_MEMORY`
+   - non-binding narrative memory derived from recent planning and performance outputs for conversational/advisory use
 
 Rules:
 
@@ -35,6 +37,7 @@ Rules:
 * Agents do not directly mutate snapshot artefacts.
 * Snapshots are append-only workspace artefacts with traceable metadata.
 * Planner prompts treat snapshot content as authoritative derived context, while raw workspace tools remain available for exact predecessors, traceability, and unresolved details.
+* Advisory memory is explicitly non-binding and may summarize recent outputs, but it never overrides authoritative artefacts.
 
 ## Consequences
 
@@ -44,6 +47,7 @@ Rules:
 * Repeated prompt composition is simplified.
 * Agents need fewer redundant lookup/reconstruction steps.
 * The system gains a clean path for future inspection/debug UI around current planning memory.
+* Coach and feed-forward flows can use the same memory architecture instead of bespoke context assembly.
 
 ### Negative
 

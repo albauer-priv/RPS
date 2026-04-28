@@ -35,6 +35,7 @@ WEEK_SENSITIVE_ARTIFACTS = {
     ArtifactType.DES_ANALYSIS_REPORT,
     ArtifactType.SEASON_PHASE_FEED_FORWARD,
     ArtifactType.PHASE_FEED_FORWARD,
+    ArtifactType.ADVISORY_MEMORY,
 }
 
 
