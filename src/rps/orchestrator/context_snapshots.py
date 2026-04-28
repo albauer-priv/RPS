@@ -1,0 +1,474 @@
+"""Derived snapshot artefacts for snapshot-based planner memory."""
+
+from __future__ import annotations
+
+from datetime import date
+
+from rps.orchestrator.resolved_context import (
+    build_resolved_activity_context_block,
+    build_resolved_athlete_context_block,
+    build_resolved_availability_context_block,
+    build_resolved_event_priority_context_block,
+    build_resolved_feed_forward_applicability_context_block,
+    build_resolved_kpi_context_block,
+    build_resolved_load_governance_context_block,
+    build_resolved_logistics_context_block,
+    build_resolved_phase_context_block,
+    build_resolved_planning_events_context_block,
+    build_resolved_recovery_context_block,
+    build_resolved_zone_model_context_block,
+)
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.paths import ARTIFACT_PATHS
+from rps.workspace.season_plan_service import SeasonPlanPhaseInfo
+from rps.workspace.types import ArtifactType
+
+JsonMap = dict[str, object]
+
+SNAPSHOT_OWNER_AGENT = "Policy-Owner"
+SNAPSHOT_PRODUCER_AGENT = "policy_owner"
+SNAPSHOT_VERSION = "1.0"
+SNAPSHOT_SCHEMA_VERSION = "1.0"
+
+
+def _as_meta(payload: object) -> JsonMap:
+    if not isinstance(payload, dict):
+        return {}
+    meta = payload.get("meta")
+    return meta if isinstance(meta, dict) else {}
+
+
+def _trace_ref(artifact_type: ArtifactType, payload: object) -> JsonMap | None:
+    meta = _as_meta(payload)
+    version_key = meta.get("version_key")
+    run_id = meta.get("run_id")
+    if not isinstance(version_key, str) or not isinstance(run_id, str):
+        return None
+    prefix = ARTIFACT_PATHS[artifact_type].filename_prefix
+    return {
+        "artifact": f"{prefix}_{version_key}.json",
+        "version": SNAPSHOT_VERSION,
+        "run_id": run_id,
+    }
+
+
+def _compact_source_version(artifact_type: ArtifactType, payload: object) -> str | None:
+    meta = _as_meta(payload)
+    version_key = meta.get("version_key")
+    return version_key if isinstance(version_key, str) else None
+
+
+def _temporal_scope_for_week(target_week: IsoWeek) -> JsonMap:
+    week_start = date.fromisocalendar(target_week.year, target_week.week, 1)
+    week_end = date.fromisocalendar(target_week.year, target_week.week, 7)
+    return {"from": week_start.isoformat(), "to": week_end.isoformat()}
+
+
+def _non_empty_prompt_blocks(blocks: dict[str, str]) -> dict[str, str]:
+    return {key: value for key, value in blocks.items() if value.strip()}
+
+
+def _source_versions_map(entries: list[tuple[str, ArtifactType, object]]) -> JsonMap:
+    out: JsonMap = {}
+    for label, artifact_type, payload in entries:
+        version_key = _compact_source_version(artifact_type, payload)
+        if version_key:
+            out[label] = version_key
+    return out
+
+
+def _build_wellness_prompt_block(wellness_payload: JsonMap | None) -> str:
+    """Return a compact wellness/body-mass block when authoritative body mass exists."""
+    if not isinstance(wellness_payload, dict):
+        return ""
+    data = wellness_payload.get("data")
+    if not isinstance(data, dict):
+        return ""
+    body_mass = data.get("body_mass_kg")
+    if not isinstance(body_mass, (int, float)):
+        return ""
+    return (
+        "**Resolved Wellness Context**\n"
+        f"WELLNESS.data.body_mass_kg is present and authoritative for KPI gating: {float(body_mass):.1f} kg.\n"
+        "Use WELLNESS.data.body_mass_kg for any kJ/kg/h or W/kg gating before any STOP about missing or "
+        "semantically unusable body mass.\n"
+    )
+
+
+def _load_latest_snapshot(
+    store: LocalArtifactStore, athlete_id: str, artifact_type: ArtifactType
+) -> JsonMap:
+    payload = store.load_latest(athlete_id, artifact_type)
+    if not isinstance(payload, dict):
+        raise TypeError(f"Latest {artifact_type.value} payload is not a JSON object.")
+    return payload
+
+
+def _join_prompt_blocks(title: str, snapshot_type: ArtifactType, snapshot: JsonMap) -> str:
+    meta = _as_meta(snapshot)
+    data = snapshot.get("data") if isinstance(snapshot, dict) else None
+    data_map = data if isinstance(data, dict) else {}
+    prompt_blocks = data_map.get("prompt_blocks")
+    if not isinstance(prompt_blocks, dict):
+        return ""
+    lines = [
+        f"**{title}**",
+        (
+            "Use this code-owned derived snapshot as authoritative runtime memory for already-resolved facts. "
+            "Do not reload the same artefacts just to rediscover values already present here."
+        ),
+    ]
+    version_key = meta.get("version_key")
+    if isinstance(version_key, str):
+        lines.append(f"snapshot_ref: {ARTIFACT_PATHS[snapshot_type].filename_prefix}_{version_key}.json")
+    source_versions = data_map.get("source_versions")
+    if isinstance(source_versions, dict) and source_versions:
+        lines.append("source_versions:")
+        for key in sorted(source_versions):
+            value = source_versions[key]
+            lines.append(f"- {key}: {value}")
+    lines.append("")
+    for key in prompt_blocks:
+        value = prompt_blocks[key]
+        if isinstance(value, str) and value.strip():
+            lines.append(value.rstrip())
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def build_athlete_state_snapshot_document(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    availability_payload: JsonMap | None = None,
+    planning_events_payload: JsonMap | None = None,
+    logistics_payload: JsonMap | None = None,
+    zone_model_payload: JsonMap | None = None,
+    wellness_payload: JsonMap | None = None,
+    athlete_profile_payload: JsonMap | None = None,
+    kpi_profile_payload: JsonMap | None = None,
+    selection_payload: JsonMap | None = None,
+) -> JsonMap:
+    """Build a persisted athlete/input/pipeline state snapshot for planners."""
+    athlete_block = build_resolved_athlete_context_block(store, athlete_id)
+    kpi_block = build_resolved_kpi_context_block(store, athlete_id)
+    availability_block = build_resolved_availability_context_block(store, athlete_id)
+    logistics_block = build_resolved_logistics_context_block(store, athlete_id, target_week)
+    planning_events_block = build_resolved_planning_events_context_block(store, athlete_id, target_week)
+    zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
+    wellness_block = _build_wellness_prompt_block(wellness_payload)
+
+    prompt_blocks = _non_empty_prompt_blocks(
+        {
+            "athlete": athlete_block,
+            "kpi": kpi_block,
+            "availability": availability_block,
+            "logistics": logistics_block,
+            "planning_events": planning_events_block,
+            "zone_model": zone_model_block,
+            "wellness": wellness_block,
+        }
+    )
+
+    source_versions = _source_versions_map(
+        [
+            ("athlete_profile", ArtifactType.ATHLETE_PROFILE, athlete_profile_payload or {}),
+            ("kpi_profile", ArtifactType.KPI_PROFILE, kpi_profile_payload or {}),
+            ("season_scenario_selection", ArtifactType.SEASON_SCENARIO_SELECTION, selection_payload or {}),
+            ("availability", ArtifactType.AVAILABILITY, availability_payload or {}),
+            ("planning_events", ArtifactType.PLANNING_EVENTS, planning_events_payload or {}),
+            ("logistics", ArtifactType.LOGISTICS, logistics_payload or {}),
+            ("zone_model", ArtifactType.ZONE_MODEL, zone_model_payload or {}),
+            ("wellness", ArtifactType.WELLNESS, wellness_payload or {}),
+        ]
+    )
+
+    trace_data = [
+        ref
+        for ref in (
+            _trace_ref(ArtifactType.ATHLETE_PROFILE, athlete_profile_payload or {}),
+            _trace_ref(ArtifactType.KPI_PROFILE, kpi_profile_payload or {}),
+            _trace_ref(ArtifactType.SEASON_SCENARIO_SELECTION, selection_payload or {}),
+            _trace_ref(ArtifactType.AVAILABILITY, availability_payload or {}),
+            _trace_ref(ArtifactType.ZONE_MODEL, zone_model_payload or {}),
+            _trace_ref(ArtifactType.WELLNESS, wellness_payload or {}),
+        )
+        if ref is not None
+    ]
+    trace_events = [
+        ref
+        for ref in (
+            _trace_ref(ArtifactType.PLANNING_EVENTS, planning_events_payload or {}),
+            _trace_ref(ArtifactType.LOGISTICS, logistics_payload or {}),
+        )
+        if ref is not None
+    ]
+
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    return {
+        "meta": {
+            "artifact_type": ArtifactType.ATHLETE_STATE_SNAPSHOT.value,
+            "schema_id": "AthleteStateSnapshotInterface",
+            "schema_version": SNAPSHOT_SCHEMA_VERSION,
+            "version": SNAPSHOT_VERSION,
+            "authority": "Derived",
+            "owner_agent": SNAPSHOT_OWNER_AGENT,
+            "run_id": "pending",
+            "created_at": "1970-01-01T00:00:00Z",
+            "scope": "Context",
+            "iso_week": target_label,
+            "iso_week_range": f"{target_label}--{target_label}",
+            "temporal_scope": _temporal_scope_for_week(target_week),
+            "trace_upstream": [],
+            "trace_data": trace_data,
+            "trace_events": trace_events,
+            "data_confidence": "HIGH",
+            "notes": "Code-owned derived athlete/input/pipeline memory snapshot for planner injection.",
+        },
+        "data": {
+            "target_iso_week": target_label,
+            "source_versions": source_versions,
+            "prompt_blocks": prompt_blocks,
+        },
+    }
+
+
+def build_planning_context_snapshot_document(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    phase_info: SeasonPlanPhaseInfo,
+    season_plan_payload: JsonMap,
+    phase_range: IsoWeekRange,
+    phase_guardrails_payload: JsonMap | None = None,
+    phase_structure_payload: JsonMap | None = None,
+    availability_payload: JsonMap | None = None,
+    planning_events_payload: JsonMap | None = None,
+    season_phase_feed_forward_payload: JsonMap | None = None,
+    phase_feed_forward_payload: JsonMap | None = None,
+    activities_actual_version: str | None = None,
+    activities_trend_version: str | None = None,
+) -> JsonMap:
+    """Build a target-week planning snapshot for phase/week planners."""
+    phase_block = build_resolved_phase_context_block(target_week=target_week, phase_info=phase_info)
+    recovery_block = build_resolved_recovery_context_block(
+        availability_payload=availability_payload,
+        season_plan_payload=season_plan_payload,
+        phase_guardrails_payload=phase_guardrails_payload,
+        phase_structure_payload=phase_structure_payload,
+    )
+    event_priority_block = build_resolved_event_priority_context_block(
+        target_week=target_week,
+        season_plan_payload=season_plan_payload,
+        phase_guardrails_payload=phase_guardrails_payload,
+        planning_events_payload=planning_events_payload,
+    )
+    load_governance_block = build_resolved_load_governance_context_block(
+        target_week=target_week,
+        season_plan_payload=season_plan_payload,
+        phase_guardrails_payload=phase_guardrails_payload,
+        phase_structure_payload=phase_structure_payload,
+    )
+    season_ff_block = build_resolved_feed_forward_applicability_context_block(
+        label="season_phase_feed_forward",
+        feed_forward_payload=season_phase_feed_forward_payload,
+        target_week=target_week,
+    )
+    phase_ff_block = build_resolved_feed_forward_applicability_context_block(
+        label="phase_feed_forward",
+        feed_forward_payload=phase_feed_forward_payload,
+        target_week=target_week,
+    )
+    activity_block = ""
+    if activities_actual_version and activities_trend_version:
+        activity_block = build_resolved_activity_context_block(
+            store,
+            athlete_id,
+            target_week=target_week,
+            activities_actual_version=activities_actual_version,
+            activities_trend_version=activities_trend_version,
+        )
+
+    prompt_blocks = _non_empty_prompt_blocks(
+        {
+            "phase": phase_block,
+            "recovery": recovery_block,
+            "event_priority": event_priority_block,
+            "load_governance": load_governance_block,
+            "season_feed_forward": season_ff_block,
+            "phase_feed_forward": phase_ff_block,
+            "activity": activity_block,
+        }
+    )
+
+    source_versions = _source_versions_map(
+        [
+            ("season_plan", ArtifactType.SEASON_PLAN, season_plan_payload),
+            ("phase_guardrails", ArtifactType.PHASE_GUARDRAILS, phase_guardrails_payload or {}),
+            ("phase_structure", ArtifactType.PHASE_STRUCTURE, phase_structure_payload or {}),
+            ("availability", ArtifactType.AVAILABILITY, availability_payload or {}),
+            ("planning_events", ArtifactType.PLANNING_EVENTS, planning_events_payload or {}),
+            ("season_phase_feed_forward", ArtifactType.SEASON_PHASE_FEED_FORWARD, season_phase_feed_forward_payload or {}),
+            ("phase_feed_forward", ArtifactType.PHASE_FEED_FORWARD, phase_feed_forward_payload or {}),
+        ]
+    )
+    if activities_actual_version:
+        source_versions["activities_actual"] = activities_actual_version
+    if activities_trend_version:
+        source_versions["activities_trend"] = activities_trend_version
+
+    trace_upstream = [
+        ref
+        for ref in (
+            _trace_ref(ArtifactType.SEASON_PLAN, season_plan_payload),
+            _trace_ref(ArtifactType.PHASE_GUARDRAILS, phase_guardrails_payload or {}),
+            _trace_ref(ArtifactType.PHASE_STRUCTURE, phase_structure_payload or {}),
+            _trace_ref(ArtifactType.SEASON_PHASE_FEED_FORWARD, season_phase_feed_forward_payload or {}),
+            _trace_ref(ArtifactType.PHASE_FEED_FORWARD, phase_feed_forward_payload or {}),
+        )
+        if ref is not None
+    ]
+    trace_data = [
+        ref
+        for ref in (
+            _trace_ref(ArtifactType.AVAILABILITY, availability_payload or {}),
+        )
+        if ref is not None
+    ]
+    trace_events = [
+        ref
+        for ref in (
+            _trace_ref(ArtifactType.PLANNING_EVENTS, planning_events_payload or {}),
+        )
+        if ref is not None
+    ]
+
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    phase_range_label = f"{phase_range.start.year:04d}-{phase_range.start.week:02d}--{phase_range.end.year:04d}-{phase_range.end.week:02d}"
+    return {
+        "meta": {
+            "artifact_type": ArtifactType.PLANNING_CONTEXT_SNAPSHOT.value,
+            "schema_id": "PlanningContextSnapshotInterface",
+            "schema_version": SNAPSHOT_SCHEMA_VERSION,
+            "version": SNAPSHOT_VERSION,
+            "authority": "Derived",
+            "owner_agent": SNAPSHOT_OWNER_AGENT,
+            "run_id": "pending",
+            "created_at": "1970-01-01T00:00:00Z",
+            "scope": "Context",
+            "iso_week": target_label,
+            "iso_week_range": f"{target_label}--{target_label}",
+            "temporal_scope": _temporal_scope_for_week(target_week),
+            "trace_upstream": trace_upstream,
+            "trace_data": trace_data,
+            "trace_events": trace_events,
+            "data_confidence": "HIGH",
+            "notes": f"Code-owned derived planning memory snapshot for target week {target_label} within phase {phase_range_label}.",
+        },
+        "data": {
+            "target_iso_week": target_label,
+            "phase_iso_week_range": phase_range_label,
+            "source_versions": source_versions,
+            "prompt_blocks": prompt_blocks,
+        },
+    }
+
+
+def save_athlete_state_snapshot(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    run_id: str,
+    athlete_profile_payload: JsonMap | None = None,
+    kpi_profile_payload: JsonMap | None = None,
+    selection_payload: JsonMap | None = None,
+    availability_payload: JsonMap | None = None,
+    planning_events_payload: JsonMap | None = None,
+    logistics_payload: JsonMap | None = None,
+    zone_model_payload: JsonMap | None = None,
+    wellness_payload: JsonMap | None = None,
+) -> JsonMap:
+    snapshot = build_athlete_state_snapshot_document(
+        store,
+        athlete_id,
+        target_week=target_week,
+        athlete_profile_payload=athlete_profile_payload,
+        kpi_profile_payload=kpi_profile_payload,
+        selection_payload=selection_payload,
+        availability_payload=availability_payload,
+        planning_events_payload=planning_events_payload,
+        logistics_payload=logistics_payload,
+        zone_model_payload=zone_model_payload,
+        wellness_payload=wellness_payload,
+    )
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    store.save_document(
+        athlete_id,
+        ArtifactType.ATHLETE_STATE_SNAPSHOT,
+        target_label,
+        snapshot,
+        producer_agent=SNAPSHOT_PRODUCER_AGENT,
+        run_id=run_id,
+        update_latest=True,
+    )
+    return _load_latest_snapshot(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT)
+
+
+def save_planning_context_snapshot(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    phase_info: SeasonPlanPhaseInfo,
+    season_plan_payload: JsonMap,
+    phase_range: IsoWeekRange,
+    run_id: str,
+    phase_guardrails_payload: JsonMap | None = None,
+    phase_structure_payload: JsonMap | None = None,
+    availability_payload: JsonMap | None = None,
+    planning_events_payload: JsonMap | None = None,
+    season_phase_feed_forward_payload: JsonMap | None = None,
+    phase_feed_forward_payload: JsonMap | None = None,
+    activities_actual_version: str | None = None,
+    activities_trend_version: str | None = None,
+) -> JsonMap:
+    snapshot = build_planning_context_snapshot_document(
+        store,
+        athlete_id,
+        target_week=target_week,
+        phase_info=phase_info,
+        season_plan_payload=season_plan_payload,
+        phase_range=phase_range,
+        phase_guardrails_payload=phase_guardrails_payload,
+        phase_structure_payload=phase_structure_payload,
+        availability_payload=availability_payload,
+        planning_events_payload=planning_events_payload,
+        season_phase_feed_forward_payload=season_phase_feed_forward_payload,
+        phase_feed_forward_payload=phase_feed_forward_payload,
+        activities_actual_version=activities_actual_version,
+        activities_trend_version=activities_trend_version,
+    )
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    store.save_document(
+        athlete_id,
+        ArtifactType.PLANNING_CONTEXT_SNAPSHOT,
+        target_label,
+        snapshot,
+        producer_agent=SNAPSHOT_PRODUCER_AGENT,
+        run_id=run_id,
+        update_latest=True,
+    )
+    return _load_latest_snapshot(store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT)
+
+
+def build_athlete_state_snapshot_prompt_block(snapshot: JsonMap) -> str:
+    """Render snapshot content for planner injection."""
+    return _join_prompt_blocks("Athlete State Snapshot", ArtifactType.ATHLETE_STATE_SNAPSHOT, snapshot)
+
+
+def build_planning_context_snapshot_prompt_block(snapshot: JsonMap) -> str:
+    """Render target-week planning snapshot content for planner injection."""
+    return _join_prompt_blocks("Planning Context Snapshot", ArtifactType.PLANNING_CONTEXT_SNAPSHOT, snapshot)

@@ -817,6 +817,7 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     )
 
     assert captured_inputs
+    assert "**Athlete State Snapshot**" in captured_inputs[0]
     assert "**Resolved KPI Context**" in captured_inputs[0]
     assert "selected_kpi_rate_band_selector: fast_competitive" in captured_inputs[0]
     assert "kj_per_kg_per_hour 20 - 24" in captured_inputs[0]
@@ -826,6 +827,7 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     assert "**Resolved Planning Event Context**" in captured_inputs[0]
     assert "Spring 200" in captured_inputs[0]
     assert "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12" not in captured_inputs[0]
+    assert store.latest_exists("test_athlete", ArtifactType.ATHLETE_STATE_SNAPSHOT)
 
 
 def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
@@ -2340,6 +2342,10 @@ def test_plan_week_injects_resolved_logistics_and_zone_context(
 
     assert result.ok is True
     assert captured_inputs
+    assert store.latest_exists(athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT)
+    assert store.latest_exists(athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT)
+    assert any("**Athlete State Snapshot**" in user_input for user_input in captured_inputs)
+    assert any("**Planning Context Snapshot**" in user_input for user_input in captured_inputs)
     assert any("**Resolved Logistics Context**" in user_input for user_input in captured_inputs)
     assert any("Business trip" in user_input for user_input in captured_inputs)
     assert any("**Resolved Zone Model Context**" in user_input for user_input in captured_inputs)

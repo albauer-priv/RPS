@@ -53,6 +53,10 @@ class ArtifactType(str, Enum):
     WELLNESS = "WELLNESS"
     DES_ANALYSIS_REPORT = "DES_ANALYSIS_REPORT"
 
+    # Derived runtime context snapshots
+    ATHLETE_STATE_SNAPSHOT = "ATHLETE_STATE_SNAPSHOT"
+    PLANNING_CONTEXT_SNAPSHOT = "PLANNING_CONTEXT_SNAPSHOT"
+
 
 @dataclass(frozen=True)
 class ArtifactMeta:

@@ -205,6 +205,7 @@ class LocalArtifactStore:
         ensure_dir(base / "data/plans/week")
         ensure_dir(base / "data/exports")
         ensure_dir(base / "data/analysis")
+        ensure_dir(base / "data/context")
         ensure_dir(base / "data")
         ensure_dir(base / "logs")
         ensure_dir(base / "latest")

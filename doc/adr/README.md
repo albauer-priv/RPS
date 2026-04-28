@@ -36,6 +36,7 @@ This folder contains the ADR log for RPS.
 - ADR-025: Multi-provider LLM Runtime + Local Vectorstore
 - ADR-026: Split Tools vs Structured Output for Groq (LiteLLM)
 - ADR-027: Consolidate Repo Layout into Runtime + Specs Roots
+- ADR-028: Snapshot-based Planner Memory
 
 ## Process (Short)
 

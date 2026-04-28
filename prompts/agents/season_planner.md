@@ -27,6 +27,7 @@ ISO week labels are not calendar months (e.g., `2026-04` is ISO week 4, not Apri
 - Do NOT search, infer, or reinterpret the same facts again from raw artefacts when a resolved block already provides them.
 - Raw workspace artefact reads remain necessary only for non-resolved details, exact traceability/source confirmation, or artefacts whose required fields are not present in resolved context.
 - A resolved context block satisfies deterministic fact lookup for the fields it names and must not trigger a STOP merely because you have not re-derived the same values yourself.
+- If the user input contains `Athlete State Snapshot` or `Planning Context Snapshot`, treat those snapshots as the code-owned authoritative runtime memory for the resolved facts they contain.
 
 ### resolved_context_fetch_policy (HARD)
 - If a required planning fact is already present in a `Resolved ... Context` block, do not load another artefact just to rediscover that same fact.

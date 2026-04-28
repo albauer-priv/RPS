@@ -9,14 +9,12 @@ from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
 from rps.agents.tasks import AgentTask
+from rps.orchestrator.context_snapshots import (
+    build_athlete_state_snapshot_prompt_block,
+    save_athlete_state_snapshot,
+)
 from rps.orchestrator.resolved_context import (
     build_resolved_activity_context_block,
-    build_resolved_athlete_context_block,
-    build_resolved_availability_context_block,
-    build_resolved_kpi_context_block,
-    build_resolved_logistics_context_block,
-    build_resolved_planning_events_context_block,
-    build_resolved_zone_model_context_block,
 )
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
@@ -27,6 +25,19 @@ AMBITION_IF_RANGE_LENGTH = 2
 
 JsonMap = dict[str, object]
 OrchestratorResult = dict[str, object]
+
+
+def _load_latest_payload(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    artifact_type: ArtifactType,
+) -> JsonMap | None:
+    """Return the latest payload for an artefact when it exists and is dict-shaped."""
+    try:
+        loaded = store.load_latest(athlete_id, artifact_type)
+    except Exception:
+        return None
+    return loaded if isinstance(loaded, dict) else None
 
 
 def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
@@ -103,43 +114,44 @@ def create_season_scenarios(
     spec = AGENTS["season_scenario"]
     injected_block = build_injection_block("season_scenario", mode="scenario")
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
-    athlete_block = ""
-    kpi_block = ""
-    availability_block = ""
-    logistics_block = ""
-    planning_events_block = ""
+    athlete_state_snapshot_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
-        athlete_block = build_resolved_athlete_context_block(store, athlete_id)
-        kpi_block = build_resolved_kpi_context_block(store, athlete_id)
-        availability_block = build_resolved_availability_context_block(store, athlete_id)
-        logistics_block = build_resolved_logistics_context_block(
+        target_week = IsoWeek(year=year, week=week)
+        athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
+        kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
+        availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
+        planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
+        logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
+        selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
+        wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
+        athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
-            IsoWeek(year=year, week=week),
+            target_week=target_week,
+            run_id=run_id,
+            athlete_profile_payload=athlete_profile_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            wellness_payload=wellness_payload or {},
         )
-        planning_events_block = build_resolved_planning_events_context_block(
-            store,
-            athlete_id,
-            IsoWeek(year=year, week=week),
+        athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
+            athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
     except Exception:
-        athlete_block = ""
-        kpi_block = ""
-        availability_block = ""
-        logistics_block = ""
-        planning_events_block = ""
+        athlete_state_snapshot_block = ""
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
         "Use workspace_get_input for Athlete Profile, Planning Events, and Logistics. "
         "Use workspace_get_latest only for shared latest inputs Availability, KPI Profile, and Wellness. "
         "Focus on qualitative scenario differences; runtime will canonicalize horizon and phase math from planning events. "
-        f"{athlete_block}"
-        f"{kpi_block}"
-        f"{availability_block}"
-        f"{logistics_block}"
-        f"{planning_events_block}"
+        f"{athlete_state_snapshot_block}"
         f"{override_line}"
         f"{injected_block}"
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
@@ -257,31 +269,37 @@ def create_season_plan(
         user_data_block = _format_user_data_block(user_data)
     except Exception:
         user_data_block = _format_user_data_block({})
-    athlete_block = ""
-    kpi_block = ""
-    availability_block = ""
-    logistics_block = ""
-    planning_events_block = ""
-    zone_model_block = ""
+    athlete_state_snapshot_block = ""
     resolved_activity_block = ""
     historical_context_line = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         target_week = IsoWeek(year=year, week=week)
-        athlete_block = build_resolved_athlete_context_block(store, athlete_id)
-        kpi_block = build_resolved_kpi_context_block(store, athlete_id)
-        availability_block = build_resolved_availability_context_block(store, athlete_id)
-        logistics_block = build_resolved_logistics_context_block(
+        athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
+        kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
+        availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
+        planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
+        logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
+        selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
+        wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
+        athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
-            target_week,
+            target_week=target_week,
+            run_id=run_id,
+            athlete_profile_payload=athlete_profile_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            wellness_payload=wellness_payload or {},
         )
-        planning_events_block = build_resolved_planning_events_context_block(
-            store,
-            athlete_id,
-            target_week,
+        athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
+            athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
-        zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -307,12 +325,7 @@ def create_season_plan(
                 "activity artefacts. "
             )
     except Exception:
-        athlete_block = ""
-        kpi_block = ""
-        availability_block = ""
-        logistics_block = ""
-        planning_events_block = ""
-        zone_model_block = ""
+        athlete_state_snapshot_block = ""
         resolved_activity_block = ""
         historical_context_line = ""
     user_input = (
@@ -320,13 +333,8 @@ def create_season_plan(
         f"Target ISO week: {year}-{week:02d}. "
         "Use the latest season-level SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context. "
         f"{historical_context_line}"
-        f"{athlete_block}"
+        f"{athlete_state_snapshot_block}"
         f"{user_data_block}"
-        f"{kpi_block}"
-        f"{availability_block}"
-        f"{logistics_block}"
-        f"{planning_events_block}"
-        f"{zone_model_block}"
         f"{resolved_activity_block}"
         f"{override_line}"
         f"{injected_block}"
