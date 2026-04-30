@@ -2441,6 +2441,8 @@ def test_workouts_page_renders():
     at.run()
     assert len(at.error) == 0
     assert len(at.info) >= 1
+    subheaders = [subheader.value for subheader in at.subheader]
+    assert "Workout Editor" in subheaders
 
 
 def test_system_pages_render():

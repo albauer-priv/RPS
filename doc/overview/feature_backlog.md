@@ -41,6 +41,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] BUG_user_inputs_polish — Events columns/rank/priority, Logistics enums, Availability rounding, guidance.
 - [x] FEAT_central_planner_context_snapshots — code-owned planner memory snapshots.
 - [x] FEAT_snapshot_memory_expansion — feed-forward + coach snapshot-first memory and advisory memory.
+- [x] FEAT_chat_week_plan_edits — bounded write-capable chat edits for existing week plans on the Workouts page.
 
 ## Unlock Graph (dependencies)
 

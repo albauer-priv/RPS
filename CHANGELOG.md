@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Plan → Workouts now includes a bounded `Workout Editor` chat for the selected ISO week: users can preview moving a workout to an empty day, changing a start time, or replacing workout text, then explicitly apply the pending edit through the guarded `WEEK_PLAN` store and deterministic `INTERVALS_WORKOUTS` rebuild; `Coach` remains read-only.
 - Bumped the application version to `0.11.0` for the snapshot-memory architecture expansion: Feed Forward now uses snapshot-first injection, Coach prefers central memory over raw artefact preload when available, and a new derived `ADVISORY_MEMORY` artefact tracks non-binding narrative context from recent planning/advisory outputs.
 - Planner orchestration now persists code-owned derived memory snapshots (`ATHLETE_STATE_SNAPSHOT`, `PLANNING_CONTEXT_SNAPSHOT`) under `data/context/` and injects these snapshot files as the primary runtime memory for season/phase/week planning, while authoritative source artefacts remain unchanged.
 - Plan Hub now prunes redundant `WORKOUT_EXPORT` steps whenever the same run already queues `WEEK_PLAN`, preventing duplicate `INTERVALS_WORKOUTS` writes for scoped week/full-chain runs while preserving standalone workout-export runs when a week plan is already ready.

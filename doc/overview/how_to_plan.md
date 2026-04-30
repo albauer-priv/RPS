@@ -26,6 +26,7 @@ Last-Updated: 2026-04-14
 5) Run **Season Scenarios** from Plan Hub if missing.
 6) Select a scenario on **Plan -> Season** (manual decision).
 7) Run **Plan Week** from Plan Hub, or use direct **Run Phase** / **Run Week** / **Run Workouts** actions when you need a targeted rerun.
+8) Use **Plan → Workouts** for targeted current-week changes after planning when you only need to move or adjust specific workouts instead of replanning the full week.
 8) Optional: **Post to Intervals** from **Plan → Workouts** (commit step) after Export.
 9) Optional: **Performance Report** on Performance pages once activities are available.
 
@@ -50,6 +51,7 @@ available for manual, step-by-step runs.
 - Run Execution table (steps, statuses, outputs, events).
 - Latest Outputs + Run History.
 - Orchestrates planning only (posting happens on Workouts page).
+- Targeted post-plan edits happen on Workouts page via the bounded `Workout Editor`.
 
 ### Plan -> Season
 - Manual scenario selection (user decision).

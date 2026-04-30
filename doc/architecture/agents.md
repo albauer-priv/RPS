@@ -19,6 +19,7 @@ This document is the canonical registry of agents, their roles, modes, and artif
 | Workout Export | Build Intervals export from week plan. | WORKOUT_EXPORT | week_plan | workout_export | Local deterministic export; posting happens in UI. |
 | Performance‑Analyst | Create performance report and feed‑forward inputs. | CREATE_REPORT, FEED_FORWARD | activities_actual, activities_trend, wellness, season_plan (optional) | des_analysis_report, season_phase_feed_forward | Report is past/current week only; feed‑forward UI chains report → season/phase → phase/week. |
 | Coach | Conversational coaching and guidance. | COACH_CHAT | chat history, athlete context | none (chat only) | UI chat surface; no artefact writes. |
+| Workout Editor | Bounded chat-based edits for an existing week plan. | WEEK_PLAN_EDIT_CHAT | selected-week week_plan, chat history | week_plan, intervals_workouts | Workouts-page only; preview first, then guarded apply + deterministic export rebuild. |
 
 ## Mode Notes
 

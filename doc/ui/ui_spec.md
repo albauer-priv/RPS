@@ -68,6 +68,7 @@ See [doc/architecture/system_architecture.md](../architecture/system_architectur
 ### Plan → Workouts
 - Workouts export view, posting actions, history
 - Revision requests for week plan
+- Bounded `Workout Editor` chat for targeted current-week `WEEK_PLAN` edits with preview/confirm/apply semantics
 - See [doc/ui/pages/plan_workouts.md](pages/plan_workouts.md).
 
 ### Analyse
