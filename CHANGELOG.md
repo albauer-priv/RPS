@@ -868,3 +868,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2026-05-04
 
 - docs: clarified intentional feed-forward version-key asymmetry across `SEASON_PHASE_FEED_FORWARD` and `PHASE_FEED_FORWARD` in artefact flow, workspace, and Feed Forward UI docs
+- fix: scoped phase-run completion logs now report the effective executed phase artefacts, including bundled `PHASE_PREVIEW` reruns

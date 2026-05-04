@@ -842,10 +842,11 @@ def plan_week(
                 }
             )
             return PlanWeekResult(ok=False, steps=steps)
-        label = "Scoped phase run" if len(forced_steps) > 1 else "Isolated phase run"
+        completed_phase_steps = [task.value.removeprefix("CREATE_") for task in phase_tasks] or sorted(forced_steps)
+        label = "Scoped phase run" if len(completed_phase_steps) > 1 else "Isolated phase run"
         _log(
             f"{label} completed for range {phase_range_label} "
-            f"(forced_steps={sorted(forced_steps)})."
+            f"(forced_steps={completed_phase_steps})."
         )
         return PlanWeekResult(ok=True, steps=steps)
 
