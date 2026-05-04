@@ -42,6 +42,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_central_planner_context_snapshots — code-owned planner memory snapshots.
 - [x] FEAT_snapshot_memory_expansion — feed-forward + coach snapshot-first memory and advisory memory.
 - [x] FEAT_chat_week_plan_edits — bounded write-capable chat edits for existing week plans on the Workouts page.
+- [x] FEAT_week_plan_consistency_guards — central `WEEK_PLAN` normalization and consistency guards before store/export.
 
 ## Unlock Graph (dependencies)
 

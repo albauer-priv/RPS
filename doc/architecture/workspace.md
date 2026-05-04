@@ -48,6 +48,10 @@ runtime/athletes/<athlete_id>/
 - `index.json` tracks version metadata for routing and lookups.
 - No edits in place; new versions are appended.
 - User inputs (athlete_profile, planning_events, logistics, availability) live under `inputs/` and are read via `workspace_get_input`.
+- `WEEK_PLAN` writes pass an additional guarded consistency layer before save:
+  - deterministic normalization of linked workout duration / agenda duration / agenda mechanical `planned_kj` where derivable
+  - cross-field validation for agenda/workout/summary coherence
+  - export is blocked if the normalized `WEEK_PLAN` is still inconsistent
 
 Templates are available under:
 

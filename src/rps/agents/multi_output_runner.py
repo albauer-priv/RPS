@@ -25,6 +25,7 @@ from rps.prompts.loader import PromptLoader
 from rps.schemas.bundler import SchemaBundler
 from rps.tools.store_output_tools import build_strict_store_tool
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.schema_registry import SchemaValidationError
@@ -1369,6 +1370,7 @@ def run_agent_multi_output(
                     parsed = _normalize_phase_guardrails(parsed)
                     if spec.artifact_type == ArtifactType.WEEK_PLAN:
                         parsed = _normalize_week_plan_meta(parsed)
+                        parsed = normalize_week_plan_consistency(parsed)
                     if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
                         parsed = _normalize_des_analysis_report(parsed)
                     try:
@@ -1468,6 +1470,7 @@ def run_agent_multi_output(
             document = _normalize_phase_guardrails(document)
             if spec.artifact_type == ArtifactType.WEEK_PLAN:
                 document = _normalize_week_plan_meta(document)
+                document = normalize_week_plan_consistency(document)
             if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
                 document = _normalize_des_analysis_report(document)
             if spec.envelope and not _is_envelope(document):

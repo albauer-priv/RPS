@@ -14,6 +14,11 @@ from typing import TypeAlias
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.orchestrator.workout_export import run_workout_export
 from rps.workouts.validator import collect_week_plan_export_issues
+from rps.workouts.week_plan_consistency import (
+    derive_workout_duration_hhmm,
+    derive_workout_duration_hhmmss,
+    normalize_week_plan_consistency,
+)
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.local_store import LocalArtifactStore, utc_iso_now
 from rps.workspace.types import ArtifactType
@@ -41,8 +46,6 @@ _DAY_TO_ISO = {
     "sunday": ("Sun", 7),
 }
 _TIME_RE = re.compile(r"^\d{2}:\d{2}$")
-_DURATION_PATTERN = re.compile(r"(?P<hours>\d+)h(?P<minutes>\d+)?m?|(?P<mins_only>\d+)m")
-
 
 @dataclass(frozen=True)
 class WeekPlanEditPreview:
@@ -104,34 +107,6 @@ def _resolve_day(target_day: str) -> tuple[str, str]:
 
 def _date_for_day(year: int, week: int, iso_day: int) -> str:
     return date.fromisocalendar(year, week, iso_day).isoformat()
-
-
-def _duration_hhmmss(total_minutes: int) -> str:
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-    return f"{hours:02d}:{minutes:02d}:00"
-
-
-def _format_duration_hhmm(total_minutes: int) -> str:
-    if total_minutes <= 0:
-        return ""
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-    return f"{hours:02d}:{minutes:02d}"
-
-
-def _duration_minutes_from_workout_text(text: str) -> int:
-    if not text:
-        return 0
-    total = 0
-    for match in _DURATION_PATTERN.finditer(text):
-        if match.group("mins_only"):
-            total += int(match.group("mins_only"))
-            continue
-        hours = int(match.group("hours") or 0)
-        minutes = int(match.group("minutes") or 0)
-        total += hours * 60 + minutes
-    return total
 
 
 def load_week_plan_for_edit(
@@ -199,15 +174,16 @@ def _lookup_rows(week_plan: JsonMap) -> tuple[list[JsonMap], dict[str, JsonMap],
 
 def _preview(operation: str, summary: str, document: JsonMap, warnings: list[str] | None = None) -> WeekPlanEditPreview:
     warning_list = list(warnings or [])
-    issues = [issue.format() for issue in collect_week_plan_export_issues(document)]
+    normalized = normalize_week_plan_consistency(document)
+    issues = [issue.format() for issue in collect_week_plan_export_issues(normalized)]
     return WeekPlanEditPreview(
         ok=not issues,
         operation=operation,
         summary=summary,
         warnings=warning_list,
         issues=issues,
-        workouts=list_week_plan_workouts(document),
-        document=document,
+        workouts=list_week_plan_workouts(normalized),
+        document=normalized,
     )
 
 
@@ -324,10 +300,11 @@ def preview_update_workout_text(
         workout["start"] = _require_time(start)
 
     normalized_text = str(workout["workout_text"])
-    total_minutes = _duration_minutes_from_workout_text(normalized_text)
-    if total_minutes > 0:
-        workout["duration"] = _duration_hhmmss(total_minutes)
-        agenda_row["planned_duration"] = _format_duration_hhmm(total_minutes)
+    derived_duration = derive_workout_duration_hhmmss(normalized_text)
+    derived_agenda_duration = derive_workout_duration_hhmm(normalized_text)
+    if derived_duration and derived_agenda_duration:
+        workout["duration"] = derived_duration
+        agenda_row["planned_duration"] = derived_agenda_duration
     else:
         warnings.append("Could not derive duration from workout_text; existing duration fields were kept.")
 
@@ -349,7 +326,7 @@ def apply_week_plan_edit(
     run_id: str,
 ) -> WeekPlanApplyResult:
     """Persist an edited week plan through the guarded store and rebuild the export."""
-    working = copy.deepcopy(document)
+    working = normalize_week_plan_consistency(copy.deepcopy(document))
     meta = _as_map(working.get("meta"))
     meta.pop("version_key", None)
     meta["created_at"] = utc_iso_now()

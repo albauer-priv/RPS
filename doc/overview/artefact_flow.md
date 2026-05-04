@@ -548,3 +548,16 @@ See [doc/architecture/agents.md](../architecture/agents.md) for the canonical ag
 ---
 
 ## End of Document
+### 2.4 Week-Planner / Workout Export Consistency Rule
+
+- `WEEK_PLAN` store is not based on schema validation alone.
+- Before a `WEEK_PLAN` is stored, the guarded store normalizes linked workout metadata from deterministic workout-local data where possible:
+  - workout duration from `workout_text`
+  - agenda duration from linked workout duration
+  - agenda mechanical `planned_kj` from linked workout notes when explicitly present
+- After normalization, `WEEK_PLAN` must pass cross-field consistency checks before `INTERVALS_WORKOUTS` export is allowed.
+- Examples of blocking inconsistencies:
+  - linked `workout_id` with `planned_duration = 00:00`
+  - linked `workout_id` with `planned_kj = 0`
+  - linked workout `duration = 00:00:01`
+  - weekly mechanical total statement in summary notes not matching the agenda sum

@@ -71,6 +71,9 @@ class WorkoutValidationIssue:
         return f"{prefix} (line {self.line_number}: {self.line or ''})"
 
 
+from rps.workouts.week_plan_consistency import collect_week_plan_consistency_issues  # noqa: E402
+
+
 def validate_week_plan_exportability(week_plan: JsonMap) -> None:
     """Validate agenda/workout references and each workout text before export."""
     issues = collect_week_plan_export_issues(week_plan)
@@ -122,6 +125,8 @@ def collect_week_plan_export_issues(week_plan: JsonMap) -> list[WorkoutValidatio
         if workout is None:
             continue
         issues.extend(validate_workout_definition(workout))
+
+    issues.extend(collect_week_plan_consistency_issues(week_plan))
 
     return issues
 

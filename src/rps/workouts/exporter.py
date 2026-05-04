@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TypeAlias
 
 from rps.workouts.validator import validate_week_plan_exportability
+from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 
 JsonMap: TypeAlias = dict[str, object]
 JsonList: TypeAlias = list[object]
@@ -12,6 +13,7 @@ JsonList: TypeAlias = list[object]
 
 def build_workout_export_payload(week_plan: JsonMap) -> list[JsonMap]:
     """Convert a validated week plan into the workout export payload."""
+    week_plan = normalize_week_plan_consistency(week_plan)
     validate_week_plan_exportability(week_plan)
     data = week_plan["data"]
     assert isinstance(data, dict)  # validated above

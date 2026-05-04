@@ -15,7 +15,12 @@ from rps.orchestrator.workout_export import run_workout_export  # noqa: E402
 from rps.workouts.exporter import build_workout_export_payload  # noqa: E402
 from rps.workouts.validator import (  # noqa: E402
     WorkoutValidationError,
+    collect_week_plan_export_issues,
     validate_week_plan_exportability,
+)
+from rps.workouts.week_plan_consistency import (  # noqa: E402
+    derive_workout_duration_hhmmss,
+    normalize_week_plan_consistency,
 )
 from rps.workspace.guarded_store import GuardedValidatedStore  # noqa: E402
 from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
@@ -125,6 +130,48 @@ class WorkoutExportTests(unittest.TestCase):
         self.assertEqual(payload[0]["type"], "Ride")
         self.assertEqual(payload[0]["name"], "Endurance Re-Entry")
         self.assertIn("2x", payload[0]["description"])
+
+    def test_derive_workout_duration_honors_simple_loop_blocks(self) -> None:
+        text = (
+            "Warmup\n- 10m ramp 50%-70% 85-90rpm\n\n"
+            "Main Set\n2x\n- 20m 80% 88-92rpm\n- 5m 60% 85rpm\n\n"
+            "Cooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        self.assertEqual(derive_workout_duration_hhmmss(text), "01:08:00")
+
+    def test_normalize_week_plan_repairs_sentinel_duration_and_agenda_kj(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 10m ramp 50%-68% 85-90rpm\n\nMain Set\n- 1h27m 70% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        week_plan["data"]["week_summary"]["notes"] = "Weekly planned_kJ mechanical total across agenda = 0."
+        week_plan["data"]["agenda"][0]["planned_duration"] = "00:00"
+        week_plan["data"]["agenda"][0]["planned_kj"] = 0
+        week_plan["data"]["workouts"][0]["duration"] = "00:00:01"
+        week_plan["data"]["workouts"][0]["notes"] = "ENDURANCE. planned_kJ 1260; planned_Load_kJ 1280."
+
+        normalized = normalize_week_plan_consistency(week_plan)
+
+        agenda_row = normalized["data"]["agenda"][0]
+        workout = normalized["data"]["workouts"][0]
+        self.assertEqual(agenda_row["planned_duration"], "01:45")
+        self.assertEqual(agenda_row["planned_kj"], 1260)
+        self.assertEqual(workout["duration"], "01:45:00")
+        self.assertIn("= 1260.", normalized["data"]["week_summary"]["notes"])
+
+    def test_validate_week_plan_rejects_linked_zero_duration_and_zero_kj(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 89m 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        week_plan["data"]["agenda"][0]["planned_duration"] = "00:00"
+        week_plan["data"]["agenda"][0]["planned_kj"] = 0
+        week_plan["data"]["workouts"][0]["duration"] = "00:00:01"
+        week_plan["data"]["workouts"][0]["notes"] = ""
+
+        issues = [issue.format() for issue in collect_week_plan_export_issues(week_plan)]
+
+        self.assertTrue(any("invalid duration metadata" in issue for issue in issues))
+        self.assertTrue(any("non-zero planned_duration" in issue for issue in issues))
+        self.assertTrue(any("positive planned_kj" in issue for issue in issues))
 
     def test_run_workout_export_stores_week_scoped_payload(self) -> None:
         week_plan = _sample_week_plan(
@@ -259,3 +306,94 @@ class WorkoutExportTests(unittest.TestCase):
                     for error in exc.exception.errors
                 )
             )
+
+    def test_guarded_store_normalizes_repairable_week_plan_consistency(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 10m ramp 50%-68% 85-90rpm\n\nMain Set\n- 1h27m 70% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        week_plan["data"]["week_summary"]["notes"] = "Weekly planned_kJ mechanical total across agenda = 0."
+        week_plan["data"]["agenda"][0]["planned_duration"] = "00:00"
+        week_plan["data"]["agenda"][0]["planned_kj"] = 0
+        week_plan["data"]["workouts"][0]["duration"] = "00:00:01"
+        week_plan["data"]["workouts"][0]["notes"] = "ENDURANCE. planned_kJ 1260; planned_Load_kJ 1280."
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            guarded = GuardedValidatedStore(
+                athlete_id="ath_004",
+                schema_dir=Path("specs/schemas"),
+                workspace_root=root,
+            )
+            guarded.store.ensure_workspace("ath_004")
+            guarded.store.save_document(
+                "ath_004",
+                ArtifactType.PHASE_STRUCTURE,
+                "2026-17--2026-19__20260424_094939",
+                {"meta": {"artifact_type": "PHASE_STRUCTURE"}, "data": {}},
+                producer_agent="phase_architect",
+                run_id="phase_structure_test",
+                update_latest=True,
+            )
+
+            guarded.guard_put_validated(
+                output_spec=OutputSpec(
+                    task=AgentTask.CREATE_WEEK_PLAN,
+                    artifact_type=ArtifactType.WEEK_PLAN,
+                    schema_file="week_plan.schema.json",
+                    tool_name="store_week_plan",
+                    envelope=True,
+                ),
+                document=week_plan,
+                run_id="week_plan_test",
+                producer_agent="week_planner",
+                update_latest=True,
+            )
+
+            saved = guarded.store.load_version("ath_004", ArtifactType.WEEK_PLAN, "2026-17")
+            agenda_row = saved["data"]["agenda"][0]
+            workout = saved["data"]["workouts"][0]
+            self.assertEqual(agenda_row["planned_duration"], "01:45")
+            self.assertEqual(agenda_row["planned_kj"], 1260)
+            self.assertEqual(workout["duration"], "01:45:00")
+
+    def test_guarded_store_rejects_unrepairable_week_plan_consistency(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 89m 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        week_plan["data"]["agenda"][0]["planned_duration"] = "00:00"
+        week_plan["data"]["agenda"][0]["planned_kj"] = 0
+        week_plan["data"]["workouts"][0]["duration"] = "00:00:01"
+        week_plan["data"]["workouts"][0]["notes"] = ""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            guarded = GuardedValidatedStore(
+                athlete_id="ath_005",
+                schema_dir=Path("specs/schemas"),
+                workspace_root=root,
+            )
+            guarded.store.ensure_workspace("ath_005")
+            guarded.store.save_document(
+                "ath_005",
+                ArtifactType.PHASE_STRUCTURE,
+                "2026-17--2026-19__20260424_094939",
+                {"meta": {"artifact_type": "PHASE_STRUCTURE"}, "data": {}},
+                producer_agent="phase_architect",
+                run_id="phase_structure_test",
+                update_latest=True,
+            )
+
+            with self.assertRaises(SchemaValidationError) as exc:
+                guarded.guard_put_validated(
+                    output_spec=OutputSpec(
+                        task=AgentTask.CREATE_WEEK_PLAN,
+                        artifact_type=ArtifactType.WEEK_PLAN,
+                        schema_file="week_plan.schema.json",
+                        tool_name="store_week_plan",
+                        envelope=True,
+                    ),
+                    document=week_plan,
+                    run_id="week_plan_test",
+                    producer_agent="week_planner",
+                    update_latest=True,
+                )
+
+            self.assertTrue(any("positive planned_kj" in error for error in exc.exception.errors))

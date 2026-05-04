@@ -30,3 +30,4 @@ Owner: UI
   - editor always previews first
   - user must confirm before apply
   - apply writes a new guarded `WEEK_PLAN` version and rebuilds `INTERVALS_WORKOUTS`
+  - preview/apply uses the same deterministic `WEEK_PLAN` consistency normalization and validation as the planner/store path
