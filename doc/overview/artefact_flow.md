@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-10
+Last-Updated: 2026-05-04
 Owner: Overview
 ---
 # Artefact Flow
 
 Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-02-10  
+Last-Updated: 2026-05-04  
 Format: GitHub-renderable Markdown + Mermaid
 
 ---
@@ -183,6 +183,11 @@ flowchart LR
 - `season_plan_yyyy-ww--yyyy-ww.json` (binding)
 - `season_phase_feed_forward_yyyy-ww.json` (optional)
 
+**Version-Key Semantics**
+- `season_phase_feed_forward_yyyy-ww.json` is selected-week scoped.
+- The `yyyy-ww` key must match the completed analysis / selected source week that triggered the Season -> Phase feed-forward.
+- Example: a completed DES analysis for `2026-18` produces `season_phase_feed_forward_2026-18.json`.
+
 ```mermaid
 flowchart LR
   U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> MA["Season-Planner"]:::agent
@@ -218,6 +223,11 @@ flowchart LR
 - `season_phase_feed_forward_yyyy-ww.json` (optional, binding if present)
 - `planning_events_*.json` (informational)
 - `logistics_*.json` (informational)
+
+**Version-Key Semantics**
+- `phase_feed_forward_yyyy-ww.json` is phase-anchored, not selected-week scoped.
+- The `yyyy-ww` key must be the first ISO week in the covered phase `iso_week_range`.
+- Example: for phase range `2026-17--2026-19`, the stored artefact is `phase_feed_forward_2026-17.json` even if the triggering `season_phase_feed_forward` came from selected week `2026-18`.
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational)
 - `availability_yyyy-ww.json` (informational)
 - `wellness_yyyy-ww.json` (informational)

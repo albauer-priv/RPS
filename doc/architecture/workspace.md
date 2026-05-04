@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-05-04
 Owner: Architecture
 ---
 # Workspace
 
 Version: 2.0  
 Status: Updated  
-Last-Updated: 2026-01-20
+Last-Updated: 2026-05-04
 
 ---
 
@@ -85,6 +85,17 @@ Templates are available under:
 | `logs/` | System | Single `rps.log` (rotated) + log sidecars |
 | `runs/` | System | Run records (`run.json`, `steps.json`, `events.jsonl`) + queue state |
 | `rendered/` | renderer | Markdown sidecars derived from JSON artefacts |
+
+### Feed-Forward Keying Rules
+
+- `season_phase_feed_forward_<iso_week>.json` is keyed by the selected completed source week.
+- `phase_feed_forward_<iso_week>.json` is keyed by the first ISO week in its `meta.iso_week_range`.
+- This asymmetry is intentional:
+  - Season -> Phase feed-forward answers: "what follows from completed week X?"
+  - Phase feed-forward answers: "what guidance applies to the phase that starts in week Y?"
+- For example:
+  - `season_phase_feed_forward_2026-18.json`
+  - `phase_feed_forward_2026-17.json` with `meta.iso_week_range = 2026-17--2026-19`
 
 ---
 

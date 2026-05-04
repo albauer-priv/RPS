@@ -865,3 +865,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Data pipeline docs updated to reference `get_intervals_data.py`.
 - System docs updated for workspace handling and validation flow.
+## 2026-05-04
+
+- docs: clarified intentional feed-forward version-key asymmetry across `SEASON_PHASE_FEED_FORWARD` and `PHASE_FEED_FORWARD` in artefact flow, workspace, and Feed Forward UI docs
