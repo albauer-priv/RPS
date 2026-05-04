@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from typing import TypeAlias
+
+from rps.workouts.issues import WorkoutValidationIssue
 
 JsonMap: TypeAlias = dict[str, object]
 
@@ -52,26 +53,7 @@ FORBIDDEN_WATTS_RE = re.compile(r"\b\d+(?:\.\d+)?[wW]\b")
 
 class WorkoutValidationError(ValueError):
     """Raised when workout export preconditions are not satisfied."""
-
-
-@dataclass(frozen=True)
-class WorkoutValidationIssue:
-    """A deterministic validation issue for one workout or workout line."""
-
-    workout_id: str
-    message: str
-    line: str | None = None
-    line_number: int | None = None
-
-    def format(self) -> str:
-        """Return a stable human-readable error string."""
-        prefix = f"{self.workout_id}: {self.message}"
-        if self.line_number is None:
-            return prefix
-        return f"{prefix} (line {self.line_number}: {self.line or ''})"
-
-
-from rps.workouts.week_plan_consistency import collect_week_plan_consistency_issues  # noqa: E402
+from rps.workouts.week_plan_consistency import collect_week_plan_consistency_issues
 
 
 def validate_week_plan_exportability(week_plan: JsonMap) -> None:

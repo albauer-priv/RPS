@@ -6,7 +6,7 @@ import copy
 import re
 from typing import TypeAlias
 
-from rps.workouts.validator import WorkoutValidationIssue
+from rps.workouts.issues import WorkoutValidationIssue
 
 JsonMap: TypeAlias = dict[str, object]
 
