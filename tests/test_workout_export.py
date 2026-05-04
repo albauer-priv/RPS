@@ -158,6 +158,20 @@ class WorkoutExportTests(unittest.TestCase):
         self.assertEqual(workout["duration"], "01:45:00")
         self.assertIn("= 1260.", normalized["data"]["week_summary"]["notes"])
 
+    def test_normalize_week_plan_overrides_duration_drift_from_workout_text(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 10m ramp 50%-75% 85-90rpm\n\nMain Set\n- 90m 80%-82% 88-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        week_plan["data"]["agenda"][0]["planned_duration"] = "01:50"
+        week_plan["data"]["workouts"][0]["duration"] = "01:50:00"
+
+        normalized = normalize_week_plan_consistency(week_plan)
+
+        agenda_row = normalized["data"]["agenda"][0]
+        workout = normalized["data"]["workouts"][0]
+        self.assertEqual(agenda_row["planned_duration"], "01:48")
+        self.assertEqual(workout["duration"], "01:48:00")
+
     def test_validate_week_plan_rejects_linked_zero_duration_and_zero_kj(self) -> None:
         week_plan = _sample_week_plan(
             "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 89m 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"

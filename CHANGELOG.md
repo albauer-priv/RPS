@@ -870,3 +870,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: clarified intentional feed-forward version-key asymmetry across `SEASON_PHASE_FEED_FORWARD` and `PHASE_FEED_FORWARD` in artefact flow, workspace, and Feed Forward UI docs
 - fix: scoped phase-run completion logs now report the effective executed phase artefacts, including bundled `PHASE_PREVIEW` reruns
 - fix: `WEEK_PLAN` store/export now normalizes and validates linked workout duration, agenda duration, agenda mechanical `planned_kj`, and summary mechanical totals before save/export
+- fix: deterministic workout duration derived from `workout_text` now overrides drifting stored `duration` / `planned_duration` values instead of only repairing sentinel durations

@@ -52,7 +52,7 @@ def normalize_week_plan_consistency(week_plan: JsonMap) -> JsonMap:
         derived_seconds = derive_workout_duration_seconds(str(workout.get("workout_text") or ""))
         current_seconds = _hhmmss_to_seconds(str(workout.get("duration") or ""))
         effective_seconds = current_seconds
-        if derived_seconds > 0 and current_seconds <= 1:
+        if derived_seconds > 0:
             effective_seconds = derived_seconds
             workout["duration"] = _seconds_to_hhmmss(derived_seconds)
         elif current_seconds <= 1 and derived_seconds <= 0:
