@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,7 @@ from rps.tools.knowledge_search import search_knowledge
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import IsoWeekRange
+from rps.workspace.local_store import normalize_loaded_document
 from rps.workspace.phase_from_season_plan import IsoWeek
 from rps.workspace.phase_resolution import add_weeks
 from rps.workspace.season_plan_service import (
@@ -426,11 +428,22 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         input_type = str(args["input_type"]).strip()
         year = int(args["year"]) if args.get("year") is not None else None
         path = _find_input_file(workspace.store.athlete_root(workspace.athlete_id), input_type, year=year)
+        raw_content = path.read_text(encoding="utf-8")
+        parsed_content: object | None = None
+        try:
+            parsed_content = normalize_loaded_document(json.loads(raw_content))
+        except Exception:
+            parsed_content = None
         return {
             "ok": True,
             "input_type": input_type,
             "path": str(path),
-            "content": path.read_text(encoding="utf-8"),
+            "content": (
+                json.dumps(parsed_content, ensure_ascii=False, indent=2)
+                if parsed_content is not None
+                else raw_content
+            ),
+            "document": parsed_content,
         }
 
     def knowledge_search(args: dict[str, Any]) -> object:

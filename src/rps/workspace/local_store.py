@@ -129,6 +129,11 @@ def _normalize_loaded_meta(document: object) -> object:
     normalized["meta"] = meta_map
     return normalized
 
+
+def normalize_loaded_document(document: object) -> object:
+    """Return a canonicalized loaded document for legacy envelopes and inputs."""
+    return _normalize_loaded_meta(document)
+
 def utc_iso_now() -> str:
     """Return the current time in ISO-8601 UTC format."""
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())

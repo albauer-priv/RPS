@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `workspace_get_input` now canonicalizes JSON input envelopes through the same legacy-meta normalization used for regular workspace artefacts, so old inputs such as `LOGISTICS` with `meta.data_confidence: "USER"` no longer reach agents as invalid raw payloads in performance/feed-forward runs.
 - Plan → Workouts now includes a bounded `Workout Editor` chat for the selected ISO week: users can preview moving a workout to an empty day, changing a start time, or replacing workout text, then explicitly apply the pending edit through the guarded `WEEK_PLAN` store and deterministic `INTERVALS_WORKOUTS` rebuild; `Coach` remains read-only.
 - Bumped the application version to `0.11.0` for the snapshot-memory architecture expansion: Feed Forward now uses snapshot-first injection, Coach prefers central memory over raw artefact preload when available, and a new derived `ADVISORY_MEMORY` artefact tracks non-binding narrative context from recent planning/advisory outputs.
 - Planner orchestration now persists code-owned derived memory snapshots (`ATHLETE_STATE_SNAPSHOT`, `PLANNING_CONTEXT_SNAPSHOT`) under `data/context/` and injects these snapshot files as the primary runtime memory for season/phase/week planning, while authoritative source artefacts remain unchanged.

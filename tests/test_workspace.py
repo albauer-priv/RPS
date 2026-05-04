@@ -507,6 +507,47 @@ class WorkspaceReadToolTests(unittest.TestCase):
             self.assertIn("_tool_warning", result)
             self.assertIn("week-sensitive", result["_tool_warning"])
 
+    def test_workspace_get_input_canonicalizes_legacy_meta(self) -> None:
+        """Verify input reads normalize legacy meta like data_confidence=USER."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_011"
+            store.ensure_workspace(athlete_id)
+            inputs_dir = store.athlete_root(athlete_id) / "inputs"
+            inputs_dir.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "meta": {
+                    "artifact_type": "LOGISTICS",
+                    "data_confidence": "USER",
+                    "created_at": "2026-05-04T09:00:00Z",
+                },
+                "data": {"travel": []},
+            }
+            (inputs_dir / "logistics_20260504.json").write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="performance_analysis",
+                )
+            )
+            result = handlers["workspace_get_input"]({"input_type": "logistics"})
+
+            self.assertIsInstance(result, dict)
+            self.assertTrue(result["ok"])
+            self.assertIsInstance(result.get("document"), dict)
+            document = result["document"]
+            assert isinstance(document, dict)
+            meta = document.get("meta")
+            assert isinstance(meta, dict)
+            self.assertEqual(meta.get("data_confidence"), "UNKNOWN")
+            self.assertIn('"data_confidence": "UNKNOWN"', result["content"])
+
     def test_workspace_tools_get_latest_warns_for_week_sensitive_artifact(self) -> None:
         """Verify validated workspace tools expose the same latest-warning guidance."""
         with tempfile.TemporaryDirectory() as tmpdir:
