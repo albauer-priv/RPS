@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-08
+Last-Updated: 2026-05-04
 Owner: Product
 ---
 # Feature Backlog
@@ -77,6 +77,9 @@ When resuming work, follow this order so context stays consistent:
 
 ## Deferred / Ideas
 
+- [ ] Manual smoke pass for `Workout Editor` — verify preview/apply flows for move, start-time change, and workout-text replacement against a real athlete week in the UI.
+- [ ] FEAT_workout_editor_swap_days — support bounded swap of two occupied workout days instead of move-to-empty-day only.
+- [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.
 - [ ] FEAT_run_progress_ui — progress indicators for long-running planning jobs.
