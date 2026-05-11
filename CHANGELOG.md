@@ -146,6 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local artifact writes now emit log entries in `rps.log` for easier debugging from Athlete Profile pages.
 
 ### Fixed
+- Z2 metric semantics are now aligned across the Intervals pipeline, activity artefacts, trend artefacts, and report/planner consumers: fields named `Z2 Share` now mean pure `Power TiZ Z2 / sum(Power TiZ Z1..Z7)`, while `Z1 + Z2` remains a separate low-intensity metric; the activity-level `Power TiZ Share Z2 (%)` bug and derived `Flag Z2 Share >= 60%/70%` logic were corrected accordingly.
+- Analyse → Report no longer renders the active `Creating performance report...` message twice in the same rerun; the job message now comes from a single shared render block and is covered by an AppTest regression.
 - Plan Week no longer crashes Intervals export due to `IsoWeek` formatting (week variable shadowing removed).
 - LiteLLM message builder now batches tool calls and always emits matching tool responses to satisfy OpenAI tool-call sequencing.
 - Tool output events now carry tool names through the runner to stabilize tool-call matching.

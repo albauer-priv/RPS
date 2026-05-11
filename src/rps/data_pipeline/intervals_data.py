@@ -10,8 +10,9 @@ import argparse
 import csv
 import json
 import logging
+import math
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime, timedelta
 from io import StringIO
 from pathlib import Path
@@ -358,6 +359,33 @@ ZONE_MODEL_DEFAULTS: dict[str, ZoneModelDefault] = {
         "training_intent": "Sprints / neuromuscular peaks",
     },
 }
+
+
+def _power_zone_share_percent(zone_seconds: dict[int, float], *, include_zones: Iterable[int]) -> float:
+    """Return the percentage share of selected power zones across Z1..Z7.
+
+    Args:
+        zone_seconds: Mapping of zone index -> seconds for zones 1..7.
+        include_zones: Zones to include in the numerator.
+
+    Returns:
+        Percentage value in the range 0..100 when total zone time is positive,
+        otherwise NaN.
+    """
+    def _clean(value: float | int | None) -> float:
+        if value is None:
+            return 0.0
+        try:
+            numeric = float(value)
+        except Exception:
+            return 0.0
+        return 0.0 if math.isnan(numeric) else numeric
+
+    total_seconds = sum(_clean(zone_seconds.get(zone, 0.0)) for zone in range(1, POWER_ZONE_COUNT + 1))
+    if total_seconds <= 0:
+        return np.nan
+    numerator_seconds = sum(_clean(zone_seconds.get(zone, 0.0)) for zone in include_zones)
+    return 100.0 * numerator_seconds / total_seconds
 
 
 def seconds_to_hms(seconds: float | int | None) -> str:
@@ -1287,9 +1315,7 @@ def export_range(
         + df["Power TiZ Z6 (s)"]
         + df["Power TiZ Z7 (s)"]
     )
-    df["Power TiZ Share Z2 (%)"] = (
-        (df["Power TiZ Z1 (s)"] + df["Power TiZ Z2 (s)"]) / pz_total.where(pz_total != 0) * 100.0
-    ).round(1)
+    df["Power TiZ Share Z2 (%)"] = ((df["Power TiZ Z2 (s)"] / pz_total.where(pz_total != 0)) * 100.0).round(1)
 
     move_min = df["Moving Time (s)"] / 60.0
     z2_min = df["Power TiZ Z2 (s)"] / 60.0
@@ -2087,8 +2113,8 @@ def compile_activities_trend(
             vo2_hr_sec_raw = hr_seconds if hr_seconds > 0 else 0.0
         vo2_eff_sec_raw = max(vo2_p_sec_raw, vo2_hr_sec_raw)
 
-        z2_pct_raw = (100.0 * pz_min_raw[2] / pz_sum) if pz_sum > 0 else np.nan
-        z1z2_pct_raw = (100.0 * (pz_min_raw[1] + pz_min_raw[2]) / pz_sum) if pz_sum > 0 else np.nan
+        z2_pct_raw = _power_zone_share_percent(pz_sec_raw, include_zones=(2,))
+        z1z2_pct_raw = _power_zone_share_percent(pz_sec_raw, include_zones=(1, 2))
         z5_pct_raw = (100.0 * pz_min_raw[5] / pz_sum) if pz_sum > 0 else np.nan
 
         mmp_out_raw = {}

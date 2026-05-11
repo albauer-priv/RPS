@@ -3148,6 +3148,27 @@ def test_performance_report_page_renders():
     assert len(at.error) == 0
 
 
+def test_performance_report_page_shows_single_active_job_message():
+    from rps.ui.shared import get_iso_year_week
+
+    year, week = get_iso_year_week()
+    at = AppTest.from_file("src/rps/ui/pages/performance/report.py")
+    at.session_state[f"report_job_test_athlete_{year:04d}{week:02d}"] = {
+        "thread": None,
+        "status": "running",
+        "message": "Creating performance report...",
+        "reasonings": [],
+        "logs": [],
+        "result": None,
+        "run_id": "test-report-run",
+    }
+    at.run(timeout=10)
+
+    assert len(at.error) == 0
+    creating_infos = [info for info in at.info if info.value == "Creating performance report..."]
+    assert len(creating_infos) == 1
+
+
 def test_data_metrics_page_renders():
     at = AppTest.from_file("src/rps/ui/pages/performance/data_metrics.py")
     at.run(timeout=10)

@@ -38,6 +38,7 @@ This folder contains the ADR log for RPS.
 - ADR-027: Consolidate Repo Layout into Runtime + Specs Roots
 - ADR-028: Snapshot-based Planner Memory
 - ADR-029: Bounded Chat Week Plan Edits
+- ADR-030: Z2 Metric Semantics
 
 ## Process (Short)
 

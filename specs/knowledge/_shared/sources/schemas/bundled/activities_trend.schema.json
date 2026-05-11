@@ -377,6 +377,7 @@
                 ],
                 "properties": {
                   "z1_z2_time_percent": {
+                    "description": "Combined low-intensity power-zone share as (Power TiZ Z1 + Power TiZ Z2) / sum(Power TiZ Z1..Z7) * 100.",
                     "type": [
                       "number",
                       "null"
@@ -389,6 +390,7 @@
                     ]
                   },
                   "z2_share_power_percent": {
+                    "description": "Pure Z2 power-zone share as Power TiZ Z2 / sum(Power TiZ Z1..Z7) * 100.",
                     "type": [
                       "number",
                       "null"
@@ -739,6 +741,7 @@
                     "minimum": 0
                   },
                   "weekly_z2_share": {
+                    "description": "Weekly Z2 time share as weekly_z2_time_total_min / weekly_moving_time_total_min * 100.",
                     "type": [
                       "number",
                       "null"
@@ -1182,6 +1185,7 @@
           ],
           "properties": {
             "z1_z2_time_percent": {
+              "description": "Combined low-intensity power-zone share as (Power TiZ Z1 + Power TiZ Z2) / sum(Power TiZ Z1..Z7) * 100.",
               "type": [
                 "number",
                 "null"
@@ -1194,6 +1198,7 @@
               ]
             },
             "z2_share_power_percent": {
+              "description": "Pure Z2 power-zone share as Power TiZ Z2 / sum(Power TiZ Z1..Z7) * 100.",
               "type": [
                 "number",
                 "null"
@@ -1544,6 +1549,7 @@
               "minimum": 0
             },
             "weekly_z2_share": {
+              "description": "Weekly Z2 time share as weekly_z2_time_total_min / weekly_moving_time_total_min * 100.",
               "type": [
                 "number",
                 "null"
@@ -2213,6 +2219,7 @@
                 ],
                 "properties": {
                   "z1_z2_time_percent": {
+                    "description": "Combined low-intensity power-zone share as (Power TiZ Z1 + Power TiZ Z2) / sum(Power TiZ Z1..Z7) * 100.",
                     "type": [
                       "number",
                       "null"
@@ -2225,6 +2232,7 @@
                     ]
                   },
                   "z2_share_power_percent": {
+                    "description": "Pure Z2 power-zone share as Power TiZ Z2 / sum(Power TiZ Z1..Z7) * 100.",
                     "type": [
                       "number",
                       "null"
@@ -2575,6 +2583,7 @@
                     "minimum": 0
                   },
                   "weekly_z2_share": {
+                    "description": "Weekly Z2 time share as weekly_z2_time_total_min / weekly_moving_time_total_min * 100.",
                     "type": [
                       "number",
                       "null"

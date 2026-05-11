@@ -96,6 +96,7 @@ at least 2 of:
 
 G1 - Structure (aerobic distribution)
 - Z2 Share (Power) (%) >= 60%
+  - Semantics: pure `Power TiZ Z2 / sum(Power TiZ Z1..Z7)`, not `Z1+Z2`
 
 G2 - Stability (durability / efficiency)
 Pass if either:

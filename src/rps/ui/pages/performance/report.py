@@ -291,7 +291,6 @@ if create_button:
             run_id_prefix=f"report_ui_{year:04d}{week:02d}",
         )
         st.session_state[job_key] = job
-        st.info(job["message"])
         set_status(
             status_state="running",
             title="Report",

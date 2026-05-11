@@ -460,6 +460,7 @@
                     ]
                   },
                   "power_tiz_share_z2": {
+                    "description": "Pure Z2 power-zone share as Power TiZ Z2 / sum(Power TiZ Z1..Z7) * 100. This is not a combined Z1+Z2 share.",
                     "type": [
                       "number",
                       "null"
@@ -1008,6 +1009,7 @@
               ]
             },
             "power_tiz_share_z2": {
+              "description": "Pure Z2 power-zone share as Power TiZ Z2 / sum(Power TiZ Z1..Z7) * 100. This is not a combined Z1+Z2 share.",
               "type": [
                 "number",
                 "null"
@@ -1782,6 +1784,7 @@
                     ]
                   },
                   "power_tiz_share_z2": {
+                    "description": "Pure Z2 power-zone share as Power TiZ Z2 / sum(Power TiZ Z1..Z7) * 100. This is not a combined Z1+Z2 share.",
                     "type": [
                       "number",
                       "null"

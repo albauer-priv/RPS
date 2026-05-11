@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-05-11
 Owner: UI
 ---
 # Analyse → Report
@@ -16,3 +16,4 @@ Owner: UI
 
 ## Actions
 - Create Report (orchestrated run)
+- While a report job is active, the page renders a single active-job info message for that run.
