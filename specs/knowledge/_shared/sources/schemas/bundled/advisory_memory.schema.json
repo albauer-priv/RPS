@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rps/specs/advisory_memory.schema.json",
+  "title": "AdvisoryMemoryInterface",
+  "type": "object",
+  "required": [
+    "meta",
+    "data"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "scope",
+        "iso_week",
+        "iso_week_range",
+        "temporal_scope",
+        "trace_upstream",
+        "trace_data",
+        "trace_events",
+        "data_confidence",
+        "notes"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "artifact_type": {
+          "const": "ADVISORY_MEMORY"
+        },
+        "schema_id": {
+          "const": "AdvisoryMemoryInterface"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "authority": {
+          "const": "Advisory"
+        },
+        "owner_agent": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "scope": {
+          "const": "Context"
+        },
+        "iso_week": {
+          "type": "string"
+        },
+        "iso_week_range": {
+          "type": "string"
+        },
+        "temporal_scope": {
+          "type": "object"
+        },
+        "trace_upstream": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "trace_data": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "trace_events": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "data_confidence": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "target_iso_week",
+        "source_versions",
+        "prompt_blocks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "target_iso_week": {
+          "type": "string"
+        },
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "prompt_blocks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
