@@ -87,34 +87,21 @@ def test_preview_report_and_feed_forward_operations_are_typed() -> None:
     assert "PHASE_FEED_FORWARD" in feed_forward_preview.affected_artifacts
 
 
-def test_runtime_gateway_auto_falls_back_to_legacy_under_python_314(monkeypatch) -> None:
+def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:
     monkeypatch.delenv("RPS_AGENT_RUNTIME", raising=False)
-    selection = agent_runtime.resolve_agent_runtime_selection()
-
-    assert selection.requested_backend == "auto"
-    assert selection.effective_backend == "legacy"
-    assert selection.can_execute is True
-    assert selection.is_fallback is True
-
-
-def test_runtime_gateway_respects_explicit_legacy_mode(monkeypatch) -> None:
-    monkeypatch.setenv("RPS_AGENT_RUNTIME", "legacy")
-    selection = agent_runtime.resolve_agent_runtime_selection()
-
-    assert selection.requested_backend == "legacy"
-    assert selection.effective_backend == "legacy"
-    assert selection.can_execute is True
-    assert selection.is_fallback is False
-
-
-def test_runtime_gateway_blocks_explicit_crewai_when_unavailable(monkeypatch) -> None:
-    monkeypatch.setenv("RPS_AGENT_RUNTIME", "crewai")
     selection = agent_runtime.resolve_agent_runtime_selection()
 
     assert selection.requested_backend == "crewai"
     assert selection.effective_backend == "crewai"
-    assert selection.can_execute is False
-    assert "unavailable" in selection.reason.lower()
+    assert selection.is_fallback is False
+
+
+def test_runtime_gateway_rejects_unknown_backend(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_AGENT_RUNTIME", "legacy")
+    selection = agent_runtime.resolve_agent_runtime_selection()
+
+    assert selection.requested_backend == "crewai"
+    assert selection.effective_backend == "crewai"
 
 
 def test_runtime_gateway_dispatches_to_crewai_backend(monkeypatch) -> None:
@@ -135,7 +122,9 @@ def test_runtime_gateway_dispatches_to_crewai_backend(monkeypatch) -> None:
         return {"ok": True, "produced": {}}
 
     monkeypatch.setattr(agent_runtime, "resolve_agent_runtime_selection", _fake_selection)
-    monkeypatch.setattr(agent_runtime, "_run_agent_multi_output_crewai", _fake_backend)
+    module = types.ModuleType("rps.agents.crewai_backend")
+    module.run_agent_multi_output_crewai = _fake_backend
+    monkeypatch.setitem(sys.modules, "rps.agents.crewai_backend", module)
 
     result = agent_runtime.run_agent_multi_output()
     assert result["ok"] is True
@@ -212,14 +201,6 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     )
 
     runtime = AgentRuntime(
-        client=SimpleNamespace(
-            config=SimpleNamespace(
-                api_key="test-key",
-                base_url="https://api.openai.com/v1",
-                org_id=None,
-                project_id=None,
-            )
-        ),
         model="openai/gpt-5-mini",
         temperature=1.0,
         reasoning_effort="medium",

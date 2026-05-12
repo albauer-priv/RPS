@@ -8,7 +8,6 @@ import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
 from rps.core.config import load_env_file
-from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
@@ -121,11 +120,9 @@ if failed_run_ids:
 
 if queue_counts["Pending"] and not queue_counts["Active"]:
     def _runtime_for_agent(agent_name: str) -> AgentRuntime:
-        client = get_client()
         return AgentRuntime(
-            client=client,
-            model=SETTINGS.openai_model,
-            temperature=SETTINGS.openai_temperature,
+            model=SETTINGS.model_for_agent(agent_name),
+            temperature=SETTINGS.temperature_for_agent(agent_name),
             reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
             reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
             max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),

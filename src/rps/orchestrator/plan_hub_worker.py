@@ -13,7 +13,6 @@ from pathlib import Path
 
 from rps.agents.runtime import AgentRuntime
 from rps.core.logging import DailySizeRotatingFileHandler
-from rps.openai.client import get_client
 from rps.orchestrator.plan_hub_actions import (
     execute_plan_week,
     execute_post_intervals,
@@ -82,19 +81,9 @@ def _artefact_versions(index: IndexRecord, artifact_type: ArtifactType) -> dict[
 
 
 def _poll_response_status(response_id: str) -> str | None:
-    """Poll OpenAI response status for a background response."""
-    try:
-        client = get_client()
-        resp = client.responses.retrieve(response_id)
-        status = getattr(resp, "status", None)
-        if status is not None:
-            return str(status)
-        if isinstance(resp, dict):
-            raw_status = resp.get("status")
-            return str(raw_status) if raw_status is not None else None
-        return None
-    except Exception:
-        return None
+    """Legacy response polling is disabled after CrewAI-only cutover."""
+    del response_id
+    return None
 
 
 def _set_duration(step: StepRecord) -> None:

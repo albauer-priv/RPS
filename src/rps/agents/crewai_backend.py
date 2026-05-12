@@ -9,8 +9,15 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-from rps.agents import multi_output_runner as legacy_runner
 from rps.agents.knowledge_injection import build_injection_block
+from rps.agents.output_normalization import (
+    extract_planning_events_document,
+    injection_mode_for_tasks,
+    load_shared_knowledge_source,
+    normalize_phase_guardrails_document,
+    normalize_season_scenarios_document,
+    normalize_workout_percent_ranges,
+)
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
@@ -130,7 +137,7 @@ def _normalize_week_plan_meta(document: JsonMap) -> JsonMap:
                     continue
                 workout_text = workout.get("workout_text")
                 if isinstance(workout_text, str):
-                    workout["workout_text"] = legacy_runner.normalize_workout_percent_ranges(workout_text)
+                    workout["workout_text"] = normalize_workout_percent_ranges(workout_text)
             data["workouts"] = workouts
         document["data"] = data
     return document
@@ -165,14 +172,14 @@ def _normalize_des_analysis_report(document: JsonMap) -> JsonMap:
 def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, object]) -> JsonMap:
     """Apply the same deterministic normalization rules as the legacy runner."""
 
-    normalized = legacy_runner.normalize_season_scenarios_document(
+    normalized = normalize_season_scenarios_document(
         document,
-        planning_events_document=legacy_runner._extract_planning_events_document(
+        planning_events_document=extract_planning_events_document(
             loaded_inputs.get("planning_events")
         ),
     )
     normalized = _fill_season_plan(normalized)
-    normalized = legacy_runner.normalize_phase_guardrails_document(normalized)
+    normalized = normalize_phase_guardrails_document(normalized)
     if spec.artifact_type == ArtifactType.WEEK_PLAN:
         normalized = _normalize_week_plan_meta(normalized)
         normalized = normalize_week_plan_consistency(normalized)
@@ -259,12 +266,12 @@ def _build_task_description(
     """Compose the final CrewAI task description from prompts, injections, and user input."""
 
     prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
-    mode = legacy_runner.injection_mode_for_tasks([task])
+    mode = injection_mode_for_tasks([task])
     injected_block = build_injection_block(agent_name, mode=mode)
     spec = OUTPUT_SPECS[task]
     mandatory_doc_name = _mandatory_output_doc_for_schema(spec.schema_file)
     mandatory_doc = (
-        legacy_runner._load_knowledge_source("specs", mandatory_doc_name)
+        load_shared_knowledge_source("specs", mandatory_doc_name)
         if mandatory_doc_name
         else None
     )

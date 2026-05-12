@@ -224,7 +224,7 @@ def create_performance_report(
     reasoning_stream_handler: Callable[[str], None] | None = None,
 ) -> OrchestratorResult:
     """Create a DES analysis report for the requested ISO week."""
-    agent_logger = logging.getLogger("rps.agents.multi_output_runner")
+    agent_logger = logging.getLogger("rps.agents.crewai_backend")
     summaries: list[str] = []
     log_messages: list[str] = []
 

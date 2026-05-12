@@ -133,15 +133,6 @@ def setup_logging(
     console_level: str | int | None = None,
 ) -> None:
     """Configure root logging with optional file output."""
-    class _DropLiteLLMDebugFilter(logging.Filter):
-        def filter(self, record: logging.LogRecord) -> bool:
-            if record.levelno > logging.DEBUG:
-                return True
-            if os.getenv("RPS_LLM_DEBUG", "0").strip().lower() in ("1", "true", "yes", "on"):
-                return True
-            name = record.name
-            return not (name.startswith("litellm") or name.startswith("LiteLLM"))
-
     root = logging.getLogger()
     root.handlers.clear()
     env_default_level = os.getenv("RPS_LOG_LEVEL")
@@ -167,7 +158,6 @@ def setup_logging(
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(console_level_value)
-        stream_handler.addFilter(_DropLiteLLMDebugFilter())
         handlers = [stream_handler]
 
     if log_file:
@@ -183,18 +173,10 @@ def setup_logging(
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(console_level_value)
-        stream_handler.addFilter(_DropLiteLLMDebugFilter())
         handlers = [stream_handler]
 
     for handler in handlers:
         root.addHandler(handler)
-
-    # Silence verbose LiteLLM debug unless explicitly raised elsewhere.
-    for name in ("litellm", "LiteLLM"):
-        llm_logger = logging.getLogger(name)
-        llm_logger.setLevel(logging.WARNING)
-        llm_logger.propagate = False
-        llm_logger.handlers.clear()
 
     if log_file:
         announce_level = max(file_level_value, console_level_value)

@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import litellm
+from openai import OpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.models import FieldCondition, Filter, MatchAny
 
@@ -29,12 +29,13 @@ class EmbeddingConfig:
 
 def resolve_embedding_config() -> EmbeddingConfig:
     """Resolve embedding settings from environment variables."""
+
     settings = load_settings()
     model = os.getenv("RPS_LLM_EMBEDDING_MODEL", "text-embedding-3-small").strip()
     if not model:
         raise RuntimeError("RPS_LLM_EMBEDDING_MODEL is required")
     return EmbeddingConfig(
-        model=model,
+        model=model.removeprefix("openai/"),
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
         org_id=settings.openai_org_id,
@@ -44,6 +45,7 @@ def resolve_embedding_config() -> EmbeddingConfig:
 
 def resolve_qdrant_path() -> str | None:
     """Return the configured Qdrant local path or None for in-memory."""
+
     raw = os.getenv("RPS_LLM_VECTORSTORE_PATH", ".cache/qdrant").strip()
     if not raw or raw.lower() in {"memory", ":memory:", "in-memory"}:
         return None
@@ -53,6 +55,7 @@ def resolve_qdrant_path() -> str | None:
 @lru_cache(maxsize=4)
 def _build_qdrant_client(path_key: str) -> QdrantClient:
     """Build and cache one Qdrant client per storage path."""
+
     if path_key == ":memory:":
         return QdrantClient(":memory:")
     return QdrantClient(path=path_key)
@@ -60,32 +63,38 @@ def _build_qdrant_client(path_key: str) -> QdrantClient:
 
 def get_qdrant_client() -> QdrantClient:
     """Return a local Qdrant client using the configured path."""
+
     path = resolve_qdrant_path()
     if path is None:
         return _build_qdrant_client(":memory:")
     return _build_qdrant_client(str(Path(path)))
 
 
+def _build_embedding_client(config: EmbeddingConfig) -> OpenAI:
+    """Create an OpenAI client for direct embedding requests."""
+
+    return OpenAI(
+        api_key=config.api_key,
+        base_url=config.base_url,
+        organization=config.org_id,
+        project=config.project_id,
+    )
+
+
 def embed_texts(texts: Iterable[str], config: EmbeddingConfig | None = None) -> list[list[float]]:
-    """Embed a sequence of texts using LiteLLM."""
+    """Embed a sequence of texts using the direct OpenAI embeddings API."""
+
     payload = list(texts)
     if not payload:
         return []
     cfg = config or resolve_embedding_config()
-    response: Any = litellm.embedding(
-        model=cfg.model,
-        input=payload,
-        api_key=cfg.api_key,
-        api_base=cfg.base_url,
-        organization=cfg.org_id,
-        project=cfg.project_id,
-    )
-    data = response["data"] if isinstance(response, dict) else getattr(response, "data", [])
-    return [item["embedding"] for item in data]
+    response: Any = _build_embedding_client(cfg).embeddings.create(model=cfg.model, input=payload)
+    return [list(item.embedding) for item in response.data]
 
 
 def build_tag_filter(tags: list[str] | None) -> Filter | None:
     """Return a Qdrant filter for tag matching, or None."""
+
     if not tags:
         return None
     cleaned = [tag.strip() for tag in tags if tag and tag.strip()]
@@ -104,6 +113,7 @@ def search_points(
     query_filter: Filter | None = None,
 ):
     """Search a collection, supporting old/new Qdrant client APIs."""
+
     if hasattr(client, "search"):
         return client.search(
             collection_name=collection_name,

@@ -14,7 +14,6 @@ TYPECHECK_GROUPS=(
   "src/rps/orchestrator"
   "src/rps/rendering/renderer.py"
   "src/rps/ui/intervals_refresh.py"
-  "src/rps/ui/rps_chatbot.py"
   "src/rps/ui/shared.py"
   "src/rps/ui/pages/athlete_profile/about_you.py"
   "src/rps/ui/pages/athlete_profile/availability.py"
@@ -22,6 +21,7 @@ TYPECHECK_GROUPS=(
   "src/rps/ui/pages/athlete_profile/logistics.py"
   "src/rps/ui/pages/coach.py"
   "src/rps/ui/pages/plan/hub.py"
+  "src/rps/ui/pages/plan/workouts.py"
   "src/rps/ui/pages/plan/season.py"
 )
 

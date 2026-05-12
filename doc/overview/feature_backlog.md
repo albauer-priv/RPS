@@ -11,19 +11,17 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 
 ## Ranked Backlog (with dependencies)
 
-1) **FEAT_multi_provider_llm** — LiteLLM-only runtime + embedded Qdrant + CrewAI cutover follow-up (in progress).  
+1) **FEAT_run_scheduler_resilience** — stuck-run detection and recovery.  
    Depends on: none
 2) **FEAT_user_inputs_io** — upload/download inputs (new modular inputs).  
    Depends on: FEAT_user_inputs_modular
 3) **FEAT_plan_adjustments** — adjust Season/Phase plans when constraints change.  
    Depends on: FEAT_user_inputs_modular, FEAT_user_data_editors
-4) **FEAT_run_scheduler_resilience** — stuck-run detection and recovery.  
-   Depends on: none
-5) **FEAT_user_management** — auth/login + per-user API keys and athlete ID.  
+4) **FEAT_user_management** — auth/login + per-user API keys and athlete ID.  
    Depends on: none (but changes deployment + config)
-6) **FEAT_docker_deploy** — image build + registry + deployment workflow.  
+5) **FEAT_docker_deploy** — image build + registry + deployment workflow.  
    Depends on: none (better after user_management for env clarity)
-7) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
+6) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
    Depends on: FEAT_posting_receipts_inspection
 
 ## Implemented / In-Progress
@@ -32,7 +30,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_parquet_readers — Parquet-first reads in Data & Metrics.
 - [x] FEAT_vectorstore_monitor — background monitor + reset behavior.
 - [~] FEAT_posting_receipts_inspection — receipt inspection + status (implemented; UX polish ongoing).
-- [~] FEAT_multi_provider_llm — LiteLLM runtime + embedded Qdrant (Docs + infra in progress).
+- [x] FEAT_multi_provider_llm — CrewAI-first runtime with direct provider config and embedded Qdrant.
 - [x] FEAT_user_inputs_modular — hard cut-over to modular inputs and new pages.
 - [x] FEAT_user_data_editors — editors for profile/goals, availability, events, logistics.
 - [x] FEAT_historical_baseline_refresh — refresh baseline from Intervals via UI.
@@ -46,6 +44,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_active_coach_operations — active Coach operations for bounded edits, replans, and advisory triggers with CrewAI foundation/config.
 - [x] FEAT_crewai_runtime_cutover — central agent runtime gateway, Python 3.13 container baseline, and initial CrewAI execution backend with explicit `auto|legacy|crewai` selection.
 - [x] FEAT_coach_crewai_decoupling — Coach page moved off `rps_chatbot`, with direct CrewAI turn execution and provider config independent of LiteLLM client objects.
+- [x] FEAT_litellm_runtime_removal — hard cutover to CrewAI-only runtime, Workout Editor chat migration, direct embedding calls, and removal of legacy LiteLLM/runtime modules.
 
 ## Unlock Graph (dependencies)
 
@@ -85,8 +84,6 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_workout_editor_swap_days — support bounded swap of two occupied workout days instead of move-to-empty-day only.
 - [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
 - [ ] Manual active `Coach` smoke pass — verify context read, bounded edit preview/apply, scoped replan preview/apply, report preview/apply, and feed-forward preview/apply against a real athlete week in the UI.
-- [ ] FEAT_litellm_runtime_removal — remove remaining legacy runtime/chat modules and product fallbacks once CrewAI parity is complete.
-- [ ] FEAT_crewai_runtime_activation — move the app runtime to a CrewAI-supported Python baseline and replace the gateway fallback with a real CrewAI execution backend.
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.
 - [ ] FEAT_run_progress_ui — progress indicators for long-running planning jobs.

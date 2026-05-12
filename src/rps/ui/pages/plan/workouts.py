@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 
+from rps.crewai_runtime.coach_chat import CoachTool, run_coach_turn
 from rps.orchestrator.week_plan_edits import (
     WeekPlanApplyResult,
     apply_week_plan_edit,
@@ -20,7 +20,6 @@ from rps.orchestrator.week_plan_edits import (
 from rps.orchestrator.week_revision import revise_week_plan
 from rps.prompts.loader import PromptLoader
 from rps.ui.intervals_post import delete_posted_workouts, post_to_intervals_commit
-from rps.ui.rps_chatbot import Chat, CustomFunction
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -83,14 +82,14 @@ def _editor_base_document(store: LocalArtifactStore, athlete_id: str, year: int,
     return load_week_plan_for_edit(store, athlete_id, year, week)
 
 
-def _workout_editor_functions(
+def _workout_editor_tools(
     *,
     store: LocalArtifactStore,
     athlete_id: str,
     year: int,
     week: int,
     version_key: str,
-) -> list[CustomFunction]:
+) -> list[CoachTool]:
     schema_dir = Path("specs/schemas")
 
     def _list_current_week_plan_workouts() -> str:
@@ -213,13 +212,13 @@ def _workout_editor_functions(
             return failed.to_json()
 
     return [
-        CustomFunction(
+        CoachTool(
             name="list_current_week_plan_workouts",
             description="Return the current selected week's agenda-linked workouts and basic metadata.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _list_current_week_plan_workouts(),
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_move_workout",
             description="Preview moving one workout to an empty target day within the selected ISO week.",
             parameters={
@@ -234,7 +233,7 @@ def _workout_editor_functions(
             },
             handler=_preview_move_workout,
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_change_start_time",
             description="Preview changing one workout's start time.",
             parameters={
@@ -248,7 +247,7 @@ def _workout_editor_functions(
             },
             handler=_preview_change_start_time,
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_update_workout_text",
             description="Preview replacing a workout's workout_text and optional title, notes, or start time.",
             parameters={
@@ -265,19 +264,19 @@ def _workout_editor_functions(
             },
             handler=_preview_update_workout_text,
         ),
-        CustomFunction(
+        CoachTool(
             name="show_pending_week_plan_edit",
             description="Return the currently pending preview edit, if one exists.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _show_pending_week_plan_edit(),
         ),
-        CustomFunction(
+        CoachTool(
             name="discard_pending_week_plan_edit",
             description="Discard the currently pending week-plan edit preview.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _discard_pending_week_plan_edit(),
         ),
-        CustomFunction(
+        CoachTool(
             name="apply_pending_week_plan_edit",
             description="Store the current pending week-plan edit and rebuild the workout export.",
             parameters={"type": "object", "properties": {}, "required": []},
@@ -411,42 +410,48 @@ else:
         "All changes apply only to this selected ISO week.\n"
         "You must use the provided tools; do not pretend a change was stored before apply_pending_week_plan_edit succeeds."
     )
-    model = st.session_state.get("workout_editor_model_cached") or ""
-    if not model:
-        model = os.getenv("RPS_LLM_MODEL_WORKOUT_EDITOR") or os.getenv("RPS_LLM_MODEL_COACH", "gpt-5-mini")
-        st.session_state["workout_editor_model_cached"] = model
-    chat = st.session_state.get(EDITOR_CHAT_KEY)
-    if chat and not isinstance(chat, Chat):
-        st.session_state.pop(EDITOR_CHAT_KEY, None)
-        chat = None
-    if chat and getattr(chat, "model", None) != model:
-        st.session_state.pop(EDITOR_CHAT_KEY, None)
-    if EDITOR_CHAT_KEY not in st.session_state:
-        st.session_state[EDITOR_CHAT_KEY] = Chat(
-            model=model,
-            instructions=instructions,
-            functions=_workout_editor_functions(
-                store=store,
-                athlete_id=athlete_id,
-                year=year,
-                week=week,
-                version_key=version_key,
-            ),
-            vector_store_ids=None,
-            allow_code_interpreter=False,
-            allow_file_search=False,
-            allow_web_search=False,
-            allow_image_generation=False,
-            placeholder="Move a workout, change a start time, or replace workout text…",
-            info_message="Bounded editor for the selected week. The editor previews first and only writes after explicit confirmation.",
-            example_messages=[
-                "Move the Saturday workout to Sunday.",
-                "Change the Tuesday workout start time to 19:00.",
-                "Replace the Thursday workout text with an easier endurance session.",
-            ],
-            agent_name="workout_editor",
-        )
-    st.session_state[EDITOR_CHAT_KEY].run()
+    messages = st.session_state.setdefault(EDITOR_CHAT_KEY, [])
+    if not isinstance(messages, list):
+        messages = []
+        st.session_state[EDITOR_CHAT_KEY] = messages
+    st.caption("Bounded editor for the selected week. The editor previews first and only writes after explicit confirmation.")
+    with st.expander("Editor Examples", expanded=False):
+        st.markdown("- Move the Saturday workout to Sunday.\n- Change the Tuesday workout start time to 19:00.\n- Replace the Thursday workout text with an easier endurance session.")
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        role = str(message.get("role") or "assistant")
+        content = str(message.get("content") or "")
+        if not content.strip():
+            continue
+        with st.chat_message(role):
+            st.markdown(content)
+    prompt = st.chat_input("Move a workout, change a start time, or replace workout text…", key="workout_editor_chat_input")
+    if prompt and prompt.strip():
+        messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        try:
+            reply = run_coach_turn(
+                instructions=instructions,
+                user_message=prompt,
+                history=messages[:-1],
+                tools=_workout_editor_tools(
+                    store=store,
+                    athlete_id=athlete_id,
+                    year=year,
+                    week=week,
+                    version_key=version_key,
+                ),
+                agent_name="workout_editor",
+                model_override=SETTINGS.model_for_agent("workout_editor"),
+                temperature_override=SETTINGS.temperature_for_agent("workout_editor"),
+            )
+        except Exception as exc:
+            reply = f"Workout editor failed: {exc}"
+        messages.append({"role": "assistant", "content": reply})
+        with st.chat_message("assistant"):
+            st.markdown(reply)
     try:
         week_plan_payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version_key)
     except FileNotFoundError:

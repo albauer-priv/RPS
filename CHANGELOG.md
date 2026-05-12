@@ -10,14 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added an active Coach operation layer on top of the existing runtime: Coach can now inspect selected-week plan context, preview/apply bounded `WEEK_PLAN` edits, preview/apply scoped week replans, and trigger DES report / feed-forward runs through explicit operation tools with mandatory preview + confirm semantics.
 - Added initial CrewAI foundation files under `config/crewai/` and `src/rps/crewai_runtime/`, including YAML agent/task definitions, typed operation result models, and a runtime compatibility helper that reports the current Python `3.14` blocker for full CrewAI activation.
-- Added a central agent runtime gateway under `src/rps/agents/runtime.py` with explicit `RPS_AGENT_RUNTIME=auto|legacy|crewai` selection so planner/advisory flows now route through one cutover point instead of importing `multi_output_runner` directly.
+- Added a CrewAI-only agent runtime gateway under `src/rps/agents/runtime.py`, so planner/advisory flows now route through one cutover point without any legacy backend fallback.
 - Added a direct CrewAI provider-config resolver plus a dedicated CrewAI one-turn chat runner for the Coach page, so conversational Coach turns no longer depend on `rps_chatbot` or the legacy LiteLLM client object.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
 - Advisory report/feed-forward execution now has reusable orchestrator helpers instead of only page-local wiring, so the same actions can be invoked from the active Coach surface.
-- All planner/advisory orchestrators and shared UI runtime helpers now import the unified runtime gateway, and Coach shows the effective backend/fallback reason while the repo remains on Python `3.14`.
+- All planner/advisory orchestrators and shared UI runtime helpers now import the unified runtime gateway, and Coach shows the effective CrewAI runtime state directly.
 - Coach page now renders its own Streamlit chat transcript and executes conversational turns through CrewAI-native `Agent`/`Task`/`Crew` objects, while the CrewAI persisted-artefact backend resolves provider settings directly from `RPS_LLM_*` env vars instead of reading `LiteLLMClient.config`.
+
+### Removed
+- Removed the remaining LiteLLM-era runtime stack: `rps.openai.litellm_runtime`, `rps.openai.client`, `rps.openai.streaming`, `rps.openai.response_utils`, `rps.openai.runtime`, `rps.agents.runner`, `rps.agents.runner_strict`, `rps.agents.multi_output_runner`, and `rps.ui.rps_chatbot`.
+
+### Changed
+- Workout Editor chat on Plan → Workouts now uses the same CrewAI-native turn runner pattern as Coach instead of the legacy `rps_chatbot` transport, while preserving preview-before-apply semantics.
+- Shared planner normalization helpers now live in `rps.agents.output_normalization`, so persisted CrewAI tasks no longer import legacy runner code just to recover schema/artefact invariants.
+- Embedded Qdrant embeddings now use direct OpenAI client calls instead of `litellm.embedding(...)`, and dependency manifests no longer include `litellm`.
 
 ## [0.11.1] - 2026-05-12
 

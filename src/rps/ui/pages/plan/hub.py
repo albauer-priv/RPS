@@ -13,7 +13,6 @@ import pandas as pd
 import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
-from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.queue_scheduler import enqueue_run, ensure_queue_dirs, start_queue_scheduler
 from rps.prompts.loader import PromptLoader
@@ -358,11 +357,9 @@ SCOPE_STEPS: dict[str, list[str]] = {
 
 def _runtime_for_agent(agent_name: str) -> AgentRuntime:
     """Build a runtime for the given agent without Streamlit state."""
-    client = get_client()
     return AgentRuntime(
-        client=client,
-        model=SETTINGS.openai_model,
-        temperature=SETTINGS.openai_temperature,
+        model=SETTINGS.model_for_agent(agent_name),
+        temperature=SETTINGS.temperature_for_agent(agent_name),
         reasoning_effort=SETTINGS.reasoning_effort_for_agent(agent_name),
         reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
         max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),
