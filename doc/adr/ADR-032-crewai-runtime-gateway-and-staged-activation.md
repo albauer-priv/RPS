@@ -10,7 +10,7 @@ Owner: Runtime
 
 RPS now contains CrewAI YAML/task foundations and active coach operations, but planning/advisory flows were still hard-wired to `rps.agents.multi_output_runner`.
 
-At the same time, upstream CrewAI `1.14.4` declares `Requires-Python: >=3.10,<3.14`, while this repo currently runs on Python `3.14`.
+At the time the gateway was introduced, upstream CrewAI `1.14.4` declared `Requires-Python: >=3.10,<3.14`, while the repo still ran on Python `3.14`.
 
 That creates a real runtime contradiction:
 
@@ -25,19 +25,19 @@ That creates a real runtime contradiction:
    * `auto`
    * `legacy`
    * `crewai`
-4. `auto` must preserve current behavior by falling back to the legacy backend whenever CrewAI cannot execute.
+4. `auto` must preserve current behavior by falling back to the legacy backend whenever CrewAI cannot execute in the current interpreter.
 5. Explicit `crewai` mode must fail fast when CrewAI is unavailable or unsupported; it must not silently fall back.
 6. Coach UI should surface the effective runtime state to avoid ambiguity.
-7. The current repo does **not** claim production CrewAI execution readiness until:
-   * Python baseline moves to a supported version, and
-   * a real CrewAI execution bridge is implemented.
+7. Production activation requires both:
+   * a supported Python baseline, and
+   * a real CrewAI execution bridge.
 
 ## Consequences
 
 ### Positive
 
 * Future CrewAI activation is now a contained backend change rather than a broad import refactor.
-* The repo remains runnable on Python `3.14`.
+* The repo remained runnable on Python `3.14` during the staged cutover.
 * Runtime state and fallback semantics become explicit and testable.
 
 ### Negative
@@ -47,7 +47,4 @@ That creates a real runtime contradiction:
 
 ### Neutral / Follow-up
 
-* A later change must either:
-  * move the app runtime to Python `<3.14`, or
-  * wait for upstream CrewAI Python `3.14` support.
-* The real CrewAI execution bridge remains a follow-up feature.
+* The follow-up change moves the app/container runtime to Python `3.13` and wires a first real CrewAI execution bridge for persisted artefact tasks.

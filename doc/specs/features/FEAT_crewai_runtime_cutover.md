@@ -20,7 +20,7 @@ Owner: Runtime / Planning
 
 * Planning/advisory orchestrators import `rps.agents.multi_output_runner` directly.
 * The repo now contains CrewAI YAML/config foundations, but no single runtime switch point.
-* Upstream CrewAI `1.14.4` requires Python `<3.14`, while this repo runs on Python `3.14`.
+* Upstream CrewAI `1.14.4` requires Python `<3.14`; when this work started, the repo still ran on Python `3.14`.
 
 **Problem**
 
@@ -30,7 +30,7 @@ Owner: Runtime / Planning
 
 **Constraints**
 
-* The app must remain runnable on Python `3.14`.
+* The app had to remain runnable during the transition from Python `3.14` to a CrewAI-supported baseline.
 * Existing artefact contracts and guarded-store semantics must remain unchanged.
 * User-visible planning/report flows must not regress while the CrewAI execution path remains blocked upstream.
 
@@ -62,7 +62,7 @@ Owner: Runtime / Planning
   * `auto` (default): use CrewAI only when fully executable; otherwise fall back to legacy.
   * `legacy`: force the current LiteLLM/multi-output runner.
   * `crewai`: require CrewAI and fail fast when it cannot execute.
-* While the repo remains on Python `3.14`, `auto` resolves to legacy fallback with an explicit reason.
+* During transition, `auto` resolves to legacy fallback whenever the current interpreter cannot execute CrewAI.
 
 **UI impact**
 
@@ -159,12 +159,12 @@ flowchart TD
 
 **Summary**
 
-* Introduce a central runtime gateway now, keep legacy execution as the effective backend until CrewAI can run.
+* Introduce a central runtime gateway now, then move the supported runtime to Python `3.13` and enable CrewAI where possible.
 
 **Pros**
 
 * Removes broad call-site coupling immediately.
-* Keeps the repo runnable on Python `3.14`.
+* Keeps the repo runnable during the baseline transition.
 * Makes later CrewAI activation a smaller, contained change.
 
 **Cons**
@@ -200,7 +200,7 @@ flowchart TD
 
 * [x] All planner/advisory orchestrators import the unified runtime gateway instead of `multi_output_runner`.
 * [x] `RPS_AGENT_RUNTIME` supports `auto|legacy|crewai`.
-* [x] `auto` falls back to legacy on Python `3.14` with an explicit reason.
+* [x] `auto` falls back to legacy when the current interpreter cannot execute CrewAI, with an explicit reason.
 * [x] Coach page shows the effective runtime state.
 * [x] Validation passes: `py_compile`, targeted pytest, lint, typecheck.
 
@@ -211,7 +211,7 @@ flowchart TD
 **Migration strategy**
 
 * No artefact migration required.
-* Runtime selection defaults to `auto`, which preserves current behavior on Python `3.14`.
+* Runtime selection defaults to `auto`, which preserves current behavior in unsupported interpreters.
 
 **Rollout / gating**
 
@@ -222,10 +222,10 @@ flowchart TD
 
 ## 9) Risks & Failure Modes
 
-* Failure mode: explicit `RPS_AGENT_RUNTIME=crewai` on Python `3.14`
+* Failure mode: explicit `RPS_AGENT_RUNTIME=crewai` on an unsupported interpreter
   * Detection: startup/runtime error with clear reason
   * Safe behavior: fail fast rather than silently switching backends
-  * Recovery: use `auto` or `legacy`, or move to Python `<3.14`
+  * Recovery: use `auto` or `legacy`, or move to a CrewAI-supported Python baseline
 
 * Failure mode: hidden call sites still import legacy runtime directly
   * Detection: search/tests
@@ -269,5 +269,5 @@ Update these docs as part of implementation:
 ## Out of Scope / Deferred
 
 * Production CrewAI execution bridge
-* Python baseline move to `<3.14`
+* Full task-by-task CrewAI parity beyond persisted artefact tasks
 * Removal of legacy LiteLLM/runtime modules

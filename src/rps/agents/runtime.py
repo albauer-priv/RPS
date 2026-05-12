@@ -34,7 +34,7 @@ class AgentRuntimeSelection:
 def _crewai_execution_implemented() -> bool:
     """Return whether the repo contains a production CrewAI execution bridge."""
 
-    return False
+    return True
 
 
 def configured_agent_backend() -> str:
@@ -114,16 +114,11 @@ def resolve_agent_runtime_selection(
 
 
 def _run_agent_multi_output_crewai(*args: Any, **kwargs: Any) -> JsonMap:
-    """Execute a run through the CrewAI backend.
+    """Execute a run through the CrewAI backend."""
 
-    The repo is not yet on a CrewAI-supported Python baseline and does not ship
-    a production execution bridge, so this path is intentionally blocked.
-    """
+    from rps.agents.crewai_backend import run_agent_multi_output_crewai
 
-    raise RuntimeError(
-        "CrewAI backend execution is not implemented yet. "
-        "Use RPS_AGENT_RUNTIME=legacy or keep the default auto mode."
-    )
+    return run_agent_multi_output_crewai(*args, **kwargs)
 
 
 def run_agent_multi_output(*args: Any, **kwargs: Any) -> JsonMap:
@@ -135,4 +130,3 @@ def run_agent_multi_output(*args: Any, **kwargs: Any) -> JsonMap:
     if not selection.can_execute:
         raise RuntimeError(selection.reason)
     return _run_agent_multi_output_crewai(*args, **kwargs)
-

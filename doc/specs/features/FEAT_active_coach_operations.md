@@ -21,7 +21,7 @@ Owner: Planning / Coach / Runtime
 * The `Coach` page is conversational but read-only.
 * Tactical plan changes are split between a read-only coach and a bounded `Workout Editor`.
 * Advisory actions such as report/feed-forward generation are page-bound and not exposed as reusable coach operations.
-* CrewAI runtime adoption is blocked in the current app runtime because upstream CrewAI currently requires Python `<3.14`.
+* At the time of this feature, CrewAI runtime adoption was blocked because the app runtime was still Python `3.14` while CrewAI required `<3.14`.
 
 **Problem**
 
@@ -31,7 +31,7 @@ Owner: Planning / Coach / Runtime
 
 **Constraints**
 
-* Current repo runtime is Python `3.14`.
+* Current repo runtime at implementation time was Python `3.14`.
 * Persisted artifacts must remain schema-valid and flow through guarded store.
 * Preview + confirm remains mandatory for chat-driven mutations.
 * No arbitrary filesystem writes from chat are allowed.
@@ -45,7 +45,7 @@ Owner: Planning / Coach / Runtime
 * [x] Turn the `Coach` page into an active plan-adjustment chat surface.
 * [x] Expose bounded edit and scoped week-replan operations directly in coach chat.
 * [x] Expose report/feed-forward trigger actions through reusable orchestrator helpers.
-* [x] Introduce initial CrewAI config/model foundation without breaking the current Python `3.14` runtime.
+* [x] Introduce initial CrewAI config/model foundation without breaking the then-current Python `3.14` runtime.
 
 **Non-Goals**
 
@@ -142,7 +142,7 @@ flowchart TD
 * Breaking changes:
   * Coach is no longer described as read-only
 * Fallback behavior:
-  * CrewAI runtime remains non-activated while Python `3.14` is in use
+  * CrewAI runtime remained non-activated while Python `3.14` was still in use
 
 **Conflicts with ADRs / Principles**
 
@@ -158,7 +158,7 @@ flowchart TD
 * Renderer: unchanged
 * Workspace/run-store: unchanged persistence rules
 * Validation/tooling: operation previews now reuse week-plan consistency/guarded-store rules
-* Deployment/config: add CrewAI YAML config foundation; no CrewAI dependency activation under Python `3.14`
+* Deployment/config: add CrewAI YAML config foundation; initial change shipped before Python baseline moved off `3.14`
 
 **Required refactoring**
 
@@ -179,7 +179,7 @@ flowchart TD
 
 * Delivers the product behavior immediately.
 * Keeps artifact safety and deterministic boundaries intact.
-* Avoids breaking the app on Python `3.14`.
+* Avoided breaking the app while it still ran on Python `3.14`.
 
 **Cons**
 
@@ -251,7 +251,7 @@ flowchart TD
 * Failure mode: CrewAI package expectation mismatch
   * Detection: runtime compatibility helper reports unsupported Python version
   * Safe behavior: current runtime remains active
-  * Recovery: move to Python `<3.14` before activating CrewAI runtime
+  * Recovery: move to a CrewAI-supported Python baseline before activating the runtime
 
 ---
 

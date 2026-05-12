@@ -3,11 +3,11 @@ name = "rps"
 version = "0.11.1"
 description = "Randonneur Performance System (RPS) for endurance planning and feedback."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13,<3.14"
 dependencies = [
   "openai>=1.40.0",
   "litellm>=1.81.6",
-  "crewai>=1.14.4; python_version < '3.14'",
+  "crewai>=1.14.4,<2.0.0",
   "qdrant-client>=1.16.2",
   "streamlit>=1.38.0",
   "tiktoken>=0.7.0",
@@ -37,7 +37,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.13"
 show_error_codes = true
 pretty = true
 warn_unused_ignores = true
@@ -48,7 +48,7 @@ exclude = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py313"
 extend-exclude = ["runtime"]
 
 [tool.ruff.lint]

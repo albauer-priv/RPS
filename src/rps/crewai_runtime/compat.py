@@ -27,7 +27,7 @@ def crewai_runtime_status() -> CrewAIRuntimeStatus:
     if ok:
         message = "CrewAI runtime can be activated."
     elif not python_supported:
-        message = "CrewAI runtime is blocked in this repo because the app runs on Python 3.14."
+        message = "CrewAI runtime is blocked in this interpreter because Python 3.14 is unsupported."
     else:
         message = "CrewAI runtime package is not installed."
     return CrewAIRuntimeStatus(

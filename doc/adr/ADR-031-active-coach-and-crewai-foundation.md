@@ -17,7 +17,7 @@ RPS currently splits conversational and write-capable planning behavior:
 * tactical week edits live in a separate bounded workout editor.
 * report/feed-forward actions are page-local flows, not reusable coach operations.
 
-At the same time, a broader CrewAI rewrite is desired, but official CrewAI documentation and PyPI metadata currently require Python `<3.14`, while this repo runs on Python `3.14`.
+At the time of this decision, a broader CrewAI rewrite was desired, but official CrewAI documentation and PyPI metadata required Python `<3.14` while the repo still ran on Python `3.14`.
 
 ## Decision
 
@@ -45,4 +45,4 @@ At the same time, a broader CrewAI rewrite is desired, but official CrewAI docum
 
 * ADR-029 stated that `Coach` remains read-only.
   * Approved exception: `Coach` now becomes write-capable through narrow explicit operations only.
-* Full CrewAI runtime activation is intentionally deferred because official upstream support excludes Python `3.14`.
+* Full CrewAI runtime activation was intentionally deferred at the time because upstream support excluded Python `3.14`.

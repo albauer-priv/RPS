@@ -14,7 +14,7 @@ operations with a consistent global sidebar and status banner.
 From repo root:
 
 ```bash
-PYTHONPATH=src python3.14 -m streamlit run src/rps/ui/streamlit_app.py
+PYTHONPATH=src python3.13 -m streamlit run src/rps/ui/streamlit_app.py
 ```
 
 ## Notes

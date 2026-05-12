@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import sys
+import types
 from pathlib import Path
+from types import SimpleNamespace
 
 from rps.agents import runtime as agent_runtime
+from rps.agents.crewai_backend import run_agent_multi_output_crewai
+from rps.agents.runtime import AgentRuntime
+from rps.agents.tasks import AgentTask
 from rps.crewai_runtime import crewai_runtime_status, load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
@@ -20,6 +25,7 @@ from rps.orchestrator.coach_operations import (
     preview_report_operation,
     preview_scoped_week_replan_operation,
 )
+from rps.prompts.loader import PromptLoader
 
 
 def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
@@ -55,7 +61,7 @@ def test_crewai_runtime_status_reports_python_compatibility() -> None:
     if sys.version_info >= (3, 14):
         assert status.python_supported is False
         assert status.ok is False
-        assert "Python 3.14" in status.message
+        assert "unsupported" in status.message.lower()
     else:
         assert status.python_supported is True
 
@@ -108,3 +114,129 @@ def test_runtime_gateway_blocks_explicit_crewai_when_unavailable(monkeypatch) ->
     assert selection.effective_backend == "crewai"
     assert selection.can_execute is False
     assert "unavailable" in selection.reason.lower()
+
+
+def test_runtime_gateway_dispatches_to_crewai_backend(monkeypatch) -> None:
+    marker = {"called": False}
+
+    def _fake_selection():
+        return agent_runtime.AgentRuntimeSelection(
+            requested_backend="crewai",
+            effective_backend="crewai",
+            can_execute=True,
+            is_fallback=False,
+            reason="ok",
+            crewai_status=crewai_runtime_status(),
+        )
+
+    def _fake_backend(*args, **kwargs):
+        marker["called"] = True
+        return {"ok": True, "produced": {}}
+
+    monkeypatch.setattr(agent_runtime, "resolve_agent_runtime_selection", _fake_selection)
+    monkeypatch.setattr(agent_runtime, "_run_agent_multi_output_crewai", _fake_backend)
+
+    result = agent_runtime.run_agent_multi_output()
+    assert result["ok"] is True
+    assert marker["called"] is True
+
+
+def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> None:
+    fake_crewai = types.ModuleType("crewai")
+    fake_tools = types.ModuleType("crewai.tools")
+
+    class FakeLLM:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeAgent:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeTask:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.output_pydantic = kwargs["output_pydantic"]
+            self.output = None
+
+    class FakeCrew:
+        def __init__(self, *, tasks, **kwargs):
+            self.tasks = tasks
+            self.kwargs = kwargs
+
+        def kickoff(self):
+            task = self.tasks[0]
+            model_cls = task.output_pydantic
+            envelope = model_cls(
+                meta={
+                    "artifact_type": "SEASON_PLAN",
+                    "schema_id": "SeasonPlanInterface",
+                    "schema_version": "1.0",
+                },
+                data={},
+            )
+            task.output = SimpleNamespace(pydantic=envelope, raw=envelope.model_dump_json())
+            return task.output
+
+    class FakeProcess:
+        sequential = "sequential"
+
+    def _tool(name: str):
+        def _decorate(func):
+            func.tool_name = name
+            return func
+
+        return _decorate
+
+    fake_crewai.LLM = FakeLLM
+    fake_crewai.Agent = FakeAgent
+    fake_crewai.Task = FakeTask
+    fake_crewai.Crew = FakeCrew
+    fake_crewai.Process = FakeProcess
+    fake_tools.tool = _tool
+
+    monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
+    monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
+
+    saved = {"ok": True, "path": "/tmp/out.json", "version_key": "2026-19__x", "run_id": "run-1"}
+
+    def _fake_guard_put_validated(self, **kwargs):
+        return saved
+
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
+        _fake_guard_put_validated,
+    )
+
+    runtime = AgentRuntime(
+        client=SimpleNamespace(
+            config=SimpleNamespace(
+                api_key="test-key",
+                base_url="https://api.openai.com/v1",
+                org_id=None,
+                project_id=None,
+            )
+        ),
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_agent_multi_output_crewai(
+        runtime,
+        agent_name="season_planner",
+        agent_vs_name="vs_rps_all_agents",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_SEASON_PLAN],
+        user_input="Create the season plan.",
+        run_id="run-1",
+    )
+
+    assert result["ok"] is True
+    assert result["produced"]["store_season_plan"] == saved

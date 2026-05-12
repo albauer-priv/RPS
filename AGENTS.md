@@ -62,7 +62,7 @@ This file is the **README for coding agents** working in this repository. It con
 
 ### Tech stack & constraints
 
-* **Languages/Frameworks:** Python 3.14, Streamlit, OpenAI **Responses API**.
+* **Languages/Frameworks:** Python 3.13, Streamlit, OpenAI **Responses API**, CrewAI.
 * **Code style:** Pythonic, minimal side effects.
 * **Dependencies:** **No new dependencies without approval.**
 
