@@ -312,6 +312,9 @@ def run_feed_forward_chain(
         report_runner=lambda: report_result,
         season_phase_runner=_run_season_phase,
         phase_runner=_run_phase_feed_forward,
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id_prefix,
     )
     season_ff_result = flow_results["season_phase_result"]
     if not season_ff_result.get("ok"):

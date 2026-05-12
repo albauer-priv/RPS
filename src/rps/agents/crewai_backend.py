@@ -26,6 +26,7 @@ from rps.crewai_runtime.bindings import (
 )
 from rps.crewai_runtime.config import load_crewai_config_bundle
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs
+from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.guarded_store import GuardedValidatedStore
@@ -312,9 +313,20 @@ def _execute_crewai_task(
     llm: object,
     tools: list[Any],
     description: str,
+    athlete_id: str | None = None,
+    run_id: str | None = None,
 ) -> Any:
     """Execute one CrewAI task and return its typed output."""
 
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_STARTED",
+        crew="single_task",
+        agent=agent_name,
+        task=task_blueprint.name,
+    )
     agent = _build_crewai_agent(
         agent_cls,
         blueprint=agent_blueprint,
@@ -342,6 +354,24 @@ def _execute_crewai_task(
             f"CrewAI task '{task_blueprint.name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
         )
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_TASK_FINISHED",
+        crew="single_task",
+        agent=agent_name,
+        task=task_blueprint.name,
+    )
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_FINISHED",
+        crew="single_task",
+        agent=agent_name,
+        task=task_blueprint.name,
+    )
     return pydantic_output
 
 
@@ -382,9 +412,20 @@ def _execute_crewai_hierarchical_crew(
     tools: list[Any],
     user_input: str,
     final_public_task: AgentTask | None = None,
+    athlete_id: str | None = None,
+    run_id: str | None = None,
 ) -> Any:
     """Execute one real multi-agent hierarchical crew and return the final typed output."""
 
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_STARTED",
+        crew=final_task_name,
+        manager=manager_agent_name,
+        tasks=list(crew_task_names),
+    )
     agents_by_name: dict[str, object] = {}
     for task_name in crew_task_names:
         task_blueprint = task_blueprints[task_name]
@@ -457,6 +498,17 @@ def _execute_crewai_hierarchical_crew(
         crew_kwargs["manager_llm"] = llm
     crew = crew_cls(**crew_kwargs)
     result = crew.kickoff()
+    for task_name, crew_task in zip(crew_task_names, crew_tasks, strict=False):
+        if getattr(crew_task, "output", None) is None:
+            continue
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="CREW_TASK_FINISHED",
+            crew=final_task_name,
+            task=task_name,
+        )
     pydantic_output = _extract_typed_output(result, final_task_obj)
     if pydantic_output is None:
         raw = getattr(getattr(final_task_obj, "output", None), "raw", None)
@@ -464,6 +516,14 @@ def _execute_crewai_hierarchical_crew(
             f"CrewAI crew final task '{final_task_name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
         )
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_FINISHED",
+        crew=final_task_name,
+        manager=manager_agent_name,
+    )
     return pydantic_output
 
 
@@ -528,6 +588,8 @@ def _run_season_plan_document(
     llm: object,
     tools: list[Any],
     task_blueprint: Any,
+    athlete_id: str,
+    run_id: str,
 ) -> JsonMap:
     """Execute the hierarchical season crew and return the final manager document."""
     pydantic_output = _execute_crewai_hierarchical_crew(
@@ -545,6 +607,8 @@ def _run_season_plan_document(
         tools=tools,
         user_input=user_input,
         final_public_task=AgentTask.CREATE_SEASON_PLAN,
+        athlete_id=athlete_id,
+        run_id=run_id,
     )
     document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(document, dict):
@@ -564,6 +628,8 @@ def _run_phase_bundle_document(
     process_cls: Any,
     llm: object,
     tools: list[Any],
+    athlete_id: str,
+    run_id: str,
 ) -> JsonMap:
     """Execute the hierarchical phase crew once and return the final PhaseBundle document."""
     final_task_name = _PHASE_INTERNAL_TASKS[-1]
@@ -582,6 +648,8 @@ def _run_phase_bundle_document(
         tools=tools,
         user_input=user_input,
         final_public_task=None,
+        athlete_id=athlete_id,
+        run_id=run_id,
     )
     bundle_document = (
         pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
@@ -670,6 +738,8 @@ def run_phase_bundle_crewai(
             process_cls=Process,
             llm=llm,
             tools=tools,
+            athlete_id=athlete_id,
+            run_id=run_id,
         )
     except Exception as exc:
         return {
@@ -718,6 +788,14 @@ def run_phase_bundle_crewai(
             logger.warning("CrewAI phase bundle store failed for %s: %s", output_spec.artifact_type.value, exc)
             return {"ok": False, "error": str(exc), "warnings": warnings, "produced": produced}
         produced[output_spec.tool_name] = saved
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="ARTEFACT_WRITTEN",
+            artifact_type=output_spec.artifact_type.value,
+            outputs=[saved],
+        )
 
     return {"ok": True, "produced": produced, "warnings": warnings}
 
@@ -929,6 +1007,8 @@ def run_agent_multi_output_crewai(
                 llm=llm,
                 tools=tools,
                 task_blueprint=task_blueprint,
+                athlete_id=athlete_id,
+                run_id=run_id,
             )
         else:
             description = _build_task_description(
@@ -949,6 +1029,8 @@ def run_agent_multi_output_crewai(
                 llm=llm,
                 tools=tools,
                 description=description,
+                athlete_id=athlete_id,
+                run_id=run_id,
             )
             document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     except Exception as exc:
@@ -991,4 +1073,12 @@ def run_agent_multi_output_crewai(
         logger.warning("CrewAI store failed for %s: %s", output_spec.artifact_type.value, exc)
         return {"ok": False, "error": str(exc), "produced": {}}
 
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="ARTEFACT_WRITTEN",
+        artifact_type=output_spec.artifact_type.value,
+        outputs=[saved],
+    )
     return {"ok": True, "produced": {output_spec.tool_name: saved}}

@@ -29,7 +29,9 @@ This document is the canonical registry of agents, their roles, modes, and artif
 - Season and Phase specialists now use dedicated prompt slices instead of reusing the top-level planner prompts.
 - Outer Season and Phase orchestration is wrapped in CrewAI Flows; grouped Phase runs reuse one internal `PhaseBundle` before deterministic public artefact persistence.
 - Outer Week, Report, and Feed-Forward orchestration now also uses CrewAI Flow wrappers.
+- Coach turn execution now routes through a dedicated CrewAI Flow wrapper before falling back to the tool-driven chat turn, so explicit confirm/discard/status messages are first-class flow routes.
 - Season and Phase specialist work now runs inside one hierarchical CrewAI crew per run instead of repeated one-task crew executions.
+- Flow/Crew runtime telemetry is written into per-run `events.jsonl` and surfaced from Plan Hub, System Status, and System History.
 
 ## Related Docs
 

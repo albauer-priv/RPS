@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added dedicated prompt slices for Season and Phase specialist roles, so internal CrewAI specialists no longer reuse the top-level `season_planner` / `phase_architect` prompts.
 - Added CrewAI Flow wrappers for outer Season and Phase orchestration under `src/rps/crewai_runtime/flows.py`.
 - Added CrewAI Flow wrappers for outer Week, Report, and Feed-Forward orchestration, bringing the remaining planning/advisory chains onto the same Flow wrapper pattern.
+- Added a Coach Flow router on top of the CrewAI turn runner, so explicit confirm/discard/pending-status messages now run through dedicated Flow routes instead of only page-local branching.
+- Added additive `FLOW_*`, `CREW_*`, and direct `ARTEFACT_WRITTEN` runtime telemetry for direct CrewAI runs, with shared UI rendering on Plan Hub, System Status, and System History.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Responsibility boundaries are now aligned across CrewAI config, runtime normalization, and architecture docs: `Season-Planner` is the binding owner of `SEASON_PLAN` and `SEASON_PHASE_FEED_FORWARD`, `Phase-Architect` owns phase artefacts and `PHASE_FEED_FORWARD`, `Performance-Analyst` is diagnostic-only, and phase cadence is explicitly an application of season authority rather than a phase-selected default.
 - Season entrypoints now route through CrewAI Flow-backed outer orchestration, and scoped `Run Phase` execution now computes one internal `PhaseBundle` and persists the requested public phase artefacts from that single grouped run instead of re-running the internal specialist chain per artefact.
 - Season and Phase specialist execution now runs as one real hierarchical CrewAI crew per run instead of serial one-task crews, while Week revision, DES report generation, and feed-forward chaining now route through CrewAI Flow wrappers.
+- Coach turns now create foreground run-store records and reuse the same run id for nested apply operations, so Coach-triggered flow, crew, and persisted artefact events stay traceable in one run timeline.
 
 ### Removed
 - Removed the remaining LiteLLM-era runtime stack: `rps.openai.litellm_runtime`, `rps.openai.client`, `rps.openai.streaming`, `rps.openai.response_utils`, `rps.openai.runtime`, `rps.agents.runner`, `rps.agents.runner_strict`, `rps.agents.multi_output_runner`, and `rps.ui.rps_chatbot`.

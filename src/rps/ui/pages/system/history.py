@@ -15,6 +15,7 @@ from rps.ui.shared import (
     get_athlete_id,
     init_ui_state,
     render_global_sidebar,
+    render_run_event_table,
     render_status_panel,
     set_status,
 )
@@ -257,6 +258,21 @@ with tab_planning:
         st.dataframe(_style_superseded(df_runs), width="stretch")
     else:
         st.info("No Plan Hub runs yet.")
+    run_ids = [row["Run ID"] for row in plan_runs if row.get("Run ID") and row.get("Run ID") != "—"]
+    if run_ids:
+        selected_run_id = st.selectbox(
+            "Runtime telemetry run",
+            options=run_ids,
+            index=0,
+            key="history_runtime_run_id",
+        )
+        with st.expander("Flow / Crew Telemetry", expanded=False):
+            render_run_event_table(
+                workspace_root=SETTINGS.workspace_root,
+                athlete_id=athlete_id,
+                run_id=selected_run_id,
+                key_prefix="history_runtime_events",
+            )
     st.caption("Artefact history")
     st.dataframe(_run_history(limit=50, allowed=planning_types), width="stretch")
 with tab_data:

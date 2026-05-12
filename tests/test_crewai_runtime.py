@@ -16,6 +16,7 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
 )
 from rps.crewai_runtime.flows import (
+    run_coach_flow,
     run_feed_forward_flow,
     run_phase_flow,
     run_report_flow,
@@ -40,6 +41,7 @@ from rps.orchestrator.coach_operations import (
     preview_scoped_week_replan_operation,
 )
 from rps.prompts.loader import PromptLoader
+from rps.ui.run_store import load_events
 
 
 def _install_fake_flow_module(monkeypatch) -> None:
@@ -191,6 +193,31 @@ def test_preview_report_and_feed_forward_operations_are_typed() -> None:
     assert feed_forward_preview.operation == "preview_feed_forward"
     assert feed_forward_preview.requires_confirmation is True
     assert "PHASE_FEED_FORWARD" in feed_forward_preview.affected_artifacts
+
+
+def test_coach_flow_routes_confirmation_and_records_events(monkeypatch, tmp_path: Path) -> None:
+    _install_fake_flow_module(monkeypatch)
+
+    result = run_coach_flow(
+        workspace_root=tmp_path,
+        athlete_id="athlete",
+        run_id="run-1",
+        user_message="confirm",
+        has_pending_operation=True,
+        chat_runner=lambda: "chat",
+        apply_runner=lambda: "applied",
+        discard_runner=lambda: "discarded",
+        show_pending_runner=lambda: "pending",
+    )
+
+    assert result["route"] == "apply_pending"
+    assert result["response"] == "applied"
+    events = load_events(tmp_path, "athlete", "run-1")
+    event_types = [str(event.get("type")) for event in events]
+    assert "FLOW_STARTED" in event_types
+    assert "FLOW_ROUTED" in event_types
+    assert "FLOW_STEP_FINISHED" in event_types
+    assert "FLOW_FINISHED" in event_types
 
 
 def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:

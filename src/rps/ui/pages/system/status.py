@@ -19,6 +19,7 @@ from rps.ui.shared import (
     get_athlete_id,
     init_ui_state,
     render_global_sidebar,
+    render_run_event_table,
     render_status_panel,
     set_status,
 )
@@ -239,6 +240,23 @@ if filtered_runs:
         st.rerun()
 else:
     st.info("No matching runs.")
+
+if filtered_runs:
+    run_options = [str(run.get("run_id") or "") for run in filtered_runs if run.get("run_id")]
+    if run_options:
+        selected_run_id = st.selectbox(
+            "Runtime telemetry run",
+            options=run_options,
+            index=0,
+            key="status_runtime_run_id",
+        )
+        with st.expander("Flow / Crew Telemetry", expanded=False):
+            render_run_event_table(
+                workspace_root=SETTINGS.workspace_root,
+                athlete_id=athlete_id,
+                run_id=selected_run_id,
+                key_prefix="status_runtime_events",
+            )
 
 st.subheader("Latest Artefacts")
 index = WorkspaceIndexManager(root=SETTINGS.workspace_root, athlete_id=athlete_id).load()

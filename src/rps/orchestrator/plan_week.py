@@ -227,6 +227,7 @@ def create_performance_report(
 ) -> OrchestratorResult:
     """Create a DES analysis report for the requested ISO week."""
     if not _flow_wrapped:
+        spec = AGENTS["performance_analyst"]
         return run_report_flow(
             lambda: create_performance_report(
                 runtime_for,
@@ -241,7 +242,10 @@ def create_performance_report(
                 reasoning_summary_resolver=reasoning_summary_resolver,
                 reasoning_stream_handler=reasoning_stream_handler,
                 _flow_wrapped=True,
-            )
+            ),
+            workspace_root=runtime_for(spec.name).workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id_prefix,
         )
 
     agent_logger = logging.getLogger("rps.agents.crewai_backend")
@@ -835,6 +839,7 @@ def plan_week(
             run_id=f"{run_id}_phase_bundle",
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            workspace_root=runtime_for(spec.name).workspace_root,
         )
         steps.append({"agent": "phase_architect", "tasks": [task.value for task in phase_tasks], "result": out})
         if out.get("ok") and out.get("produced"):
@@ -1058,6 +1063,7 @@ def plan_week(
             run_id=f"{run_id}_week",
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            workspace_root=runtime_for(spec.name).workspace_root,
             force_file_search=force_file_search,
             max_num_results=max_num_results,
         )

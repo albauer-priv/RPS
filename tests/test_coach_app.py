@@ -40,6 +40,7 @@ def test_coach_source_exposes_active_operation_tools():
 def test_coach_source_no_longer_depends_on_rps_chatbot():
     source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
     assert "rps_chatbot" not in source
+    assert "run_coach_flow(" in source
 
 
 def test_workouts_editor_source_no_longer_depends_on_rps_chatbot():

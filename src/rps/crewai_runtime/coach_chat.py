@@ -7,10 +7,12 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from importlib import import_module
+from pathlib import Path
 from typing import Any
 
 from .compat import crewai_runtime_status
 from .provider import build_crewai_llm_kwargs
+from .telemetry import emit_runtime_event
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +81,9 @@ def run_coach_turn(
     agent_name: str = "coach",
     model_override: str | None = None,
     temperature_override: float | None = None,
+    workspace_root: Path | None = None,
+    athlete_id: str | None = None,
+    run_id: str | None = None,
 ) -> str:
     """Run one CrewAI-backed coach turn and return assistant text."""
 
@@ -136,7 +141,34 @@ def run_coach_turn(
         agent=agent,
     )
     crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
+    emit_runtime_event(
+        root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_STARTED",
+        crew="coach_turn",
+        agent=agent_name,
+        task="coach_turn",
+    )
     result = crew.kickoff()
+    emit_runtime_event(
+        root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_TASK_FINISHED",
+        crew="coach_turn",
+        agent=agent_name,
+        task="coach_turn",
+    )
+    emit_runtime_event(
+        root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="CREW_FINISHED",
+        crew="coach_turn",
+        agent=agent_name,
+        task="coach_turn",
+    )
 
     raw = getattr(task.output, "raw", None)
     if isinstance(raw, str) and raw.strip():

@@ -473,6 +473,61 @@ def make_ui_run_id(name: str) -> str:
     return f"ui_{safe}_{stamp}"
 
 
+def render_run_event_table(
+    *,
+    workspace_root: Path,
+    athlete_id: str,
+    run_id: str,
+    limit: int = 200,
+    key_prefix: str = "run_events",
+) -> None:
+    """Render filtered run-store events for one run."""
+
+    from rps.ui.run_store import load_events
+
+    events = load_events(workspace_root, athlete_id, run_id, limit=limit)
+    if not events:
+        st.info("No runtime events recorded for this run.")
+        return
+    event_types = sorted(
+        str(event_type)
+        for event in events
+        for event_type in [event.get("type")]
+        if event_type
+    )
+    filter_options = ["All", "FLOW_*", "CREW_*", "RUN_*", "STEP_*", *event_types]
+    selected_filter = st.selectbox(
+        "Event filter",
+        options=filter_options,
+        index=1 if "FLOW_*" in filter_options else 0,
+        key=f"{key_prefix}_filter_{run_id}",
+    )
+    rows: list[dict[str, object]] = []
+    for event in events:
+        event_type = str(event.get("type") or "")
+        if selected_filter == "FLOW_*" and not event_type.startswith("FLOW_"):
+            continue
+        if selected_filter == "CREW_*" and not event_type.startswith("CREW_"):
+            continue
+        if selected_filter == "RUN_*" and not event_type.startswith("RUN_"):
+            continue
+        if selected_filter == "STEP_*" and not event_type.startswith("STEP_"):
+            continue
+        if selected_filter not in {"All", "FLOW_*", "CREW_*", "RUN_*", "STEP_*"} and event_type != selected_filter:
+            continue
+        details = event.get("reason") or event.get("outputs") or event.get("route") or event.get("tasks") or "—"
+        rows.append(
+            {
+                "Timestamp": event.get("ts") or "—",
+                "Type": event_type or "—",
+                "Flow": event.get("flow") or "—",
+                "Step": event.get("step") or event.get("task") or "—",
+                "Details": details,
+            }
+        )
+    st.dataframe(rows, width="stretch", hide_index=True)
+
+
 def season_plan_covers_week(athlete_id: str, year: int, week: int) -> tuple[bool, str | None]:
     """Return whether the latest season plan covers the given ISO week."""
     store = LocalArtifactStore(root=SETTINGS.workspace_root)

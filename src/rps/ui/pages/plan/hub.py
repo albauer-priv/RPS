@@ -24,7 +24,6 @@ from rps.ui.run_store import (
     RunRecord,
     append_run,
     find_active_runs,
-    load_events,
     load_runs,
     update_run,
 )
@@ -37,6 +36,7 @@ from rps.ui.shared import (
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
+    render_run_event_table,
     render_status_panel,
     set_status,
 )
@@ -2053,42 +2053,13 @@ if active_run:
         )
         st.rerun()
     st.dataframe(active_steps, width="stretch")
-    events = load_events(
-        SETTINGS.workspace_root,
-        hub_scope["athlete_id"],
-        str(active_run.get("run_id") or ""),
-        limit=200,
-    )
-    if events:
-        with st.expander("Run events", expanded=False):
-            event_types = sorted(
-                str(event_type)
-                for event in events
-                for event_type in [event.get("type")]
-                if event_type
-            )
-            filter_options = ["All", "STEP_*", "RUN_*"] + event_types
-            default_index = 1 if active_run and active_run.get("status") in {"QUEUED", "RUNNING"} else 0
-            selected_filter = st.selectbox("Filter", options=filter_options, index=default_index)
-            event_rows = []
-            for event in events:
-                raw_event_type = event.get("type")
-                event_type = raw_event_type if isinstance(raw_event_type, str) else ""
-                if selected_filter == "STEP_*" and not event_type.startswith("STEP_"):
-                    continue
-                if selected_filter == "RUN_*" and not event_type.startswith("RUN_"):
-                    continue
-                if selected_filter not in {"All", "STEP_*", "RUN_*"} and event_type != selected_filter:
-                    continue
-                event_rows.append(
-                    {
-                        "Timestamp": event.get("ts") or "—",
-                        "Type": event_type or "—",
-                        "Step": event.get("step_id") or "—",
-                        "Details": event.get("reason") or event.get("outputs") or "—",
-                    }
-                )
-            st.dataframe(pd.DataFrame(event_rows), width="stretch")
+    with st.expander("Run events", expanded=False):
+        render_run_event_table(
+            workspace_root=SETTINGS.workspace_root,
+            athlete_id=hub_scope["athlete_id"],
+            run_id=str(active_run.get("run_id") or ""),
+            key_prefix="plan_hub_runtime_events",
+        )
     st.caption("Process controls are managed from System → Status.")
 else:
     st.info("No active run. Start planning to see execution steps.")

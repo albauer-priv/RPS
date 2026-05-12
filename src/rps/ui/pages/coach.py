@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from contextlib import suppress
+from datetime import UTC, datetime
 from pathlib import Path
 
 import streamlit as st
@@ -10,6 +11,7 @@ import streamlit as st
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.runtime import resolve_agent_runtime_selection
 from rps.crewai_runtime.coach_chat import CoachTool, run_coach_turn
+from rps.crewai_runtime.flows import run_coach_flow
 from rps.orchestrator.coach_operations import (
     apply_feed_forward_operation,
     apply_report_operation,
@@ -31,6 +33,7 @@ from rps.orchestrator.context_snapshots import (
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.ui.run_store import append_run, update_run
 from rps.ui.shared import (
     SETTINGS,
     get_athlete_id,
@@ -49,6 +52,7 @@ JsonMap = dict[str, object]
 COACH_PENDING_KEY = "coach_pending_operation"
 COACH_CONTEXT_KEY = "coach_context_key"
 COACH_MESSAGES_KEY = "coach_messages"
+COACH_ACTIVE_RUN_ID_KEY = "coach_active_run_id"
 
 
 def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str, object]]]:
@@ -140,6 +144,28 @@ def _coach_messages() -> list[JsonMap]:
         messages = []
         st.session_state[COACH_MESSAGES_KEY] = messages
     return messages
+
+
+def _start_coach_turn_run(*, athlete_id: str, year: int, week: int, user_message: str) -> str:
+    """Create one foreground run-store record for a Coach turn."""
+
+    run_id = make_ui_run_id(f"coach_turn_{year}_{week:02d}")
+    append_run(
+        SETTINGS.workspace_root,
+        athlete_id,
+        {
+            "run_id": run_id,
+            "status": "RUNNING",
+            "mode": "Interactive",
+            "process_type": "COACH",
+            "process_subtype": "TURN",
+            "scope": f"{year:04d}-{week:02d}",
+            "message": user_message,
+            "current_step": "coach_flow",
+            "started_at": datetime.now(UTC).isoformat(),
+        },
+    )
+    return run_id
 
 
 def _coach_summary(messages: list[JsonMap]) -> str:
@@ -276,7 +302,12 @@ def _active_coach_functions(
                 }
             )
         operation = str(pending.get("operation") or "")
-        run_id = make_ui_run_id(f"coach_op_{operation}_{year}_{week:02d}")
+        active_run_id = st.session_state.get(COACH_ACTIVE_RUN_ID_KEY)
+        run_id = (
+            str(active_run_id)
+            if isinstance(active_run_id, str) and active_run_id
+            else make_ui_run_id(f"coach_op_{operation}_{year}_{week:02d}")
+        )
         if operation == "preview_artifact_edit":
             document = pending.get("document")
             if not isinstance(document, dict):
@@ -571,27 +602,86 @@ for message in messages:
 
 prompt = st.chat_input("Ask the active coach to inspect, adjust, or replan…")
 if prompt:
-    messages.append({"role": "user", "content": prompt})
+    user_prompt = prompt
+    messages.append({"role": "user", "content": user_prompt})
     with st.chat_message("user"):
-        st.markdown(prompt)
+        st.markdown(user_prompt)
     if runtime_selection.effective_backend != "crewai" or not runtime_selection.can_execute:
         reply = (
             "Coach conversation runtime is not executable in this interpreter. "
             f"{runtime_selection.reason}"
         )
     else:
+        turn_run_id = _start_coach_turn_run(
+            athlete_id=athlete_id,
+            year=year,
+            week=week,
+            user_message=user_prompt,
+        )
+        st.session_state[COACH_ACTIVE_RUN_ID_KEY] = turn_run_id
         with st.spinner("Coach is thinking…"):
             try:
-                reply = run_coach_turn(
-                    instructions=instructions,
-                    user_message=prompt,
-                    history=messages[:-1],
-                    tools=tools,
-                    agent_name="coach",
-                    model_override=model,
+                flow_result = run_coach_flow(
+                    workspace_root=Path(SETTINGS.workspace_root),
+                    athlete_id=athlete_id,
+                    run_id=turn_run_id,
+                    user_message=user_prompt,
+                    has_pending_operation=bool(_coach_pending()),
+                    chat_runner=lambda: run_coach_turn(
+                        instructions=instructions,
+                        user_message=user_prompt,
+                        history=messages[:-1],
+                        tools=tools,
+                        agent_name="coach",
+                        model_override=model,
+                        workspace_root=Path(SETTINGS.workspace_root),
+                        athlete_id=athlete_id,
+                        run_id=turn_run_id,
+                    ),
+                    apply_runner=lambda: next(
+                        tool.handler()
+                        for tool in tools
+                        if tool.name == "apply_pending_coach_operation"
+                    ),
+                    discard_runner=lambda: next(
+                        tool.handler()
+                        for tool in tools
+                        if tool.name == "discard_pending_coach_operation"
+                    ),
+                    show_pending_runner=lambda: next(
+                        tool.handler()
+                        for tool in tools
+                        if tool.name == "show_pending_coach_operation"
+                    ),
+                )
+                reply = flow_result["response"]
+                update_run(
+                    SETTINGS.workspace_root,
+                    athlete_id,
+                    turn_run_id,
+                    {
+                        "status": "DONE",
+                        "current_step": None,
+                        "route": flow_result.get("route"),
+                        "message": user_prompt,
+                        "finished_at": datetime.now(UTC).isoformat(),
+                    },
                 )
             except Exception as exc:
                 reply = f"Coach turn failed: {exc}"
+                update_run(
+                    SETTINGS.workspace_root,
+                    athlete_id,
+                    turn_run_id,
+                    {
+                        "status": "FAILED",
+                        "current_step": None,
+                        "message": user_prompt,
+                        "finished_at": datetime.now(UTC).isoformat(),
+                    },
+                )
+            finally:
+                st.session_state.pop(COACH_ACTIVE_RUN_ID_KEY, None)
     messages.append({"role": "assistant", "content": reply})
     with st.chat_message("assistant"):
         st.markdown(reply)

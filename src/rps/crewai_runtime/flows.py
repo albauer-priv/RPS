@@ -1,9 +1,10 @@
-"""CrewAI Flow wrappers for outer season and phase orchestration."""
+"""CrewAI Flow wrappers for outer orchestration and Coach routing."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from importlib import import_module
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -11,6 +12,7 @@ from pydantic import BaseModel, Field
 from rps.agents.crewai_backend import run_phase_bundle_crewai
 from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
+from rps.crewai_runtime.telemetry import emit_runtime_event
 
 JsonMap = dict[str, Any]
 
@@ -49,6 +51,14 @@ class FeedForwardFlowState(BaseModel):
     phase_result: JsonMap = Field(default_factory=dict)
 
 
+class CoachFlowState(BaseModel):
+    """Structured state for one coach turn."""
+
+    user_message: str = ""
+    route: str = ""
+    response: str = ""
+
+
 def _load_flow_symbols() -> tuple[Any, Any, Any, Any]:
     """Load CrewAI Flow primitives lazily for runtime-safe imports."""
 
@@ -58,6 +68,29 @@ def _load_flow_symbols() -> tuple[Any, Any, Any, Any]:
     listen = getattr(flow_module, "listen")
     router = getattr(flow_module, "router")
     return Flow, start, listen, router
+
+
+def _emit_flow_event(
+    *,
+    workspace_root: Path | None,
+    athlete_id: str | None,
+    run_id: str | None,
+    event_type: str,
+    flow_name: str,
+    step: str | None = None,
+    **payload: object,
+) -> None:
+    """Emit one Flow-level event into the run-store."""
+
+    emit_runtime_event(
+        root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type=event_type,
+        flow=flow_name,
+        step=step,
+        **payload,
+    )
 
 
 def run_season_flow(
@@ -72,6 +105,7 @@ def run_season_flow(
     temperature_override: float | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
+    workspace_root: Path | None = None,
 ) -> JsonMap:
     """Execute one season outer step through a CrewAI Flow wrapper."""
 
@@ -89,14 +123,38 @@ def run_season_flow(
     class SeasonOuterFlow(Flow[SeasonFlowState]):
         @start()
         def bootstrap(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STARTED",
+                flow_name="season",
+                route=self.state.action,
+            )
             return self.state.action
 
         @router(bootstrap)
         def route(self, selected_action: str) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_ROUTED",
+                flow_name="season",
+                route=selected_action,
+            )
             return selected_action
 
         @listen("season_scenarios")
         def run_scenarios(self) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="season",
+                step="season_scenarios",
+            )
             self.state.result = run_agent_multi_output(
                 runtime_for(agent_name),
                 agent_name=agent_name,
@@ -110,10 +168,27 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="season",
+                step="season_scenarios",
+                ok=bool(self.state.result.get("ok")),
+            )
             return self.state.result
 
         @listen("season_scenario_selection")
         def run_selection(self) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="season",
+                step="season_scenario_selection",
+            )
             self.state.result = run_agent_multi_output(
                 runtime_for(agent_name),
                 agent_name=agent_name,
@@ -127,10 +202,27 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="season",
+                step="season_scenario_selection",
+                ok=bool(self.state.result.get("ok")),
+            )
             return self.state.result
 
         @listen("season_plan")
         def run_plan(self) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="season",
+                step="season_plan",
+            )
             self.state.result = run_agent_multi_output(
                 runtime_for(agent_name),
                 agent_name=agent_name,
@@ -144,11 +236,39 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="season",
+                step="season_plan",
+                ok=bool(self.state.result.get("ok")),
+            )
             return self.state.result
 
     flow = SeasonOuterFlow()
     flow.state.action = action
-    flow.kickoff()
+    try:
+        flow.kickoff()
+    except Exception as exc:
+        _emit_flow_event(
+            workspace_root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="FLOW_FAILED",
+            flow_name="season",
+            reason=str(exc),
+        )
+        raise
+    _emit_flow_event(
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="FLOW_FINISHED",
+        flow_name="season",
+        ok=bool(flow.state.result.get("ok")),
+    )
     return dict(flow.state.result)
 
 
@@ -162,6 +282,7 @@ def run_phase_flow(
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
+    workspace_root: Path | None = None,
 ) -> JsonMap:
     """Execute the outer Phase chain through one CrewAI Flow-backed bundle run."""
 
@@ -173,10 +294,27 @@ def run_phase_flow(
     class PhaseOuterFlow(Flow[PhaseFlowState]):
         @start()
         def bootstrap(self) -> list[str]:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STARTED",
+                flow_name="phase",
+                requested_tasks=list(self.state.requested_tasks),
+            )
             return list(self.state.requested_tasks)
 
         @listen(bootstrap)
         def run_bundle(self, _requested_tasks: list[str]) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="phase",
+                step="phase_bundle",
+                requested_tasks=list(self.state.requested_tasks),
+            )
             self.state.result = run_phase_bundle_crewai(
                 runtime,
                 agent_name=agent_name,
@@ -187,11 +325,39 @@ def run_phase_flow(
                 model_override=model_override,
                 temperature_override=temperature_override,
             )
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="phase",
+                step="phase_bundle",
+                ok=bool(self.state.result.get("ok")),
+            )
             return self.state.result
 
     flow = PhaseOuterFlow()
     flow.state.requested_tasks = [task.value for task in tasks]
-    flow.kickoff()
+    try:
+        flow.kickoff()
+    except Exception as exc:
+        _emit_flow_event(
+            workspace_root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="FLOW_FAILED",
+            flow_name="phase",
+            reason=str(exc),
+        )
+        raise
+    _emit_flow_event(
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="FLOW_FINISHED",
+        flow_name="phase",
+        ok=bool(flow.state.result.get("ok")),
+    )
     return dict(flow.state.result)
 
 
@@ -207,6 +373,7 @@ def run_week_flow(
     temperature_override: float | None = None,
     force_file_search: bool = True,
     max_num_results: int = 20,
+    workspace_root: Path | None = None,
 ) -> JsonMap:
     """Execute the outer Week chain through a CrewAI Flow wrapper."""
 
@@ -215,10 +382,25 @@ def run_week_flow(
     class WeekOuterFlow(Flow[WeekFlowState]):
         @start()
         def bootstrap(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STARTED",
+                flow_name="week",
+            )
             return "week_plan"
 
         @listen(bootstrap)
         def run_week(self, _label: str) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="week",
+                step="week_plan",
+            )
             self.state.result = run_agent_multi_output(
                 runtime_for(agent_name),
                 agent_name=agent_name,
@@ -232,15 +414,47 @@ def run_week_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="week",
+                step="week_plan",
+                ok=bool(self.state.result.get("ok")),
+            )
             return self.state.result
 
     flow = WeekOuterFlow()
-    flow.kickoff()
+    try:
+        flow.kickoff()
+    except Exception as exc:
+        _emit_flow_event(
+            workspace_root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="FLOW_FAILED",
+            flow_name="week",
+            reason=str(exc),
+        )
+        raise
+    _emit_flow_event(
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="FLOW_FINISHED",
+        flow_name="week",
+        ok=bool(flow.state.result.get("ok")),
+    )
     return dict(flow.state.result)
 
 
 def run_report_flow(
     report_runner: Callable[[], JsonMap],
+    *,
+    workspace_root: Path | None = None,
+    athlete_id: str | None = None,
+    run_id: str | None = None,
 ) -> JsonMap:
     """Execute report generation through a CrewAI Flow wrapper."""
 
@@ -249,15 +463,58 @@ def run_report_flow(
     class ReportOuterFlow(Flow[ReportFlowState]):
         @start()
         def bootstrap(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STARTED",
+                flow_name="report",
+            )
             return "report"
 
         @listen(bootstrap)
         def run_report(self, _label: str) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="report",
+                step="des_analysis_report",
+            )
             self.state.result = report_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="report",
+                step="des_analysis_report",
+                ok=bool(self.state.result.get("ok")),
+            )
             return self.state.result
 
     flow = ReportOuterFlow()
-    flow.kickoff()
+    try:
+        flow.kickoff()
+    except Exception as exc:
+        _emit_flow_event(
+            workspace_root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="FLOW_FAILED",
+            flow_name="report",
+            reason=str(exc),
+        )
+        raise
+    _emit_flow_event(
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="FLOW_FINISHED",
+        flow_name="report",
+        ok=bool(flow.state.result.get("ok")),
+    )
     return dict(flow.state.result)
 
 
@@ -266,6 +523,9 @@ def run_feed_forward_flow(
     report_runner: Callable[[], JsonMap],
     season_phase_runner: Callable[[], JsonMap],
     phase_runner: Callable[[], JsonMap],
+    workspace_root: Path | None = None,
+    athlete_id: str | None = None,
+    run_id: str | None = None,
 ) -> dict[str, JsonMap]:
     """Execute report -> season delta -> phase delta through a CrewAI Flow wrapper."""
 
@@ -274,11 +534,35 @@ def run_feed_forward_flow(
     class FeedForwardOuterFlow(Flow[FeedForwardFlowState]):
         @start()
         def bootstrap(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STARTED",
+                flow_name="feed_forward",
+            )
             return "report"
 
         @listen(bootstrap)
         def run_report(self, _label: str) -> JsonMap:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="feed_forward",
+                step="des_analysis_report",
+            )
             self.state.report_result = report_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="feed_forward",
+                step="des_analysis_report",
+                ok=bool(self.state.report_result.get("ok")),
+            )
             return self.state.report_result
 
         @listen(run_report)
@@ -286,7 +570,24 @@ def run_feed_forward_flow(
             if not self.state.report_result.get("ok"):
                 self.state.season_phase_result = {"ok": False, "skipped": True}
                 return self.state.season_phase_result
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="feed_forward",
+                step="season_phase_feed_forward",
+            )
             self.state.season_phase_result = season_phase_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="feed_forward",
+                step="season_phase_feed_forward",
+                ok=bool(self.state.season_phase_result.get("ok")),
+            )
             return self.state.season_phase_result
 
         @listen(run_season_phase)
@@ -294,13 +595,213 @@ def run_feed_forward_flow(
             if not self.state.season_phase_result.get("ok"):
                 self.state.phase_result = {"ok": False, "skipped": True}
                 return self.state.phase_result
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="feed_forward",
+                step="phase_feed_forward",
+            )
             self.state.phase_result = phase_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="feed_forward",
+                step="phase_feed_forward",
+                ok=bool(self.state.phase_result.get("ok")),
+            )
             return self.state.phase_result
 
     flow = FeedForwardOuterFlow()
-    flow.kickoff()
+    try:
+        flow.kickoff()
+    except Exception as exc:
+        _emit_flow_event(
+            workspace_root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="FLOW_FAILED",
+            flow_name="feed_forward",
+            reason=str(exc),
+        )
+        raise
+    _emit_flow_event(
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="FLOW_FINISHED",
+        flow_name="feed_forward",
+        ok=bool(
+            flow.state.report_result.get("ok")
+            and flow.state.season_phase_result.get("ok")
+            and flow.state.phase_result.get("ok")
+        ),
+    )
     return {
         "report_result": dict(flow.state.report_result),
         "season_phase_result": dict(flow.state.season_phase_result),
         "phase_result": dict(flow.state.phase_result),
     }
+
+
+def run_coach_flow(
+    *,
+    workspace_root: Path,
+    athlete_id: str,
+    run_id: str,
+    user_message: str,
+    has_pending_operation: bool,
+    chat_runner: Callable[[], str],
+    apply_runner: Callable[[], str],
+    discard_runner: Callable[[], str],
+    show_pending_runner: Callable[[], str],
+) -> dict[str, str]:
+    """Route one coach turn through an explicit Flow wrapper."""
+
+    Flow, start, listen, router = _load_flow_symbols()
+    normalized_message = user_message.strip().lower()
+
+    class CoachOuterFlow(Flow[CoachFlowState]):
+        @start()
+        def bootstrap(self) -> str:
+            self.state.user_message = user_message
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STARTED",
+                flow_name="coach",
+                pending_operation=has_pending_operation,
+            )
+            return self.state.user_message
+
+        @router(bootstrap)
+        def route_turn(self, _message: str) -> str:
+            if has_pending_operation and normalized_message in {"yes", "confirm", "apply", "do it", "go ahead"}:
+                route_name = "apply_pending"
+            elif has_pending_operation and normalized_message in {"no", "cancel", "discard", "drop it"}:
+                route_name = "discard_pending"
+            elif normalized_message in {"pending", "show pending", "what is pending", "status"}:
+                route_name = "show_pending"
+            else:
+                route_name = "chat_turn"
+            self.state.route = route_name
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_ROUTED",
+                flow_name="coach",
+                route=route_name,
+            )
+            return route_name
+
+        @listen("chat_turn")
+        def run_chat_turn(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="coach",
+                step="chat_turn",
+            )
+            self.state.response = chat_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="coach",
+                step="chat_turn",
+            )
+            return self.state.response
+
+        @listen("apply_pending")
+        def run_apply_pending(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="coach",
+                step="apply_pending",
+            )
+            self.state.response = apply_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="coach",
+                step="apply_pending",
+            )
+            return self.state.response
+
+        @listen("discard_pending")
+        def run_discard_pending(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="coach",
+                step="discard_pending",
+            )
+            self.state.response = discard_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="coach",
+                step="discard_pending",
+            )
+            return self.state.response
+
+        @listen("show_pending")
+        def run_show_pending(self) -> str:
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_STARTED",
+                flow_name="coach",
+                step="show_pending",
+            )
+            self.state.response = show_pending_runner()
+            _emit_flow_event(
+                workspace_root=workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                event_type="FLOW_STEP_FINISHED",
+                flow_name="coach",
+                step="show_pending",
+            )
+            return self.state.response
+
+    flow = CoachOuterFlow()
+    try:
+        flow.kickoff()
+    except Exception as exc:
+        _emit_flow_event(
+            workspace_root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="FLOW_FAILED",
+            flow_name="coach",
+            reason=str(exc),
+        )
+        raise
+    _emit_flow_event(
+        workspace_root=workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="FLOW_FINISHED",
+        flow_name="coach",
+        route=flow.state.route,
+    )
+    return {"route": flow.state.route, "response": flow.state.response}

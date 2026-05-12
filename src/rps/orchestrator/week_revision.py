@@ -66,4 +66,5 @@ def revise_week_plan(
         temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
         force_file_search=force_file_search,
         max_num_results=max_num_results,
+        workspace_root=runtime_for(spec.name).workspace_root,
     )
