@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-04
+Last-Updated: 2026-05-12
 Owner: ADR
 ---
 # Architecture Decision Records (ADR)
@@ -39,6 +39,7 @@ This folder contains the ADR log for RPS.
 - ADR-028: Snapshot-based Planner Memory
 - ADR-029: Bounded Chat Week Plan Edits
 - ADR-030: Z2 Metric Semantics
+- ADR-031: Active Coach Operations and CrewAI Foundation
 
 ## Process (Short)
 

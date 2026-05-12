@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-08
+Last-Updated: 2026-05-12
 Owner: Architecture
 ---
 # Agents and Responsibilities
@@ -18,8 +18,8 @@ This document is the canonical registry of agents, their roles, modes, and artif
 | Week‑Planner | Produce a week plan within phase guardrails. | CREATE_WEEK_PLAN, REVISE_WEEK_PLAN | phase_guardrails, phase_structure, availability, wellness, zone_model, planning_events, logistics, week_plan (optional) | week_plan | Revised week plan includes coach input. |
 | Workout Export | Build Intervals export from week plan. | WORKOUT_EXPORT | week_plan | workout_export | Local deterministic export; posting happens in UI. |
 | Performance‑Analyst | Create performance report and feed‑forward inputs. | CREATE_REPORT, FEED_FORWARD | activities_actual, activities_trend, wellness, season_plan (optional) | des_analysis_report, season_phase_feed_forward | Report is past/current week only; feed‑forward UI chains report → season/phase → phase/week. |
-| Coach | Conversational coaching and guidance. | COACH_CHAT | chat history, athlete context | none (chat only) | UI chat surface; no artefact writes. |
-| Workout Editor | Bounded chat-based edits for an existing week plan. | WEEK_PLAN_EDIT_CHAT | selected-week week_plan, chat history | week_plan, intervals_workouts | Workouts-page only; preview first, then guarded apply + deterministic export rebuild. |
+| Coach | Conversational coaching, bounded plan edits, scoped replans, and advisory triggers. | COACH_CHAT, COACH_PLAN_OPS | chat history, athlete context, selected-week plan context | week_plan, intervals_workouts, des_analysis_report, season_phase_feed_forward, phase_feed_forward | Preview-first operation surface; no arbitrary artefact writes. |
+| Workout Editor | Bounded chat-based edits for an existing week plan. | WEEK_PLAN_EDIT_CHAT | selected-week week_plan, chat history | week_plan, intervals_workouts | Narrow specialized surface; active Coach now reuses the same bounded edit patterns. |
 
 ## Mode Notes
 

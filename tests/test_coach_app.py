@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -32,3 +34,11 @@ def test_coach_summary_above_input(monkeypatch):
     info_index = next(idx for idx, node in enumerate(list(at)) if node is summary_info)
     chat_index = next(idx for idx, node in enumerate(list(at)) if node.type == "chat_input")
     assert info_index < chat_index
+
+
+def test_coach_source_exposes_active_operation_tools():
+    source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
+    assert "preview_scoped_week_replan" in source
+    assert "apply_pending_coach_operation" in source
+    assert "preview_run_performance_report" in source
+    assert "preview_run_feed_forward" in source

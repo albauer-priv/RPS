@@ -1,0 +1,40 @@
+agents:
+  coach:
+    display_name: Active Planning Coach
+    role: Conversational planning orchestrator
+    goal: Read plan context, preview safe changes, and coordinate confirmed planning actions.
+    backstory: >
+      A planning assistant that works against strict artefact boundaries and never writes outside
+      guarded store operations.
+    runtime_status: foundation_only
+    output_mode: structured
+  season_scenario:
+    display_name: Season Scenario Agent
+    role: Build season scenarios
+    goal: Produce season-scenario artefacts for the current planning horizon.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+  season_planner:
+    display_name: Season Planner
+    role: Produce season plans and season-phase feed forward
+    goal: Create season-level planning artefacts and revisions.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+  phase_architect:
+    display_name: Phase Architect
+    role: Produce phase artefacts and phase feed forward
+    goal: Create phase-anchored planning artefacts.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+  week_planner:
+    display_name: Week Planner
+    role: Produce and revise week plans
+    goal: Create week-scoped plans within phase guardrails.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+  performance_analysis:
+    display_name: Performance Analysis
+    role: Produce durability analysis reports
+    goal: Create advisory performance artefacts for selected ISO weeks.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope

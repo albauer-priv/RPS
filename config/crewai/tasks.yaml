@@ -1,0 +1,109 @@
+tasks:
+  coach_read_context:
+    agent: coach
+    kind: operation
+    output: coach_preview
+    description: Read the selected-week plan context and summarize the current actionable state.
+    expected_output: A structured preview-style context summary for the active coach.
+  coach_preview_artifact_edit:
+    agent: coach
+    kind: operation
+    output: coach_preview
+    description: Preview a bounded selected-week artifact edit before any persistence occurs.
+    expected_output: A structured preview object including affected artifacts and confirmation requirement.
+  coach_apply_artifact_edit:
+    agent: coach
+    kind: operation
+    output: coach_apply
+    description: Apply the currently confirmed bounded artifact edit through guarded store operations.
+    expected_output: A structured apply result describing stored artifacts and any rebuilds.
+  coach_preview_scoped_replan:
+    agent: coach
+    kind: operation
+    output: coach_preview
+    description: Preview a scoped selected-week replan based on a user instruction.
+    expected_output: A structured preview object for the scoped replan.
+  coach_apply_scoped_replan:
+    agent: coach
+    kind: operation
+    output: coach_apply
+    description: Apply a confirmed scoped selected-week replan and rebuild downstream deterministic artifacts.
+    expected_output: A structured apply result for the scoped replan.
+  coach_preview_report:
+    agent: coach
+    kind: operation
+    output: coach_preview
+    description: Preview DES analysis report generation for the selected ISO week.
+    expected_output: A structured preview object for report generation.
+  coach_apply_report:
+    agent: coach
+    kind: operation
+    output: coach_apply
+    description: Run confirmed DES analysis report generation for the selected ISO week.
+    expected_output: A structured apply result for report generation.
+  coach_preview_feed_forward:
+    agent: coach
+    kind: operation
+    output: coach_preview
+    description: Preview the report and feed-forward chain for the selected ISO week.
+    expected_output: A structured preview object for the advisory chain.
+  coach_apply_feed_forward:
+    agent: coach
+    kind: operation
+    output: coach_apply
+    description: Run the confirmed report and feed-forward chain for the selected ISO week.
+    expected_output: A structured apply result for the advisory chain.
+  season_scenarios:
+    agent: season_scenario
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the season-scenarios artifact envelope for the selected planning horizon.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  season_plan:
+    agent: season_planner
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the season-plan artifact envelope for the selected planning horizon.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  season_phase_feed_forward:
+    agent: season_planner
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the selected-week season-to-phase feed-forward artifact envelope.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  phase_guardrails:
+    agent: phase_architect
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the phase-guardrails artifact envelope for the exact phase range.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  phase_structure:
+    agent: phase_architect
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the phase-structure artifact envelope for the exact phase range.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  phase_preview:
+    agent: phase_architect
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the phase-preview artifact envelope for the exact phase range.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  phase_feed_forward:
+    agent: phase_architect
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the selected-week phase feed-forward artifact envelope.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  week_plan:
+    agent: week_planner
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create or revise the week-plan artifact envelope for the selected ISO week.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
+  des_analysis_report:
+    agent: performance_analysis
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the DES analysis report artifact envelope for the selected ISO week.
+    expected_output: A full schema-compliant artifact envelope with meta and data.
