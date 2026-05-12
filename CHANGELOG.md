@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-05-12
+
+### Added
+- Added the previously missing bundled schema snapshots for `advisory_memory`, `athlete_state_snapshot`, and `planning_context_snapshot` under `specs/knowledge/_shared/sources/schemas/bundled/`, aligning the committed bundle set with the source schemas and workspace schema map.
+
+### Changed
+- Bumped the application version from `0.11.0` to `0.11.1`.
+
+### Fixed
+- Z2 metric semantics are now aligned across the Intervals pipeline, activity artefacts, trend artefacts, and report/planner consumers: fields named `Z2 Share` now mean pure `Power TiZ Z2 / sum(Power TiZ Z1..Z7)`, while `Z1 + Z2` remains a separate low-intensity metric; the activity-level `Power TiZ Share Z2 (%)` bug and derived `Flag Z2 Share >= 60%/70%` logic were corrected accordingly.
+- Analyse → Report no longer renders the active `Creating performance report...` message twice in the same rerun; the job message now comes from a single shared render block and is covered by an AppTest regression.
+
 ### Changed
 - `workspace_get_input` now canonicalizes JSON input envelopes through the same legacy-meta normalization used for regular workspace artefacts, so old inputs such as `LOGISTICS` with `meta.data_confidence: "USER"` no longer reach agents as invalid raw payloads in performance/feed-forward runs.
 - Plan → Workouts now includes a bounded `Workout Editor` chat for the selected ISO week: users can preview moving a workout to an empty day, changing a start time, or replacing workout text, then explicitly apply the pending edit through the guarded `WEEK_PLAN` store and deterministic `INTERVALS_WORKOUTS` rebuild; `Coach` remains read-only.
@@ -146,8 +158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local artifact writes now emit log entries in `rps.log` for easier debugging from Athlete Profile pages.
 
 ### Fixed
-- Z2 metric semantics are now aligned across the Intervals pipeline, activity artefacts, trend artefacts, and report/planner consumers: fields named `Z2 Share` now mean pure `Power TiZ Z2 / sum(Power TiZ Z1..Z7)`, while `Z1 + Z2` remains a separate low-intensity metric; the activity-level `Power TiZ Share Z2 (%)` bug and derived `Flag Z2 Share >= 60%/70%` logic were corrected accordingly.
-- Analyse → Report no longer renders the active `Creating performance report...` message twice in the same rerun; the job message now comes from a single shared render block and is covered by an AppTest regression.
 - Plan Week no longer crashes Intervals export due to `IsoWeek` formatting (week variable shadowing removed).
 - LiteLLM message builder now batches tool calls and always emits matching tool responses to satisfy OpenAI tool-call sequencing.
 - Tool output events now carry tool names through the runner to stabilize tool-call matching.
