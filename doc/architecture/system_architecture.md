@@ -98,7 +98,7 @@ flowchart TD
   - Season, Phase, Week, Report, and Feed-Forward entrypoints use CrewAI Flow wrappers while guarded store and deterministic export remain code-owned boundaries.
 7. **Run Store**
   - Per-run JSON state under `runtime/athletes/<athlete_id>/runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
-  - Direct foreground Coach and page-triggered CrewAI runs now emit additive `FLOW_*`, `CREW_*`, and `ARTEFACT_WRITTEN` telemetry into `events.jsonl`.
+  - Direct foreground Coach and page-triggered CrewAI runs now map CrewAI-native Flow/Crew/Task/Tool events through a central event-listener adapter into additive `FLOW_*`, `CREW_*`, `TOOL_*`, and `ARTEFACT_WRITTEN` rows in `events.jsonl`.
    - Background jobs (data pipeline, housekeeping, agent reports) also write run records with `process_type`/`process_subtype`.
    - Use the background run tracker helper to standardize status updates.
    - Scheduling guards block concurrent runs sharing the same type/subtype and prevent lower-priority planning runs while higher-priority ones are active.

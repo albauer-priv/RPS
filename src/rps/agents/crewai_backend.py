@@ -26,7 +26,7 @@ from rps.crewai_runtime.bindings import (
 )
 from rps.crewai_runtime.config import load_crewai_config_bundle
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs
-from rps.crewai_runtime.telemetry import emit_runtime_event
+from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.guarded_store import GuardedValidatedStore
@@ -318,15 +318,6 @@ def _execute_crewai_task(
 ) -> Any:
     """Execute one CrewAI task and return its typed output."""
 
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_STARTED",
-        crew="single_task",
-        agent=agent_name,
-        task=task_blueprint.name,
-    )
     agent = _build_crewai_agent(
         agent_cls,
         blueprint=agent_blueprint,
@@ -346,7 +337,16 @@ def _execute_crewai_task(
         process=process,
         verbose=bool(task_blueprint.config.get("verbose", False)),
     )
-    result = crew.kickoff()
+    if athlete_id and run_id:
+        with runtime_event_scope(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            component=f"crew:{task_blueprint.name}",
+        ):
+            result = crew.kickoff()
+    else:
+        result = crew.kickoff()
     pydantic_output = _extract_typed_output(result, crew_task)
     if pydantic_output is None:
         raw = getattr(getattr(crew_task, "output", None), "raw", None)
@@ -354,24 +354,6 @@ def _execute_crewai_task(
             f"CrewAI task '{task_blueprint.name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
         )
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_TASK_FINISHED",
-        crew="single_task",
-        agent=agent_name,
-        task=task_blueprint.name,
-    )
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_FINISHED",
-        crew="single_task",
-        agent=agent_name,
-        task=task_blueprint.name,
-    )
     return pydantic_output
 
 
@@ -417,15 +399,6 @@ def _execute_crewai_hierarchical_crew(
 ) -> Any:
     """Execute one real multi-agent hierarchical crew and return the final typed output."""
 
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_STARTED",
-        crew=final_task_name,
-        manager=manager_agent_name,
-        tasks=list(crew_task_names),
-    )
     agents_by_name: dict[str, object] = {}
     for task_name in crew_task_names:
         task_blueprint = task_blueprints[task_name]
@@ -497,18 +470,16 @@ def _execute_crewai_hierarchical_crew(
         crew_kwargs["manager_agent"] = manager_agent
         crew_kwargs["manager_llm"] = llm
     crew = crew_cls(**crew_kwargs)
-    result = crew.kickoff()
-    for task_name, crew_task in zip(crew_task_names, crew_tasks, strict=False):
-        if getattr(crew_task, "output", None) is None:
-            continue
-        emit_runtime_event(
+    if athlete_id and run_id:
+        with runtime_event_scope(
             root=runtime.workspace_root,
             athlete_id=athlete_id,
             run_id=run_id,
-            event_type="CREW_TASK_FINISHED",
-            crew=final_task_name,
-            task=task_name,
-        )
+            component=f"crew:{final_task_name}",
+        ):
+            result = crew.kickoff()
+    else:
+        result = crew.kickoff()
     pydantic_output = _extract_typed_output(result, final_task_obj)
     if pydantic_output is None:
         raw = getattr(getattr(final_task_obj, "output", None), "raw", None)
@@ -516,14 +487,6 @@ def _execute_crewai_hierarchical_crew(
             f"CrewAI crew final task '{final_task_name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
         )
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_FINISHED",
-        crew=final_task_name,
-        manager=manager_agent_name,
-    )
     return pydantic_output
 
 

@@ -31,7 +31,7 @@ This document is the canonical registry of agents, their roles, modes, and artif
 - Outer Week, Report, and Feed-Forward orchestration now also uses CrewAI Flow wrappers.
 - Coach turn execution now routes through a dedicated CrewAI Flow wrapper before falling back to the tool-driven chat turn, so explicit confirm/discard/status messages are first-class flow routes.
 - Season and Phase specialist work now runs inside one hierarchical CrewAI crew per run instead of repeated one-task crew executions.
-- Flow/Crew runtime telemetry is written into per-run `events.jsonl` and surfaced from Plan Hub, System Status, and System History.
+- Flow/Crew runtime telemetry now uses a central CrewAI `BaseEventListener` adapter into per-run `events.jsonl` and is surfaced from Plan Hub, System Status, and System History.
 
 ## Related Docs
 

@@ -12,7 +12,7 @@ from typing import Any
 
 from .compat import crewai_runtime_status
 from .provider import build_crewai_llm_kwargs
-from .telemetry import emit_runtime_event
+from .telemetry import runtime_event_scope
 
 logger = logging.getLogger(__name__)
 
@@ -141,34 +141,16 @@ def run_coach_turn(
         agent=agent,
     )
     crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
-    emit_runtime_event(
-        root=workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_STARTED",
-        crew="coach_turn",
-        agent=agent_name,
-        task="coach_turn",
-    )
-    result = crew.kickoff()
-    emit_runtime_event(
-        root=workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_TASK_FINISHED",
-        crew="coach_turn",
-        agent=agent_name,
-        task="coach_turn",
-    )
-    emit_runtime_event(
-        root=workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="CREW_FINISHED",
-        crew="coach_turn",
-        agent=agent_name,
-        task="coach_turn",
-    )
+    if workspace_root is not None and athlete_id and run_id:
+        with runtime_event_scope(
+            root=workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            component="coach_turn",
+        ):
+            result = crew.kickoff()
+    else:
+        result = crew.kickoff()
 
     raw = getattr(task.output, "raw", None)
     if isinstance(raw, str) and raw.strip():

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added CrewAI Flow wrappers for outer Week, Report, and Feed-Forward orchestration, bringing the remaining planning/advisory chains onto the same Flow wrapper pattern.
 - Added a Coach Flow router on top of the CrewAI turn runner, so explicit confirm/discard/pending-status messages now run through dedicated Flow routes instead of only page-local branching.
 - Added additive `FLOW_*`, `CREW_*`, and direct `ARTEFACT_WRITTEN` runtime telemetry for direct CrewAI runs, with shared UI rendering on Plan Hub, System Status, and System History.
+- Added a central CrewAI `BaseEventListener` adapter with run-context propagation, so Flow/Crew/Task/Tool lifecycle telemetry now comes from CrewAI's native event bus instead of predominantly manual emission.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Season entrypoints now route through CrewAI Flow-backed outer orchestration, and scoped `Run Phase` execution now computes one internal `PhaseBundle` and persists the requested public phase artefacts from that single grouped run instead of re-running the internal specialist chain per artefact.
 - Season and Phase specialist execution now runs as one real hierarchical CrewAI crew per run instead of serial one-task crews, while Week revision, DES report generation, and feed-forward chaining now route through CrewAI Flow wrappers.
 - Coach turns now create foreground run-store records and reuse the same run id for nested apply operations, so Coach-triggered flow, crew, and persisted artefact events stay traceable in one run timeline.
+- Direct runtime telemetry now relies on CrewAI listener events for lifecycle coverage, while `ARTEFACT_WRITTEN` remains an explicit RPS-owned persistence-boundary event.
 
 ### Removed
 - Removed the remaining LiteLLM-era runtime stack: `rps.openai.litellm_runtime`, `rps.openai.client`, `rps.openai.streaming`, `rps.openai.response_utils`, `rps.openai.runtime`, `rps.agents.runner`, `rps.agents.runner_strict`, `rps.agents.multi_output_runner`, and `rps.ui.rps_chatbot`.

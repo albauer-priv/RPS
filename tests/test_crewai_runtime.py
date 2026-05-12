@@ -10,6 +10,7 @@ from rps.agents.crewai_backend import run_agent_multi_output_crewai
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime import crewai_runtime_status, load_crewai_config_bundle
+from rps.crewai_runtime import telemetry as crewai_telemetry
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
     build_task_blueprints,
@@ -44,10 +45,71 @@ from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_events
 
 
+def _install_fake_crewai_events(monkeypatch) -> object:
+    """Install a minimal CrewAI events module with a singleton event bus."""
+
+    events_module = types.ModuleType("crewai.events")
+
+    class FakeEventBus:
+        def __init__(self):
+            self.handlers: dict[type[object], list[object]] = {}
+
+        def on(self, event_cls):
+            def _decorate(fn):
+                self.handlers.setdefault(event_cls, []).append(fn)
+                return fn
+
+            return _decorate
+
+        def emit(self, event):
+            for handler in self.handlers.get(type(event), []):
+                handler(None, event)
+
+    bus = FakeEventBus()
+
+    class BaseEventListener:
+        def __init__(self):
+            self.setup_listeners(bus)
+
+        def setup_listeners(self, crewai_event_bus):
+            return None
+
+    class _BaseEvent:
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+    for name in [
+        "CrewKickoffStartedEvent",
+        "CrewKickoffCompletedEvent",
+        "CrewKickoffFailedEvent",
+        "TaskStartedEvent",
+        "TaskCompletedEvent",
+        "TaskFailedEvent",
+        "ToolUsageStartedEvent",
+        "ToolUsageFinishedEvent",
+        "ToolUsageErrorEvent",
+        "FlowStartedEvent",
+        "FlowFinishedEvent",
+        "MethodExecutionStartedEvent",
+        "MethodExecutionFinishedEvent",
+        "MethodExecutionFailedEvent",
+    ]:
+        setattr(events_module, name, type(name, (_BaseEvent,), {}))
+    events_module.BaseEventListener = BaseEventListener
+    events_module.crewai_event_bus = bus
+    monkeypatch.setitem(sys.modules, "crewai.events", events_module)
+    crewai_telemetry._LISTENER_READY = False
+    crewai_telemetry._LISTENER_INIT_FAILED = False
+    return events_module
+
+
 def _install_fake_flow_module(monkeypatch) -> None:
     """Install a minimal CrewAI Flow module for unit tests."""
 
     flow_module = types.ModuleType("crewai.flow.flow")
+    events_module = sys.modules.get("crewai.events")
+    bus = getattr(events_module, "crewai_event_bus", None)
 
     def start(*_args, **_kwargs):
         def _decorate(func):
@@ -79,6 +141,8 @@ def _install_fake_flow_module(monkeypatch) -> None:
             self.state = SimpleNamespace(action="", result={}, requested_tasks=[])
 
         def kickoff(self):
+            if bus is not None:
+                bus.emit(events_module.FlowStartedEvent(flow_name=type(self).__name__))
             start_method = None
             router_method = None
             listeners: list[tuple[object, object]] = []
@@ -93,16 +157,26 @@ def _install_fake_flow_module(monkeypatch) -> None:
                     listeners.append((getattr(func, "_flow_listen"), candidate))
             if start_method is None:
                 raise AssertionError("FakeFlow requires a @start method")
+            if bus is not None:
+                bus.emit(events_module.MethodExecutionStartedEvent(flow_name=type(self).__name__, method_name=getattr(start_method, "__name__", "")))
             current_result = start_method()
+            if bus is not None:
+                bus.emit(events_module.MethodExecutionFinishedEvent(flow_name=type(self).__name__, method_name=getattr(start_method, "__name__", "")))
             current_name = getattr(start_method, "__name__", "")
             if router_method is not None:
                 route_label = router_method(current_result)
                 for trigger, listener_method in listeners:
                     if trigger == route_label:
+                        if bus is not None:
+                            bus.emit(events_module.MethodExecutionStartedEvent(flow_name=type(self).__name__, method_name=getattr(listener_method, "__name__", "")))
                         current_result = listener_method()
+                        if bus is not None:
+                            bus.emit(events_module.MethodExecutionFinishedEvent(flow_name=type(self).__name__, method_name=getattr(listener_method, "__name__", "")))
                         current_name = getattr(listener_method, "__name__", "")
                         break
                 else:
+                    if bus is not None:
+                        bus.emit(events_module.FlowFinishedEvent(flow_name=type(self).__name__))
                     return None
             while True:
                 next_listener = None
@@ -112,8 +186,14 @@ def _install_fake_flow_module(monkeypatch) -> None:
                         next_listener = listener_method
                         break
                 if next_listener is None:
+                    if bus is not None:
+                        bus.emit(events_module.FlowFinishedEvent(flow_name=type(self).__name__))
                     return current_result
+                if bus is not None:
+                    bus.emit(events_module.MethodExecutionStartedEvent(flow_name=type(self).__name__, method_name=getattr(next_listener, "__name__", "")))
                 current_result = next_listener(current_result)
+                if bus is not None:
+                    bus.emit(events_module.MethodExecutionFinishedEvent(flow_name=type(self).__name__, method_name=getattr(next_listener, "__name__", "")))
                 current_name = getattr(next_listener, "__name__", "")
 
     flow_module.Flow = FakeFlow
@@ -196,6 +276,7 @@ def test_preview_report_and_feed_forward_operations_are_typed() -> None:
 
 
 def test_coach_flow_routes_confirmation_and_records_events(monkeypatch, tmp_path: Path) -> None:
+    _install_fake_crewai_events(monkeypatch)
     _install_fake_flow_module(monkeypatch)
 
     result = run_coach_flow(
