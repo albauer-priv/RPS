@@ -45,6 +45,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_week_plan_consistency_guards — central `WEEK_PLAN` normalization and consistency guards before store/export.
 - [x] FEAT_active_coach_operations — active Coach operations for bounded edits, replans, and advisory triggers with CrewAI foundation/config.
 - [x] FEAT_crewai_runtime_cutover — central agent runtime gateway, Python 3.13 container baseline, and initial CrewAI execution backend with explicit `auto|legacy|crewai` selection.
+- [x] FEAT_coach_crewai_decoupling — Coach page moved off `rps_chatbot`, with direct CrewAI turn execution and provider config independent of LiteLLM client objects.
 
 ## Unlock Graph (dependencies)
 
@@ -84,6 +85,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_workout_editor_swap_days — support bounded swap of two occupied workout days instead of move-to-empty-day only.
 - [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
 - [ ] Manual active `Coach` smoke pass — verify context read, bounded edit preview/apply, scoped replan preview/apply, report preview/apply, and feed-forward preview/apply against a real athlete week in the UI.
+- [ ] FEAT_litellm_runtime_removal — remove remaining legacy runtime/chat modules and product fallbacks once CrewAI parity is complete.
 - [ ] FEAT_crewai_runtime_activation — move the app runtime to a CrewAI-supported Python baseline and replace the gateway fallback with a real CrewAI execution backend.
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.

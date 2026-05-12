@@ -7,15 +7,9 @@ from pathlib import Path
 
 import streamlit as st
 
-try:
-    from rps.ui.rps_chatbot import CustomFunction
-except Exception as exc:  # pragma: no cover - UI fallback
-    st.error(f"Coach toolkit not available: {exc}")
-    st.stop()
-
 from rps.agents.knowledge_injection import build_injection_block
-from rps.agents.registry import AGENTS
 from rps.agents.runtime import resolve_agent_runtime_selection
+from rps.crewai_runtime.coach_chat import CoachTool, run_coach_turn
 from rps.orchestrator.coach_operations import (
     apply_feed_forward_operation,
     apply_report_operation,
@@ -37,10 +31,8 @@ from rps.orchestrator.context_snapshots import (
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
-from rps.ui.rps_chatbot import Chat
 from rps.ui.shared import (
     SETTINGS,
-    base_runtime,
     get_athlete_id,
     get_iso_year_week,
     init_ui_state,
@@ -56,6 +48,7 @@ from rps.workspace.types import ArtifactType
 JsonMap = dict[str, object]
 COACH_PENDING_KEY = "coach_pending_operation"
 COACH_CONTEXT_KEY = "coach_context_key"
+COACH_MESSAGES_KEY = "coach_messages"
 
 
 def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str, object]]]:
@@ -136,9 +129,29 @@ def _coach_pending() -> JsonMap | None:
 
 
 def _coach_reset(context_key: str) -> None:
-    st.session_state.pop("coach_chat", None)
+    st.session_state.pop(COACH_MESSAGES_KEY, None)
     st.session_state.pop(COACH_PENDING_KEY, None)
     st.session_state[COACH_CONTEXT_KEY] = context_key
+
+
+def _coach_messages() -> list[JsonMap]:
+    messages = st.session_state.setdefault(COACH_MESSAGES_KEY, [])
+    if not isinstance(messages, list):
+        messages = []
+        st.session_state[COACH_MESSAGES_KEY] = messages
+    return messages
+
+
+def _coach_summary(messages: list[JsonMap]) -> str:
+    latest_user = ""
+    for message in reversed(messages):
+        if str(message.get("role") or "") == "user":
+            latest_user = str(message.get("content") or "").strip()
+            break
+    if not latest_user:
+        return "New Chat"
+    words = latest_user.split()
+    return " ".join(words[:4]) if words else "New Chat"
 
 
 def _coach_base_document(
@@ -161,7 +174,7 @@ def _active_coach_functions(
     athlete_id: str,
     year: int,
     week: int,
-) -> list[CustomFunction]:
+) -> list[CoachTool]:
     version_key = f"{year:04d}-{week:02d}"
 
     def _read_current_plan_context() -> str:
@@ -321,19 +334,19 @@ def _active_coach_functions(
         return _json_result(output)
 
     return [
-        CustomFunction(
+        CoachTool(
             name="read_current_plan_context",
             description="Return selected-week planning context and current workout summary for the active coach.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _read_current_plan_context(),
         ),
-        CustomFunction(
+        CoachTool(
             name="list_current_week_plan_workouts",
             description="Return the current selected week's agenda-linked workouts and metadata.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _list_current_week_plan_workouts(),
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_move_workout",
             description="Preview moving one workout to an empty target day within the selected ISO week.",
             parameters={
@@ -348,7 +361,7 @@ def _active_coach_functions(
             },
             handler=_preview_move_workout,
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_change_start_time",
             description="Preview changing one workout start time.",
             parameters={
@@ -359,7 +372,7 @@ def _active_coach_functions(
             },
             handler=_preview_change_start_time,
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_update_workout_text",
             description="Preview replacing a workout's workout_text and optional title, notes, or start time.",
             parameters={
@@ -376,7 +389,7 @@ def _active_coach_functions(
             },
             handler=_preview_update_workout_text,
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_scoped_week_replan",
             description="Preview a scoped week replan for the selected ISO week using a coach message.",
             parameters={
@@ -387,31 +400,31 @@ def _active_coach_functions(
             },
             handler=_preview_scoped_week_replan,
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_run_performance_report",
             description="Preview running DES analysis report generation for the selected ISO week.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _preview_run_performance_report(),
         ),
-        CustomFunction(
+        CoachTool(
             name="preview_run_feed_forward",
             description="Preview running the report and feed-forward chain for the selected ISO week.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _preview_run_feed_forward(),
         ),
-        CustomFunction(
+        CoachTool(
             name="show_pending_coach_operation",
             description="Return the currently pending coach operation preview, if one exists.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _show_pending_coach_operation(),
         ),
-        CustomFunction(
+        CoachTool(
             name="discard_pending_coach_operation",
             description="Discard the currently pending coach operation preview.",
             parameters={"type": "object", "properties": {}, "required": []},
             handler=lambda: _discard_pending_coach_operation(),
         ),
-        CustomFunction(
+        CoachTool(
             name="apply_pending_coach_operation",
             description="Apply the currently pending coach operation after explicit confirmation.",
             parameters={"type": "object", "properties": {}, "required": []},
@@ -438,24 +451,12 @@ if runtime_selection.effective_backend == "crewai":
 else:
     st.caption(f"Agent runtime: legacy fallback. {runtime_selection.reason}")
 
-try:
-    base = base_runtime()
-except RuntimeError as exc:
-    st.error(str(exc))
-    st.info("Set RPS_LLM_API_KEY in your environment or .env, then restart the app.")
-    st.stop()
-vs_id = None
-try:
-    vs_id = base["vs_resolver"].id_for_store_name(AGENTS["coach"].vector_store_name)
-except Exception:
-    vs_id = None
-
 ctx = ReadToolContext(
     athlete_id=athlete_id,
     workspace_root=SETTINGS.workspace_root,
 )
 handlers = read_tool_handlers(ctx)
-functions: list[CustomFunction] = []
+tools: list[CoachTool] = []
 for spec in read_tool_defs():
     raw_name = spec.get("name")
     if not isinstance(raw_name, str):
@@ -472,10 +473,10 @@ for spec in read_tool_defs():
         parameters = {}
 
     def _wrap(h=handler):
-        return lambda **kwargs: h(kwargs)
+        return lambda **kwargs: _json_result(h(kwargs))
 
-    functions.append(
-        CustomFunction(
+    tools.append(
+        CoachTool(
             name=name,
             description=description,
             parameters=parameters,
@@ -483,7 +484,7 @@ for spec in read_tool_defs():
         )
     )
 
-functions.extend(
+tools.extend(
     _active_coach_functions(
         store=LocalArtifactStore(root=SETTINGS.workspace_root),
         athlete_id=athlete_id,
@@ -547,65 +548,10 @@ instructions = (
     "preview report/feed-forward runs, and apply only after explicit confirmation.\n"
     "Never claim that a change was stored before apply_pending_coach_operation succeeds."
 )
-
-allow_web_search = False
-if os.getenv("RPS_LLM_ENABLE_WEB_SEARCH", "").lower() in {"1", "true", "yes"}:
-    agents = {
-        a.strip().lower()
-        for a in os.getenv("RPS_LLM_WEB_SEARCH_AGENTS", "").split(",")
-        if a.strip()
-    }
-    allow_web_search = "coach" in agents
-
-model = os.getenv("RPS_LLM_MODEL_COACH", "gpt-5-mini")
-use_background = os.getenv("RPS_LLM_COACH_BACKGROUND", "").lower() in {"1", "true", "yes"}
-poll_interval = os.getenv("RPS_LLM_COACH_POLL_INTERVAL_SEC")
+model = os.getenv("RPS_LLM_MODEL_COACH") or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5-mini"
 base_url = os.getenv("RPS_LLM_BASE_URL_COACH") or os.getenv("RPS_LLM_BASE_URL")
 key_hint = "set" if os.getenv("RPS_LLM_API_KEY_COACH") or os.getenv("RPS_LLM_API_KEY") else "missing"
-chat = st.session_state.get("coach_chat")
-if chat and not isinstance(chat, Chat):
-    st.session_state.pop("coach_chat", None)
-    chat = None
-if chat and getattr(chat, "model", None) != model:
-    st.session_state.pop("coach_chat", None)
-if "coach_chat" not in st.session_state:
-    auto_compact_turns: int | None = 3
-    compact_model: str | None = None
-    temperature_value: float | None = None
-    compact_turns = os.getenv("RPS_LLM_COACH_COMPACT_TURNS")
-    if compact_turns:
-        with suppress(ValueError):
-            auto_compact_turns = int(compact_turns)
-    compact_model = os.getenv("RPS_LLM_COACH_COMPACT_MODEL")
-    if compact_model:
-        compact_model = compact_model
-    temperature = os.getenv("RPS_LLM_TEMPERATURE_COACH")
-    if temperature and not model.startswith("gpt-5"):
-        temperature_value = float(temperature)
-    st.session_state.coach_chat = Chat(
-        model=model,
-        instructions=instructions,
-        functions=functions,
-        vector_store_ids=None,
-        allow_code_interpreter=False,
-        allow_file_search=False,
-        allow_web_search=allow_web_search,
-        allow_image_generation=False,
-        placeholder="Ask the active coach to inspect, adjust, or replan…",
-        auto_compact_turns=auto_compact_turns,
-        compact_model=compact_model,
-        temperature=temperature_value,
-        agent_name="coach",
-    )
-
-ui_log(
-    f"Coach initialized with model={model} base_url={base_url or 'default'} api_key={key_hint}"
-)
-
-st.session_state.coach_chat.use_background = use_background
-if poll_interval:
-    with suppress(ValueError):
-        st.session_state.coach_chat.poll_interval_sec = float(poll_interval)
+ui_log(f"Coach initialized with model={model} base_url={base_url or 'default'} api_key={key_hint}")
 
 pending = _coach_pending()
 if pending:
@@ -615,5 +561,37 @@ if pending:
         st.warning(f"Pending coach operation has validation issues. {summary}")
     else:
         st.info(f"Pending coach operation ready to apply. {summary}")
+messages = _coach_messages()
+st.info(f"Summary: {_coach_summary(messages)}")
+for message in messages:
+    role = str(message.get("role") or "assistant")
+    content = str(message.get("content") or "")
+    with st.chat_message(role):
+        st.markdown(content)
 
-st.session_state.coach_chat.run()
+prompt = st.chat_input("Ask the active coach to inspect, adjust, or replan…")
+if prompt:
+    messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    if runtime_selection.effective_backend != "crewai" or not runtime_selection.can_execute:
+        reply = (
+            "Coach conversation runtime is not executable in this interpreter. "
+            f"{runtime_selection.reason}"
+        )
+    else:
+        with st.spinner("Coach is thinking…"):
+            try:
+                reply = run_coach_turn(
+                    instructions=instructions,
+                    user_message=prompt,
+                    history=messages[:-1],
+                    tools=tools,
+                    agent_name="coach",
+                    model_override=model,
+                )
+            except Exception as exc:
+                reply = f"Coach turn failed: {exc}"
+    messages.append({"role": "assistant", "content": reply})
+    with st.chat_message("assistant"):
+        st.markdown(reply)

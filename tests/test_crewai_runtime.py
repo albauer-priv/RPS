@@ -20,6 +20,7 @@ from rps.crewai_runtime.models import (
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
 )
+from rps.crewai_runtime.provider import build_crewai_llm_kwargs, resolve_crewai_provider_config
 from rps.orchestrator.coach_operations import (
     preview_feed_forward_operation,
     preview_report_operation,
@@ -142,6 +143,8 @@ def test_runtime_gateway_dispatches_to_crewai_backend(monkeypatch) -> None:
 
 
 def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
     fake_crewai = types.ModuleType("crewai")
     fake_tools = types.ModuleType("crewai.tools")
 
@@ -240,3 +243,19 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
     assert result["ok"] is True
     assert result["produced"]["store_season_plan"] == saved
+
+
+def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    monkeypatch.setenv("RPS_LLM_BASE_URL", "https://api.openai.com/v1")
+    monkeypatch.setenv("RPS_LLM_API_KEY_COACH", "coach-key")
+    monkeypatch.setenv("RPS_LLM_MODEL_COACH", "openai/gpt-5-nano")
+
+    config = resolve_crewai_provider_config("coach")
+    kwargs = build_crewai_llm_kwargs("coach")
+
+    assert config.api_key == "coach-key"
+    assert config.model == "openai/gpt-5-nano"
+    assert kwargs["api_key"] == "coach-key"
+    assert kwargs["model"] == "openai/gpt-5-nano"

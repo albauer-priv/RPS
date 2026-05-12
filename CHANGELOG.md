@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an active Coach operation layer on top of the existing runtime: Coach can now inspect selected-week plan context, preview/apply bounded `WEEK_PLAN` edits, preview/apply scoped week replans, and trigger DES report / feed-forward runs through explicit operation tools with mandatory preview + confirm semantics.
 - Added initial CrewAI foundation files under `config/crewai/` and `src/rps/crewai_runtime/`, including YAML agent/task definitions, typed operation result models, and a runtime compatibility helper that reports the current Python `3.14` blocker for full CrewAI activation.
 - Added a central agent runtime gateway under `src/rps/agents/runtime.py` with explicit `RPS_AGENT_RUNTIME=auto|legacy|crewai` selection so planner/advisory flows now route through one cutover point instead of importing `multi_output_runner` directly.
+- Added a direct CrewAI provider-config resolver plus a dedicated CrewAI one-turn chat runner for the Coach page, so conversational Coach turns no longer depend on `rps_chatbot` or the legacy LiteLLM client object.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
 - Advisory report/feed-forward execution now has reusable orchestrator helpers instead of only page-local wiring, so the same actions can be invoked from the active Coach surface.
 - All planner/advisory orchestrators and shared UI runtime helpers now import the unified runtime gateway, and Coach shows the effective backend/fallback reason while the repo remains on Python `3.14`.
+- Coach page now renders its own Streamlit chat transcript and executes conversational turns through CrewAI-native `Agent`/`Task`/`Crew` objects, while the CrewAI persisted-artefact backend resolves provider settings directly from `RPS_LLM_*` env vars instead of reading `LiteLLMClient.config`.
 
 ## [0.11.1] - 2026-05-12
 

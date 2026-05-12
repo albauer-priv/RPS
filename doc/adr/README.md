@@ -41,6 +41,7 @@ This folder contains the ADR log for RPS.
 - ADR-030: Z2 Metric Semantics
 - ADR-031: Active Coach Operations and CrewAI Foundation
 - ADR-032: CrewAI Runtime Gateway and Staged Activation
+- ADR-033: Coach CrewAI Decoupling and Direct Provider Config
 
 ## Process (Short)
 

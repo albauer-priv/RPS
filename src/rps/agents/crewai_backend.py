@@ -18,6 +18,7 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
 )
 from rps.crewai_runtime.config import load_crewai_config_bundle
+from rps.crewai_runtime.provider import build_crewai_llm_kwargs
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.guarded_store import GuardedValidatedStore
@@ -347,25 +348,18 @@ def run_agent_multi_output_crewai(
     task_blueprint = task_blueprints[blueprint_name]
     agent_blueprint = agent_blueprints[task_blueprint.agent]
 
-    model = model_override or runtime.model
-    temperature = temperature_override if temperature_override is not None else runtime.temperature
-    llm_kwargs: JsonMap = {
-        "model": model,
-        "api_key": runtime.client.config.api_key,
-    }
-    if runtime.client.config.base_url:
-        llm_kwargs["base_url"] = runtime.client.config.base_url
-    if runtime.client.config.org_id:
-        llm_kwargs["organization"] = runtime.client.config.org_id
-    if runtime.client.config.project_id:
-        llm_kwargs["project"] = runtime.client.config.project_id
-    if temperature is not None:
-        llm_kwargs["temperature"] = temperature
-    if runtime.max_completion_tokens is not None:
-        llm_kwargs["max_completion_tokens"] = runtime.max_completion_tokens
-    if runtime.reasoning_effort:
-        llm_kwargs["reasoning_effort"] = runtime.reasoning_effort
-    llm = LLM(**llm_kwargs)
+    llm = LLM(
+        **build_crewai_llm_kwargs(
+            agent_name,
+            model_override=model_override or runtime.model,
+            temperature_override=(
+                temperature_override if temperature_override is not None else runtime.temperature
+            ),
+            reasoning_effort_override=runtime.reasoning_effort,
+            reasoning_summary_override=runtime.reasoning_summary,
+            max_completion_tokens_override=runtime.max_completion_tokens,
+        )
+    )
 
     tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
     agent = Agent(

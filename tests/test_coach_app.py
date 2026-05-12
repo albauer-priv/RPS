@@ -9,14 +9,7 @@ def _env_setup(monkeypatch):
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
 
 
-def test_coach_summary_above_input(monkeypatch):
-    import rps.ui.rps_chatbot as rps_chatbot
-
-    def _noop_summarize(self) -> None:
-        self.summary = self.summary or "New Chat"
-
-    monkeypatch.setattr(rps_chatbot.Chat, "summarize", _noop_summarize)
-
+def test_coach_summary_above_input():
     at = AppTest.from_file("src/rps/ui/pages/coach.py")
     at.run()
 
@@ -42,3 +35,8 @@ def test_coach_source_exposes_active_operation_tools():
     assert "apply_pending_coach_operation" in source
     assert "preview_run_performance_report" in source
     assert "preview_run_feed_forward" in source
+
+
+def test_coach_source_no_longer_depends_on_rps_chatbot():
+    source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
+    assert "rps_chatbot" not in source
