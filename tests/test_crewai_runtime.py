@@ -15,7 +15,13 @@ from rps.crewai_runtime.bindings import (
     build_task_blueprints,
     output_model_for_kind,
 )
-from rps.crewai_runtime.flows import run_phase_flow, run_season_flow
+from rps.crewai_runtime.flows import (
+    run_feed_forward_flow,
+    run_phase_flow,
+    run_report_flow,
+    run_season_flow,
+    run_week_flow,
+)
 from rps.crewai_runtime.models import (
     ArtifactEnvelopeModel,
     CoachOperationApplyResultModel,
@@ -85,18 +91,28 @@ def _install_fake_flow_module(monkeypatch) -> None:
                     listeners.append((getattr(func, "_flow_listen"), candidate))
             if start_method is None:
                 raise AssertionError("FakeFlow requires a @start method")
-            start_result = start_method()
+            current_result = start_method()
+            current_name = getattr(start_method, "__name__", "")
             if router_method is not None:
-                route_label = router_method(start_result)
+                route_label = router_method(current_result)
                 for trigger, listener_method in listeners:
                     if trigger == route_label:
-                        return listener_method()
-                return None
-            for trigger, listener_method in listeners:
-                trigger_name = getattr(trigger, "__name__", None)
-                if trigger_name == getattr(start_method, "__name__", None):
-                    return listener_method(start_result)
-            return None
+                        current_result = listener_method()
+                        current_name = getattr(listener_method, "__name__", "")
+                        break
+                else:
+                    return None
+            while True:
+                next_listener = None
+                for trigger, listener_method in listeners:
+                    trigger_name = getattr(trigger, "__name__", None)
+                    if trigger_name == current_name:
+                        next_listener = listener_method
+                        break
+                if next_listener is None:
+                    return current_result
+                current_result = next_listener(current_result)
+                current_name = getattr(next_listener, "__name__", "")
 
     flow_module.Flow = FakeFlow
     flow_module.start = start
@@ -241,13 +257,19 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
             self.output_pydantic = kwargs["output_pydantic"]
             self.output = None
 
+    captured_crew: dict[str, object] = {}
+
     class FakeCrew:
         def __init__(self, *, tasks, **kwargs):
             self.tasks = tasks
             self.kwargs = kwargs
+            captured_crew["agents"] = kwargs.get("agents", [])
+            captured_crew["tasks"] = tasks
+            captured_crew["manager_agent"] = kwargs.get("manager_agent")
+            captured_crew["process"] = kwargs.get("process")
 
         def kickoff(self):
-            task = self.tasks[0]
+            task = self.tasks[-1]
             model_cls = task.output_pydantic
             if model_cls is ArtifactEnvelopeModel:
                 model = model_cls(
@@ -265,6 +287,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
     class FakeProcess:
         sequential = "sequential"
+        hierarchical = "hierarchical"
 
     def _tool(name: str):
         def _decorate(func):
@@ -317,6 +340,9 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
     assert result["ok"] is True
     assert result["produced"]["store_season_plan"] == saved
+    assert isinstance(captured_crew["agents"], list)
+    assert len(captured_crew["agents"]) >= 7
+    assert captured_crew["manager_agent"] is not None
 
 
 def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
@@ -340,13 +366,19 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
             self.description = kwargs["description"]
             self.output = None
 
+    captured_crew: dict[str, object] = {}
+
     class FakeCrew:
         def __init__(self, *, tasks, **kwargs):
             self.tasks = tasks
             self.kwargs = kwargs
+            captured_crew["agents"] = kwargs.get("agents", [])
+            captured_crew["tasks"] = tasks
+            captured_crew["manager_agent"] = kwargs.get("manager_agent")
+            captured_crew["process"] = kwargs.get("process")
 
         def kickoff(self):
-            task = self.tasks[0]
+            task = self.tasks[-1]
             model_cls = task.output_pydantic
             if model_cls is PhaseBundleModel:
                 model = model_cls(
@@ -395,6 +427,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
 
     class FakeProcess:
         sequential = "sequential"
+        hierarchical = "hierarchical"
 
     def _tool(name: str):
         def _decorate(func):
@@ -452,6 +485,9 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     meta = document["meta"]
     assert meta["artifact_type"] == "PHASE_GUARDRAILS"
     assert meta["owner_agent"] == "Phase-Architect"
+    assert isinstance(captured_crew["agents"], list)
+    assert len(captured_crew["agents"]) >= 7
+    assert captured_crew["manager_agent"] is not None
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:
@@ -627,6 +663,83 @@ def test_run_phase_flow_executes_bundle_once(monkeypatch) -> None:
 
     assert result["ok"] is True
     assert marker["calls"] == 1
+
+
+def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+    captured: dict[str, object] = {}
+
+    def _fake_run_agent_multi_output(*args, **kwargs):
+        captured["tasks"] = kwargs["tasks"]
+        return {"ok": True, "produced": {"store_week_plan": {"run_id": kwargs["run_id"]}}}
+
+    monkeypatch.setattr("rps.crewai_runtime.flows.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_week_flow(
+        runtime_for=lambda _name: runtime,
+        agent_name="week_planner",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_WEEK_PLAN],
+        user_input="Create week plan.",
+        run_id="week-flow-run",
+    )
+
+    assert result["ok"] is True
+    assert captured["tasks"] == [AgentTask.CREATE_WEEK_PLAN]
+
+
+def test_run_report_flow_executes_runner(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+    marker = {"calls": 0}
+
+    def _runner():
+        marker["calls"] += 1
+        return {"ok": True, "produced": {"store_des_analysis_report": {"run_id": "report-run"}}}
+
+    result = run_report_flow(_runner)
+
+    assert result["ok"] is True
+    assert marker["calls"] == 1
+
+
+def test_run_feed_forward_flow_runs_chain(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+    marker = {"report": 0, "season": 0, "phase": 0}
+
+    def _report():
+        marker["report"] += 1
+        return {"ok": True}
+
+    def _season():
+        marker["season"] += 1
+        return {"ok": True}
+
+    def _phase():
+        marker["phase"] += 1
+        return {"ok": True}
+
+    result = run_feed_forward_flow(
+        report_runner=_report,
+        season_phase_runner=_season,
+        phase_runner=_phase,
+    )
+
+    assert result["report_result"]["ok"] is True
+    assert result["season_phase_result"]["ok"] is True
+    assert result["phase_result"]["ok"] is True
+    assert marker == {"report": 1, "season": 1, "phase": 1}
 
 
 def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> None:

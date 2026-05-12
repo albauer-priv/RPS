@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added live hierarchical Season/Phase execution on top of that foundation: `SEASON_PLAN` now runs specialist subtasks before manager finalization, and phase artefacts now run specialist subtasks plus an internal `PhaseBundle` manager step before the requested public phase artefact is persisted.
 - Added dedicated prompt slices for Season and Phase specialist roles, so internal CrewAI specialists no longer reuse the top-level `season_planner` / `phase_architect` prompts.
 - Added CrewAI Flow wrappers for outer Season and Phase orchestration under `src/rps/crewai_runtime/flows.py`.
+- Added CrewAI Flow wrappers for outer Week, Report, and Feed-Forward orchestration, bringing the remaining planning/advisory chains onto the same Flow wrapper pattern.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach page now renders its own Streamlit chat transcript and executes conversational turns through CrewAI-native `Agent`/`Task`/`Crew` objects, while the CrewAI persisted-artefact backend resolves provider settings directly from `RPS_LLM_*` env vars instead of reading `LiteLLMClient.config`.
 - Responsibility boundaries are now aligned across CrewAI config, runtime normalization, and architecture docs: `Season-Planner` is the binding owner of `SEASON_PLAN` and `SEASON_PHASE_FEED_FORWARD`, `Phase-Architect` owns phase artefacts and `PHASE_FEED_FORWARD`, `Performance-Analyst` is diagnostic-only, and phase cadence is explicitly an application of season authority rather than a phase-selected default.
 - Season entrypoints now route through CrewAI Flow-backed outer orchestration, and scoped `Run Phase` execution now computes one internal `PhaseBundle` and persists the requested public phase artefacts from that single grouped run instead of re-running the internal specialist chain per artefact.
+- Season and Phase specialist execution now runs as one real hierarchical CrewAI crew per run instead of serial one-task crews, while Week revision, DES report generation, and feed-forward chaining now route through CrewAI Flow wrappers.
 
 ### Removed
 - Removed the remaining LiteLLM-era runtime stack: `rps.openai.litellm_runtime`, `rps.openai.client`, `rps.openai.streaming`, `rps.openai.response_utils`, `rps.openai.runtime`, `rps.agents.runner`, `rps.agents.runner_strict`, `rps.agents.multi_output_runner`, and `rps.ui.rps_chatbot`.

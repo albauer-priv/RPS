@@ -327,7 +327,7 @@ def _execute_crewai_task(
         agent=agent,
         output_pydantic=output_model_for_kind(task_blueprint.output_kind),
     )
-    process = getattr(process_cls, "hierarchical", None) or getattr(process_cls, "sequential")
+    process = getattr(process_cls, "sequential")
     crew = crew_cls(
         agents=[agent],
         tasks=[crew_task],
@@ -340,6 +340,128 @@ def _execute_crewai_task(
         raw = getattr(getattr(crew_task, "output", None), "raw", None)
         raise RuntimeError(
             f"CrewAI task '{task_blueprint.name}' did not produce a typed pydantic output."
+            + (f" Raw output: {raw}" if raw else "")
+        )
+    return pydantic_output
+
+
+def _build_crewai_task(
+    *,
+    task_cls: Any,
+    task_blueprint: Any,
+    agent: object,
+    description: str,
+    context_tasks: list[object] | None = None,
+) -> object:
+    """Instantiate one CrewAI task object with optional explicit context."""
+
+    kwargs: dict[str, Any] = {
+        "description": description,
+        "expected_output": task_blueprint.expected_output,
+        "agent": agent,
+        "output_pydantic": output_model_for_kind(task_blueprint.output_kind),
+    }
+    if context_tasks:
+        kwargs["context"] = context_tasks
+    return task_cls(**kwargs)
+
+
+def _execute_crewai_hierarchical_crew(
+    *,
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    runtime: AgentRuntime,
+    manager_agent_name: str,
+    crew_task_names: tuple[str, ...],
+    final_task_name: str,
+    task_blueprints: dict[str, Any],
+    agent_blueprints: dict[str, Any],
+    llm: object,
+    tools: list[Any],
+    user_input: str,
+    final_public_task: AgentTask | None = None,
+) -> Any:
+    """Execute one real multi-agent hierarchical crew and return the final typed output."""
+
+    agents_by_name: dict[str, object] = {}
+    for task_name in crew_task_names:
+        task_blueprint = task_blueprints[task_name]
+        agent_name = task_blueprint.agent
+        if agent_name in agents_by_name:
+            continue
+        agent_blueprint = agent_blueprints[agent_name]
+        agents_by_name[agent_name] = _build_crewai_agent(
+            agent_cls,
+            blueprint=agent_blueprint,
+            llm=llm,
+            tools=tools,
+        )
+
+    manager_agent = agents_by_name[manager_agent_name]
+    crew_tasks: list[object] = []
+    prior_tasks: list[object] = []
+    final_task_obj: object | None = None
+    for task_name in crew_task_names:
+        task_blueprint = task_blueprints[task_name]
+        agent_name = task_blueprint.agent
+        prompt_agent = _resolve_prompt_agent_name(agent_name, agent_blueprints[agent_name])
+        if task_name == final_task_name and final_public_task is not None:
+            description = _build_task_description(
+                runtime,
+                agent_name=manager_agent_name,
+                task=final_public_task,
+                user_input=user_input,
+            )
+            if prior_tasks:
+                description = "\n".join(
+                    [
+                        description,
+                        "",
+                        "Use the prior specialist and audit task outputs as context for the final manager decision.",
+                    ]
+                )
+        else:
+            description = _build_internal_task_description(
+                runtime,
+                prompt_agent=prompt_agent,
+                task_blueprint=task_blueprint,
+                user_input=user_input,
+            )
+        crew_task = _build_crewai_task(
+            task_cls=task_cls,
+            task_blueprint=task_blueprint,
+            agent=agents_by_name[agent_name],
+            description=description,
+            context_tasks=prior_tasks[:] if prior_tasks else None,
+        )
+        crew_tasks.append(crew_task)
+        prior_tasks.append(crew_task)
+        if task_name == final_task_name:
+            final_task_obj = crew_task
+
+    if final_task_obj is None:
+        raise RuntimeError(f"Final crew task '{final_task_name}' was not created.")
+
+    hierarchical = getattr(process_cls, "hierarchical", None)
+    process = hierarchical or getattr(process_cls, "sequential")
+    crew_kwargs: dict[str, Any] = {
+        "agents": [agent for name, agent in agents_by_name.items() if name != manager_agent_name],
+        "tasks": crew_tasks,
+        "process": process,
+        "verbose": False,
+    }
+    if hierarchical is not None:
+        crew_kwargs["manager_agent"] = manager_agent
+        crew_kwargs["manager_llm"] = llm
+    crew = crew_cls(**crew_kwargs)
+    result = crew.kickoff()
+    pydantic_output = _extract_typed_output(result, final_task_obj)
+    if pydantic_output is None:
+        raw = getattr(getattr(final_task_obj, "output", None), "raw", None)
+        raise RuntimeError(
+            f"CrewAI crew final task '{final_task_name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
         )
     return pydantic_output
@@ -405,64 +527,24 @@ def _run_season_plan_document(
     process_cls: Any,
     llm: object,
     tools: list[Any],
-    agent_name: str,
-    agent_blueprint: Any,
     task_blueprint: Any,
 ) -> JsonMap:
     """Execute the hierarchical season crew and return the final manager document."""
-
-    internal_blocks: list[str] = []
-    for internal_name in _SEASON_INTERNAL_TASKS:
-        internal_task_blueprint = task_blueprints[internal_name]
-        internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
-        prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
-        internal_output = _execute_crewai_task(
-            agent_cls=agent_cls,
-            crew_cls=crew_cls,
-            task_cls=task_cls,
-            process_cls=process_cls,
-            runtime=runtime,
-            agent_name=internal_task_blueprint.agent,
-            agent_blueprint=internal_agent_blueprint,
-            task_blueprint=internal_task_blueprint,
-            llm=llm,
-            tools=tools,
-            description=_build_internal_task_description(
-                runtime,
-                prompt_agent=prompt_agent,
-                task_blueprint=internal_task_blueprint,
-                user_input=user_input,
-                context_blocks=internal_blocks,
-            ),
-        )
-        internal_blocks.append(_render_json_block(internal_name, internal_output))
-
-    description = _build_task_description(
-        runtime,
-        agent_name=agent_name,
-        task=AgentTask.CREATE_SEASON_PLAN,
-        user_input=user_input,
-    )
-    description = "\n".join(
-        [
-            description,
-            "",
-            "Internal specialist findings:",
-            *internal_blocks,
-        ]
-    )
-    pydantic_output = _execute_crewai_task(
+    pydantic_output = _execute_crewai_hierarchical_crew(
         agent_cls=agent_cls,
         crew_cls=crew_cls,
         task_cls=task_cls,
         process_cls=process_cls,
         runtime=runtime,
-        agent_name=agent_name,
-        agent_blueprint=agent_blueprint,
-        task_blueprint=task_blueprint,
+        manager_agent_name=task_blueprint.agent,
+        crew_task_names=(*_SEASON_INTERNAL_TASKS, task_blueprint.name),
+        final_task_name=task_blueprint.name,
+        task_blueprints=task_blueprints,
+        agent_blueprints=agent_blueprints,
         llm=llm,
         tools=tools,
-        description=description,
+        user_input=user_input,
+        final_public_task=AgentTask.CREATE_SEASON_PLAN,
     )
     document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(document, dict):
@@ -484,36 +566,25 @@ def _run_phase_bundle_document(
     tools: list[Any],
 ) -> JsonMap:
     """Execute the hierarchical phase crew once and return the final PhaseBundle document."""
-
-    internal_blocks: list[str] = []
-    internal_output: Any = None
-    for internal_name in _PHASE_INTERNAL_TASKS:
-        internal_task_blueprint = task_blueprints[internal_name]
-        internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
-        prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
-        internal_output = _execute_crewai_task(
-            agent_cls=agent_cls,
-            crew_cls=crew_cls,
-            task_cls=task_cls,
-            process_cls=process_cls,
-            runtime=runtime,
-            agent_name=internal_task_blueprint.agent,
-            agent_blueprint=internal_agent_blueprint,
-            task_blueprint=internal_task_blueprint,
-            llm=llm,
-            tools=tools,
-            description=_build_internal_task_description(
-                runtime,
-                prompt_agent=prompt_agent,
-                task_blueprint=internal_task_blueprint,
-                user_input=user_input,
-                context_blocks=internal_blocks,
-            ),
-        )
-        internal_blocks.append(_render_json_block(internal_name, internal_output))
-
+    final_task_name = _PHASE_INTERNAL_TASKS[-1]
+    pydantic_output = _execute_crewai_hierarchical_crew(
+        agent_cls=agent_cls,
+        crew_cls=crew_cls,
+        task_cls=task_cls,
+        process_cls=process_cls,
+        runtime=runtime,
+        manager_agent_name=task_blueprints[final_task_name].agent,
+        crew_task_names=_PHASE_INTERNAL_TASKS,
+        final_task_name=final_task_name,
+        task_blueprints=task_blueprints,
+        agent_blueprints=agent_blueprints,
+        llm=llm,
+        tools=tools,
+        user_input=user_input,
+        final_public_task=None,
+    )
     bundle_document = (
-        internal_output.model_dump() if hasattr(internal_output, "model_dump") else internal_output
+        pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     )
     if not isinstance(bundle_document, dict):
         raise RuntimeError("Phase bundle output did not decode to an object.")
@@ -857,8 +928,6 @@ def run_agent_multi_output_crewai(
                 process_cls=Process,
                 llm=llm,
                 tools=tools,
-                agent_name=agent_name,
-                agent_blueprint=agent_blueprint,
                 task_blueprint=task_blueprint,
             )
         else:

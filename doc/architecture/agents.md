@@ -28,6 +28,8 @@ This document is the canonical registry of agents, their roles, modes, and artif
 - CrewAI runtime now executes internal specialist roles for `Season-Planner` and `Phase-Architect`; these sub-roles are not independent top-level artefact authorities and only feed manager-authored persisted outputs.
 - Season and Phase specialists now use dedicated prompt slices instead of reusing the top-level planner prompts.
 - Outer Season and Phase orchestration is wrapped in CrewAI Flows; grouped Phase runs reuse one internal `PhaseBundle` before deterministic public artefact persistence.
+- Outer Week, Report, and Feed-Forward orchestration now also uses CrewAI Flow wrappers.
+- Season and Phase specialist work now runs inside one hierarchical CrewAI crew per run instead of repeated one-task crew executions.
 
 ## Related Docs
 

@@ -29,6 +29,26 @@ class PhaseFlowState(BaseModel):
     result: JsonMap = Field(default_factory=dict)
 
 
+class WeekFlowState(BaseModel):
+    """Structured state for week outer orchestration."""
+
+    result: JsonMap = Field(default_factory=dict)
+
+
+class ReportFlowState(BaseModel):
+    """Structured state for report outer orchestration."""
+
+    result: JsonMap = Field(default_factory=dict)
+
+
+class FeedForwardFlowState(BaseModel):
+    """Structured state for advisory chain orchestration."""
+
+    report_result: JsonMap = Field(default_factory=dict)
+    season_phase_result: JsonMap = Field(default_factory=dict)
+    phase_result: JsonMap = Field(default_factory=dict)
+
+
 def _load_flow_symbols() -> tuple[Any, Any, Any, Any]:
     """Load CrewAI Flow primitives lazily for runtime-safe imports."""
 
@@ -173,3 +193,114 @@ def run_phase_flow(
     flow.state.requested_tasks = [task.value for task in tasks]
     flow.kickoff()
     return dict(flow.state.result)
+
+
+def run_week_flow(
+    *,
+    runtime_for: Callable[[str], AgentRuntime],
+    agent_name: str,
+    athlete_id: str,
+    tasks: list[AgentTask],
+    user_input: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+    force_file_search: bool = True,
+    max_num_results: int = 20,
+) -> JsonMap:
+    """Execute the outer Week chain through a CrewAI Flow wrapper."""
+
+    Flow, start, listen, _router = _load_flow_symbols()
+
+    class WeekOuterFlow(Flow[WeekFlowState]):
+        @start()
+        def bootstrap(self) -> str:
+            return "week_plan"
+
+        @listen(bootstrap)
+        def run_week(self, _label: str) -> JsonMap:
+            self.state.result = run_agent_multi_output(
+                runtime_for(agent_name),
+                agent_name=agent_name,
+                agent_vs_name="vs_rps_all_agents",
+                athlete_id=athlete_id,
+                tasks=tasks,
+                user_input=user_input,
+                run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
+                force_file_search=force_file_search,
+                max_num_results=max_num_results,
+            )
+            return self.state.result
+
+    flow = WeekOuterFlow()
+    flow.kickoff()
+    return dict(flow.state.result)
+
+
+def run_report_flow(
+    report_runner: Callable[[], JsonMap],
+) -> JsonMap:
+    """Execute report generation through a CrewAI Flow wrapper."""
+
+    Flow, start, listen, _router = _load_flow_symbols()
+
+    class ReportOuterFlow(Flow[ReportFlowState]):
+        @start()
+        def bootstrap(self) -> str:
+            return "report"
+
+        @listen(bootstrap)
+        def run_report(self, _label: str) -> JsonMap:
+            self.state.result = report_runner()
+            return self.state.result
+
+    flow = ReportOuterFlow()
+    flow.kickoff()
+    return dict(flow.state.result)
+
+
+def run_feed_forward_flow(
+    *,
+    report_runner: Callable[[], JsonMap],
+    season_phase_runner: Callable[[], JsonMap],
+    phase_runner: Callable[[], JsonMap],
+) -> dict[str, JsonMap]:
+    """Execute report -> season delta -> phase delta through a CrewAI Flow wrapper."""
+
+    Flow, start, listen, _router = _load_flow_symbols()
+
+    class FeedForwardOuterFlow(Flow[FeedForwardFlowState]):
+        @start()
+        def bootstrap(self) -> str:
+            return "report"
+
+        @listen(bootstrap)
+        def run_report(self, _label: str) -> JsonMap:
+            self.state.report_result = report_runner()
+            return self.state.report_result
+
+        @listen(run_report)
+        def run_season_phase(self, _report_result: JsonMap) -> JsonMap:
+            if not self.state.report_result.get("ok"):
+                self.state.season_phase_result = {"ok": False, "skipped": True}
+                return self.state.season_phase_result
+            self.state.season_phase_result = season_phase_runner()
+            return self.state.season_phase_result
+
+        @listen(run_season_phase)
+        def run_phase(self, _season_phase_result: JsonMap) -> JsonMap:
+            if not self.state.season_phase_result.get("ok"):
+                self.state.phase_result = {"ok": False, "skipped": True}
+                return self.state.phase_result
+            self.state.phase_result = phase_runner()
+            return self.state.phase_result
+
+    flow = FeedForwardOuterFlow()
+    flow.kickoff()
+    return {
+        "report_result": dict(flow.state.report_result),
+        "season_phase_result": dict(flow.state.season_phase_result),
+        "phase_result": dict(flow.state.phase_result),
+    }

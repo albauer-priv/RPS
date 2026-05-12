@@ -14,7 +14,7 @@ from rps.agents.registry import AGENTS
 from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
-from rps.crewai_runtime.flows import run_phase_flow
+from rps.crewai_runtime.flows import run_phase_flow, run_report_flow, run_week_flow
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
@@ -223,8 +223,27 @@ def create_performance_report(
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
     reasoning_summary_resolver: Callable[[str], str | None] | None = None,
     reasoning_stream_handler: Callable[[str], None] | None = None,
+    _flow_wrapped: bool = False,
 ) -> OrchestratorResult:
     """Create a DES analysis report for the requested ISO week."""
+    if not _flow_wrapped:
+        return run_report_flow(
+            lambda: create_performance_report(
+                runtime_for,
+                athlete_id=athlete_id,
+                report_week=report_week,
+                run_id_prefix=run_id_prefix,
+                force_file_search=force_file_search,
+                max_num_results=max_num_results,
+                model_resolver=model_resolver,
+                temperature_resolver=temperature_resolver,
+                reasoning_effort_resolver=reasoning_effort_resolver,
+                reasoning_summary_resolver=reasoning_summary_resolver,
+                reasoning_stream_handler=reasoning_stream_handler,
+                _flow_wrapped=True,
+            )
+        )
+
     agent_logger = logging.getLogger("rps.agents.crewai_backend")
     summaries: list[str] = []
     log_messages: list[str] = []
@@ -1017,10 +1036,9 @@ def plan_week(
         _log(message)
         mode = _mode_for_task(AgentTask.CREATE_WEEK_PLAN)
         injected_block = build_injection_block("week_planner", mode=mode)
-        out = run_agent_multi_output(
-            runtime_for(spec.name),
+        out = run_week_flow(
+            runtime_for=runtime_for,
             agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=week_tasks,
             user_input=(
