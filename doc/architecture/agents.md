@@ -26,6 +26,8 @@ This document is the canonical registry of agents, their roles, modes, and artif
 - Modes are referenced by orchestrators and UI run scopes.
 - Prompts are in [prompts/agents/*.md](prompts/agents/*.md) and knowledge injection is configured in `config/agent_knowledge_injection.yaml`.
 - CrewAI runtime now executes internal specialist roles for `Season-Planner` and `Phase-Architect`; these sub-roles are not independent top-level artefact authorities and only feed manager-authored persisted outputs.
+- Season and Phase specialists now use dedicated prompt slices instead of reusing the top-level planner prompts.
+- Outer Season and Phase orchestration is wrapped in CrewAI Flows; grouped Phase runs reuse one internal `PhaseBundle` before deterministic public artefact persistence.
 
 ## Related Docs
 

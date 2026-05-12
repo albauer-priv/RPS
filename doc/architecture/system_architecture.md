@@ -83,6 +83,7 @@ flowchart TD
 
 1. **CrewAI Runtime**
    - CrewAI Agent/Task execution with typed outputs and workspace tools.
+   - Outer Season and Phase orchestration now also runs through CrewAI Flow wrappers.
 2. **Local Vector Stores**
    - Local knowledge base (sources in repo; embeddings built locally).
 3. **Prompt Loader**
@@ -92,7 +93,8 @@ flowchart TD
 5. **Schema Validation**
    - JSON schema validation for all artifacts (envelope or raw payload).
 6. **Orchestrator (optional)**
-   - `plan-week` for Season → Phase → Week → Builder → Analysis sequencing.
+  - `plan-week` for Season → Phase → Week → Builder → Analysis sequencing.
+  - Season and Phase orchestration entrypoints use CrewAI Flow wrappers while guarded store and deterministic export remain code-owned boundaries.
 7. **Run Store**
   - Per-run JSON state under `runtime/athletes/<athlete_id>/runs/<run_id>/run.json`, `steps.json`, and `events.jsonl`.
    - Background jobs (data pipeline, housekeeping, agent reports) also write run records with `process_type`/`process_subtype`.

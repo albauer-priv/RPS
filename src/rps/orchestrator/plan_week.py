@@ -14,6 +14,7 @@ from rps.agents.registry import AGENTS
 from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
+from rps.crewai_runtime.flows import run_phase_flow
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
@@ -786,39 +787,39 @@ def plan_week(
                 "never use workspace_get_latest for these activity artefacts. "
             )
         spec = AGENTS["phase_architect"]
-        for task in phase_tasks:
-            mode = _mode_for_task(task)
-            injected_block = build_injection_block("phase_architect", mode=mode)
-            message = f"Running Phase-Architect task {task.value} for phase range {phase_range_label}."
-            _log(message)
-            out = run_agent_multi_output(
-                runtime_for(spec.name),
-                agent_name=spec.name,
-                agent_vs_name=spec.vector_store_name,
-                athlete_id=athlete_id,
-                tasks=[task],
-                user_input=(
-                    f"Create phase artefact {task.value} for phase range {phase_range_label} "
-                    f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
-                    "Use this phase range as the iso_week_range for the artefact. "
-                    "Read season_plan first and use explicit week/range-scoped workspace tools for any "
-                    "week-sensitive or exact-range dependencies. "
-                    f"{athlete_state_snapshot_block}"
-                    f"{planning_context_snapshot_block}"
-                    f"{historical_context_line}"
-                    f"{user_data_block}"
-                    f"{override_line}"
-                    f"{injected_block}"
-                ),
-                run_id=f"{run_id}_phase_{task.value.lower()}",
-                model_override=model_resolver(spec.name) if model_resolver else None,
-                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
-            steps.append({"agent": "phase_architect", "tasks": [task.value], "result": out})
-            if out.get("ok") and out.get("produced"):
-                _log("Done.")
+        phase_task_labels = ", ".join(task.value for task in phase_tasks)
+        mode = _mode_for_task(phase_tasks[0])
+        injected_block = build_injection_block("phase_architect", mode=mode)
+        message = (
+            f"Running Phase-Architect Flow for phase range {phase_range_label} "
+            f"covering tasks: {phase_task_labels}."
+        )
+        _log(message)
+        out = run_phase_flow(
+            runtime_for(spec.name),
+            agent_name=spec.name,
+            athlete_id=athlete_id,
+            tasks=phase_tasks,
+            user_input=(
+                f"Create phase artefacts {phase_task_labels} for phase range {phase_range_label} "
+                f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
+                "Use this phase range as the iso_week_range for the artefacts. "
+                "Read season_plan first and use explicit week/range-scoped workspace tools for any "
+                "week-sensitive or exact-range dependencies. "
+                f"{athlete_state_snapshot_block}"
+                f"{planning_context_snapshot_block}"
+                f"{historical_context_line}"
+                f"{user_data_block}"
+                f"{override_line}"
+                f"{injected_block}"
+            ),
+            run_id=f"{run_id}_phase_bundle",
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+        )
+        steps.append({"agent": "phase_architect", "tasks": [task.value for task in phase_tasks], "result": out})
+        if out.get("ok") and out.get("produced"):
+            _log("Done.")
 
     required_phase_artefacts = _required_phase_artefacts_for_forced_steps(forced_steps)
     if required_phase_artefacts:

@@ -29,7 +29,7 @@ agents:
     goal: Resolve scenario guidance into a binding season plan and season-level feed-forward decisions.
     runtime_status: foundation_only
     output_mode: artifact_envelope
-    prompt_agent: season_planner
+    prompt_agent: season_planner_manager
     allow_delegation: true
   scenario_interpreter:
     display_name: Scenario Interpreter
@@ -37,56 +37,56 @@ agents:
     goal: Translate the selected scenario into season-level planning intent without treating it as binding authority.
     runtime_status: foundation_only
     output_mode: season_event_anchor
-    prompt_agent: season_planner
+    prompt_agent: scenario_interpreter
   event_priority_anchor_specialist:
     display_name: Event Priority and Anchor Specialist
     role: Classify and prioritize season events
     goal: Define event anchors and priority windows for reverse season planning.
     runtime_status: foundation_only
     output_mode: season_event_anchor
-    prompt_agent: season_planner
+    prompt_agent: event_priority_anchor_specialist
   macrocycle_architect:
     display_name: Macrocycle Architect
     role: Reverse-plan season macrocycles
     goal: Build base/build/peak/transition structure backward from priority events and bind cadence at season level.
     runtime_status: foundation_only
     output_mode: season_macrocycle_draft
-    prompt_agent: season_planner
+    prompt_agent: macrocycle_architect
   load_governance_specialist:
     display_name: Load Governance Specialist
     role: Season load governance
     goal: Keep season load corridors and durability-first progression coherent.
     runtime_status: foundation_only
     output_mode: load_governance_audit
-    prompt_agent: season_planner
+    prompt_agent: load_governance_specialist
   constraint_specialist:
     display_name: Constraint Specialist
     role: Season constraint synthesis
     goal: Preserve athlete, availability, logistics, and planning-event constraints in binding season governance.
     runtime_status: foundation_only
     output_mode: constraint_audit
-    prompt_agent: season_planner
+    prompt_agent: constraint_specialist
   historical_context_specialist:
     display_name: Historical Context Specialist
     role: Historical load and recovery interpreter
     goal: Ground season planning in recent activity, load tolerance, and recovery context.
     runtime_status: foundation_only
     output_mode: constraint_audit
-    prompt_agent: season_planner
+    prompt_agent: historical_context_specialist
   kpi_guidance_specialist:
     display_name: KPI Guidance Specialist
     role: KPI guidance interpreter
     goal: Align season governance with selected KPI profile guidance without overstepping into diagnostics.
     runtime_status: foundation_only
     output_mode: constraint_audit
-    prompt_agent: season_planner
+    prompt_agent: kpi_guidance_specialist
   season_plan_auditor:
     display_name: Season Plan Auditor
     role: Season authority auditor
     goal: Check macrocycle coherence, cadence authority, and season-level governance before persistence.
     runtime_status: foundation_only
     output_mode: season_plan_audit
-    prompt_agent: season_planner
+    prompt_agent: season_plan_auditor
   phase_architect:
     display_name: Phase Architect
     role: Produce phase artefacts and phase feed forward
@@ -100,7 +100,7 @@ agents:
     goal: Convert season governance into binding phase outputs and phase deltas without redefining season authority.
     runtime_status: foundation_only
     output_mode: artifact_envelope
-    prompt_agent: phase_architect
+    prompt_agent: phase_architect_manager
     allow_delegation: true
   guardrails_specialist:
     display_name: Guardrails Specialist
@@ -108,49 +108,49 @@ agents:
     goal: Define weekly load bands, semantics, and execution non-negotiables for the exact phase range.
     runtime_status: foundation_only
     output_mode: phase_guardrails_payload
-    prompt_agent: phase_architect
+    prompt_agent: guardrails_specialist
   structure_specialist:
     display_name: Structure Specialist
     role: Phase structure author
     goal: Define week roles, skeleton logic, and execution principles inside established phase guardrails.
     runtime_status: foundation_only
     output_mode: phase_structure_payload
-    prompt_agent: phase_architect
+    prompt_agent: structure_specialist
   cadence_recovery_integrator:
     display_name: Cadence and Recovery Integrator
     role: Season-cadence applicator
     goal: Apply season-selected cadence and recovery rhythm within the exact phase range without inventing a new cadence.
     runtime_status: foundation_only
     output_mode: phase_structure_payload
-    prompt_agent: phase_architect
+    prompt_agent: cadence_recovery_integrator
   intensity_distribution_specialist:
     display_name: Intensity Distribution Specialist
     role: Phase intensity handling specialist
     goal: Shape phase-appropriate intensity handling and density inside existing guardrails without prescribing workouts.
     runtime_status: foundation_only
     output_mode: phase_structure_payload
-    prompt_agent: phase_architect
+    prompt_agent: intensity_distribution_specialist
   preview_synthesizer:
     display_name: Preview Synthesizer
     role: Derived phase preview author
     goal: Produce a preview-only narrative that adds no new planning decisions.
     runtime_status: foundation_only
     output_mode: phase_preview_payload
-    prompt_agent: phase_architect
+    prompt_agent: preview_synthesizer
   constraint_auditor:
     display_name: Constraint Auditor
     role: Phase constraint auditor
     goal: Check availability, logistics, planning events, and applicable season feed-forward consistency.
     runtime_status: foundation_only
     output_mode: constraint_audit
-    prompt_agent: phase_architect
+    prompt_agent: constraint_auditor
   load_governance_auditor:
     display_name: Load Governance Auditor
     role: Phase load governance auditor
     goal: Check corridor coherence, durability-first policy, and compression risk before phase persistence.
     runtime_status: foundation_only
     output_mode: load_governance_audit
-    prompt_agent: phase_architect
+    prompt_agent: load_governance_auditor
   week_planner:
     display_name: Week Planner
     role: Produce and revise week plans

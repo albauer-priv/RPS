@@ -7,8 +7,9 @@ from collections.abc import Callable
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
-from rps.agents.runtime import AgentRuntime, run_agent_multi_output
+from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
+from rps.crewai_runtime.flows import run_season_flow
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
     save_advisory_memory,
@@ -158,12 +159,11 @@ def create_season_scenarios(
         "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
     )
     logger.info("Creating season scenarios athlete=%s iso_week=%04d-W%02d", athlete_id, year, week)
-    return run_agent_multi_output(
-        runtime_for(spec.name),
+    return run_season_flow(
+        runtime_for=runtime_for,
         agent_name=spec.name,
-        agent_vs_name=spec.vector_store_name,
         athlete_id=athlete_id,
-        tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
+        task=AgentTask.CREATE_SEASON_SCENARIOS,
         user_input=user_input,
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
@@ -228,12 +228,11 @@ def select_season_scenario(
         week,
         selected,
     )
-    return run_agent_multi_output(
-        runtime_for(spec.name),
+    return run_season_flow(
+        runtime_for=runtime_for,
         agent_name=spec.name,
-        agent_vs_name=spec.vector_store_name,
         athlete_id=athlete_id,
-        tasks=[AgentTask.CREATE_SEASON_SCENARIO_SELECTION],
+        task=AgentTask.CREATE_SEASON_SCENARIO_SELECTION,
         user_input=user_input,
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
@@ -348,12 +347,11 @@ def create_season_plan(
         week,
         selected or "latest",
     )
-    result = run_agent_multi_output(
-        runtime_for(spec.name),
+    result = run_season_flow(
+        runtime_for=runtime_for,
         agent_name=spec.name,
-        agent_vs_name=spec.vector_store_name,
         athlete_id=athlete_id,
-        tasks=[AgentTask.CREATE_SEASON_PLAN],
+        task=AgentTask.CREATE_SEASON_PLAN,
         user_input=user_input,
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,

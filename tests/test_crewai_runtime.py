@@ -15,6 +15,7 @@ from rps.crewai_runtime.bindings import (
     build_task_blueprints,
     output_model_for_kind,
 )
+from rps.crewai_runtime.flows import run_phase_flow, run_season_flow
 from rps.crewai_runtime.models import (
     ArtifactEnvelopeModel,
     CoachOperationApplyResultModel,
@@ -33,6 +34,75 @@ from rps.orchestrator.coach_operations import (
     preview_scoped_week_replan_operation,
 )
 from rps.prompts.loader import PromptLoader
+
+
+def _install_fake_flow_module(monkeypatch) -> None:
+    """Install a minimal CrewAI Flow module for unit tests."""
+
+    flow_module = types.ModuleType("crewai.flow.flow")
+
+    def start(*_args, **_kwargs):
+        def _decorate(func):
+            func._flow_start = True
+            return func
+
+        return _decorate
+
+    def router(trigger):
+        def _decorate(func):
+            func._flow_router = trigger
+            return func
+
+        return _decorate
+
+    def listen(trigger):
+        def _decorate(func):
+            func._flow_listen = trigger
+            return func
+
+        return _decorate
+
+    class FakeFlow:
+        @classmethod
+        def __class_getitem__(cls, _item):
+            return cls
+
+        def __init__(self):
+            self.state = SimpleNamespace(action="", result={}, requested_tasks=[])
+
+        def kickoff(self):
+            start_method = None
+            router_method = None
+            listeners: list[tuple[object, object]] = []
+            for name in dir(self):
+                candidate = getattr(self, name)
+                func = getattr(type(self), name, None)
+                if callable(candidate) and getattr(func, "_flow_start", False):
+                    start_method = candidate
+                if callable(candidate) and hasattr(func, "_flow_router"):
+                    router_method = candidate
+                if callable(candidate) and hasattr(func, "_flow_listen"):
+                    listeners.append((getattr(func, "_flow_listen"), candidate))
+            if start_method is None:
+                raise AssertionError("FakeFlow requires a @start method")
+            start_result = start_method()
+            if router_method is not None:
+                route_label = router_method(start_result)
+                for trigger, listener_method in listeners:
+                    if trigger == route_label:
+                        return listener_method()
+                return None
+            for trigger, listener_method in listeners:
+                trigger_name = getattr(trigger, "__name__", None)
+                if trigger_name == getattr(start_method, "__name__", None):
+                    return listener_method(start_result)
+            return None
+
+    flow_module.Flow = FakeFlow
+    flow_module.start = start
+    flow_module.listen = listen
+    flow_module.router = router
+    monkeypatch.setitem(sys.modules, "crewai.flow.flow", flow_module)
 
 
 def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
@@ -57,6 +127,8 @@ def test_crewai_blueprints_build_from_yaml() -> None:
 
     assert agents["coach"].goal
     assert agents["season_plan_auditor"].goal
+    assert agents["season_plan_auditor"].config["prompt_agent"] == "season_plan_auditor"
+    assert agents["guardrails_specialist"].config["prompt_agent"] == "guardrails_specialist"
     assert tasks["coach_preview_artifact_edit"].output_kind == "coach_preview"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
     assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle"
@@ -480,6 +552,81 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
     assert isinstance(document, dict)
     meta = document["meta"]
     assert meta["owner_agent"] == "Season-Planner"
+
+
+def test_run_season_flow_routes_to_requested_task(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+
+    captured: dict[str, object] = {}
+
+    def _fake_run_agent_multi_output(*args, **kwargs):
+        captured["task"] = kwargs["tasks"][0]
+        return {"ok": True, "produced": {"store": {"run_id": kwargs["run_id"]}}}
+
+    monkeypatch.setattr("rps.crewai_runtime.flows.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_season_flow(
+        runtime_for=lambda _name: runtime,
+        agent_name="season_planner",
+        athlete_id="i150546",
+        task=AgentTask.CREATE_SEASON_PLAN,
+        user_input="Create season plan.",
+        run_id="season-flow-run",
+    )
+
+    assert result["ok"] is True
+    assert captured["task"] == AgentTask.CREATE_SEASON_PLAN
+
+
+def test_run_phase_flow_executes_bundle_once(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+    marker = {"calls": 0}
+
+    def _fake_run_phase_bundle_crewai(*args, **kwargs):
+        marker["calls"] += 1
+        return {"ok": True, "produced": {"store_phase_guardrails": {"run_id": kwargs["run_id"]}}}
+
+    monkeypatch.setattr("rps.crewai_runtime.flows.run_phase_bundle_crewai", _fake_run_phase_bundle_crewai)
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_phase_flow(
+        runtime,
+        agent_name="phase_architect",
+        athlete_id="i150546",
+        tasks=[
+            AgentTask.CREATE_PHASE_GUARDRAILS,
+            AgentTask.CREATE_PHASE_STRUCTURE,
+            AgentTask.CREATE_PHASE_PREVIEW,
+        ],
+        user_input="Create phase bundle.",
+        run_id="phase-flow-run",
+    )
+
+    assert result["ok"] is True
+    assert marker["calls"] == 1
 
 
 def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> None:

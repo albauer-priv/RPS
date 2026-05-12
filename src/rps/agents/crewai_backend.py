@@ -393,6 +393,133 @@ def _phase_document_from_bundle(bundle_document: JsonMap, artifact_type: Artifac
     return candidate
 
 
+def _run_season_plan_document(
+    *,
+    runtime: AgentRuntime,
+    user_input: str,
+    task_blueprints: dict[str, Any],
+    agent_blueprints: dict[str, Any],
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    llm: object,
+    tools: list[Any],
+    agent_name: str,
+    agent_blueprint: Any,
+    task_blueprint: Any,
+) -> JsonMap:
+    """Execute the hierarchical season crew and return the final manager document."""
+
+    internal_blocks: list[str] = []
+    for internal_name in _SEASON_INTERNAL_TASKS:
+        internal_task_blueprint = task_blueprints[internal_name]
+        internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
+        prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
+        internal_output = _execute_crewai_task(
+            agent_cls=agent_cls,
+            crew_cls=crew_cls,
+            task_cls=task_cls,
+            process_cls=process_cls,
+            runtime=runtime,
+            agent_name=internal_task_blueprint.agent,
+            agent_blueprint=internal_agent_blueprint,
+            task_blueprint=internal_task_blueprint,
+            llm=llm,
+            tools=tools,
+            description=_build_internal_task_description(
+                runtime,
+                prompt_agent=prompt_agent,
+                task_blueprint=internal_task_blueprint,
+                user_input=user_input,
+                context_blocks=internal_blocks,
+            ),
+        )
+        internal_blocks.append(_render_json_block(internal_name, internal_output))
+
+    description = _build_task_description(
+        runtime,
+        agent_name=agent_name,
+        task=AgentTask.CREATE_SEASON_PLAN,
+        user_input=user_input,
+    )
+    description = "\n".join(
+        [
+            description,
+            "",
+            "Internal specialist findings:",
+            *internal_blocks,
+        ]
+    )
+    pydantic_output = _execute_crewai_task(
+        agent_cls=agent_cls,
+        crew_cls=crew_cls,
+        task_cls=task_cls,
+        process_cls=process_cls,
+        runtime=runtime,
+        agent_name=agent_name,
+        agent_blueprint=agent_blueprint,
+        task_blueprint=task_blueprint,
+        llm=llm,
+        tools=tools,
+        description=description,
+    )
+    document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+    if not isinstance(document, dict):
+        raise RuntimeError("Season manager output did not decode to an artifact envelope object.")
+    return document
+
+
+def _run_phase_bundle_document(
+    *,
+    runtime: AgentRuntime,
+    user_input: str,
+    task_blueprints: dict[str, Any],
+    agent_blueprints: dict[str, Any],
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    llm: object,
+    tools: list[Any],
+) -> JsonMap:
+    """Execute the hierarchical phase crew once and return the final PhaseBundle document."""
+
+    internal_blocks: list[str] = []
+    internal_output: Any = None
+    for internal_name in _PHASE_INTERNAL_TASKS:
+        internal_task_blueprint = task_blueprints[internal_name]
+        internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
+        prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
+        internal_output = _execute_crewai_task(
+            agent_cls=agent_cls,
+            crew_cls=crew_cls,
+            task_cls=task_cls,
+            process_cls=process_cls,
+            runtime=runtime,
+            agent_name=internal_task_blueprint.agent,
+            agent_blueprint=internal_agent_blueprint,
+            task_blueprint=internal_task_blueprint,
+            llm=llm,
+            tools=tools,
+            description=_build_internal_task_description(
+                runtime,
+                prompt_agent=prompt_agent,
+                task_blueprint=internal_task_blueprint,
+                user_input=user_input,
+                context_blocks=internal_blocks,
+            ),
+        )
+        internal_blocks.append(_render_json_block(internal_name, internal_output))
+
+    bundle_document = (
+        internal_output.model_dump() if hasattr(internal_output, "model_dump") else internal_output
+    )
+    if not isinstance(bundle_document, dict):
+        raise RuntimeError("Phase bundle output did not decode to an object.")
+    return bundle_document
+
+
 def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, object]) -> JsonMap:
     """Apply the same deterministic normalization rules as the legacy runner."""
 
@@ -411,6 +538,117 @@ def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, o
     if spec.artifact_type == ArtifactType.DES_ANALYSIS_REPORT:
         normalized = _normalize_des_analysis_report(normalized)
     return normalized
+
+
+def run_phase_bundle_crewai(
+    runtime: AgentRuntime,
+    *,
+    agent_name: str,
+    athlete_id: str,
+    tasks: list[AgentTask],
+    user_input: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+) -> JsonMap:
+    """Execute the hierarchical phase crew once and persist the requested phase artefacts."""
+
+    allowed_tasks = {
+        AgentTask.CREATE_PHASE_GUARDRAILS,
+        AgentTask.CREATE_PHASE_STRUCTURE,
+        AgentTask.CREATE_PHASE_PREVIEW,
+    }
+    requested_tasks = [task for task in tasks if task in allowed_tasks]
+    if not requested_tasks:
+        return {
+            "ok": False,
+            "error": "Phase bundle execution requires one or more phase artefact tasks.",
+            "produced": {},
+        }
+
+    crewai = import_module("crewai")
+    Agent = getattr(crewai, "Agent")
+    Task = getattr(crewai, "Task")
+    Crew = getattr(crewai, "Crew")
+    Process = getattr(crewai, "Process")
+    LLM = getattr(crewai, "LLM")
+
+    bundle = load_crewai_config_bundle(root=ROOT)
+    agent_blueprints = build_agent_blueprints(bundle)
+    task_blueprints = build_task_blueprints(bundle)
+    manager_task_blueprint = task_blueprints["phase_bundle_finalize"]
+
+    llm = _build_crewai_llm(
+        LLM,
+        runtime,
+        agent_name=agent_name,
+        model_override=model_override,
+        temperature_override=temperature_override,
+    )
+    tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
+
+    try:
+        bundle_document = _run_phase_bundle_document(
+            runtime=runtime,
+            user_input=user_input,
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            llm=llm,
+            tools=tools,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "error": str(exc),
+            "produced": {},
+        }
+
+    if bundle_document.get("blocking_issues"):
+        return {
+            "ok": False,
+            "error": "Phase bundle blocked by internal audits.",
+            "details": list(bundle_document.get("blocking_issues") or []),
+            "warnings": list(bundle_document.get("warnings") or []),
+            "produced": {},
+        }
+
+    guarded = GuardedValidatedStore(
+        athlete_id=athlete_id,
+        schema_dir=runtime.schema_dir,
+        workspace_root=runtime.workspace_root,
+    )
+    produced: dict[str, Any] = {}
+    warnings = list(bundle_document.get("warnings") or [])
+    for task in requested_tasks:
+        output_spec = OUTPUT_SPECS[task]
+        document = _phase_document_from_bundle(bundle_document, output_spec.artifact_type)
+        document = _normalize_document(output_spec, document, loaded_inputs)
+        try:
+            saved = guarded.guard_put_validated(
+                output_spec=output_spec,
+                document=document,
+                run_id=run_id,
+                producer_agent=manager_task_blueprint.agent,
+                update_latest=True,
+            )
+        except SchemaValidationError as exc:
+            return {
+                "ok": False,
+                "error": "Schema validation failed",
+                "details": list(exc.errors or []),
+                "warnings": warnings,
+                "produced": produced,
+            }
+        except Exception as exc:
+            logger.warning("CrewAI phase bundle store failed for %s: %s", output_spec.artifact_type.value, exc)
+            return {"ok": False, "error": str(exc), "warnings": warnings, "produced": produced}
+        produced[output_spec.tool_name] = saved
+
+    return {"ok": True, "produced": produced, "warnings": warnings}
 
 
 def _build_crewai_tooling(
@@ -558,6 +796,22 @@ def run_agent_multi_output_crewai(
         }
 
     task = tasks[0]
+    if task in {
+        AgentTask.CREATE_PHASE_GUARDRAILS,
+        AgentTask.CREATE_PHASE_STRUCTURE,
+        AgentTask.CREATE_PHASE_PREVIEW,
+    }:
+        return run_phase_bundle_crewai(
+            runtime,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            tasks=[task],
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+        )
+
     output_spec = OUTPUT_SPECS[task]
     blueprint_name = _TASK_BLUEPRINT_BY_AGENT_TASK.get(task)
     if blueprint_name is None:
@@ -592,110 +846,21 @@ def run_agent_multi_output_crewai(
 
     try:
         if task == AgentTask.CREATE_SEASON_PLAN:
-            internal_blocks: list[str] = []
-            for internal_name in _SEASON_INTERNAL_TASKS:
-                internal_task_blueprint = task_blueprints[internal_name]
-                internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
-                prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
-                internal_output = _execute_crewai_task(
-                    agent_cls=Agent,
-                    crew_cls=Crew,
-                    task_cls=Task,
-                    process_cls=Process,
-                    runtime=runtime,
-                    agent_name=internal_task_blueprint.agent,
-                    agent_blueprint=internal_agent_blueprint,
-                    task_blueprint=internal_task_blueprint,
-                    llm=llm,
-                    tools=tools,
-                    description=_build_internal_task_description(
-                        runtime,
-                        prompt_agent=prompt_agent,
-                        task_blueprint=internal_task_blueprint,
-                        user_input=user_input,
-                        context_blocks=internal_blocks,
-                    ),
-                )
-                internal_blocks.append(_render_json_block(internal_name, internal_output))
-
-            description = _build_task_description(
-                runtime,
-                agent_name=agent_name,
-                task=task,
+            document = _run_season_plan_document(
+                runtime=runtime,
                 user_input=user_input,
-            )
-            description = "\n".join(
-                [
-                    description,
-                    "",
-                    "Internal specialist findings:",
-                    *internal_blocks,
-                ]
-            )
-            pydantic_output = _execute_crewai_task(
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                runtime=runtime,
+                llm=llm,
+                tools=tools,
                 agent_name=agent_name,
                 agent_blueprint=agent_blueprint,
                 task_blueprint=task_blueprint,
-                llm=llm,
-                tools=tools,
-                description=description,
             )
-            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
-        elif task in {
-            AgentTask.CREATE_PHASE_GUARDRAILS,
-            AgentTask.CREATE_PHASE_STRUCTURE,
-            AgentTask.CREATE_PHASE_PREVIEW,
-        }:
-            internal_blocks = []
-            for internal_name in _PHASE_INTERNAL_TASKS:
-                internal_task_blueprint = task_blueprints[internal_name]
-                internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
-                prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
-                internal_output = _execute_crewai_task(
-                    agent_cls=Agent,
-                    crew_cls=Crew,
-                    task_cls=Task,
-                    process_cls=Process,
-                    runtime=runtime,
-                    agent_name=internal_task_blueprint.agent,
-                    agent_blueprint=internal_agent_blueprint,
-                    task_blueprint=internal_task_blueprint,
-                    llm=llm,
-                    tools=tools,
-                    description=_build_internal_task_description(
-                        runtime,
-                        prompt_agent=prompt_agent,
-                        task_blueprint=internal_task_blueprint,
-                        user_input=user_input,
-                        context_blocks=internal_blocks,
-                    ),
-                )
-                internal_blocks.append(_render_json_block(internal_name, internal_output))
-
-            bundle_output = internal_output
-            bundle_document = (
-                bundle_output.model_dump() if hasattr(bundle_output, "model_dump") else bundle_output
-            )
-            if not isinstance(bundle_document, dict):
-                return {
-                    "ok": False,
-                    "error": "Phase bundle output did not decode to an object.",
-                    "produced": {},
-                }
-            if bundle_document.get("blocking_issues"):
-                return {
-                    "ok": False,
-                    "error": "Phase bundle blocked by internal audits.",
-                    "details": list(bundle_document.get("blocking_issues") or []),
-                    "warnings": list(bundle_document.get("warnings") or []),
-                    "produced": {},
-                }
-            document = _phase_document_from_bundle(bundle_document, output_spec.artifact_type)
         else:
             description = _build_task_description(
                 runtime,
