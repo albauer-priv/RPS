@@ -15,7 +15,7 @@ except Exception as exc:  # pragma: no cover - UI fallback
 
 from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
-from rps.crewai_runtime.compat import crewai_runtime_status
+from rps.agents.runtime import resolve_agent_runtime_selection
 from rps.orchestrator.coach_operations import (
     apply_feed_forward_operation,
     apply_report_operation,
@@ -432,9 +432,11 @@ st.caption(f"Athlete: {athlete_id}")
 set_status(status_state="done", title="Coach", message="Ready.")
 render_status_panel()
 
-crewai_status = crewai_runtime_status()
-if not crewai_status.ok:
-    st.caption(f"CrewAI foundation only: {crewai_status.message}")
+runtime_selection = resolve_agent_runtime_selection()
+if runtime_selection.effective_backend == "crewai":
+    st.caption("Agent runtime: CrewAI")
+else:
+    st.caption(f"Agent runtime: legacy fallback. {runtime_selection.reason}")
 
 try:
     base = base_runtime()

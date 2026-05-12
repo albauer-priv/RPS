@@ -6,8 +6,8 @@ from datetime import date
 import streamlit as st
 
 from rps.agents.knowledge_injection import build_injection_block
-from rps.agents.multi_output_runner import run_agent_multi_output
 from rps.agents.registry import AGENTS
+from rps.agents.runtime import run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,

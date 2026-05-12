@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Protocol
 
-from rps.agents.multi_output_runner import AgentRuntime
+from rps.agents.runtime import AgentRuntime
 from rps.crewai_runtime.models import (
     ArtifactWriteModel,
     CoachOperationApplyResultModel,

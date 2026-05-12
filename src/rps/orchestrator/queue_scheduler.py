@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from rps.agents.multi_output_runner import AgentRuntime
+from rps.agents.runtime import AgentRuntime
 from rps.orchestrator.plan_hub_worker import PlanHubWorkerConfig, start_plan_hub_worker_with_stop
 from rps.ui.run_store import load_runs
 

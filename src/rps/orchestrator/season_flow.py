@@ -6,8 +6,8 @@ import logging
 from collections.abc import Callable
 
 from rps.agents.knowledge_injection import build_injection_block
-from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
+from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,

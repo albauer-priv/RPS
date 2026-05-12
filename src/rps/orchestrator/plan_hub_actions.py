@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
-from rps.agents.multi_output_runner import AgentRuntime
+from rps.agents.runtime import AgentRuntime
 from rps.orchestrator.plan_week import create_performance_report, plan_week
 from rps.orchestrator.season_flow import (
     create_season_plan,

@@ -404,7 +404,7 @@ def base_runtime() -> dict:
 
 def multi_runtime_for(agent_name: str):
     """Return an AgentRuntime for the requested agent."""
-    from rps.agents.multi_output_runner import AgentRuntime as MultiRuntime
+    from rps.agents.runtime import AgentRuntime as MultiRuntime
 
     base = base_runtime()
     return MultiRuntime(

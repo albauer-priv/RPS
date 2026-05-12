@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from rps.agents.multi_output_runner import AgentRuntime
+from rps.agents.runtime import AgentRuntime
 from rps.core.logging import DailySizeRotatingFileHandler
 from rps.openai.client import get_client
 from rps.orchestrator.plan_hub_actions import (

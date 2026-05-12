@@ -10,8 +10,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from rps.agents.knowledge_injection import build_injection_block
-from rps.agents.multi_output_runner import AgentRuntime, run_agent_multi_output
 from rps.agents.registry import AGENTS
+from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline

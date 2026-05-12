@@ -12,7 +12,7 @@ from typing import TypedDict, cast
 import pandas as pd
 import streamlit as st
 
-from rps.agents.multi_output_runner import AgentRuntime
+from rps.agents.runtime import AgentRuntime
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.queue_scheduler import enqueue_run, ensure_queue_dirs, start_queue_scheduler

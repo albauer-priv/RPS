@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from rps.agents import runtime as agent_runtime
 from rps.crewai_runtime import crewai_runtime_status, load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
@@ -77,3 +78,33 @@ def test_preview_report_and_feed_forward_operations_are_typed() -> None:
     assert feed_forward_preview.operation == "preview_feed_forward"
     assert feed_forward_preview.requires_confirmation is True
     assert "PHASE_FEED_FORWARD" in feed_forward_preview.affected_artifacts
+
+
+def test_runtime_gateway_auto_falls_back_to_legacy_under_python_314(monkeypatch) -> None:
+    monkeypatch.delenv("RPS_AGENT_RUNTIME", raising=False)
+    selection = agent_runtime.resolve_agent_runtime_selection()
+
+    assert selection.requested_backend == "auto"
+    assert selection.effective_backend == "legacy"
+    assert selection.can_execute is True
+    assert selection.is_fallback is True
+
+
+def test_runtime_gateway_respects_explicit_legacy_mode(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_AGENT_RUNTIME", "legacy")
+    selection = agent_runtime.resolve_agent_runtime_selection()
+
+    assert selection.requested_backend == "legacy"
+    assert selection.effective_backend == "legacy"
+    assert selection.can_execute is True
+    assert selection.is_fallback is False
+
+
+def test_runtime_gateway_blocks_explicit_crewai_when_unavailable(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_AGENT_RUNTIME", "crewai")
+    selection = agent_runtime.resolve_agent_runtime_selection()
+
+    assert selection.requested_backend == "crewai"
+    assert selection.effective_backend == "crewai"
+    assert selection.can_execute is False
+    assert "unavailable" in selection.reason.lower()

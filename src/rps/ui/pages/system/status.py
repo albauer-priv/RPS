@@ -6,7 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from rps.agents.multi_output_runner import AgentRuntime
+from rps.agents.runtime import AgentRuntime
 from rps.core.config import load_env_file
 from rps.openai.client import get_client
 from rps.openai.vectorstore_state import VectorStoreResolver
