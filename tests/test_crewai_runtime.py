@@ -19,6 +19,12 @@ from rps.crewai_runtime.models import (
     ArtifactEnvelopeModel,
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
+    ConstraintAuditModel,
+    LoadGovernanceAuditModel,
+    PhaseBundleModel,
+    SeasonEventAnchorModel,
+    SeasonMacrocycleDraftModel,
+    SeasonPlanAuditModel,
 )
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs, resolve_crewai_provider_config
 from rps.orchestrator.coach_operations import (
@@ -36,8 +42,12 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     task_defs = bundle.tasks["tasks"]
     assert "coach" in agent_defs
     assert "week_planner" in agent_defs
+    assert "season_planner_manager" in agent_defs
+    assert "phase_architect_manager" in agent_defs
     assert task_defs["coach_apply_scoped_replan"]["agent"] == "coach"
     assert task_defs["week_plan"]["agent"] == "week_planner"
+    assert task_defs["season_plan"]["agent"] == "season_planner_manager"
+    assert task_defs["phase_guardrails"]["agent"] == "phase_architect_manager"
 
 
 def test_crewai_blueprints_build_from_yaml() -> None:
@@ -46,14 +56,22 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     tasks = build_task_blueprints(bundle)
 
     assert agents["coach"].goal
+    assert agents["season_plan_auditor"].goal
     assert tasks["coach_preview_artifact_edit"].output_kind == "coach_preview"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
+    assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle"
 
 
 def test_output_model_registry_resolves_known_output_kinds() -> None:
     assert output_model_for_kind("artifact_envelope") is ArtifactEnvelopeModel
     assert output_model_for_kind("coach_preview") is CoachOperationPreviewModel
     assert output_model_for_kind("coach_apply") is CoachOperationApplyResultModel
+    assert output_model_for_kind("season_event_anchor") is SeasonEventAnchorModel
+    assert output_model_for_kind("season_macrocycle_draft") is SeasonMacrocycleDraftModel
+    assert output_model_for_kind("season_plan_audit") is SeasonPlanAuditModel
+    assert output_model_for_kind("constraint_audit") is ConstraintAuditModel
+    assert output_model_for_kind("load_governance_audit") is LoadGovernanceAuditModel
+    assert output_model_for_kind("phase_bundle") is PhaseBundleModel
 
 
 def test_crewai_runtime_status_reports_python_compatibility() -> None:
@@ -224,6 +242,106 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
     assert result["ok"] is True
     assert result["produced"]["store_season_plan"] == saved
+
+
+def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    fake_crewai = types.ModuleType("crewai")
+    fake_tools = types.ModuleType("crewai.tools")
+
+    class FakeLLM:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeAgent:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeTask:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.output_pydantic = kwargs["output_pydantic"]
+            self.output = None
+
+    class FakeCrew:
+        def __init__(self, *, tasks, **kwargs):
+            self.tasks = tasks
+            self.kwargs = kwargs
+
+        def kickoff(self):
+            task = self.tasks[0]
+            model_cls = task.output_pydantic
+            envelope = model_cls(
+                meta={
+                    "artifact_type": "SEASON_PHASE_FEED_FORWARD",
+                    "schema_id": "SeasonPhaseFeedForwardInterface",
+                    "schema_version": "1.0",
+                    "owner_agent": "Performance-Analyst",
+                },
+                data={},
+            )
+            task.output = SimpleNamespace(pydantic=envelope, raw=envelope.model_dump_json())
+            return task.output
+
+    class FakeProcess:
+        sequential = "sequential"
+
+    def _tool(name: str):
+        def _decorate(func):
+            func.tool_name = name
+            return func
+
+        return _decorate
+
+    fake_crewai.LLM = FakeLLM
+    fake_crewai.Agent = FakeAgent
+    fake_crewai.Task = FakeTask
+    fake_crewai.Crew = FakeCrew
+    fake_crewai.Process = FakeProcess
+    fake_tools.tool = _tool
+
+    monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
+    monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
+
+    captured: dict[str, object] = {}
+
+    def _fake_guard_put_validated(self, **kwargs):
+        captured.update(kwargs)
+        return {"ok": True, "path": "/tmp/out.json", "version_key": "2026-19__x", "run_id": "run-ff"}
+
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
+        _fake_guard_put_validated,
+    )
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_agent_multi_output_crewai(
+        runtime,
+        agent_name="season_planner",
+        agent_vs_name="vs_rps_all_agents",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
+        user_input="Create season-phase feed-forward.",
+        run_id="run-ff",
+    )
+
+    assert result["ok"] is True
+    document = captured["document"]
+    assert isinstance(document, dict)
+    meta = document["meta"]
+    assert meta["owner_agent"] == "Season-Planner"
 
 
 def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> None:

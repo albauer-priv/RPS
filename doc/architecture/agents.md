@@ -12,19 +12,20 @@ This document is the canonical registry of agents, their roles, modes, and artif
 
 | Agent | Purpose | Modes | Required inputs | Writes | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Season‑Scenario‑Agent | Generate scenarios and scenario selection scaffolding. | CREATE_SEASON_SCENARIOS, CREATE_SEASON_SCENARIO_SELECTION | athlete_profile, planning_events, logistics, kpi_profile, availability, wellness (as required) | season_scenarios, season_scenario_selection | Uses KPI segment selection from UI. |
-| Season‑Planner | Create season plan (weekly load corridors + phase outline). | CREATE_SEASON_PLAN | athlete_profile, planning_events, logistics, kpi_profile, availability, wellness, season_scenarios (optional), season_scenario_selection (optional) | season_plan | Must follow LoadEstimationSpec. |
-| Phase‑Architect | Produce phase guardrails, structure, and preview for a phase range. | CREATE_PHASE_GUARDRAILS, CREATE_PHASE_STRUCTURE, CREATE_PHASE_PREVIEW | season_plan, availability, wellness, zone_model, planning_events, logistics, season_phase_feed_forward (optional) | phase_guardrails, phase_structure, phase_preview | Requires exact-range guardrails for structure; exact-range structure for preview; outputs must reference stored filenames (no guessed names). |
+| Season‑Scenario‑Agent | Generate scenarios and scenario selection scaffolding. | CREATE_SEASON_SCENARIOS, CREATE_SEASON_SCENARIO_SELECTION | athlete_profile, planning_events, logistics, kpi_profile, availability, wellness (as required) | season_scenarios, season_scenario_selection | Advisory only; scenario cadence and phase shaping are informational inputs to Season‑Planner. |
+| Season‑Planner | Create binding season plans and season→phase feed forward. | CREATE_SEASON_PLAN, CREATE_SEASON_PHASE_FEED_FORWARD | athlete_profile, planning_events, logistics, kpi_profile, availability, wellness, season_scenarios (optional), season_scenario_selection (optional), des_analysis_report (for feed forward) | season_plan, season_phase_feed_forward | Binding planning authority for season cadence, macrocycle structure, and season-level phase adjustments. |
+| Phase‑Architect | Produce binding phase governance, preview, and phase→week feed forward. | CREATE_PHASE_GUARDRAILS, CREATE_PHASE_STRUCTURE, CREATE_PHASE_PREVIEW, CREATE_PHASE_FEED_FORWARD | season_plan, availability, wellness, zone_model, planning_events, logistics, season_phase_feed_forward (optional) | phase_guardrails, phase_structure, phase_preview, phase_feed_forward | Applies season-selected cadence inside the exact phase range; may not redefine cadence defaults. |
 | Week‑Planner | Produce a week plan within phase guardrails. | CREATE_WEEK_PLAN, REVISE_WEEK_PLAN | phase_guardrails, phase_structure, availability, wellness, zone_model, planning_events, logistics, week_plan (optional) | week_plan | Revised week plan includes coach input. |
 | Workout Export | Build Intervals export from week plan. | WORKOUT_EXPORT | week_plan | workout_export | Local deterministic export; posting happens in UI. |
-| Performance‑Analyst | Create performance report and feed‑forward inputs. | CREATE_REPORT, FEED_FORWARD | activities_actual, activities_trend, wellness, season_plan (optional) | des_analysis_report, season_phase_feed_forward | Report is past/current week only; feed‑forward UI chains report → season/phase → phase/week. |
-| Coach | Conversational coaching, bounded plan edits, scoped replans, and advisory triggers. | COACH_CHAT, COACH_PLAN_OPS | chat history, athlete context, selected-week plan context | week_plan, intervals_workouts, des_analysis_report, season_phase_feed_forward, phase_feed_forward | Preview-first operation surface; no arbitrary artefact writes. |
+| Performance‑Analyst | Create diagnostic performance reports. | CREATE_REPORT | activities_actual, activities_trend, wellness, season_plan (optional) | des_analysis_report | Diagnostic only; may inform feed-forward flows but does not own planning artefacts or governance changes. |
+| Coach | Conversational coaching, bounded plan edits, scoped replans, and advisory triggers. | COACH_CHAT, COACH_PLAN_OPS | chat history, athlete context, selected-week plan context | week_plan, intervals_workouts, des_analysis_report, season_phase_feed_forward, phase_feed_forward | Preview-first orchestration surface; triggers planner/report flows but is not a planning artefact author. |
 | Workout Editor | Bounded chat-based edits for an existing week plan. | WEEK_PLAN_EDIT_CHAT | selected-week week_plan, chat history | week_plan, intervals_workouts | Narrow specialized surface; active Coach now reuses the same bounded edit patterns. |
 
 ## Mode Notes
 
 - Modes are referenced by orchestrators and UI run scopes.
 - Prompts are in [prompts/agents/*.md](prompts/agents/*.md) and knowledge injection is configured in `config/agent_knowledge_injection.yaml`.
+- CrewAI config defines internal specialist roles for `Season-Planner` and `Phase-Architect`; these sub-roles are not independent top-level artefact authorities.
 
 ## Related Docs
 

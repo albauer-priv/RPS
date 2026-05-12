@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-04
+Last-Updated: 2026-05-12
 Owner: Overview
 ---
 # Artefact Flow
 
 Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-05-04  
+Last-Updated: 2026-05-12  
 Format: GitHub-renderable Markdown + Mermaid
 
 ---
@@ -182,6 +182,7 @@ flowchart LR
 **Outputs (Artefacts)**
 - `season_plan_yyyy-ww--yyyy-ww.json` (binding)
 - `season_phase_feed_forward_yyyy-ww.json` (optional)
+- `season_phase_feed_forward_yyyy-ww.json` is authored by **Season-Planner**; `des_analysis_report` is advisory input only.
 
 **Version-Key Semantics**
 - `season_phase_feed_forward_yyyy-ww.json` is selected-week scoped.
@@ -443,6 +444,7 @@ flowchart LR
 
 **Outputs (Artefacts)**
 - `des_analysis_report_yyyy-ww.json`
+- No feed-forward artefact is authored here; feed-forward flows consume this report and then route to Season-Planner or Phase-Architect.
 
 ```mermaid
 flowchart LR
@@ -530,6 +532,7 @@ See [doc/architecture/agents.md](../architecture/agents.md) for the canonical ag
 
 ### 3.8 Performance-Analyst
 - `des_analysis_report_yyyy-ww.json`
+- Diagnostic only; does not own `season_phase_feed_forward` or `phase_feed_forward`
 
 ### 3.9 Data Operations
 - `backup_archive_<athlete_id>_<timestamp>.zip`

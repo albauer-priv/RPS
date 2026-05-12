@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-10
+Last-Updated: 2026-05-12
 Owner: Architecture
 ---
 # System Architecture
 
 Version: 2.3  
 Status: Updated  
-Last-Updated: 2026-02-10
+Last-Updated: 2026-05-12
 
 ---
 
@@ -81,8 +81,8 @@ flowchart TD
 
 **Core components**
 
-1. **LLM Responses Runtime**
-   - Tool-calling loop (knowledge_search + function tools).
+1. **CrewAI Runtime**
+   - CrewAI Agent/Task execution with typed outputs and workspace tools.
 2. **Local Vector Stores**
    - Local knowledge base (sources in repo; embeddings built locally).
 3. **Prompt Loader**
@@ -132,6 +132,7 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 - Diagnostic only, advisory output.
 - Consumes factual data + planning context.
 - Produces `des_analysis_report` (advisory).
+- Does not own season/phase governance artefacts or feed-forward authority.
 
 ### 3.1.1 Data Pipeline (Assumed)
 
@@ -152,15 +153,20 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 - Defines long-term intent (8–32 weeks).
 - Produces `season_plan` and optional `season_phase_feed_forward`.
 - Uses wellness `body_mass_kg` + Availability to anchor kJ corridor math.
+- Is the first binding planning authority after advisory season scenarios.
+- Owns final cadence selection, macrocycle structure, and season-level feed-forward decisions.
 - **Important:** Season phases define ISO week ranges, but MUST NOT define phase-artefact outputs.
 
 ### 3.4 Phase-Architect
 - Converts season phase intent into phase guardrails and phase structure.
+- Applies the season-selected cadence within the exact phase range and must not invent a new default cadence.
+- Owns phase-level deltas via `phase_feed_forward`.
 - **Phase ranges are derived from season phases**, not calendar alignment.
 
 ### 3.5 Week-Planner
 - Produces weekly execution plan (`week_plan`).
 - Must comply with governance + phase structure.
+- Must not introduce progression or deload logic of its own.
 
 ### 3.6 Workout Export
 - Deterministic conversion into Intervals.icu JSON (raw export payload).

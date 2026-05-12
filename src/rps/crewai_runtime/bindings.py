@@ -14,6 +14,15 @@ from .models import (
     ArtifactEnvelopeModel,
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
+    ConstraintAuditModel,
+    LoadGovernanceAuditModel,
+    PhaseBundleModel,
+    PhaseGuardrailsPayloadModel,
+    PhasePreviewPayloadModel,
+    PhaseStructurePayloadModel,
+    SeasonEventAnchorModel,
+    SeasonMacrocycleDraftModel,
+    SeasonPlanAuditModel,
 )
 
 JsonMap = dict[str, Any]
@@ -103,6 +112,15 @@ def output_model_for_kind(output_kind: str) -> type[Any]:
         "artifact_envelope": ArtifactEnvelopeModel,
         "coach_preview": CoachOperationPreviewModel,
         "coach_apply": CoachOperationApplyResultModel,
+        "season_event_anchor": SeasonEventAnchorModel,
+        "season_macrocycle_draft": SeasonMacrocycleDraftModel,
+        "season_plan_audit": SeasonPlanAuditModel,
+        "phase_guardrails_payload": PhaseGuardrailsPayloadModel,
+        "phase_structure_payload": PhaseStructurePayloadModel,
+        "phase_preview_payload": PhasePreviewPayloadModel,
+        "constraint_audit": ConstraintAuditModel,
+        "load_governance_audit": LoadGovernanceAuditModel,
+        "phase_bundle": PhaseBundleModel,
     }
     if output_kind not in registry:
         raise ValueError(f"Unsupported CrewAI output kind: {output_kind}")

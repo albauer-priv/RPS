@@ -52,6 +52,19 @@ _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
 }
 
+_CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
+    ArtifactType.SEASON_SCENARIOS: "Season-Scenario-Agent",
+    ArtifactType.SEASON_SCENARIO_SELECTION: "Season-Scenario-Agent",
+    ArtifactType.SEASON_PLAN: "Season-Planner",
+    ArtifactType.SEASON_PHASE_FEED_FORWARD: "Season-Planner",
+    ArtifactType.PHASE_GUARDRAILS: "Phase-Architect",
+    ArtifactType.PHASE_STRUCTURE: "Phase-Architect",
+    ArtifactType.PHASE_PREVIEW: "Phase-Architect",
+    ArtifactType.PHASE_FEED_FORWARD: "Phase-Architect",
+    ArtifactType.WEEK_PLAN: "Week-Planner",
+    ArtifactType.DES_ANALYSIS_REPORT: "Performance-Analyst",
+}
+
 
 def _mandatory_output_doc_for_schema(schema_file: str) -> str | None:
     mandatory_by_schema = {
@@ -112,6 +125,22 @@ def _fill_season_plan(document: JsonMap) -> JsonMap:
     return document
 
 
+def _normalize_artifact_meta(document: JsonMap, artifact_type: ArtifactType) -> JsonMap:
+    """Apply canonical meta ownership for persisted artifact envelopes."""
+
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta")
+    if not isinstance(meta, dict):
+        return document
+    meta.setdefault("authority", "Binding")
+    owner = _CANONICAL_OWNER_BY_ARTIFACT.get(artifact_type)
+    if owner:
+        meta["owner_agent"] = owner
+    document["meta"] = meta
+    return document
+
+
 def _normalize_week_plan_meta(document: JsonMap) -> JsonMap:
     """Coerce WEEK_PLAN header constants to the canonical schema values."""
 
@@ -154,7 +183,7 @@ def _normalize_des_analysis_report(document: JsonMap) -> JsonMap:
         meta["schema_id"] = "DESAnalysisInterface"
         meta["schema_version"] = "1.1"
         meta["authority"] = "Binding"
-        meta["owner_agent"] = "Performance-Analyst"
+        meta["owner_agent"] = _CANONICAL_OWNER_BY_ARTIFACT[ArtifactType.DES_ANALYSIS_REPORT]
         if "notes" not in meta or meta.get("notes") is None:
             meta["notes"] = ""
         document["meta"] = meta
@@ -178,6 +207,7 @@ def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, o
             loaded_inputs.get("planning_events")
         ),
     )
+    normalized = _normalize_artifact_meta(normalized, spec.artifact_type)
     normalized = _fill_season_plan(normalized)
     normalized = normalize_phase_guardrails_document(normalized)
     if spec.artifact_type == ArtifactType.WEEK_PLAN:

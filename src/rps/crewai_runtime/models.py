@@ -1,4 +1,4 @@
-"""Typed operation models aligned with future CrewAI task outputs."""
+"""Typed operation models aligned with CrewAI task outputs."""
 
 from __future__ import annotations
 
@@ -44,6 +44,111 @@ class ArtifactEnvelopeModel(BaseModel):
 
     meta: ArtifactEnvelopeMetaModel
     data: dict[str, Any]
+
+
+class SeasonEventAnchorModel(BaseModel):
+    """Internal season draft for event priority and anchor handling."""
+
+    primary_a_events: list[str] = Field(default_factory=list)
+    supporting_b_events: list[str] = Field(default_factory=list)
+    contextual_c_events: list[str] = Field(default_factory=list)
+    anchor_rationale: list[str] = Field(default_factory=list)
+    constrained_time_window: bool = False
+
+
+class SeasonMacrocycleDraftModel(BaseModel):
+    """Internal season draft for macrocycle and cadence layout."""
+
+    deload_cadence: str | None = None
+    phase_length_weeks: int | None = None
+    macrocycle_order: list[str] = Field(default_factory=list)
+    reverse_planning_notes: list[str] = Field(default_factory=list)
+    event_window_implications: list[str] = Field(default_factory=list)
+
+
+class SeasonPlanAuditModel(BaseModel):
+    """Internal audit result for season-plan authority checks."""
+
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    recommended_adjustments: list[str] = Field(default_factory=list)
+    macrocycle_coherence_ok: bool = True
+    cadence_authority_ok: bool = True
+
+
+class ConstraintAuditModel(BaseModel):
+    """Internal audit result for constraint propagation and consistency."""
+
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    recommended_adjustments: list[str] = Field(default_factory=list)
+    applied_sources: list[str] = Field(default_factory=list)
+
+
+class LoadGovernanceAuditModel(BaseModel):
+    """Internal audit result for corridor and durability governance."""
+
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    recommended_adjustments: list[str] = Field(default_factory=list)
+    cadence_authority_preserved: bool = True
+    durability_first_respected: bool = True
+
+
+class PhaseGuardrailsPayloadModel(BaseModel):
+    """Internal phase draft for guardrails payload content."""
+
+    phase_summary: dict[str, Any] = Field(default_factory=dict)
+    load_guardrails: dict[str, Any] = Field(default_factory=dict)
+    allowed_forbidden_semantics: dict[str, Any] = Field(default_factory=dict)
+    events_constraints: dict[str, Any] = Field(default_factory=dict)
+    execution_non_negotiables: dict[str, Any] = Field(default_factory=dict)
+
+
+class PhaseStructurePayloadModel(BaseModel):
+    """Internal phase draft for structural execution guidance."""
+
+    upstream_intent: dict[str, Any] = Field(default_factory=dict)
+    load_ranges: dict[str, Any] = Field(default_factory=dict)
+    execution_principles: dict[str, Any] = Field(default_factory=dict)
+    structural_phase_elements: dict[str, Any] = Field(default_factory=dict)
+    week_skeleton_logic: dict[str, Any] = Field(default_factory=dict)
+    adaptation_rules: list[str] = Field(default_factory=list)
+
+
+class PhasePreviewPayloadModel(BaseModel):
+    """Internal phase draft for preview-only narrative output."""
+
+    phase_intent_summary: dict[str, Any] = Field(default_factory=dict)
+    feel_overview: dict[str, Any] = Field(default_factory=dict)
+    weekly_agenda_preview: list[dict[str, Any]] = Field(default_factory=list)
+    week_to_week_narrative: dict[str, Any] = Field(default_factory=dict)
+    deviation_rules: list[str] = Field(default_factory=list)
+
+
+class PhaseBundleDecisionModel(BaseModel):
+    """Internal manager summary for a full phase bundle."""
+
+    cadence_source: str | None = None
+    cadence_application_notes: list[str] = Field(default_factory=list)
+    override_rationale: list[str] = Field(default_factory=list)
+
+
+class PhaseBundleModel(BaseModel):
+    """Internal season-authorized phase bundle before deterministic split."""
+
+    phase_range: str
+    phase_id: str | None = None
+    phase_type: str | None = None
+    cadence_source: str | None = None
+    guardrails: PhaseGuardrailsPayloadModel
+    structure: PhaseStructurePayloadModel
+    preview: PhasePreviewPayloadModel
+    constraint_audit: ConstraintAuditModel
+    load_governance_audit: LoadGovernanceAuditModel
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    decision_summary: PhaseBundleDecisionModel
 
 
 class CoachOperationPreviewModel(BaseModel):

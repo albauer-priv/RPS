@@ -43,6 +43,7 @@ This folder contains the ADR log for RPS.
 - ADR-032: CrewAI Runtime Gateway and Staged Activation
 - ADR-033: Coach CrewAI Decoupling and Direct Provider Config
 - ADR-034: Hard CrewAI Cutover and LiteLLM Removal
+- ADR-035: CrewAI Agent Authority Boundaries
 
 ## Process (Short)
 

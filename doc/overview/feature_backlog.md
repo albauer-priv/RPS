@@ -45,6 +45,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_crewai_runtime_cutover — central agent runtime gateway, Python 3.13 container baseline, and initial CrewAI execution backend with explicit `auto|legacy|crewai` selection.
 - [x] FEAT_coach_crewai_decoupling — Coach page moved off `rps_chatbot`, with direct CrewAI turn execution and provider config independent of LiteLLM client objects.
 - [x] FEAT_litellm_runtime_removal — hard cutover to CrewAI-only runtime, Workout Editor chat migration, direct embedding calls, and removal of legacy LiteLLM/runtime modules.
+- [x] FEAT_crewai_agent_responsibility_cleanup — authority cleanup for season/phase/feed-forward ownership plus CrewAI foundation models for Season/Phase specialist roles.
 
 ## Unlock Graph (dependencies)
 
@@ -85,6 +86,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
 - [ ] Manual active `Coach` smoke pass — verify context read, bounded edit preview/apply, scoped replan preview/apply, report preview/apply, and feed-forward preview/apply against a real athlete week in the UI.
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
+- [ ] FEAT_hierarchical_crewai_execution — turn the Season and Phase specialist foundation into a real multi-task hierarchical Crew executor with manager-only persisted outputs and internal PhaseBundle splitting.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.
 - [ ] FEAT_run_progress_ui — progress indicators for long-running planning jobs.
 - [ ] FEAT_planning_done_notification — optional banner/email/push when planning completes.
