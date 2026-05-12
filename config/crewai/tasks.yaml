@@ -65,6 +65,12 @@ tasks:
     output: artifact_envelope
     description: Create the season-plan artifact envelope for the selected planning horizon.
     expected_output: A full schema-compliant artifact envelope with meta and data.
+  season_scenario_interpretation:
+    agent: scenario_interpreter
+    kind: internal_reasoning
+    output: season_event_anchor
+    description: Interpret the selected scenario and extract advisory planning intent without turning it into binding authority.
+    expected_output: A structured advisory interpretation of the selected scenario.
   season_event_anchor_review:
     agent: event_priority_anchor_specialist
     kind: internal_reasoning
@@ -178,7 +184,7 @@ tasks:
     kind: internal_reasoning
     output: phase_bundle
     description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before deterministic artifact splitting.
-    expected_output: A structured PhaseBundle that is not persisted directly.
+    expected_output: A structured PhaseBundle that is not persisted directly and contains nested full phase artefact envelopes for guardrails, structure, and preview.
   phase_feed_forward:
     agent: phase_architect_manager
     kind: persisted_artifact

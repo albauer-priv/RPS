@@ -44,6 +44,7 @@ This folder contains the ADR log for RPS.
 - ADR-033: Coach CrewAI Decoupling and Direct Provider Config
 - ADR-034: Hard CrewAI Cutover and LiteLLM Removal
 - ADR-035: CrewAI Agent Authority Boundaries
+- ADR-036: Hierarchical Season and Phase Crew Execution
 
 ## Process (Short)
 

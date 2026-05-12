@@ -65,6 +65,28 @@ _CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
     ArtifactType.DES_ANALYSIS_REPORT: "Performance-Analyst",
 }
 
+_SEASON_INTERNAL_TASKS: tuple[str, ...] = (
+    "season_scenario_interpretation",
+    "season_event_anchor_review",
+    "season_macrocycle_draft",
+    "season_constraint_review",
+    "season_historical_context_review",
+    "season_kpi_guidance_review",
+    "season_load_governance_review",
+    "season_plan_audit",
+)
+
+_PHASE_INTERNAL_TASKS: tuple[str, ...] = (
+    "phase_guardrails_draft",
+    "phase_structure_draft",
+    "phase_cadence_recovery_integration",
+    "phase_intensity_distribution_review",
+    "phase_preview_draft",
+    "phase_constraint_audit",
+    "phase_load_governance_audit",
+    "phase_bundle_finalize",
+)
+
 
 def _mandatory_output_doc_for_schema(schema_file: str) -> str | None:
     mandatory_by_schema = {
@@ -196,6 +218,179 @@ def _normalize_des_analysis_report(document: JsonMap) -> JsonMap:
             data["recommendation"] = rec
         document["data"] = data
     return document
+
+
+def _render_json_block(label: str, payload: object) -> str:
+    """Render structured intermediate results as compact JSON context."""
+
+    if hasattr(payload, "model_dump"):
+        payload = payload.model_dump()
+    try:
+        rendered = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+    except TypeError:
+        rendered = json.dumps(str(payload), ensure_ascii=False)
+    return f"{label}:\n```json\n{rendered}\n```"
+
+
+def _resolve_prompt_agent_name(agent_name: str, blueprint: Any) -> str:
+    """Resolve which top-level prompt should back a CrewAI specialist agent."""
+
+    config = getattr(blueprint, "config", {}) or {}
+    prompt_agent = config.get("prompt_agent")
+    if isinstance(prompt_agent, str) and prompt_agent:
+        return prompt_agent
+    return agent_name
+
+
+def _build_crewai_llm(
+    crewai_llm_cls: Any,
+    runtime: AgentRuntime,
+    *,
+    agent_name: str,
+    model_override: str | None,
+    temperature_override: float | None,
+) -> object:
+    """Instantiate the CrewAI LLM wrapper for the given agent."""
+
+    return crewai_llm_cls(
+        **build_crewai_llm_kwargs(
+            agent_name,
+            model_override=model_override or runtime.model,
+            temperature_override=(
+                temperature_override if temperature_override is not None else runtime.temperature
+            ),
+            reasoning_effort_override=runtime.reasoning_effort,
+            reasoning_summary_override=runtime.reasoning_summary,
+            max_completion_tokens_override=runtime.max_completion_tokens,
+        )
+    )
+
+
+def _build_crewai_agent(
+    agent_cls: Any,
+    *,
+    blueprint: Any,
+    llm: object,
+    tools: list[Any],
+) -> object:
+    """Instantiate one CrewAI agent from a blueprint."""
+
+    config = getattr(blueprint, "config", {}) or {}
+    return agent_cls(
+        role=blueprint.role,
+        goal=blueprint.goal,
+        backstory=blueprint.backstory,
+        llm=llm,
+        tools=tools,
+        allow_delegation=bool(config.get("allow_delegation", False)),
+        verbose=bool(config.get("verbose", False)),
+    )
+
+
+def _extract_typed_output(result: object, task_obj: object) -> Any:
+    """Extract the typed Pydantic output from a CrewAI task result."""
+
+    task_output = getattr(task_obj, "output", None)
+    pydantic_output = getattr(task_output, "pydantic", None) if task_output is not None else None
+    if pydantic_output is None:
+        pydantic_output = getattr(result, "pydantic", None)
+    if pydantic_output is None and hasattr(result, "model_dump"):
+        pydantic_output = result
+    return pydantic_output
+
+
+def _execute_crewai_task(
+    *,
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    runtime: AgentRuntime,
+    agent_name: str,
+    agent_blueprint: Any,
+    task_blueprint: Any,
+    llm: object,
+    tools: list[Any],
+    description: str,
+) -> Any:
+    """Execute one CrewAI task and return its typed output."""
+
+    agent = _build_crewai_agent(
+        agent_cls,
+        blueprint=agent_blueprint,
+        llm=llm,
+        tools=tools,
+    )
+    crew_task = task_cls(
+        description=description,
+        expected_output=task_blueprint.expected_output,
+        agent=agent,
+        output_pydantic=output_model_for_kind(task_blueprint.output_kind),
+    )
+    process = getattr(process_cls, "hierarchical", None) or getattr(process_cls, "sequential")
+    crew = crew_cls(
+        agents=[agent],
+        tasks=[crew_task],
+        process=process,
+        verbose=bool(task_blueprint.config.get("verbose", False)),
+    )
+    result = crew.kickoff()
+    pydantic_output = _extract_typed_output(result, crew_task)
+    if pydantic_output is None:
+        raw = getattr(getattr(crew_task, "output", None), "raw", None)
+        raise RuntimeError(
+            f"CrewAI task '{task_blueprint.name}' did not produce a typed pydantic output."
+            + (f" Raw output: {raw}" if raw else "")
+        )
+    return pydantic_output
+
+
+def _build_internal_task_description(
+    runtime: AgentRuntime,
+    *,
+    prompt_agent: str,
+    task_blueprint: Any,
+    user_input: str,
+    context_blocks: list[str] | None = None,
+) -> str:
+    """Build a specialist-task description with top-level prompt context."""
+
+    prompt = runtime.prompt_loader.combined_system_prompt(prompt_agent)
+    parts = [
+        "System and agent instructions:",
+        prompt,
+        "",
+        f"Internal specialist task: {task_blueprint.description}",
+        "",
+        "User request:",
+        user_input,
+    ]
+    if context_blocks:
+        parts.extend(["", "Internal context from prior specialist tasks:"])
+        parts.extend(context_blocks)
+    parts.extend(
+        [
+            "",
+            "Return only the typed output required for this specialist task.",
+        ]
+    )
+    return "\n".join(parts)
+
+
+def _phase_document_from_bundle(bundle_document: JsonMap, artifact_type: ArtifactType) -> JsonMap:
+    """Select the correct nested phase artifact document from a PhaseBundle."""
+
+    if artifact_type == ArtifactType.PHASE_GUARDRAILS:
+        candidate = bundle_document.get("guardrails_document") or bundle_document.get("guardrails")
+    elif artifact_type == ArtifactType.PHASE_STRUCTURE:
+        candidate = bundle_document.get("structure_document") or bundle_document.get("structure")
+    elif artifact_type == ArtifactType.PHASE_PREVIEW:
+        candidate = bundle_document.get("preview_document") or bundle_document.get("preview")
+    else:
+        raise ValueError(f"Unsupported PhaseBundle split target: {artifact_type.value}")
+    if not isinstance(candidate, dict):
+        raise RuntimeError(f"PhaseBundle missing nested document for {artifact_type.value}.")
+    return candidate
 
 
 def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, object]) -> JsonMap:
@@ -385,64 +580,150 @@ def run_agent_multi_output_crewai(
     task_blueprint = task_blueprints[blueprint_name]
     agent_blueprint = agent_blueprints[task_blueprint.agent]
 
-    llm = LLM(
-        **build_crewai_llm_kwargs(
-            agent_name,
-            model_override=model_override or runtime.model,
-            temperature_override=(
-                temperature_override if temperature_override is not None else runtime.temperature
-            ),
-            reasoning_effort_override=runtime.reasoning_effort,
-            reasoning_summary_override=runtime.reasoning_summary,
-            max_completion_tokens_override=runtime.max_completion_tokens,
-        )
+    llm = _build_crewai_llm(
+        LLM,
+        runtime,
+        agent_name=agent_name,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
 
     tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
-    agent = Agent(
-        role=agent_blueprint.role,
-        goal=agent_blueprint.goal,
-        backstory=agent_blueprint.backstory,
-        llm=llm,
-        tools=tools,
-        allow_delegation=False,
-        verbose=bool(agent_blueprint.config.get("verbose", False)),
-    )
-    crew_task = Task(
-        description=_build_task_description(
-            runtime,
-            agent_name=agent_name,
-            task=task,
-            user_input=user_input,
-        ),
-        expected_output=task_blueprint.expected_output,
-        agent=agent,
-        output_pydantic=output_model_for_kind(task_blueprint.output_kind),
-    )
-    crew = Crew(
-        agents=[agent],
-        tasks=[crew_task],
-        process=Process.sequential,
-        verbose=bool(task_blueprint.config.get("verbose", False)),
-    )
-    result = crew.kickoff()
 
-    task_output = getattr(crew_task, "output", None)
-    pydantic_output = getattr(task_output, "pydantic", None) if task_output is not None else None
-    if pydantic_output is None:
-        pydantic_output = getattr(result, "pydantic", None)
-    if pydantic_output is None and hasattr(result, "model_dump"):
-        pydantic_output = result
-    if pydantic_output is None:
-        raw = getattr(task_output, "raw", None)
+    try:
+        if task == AgentTask.CREATE_SEASON_PLAN:
+            internal_blocks: list[str] = []
+            for internal_name in _SEASON_INTERNAL_TASKS:
+                internal_task_blueprint = task_blueprints[internal_name]
+                internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
+                prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
+                internal_output = _execute_crewai_task(
+                    agent_cls=Agent,
+                    crew_cls=Crew,
+                    task_cls=Task,
+                    process_cls=Process,
+                    runtime=runtime,
+                    agent_name=internal_task_blueprint.agent,
+                    agent_blueprint=internal_agent_blueprint,
+                    task_blueprint=internal_task_blueprint,
+                    llm=llm,
+                    tools=tools,
+                    description=_build_internal_task_description(
+                        runtime,
+                        prompt_agent=prompt_agent,
+                        task_blueprint=internal_task_blueprint,
+                        user_input=user_input,
+                        context_blocks=internal_blocks,
+                    ),
+                )
+                internal_blocks.append(_render_json_block(internal_name, internal_output))
+
+            description = _build_task_description(
+                runtime,
+                agent_name=agent_name,
+                task=task,
+                user_input=user_input,
+            )
+            description = "\n".join(
+                [
+                    description,
+                    "",
+                    "Internal specialist findings:",
+                    *internal_blocks,
+                ]
+            )
+            pydantic_output = _execute_crewai_task(
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                runtime=runtime,
+                agent_name=agent_name,
+                agent_blueprint=agent_blueprint,
+                task_blueprint=task_blueprint,
+                llm=llm,
+                tools=tools,
+                description=description,
+            )
+            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+        elif task in {
+            AgentTask.CREATE_PHASE_GUARDRAILS,
+            AgentTask.CREATE_PHASE_STRUCTURE,
+            AgentTask.CREATE_PHASE_PREVIEW,
+        }:
+            internal_blocks = []
+            for internal_name in _PHASE_INTERNAL_TASKS:
+                internal_task_blueprint = task_blueprints[internal_name]
+                internal_agent_blueprint = agent_blueprints[internal_task_blueprint.agent]
+                prompt_agent = _resolve_prompt_agent_name(internal_task_blueprint.agent, internal_agent_blueprint)
+                internal_output = _execute_crewai_task(
+                    agent_cls=Agent,
+                    crew_cls=Crew,
+                    task_cls=Task,
+                    process_cls=Process,
+                    runtime=runtime,
+                    agent_name=internal_task_blueprint.agent,
+                    agent_blueprint=internal_agent_blueprint,
+                    task_blueprint=internal_task_blueprint,
+                    llm=llm,
+                    tools=tools,
+                    description=_build_internal_task_description(
+                        runtime,
+                        prompt_agent=prompt_agent,
+                        task_blueprint=internal_task_blueprint,
+                        user_input=user_input,
+                        context_blocks=internal_blocks,
+                    ),
+                )
+                internal_blocks.append(_render_json_block(internal_name, internal_output))
+
+            bundle_output = internal_output
+            bundle_document = (
+                bundle_output.model_dump() if hasattr(bundle_output, "model_dump") else bundle_output
+            )
+            if not isinstance(bundle_document, dict):
+                return {
+                    "ok": False,
+                    "error": "Phase bundle output did not decode to an object.",
+                    "produced": {},
+                }
+            if bundle_document.get("blocking_issues"):
+                return {
+                    "ok": False,
+                    "error": "Phase bundle blocked by internal audits.",
+                    "details": list(bundle_document.get("blocking_issues") or []),
+                    "warnings": list(bundle_document.get("warnings") or []),
+                    "produced": {},
+                }
+            document = _phase_document_from_bundle(bundle_document, output_spec.artifact_type)
+        else:
+            description = _build_task_description(
+                runtime,
+                agent_name=agent_name,
+                task=task,
+                user_input=user_input,
+            )
+            pydantic_output = _execute_crewai_task(
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                runtime=runtime,
+                agent_name=agent_name,
+                agent_blueprint=agent_blueprint,
+                task_blueprint=task_blueprint,
+                llm=llm,
+                tools=tools,
+                description=description,
+            )
+            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+    except Exception as exc:
         return {
             "ok": False,
-            "error": "CrewAI task did not produce a typed pydantic output.",
-            "final_text": raw,
+            "error": str(exc),
             "produced": {},
         }
 
-    document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(document, dict):
         return {
             "ok": False,

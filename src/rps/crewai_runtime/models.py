@@ -144,6 +144,9 @@ class PhaseBundleModel(BaseModel):
     guardrails: PhaseGuardrailsPayloadModel
     structure: PhaseStructurePayloadModel
     preview: PhasePreviewPayloadModel
+    guardrails_document: dict[str, Any] | None = None
+    structure_document: dict[str, Any] | None = None
+    preview_document: dict[str, Any] | None = None
     constraint_audit: ConstraintAuditModel
     load_governance_audit: LoadGovernanceAuditModel
     warnings: list[str] = Field(default_factory=list)

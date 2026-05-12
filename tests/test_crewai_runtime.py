@@ -177,15 +177,18 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         def kickoff(self):
             task = self.tasks[0]
             model_cls = task.output_pydantic
-            envelope = model_cls(
-                meta={
-                    "artifact_type": "SEASON_PLAN",
-                    "schema_id": "SeasonPlanInterface",
-                    "schema_version": "1.0",
-                },
-                data={},
-            )
-            task.output = SimpleNamespace(pydantic=envelope, raw=envelope.model_dump_json())
+            if model_cls is ArtifactEnvelopeModel:
+                model = model_cls(
+                    meta={
+                        "artifact_type": "SEASON_PLAN",
+                        "schema_id": "SeasonPlanInterface",
+                        "schema_version": "1.0",
+                    },
+                    data={},
+                )
+            else:
+                model = model_cls()
+            task.output = SimpleNamespace(pydantic=model, raw=model.model_dump_json())
             return task.output
 
     class FakeProcess:
@@ -242,6 +245,141 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
     assert result["ok"] is True
     assert result["produced"]["store_season_plan"] == saved
+
+
+def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    fake_crewai = types.ModuleType("crewai")
+    fake_tools = types.ModuleType("crewai.tools")
+
+    class FakeLLM:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeAgent:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeTask:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.output_pydantic = kwargs["output_pydantic"]
+            self.description = kwargs["description"]
+            self.output = None
+
+    class FakeCrew:
+        def __init__(self, *, tasks, **kwargs):
+            self.tasks = tasks
+            self.kwargs = kwargs
+
+        def kickoff(self):
+            task = self.tasks[0]
+            model_cls = task.output_pydantic
+            if model_cls is PhaseBundleModel:
+                model = model_cls(
+                    phase_range="2026-17--2026-19",
+                    phase_id="P01",
+                    phase_type="Base",
+                    cadence_source="season_plan",
+                    guardrails={},
+                    structure={},
+                    preview={},
+                    guardrails_document={
+                        "meta": {
+                            "artifact_type": "PHASE_GUARDRAILS",
+                            "schema_id": "PhaseGuardrailsInterface",
+                            "schema_version": "1.0",
+                            "owner_agent": "Phase-Architect",
+                        },
+                        "data": {},
+                    },
+                    structure_document={
+                        "meta": {
+                            "artifact_type": "PHASE_STRUCTURE",
+                            "schema_id": "PhaseStructureInterface",
+                            "schema_version": "1.0",
+                            "owner_agent": "Phase-Architect",
+                        },
+                        "data": {},
+                    },
+                    preview_document={
+                        "meta": {
+                            "artifact_type": "PHASE_PREVIEW",
+                            "schema_id": "PhasePreviewInterface",
+                            "schema_version": "1.0",
+                            "owner_agent": "Phase-Architect",
+                        },
+                        "data": {},
+                    },
+                    constraint_audit={},
+                    load_governance_audit={},
+                    decision_summary={},
+                )
+            else:
+                model = model_cls()
+            task.output = SimpleNamespace(pydantic=model, raw=model.model_dump_json())
+            return task.output
+
+    class FakeProcess:
+        sequential = "sequential"
+
+    def _tool(name: str):
+        def _decorate(func):
+            func.tool_name = name
+            return func
+
+        return _decorate
+
+    fake_crewai.LLM = FakeLLM
+    fake_crewai.Agent = FakeAgent
+    fake_crewai.Task = FakeTask
+    fake_crewai.Crew = FakeCrew
+    fake_crewai.Process = FakeProcess
+    fake_tools.tool = _tool
+
+    monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
+    monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
+
+    captured: dict[str, object] = {}
+
+    def _fake_guard_put_validated(self, **kwargs):
+        captured.update(kwargs)
+        return {"ok": True, "path": "/tmp/phase.json", "version_key": "2026-17__x", "run_id": "run-phase"}
+
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
+        _fake_guard_put_validated,
+    )
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_agent_multi_output_crewai(
+        runtime,
+        agent_name="phase_architect",
+        agent_vs_name="vs_rps_all_agents",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_PHASE_GUARDRAILS],
+        user_input="Create phase guardrails.",
+        run_id="run-phase",
+    )
+
+    assert result["ok"] is True
+    document = captured["document"]
+    assert isinstance(document, dict)
+    meta = document["meta"]
+    assert meta["artifact_type"] == "PHASE_GUARDRAILS"
+    assert meta["owner_agent"] == "Phase-Architect"
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:

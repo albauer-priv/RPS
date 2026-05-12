@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a CrewAI-only agent runtime gateway under `src/rps/agents/runtime.py`, so planner/advisory flows now route through one cutover point without any legacy backend fallback.
 - Added a direct CrewAI provider-config resolver plus a dedicated CrewAI one-turn chat runner for the Coach page, so conversational Coach turns no longer depend on `rps_chatbot` or the legacy LiteLLM client object.
 - Added internal CrewAI foundation models and YAML task/agent roles for Season and Phase specialist execution, including season audit/macrocycle drafts and an internal `PhaseBundle` vocabulary for future hierarchical Crew execution.
+- Added live hierarchical Season/Phase execution on top of that foundation: `SEASON_PLAN` now runs specialist subtasks before manager finalization, and phase artefacts now run specialist subtasks plus an internal `PhaseBundle` manager step before the requested public phase artefact is persisted.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
