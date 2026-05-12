@@ -301,6 +301,37 @@ def test_coach_flow_routes_confirmation_and_records_events(monkeypatch, tmp_path
     assert "FLOW_FINISHED" in event_types
 
 
+def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Path) -> None:
+    events_module = _install_fake_crewai_events(monkeypatch)
+    crewai_telemetry.ensure_crewai_event_listener()
+    bus = events_module.crewai_event_bus
+
+    task = SimpleNamespace(
+        id="12345678-abcdef",
+        description="System instructions:\n# giant injected prompt body that must never be copied into telemetry",
+    )
+    crew = SimpleNamespace(name="crew")
+
+    with crewai_telemetry.runtime_event_scope(
+        root=tmp_path,
+        athlete_id="athlete",
+        run_id="run-compact",
+        component="coach_turn",
+    ):
+        bus.emit(events_module.CrewKickoffStartedEvent(crew=crew))
+        bus.emit(events_module.TaskStartedEvent(task=task))
+        bus.emit(events_module.ToolUsageStartedEvent(tool=SimpleNamespace(name="read_current_plan_context")))
+
+    events = load_events(tmp_path, "athlete", "run-compact")
+    assert events[0]["type"] == "CREW_STARTED"
+    assert events[0]["crew"] == "coach_turn"
+    assert events[1]["type"] == "CREW_TASK_STARTED"
+    assert events[1]["task"] == "SimpleNamespace#12345678"
+    assert "System instructions:" not in events[1]["task"]
+    assert events[2]["type"] == "TOOL_STARTED"
+    assert events[2]["tool"] == "read_current_plan_context"
+
+
 def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:
     monkeypatch.delenv("RPS_AGENT_RUNTIME", raising=False)
     selection = agent_runtime.resolve_agent_runtime_selection()

@@ -51,6 +51,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_crewai_advisory_flows_and_true_hierarchical_crews — outer Week/Report/Feed-Forward Flow wrappers and true hierarchical single-crew execution for Season/Phase specialist work.
 - [x] FEAT_coach_flow_router_and_runtime_telemetry — Coach Flow routing for confirm/discard/status turns plus visible Flow/Crew telemetry in Plan Hub, Status, and History.
 - [x] FEAT_crewai_event_listener_runtime_telemetry — CrewAI-native event listener adapter for Flow/Crew/Task/Tool telemetry into the existing run-store.
+- [x] FEAT_crewai_runtime_event_payload_cleanup — compact normalized crew/task/tool labels in CrewAI runtime telemetry to keep `events.jsonl` and UI history readable.
 
 ## Unlock Graph (dependencies)
 

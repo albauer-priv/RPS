@@ -49,6 +49,7 @@ This folder contains the ADR log for RPS.
 - ADR-038: CrewAI Advisory Flows and True Hierarchical Crews
 - ADR-039: Coach Flow Router and Runtime Telemetry
 - ADR-040: CrewAI Event Listener Runtime Telemetry
+- ADR-041: CrewAI Runtime Event Payload Cleanup
 
 ## Process (Short)
 

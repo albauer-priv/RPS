@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a Coach Flow router on top of the CrewAI turn runner, so explicit confirm/discard/pending-status messages now run through dedicated Flow routes instead of only page-local branching.
 - Added additive `FLOW_*`, `CREW_*`, and direct `ARTEFACT_WRITTEN` runtime telemetry for direct CrewAI runs, with shared UI rendering on Plan Hub, System Status, and System History.
 - Added a central CrewAI `BaseEventListener` adapter with run-context propagation, so Flow/Crew/Task/Tool lifecycle telemetry now comes from CrewAI's native event bus instead of predominantly manual emission.
+- Added compact CrewAI runtime label normalization for `CREW_*`, `CREW_TASK_*`, and `TOOL_*` telemetry, preventing prompt-sized task payloads and generic `crew` labels from polluting `events.jsonl` and UI history.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
