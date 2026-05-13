@@ -929,6 +929,92 @@ def _build_task_description(
     return "\n".join(parts)
 
 
+def _run_single_task_document_crewai(
+    runtime: AgentRuntime,
+    *,
+    agent_name: str,
+    athlete_id: str,
+    task: AgentTask,
+    user_input: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+) -> tuple[Any, JsonMap]:
+    """Execute one CrewAI task and return its normalized document without storing it."""
+
+    output_spec = OUTPUT_SPECS[task]
+    blueprint_name = _TASK_BLUEPRINT_BY_AGENT_TASK.get(task)
+    if blueprint_name is None:
+        raise ValueError(f"No CrewAI task blueprint mapping for {task.value}.")
+
+    crewai = import_module("crewai")
+    Agent = getattr(crewai, "Agent")
+    Task = getattr(crewai, "Task")
+    Crew = getattr(crewai, "Crew")
+    Process = getattr(crewai, "Process")
+    LLM = getattr(crewai, "LLM")
+
+    bundle = load_crewai_config_bundle(root=ROOT)
+    agent_blueprints = build_agent_blueprints(bundle)
+    task_blueprints = build_task_blueprints(bundle)
+    task_blueprint = task_blueprints[blueprint_name]
+    agent_blueprint = agent_blueprints[task_blueprint.agent]
+
+    llm = _build_crewai_llm(
+        LLM,
+        runtime,
+        agent_name=agent_name,
+        model_override=model_override,
+        temperature_override=temperature_override,
+    )
+    tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
+
+    if task == AgentTask.CREATE_SEASON_PLAN:
+        document = _run_season_plan_document(
+            runtime=runtime,
+            user_input=user_input,
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            llm=llm,
+            tools=tools,
+            task_blueprint=task_blueprint,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+    else:
+        description = _build_task_description(
+            runtime,
+            agent_name=agent_name,
+            task=task,
+            user_input=user_input,
+        )
+        pydantic_output = _execute_crewai_task(
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            runtime=runtime,
+            agent_name=agent_name,
+            agent_blueprint=agent_blueprint,
+            task_blueprint=task_blueprint,
+            llm=llm,
+            tools=tools,
+            description=description,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+        document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+
+    if not isinstance(document, dict):
+        raise RuntimeError("CrewAI typed output did not decode to an artifact envelope object.")
+
+    return output_spec, _normalize_document(output_spec, document, loaded_inputs)
+
+
 def run_agent_multi_output_crewai(
     runtime: AgentRuntime,
     *,
@@ -973,93 +1059,23 @@ def run_agent_multi_output_crewai(
             temperature_override=temperature_override,
         )
 
-    output_spec = OUTPUT_SPECS[task]
-    blueprint_name = _TASK_BLUEPRINT_BY_AGENT_TASK.get(task)
-    if blueprint_name is None:
-        return {
-            "ok": False,
-            "error": f"No CrewAI task blueprint mapping for {task.value}.",
-            "produced": {},
-        }
-
-    crewai = import_module("crewai")
-    Agent = getattr(crewai, "Agent")
-    Task = getattr(crewai, "Task")
-    Crew = getattr(crewai, "Crew")
-    Process = getattr(crewai, "Process")
-    LLM = getattr(crewai, "LLM")
-
-    bundle = load_crewai_config_bundle(root=ROOT)
-    agent_blueprints = build_agent_blueprints(bundle)
-    task_blueprints = build_task_blueprints(bundle)
-    task_blueprint = task_blueprints[blueprint_name]
-    agent_blueprint = agent_blueprints[task_blueprint.agent]
-
-    llm = _build_crewai_llm(
-        LLM,
-        runtime,
-        agent_name=agent_name,
-        model_override=model_override,
-        temperature_override=temperature_override,
-    )
-
-    tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
-
     try:
-        if task == AgentTask.CREATE_SEASON_PLAN:
-            document = _run_season_plan_document(
-                runtime=runtime,
-                user_input=user_input,
-                task_blueprints=task_blueprints,
-                agent_blueprints=agent_blueprints,
-                agent_cls=Agent,
-                crew_cls=Crew,
-                task_cls=Task,
-                process_cls=Process,
-                llm=llm,
-                tools=tools,
-                task_blueprint=task_blueprint,
-                athlete_id=athlete_id,
-                run_id=run_id,
-            )
-        else:
-            description = _build_task_description(
-                runtime,
-                agent_name=agent_name,
-                task=task,
-                user_input=user_input,
-            )
-            pydantic_output = _execute_crewai_task(
-                agent_cls=Agent,
-                crew_cls=Crew,
-                task_cls=Task,
-                process_cls=Process,
-                runtime=runtime,
-                agent_name=agent_name,
-                agent_blueprint=agent_blueprint,
-                task_blueprint=task_blueprint,
-                llm=llm,
-                tools=tools,
-                description=description,
-                athlete_id=athlete_id,
-                run_id=run_id,
-            )
-            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+        output_spec, document = _run_single_task_document_crewai(
+            runtime,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            task=task,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+        )
     except Exception as exc:
         return {
             "ok": False,
             "error": str(exc),
             "produced": {},
         }
-
-    if not isinstance(document, dict):
-        return {
-            "ok": False,
-            "error": "CrewAI typed output did not decode to an artifact envelope object.",
-            "produced": {},
-        }
-
-    document = _normalize_document(output_spec, document, loaded_inputs)
 
     guarded = GuardedValidatedStore(
         athlete_id=athlete_id,
@@ -1094,3 +1110,63 @@ def run_agent_multi_output_crewai(
         outputs=[saved],
     )
     return {"ok": True, "produced": {output_spec.tool_name: saved}}
+
+
+def run_agent_multi_output_preview_crewai(
+    runtime: AgentRuntime,
+    *,
+    agent_name: str,
+    agent_vs_name: str,
+    athlete_id: str,
+    tasks: list[AgentTask],
+    user_input: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+    include_debug_file_search: bool = False,
+    force_file_search: bool = True,
+    max_num_results: int | None = None,
+    stream_handlers: dict[str, object] | None = None,
+) -> JsonMap:
+    """Execute a single CrewAI task and return the normalized document without storing it."""
+
+    del agent_vs_name, include_debug_file_search, force_file_search, max_num_results, stream_handlers
+
+    if len(tasks) != 1:
+        return {
+            "ok": False,
+            "error": "CrewAI preview backend currently supports exactly one task per run.",
+            "document": {},
+        }
+
+    task = tasks[0]
+    if task in {
+        AgentTask.CREATE_PHASE_GUARDRAILS,
+        AgentTask.CREATE_PHASE_STRUCTURE,
+        AgentTask.CREATE_PHASE_PREVIEW,
+    }:
+        return {
+            "ok": False,
+            "error": "Preview-only CrewAI backend does not support phase bundle tasks.",
+            "document": {},
+        }
+
+    try:
+        output_spec, document = _run_single_task_document_crewai(
+            runtime,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            task=task,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+        )
+    except Exception as exc:
+        return {"ok": False, "error": str(exc), "document": {}}
+
+    return {
+        "ok": True,
+        "artifact_type": output_spec.artifact_type.value,
+        "document": document,
+    }

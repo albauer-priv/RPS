@@ -456,7 +456,24 @@ def _active_coach_functions(
         return preview.model_dump_json(indent=2)
 
     def _preview_scoped_week_replan(message: str) -> str:
-        preview = preview_scoped_week_replan_operation(year=year, week=week, message=message)
+        active_run_id = st.session_state.get(COACH_ACTIVE_RUN_ID_KEY)
+        preview_run_id = (
+            f"{active_run_id}_preview"
+            if isinstance(active_run_id, str) and active_run_id
+            else make_ui_run_id(f"coach_preview_scoped_replan_{year}_{week:02d}")
+        )
+        preview = preview_scoped_week_replan_operation(
+            multi_runtime_for,
+            store=store,
+            athlete_id=athlete_id,
+            year=year,
+            week=week,
+            message=message,
+            run_id=preview_run_id,
+            model_resolver=SETTINGS.model_for_agent,
+            temperature_resolver=SETTINGS.temperature_for_agent,
+            max_num_results=SETTINGS.file_search_max_results,
+        )
         st.session_state[COACH_PENDING_KEY] = preview.model_dump()
         return preview.model_dump_json(indent=2)
 
@@ -474,7 +491,16 @@ def _active_coach_functions(
         pending = _coach_pending()
         if not pending:
             return _json_result({"ok": False, "message": "No pending coach operation."})
-        return _json_result({"ok": True, **pending})
+        metadata = pending.get("metadata")
+        metadata_map = metadata if isinstance(metadata, dict) else {}
+        return _json_result(
+            {
+                "ok": True,
+                **pending,
+                "change_table_markdown": metadata_map.get("change_table_markdown"),
+                "diff_text": metadata_map.get("diff_text"),
+            }
+        )
 
     def _discard_pending_coach_operation() -> str:
         st.session_state.pop(COACH_PENDING_KEY, None)
@@ -510,21 +536,40 @@ def _active_coach_functions(
                 run_id=run_id,
             )
         elif operation == "preview_scoped_replan":
-            metadata = pending.get("metadata")
-            metadata_map = metadata if isinstance(metadata, dict) else {}
-            message = str(metadata_map.get("message") or "")
-            result = apply_scoped_week_replan_operation(
-                multi_runtime_for,
-                workspace_root=store.root,
-                athlete_id=athlete_id,
-                year=year,
-                week=week,
-                message=message,
-                run_id=run_id,
-                model_resolver=SETTINGS.model_for_agent,
-                temperature_resolver=SETTINGS.temperature_for_agent,
-                max_num_results=SETTINGS.file_search_max_results,
-            )
+            document = pending.get("document")
+            if isinstance(document, dict):
+                applied = apply_week_plan_preview(
+                    workspace_root=store.root,
+                    athlete_id=athlete_id,
+                    document=document,
+                    run_id=run_id,
+                )
+                result = applied.model_copy(
+                    update={
+                        "operation": "apply_scoped_replan",
+                        "summary": (
+                            f"Scoped week replan applied for {year:04d}-{week:02d}."
+                            if applied.ok
+                            else f"Scoped week replan failed for {year:04d}-{week:02d}."
+                        ),
+                    }
+                )
+            else:
+                metadata = pending.get("metadata")
+                metadata_map = metadata if isinstance(metadata, dict) else {}
+                message = str(metadata_map.get("message") or "")
+                result = apply_scoped_week_replan_operation(
+                    multi_runtime_for,
+                    workspace_root=store.root,
+                    athlete_id=athlete_id,
+                    year=year,
+                    week=week,
+                    message=message,
+                    run_id=run_id,
+                    model_resolver=SETTINGS.model_for_agent,
+                    temperature_resolver=SETTINGS.temperature_for_agent,
+                    max_num_results=SETTINGS.file_search_max_results,
+                )
         elif operation == "preview_report":
             result = apply_report_operation(
                 multi_runtime_for,

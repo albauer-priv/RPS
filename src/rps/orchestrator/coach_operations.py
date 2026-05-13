@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from difflib import unified_diff
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -24,10 +25,12 @@ from rps.orchestrator.week_plan_edits import (
     preview_move_workout,
     preview_update_workout_text,
 )
-from rps.orchestrator.week_revision import revise_week_plan
+from rps.orchestrator.week_revision import preview_week_plan_revision, revise_week_plan
 from rps.orchestrator.workout_export import run_workout_export
+from rps.rendering.renderer import validate_document
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.types import ArtifactType
 
 JsonMap = dict[str, Any]
@@ -65,6 +68,116 @@ class _HasToJson(Protocol):
     """Preview payload protocol produced by bounded week-plan edit helpers."""
 
     def to_json(self) -> str: ...
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: object) -> list[object]:
+    return value if isinstance(value, list) else []
+
+
+def _json_diff(before: object, after: object) -> str:
+    before_text = json.dumps(before, ensure_ascii=False, indent=2, sort_keys=True)
+    after_text = json.dumps(after, ensure_ascii=False, indent=2, sort_keys=True)
+    return "\n".join(
+        unified_diff(
+            before_text.splitlines(),
+            after_text.splitlines(),
+            fromfile="before.json",
+            tofile="after.json",
+            lineterm="",
+        )
+    )
+
+
+def _week_plan_rows(document: JsonMap) -> list[dict[str, str]]:
+    data = _as_map(document.get("data"))
+    agenda = _as_list(data.get("agenda"))
+    workouts = {
+        str(_as_map(item).get("workout_id") or ""): _as_map(item)
+        for item in _as_list(data.get("workouts"))
+        if str(_as_map(item).get("workout_id") or "")
+    }
+    rows: list[dict[str, str]] = []
+    for entry in agenda:
+        agenda_row = _as_map(entry)
+        workout_id = str(agenda_row.get("workout_id") or "")
+        workout = workouts.get(workout_id, {})
+        title = str(workout.get("title") or ("Rest" if not workout_id else workout_id))
+        start = str(workout.get("start") or "")
+        duration = str(workout.get("duration") or "")
+        planned_duration = str(agenda_row.get("planned_duration") or "")
+        planned_kj = str(agenda_row.get("planned_kj") or "")
+        day_role = str(agenda_row.get("day_role") or "")
+        rows.append(
+            {
+                "date": str(agenda_row.get("date") or ""),
+                "day": str(agenda_row.get("day") or ""),
+                "title": title,
+                "start": start,
+                "duration": duration,
+                "planned_duration": planned_duration,
+                "planned_kj": planned_kj,
+                "day_role": day_role,
+            }
+        )
+    return rows
+
+
+def _row_summary(row: dict[str, str] | None) -> str:
+    if not row:
+        return "-"
+    title = row.get("title") or "-"
+    day_role = row.get("day_role") or "-"
+    start = row.get("start") or "-"
+    duration = row.get("duration") or row.get("planned_duration") or "-"
+    planned_kj = row.get("planned_kj") or "-"
+    return f"{title} | {day_role} | start {start} | duration {duration} | {planned_kj} kJ"
+
+
+def _change_rows(before: list[dict[str, str]], after: list[dict[str, str]]) -> list[dict[str, str]]:
+    def _index(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+        return {
+            f"{row.get('date') or ''}|{row.get('day') or ''}": row
+            for row in rows
+        }
+
+    before_idx = _index(before)
+    after_idx = _index(after)
+    keys = sorted(set(before_idx) | set(after_idx))
+    changes: list[dict[str, str]] = []
+    for key in keys:
+        before_row = before_idx.get(key)
+        after_row = after_idx.get(key)
+        before_text = _row_summary(before_row)
+        after_text = _row_summary(after_row)
+        if before_text == after_text:
+            continue
+        row = after_row or before_row or {}
+        changes.append(
+            {
+                "date": str(row.get("date") or ""),
+                "day": str(row.get("day") or ""),
+                "before": before_text,
+                "after": after_text,
+            }
+        )
+    return changes
+
+
+def _change_table_markdown(changes: list[dict[str, str]]) -> str:
+    if not changes:
+        return "| Date | Day | Before | After |\n|---|---|---|---|\n| - | - | No visible changes | No visible changes |"
+    lines = ["| Date | Day | Before | After |", "|---|---|---|---|"]
+    for row in changes:
+        before = str(row.get("before") or "-").replace("\n", " ")
+        after = str(row.get("after") or "-").replace("\n", " ")
+        lines.append(
+            f"| {row.get('date') or '-'} | {row.get('day') or '-'} | {before} | {after} |"
+        )
+    return "\n".join(lines)
 
 
 def _preview_from_week_plan(operation: str, preview_payload: _HasToJson) -> CoachOperationPreviewModel:
@@ -173,23 +286,118 @@ def preview_update_workout_text_operation(
 
 
 def preview_scoped_week_replan_operation(
+    runtime_for: Callable[[str], AgentRuntime],
     *,
+    store: LocalArtifactStore,
+    athlete_id: str,
     year: int,
     week: int,
     message: str,
+    run_id: str,
+    model_resolver: Callable[[str], str] | None = None,
+    temperature_resolver: Callable[[str], float | None] | None = None,
+    max_num_results: int = 20,
 ) -> CoachOperationPreviewModel:
-    """Preview a scoped week replan without mutating artifacts."""
+    """Preview a scoped week replan with a real candidate WEEK_PLAN document."""
 
     version_key = f"{year:04d}-{week:02d}"
+    cleaned_message = message.strip()
+    if not cleaned_message:
+        return CoachOperationPreviewModel(
+            operation="preview_scoped_replan",
+            ok=False,
+            requires_confirmation=True,
+            summary=f"Scoped replan prepared for {version_key}.",
+            issues=["Replan message must not be empty."],
+            affected_artifacts=["WEEK_PLAN", "INTERVALS_WORKOUTS"],
+            downstream_recomputations=["Rebuild INTERVALS_WORKOUTS"],
+            metadata={"message": cleaned_message, "iso_week": version_key},
+        )
+
+    try:
+        before_document = load_week_plan_for_edit(store, athlete_id, year, week)
+    except FileNotFoundError:
+        return CoachOperationPreviewModel(
+            operation="preview_scoped_replan",
+            ok=False,
+            requires_confirmation=True,
+            summary=f"Scoped replan preview failed for {version_key}.",
+            issues=[f"No WEEK_PLAN found for {version_key}."],
+            affected_artifacts=["WEEK_PLAN", "INTERVALS_WORKOUTS"],
+            downstream_recomputations=["Rebuild INTERVALS_WORKOUTS"],
+            metadata={"message": cleaned_message, "iso_week": version_key},
+        )
+
+    preview_result = preview_week_plan_revision(
+        runtime_for,
+        athlete_id=athlete_id,
+        year=year,
+        week=week,
+        message=cleaned_message,
+        run_id=run_id,
+        model_resolver=model_resolver,
+        temperature_resolver=temperature_resolver,
+        force_file_search=True,
+        max_num_results=max_num_results,
+    )
+    if not (isinstance(preview_result, dict) and preview_result.get("ok")):
+        return CoachOperationPreviewModel(
+            operation="preview_scoped_replan",
+            ok=False,
+            requires_confirmation=True,
+            summary=f"Scoped replan preview failed for {version_key}.",
+            issues=[str(preview_result.get("error") or "Week Planner preview failed.")],
+            affected_artifacts=["WEEK_PLAN", "INTERVALS_WORKOUTS"],
+            downstream_recomputations=["Rebuild INTERVALS_WORKOUTS"],
+            metadata={"message": cleaned_message, "iso_week": version_key},
+        )
+
+    preview_document = preview_result.get("document")
+    if not isinstance(preview_document, dict):
+        return CoachOperationPreviewModel(
+            operation="preview_scoped_replan",
+            ok=False,
+            requires_confirmation=True,
+            summary=f"Scoped replan preview failed for {version_key}.",
+            issues=["Preview run did not return a candidate WEEK_PLAN document."],
+            affected_artifacts=["WEEK_PLAN", "INTERVALS_WORKOUTS"],
+            downstream_recomputations=["Rebuild INTERVALS_WORKOUTS"],
+            metadata={"message": cleaned_message, "iso_week": version_key},
+        )
+
+    issues: list[str] = []
+    try:
+        validate_document(preview_document, "WEEK_PLAN", Path("specs/schemas"))
+    except SchemaValidationError as exc:
+        issues.extend(list(exc.errors or []))
+    except Exception as exc:
+        issues.append(str(exc))
+
+    before_rows = _week_plan_rows(before_document)
+    after_rows = _week_plan_rows(preview_document)
+    change_rows = _change_rows(before_rows, after_rows)
+    warnings = [] if change_rows else ["Preview produced no visible workout-level changes."]
+    change_table_markdown = _change_table_markdown(change_rows)
+    diff_text = _json_diff(before_document, preview_document)
     return CoachOperationPreviewModel(
         operation="preview_scoped_replan",
-        ok=bool(message.strip()),
+        ok=not issues,
         requires_confirmation=True,
-        summary=f"Scoped replan prepared for {version_key}.",
-        issues=[] if message.strip() else ["Replan message must not be empty."],
+        summary=f"Scoped replan preview prepared for {version_key}.",
+        warnings=warnings,
+        issues=issues,
         affected_artifacts=["WEEK_PLAN", "INTERVALS_WORKOUTS"],
         downstream_recomputations=["Rebuild INTERVALS_WORKOUTS"],
-        metadata={"message": message.strip(), "iso_week": version_key},
+        document=preview_document,
+        metadata={
+            "message": cleaned_message,
+            "iso_week": version_key,
+            "base_workouts": before_rows,
+            "preview_workouts": after_rows,
+            "change_rows": change_rows,
+            "change_table_markdown": change_table_markdown,
+            "diff_text": diff_text,
+        },
     )
 
 

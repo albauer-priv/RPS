@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from rps.agents.crewai_backend import run_phase_bundle_crewai
-from rps.agents.runtime import AgentRuntime, run_agent_multi_output
+from rps.agents.runtime import AgentRuntime, run_agent_multi_output, run_agent_multi_output_preview
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
 
@@ -228,6 +228,7 @@ def run_week_flow(
     force_file_search: bool = True,
     max_num_results: int = 20,
     workspace_root: Path | None = None,
+    preview_only: bool = False,
 ) -> JsonMap:
     """Execute the outer Week chain through a CrewAI Flow wrapper."""
 
@@ -240,7 +241,8 @@ def run_week_flow(
 
         @listen(bootstrap)
         def run_week(self, _label: str) -> JsonMap:
-            self.state.result = run_agent_multi_output(
+            runner = run_agent_multi_output_preview if preview_only else run_agent_multi_output
+            self.state.result = runner(
                 runtime_for(agent_name),
                 agent_name=agent_name,
                 agent_vs_name="vs_rps_all_agents",

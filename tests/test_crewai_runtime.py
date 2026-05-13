@@ -49,6 +49,8 @@ from rps.orchestrator.coach_operations import (
 )
 from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_events
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
 
 
 def _install_fake_crewai_events(monkeypatch) -> object:
@@ -270,10 +272,142 @@ def test_crewai_runtime_status_reports_python_compatibility() -> None:
 
 
 def test_preview_scoped_week_replan_requires_message() -> None:
-    preview = preview_scoped_week_replan_operation(year=2026, week=19, message="")
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+    preview = preview_scoped_week_replan_operation(
+        lambda _name: runtime,
+        store=LocalArtifactStore(root=Path("runtime/athletes")),
+        athlete_id="i150546",
+        year=2026,
+        week=19,
+        message="",
+        run_id="preview-run",
+    )
     assert preview.ok is False
     assert preview.requires_confirmation is True
     assert preview.issues
+
+
+def test_preview_scoped_week_replan_returns_true_preview_metadata(monkeypatch, tmp_path: Path) -> None:
+    athlete_id = "i150546"
+    store = LocalArtifactStore(root=tmp_path)
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=tmp_path,
+    )
+    base_document = {
+        "meta": {
+            "artifact_type": "WEEK_PLAN",
+            "schema_id": "WeekPlanInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "test",
+            "run_id": "base-run",
+            "created_at": "2026-05-13T06:00:00Z",
+            "scope": "Shared",
+            "iso_week": "2026-19",
+            "iso_week_range": "2026-19--2026-19",
+            "temporal_scope": {"from": "2026-05-04", "to": "2026-05-10"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "HIGH",
+            "notes": "test",
+        },
+        "data": {
+            "agenda": [
+                {
+                    "day": "Tue",
+                    "date": "2026-05-05",
+                    "day_role": "ENDURANCE",
+                    "planned_duration": "01:30",
+                    "planned_kj": 900,
+                    "workout_id": "w1",
+                }
+            ],
+            "workouts": [
+                {
+                    "workout_id": "w1",
+                    "title": "Aerobic Endurance",
+                    "date": "2026-05-05",
+                    "start": "18:00",
+                    "duration": "01:30:00",
+                }
+            ],
+        },
+    }
+    preview_document = {
+        **base_document,
+        "data": {
+            "agenda": [
+                {
+                    "day": "Tue",
+                    "date": "2026-05-05",
+                    "day_role": "ENDURANCE",
+                    "planned_duration": "01:10",
+                    "planned_kj": 780,
+                    "workout_id": "w1",
+                }
+            ],
+            "workouts": [
+                {
+                    "workout_id": "w1",
+                    "title": "Aerobic Endurance",
+                    "date": "2026-05-05",
+                    "start": "18:00",
+                    "duration": "01:10:00",
+                }
+            ],
+        },
+    }
+    store.save_document(
+        athlete_id,
+        ArtifactType.WEEK_PLAN,
+        "2026-19",
+        base_document,
+        producer_agent="test",
+        run_id="base-run",
+        update_latest=True,
+    )
+    monkeypatch.setattr(
+        "rps.orchestrator.coach_operations.preview_week_plan_revision",
+        lambda *args, **kwargs: {"ok": True, "document": preview_document},
+    )
+    monkeypatch.setattr("rps.orchestrator.coach_operations.validate_document", lambda *args, **kwargs: None)
+
+    preview = preview_scoped_week_replan_operation(
+        lambda _name: runtime,
+        store=store,
+        athlete_id=athlete_id,
+        year=2026,
+        week=19,
+        message="Reduce Tuesday slightly.",
+        run_id="preview-run",
+    )
+
+    assert preview.ok is True
+    assert preview.document == preview_document
+    metadata = preview.metadata
+    assert metadata["change_rows"]
+    assert "| Date | Day | Before | After |" in metadata["change_table_markdown"]
+    assert "before.json" in metadata["diff_text"]
 
 
 def test_preview_report_and_feed_forward_operations_are_typed() -> None:
@@ -862,6 +996,44 @@ def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
 
     assert result["ok"] is True
     assert captured["tasks"] == [AgentTask.CREATE_WEEK_PLAN]
+
+
+def test_run_week_flow_preview_only_dispatches_preview_runner(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+    captured: dict[str, object] = {}
+
+    def _fake_run_agent_multi_output_preview(*args, **kwargs):
+        captured["tasks"] = kwargs["tasks"]
+        captured["preview_only"] = True
+        return {"ok": True, "artifact_type": "WEEK_PLAN", "document": {"meta": {}, "data": {}}}
+
+    monkeypatch.setattr("rps.crewai_runtime.flows.run_agent_multi_output_preview", _fake_run_agent_multi_output_preview)
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_week_flow(
+        runtime_for=lambda _name: runtime,
+        agent_name="week_planner",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_WEEK_PLAN],
+        user_input="Preview week plan.",
+        run_id="week-flow-preview-run",
+        preview_only=True,
+    )
+
+    assert result["ok"] is True
+    assert captured["tasks"] == [AgentTask.CREATE_WEEK_PLAN]
+    assert captured["preview_only"] is True
 
 
 def test_run_report_flow_executes_runner(monkeypatch) -> None:
