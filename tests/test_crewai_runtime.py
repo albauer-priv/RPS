@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import types
 from pathlib import Path
@@ -402,7 +403,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     class FakeTask:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
-            self.output_pydantic = kwargs["output_pydantic"]
+            self.output_pydantic = kwargs.get("output_pydantic")
             self.output = None
 
     captured_crew: dict[str, object] = {}
@@ -419,6 +420,17 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         def kickoff(self):
             task = self.tasks[-1]
             model_cls = task.output_pydantic
+            if model_cls is None:
+                payload = {
+                    "meta": {
+                        "artifact_type": "SEASON_PLAN",
+                        "schema_id": "SeasonPlanInterface",
+                        "schema_version": "1.0",
+                    },
+                    "data": {},
+                }
+                task.output = SimpleNamespace(pydantic=None, raw=json.dumps(payload))
+                return task.output
             if model_cls is ArtifactEnvelopeModel:
                 model = model_cls(
                     meta={
@@ -655,7 +667,7 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
     class FakeTask:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
-            self.output_pydantic = kwargs["output_pydantic"]
+            self.output_pydantic = kwargs.get("output_pydantic")
             self.output = None
 
     class FakeCrew:
@@ -666,15 +678,19 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
         def kickoff(self):
             task = self.tasks[0]
             model_cls = task.output_pydantic
-            envelope = model_cls(
-                meta={
+            payload = {
+                "meta": {
                     "artifact_type": "SEASON_PHASE_FEED_FORWARD",
                     "schema_id": "SeasonPhaseFeedForwardInterface",
                     "schema_version": "1.0",
                     "owner_agent": "Performance-Analyst",
                 },
-                data={},
-            )
+                "data": {},
+            }
+            if model_cls is None:
+                task.output = SimpleNamespace(pydantic=None, raw=json.dumps(payload))
+                return task.output
+            envelope = model_cls(**payload)
             task.output = SimpleNamespace(pydantic=envelope, raw=envelope.model_dump_json())
             return task.output
 

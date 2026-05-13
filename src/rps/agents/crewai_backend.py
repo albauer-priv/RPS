@@ -288,6 +288,41 @@ def _build_crewai_agent(
     )
 
 
+
+
+def _extract_raw_output_text(result: object, task_obj: object) -> str | None:
+    """Return raw text output from a CrewAI task result when available."""
+
+    task_output = getattr(task_obj, "output", None)
+    for candidate in (
+        getattr(task_output, "raw", None),
+        getattr(result, "raw", None),
+        result if isinstance(result, str) else None,
+    ):
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+    return None
+
+
+def _parse_json_document(raw_text: str) -> JsonMap:
+    """Parse a JSON object from raw task output, tolerating fenced JSON blocks."""
+
+    text = raw_text.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+        if text.lower().startswith("json"):
+            text = text[4:].strip()
+    parsed = json.loads(text)
+    if not isinstance(parsed, dict):
+        raise RuntimeError("CrewAI task output did not decode to an artifact envelope object.")
+    return parsed
+
+
 def _extract_typed_output(result: object, task_obj: object) -> Any:
     """Extract the typed Pydantic output from a CrewAI task result."""
 
@@ -324,12 +359,14 @@ def _execute_crewai_task(
         llm=llm,
         tools=tools,
     )
-    crew_task = task_cls(
-        description=description,
-        expected_output=task_blueprint.expected_output,
-        agent=agent,
-        output_pydantic=output_model_for_kind(task_blueprint.output_kind),
-    )
+    crew_task_kwargs: dict[str, Any] = {
+        "description": description,
+        "expected_output": task_blueprint.expected_output,
+        "agent": agent,
+    }
+    if task_blueprint.output_kind != "artifact_envelope":
+        crew_task_kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
+    crew_task = task_cls(**crew_task_kwargs)
     process = getattr(process_cls, "sequential")
     crew = crew_cls(
         agents=[agent],
@@ -347,9 +384,14 @@ def _execute_crewai_task(
             result = crew.kickoff()
     else:
         result = crew.kickoff()
+    if task_blueprint.output_kind == "artifact_envelope":
+        raw = _extract_raw_output_text(result, crew_task)
+        if not raw:
+            raise RuntimeError(f"CrewAI task '{task_blueprint.name}' produced no raw artifact output.")
+        return _parse_json_document(raw)
     pydantic_output = _extract_typed_output(result, crew_task)
     if pydantic_output is None:
-        raw = getattr(getattr(crew_task, "output", None), "raw", None)
+        raw = _extract_raw_output_text(result, crew_task)
         raise RuntimeError(
             f"CrewAI task '{task_blueprint.name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
@@ -371,8 +413,9 @@ def _build_crewai_task(
         "description": description,
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
-        "output_pydantic": output_model_for_kind(task_blueprint.output_kind),
     }
+    if task_blueprint.output_kind != "artifact_envelope":
+        kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
     if context_tasks:
         kwargs["context"] = context_tasks
     return task_cls(**kwargs)
@@ -480,9 +523,15 @@ def _execute_crewai_hierarchical_crew(
             result = crew.kickoff()
     else:
         result = crew.kickoff()
+    final_output_kind = str(task_blueprints[final_task_name].output_kind)
+    if final_output_kind == "artifact_envelope":
+        raw = _extract_raw_output_text(result, final_task_obj)
+        if not raw:
+            raise RuntimeError(f"CrewAI crew final task '{final_task_name}' produced no raw artifact output.")
+        return _parse_json_document(raw)
     pydantic_output = _extract_typed_output(result, final_task_obj)
     if pydantic_output is None:
-        raw = getattr(getattr(final_task_obj, "output", None), "raw", None)
+        raw = _extract_raw_output_text(result, final_task_obj)
         raise RuntimeError(
             f"CrewAI crew final task '{final_task_name}' did not produce a typed pydantic output."
             + (f" Raw output: {raw}" if raw else "")
