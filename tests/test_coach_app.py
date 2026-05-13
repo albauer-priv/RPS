@@ -183,7 +183,8 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
                     "current_week_plan": (
                         "**Current Week Plan Snapshot**\n"
                         "Use this derived current-week plan summary directly before asking tools to rediscover the same workout list.\n"
-                        "- Tue 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ | start 18:00\n"
+                        "planned_workouts_table:\n"
+                        "- Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ | 18:00\n"
                     ),
                 },
             },
@@ -275,8 +276,8 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
                         "completed_sessions_count: 1\n"
                         "completed_moving_time: 01:33:00\n"
                         "completed_work_kj: 1017\n"
-                        "completed_sessions:\n"
-                        "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78\n"
+                        "completed_sessions_table:\n"
+                        "- 2026-05-12 | Ride | 01:33:00 | 1017 kJ | 96 | 0.78\n"
                     ),
                     "plan_vs_actual": (
                         "**Plan vs Actual Snapshot**\n"
@@ -305,6 +306,9 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     assert "**Current Week Actuals**" in intro_text
     assert "Completed sessions so far: 1" in intro_text
     assert "**Plan vs Actual**" in intro_text
-    assert "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78" in intro_text
+    assert "| Day | Date | Type | Workout | Duration | kJ | Start |" in intro_text
+    assert "| Date | Type | Duration | kJ | Load TSS | IF |" in intro_text
+    assert "| Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ | 18:00 |" in intro_text
+    assert "| 2026-05-12 | Ride | 01:33:00 | 1017 kJ | 96 | 0.78 |" in intro_text
     assert "**Pending Status**" not in intro_text
     assert "No pending coach operation." not in intro_text

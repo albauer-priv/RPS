@@ -209,6 +209,32 @@ def _extract_section_bullets(block: str, section_name: str) -> list[str]:
     return bullets
 
 
+def _extract_section_rows(block: str, section_name: str) -> list[list[str]]:
+    """Return pipe-delimited row values from a named bullet section."""
+
+    rows: list[list[str]] = []
+    for bullet in _extract_section_bullets(block, section_name):
+        payload = bullet[2:].strip()
+        rows.append([part.strip() or "-" for part in payload.split("|")])
+    return rows
+
+
+def _markdown_table(headers: list[str], rows: list[list[str]]) -> list[str]:
+    """Build a markdown table from headers and row values."""
+
+    if not rows:
+        return []
+    normalized_rows: list[list[str]] = []
+    width = len(headers)
+    for row in rows:
+        padded = (row + (["-"] * width))[:width]
+        normalized_rows.append([cell.replace("|", "\\|") for cell in padded])
+    header_line = "| " + " | ".join(headers) + " |"
+    divider_line = "| " + " | ".join(["---"] * width) + " |"
+    body_lines = ["| " + " | ".join(row) + " |" for row in normalized_rows]
+    return [header_line, divider_line, *body_lines]
+
+
 def _coach_intro_message(
     *,
     year: int,
@@ -223,17 +249,23 @@ def _coach_intro_message(
     phase = _extract_keyed_lines(planning_blocks.get("phase", ""))
     load = _extract_keyed_lines(planning_blocks.get("load_governance", ""))
     week_summary = _extract_keyed_lines(advisory_blocks.get("week", ""))
-    workouts = _extract_bullets(advisory_blocks.get("current_week_plan", ""))
+    planned_workout_rows = _extract_section_rows(
+        advisory_blocks.get("current_week_plan", ""),
+        "planned_workouts_table",
+    )
     current_status_blocks = _prompt_block_map(payloads.get("current_week_status"))
     current_actuals = _extract_keyed_lines(current_status_blocks.get("current_week_actuals", ""))
-    completed_sessions = _extract_bullets(current_status_blocks.get("current_week_actuals", ""))
+    completed_session_rows = _extract_section_rows(
+        current_status_blocks.get("current_week_actuals", ""),
+        "completed_sessions_table",
+    )
     plan_vs_actual = _extract_keyed_lines(current_status_blocks.get("plan_vs_actual", ""))
     open_planned_days = _extract_section_bullets(
         current_status_blocks.get("plan_vs_actual", ""),
         "open_planned_days",
     )
 
-    if not phase and not week_summary and not workouts and not current_actuals and not completed_sessions and not plan_vs_actual:
+    if not phase and not week_summary and not planned_workout_rows and not current_actuals and not completed_session_rows and not plan_vs_actual:
         return None
 
     lines = [f"Context loaded for {year:04d}-{week:02d}."]
@@ -271,11 +303,16 @@ def _coach_intro_message(
     planned_load = week_summary.get("planned_weekly_load_kj")
     if planned_load:
         lines.append(f"- Planned weekly load: {planned_load}")
-    if workouts:
+    if planned_workout_rows:
         lines.append("- Planned workouts:")
-        lines.extend(workouts)
+        lines.extend(
+            _markdown_table(
+                ["Day", "Date", "Type", "Workout", "Duration", "kJ", "Start"],
+                planned_workout_rows,
+            )
+        )
 
-    if current_actuals or completed_sessions:
+    if current_actuals or completed_session_rows:
         lines.extend(["", "**Current Week Actuals**"])
         completed_count = current_actuals.get("completed_sessions_count")
         if completed_count:
@@ -286,9 +323,14 @@ def _coach_intro_message(
         completed_work = current_actuals.get("completed_work_kj")
         if completed_work:
             lines.append(f"- Completed work: {completed_work} kJ")
-        if completed_sessions:
+        if completed_session_rows:
             lines.append("- Completed sessions:")
-            lines.extend(completed_sessions)
+            lines.extend(
+                _markdown_table(
+                    ["Date", "Type", "Duration", "kJ", "Load TSS", "IF"],
+                    completed_session_rows,
+                )
+            )
 
     if plan_vs_actual:
         lines.extend(["", "**Plan vs Actual**"])

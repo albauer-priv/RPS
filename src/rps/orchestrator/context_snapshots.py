@@ -7,7 +7,6 @@ from datetime import UTC, date, datetime, timedelta
 
 from rps.data_pipeline.intervals_data import fetch_current_week_activities_actual_payload
 from rps.orchestrator.resolved_context import (
-    _format_activity_session_line,
     build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
@@ -156,6 +155,7 @@ def _build_current_week_plan_block(week_plan_payload: JsonMap | None) -> str:
         "**Current Week Plan Snapshot**",
         "Use this derived current-week plan summary directly before asking tools to rediscover the same workout list.",
     ]
+    lines.append("planned_workouts_table:")
     for row in workouts:
         day = _as_str(row.get("day"))
         date_label = _as_str(row.get("date"))
@@ -164,18 +164,20 @@ def _build_current_week_plan_block(week_plan_payload: JsonMap | None) -> str:
         duration = _as_str(row.get("duration")) or _as_str(row.get("planned_duration"))
         planned_kj = _as_str(row.get("planned_kj"))
         start = _as_str(row.get("start"))
-        line = f"- {day} {date_label}"
-        if role:
-            line += f" | {role}"
-        if title:
-            line += f" | {title}"
-        if duration:
-            line += f" | {duration}"
-        if planned_kj:
-            line += f" | {planned_kj} kJ"
-        if start:
-            line += f" | start {start}"
-        lines.append(line)
+        lines.append(
+            "- "
+            + " | ".join(
+                [
+                    day or "-",
+                    date_label or "-",
+                    role or "-",
+                    title or "-",
+                    duration or "-",
+                    (planned_kj + " kJ") if planned_kj else "-",
+                    start or "-",
+                ]
+            )
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -316,11 +318,32 @@ def _build_current_week_actuals_block(current_week_actual_payload: JsonMap | Non
     lines.append(f"completed_moving_time: {_format_duration(total_seconds)}")
     lines.append(f"completed_work_kj: {int(round(total_work_kj))}")
     if completed_sessions:
-        lines.append("completed_sessions:")
+        lines.append("completed_sessions_table:")
         for activity in completed_sessions:
-            rendered = _format_activity_session_line(activity)
-            if rendered:
-                lines.append(rendered)
+            day = _as_str(activity.get("day"))[:10] or "-"
+            session_type = _as_str(activity.get("type")) or "activity"
+            moving_time = _as_str(activity.get("moving_time")) or "-"
+            work_kj = activity.get("work_kj")
+            work_label = f"{int(round(float(work_kj)))} kJ" if isinstance(work_kj, (int, float)) else "-"
+            load_tss = activity.get("load_tss")
+            load_label = (
+                str(int(round(float(load_tss)))) if isinstance(load_tss, (int, float)) else "-"
+            )
+            intensity_factor = activity.get("if")
+            if_label = f"{float(intensity_factor):.2f}" if isinstance(intensity_factor, (int, float)) else "-"
+            lines.append(
+                "- "
+                + " | ".join(
+                    [
+                        day,
+                        session_type,
+                        moving_time,
+                        work_label,
+                        load_label,
+                        if_label,
+                    ]
+                )
+            )
     return "\n".join(lines) + "\n"
 
 
