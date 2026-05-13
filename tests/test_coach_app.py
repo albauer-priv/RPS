@@ -184,7 +184,7 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
                         "**Current Week Plan Snapshot**\n"
                         "Use this derived current-week plan summary directly before asking tools to rediscover the same workout list.\n"
                         "planned_workouts_table:\n"
-                        "- Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ | 18:00\n"
+                        "- Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ\n"
                     ),
                 },
             },
@@ -277,14 +277,16 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
                         "completed_moving_time: 01:33:00\n"
                         "completed_work_kj: 1017\n"
                         "completed_sessions_table:\n"
-                        "- 2026-05-12 | Ride | 01:33:00 | 1017 kJ | 96 | 0.78\n"
+                        "- Tue | 2026-05-12 | Ride | Evening Ride | 01:33:00 | 1017 kJ | 0.78 | 96\n"
                     ),
                     "plan_vs_actual": (
                         "**Plan vs Actual Snapshot**\n"
                         "matched_planned_days_count: 1\n"
-                        "open_planned_days_count: 0\n"
+                        "open_planned_days_count: 1\n"
                         "unplanned_completed_days_count: 0\n"
                         "completed_work_kj_so_far: 1017\n"
+                        "open_planned_days_table:\n"
+                        "- Thu | 2026-05-14 | RECOVERY | Recovery Spin | 00:45 | 250 kJ\n"
                     ),
                 },
             },
@@ -306,9 +308,10 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     assert "**Current Week Actuals**" in intro_text
     assert "Completed sessions so far: 1" in intro_text
     assert "**Plan vs Actual**" in intro_text
-    assert "| Day | Date | Type | Workout | Duration | kJ | Start |" in intro_text
-    assert "| Date | Type | Duration | kJ | Load TSS | IF |" in intro_text
-    assert "| Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ | 18:00 |" in intro_text
-    assert "| 2026-05-12 | Ride | 01:33:00 | 1017 kJ | 96 | 0.78 |" in intro_text
+    assert "| Day | Date | Day-Role | Title | Planned Duration | Planned Load (kJ) |" in intro_text
+    assert "| Day | Date | Type | Title | Actual Duration | Actual Load (kJ) | IF | TSS |" in intro_text
+    assert "| Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ |" in intro_text
+    assert "| Tue | 2026-05-12 | Ride | Evening Ride | 01:33:00 | 1017 kJ | 0.78 | 96 |" in intro_text
+    assert "| Thu | 2026-05-14 | RECOVERY | Recovery Spin | 00:45 | 250 kJ |" in intro_text
     assert "**Pending Status**" not in intro_text
     assert "No pending coach operation." not in intro_text

@@ -260,9 +260,9 @@ def _coach_intro_message(
         "completed_sessions_table",
     )
     plan_vs_actual = _extract_keyed_lines(current_status_blocks.get("plan_vs_actual", ""))
-    open_planned_days = _extract_section_bullets(
+    open_planned_day_rows = _extract_section_rows(
         current_status_blocks.get("plan_vs_actual", ""),
-        "open_planned_days",
+        "open_planned_days_table",
     )
 
     if not phase and not week_summary and not planned_workout_rows and not current_actuals and not completed_session_rows and not plan_vs_actual:
@@ -307,7 +307,7 @@ def _coach_intro_message(
         lines.append("- Planned workouts:")
         lines.extend(
             _markdown_table(
-                ["Day", "Date", "Type", "Workout", "Duration", "kJ", "Start"],
+                ["Day", "Date", "Day-Role", "Title", "Planned Duration", "Planned Load (kJ)"],
                 planned_workout_rows,
             )
         )
@@ -327,7 +327,7 @@ def _coach_intro_message(
             lines.append("- Completed sessions:")
             lines.extend(
                 _markdown_table(
-                    ["Date", "Type", "Duration", "kJ", "Load TSS", "IF"],
+                    ["Day", "Date", "Type", "Title", "Actual Duration", "Actual Load (kJ)", "IF", "TSS"],
                     completed_session_rows,
                 )
             )
@@ -346,9 +346,14 @@ def _coach_intro_message(
         completed_work_so_far = plan_vs_actual.get("completed_work_kj_so_far")
         if completed_work_so_far:
             lines.append(f"- Completed work so far: {completed_work_so_far} kJ")
-        if open_planned_days:
+        if open_planned_day_rows:
             lines.append("- Open planned day details:")
-            lines.extend(open_planned_days)
+            lines.extend(
+                _markdown_table(
+                    ["Day", "Date", "Day-Role", "Title", "Planned Duration", "Planned Load (kJ)"],
+                    open_planned_day_rows,
+                )
+            )
 
     if pending:
         lines.extend(["", "**Pending Status**"])
