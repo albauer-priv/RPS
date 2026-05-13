@@ -47,6 +47,11 @@ def test_coach_source_exposes_active_operation_tools():
     assert "run_conversational_turn(" in source
 
 
+def test_coach_preview_toolset_is_scoped_replan_only() -> None:
+    source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
+    assert 'preview_names = [\n        "preview_scoped_week_replan",' in source
+
+
 def test_coach_source_no_longer_depends_on_rps_chatbot():
     source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
     assert "rps_chatbot" not in source

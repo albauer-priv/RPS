@@ -664,9 +664,6 @@ def _coach_specialist_toolsets(tools: list[CoachTool]) -> SpecialistToolsets:
         "list_current_week_plan_workouts",
     ]
     preview_names = [
-        "preview_move_workout",
-        "preview_change_start_time",
-        "preview_update_workout_text",
         "preview_scoped_week_replan",
     ]
     pending_names = [
