@@ -303,7 +303,7 @@ def run_conversational_turn(
     from .models import (
         AdjustmentIntentModel,
         CoachingRecommendationModel,
-        CoachOperationPreviewModel,
+        CoachPreviewSummaryModel,
         PendingResolutionResultModel,
         TurnModeModel,
         WeekContextAssessmentModel,
@@ -403,7 +403,7 @@ def run_conversational_turn(
             surface_name=surface.name,
         )
 
-    def _preview(intent_result: AdjustmentIntentModel) -> CoachOperationPreviewModel:
+    def _preview(intent_result: AdjustmentIntentModel) -> CoachPreviewSummaryModel:
         return _run_structured_task(
             task_name="create_week_preview",
             agent_name="week_preview_specialist",
@@ -418,7 +418,7 @@ def run_conversational_turn(
                 ]
             ),
             expected_output="A structured preview result.",
-            output_model=CoachOperationPreviewModel,
+            output_model=CoachPreviewSummaryModel,
             tool_specs=toolsets.preview,
             model_override=model_override,
             temperature_override=temperature_override,

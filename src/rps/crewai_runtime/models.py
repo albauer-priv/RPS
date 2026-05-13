@@ -197,6 +197,21 @@ class PhaseBundleModel(BaseModel):
     decision_summary: PhaseBundleDecisionModel
 
 
+
+
+class CoachPreviewSummaryModel(BaseModel):
+    """Strict preview summary model for conversational preview specialist output."""
+
+    operation: str
+    ok: bool
+    requires_confirmation: bool = True
+    summary: str
+    warnings: list[str] = Field(default_factory=list)
+    issues: list[str] = Field(default_factory=list)
+    affected_artifacts: list[str] = Field(default_factory=list)
+    downstream_recomputations: list[str] = Field(default_factory=list)
+
+
 class CoachOperationPreviewModel(BaseModel):
     """Structured preview for a pending coach operation."""
 

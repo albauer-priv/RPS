@@ -32,7 +32,7 @@ tasks:
   create_week_preview:
     agent: week_preview_specialist
     kind: operation
-    output: coach_preview
+    output: coach_preview_summary
     description: Create exactly one bounded selected-week preview from a structured adjustment intent.
     expected_output: A structured coach preview result for the selected week.
   resolve_pending_operation:
