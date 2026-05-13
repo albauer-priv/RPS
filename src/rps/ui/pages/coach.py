@@ -28,6 +28,7 @@ from rps.orchestrator.coach_operations import (
 from rps.orchestrator.context_snapshots import (
     build_advisory_memory_prompt_block,
     build_athlete_state_snapshot_prompt_block,
+    build_current_week_actuals_prompt_block,
     build_planning_context_snapshot_prompt_block,
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
@@ -45,6 +46,7 @@ from rps.ui.shared import (
     set_status,
     ui_log,
 )
+from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -114,6 +116,9 @@ def _coach_memory_blocks(athlete_id: str, year: int, week: int) -> list[str]:
     planning_snapshot = payloads.get("planning_snapshot")
     if planning_snapshot:
         blocks.append(build_planning_context_snapshot_prompt_block(planning_snapshot))
+    current_week_actuals = _as_map(payloads.get("current_week_actuals")).get("block")
+    if isinstance(current_week_actuals, str) and current_week_actuals.strip():
+        blocks.append(current_week_actuals)
     advisory_memory = payloads.get("advisory_memory")
     if advisory_memory:
         blocks.append(build_advisory_memory_prompt_block(advisory_memory))
@@ -131,6 +136,13 @@ def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, d
             store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
         )
         or {},
+        "current_week_actuals": {
+            "block": build_current_week_actuals_prompt_block(
+                store,
+                athlete_id,
+                target_week=IsoWeek(year=year, week=week),
+            )
+        },
         "advisory_memory": _load_selected_week_artifact(store, athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
         or {},
     }
@@ -186,8 +198,11 @@ def _coach_intro_message(
     load = _extract_keyed_lines(planning_blocks.get("load_governance", ""))
     week_summary = _extract_keyed_lines(advisory_blocks.get("week", ""))
     workouts = _extract_bullets(advisory_blocks.get("current_week_plan", ""))
+    current_actuals_block = _as_map(payloads.get("current_week_actuals")).get("block")
+    current_actuals = _extract_keyed_lines(str(current_actuals_block or ""))
+    completed_sessions = _extract_bullets(str(current_actuals_block or ""))
 
-    if not phase and not week_summary and not workouts:
+    if not phase and not week_summary and not workouts and not current_actuals and not completed_sessions:
         return None
 
     lines = [f"Context loaded for {year:04d}-{week:02d}."]
@@ -228,6 +243,21 @@ def _coach_intro_message(
     if workouts:
         lines.append("- Planned workouts:")
         lines.extend(workouts)
+
+    if current_actuals or completed_sessions:
+        lines.extend(["", "**Current Week Actuals**"])
+        completed_count = current_actuals.get("completed_sessions_count")
+        if completed_count:
+            lines.append(f"- Completed sessions so far: {completed_count}")
+        completed_time = current_actuals.get("completed_moving_time")
+        if completed_time:
+            lines.append(f"- Completed moving time: {completed_time}")
+        completed_work = current_actuals.get("completed_work_kj")
+        if completed_work:
+            lines.append(f"- Completed work: {completed_work} kJ")
+        if completed_sessions:
+            lines.append("- Completed sessions:")
+            lines.extend(completed_sessions)
 
     lines.extend(["", "**Pending Status**"])
     if pending:

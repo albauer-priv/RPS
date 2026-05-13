@@ -178,6 +178,49 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
         producer_agent="test",
         run_id="test",
     )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-20",
+        {
+            "meta": {
+                "artifact_type": "ACTIVITIES_ACTUAL",
+                "schema_id": "ActivitiesActualInterface",
+                "schema_version": "1.0",
+                "version": "1.0",
+                "authority": "Binding",
+                "owner_agent": "Data-Pipeline",
+                "run_id": "pending",
+                "created_at": "1970-01-01T00:00:00Z",
+                "scope": "Shared",
+                "iso_week": "2026-20",
+                "iso_week_range": "2026-20--2026-20",
+                "temporal_scope": {"from": "2026-05-11", "to": "2026-05-17"},
+                "trace_upstream": [],
+                "trace_data": [],
+                "trace_events": [],
+                "data_confidence": "HIGH",
+                "notes": "test",
+            },
+            "data": {
+                "activities": [
+                    {
+                        "iso_year": 2026,
+                        "iso_week": 20,
+                        "day": "2026-05-12",
+                        "start_time_local": "2026-05-12T18:00:00",
+                        "type": "Ride",
+                        "moving_time": "01:33:00",
+                        "work_kj": 1017.0,
+                        "load_tss": 96.0,
+                        "intensity_factor": 0.78,
+                    }
+                ]
+            },
+        },
+        producer_agent="test",
+        run_id="test",
+    )
 
     at = AppTest.from_file("src/rps/ui/pages/coach.py")
     at.run(timeout=10)
@@ -188,3 +231,7 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
         1 for markdown in at.markdown if "Context loaded for 2026-20." in str(markdown.value)
     )
     assert intro_count == 1
+    intro_text = "\n".join(str(markdown.value) for markdown in at.markdown)
+    assert "**Current Week Actuals**" in intro_text
+    assert "Completed sessions so far: 1" in intro_text
+    assert "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78" in intro_text

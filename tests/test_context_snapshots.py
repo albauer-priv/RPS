@@ -1,8 +1,11 @@
 from rps.orchestrator.context_snapshots import (
     build_advisory_memory_document,
     build_advisory_memory_prompt_block,
+    build_current_week_actuals_prompt_block,
 )
 from rps.workspace.iso_helpers import IsoWeek
+from rps.workspace.local_store import LocalArtifactStore
+from rps.workspace.types import ArtifactType
 
 
 def test_build_advisory_memory_document_collects_recent_output_summaries():
@@ -75,3 +78,57 @@ def test_build_advisory_memory_prompt_block_marks_memory_as_non_binding():
     assert "**Advisory Memory**" in block
     assert "non-binding narrative context" in block
     assert "week_objective: Absorb and rebuild." in block
+
+
+def test_build_current_week_actuals_prompt_block_summarizes_completed_target_week_sessions(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        "2026-20",
+        {
+            "data": {
+                "activities": [
+                    {
+                        "iso_year": 2026,
+                        "iso_week": 20,
+                        "day": "2026-05-12",
+                        "start_time_local": "2026-05-12T18:00:00",
+                        "type": "Ride",
+                        "moving_time": "01:33:00",
+                        "work_kj": 1017.0,
+                        "load_tss": 96.0,
+                        "intensity_factor": 0.78,
+                    },
+                    {
+                        "iso_year": 2026,
+                        "iso_week": 20,
+                        "day": "2026-05-14",
+                        "start_time_local": "2026-05-14T06:30:00",
+                        "type": "Ride",
+                        "moving_time": "01:10:00",
+                        "work_kj": 680.0,
+                        "load_tss": 58.0,
+                        "intensity_factor": 0.71,
+                    },
+                ]
+            }
+        },
+        producer_agent="test",
+        run_id="activities_actual",
+        update_latest=True,
+    )
+
+    block = build_current_week_actuals_prompt_block(
+        store,
+        athlete_id,
+        target_week=IsoWeek(year=2026, week=20),
+    )
+
+    assert "**Current Week Actuals Snapshot**" in block
+    assert "completed sessions in the current target week up to now" in block
+    assert "completed_sessions_count: 2" in block
+    assert "completed_moving_time: 02:43:00" in block
+    assert "completed_work_kj: 1697" in block
+    assert "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78" in block

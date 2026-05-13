@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 from rps.orchestrator.resolved_context import (
+    _format_activity_session_line,
     build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
     build_resolved_availability_context_block,
@@ -176,6 +177,30 @@ def _build_current_week_plan_block(week_plan_payload: JsonMap | None) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _duration_to_seconds(value: object) -> int:
+    """Return whole seconds for a `HH:MM:SS` string or zero when unavailable."""
+
+    if not isinstance(value, str):
+        return 0
+    parts = value.split(":")
+    if len(parts) != 3:
+        return 0
+    try:
+        hours, minutes, seconds = (int(part) for part in parts)
+    except ValueError:
+        return 0
+    return max(0, hours * 3600 + minutes * 60 + seconds)
+
+
+def _format_duration(seconds: int) -> str:
+    """Return `HH:MM:SS` for a non-negative duration in seconds."""
+
+    seconds = max(0, int(seconds))
+    hours, remainder = divmod(seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
 def _build_advisory_report_block(des_analysis_payload: JsonMap | None) -> str:
     data = _as_data(des_analysis_payload)
     recommendation = data.get("recommendation")
@@ -242,6 +267,66 @@ def _load_latest_snapshot(
     if not isinstance(payload, dict):
         raise TypeError(f"Latest {artifact_type.value} payload is not a JSON object.")
     return payload
+
+
+def build_current_week_actuals_prompt_block(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+) -> str:
+    """Return a coach-only block with completed sessions in the current target week so far."""
+
+    week_key = f"{target_week.year:04d}-{target_week.week:02d}"
+    version_key = store.resolve_week_version_key(athlete_id, ArtifactType.ACTIVITIES_ACTUAL, week_key)
+    if not version_key:
+        return ""
+    try:
+        payload = store.load_version(athlete_id, ArtifactType.ACTIVITIES_ACTUAL, version_key)
+    except FileNotFoundError:
+        return ""
+    if not isinstance(payload, dict):
+        return ""
+    data = payload.get("data")
+    activities = data.get("activities") if isinstance(data, dict) else None
+    if not isinstance(activities, list) or not activities:
+        return ""
+
+    completed_sessions: list[dict[str, object]] = []
+    total_seconds = 0
+    total_work_kj = 0.0
+    for activity in activities:
+        if not isinstance(activity, dict):
+            continue
+        if activity.get("iso_year") not in (None, target_week.year):
+            continue
+        if activity.get("iso_week") not in (None, target_week.week):
+            continue
+        completed_sessions.append(activity)
+        total_seconds += _duration_to_seconds(activity.get("moving_time"))
+        work_kj = activity.get("work_kj")
+        if isinstance(work_kj, (int, float)):
+            total_work_kj += float(work_kj)
+
+    if not completed_sessions:
+        return ""
+
+    completed_sessions.sort(key=lambda item: str(item.get("start_time_local") or item.get("day") or ""))
+    lines = [
+        "**Current Week Actuals Snapshot**",
+        "Use these completed sessions in the current target week up to now directly; this block is partial and may omit future or not-yet-synced activities.",
+        f"target_iso_week: {week_key}",
+        f"activities_actual_version: {version_key}",
+        f"completed_sessions_count: {len(completed_sessions)}",
+        f"completed_moving_time: {_format_duration(total_seconds)}",
+        f"completed_work_kj: {int(round(total_work_kj))}",
+        "completed_sessions:",
+    ]
+    for activity in completed_sessions:
+        rendered = _format_activity_session_line(activity)
+        if rendered:
+            lines.append(rendered)
+    return "\n".join(lines) + "\n"
 
 
 def _join_prompt_blocks(title: str, snapshot_type: ArtifactType, snapshot: JsonMap) -> str:
