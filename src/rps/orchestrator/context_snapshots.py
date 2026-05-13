@@ -214,6 +214,32 @@ def _weekday_label(date_text: str) -> str:
         return "-"
 
 
+def _simple_key_value_map(block: str) -> dict[str, str]:
+    """Parse simple `key: value` lines from a prompt block."""
+
+    parsed: dict[str, str] = {}
+    for line in block.splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key_clean = key.strip()
+        value_clean = value.strip()
+        if key_clean and value_clean and not key_clean.startswith("**"):
+            parsed[key_clean] = value_clean
+    return parsed
+
+
+def _int_from_text(value: str | None) -> int:
+    """Return an integer parsed from text, defaulting to zero."""
+
+    if not value:
+        return 0
+    try:
+        return int(value)
+    except ValueError:
+        return 0
+
+
 def _build_advisory_report_block(des_analysis_payload: JsonMap | None) -> str:
     data = _as_data(des_analysis_payload)
     recommendation = data.get("recommendation")
@@ -897,6 +923,26 @@ def save_current_week_status_snapshot(
     return _load_latest_snapshot(store, athlete_id, ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT)
 
 
+def _current_week_status_snapshot_has_required_tables(snapshot: JsonMap | None) -> bool:
+    """Return whether a persisted current-week status snapshot includes required table sections."""
+
+    if not isinstance(snapshot, dict):
+        return False
+    data = _as_data(snapshot)
+    prompt_blocks = data.get("prompt_blocks")
+    if not isinstance(prompt_blocks, dict):
+        return False
+    actuals_block = _as_str(prompt_blocks.get("current_week_actuals"))
+    plan_vs_actual_block = _as_str(prompt_blocks.get("plan_vs_actual"))
+    actuals_map = _simple_key_value_map(actuals_block)
+    plan_map = _simple_key_value_map(plan_vs_actual_block)
+    completed_count = _int_from_text(actuals_map.get("completed_sessions_count"))
+    open_days_count = _int_from_text(plan_map.get("open_planned_days_count"))
+    if completed_count > 0 and "completed_sessions_table:" not in actuals_block:
+        return False
+    return not (open_days_count > 0 and "open_planned_days_table:" not in plan_vs_actual_block)
+
+
 def ensure_current_week_status_snapshot(
     store: LocalArtifactStore,
     athlete_id: str,
@@ -930,6 +976,7 @@ def ensure_current_week_status_snapshot(
         isinstance(existing, dict)
         and _snapshot_recent_enough(existing)
         and existing_week_plan_version == current_week_plan_version
+        and _current_week_status_snapshot_has_required_tables(existing)
     ):
         return existing
 

@@ -135,6 +135,7 @@ def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, d
     week_key = f"{year:04d}-{week:02d}"
     week_plan_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.WEEK_PLAN, week_key) or {}
     return {
+        "week_plan": week_plan_payload,
         "athlete_snapshot": _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT) or {},
         "planning_snapshot": _load_selected_week_artifact(
             store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
@@ -253,6 +254,21 @@ def _coach_intro_message(
         advisory_blocks.get("current_week_plan", ""),
         "planned_workouts_table",
     )
+    if not planned_workout_rows:
+        week_plan_payload_raw = payloads.get("week_plan")
+        week_plan_payload: dict[str, object] = week_plan_payload_raw if isinstance(week_plan_payload_raw, dict) else {}
+        planned_workout_rows = [
+            [
+                str(row.get("day") or "-"),
+                str(row.get("date") or "-"),
+                str(row.get("day_role") or "-"),
+                str(row.get("title") or "-"),
+                str(row.get("duration") or row.get("planned_duration") or "-"),
+                (str(row.get("planned_kj")) + " kJ") if row.get("planned_kj") not in (None, "") else "-",
+            ]
+            for row in list_week_plan_workouts(week_plan_payload)
+            if isinstance(row, dict)
+        ]
     current_status_blocks = _prompt_block_map(payloads.get("current_week_status"))
     current_actuals = _extract_keyed_lines(current_status_blocks.get("current_week_actuals", ""))
     completed_session_rows = _extract_section_rows(
