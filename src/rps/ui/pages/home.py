@@ -62,6 +62,7 @@ def _artifact_status_rows(store: LocalArtifactStore, athlete_id: str) -> list[di
         ("DES Report", "Agent", "Durability/efficiency analysis report.", ArtifactType.DES_ANALYSIS_REPORT),
         ("Athlete State Snapshot", "System", "Derived authoritative runtime memory.", ArtifactType.ATHLETE_STATE_SNAPSHOT),
         ("Planning Context Snapshot", "System", "Derived target-week planning memory.", ArtifactType.PLANNING_CONTEXT_SNAPSHOT),
+        ("Current Week Status Snapshot", "System", "Derived current-week plan/actual status memory.", ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT),
         ("Advisory Memory", "System", "Non-binding narrative planning memory.", ArtifactType.ADVISORY_MEMORY),
     ]
     rows: list[dict[str, str]] = []

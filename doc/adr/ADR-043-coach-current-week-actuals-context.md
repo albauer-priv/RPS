@@ -1,13 +1,15 @@
 ---
-Version: 1.0
-Status: Accepted
+Version: 1.1
+Status: Superseded
 Last-Updated: 2026-05-13
 Owner: Coach / Workspace / UI
 ---
 # ADR-043: Coach Current Week Actuals Context
 
-**Status:** Accepted  
+**Status:** Superseded  
 **Date:** 2026-05-13
+
+Superseded by `ADR-044-coach-current-week-status-snapshot.md`.
 
 ## Context
 

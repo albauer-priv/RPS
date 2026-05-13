@@ -71,7 +71,7 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
                 "authority": "Derived",
                 "owner_agent": "Policy-Owner",
                 "run_id": "pending",
-                "created_at": "1970-01-01T00:00:00Z",
+                "created_at": "2026-05-13T06:00:00Z",
                 "scope": "Context",
                 "iso_week": "2026-20",
                 "iso_week_range": "2026-20--2026-20",
@@ -180,18 +180,18 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     )
     store.save_document(
         athlete_id,
-        ArtifactType.ACTIVITIES_ACTUAL,
+        ArtifactType.WEEK_PLAN,
         "2026-20",
         {
             "meta": {
-                "artifact_type": "ACTIVITIES_ACTUAL",
-                "schema_id": "ActivitiesActualInterface",
+                "artifact_type": "WEEK_PLAN",
+                "schema_id": "WeekPlanInterface",
                 "schema_version": "1.0",
                 "version": "1.0",
                 "authority": "Binding",
-                "owner_agent": "Data-Pipeline",
-                "run_id": "pending",
-                "created_at": "1970-01-01T00:00:00Z",
+                "owner_agent": "Policy-Owner",
+                "run_id": "week_run",
+                "created_at": "2026-05-13T06:00:00Z",
                 "scope": "Shared",
                 "iso_week": "2026-20",
                 "iso_week_range": "2026-20--2026-20",
@@ -203,19 +203,76 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
                 "notes": "test",
             },
             "data": {
-                "activities": [
+                "week_summary": {"week_objective": "Stabilize aerobic re-entry.", "planned_weekly_load_kj": 6700},
+                "agenda": [
                     {
-                        "iso_year": 2026,
-                        "iso_week": 20,
-                        "day": "2026-05-12",
-                        "start_time_local": "2026-05-12T18:00:00",
-                        "type": "Ride",
-                        "moving_time": "01:33:00",
-                        "work_kj": 1017.0,
-                        "load_tss": 96.0,
-                        "intensity_factor": 0.78,
+                        "day": "Tue",
+                        "date": "2026-05-12",
+                        "day_role": "QUALITY",
+                        "planned_duration": "01:33",
+                        "planned_kj": 1017,
+                        "workout_id": "w1",
                     }
-                ]
+                ],
+                "workouts": [
+                    {"workout_id": "w1", "title": "Tempo Stabilization", "start": "18:00", "duration": "01:33"}
+                ],
+            },
+        },
+        producer_agent="test",
+        run_id="test",
+    )
+    week_plan_version = store.resolve_week_version_key(athlete_id, ArtifactType.WEEK_PLAN, "2026-20")
+    assert week_plan_version is not None
+    monkeypatch.setattr(
+        "rps.orchestrator.context_snapshots.fetch_current_week_activities_actual_payload",
+        lambda **_: (_ for _ in ()).throw(AssertionError("unexpected live current-week fetch")),
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT,
+        "2026-20",
+        {
+            "meta": {
+                "artifact_type": "CURRENT_WEEK_STATUS_SNAPSHOT",
+                "schema_id": "CurrentWeekStatusSnapshotInterface",
+                "schema_version": "1.0",
+                "version": "1.0",
+                "authority": "Derived",
+                "owner_agent": "Policy-Owner",
+                "run_id": "pending",
+                "created_at": "2026-05-13T06:00:00Z",
+                "scope": "Context",
+                "iso_week": "2026-20",
+                "iso_week_range": "2026-20--2026-20",
+                "temporal_scope": {"from": "2026-05-11", "to": "2026-05-17"},
+                "trace_upstream": [],
+                "trace_data": [],
+                "trace_events": [],
+                "data_confidence": "HIGH",
+                "notes": "test",
+            },
+            "data": {
+                "target_iso_week": "2026-20",
+                "source_versions": {"week_plan": week_plan_version, "current_week_activities_actual": "2026-20"},
+                "prompt_blocks": {
+                    "current_week_actuals": (
+                        "**Current Week Actuals Snapshot**\n"
+                        "target_iso_week: 2026-20\n"
+                        "completed_sessions_count: 1\n"
+                        "completed_moving_time: 01:33:00\n"
+                        "completed_work_kj: 1017\n"
+                        "completed_sessions:\n"
+                        "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78\n"
+                    ),
+                    "plan_vs_actual": (
+                        "**Plan vs Actual Snapshot**\n"
+                        "matched_planned_days_count: 1\n"
+                        "open_planned_days_count: 0\n"
+                        "unplanned_completed_days_count: 0\n"
+                        "completed_work_kj_so_far: 1017\n"
+                    ),
+                },
             },
         },
         producer_agent="test",
@@ -234,4 +291,5 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     intro_text = "\n".join(str(markdown.value) for markdown in at.markdown)
     assert "**Current Week Actuals**" in intro_text
     assert "Completed sessions so far: 1" in intro_text
+    assert "**Plan vs Actual**" in intro_text
     assert "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78" in intro_text

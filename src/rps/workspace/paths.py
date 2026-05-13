@@ -40,6 +40,7 @@ ARTIFACT_PATHS: dict[ArtifactType, ArtifactPathConfig] = {
     ArtifactType.DES_ANALYSIS_REPORT: ArtifactPathConfig("data/analysis", "des_analysis_report"),
     ArtifactType.ATHLETE_STATE_SNAPSHOT: ArtifactPathConfig("data/context", "athlete_state_snapshot"),
     ArtifactType.PLANNING_CONTEXT_SNAPSHOT: ArtifactPathConfig("data/context", "planning_context_snapshot"),
+    ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT: ArtifactPathConfig("data/context", "current_week_status_snapshot"),
     ArtifactType.ADVISORY_MEMORY: ArtifactPathConfig("data/context", "advisory_memory"),
 }
 

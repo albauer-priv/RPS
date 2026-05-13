@@ -319,14 +319,18 @@ flowchart LR
 - Binding planner memory is split into:
   - `athlete_state_snapshot_yyyy-ww.json`
   - `planning_context_snapshot_yyyy-ww.json`
+- Coach-facing current-week status memory is stored as:
+  - `current_week_status_snapshot_yyyy-ww.json`
 - Non-binding narrative memory is stored as:
   - `advisory_memory_yyyy-ww.json`
 - Planners and Coach consume snapshot memory first and use raw artefacts only for missing detail or traceability.
 - Coach-facing advisory memory may include the selected-week objective, planned weekly load, and a compact current-week workout list derived from the latest `WEEK_PLAN`.
+- Current-week actuals are fetched separately from Intervals.icu, normalized into the same activity shape as `ACTIVITIES_ACTUAL`, and persisted into `CURRENT_WEEK_STATUS_SNAPSHOT` before Coach consumes them.
 
 **Outputs (Artefacts)**
 - `athlete_state_snapshot_yyyy-ww.json` (derived)
 - `planning_context_snapshot_yyyy-ww.json` (derived)
+- `current_week_status_snapshot_yyyy-ww.json` (derived)
 - `advisory_memory_yyyy-ww.json` (advisory)
 
 ```mermaid
@@ -334,9 +338,11 @@ flowchart LR
   SRC["Authoritative Inputs + Outputs"]:::artefact --> ORCH["Orchestrator Snapshot Builders"]:::component
   ORCH --> ASS["athlete_state_snapshot_yyyy-ww.json"]:::artefact
   ORCH --> PCS["planning_context_snapshot_yyyy-ww.json"]:::artefact
+  ORCH --> CWS["current_week_status_snapshot_yyyy-ww.json"]:::artefact
   ORCH --> ADM["advisory_memory_yyyy-ww.json"]:::artefact
   ASS --> PL["Planner / Coach Injection"]:::agent
   PCS --> PL
+  CWS --> PL
   ADM -. non-binding .-> PL
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;

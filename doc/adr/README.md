@@ -52,6 +52,7 @@ This folder contains the ADR log for RPS.
 - ADR-041: CrewAI Runtime Event Payload Cleanup
 - ADR-042: Coach Week-Plan Memory and Intro Summary
 - ADR-043: Coach Current Week Actuals Context
+- ADR-044: Coach Current Week Status Snapshot
 
 ## Process (Short)
 

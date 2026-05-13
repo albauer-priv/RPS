@@ -1142,18 +1142,18 @@ def div_or_none(value: float | int | None, denom: float | int) -> float | None:
     return value / denom
 
 
-def export_range(
+def build_export_dataframe(
     *,
     athlete_id: str,
     base_url: str,
     from_date: date,
     to_date: date,
-) -> Path:
-    """Export activities for a date range and write CSV outputs."""
-    print(f"Range: {from_date} to {to_date}")
-
+) -> pd.DataFrame:
+    """Return the normalized Intervals export dataframe for a date range."""
     activities = get_activities(athlete_id, base_url, from_date, to_date)
     activities = [a for a in activities if a.get("type") in {"Ride", "VirtualRide"}]
+    if not activities:
+        return pd.DataFrame()
 
     curve_csv = get_power_curves_csv(athlete_id, base_url, from_date, to_date)
     curve_df = pd.read_csv(StringIO(curve_csv))
@@ -1361,6 +1361,28 @@ def export_range(
 
     apply_rounding_policy(df)
 
+    return df
+
+
+def export_range(
+    *,
+    athlete_id: str,
+    base_url: str,
+    from_date: date,
+    to_date: date,
+) -> Path:
+    """Export activities for a date range and write CSV outputs."""
+    print(f"Range: {from_date} to {to_date}")
+
+    df = build_export_dataframe(
+        athlete_id=athlete_id,
+        base_url=base_url,
+        from_date=from_date,
+        to_date=to_date,
+    )
+    if df.empty:
+        raise ValueError("No Ride or VirtualRide activities found for the requested range.")
+
     iso_year, iso_week = date_to_iso_week(to_date)
     data_dir = athlete_data_dir(athlete_id)
     latest_dir = athlete_latest_dir(athlete_id)
@@ -1544,14 +1566,19 @@ def write_parquet_cache(df: pd.DataFrame, out_file: Path, logger: logging.Logger
             )
 
 
-def compile_activities_actual(
+def build_activities_actual_payloads_from_export_frame(
+    export_df: pd.DataFrame,
     *,
-    athlete_id: str,
-    input_csv: Path,
+    source_artifact_name: str,
     skip_validate: bool,
-) -> None:
-    """Compile activities_actual JSON for the latest ISO week in the export."""
-    df = pd.read_csv(input_csv, sep=SEPARATOR, quotechar=QUOTECHAR)
+    run_ts: datetime | None = None,
+    run_id_prefix: str = "data-pipeline",
+) -> list[tuple[str, pd.DataFrame, dict[str, Any]]]:
+    """Return week-scoped `ACTIVITIES_ACTUAL` payloads from an exported Intervals dataframe."""
+
+    if export_df.empty:
+        return []
+    df = export_df.copy()
     dt_col = standardize_activity_columns(df)
     df = df.copy()
 
@@ -1564,7 +1591,6 @@ def compile_activities_actual(
     )
 
     apply_unit_conversions(df)
-
     apply_rounding_policy(df)
 
     required_columns = [
@@ -1705,49 +1731,20 @@ def compile_activities_actual(
 
     groups = list(df.groupby(["ISO Year", "ISO Week"], sort=True))
     if not groups:
-        raise ValueError("No rows available for activities_actual export.")
-    run_ts = datetime.now(UTC)
+        return []
+    run_ts = run_ts or datetime.now(UTC)
     run_stamp = run_ts.strftime("%Y%m%d-%H%M%S")
 
     schema_dir = resolve_schema_dir()
     validator = SchemaRegistry(schema_dir).validator_for("activities_actual.schema.json")
-
-    data_dir = athlete_data_dir(athlete_id)
-    latest_dir = athlete_latest_dir(athlete_id)
-
-    logger = logging.getLogger(__name__)
-    last_out_file: Path | None = None
-    last_out_json_file: Path | None = None
-    last_out_parquet_file: Path | None = None
+    results: list[tuple[str, pd.DataFrame, dict[str, Any]]] = []
     for (yr, wk), g in groups:
         g = g.sort_values(dt_col)
         out_df = g[output_cols]
 
         iso_week = f"{int(wk):02d}"
-        out_file = data_dir / f"{int(yr):04d}" / iso_week / f"activities_actual_{int(yr)}-{iso_week}.csv"
-        out_json_file = out_file.with_suffix(".json")
-        out_parquet_file = out_file.with_suffix(".parquet")
-        out_file.parent.mkdir(parents=True, exist_ok=True)
-
-        out_df.to_csv(
-            out_file,
-            index=False,
-            sep=SEPARATOR,
-            quoting=csv.QUOTE_ALL,
-            quotechar=QUOTECHAR,
-            doublequote=True,
-            encoding="utf-8-sig",
-            lineterminator="\n",
-            na_rep="",
-        )
-        write_parquet_cache(out_df, out_parquet_file, logger)
-
         required_columns_set = set(required_field_map.values())
-        metric_columns = [
-            c for c in out_df.columns
-            if c not in required_columns_set
-            and c not in flag_columns
-        ]
+        metric_columns = [c for c in out_df.columns if c not in required_columns_set and c not in flag_columns]
 
         flag_key_map: dict[str, str] = {}
         used_flag_keys: set[str] = set()
@@ -1766,7 +1763,6 @@ def compile_activities_actual(
         expected_activity_keys = set(required_field_map.keys()) | {"flags", "metrics"}
         expected_flag_keys = set(flag_key_map.values())
         expected_metric_keys = set(metric_key_map.values())
-
         activities = []
         for _, row in out_df.iterrows():
             activity = {
@@ -1801,17 +1797,13 @@ def compile_activities_actual(
                 "hr_tiz_z7": format_duration_hms(row.get(required_field_map["hr_tiz_z7"])),
                 "sweet_spot_tiz": format_duration_hms(row.get(required_field_map["sweet_spot_tiz"])),
             }
-
             missing_fields = [key for key in non_null_fields if activity.get(key) is None]
             if missing_fields:
                 raise ValueError(
-                    f"Missing required values for {', '.join(missing_fields)} "
-                    f"in ISO week {int(yr)}-{iso_week}."
+                    f"Missing required values for {', '.join(missing_fields)} in ISO week {int(yr)}-{iso_week}."
                 )
 
-            flags = {}
-            for col in flag_columns:
-                flags[flag_key_map[col]] = normalize_bool(row.get(col))
+            flags = {flag_key_map[col]: normalize_bool(row.get(col)) for col in flag_columns}
             activity["flags"] = flags
 
             metrics = {}
@@ -1826,7 +1818,6 @@ def compile_activities_actual(
             ensure_keys("activity", set(activity.keys()), expected_activity_keys, context_label)
             ensure_keys("activity.flags", set(flags.keys()), expected_flag_keys, context_label)
             ensure_keys("activity.metrics", set(metrics.keys()), expected_metric_keys, context_label)
-
             activities.append(activity)
 
         confidence_cols_actual = [
@@ -1839,7 +1830,6 @@ def compile_activities_actual(
             required_field_map["intensity_factor"],
         ]
         data_confidence = _confidence_from_columns(out_df, confidence_cols_actual)
-
         version_key = f"{int(yr)}-{iso_week}"
         meta = {
             "artifact_type": "ACTIVITIES_ACTUAL",
@@ -1848,7 +1838,7 @@ def compile_activities_actual(
             "version": "1.0",
             "authority": "Binding",
             "owner_agent": "Data-Pipeline",
-            "run_id": f"{run_stamp}-data-pipeline-{int(yr)}{iso_week}",
+            "run_id": f"{run_stamp}-{run_id_prefix}-{int(yr)}{iso_week}",
             "created_at": run_ts.isoformat(),
             "data_confidence": data_confidence,
             "iso_week": version_key,
@@ -1860,7 +1850,7 @@ def compile_activities_actual(
             "scope": "Shared",
             "trace_upstream": [
                 {
-                    "artifact": input_csv.name,
+                    "artifact": source_artifact_name,
                     "version": "1.0",
                     "run_id": run_stamp,
                 }
@@ -1876,7 +1866,6 @@ def compile_activities_actual(
                 "notes": "Derived from Intervals.icu activity export.",
             },
         }
-
         if not skip_validate:
             try:
                 validate_or_raise(validator, payload)
@@ -1885,6 +1874,92 @@ def compile_activities_actual(
                 for err in exc.errors:
                     print(f"- {err}")
                 raise
+        results.append((version_key, out_df, payload))
+
+    return results
+
+
+def fetch_current_week_activities_actual_payload(
+    *,
+    athlete_id: str,
+    year: int,
+    week: int,
+    today: date | None = None,
+) -> dict[str, Any] | None:
+    """Fetch the current ISO week directly from Intervals.icu and return an in-memory payload."""
+
+    today = today or date.today()
+    week_start = date.fromisocalendar(year, week, 1)
+    week_end = date.fromisocalendar(year, week, 7)
+    if today < week_start:
+        return None
+
+    load_env()
+    api_key = require_env("API_KEY")
+    base_url = require_env("BASE_URL")
+    session.auth = HTTPBasicAuth("API_KEY", api_key)
+    effective_end = min(today, week_end)
+    export_df = build_export_dataframe(
+        athlete_id=athlete_id,
+        base_url=base_url,
+        from_date=week_start,
+        to_date=effective_end,
+    )
+    payloads = build_activities_actual_payloads_from_export_frame(
+        export_df,
+        source_artifact_name=f"intervals_icu_current_week_{week_start.isoformat()}_{effective_end.isoformat()}.csv",
+        skip_validate=True,
+        run_id_prefix="current-week-status",
+    )
+    target_key = f"{year:04d}-{week:02d}"
+    for version_key, _, payload in payloads:
+        if version_key == target_key:
+            return payload
+    return None
+
+
+def compile_activities_actual(
+    *,
+    athlete_id: str,
+    input_csv: Path,
+    skip_validate: bool,
+) -> None:
+    """Compile activities_actual JSON for the latest ISO week in the export."""
+    df = pd.read_csv(input_csv, sep=SEPARATOR, quotechar=QUOTECHAR)
+    payloads = build_activities_actual_payloads_from_export_frame(
+        df,
+        source_artifact_name=input_csv.name,
+        skip_validate=skip_validate,
+    )
+    if not payloads:
+        raise ValueError("No rows available for activities_actual export.")
+    data_dir = athlete_data_dir(athlete_id)
+    latest_dir = athlete_latest_dir(athlete_id)
+
+    logger = logging.getLogger(__name__)
+    last_out_file: Path | None = None
+    last_out_json_file: Path | None = None
+    last_out_parquet_file: Path | None = None
+    for version_key, out_df, payload in payloads:
+        yr_str, iso_week = version_key.split("-", 1)
+        yr = int(yr_str)
+        out_file = data_dir / f"{int(yr):04d}" / iso_week / f"activities_actual_{int(yr)}-{iso_week}.csv"
+        out_json_file = out_file.with_suffix(".json")
+        out_parquet_file = out_file.with_suffix(".parquet")
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+
+        out_df.to_csv(
+            out_file,
+            index=False,
+            sep=SEPARATOR,
+            quoting=csv.QUOTE_ALL,
+            quotechar=QUOTECHAR,
+            doublequote=True,
+            encoding="utf-8-sig",
+            lineterminator="\n",
+            na_rep="",
+        )
+        write_parquet_cache(out_df, out_parquet_file, logger)
 
         with open(out_json_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -1893,7 +1968,7 @@ def compile_activities_actual(
         last_out_json_file = out_json_file
         last_out_parquet_file = out_parquet_file
 
-        index_meta = cast(IndexMeta, meta)
+        index_meta = cast(IndexMeta, payload["meta"])
         record_index_write(
             athlete_id=athlete_id,
             artifact_type="ACTIVITIES_ACTUAL",

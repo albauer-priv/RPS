@@ -18,7 +18,7 @@ This document is the canonical registry of agents, their roles, modes, and artif
 | Week‑Planner | Produce a week plan within phase guardrails. | CREATE_WEEK_PLAN, REVISE_WEEK_PLAN | phase_guardrails, phase_structure, availability, wellness, zone_model, planning_events, logistics, week_plan (optional) | week_plan | Revised week plan includes coach input. |
 | Workout Export | Build Intervals export from week plan. | WORKOUT_EXPORT | week_plan | workout_export | Local deterministic export; posting happens in UI. |
 | Performance‑Analyst | Create diagnostic performance reports. | CREATE_REPORT | activities_actual, activities_trend, wellness, season_plan (optional) | des_analysis_report | Diagnostic only; may inform feed-forward flows but does not own planning artefacts or governance changes. |
-| Coach | Conversational coaching, bounded plan edits, scoped replans, and advisory triggers. | COACH_CHAT, COACH_PLAN_OPS | chat history, athlete context, selected-week plan context, selected-week completed actuals up to now | week_plan, intervals_workouts, des_analysis_report, season_phase_feed_forward, phase_feed_forward | Preview-first orchestration surface; triggers planner/report flows but is not a planning artefact author. |
+| Coach | Conversational coaching, bounded plan edits, scoped replans, and advisory triggers. | COACH_CHAT, COACH_PLAN_OPS | chat history, athlete context, selected-week plan context, current-week status snapshot | week_plan, intervals_workouts, des_analysis_report, season_phase_feed_forward, phase_feed_forward | Preview-first orchestration surface; triggers planner/report flows but is not a planning artefact author. |
 | Workout Editor | Bounded chat-based edits for an existing week plan. | WEEK_PLAN_EDIT_CHAT | selected-week week_plan, chat history | week_plan, intervals_workouts | Narrow specialized surface; active Coach now reuses the same bounded edit patterns. |
 
 ## Mode Notes
@@ -30,7 +30,7 @@ This document is the canonical registry of agents, their roles, modes, and artif
 - Outer Season and Phase orchestration is wrapped in CrewAI Flows; grouped Phase runs reuse one internal `PhaseBundle` before deterministic public artefact persistence.
 - Outer Week, Report, and Feed-Forward orchestration now also uses CrewAI Flow wrappers.
 - Coach turn execution now routes through a dedicated CrewAI Flow wrapper before falling back to the tool-driven chat turn, so explicit confirm/discard/status messages are first-class flow routes.
-- Coach now also receives a separate current-week actuals block built from selected-week `ACTIVITIES_ACTUAL`, while the planning snapshot keeps the last complete historical reference week for stable planning context.
+- Coach now consumes a dedicated `CURRENT_WEEK_STATUS_SNAPSHOT` for current-week actuals and plan-vs-actual status, while the planning snapshot keeps the last complete historical reference week for stable planning context.
 - Season and Phase specialist work now runs inside one hierarchical CrewAI crew per run instead of repeated one-task crew executions.
 - Flow/Crew runtime telemetry now uses a central CrewAI `BaseEventListener` adapter into per-run `events.jsonl`, with compact normalized crew/task/tool labels surfaced in Plan Hub, System Status, and System History.
 

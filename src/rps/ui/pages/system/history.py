@@ -59,6 +59,7 @@ def _latest_outputs(athlete_id: str) -> list[dict[str, str]]:
         (ArtifactType.DES_ANALYSIS_REPORT, "Performance Report"),
         (ArtifactType.ATHLETE_STATE_SNAPSHOT, "Athlete State Snapshot"),
         (ArtifactType.PLANNING_CONTEXT_SNAPSHOT, "Planning Context Snapshot"),
+        (ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT, "Current Week Status Snapshot"),
         (ArtifactType.ADVISORY_MEMORY, "Advisory Memory"),
     ]
     rows = []
@@ -212,6 +213,7 @@ authority_map = {
     ArtifactType.DES_ANALYSIS_REPORT.value: "Advisory",
     ArtifactType.ATHLETE_STATE_SNAPSHOT.value: "Derived",
     ArtifactType.PLANNING_CONTEXT_SNAPSHOT.value: "Derived",
+    ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT.value: "Derived",
     ArtifactType.ADVISORY_MEMORY.value: "Advisory",
 }
 for row in latest_rows:
@@ -238,6 +240,7 @@ planning_types = {
     ArtifactType.DES_ANALYSIS_REPORT.value,
     ArtifactType.ATHLETE_STATE_SNAPSHOT.value,
     ArtifactType.PLANNING_CONTEXT_SNAPSHOT.value,
+    ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT.value,
     ArtifactType.ADVISORY_MEMORY.value,
 }
 data_types = {

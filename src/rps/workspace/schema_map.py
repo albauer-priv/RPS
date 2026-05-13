@@ -28,5 +28,6 @@ ARTIFACT_SCHEMA_FILE: dict[ArtifactType, str] = {
     ArtifactType.DES_ANALYSIS_REPORT: "des_analysis_report.schema.json",
     ArtifactType.ATHLETE_STATE_SNAPSHOT: "athlete_state_snapshot.schema.json",
     ArtifactType.PLANNING_CONTEXT_SNAPSHOT: "planning_context_snapshot.schema.json",
+    ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT: "current_week_status_snapshot.schema.json",
     ArtifactType.ADVISORY_MEMORY: "advisory_memory.schema.json",
 }

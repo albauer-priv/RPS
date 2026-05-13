@@ -1,16 +1,20 @@
 ---
-Version: 1.0
-Status: Implemented
+Version: 1.1
+Status: Superseded
 Last-Updated: 2026-05-13
 Owner: Coach / Workspace / UI
 ---
 # FEAT: Coach Current Week Actuals Context
 
 * **ID:** `FEAT_coach_current_week_actuals_context`
-* **Status:** Implemented
+* **Status:** Superseded
 * **Owner/Area:** Coach / Workspace / UI
 * **Last-Updated:** 2026-05-13
-* **Related:** `FEAT_snapshot_memory_expansion`, `ADR-028-snapshot-based-planner-memory`, `ADR-042-coach-week-plan-memory-and-intro`
+* **Related:** `FEAT_coach_current_week_status_snapshot`, `ADR-044-coach-current-week-status-snapshot`
+
+Superseded by `doc/specs/features/FEAT_coach_current_week_status_snapshot.md`.
+
+The direct Coach-side read of current-week actuals was replaced by a persisted `CURRENT_WEEK_STATUS_SNAPSHOT` that is refreshed from the Intervals.icu API and consumed by Coach as code-owned memory.
 
 ## 1) Context / Problem
 

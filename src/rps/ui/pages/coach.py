@@ -28,8 +28,9 @@ from rps.orchestrator.coach_operations import (
 from rps.orchestrator.context_snapshots import (
     build_advisory_memory_prompt_block,
     build_athlete_state_snapshot_prompt_block,
-    build_current_week_actuals_prompt_block,
+    build_current_week_status_snapshot_prompt_block,
     build_planning_context_snapshot_prompt_block,
+    ensure_current_week_status_snapshot,
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
 from rps.prompts.loader import PromptLoader
@@ -66,7 +67,6 @@ def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str,
         ("logistics", "workspace_get_input", {"input_type": "logistics"}),
         ("availability", "workspace_get_input", {"input_type": "availability"}),
         ("activities_trend", "workspace_get_version", {"artifact_type": "ACTIVITIES_TREND", "version_key": week_key}),
-        ("activities_actual", "workspace_get_version", {"artifact_type": "ACTIVITIES_ACTUAL", "version_key": week_key}),
         ("season_plan", "workspace_get_latest", {"artifact_type": "SEASON_PLAN"}),
         ("phase_preview", "workspace_get_version", {"artifact_type": "PHASE_PREVIEW", "version_key": week_key}),
         ("phase_guardrails", "workspace_get_version", {"artifact_type": "PHASE_GUARDRAILS", "version_key": week_key}),
@@ -116,9 +116,9 @@ def _coach_memory_blocks(athlete_id: str, year: int, week: int) -> list[str]:
     planning_snapshot = payloads.get("planning_snapshot")
     if planning_snapshot:
         blocks.append(build_planning_context_snapshot_prompt_block(planning_snapshot))
-    current_week_actuals = _as_map(payloads.get("current_week_actuals")).get("block")
-    if isinstance(current_week_actuals, str) and current_week_actuals.strip():
-        blocks.append(current_week_actuals)
+    current_week_status = payloads.get("current_week_status")
+    if current_week_status:
+        blocks.append(build_current_week_status_snapshot_prompt_block(current_week_status))
     advisory_memory = payloads.get("advisory_memory")
     if advisory_memory:
         blocks.append(build_advisory_memory_prompt_block(advisory_memory))
@@ -130,19 +130,21 @@ def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, d
 
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     week_key = f"{year:04d}-{week:02d}"
+    week_plan_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.WEEK_PLAN, week_key) or {}
     return {
         "athlete_snapshot": _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT) or {},
         "planning_snapshot": _load_selected_week_artifact(
             store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
         )
         or {},
-        "current_week_actuals": {
-            "block": build_current_week_actuals_prompt_block(
-                store,
-                athlete_id,
-                target_week=IsoWeek(year=year, week=week),
-            )
-        },
+        "current_week_status": ensure_current_week_status_snapshot(
+            store,
+            athlete_id,
+            target_week=IsoWeek(year=year, week=week),
+            run_id="coach_current_week_status",
+            week_plan_payload=week_plan_payload,
+        )
+        or {},
         "advisory_memory": _load_selected_week_artifact(store, athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
         or {},
     }
@@ -183,6 +185,27 @@ def _extract_bullets(block: str) -> list[str]:
     return [line.strip() for line in block.splitlines() if line.strip().startswith("- ")]
 
 
+def _extract_section_bullets(block: str, section_name: str) -> list[str]:
+    """Return bullet lines that belong to a named section within a memory block."""
+
+    bullets: list[str] = []
+    in_section = False
+    for raw_line in block.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if in_section:
+                break
+            continue
+        if line.endswith(":") and not line.startswith("- "):
+            in_section = line[:-1] == section_name
+            continue
+        if in_section and line.startswith("- "):
+            bullets.append(line)
+        elif in_section and not line.startswith("- "):
+            break
+    return bullets
+
+
 def _coach_intro_message(
     *,
     year: int,
@@ -198,11 +221,16 @@ def _coach_intro_message(
     load = _extract_keyed_lines(planning_blocks.get("load_governance", ""))
     week_summary = _extract_keyed_lines(advisory_blocks.get("week", ""))
     workouts = _extract_bullets(advisory_blocks.get("current_week_plan", ""))
-    current_actuals_block = _as_map(payloads.get("current_week_actuals")).get("block")
-    current_actuals = _extract_keyed_lines(str(current_actuals_block or ""))
-    completed_sessions = _extract_bullets(str(current_actuals_block or ""))
+    current_status_blocks = _prompt_block_map(payloads.get("current_week_status"))
+    current_actuals = _extract_keyed_lines(current_status_blocks.get("current_week_actuals", ""))
+    completed_sessions = _extract_bullets(current_status_blocks.get("current_week_actuals", ""))
+    plan_vs_actual = _extract_keyed_lines(current_status_blocks.get("plan_vs_actual", ""))
+    open_planned_days = _extract_section_bullets(
+        current_status_blocks.get("plan_vs_actual", ""),
+        "open_planned_days",
+    )
 
-    if not phase and not week_summary and not workouts and not current_actuals and not completed_sessions:
+    if not phase and not week_summary and not workouts and not current_actuals and not completed_sessions and not plan_vs_actual:
         return None
 
     lines = [f"Context loaded for {year:04d}-{week:02d}."]
@@ -258,6 +286,24 @@ def _coach_intro_message(
         if completed_sessions:
             lines.append("- Completed sessions:")
             lines.extend(completed_sessions)
+
+    if plan_vs_actual:
+        lines.extend(["", "**Plan vs Actual**"])
+        matched_days = plan_vs_actual.get("matched_planned_days_count")
+        if matched_days:
+            lines.append(f"- Matched planned days: {matched_days}")
+        open_days = plan_vs_actual.get("open_planned_days_count")
+        if open_days:
+            lines.append(f"- Open planned days: {open_days}")
+        unplanned_days = plan_vs_actual.get("unplanned_completed_days_count")
+        if unplanned_days:
+            lines.append(f"- Unplanned completed days: {unplanned_days}")
+        completed_work_so_far = plan_vs_actual.get("completed_work_kj_so_far")
+        if completed_work_so_far:
+            lines.append(f"- Completed work so far: {completed_work_so_far} kJ")
+        if open_planned_days:
+            lines.append("- Open planned day details:")
+            lines.extend(open_planned_days)
 
     lines.extend(["", "**Pending Status**"])
     if pending:

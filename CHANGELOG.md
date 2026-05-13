@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a central CrewAI `BaseEventListener` adapter with run-context propagation, so Flow/Crew/Task/Tool lifecycle telemetry now comes from CrewAI's native event bus instead of predominantly manual emission.
 - Added compact CrewAI runtime label normalization for `CREW_*`, `CREW_TASK_*`, and `TOOL_*` telemetry, preventing prompt-sized task payloads and generic `crew` labels from polluting `events.jsonl` and UI history.
 - Added richer Coach-preferred advisory memory with a concrete `Current Week Plan Snapshot`, plus a one-time deterministic startup summary in the Coach chat for each fresh athlete/week context.
-- Added a separate Coach-only `Current Week Actuals Snapshot` built from selected-week `ACTIVITIES_ACTUAL`, so Coach now sees completed sessions in the current target week up to now without replacing the stable historical reference-week activity context.
+- Added a dedicated `CURRENT_WEEK_STATUS_SNAPSHOT` artefact under `data/context/`, so Coach now consumes persisted current-week actuals and deterministic plan-vs-actual status from snapshot memory instead of reading current-week raw actuals directly.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach turns now create foreground run-store records and reuse the same run id for nested apply operations, so Coach-triggered flow, crew, and persisted artefact events stay traceable in one run timeline.
 - Direct runtime telemetry now relies on CrewAI listener events for lifecycle coverage, while `ARTEFACT_WRITTEN` remains an explicit RPS-owned persistence-boundary event.
 - Coach-applied week-plan edits and scoped replans now refresh `ADVISORY_MEMORY`, so the central memory stays aligned with the latest selected-week artefacts.
-- Coach startup summaries now include a dedicated `Current Week Actuals` section when selected-week completed sessions exist, keeping current-week reality separate from historical planning context.
+- Coach startup summaries now include dedicated `Current Week Actuals` and `Plan vs Actual` sections derived from `CURRENT_WEEK_STATUS_SNAPSHOT`, while `PLANNING_CONTEXT_SNAPSHOT` keeps the stable historical reference-week activity context unchanged.
 
 ### Removed
 - Removed the remaining LiteLLM-era runtime stack: `rps.openai.litellm_runtime`, `rps.openai.client`, `rps.openai.streaming`, `rps.openai.response_utils`, `rps.openai.runtime`, `rps.agents.runner`, `rps.agents.runner_strict`, `rps.agents.multi_output_runner`, and `rps.ui.rps_chatbot`.

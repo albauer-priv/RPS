@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date
+import os
+from datetime import UTC, date, datetime, timedelta
 
+from rps.data_pipeline.intervals_data import fetch_current_week_activities_actual_payload
 from rps.orchestrator.resolved_context import (
     _format_activity_session_line,
     build_resolved_activity_context_block,
@@ -269,32 +271,14 @@ def _load_latest_snapshot(
     return payload
 
 
-def build_current_week_actuals_prompt_block(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    *,
-    target_week: IsoWeek,
-) -> str:
-    """Return a coach-only block with completed sessions in the current target week so far."""
+def _completed_sessions(current_week_actual_payload: JsonMap | None, target_week: IsoWeek) -> list[dict[str, object]]:
+    """Return normalized completed sessions for the target week from a live/current-week payload."""
 
-    week_key = f"{target_week.year:04d}-{target_week.week:02d}"
-    version_key = store.resolve_week_version_key(athlete_id, ArtifactType.ACTIVITIES_ACTUAL, week_key)
-    if not version_key:
-        return ""
-    try:
-        payload = store.load_version(athlete_id, ArtifactType.ACTIVITIES_ACTUAL, version_key)
-    except FileNotFoundError:
-        return ""
-    if not isinstance(payload, dict):
-        return ""
-    data = payload.get("data")
+    data = current_week_actual_payload.get("data") if isinstance(current_week_actual_payload, dict) else None
     activities = data.get("activities") if isinstance(data, dict) else None
-    if not isinstance(activities, list) or not activities:
-        return ""
-
-    completed_sessions: list[dict[str, object]] = []
-    total_seconds = 0
-    total_work_kj = 0.0
+    if not isinstance(activities, list):
+        return []
+    sessions: list[dict[str, object]] = []
     for activity in activities:
         if not isinstance(activity, dict):
             continue
@@ -302,31 +286,123 @@ def build_current_week_actuals_prompt_block(
             continue
         if activity.get("iso_week") not in (None, target_week.week):
             continue
-        completed_sessions.append(activity)
+        sessions.append(activity)
+    sessions.sort(key=lambda item: str(item.get("start_time_local") or item.get("day") or ""))
+    return sessions
+
+
+def _build_current_week_actuals_block(current_week_actual_payload: JsonMap | None, target_week: IsoWeek) -> str:
+    """Return the current-week completed-session block for Coach memory."""
+
+    completed_sessions = _completed_sessions(current_week_actual_payload, target_week)
+    total_seconds = 0
+    total_work_kj = 0.0
+    for activity in completed_sessions:
         total_seconds += _duration_to_seconds(activity.get("moving_time"))
         work_kj = activity.get("work_kj")
         if isinstance(work_kj, (int, float)):
             total_work_kj += float(work_kj)
 
-    if not completed_sessions:
-        return ""
-
-    completed_sessions.sort(key=lambda item: str(item.get("start_time_local") or item.get("day") or ""))
     lines = [
         "**Current Week Actuals Snapshot**",
-        "Use these completed sessions in the current target week up to now directly; this block is partial and may omit future or not-yet-synced activities.",
-        f"target_iso_week: {week_key}",
-        f"activities_actual_version: {version_key}",
-        f"completed_sessions_count: {len(completed_sessions)}",
-        f"completed_moving_time: {_format_duration(total_seconds)}",
-        f"completed_work_kj: {int(round(total_work_kj))}",
-        "completed_sessions:",
+        "Use this code-owned snapshot for completed sessions in the current target week up to now. It is partial by design and must not replace the stable historical reference-week planning context.",
+        f"target_iso_week: {target_week.year:04d}-{target_week.week:02d}",
     ]
-    for activity in completed_sessions:
-        rendered = _format_activity_session_line(activity)
-        if rendered:
-            lines.append(rendered)
+    meta = _as_meta(current_week_actual_payload or {})
+    version_key = meta.get("version_key")
+    if isinstance(version_key, str):
+        lines.append(f"activities_actual_version: {version_key}")
+    lines.append(f"completed_sessions_count: {len(completed_sessions)}")
+    lines.append(f"completed_moving_time: {_format_duration(total_seconds)}")
+    lines.append(f"completed_work_kj: {int(round(total_work_kj))}")
+    if completed_sessions:
+        lines.append("completed_sessions:")
+        for activity in completed_sessions:
+            rendered = _format_activity_session_line(activity)
+            if rendered:
+                lines.append(rendered)
     return "\n".join(lines) + "\n"
+
+
+def _build_plan_vs_actual_block(
+    week_plan_payload: JsonMap | None,
+    current_week_actual_payload: JsonMap | None,
+    target_week: IsoWeek,
+) -> str:
+    """Return a deterministic plan-vs-actual comparison for the current week."""
+
+    workouts = list_week_plan_workouts(week_plan_payload or {}) if isinstance(week_plan_payload, dict) else []
+    completed_sessions = _completed_sessions(current_week_actual_payload, target_week)
+    if not workouts and not completed_sessions:
+        return ""
+
+    planned_dates: dict[str, str] = {}
+    for row in workouts:
+        if not isinstance(row, dict):
+            continue
+        date_label = _as_str(row.get("date"))
+        title = _as_str(row.get("title")) or _as_str(row.get("day_role")) or "Planned workout"
+        if date_label:
+            planned_dates[date_label] = title
+
+    completed_dates: dict[str, str] = {}
+    for activity in completed_sessions:
+        day = _as_str(activity.get("day"))[:10]
+        label = _as_str(activity.get("type")) or "activity"
+        if day:
+            completed_dates[day] = label
+
+    open_days = sorted(set(planned_dates) - set(completed_dates))
+    unplanned_days = sorted(set(completed_dates) - set(planned_dates))
+    matched_days = sorted(set(planned_dates) & set(completed_dates))
+
+    week_summary = _as_data(week_plan_payload).get("week_summary") if isinstance(week_plan_payload, dict) else None
+    week_summary_map = week_summary if isinstance(week_summary, dict) else {}
+    planned_load = week_summary_map.get("planned_weekly_load_kj")
+    completed_work_kj = 0
+    for activity in completed_sessions:
+        work_kj = activity.get("work_kj")
+        if isinstance(work_kj, (int, float)):
+            completed_work_kj += int(round(float(work_kj)))
+
+    lines = [
+        "**Plan vs Actual Snapshot**",
+        f"planned_workouts_count: {len(planned_dates)}",
+        f"completed_sessions_count: {len(completed_sessions)}",
+        f"matched_planned_days_count: {len(matched_days)}",
+        f"open_planned_days_count: {len(open_days)}",
+        f"unplanned_completed_days_count: {len(unplanned_days)}",
+        f"completed_work_kj_so_far: {completed_work_kj}",
+    ]
+    if isinstance(planned_load, (int, float)):
+        lines.append(f"planned_weekly_load_kj: {int(planned_load)}")
+    if open_days:
+        lines.append("open_planned_days:")
+        for day in open_days:
+            lines.append(f"- {day} | {planned_dates[day]}")
+    if unplanned_days:
+        lines.append("unplanned_completed_days:")
+        for day in unplanned_days:
+            lines.append(f"- {day} | {completed_dates[day]}")
+    return "\n".join(lines) + "\n"
+
+
+def _snapshot_recent_enough(snapshot: JsonMap | None) -> bool:
+    """Return true when a snapshot is younger than the configured current-week TTL."""
+
+    meta = _as_meta(snapshot or {})
+    created_at = meta.get("created_at")
+    if not isinstance(created_at, str) or not created_at:
+        return False
+    try:
+        normalized = created_at.replace("Z", "+00:00")
+        created = datetime.fromisoformat(normalized)
+    except ValueError:
+        return False
+    if created.tzinfo is not None:
+        created = created.astimezone(UTC)
+    max_age_hours = float(os.getenv("RPS_CURRENT_WEEK_STATUS_MAX_AGE_HOURS", "2"))
+    return created >= datetime.now(UTC) - timedelta(hours=max_age_hours)
 
 
 def _join_prompt_blocks(title: str, snapshot_type: ArtifactType, snapshot: JsonMap) -> str:
@@ -688,6 +764,138 @@ def save_planning_context_snapshot(
     return _load_latest_snapshot(store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT)
 
 
+def build_current_week_status_snapshot_document(
+    *,
+    target_week: IsoWeek,
+    week_plan_payload: JsonMap | None = None,
+    current_week_actual_payload: JsonMap | None = None,
+) -> JsonMap:
+    """Build a persisted current-week status snapshot for Coach-only plan/actual context."""
+
+    prompt_blocks = _non_empty_prompt_blocks(
+        {
+            "current_week_actuals": _build_current_week_actuals_block(current_week_actual_payload, target_week),
+            "plan_vs_actual": _build_plan_vs_actual_block(week_plan_payload, current_week_actual_payload, target_week),
+        }
+    )
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    source_versions = _source_versions_map([("week_plan", ArtifactType.WEEK_PLAN, week_plan_payload or {})])
+    actual_meta = _as_meta(current_week_actual_payload or {})
+    actual_version = actual_meta.get("version_key") or actual_meta.get("iso_week")
+    if isinstance(actual_version, str) and actual_version:
+        source_versions["current_week_activities_actual"] = actual_version
+    trace_upstream = [ref for ref in (_trace_ref(ArtifactType.WEEK_PLAN, week_plan_payload or {}),) if ref is not None]
+    return {
+        "meta": {
+            "artifact_type": ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT.value,
+            "schema_id": "CurrentWeekStatusSnapshotInterface",
+            "schema_version": SNAPSHOT_SCHEMA_VERSION,
+            "version": SNAPSHOT_VERSION,
+            "authority": "Derived",
+            "owner_agent": SNAPSHOT_OWNER_AGENT,
+            "run_id": "pending",
+            "created_at": "1970-01-01T00:00:00Z",
+            "scope": "Context",
+            "iso_week": target_label,
+            "iso_week_range": f"{target_label}--{target_label}",
+            "temporal_scope": _temporal_scope_for_week(target_week),
+            "trace_upstream": trace_upstream,
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "MEDIUM",
+            "notes": f"Code-owned derived current-week status snapshot for target week {target_label}.",
+        },
+        "data": {
+            "target_iso_week": target_label,
+            "source_versions": source_versions,
+            "prompt_blocks": prompt_blocks,
+        },
+    }
+
+
+def save_current_week_status_snapshot(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    run_id: str,
+    week_plan_payload: JsonMap | None = None,
+    current_week_actual_payload: JsonMap | None = None,
+) -> JsonMap:
+    """Persist the current-week status snapshot for the selected week."""
+
+    snapshot = build_current_week_status_snapshot_document(
+        target_week=target_week,
+        week_plan_payload=week_plan_payload,
+        current_week_actual_payload=current_week_actual_payload,
+    )
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    store.save_document(
+        athlete_id,
+        ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT,
+        target_label,
+        snapshot,
+        producer_agent=SNAPSHOT_PRODUCER_AGENT,
+        run_id=run_id,
+        update_latest=True,
+    )
+    return _load_latest_snapshot(store, athlete_id, ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT)
+
+
+def ensure_current_week_status_snapshot(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_week: IsoWeek,
+    run_id: str,
+    week_plan_payload: JsonMap | None = None,
+) -> JsonMap:
+    """Load or refresh the current-week status snapshot for Coach."""
+
+    target_label = f"{target_week.year:04d}-{target_week.week:02d}"
+    current_week = IsoWeek(*date.today().isocalendar()[:2])
+    current_week_plan_version = _compact_source_version(ArtifactType.WEEK_PLAN, week_plan_payload or {})
+    existing_version = store.resolve_week_version_key(athlete_id, ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT, target_label)
+    existing: JsonMap | None = None
+    if existing_version:
+        try:
+            payload = store.load_version(athlete_id, ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT, existing_version)
+        except FileNotFoundError:
+            payload = None
+        existing = payload if isinstance(payload, dict) else None
+    if isinstance(existing, dict) and target_week != current_week:
+        return existing
+    existing_source_versions = _as_data(existing).get("source_versions") if isinstance(existing, dict) else None
+    existing_week_plan_version = (
+        existing_source_versions.get("week_plan")
+        if isinstance(existing_source_versions, dict)
+        else None
+    )
+    if (
+        isinstance(existing, dict)
+        and _snapshot_recent_enough(existing)
+        and existing_week_plan_version == current_week_plan_version
+    ):
+        return existing
+
+    if target_week != current_week:
+        return existing if isinstance(existing, dict) else {}
+
+    current_week_actual_payload = fetch_current_week_activities_actual_payload(
+        athlete_id=athlete_id,
+        year=target_week.year,
+        week=target_week.week,
+    )
+    return save_current_week_status_snapshot(
+        store,
+        athlete_id,
+        target_week=target_week,
+        run_id=run_id,
+        week_plan_payload=week_plan_payload,
+        current_week_actual_payload=current_week_actual_payload,
+    )
+
+
 def build_advisory_memory_document(
     *,
     target_week: IsoWeek,
@@ -805,6 +1013,11 @@ def build_athlete_state_snapshot_prompt_block(snapshot: JsonMap) -> str:
 def build_planning_context_snapshot_prompt_block(snapshot: JsonMap) -> str:
     """Render target-week planning snapshot content for planner injection."""
     return _join_prompt_blocks("Planning Context Snapshot", ArtifactType.PLANNING_CONTEXT_SNAPSHOT, snapshot)
+
+
+def build_current_week_status_snapshot_prompt_block(snapshot: JsonMap) -> str:
+    """Render current-week status snapshot content for Coach injection."""
+    return _join_prompt_blocks("Current Week Status Snapshot", ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT, snapshot)
 
 
 def build_advisory_memory_prompt_block(snapshot: JsonMap) -> str:

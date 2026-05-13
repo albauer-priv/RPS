@@ -1,7 +1,8 @@
 from rps.orchestrator.context_snapshots import (
     build_advisory_memory_document,
     build_advisory_memory_prompt_block,
-    build_current_week_actuals_prompt_block,
+    build_current_week_status_snapshot_document,
+    ensure_current_week_status_snapshot,
 )
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
@@ -80,14 +81,39 @@ def test_build_advisory_memory_prompt_block_marks_memory_as_non_binding():
     assert "week_objective: Absorb and rebuild." in block
 
 
-def test_build_current_week_actuals_prompt_block_summarizes_completed_target_week_sessions(tmp_path):
-    store = LocalArtifactStore(root=tmp_path)
-    athlete_id = "i150546"
-    store.save_document(
-        athlete_id,
-        ArtifactType.ACTIVITIES_ACTUAL,
-        "2026-20",
-        {
+def test_build_current_week_status_snapshot_document_summarizes_actuals_and_plan_gap():
+    snapshot = build_current_week_status_snapshot_document(
+        target_week=IsoWeek(year=2026, week=20),
+        week_plan_payload={
+            "meta": {"artifact_type": "WEEK_PLAN", "version_key": "2026-20__20260511_080000", "run_id": "week"},
+            "data": {
+                "week_summary": {"planned_weekly_load_kj": 6700},
+                "agenda": [
+                    {
+                        "day": "Tue",
+                        "date": "2026-05-12",
+                        "day_role": "QUALITY",
+                        "planned_duration": "01:33",
+                        "planned_kj": 1017,
+                        "workout_id": "w1",
+                    },
+                    {
+                        "day": "Thu",
+                        "date": "2026-05-14",
+                        "day_role": "ENDURANCE",
+                        "planned_duration": "01:10",
+                        "planned_kj": 680,
+                        "workout_id": "w2",
+                    },
+                ],
+                "workouts": [
+                    {"workout_id": "w1", "title": "Tempo Stabilization", "start": "18:00", "duration": "01:33"},
+                    {"workout_id": "w2", "title": "Endurance Ride", "start": "06:30", "duration": "01:10"},
+                ],
+            },
+        },
+        current_week_actual_payload={
+            "meta": {"iso_week": "2026-20", "version_key": "2026-20"},
             "data": {
                 "activities": [
                     {
@@ -100,35 +126,65 @@ def test_build_current_week_actuals_prompt_block_summarizes_completed_target_wee
                         "work_kj": 1017.0,
                         "load_tss": 96.0,
                         "intensity_factor": 0.78,
-                    },
+                    }
+                ]
+            },
+        },
+    )
+    prompt_blocks = snapshot["data"]["prompt_blocks"]
+    assert "current_week_actuals" in prompt_blocks
+    assert "plan_vs_actual" in prompt_blocks
+    assert "completed_sessions_count: 1" in prompt_blocks["current_week_actuals"]
+    assert "open_planned_days_count: 1" in prompt_blocks["plan_vs_actual"]
+    assert "- 2026-05-14 | Endurance Ride" in prompt_blocks["plan_vs_actual"]
+
+
+def test_ensure_current_week_status_snapshot_fetches_live_current_week(monkeypatch, tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    monkeypatch.setattr(
+        "rps.orchestrator.context_snapshots.date",
+        type(
+            "FakeDate",
+            (),
+            {
+                "today": staticmethod(lambda: __import__("datetime").date(2026, 5, 13)),
+                "fromisocalendar": __import__("datetime").date.fromisocalendar,
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        "rps.orchestrator.context_snapshots.fetch_current_week_activities_actual_payload",
+        lambda **_: {
+            "meta": {"iso_week": "2026-20", "version_key": "2026-20"},
+            "data": {
+                "activities": [
                     {
                         "iso_year": 2026,
                         "iso_week": 20,
-                        "day": "2026-05-14",
-                        "start_time_local": "2026-05-14T06:30:00",
+                        "day": "2026-05-12",
+                        "start_time_local": "2026-05-12T18:00:00",
                         "type": "Ride",
-                        "moving_time": "01:10:00",
-                        "work_kj": 680.0,
-                        "load_tss": 58.0,
-                        "intensity_factor": 0.71,
-                    },
+                        "moving_time": "01:33:00",
+                        "work_kj": 1017.0,
+                        "load_tss": 96.0,
+                        "intensity_factor": 0.78,
+                    }
                 ]
-            }
+            },
         },
-        producer_agent="test",
-        run_id="activities_actual",
-        update_latest=True,
     )
 
-    block = build_current_week_actuals_prompt_block(
+    snapshot = ensure_current_week_status_snapshot(
         store,
         athlete_id,
         target_week=IsoWeek(year=2026, week=20),
+        run_id="test_run",
+        week_plan_payload={},
     )
 
-    assert "**Current Week Actuals Snapshot**" in block
-    assert "completed sessions in the current target week up to now" in block
-    assert "completed_sessions_count: 2" in block
-    assert "completed_moving_time: 02:43:00" in block
-    assert "completed_work_kj: 1697" in block
-    assert "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78" in block
+    assert snapshot["meta"]["artifact_type"] == "CURRENT_WEEK_STATUS_SNAPSHOT"
+    prompt_blocks = snapshot["data"]["prompt_blocks"]
+    assert "current_week_actuals" in prompt_blocks
+    assert "completed_sessions_count: 1" in prompt_blocks["current_week_actuals"]
+    assert store.latest_exists(athlete_id, ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT)
