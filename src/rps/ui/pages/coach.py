@@ -106,21 +106,135 @@ def _load_selected_week_artifact(
 
 def _coach_memory_blocks(athlete_id: str, year: int, week: int) -> list[str]:
     """Load preferred snapshot/advisory memory blocks for Coach."""
-    store = LocalArtifactStore(root=SETTINGS.workspace_root)
-    week_key = f"{year:04d}-{week:02d}"
+    payloads = _coach_memory_payloads(athlete_id, year, week)
     blocks: list[str] = []
-    athlete_snapshot = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT)
+    athlete_snapshot = payloads.get("athlete_snapshot")
     if athlete_snapshot:
         blocks.append(build_athlete_state_snapshot_prompt_block(athlete_snapshot))
-    planning_snapshot = _load_selected_week_artifact(
-        store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
-    )
+    planning_snapshot = payloads.get("planning_snapshot")
     if planning_snapshot:
         blocks.append(build_planning_context_snapshot_prompt_block(planning_snapshot))
-    advisory_memory = _load_selected_week_artifact(store, athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
+    advisory_memory = payloads.get("advisory_memory")
     if advisory_memory:
         blocks.append(build_advisory_memory_prompt_block(advisory_memory))
     return [block for block in blocks if block.strip()]
+
+
+def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, dict[str, object]]:
+    """Load Coach-preferred snapshot payloads for the selected week."""
+
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    week_key = f"{year:04d}-{week:02d}"
+    return {
+        "athlete_snapshot": _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT) or {},
+        "planning_snapshot": _load_selected_week_artifact(
+            store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
+        )
+        or {},
+        "advisory_memory": _load_selected_week_artifact(store, athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
+        or {},
+    }
+
+
+def _prompt_block_map(payload: dict[str, object] | None) -> dict[str, str]:
+    """Return string prompt blocks from a snapshot/advisory payload."""
+
+    if not isinstance(payload, dict):
+        return {}
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return {}
+    prompt_blocks = data.get("prompt_blocks")
+    if not isinstance(prompt_blocks, dict):
+        return {}
+    return {str(key): str(value) for key, value in prompt_blocks.items() if isinstance(value, str) and value.strip()}
+
+
+def _extract_keyed_lines(block: str) -> dict[str, str]:
+    """Parse simple `key: value` lines from a memory block."""
+
+    parsed: dict[str, str] = {}
+    for line in block.splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key_clean = key.strip()
+        value_clean = value.strip()
+        if key_clean and value_clean and not key_clean.startswith("**"):
+            parsed[key_clean] = value_clean
+    return parsed
+
+
+def _extract_bullets(block: str) -> list[str]:
+    """Return markdown bullet lines from a memory block."""
+
+    return [line.strip() for line in block.splitlines() if line.strip().startswith("- ")]
+
+
+def _coach_intro_message(
+    *,
+    year: int,
+    week: int,
+    payloads: dict[str, dict[str, object]],
+    pending: JsonMap | None,
+) -> str | None:
+    """Build one deterministic startup summary from Coach memory payloads."""
+
+    planning_blocks = _prompt_block_map(payloads.get("planning_snapshot"))
+    advisory_blocks = _prompt_block_map(payloads.get("advisory_memory"))
+    phase = _extract_keyed_lines(planning_blocks.get("phase", ""))
+    load = _extract_keyed_lines(planning_blocks.get("load_governance", ""))
+    week_summary = _extract_keyed_lines(advisory_blocks.get("week", ""))
+    workouts = _extract_bullets(advisory_blocks.get("current_week_plan", ""))
+
+    if not phase and not week_summary and not workouts:
+        return None
+
+    lines = [f"Context loaded for {year:04d}-{week:02d}."]
+    lines.extend(["", "**Phase Summary**"])
+    phase_name = phase.get("phase_name")
+    phase_type = phase.get("phase_type")
+    phase_index = phase.get("phase_week_index")
+    phase_range = phase.get("phase_iso_week_range")
+    if phase_name or phase_type:
+        phase_line = "- "
+        if phase_name:
+            phase_line += phase_name
+        if phase_type:
+            phase_line += f" ({phase_type})" if phase_name else phase_type
+        if phase_index:
+            phase_line += f", week {phase_index}"
+        if phase_range:
+            phase_line += f", range {phase_range}"
+        lines.append(phase_line)
+    band = next(
+        (
+            value
+            for key, value in load.items()
+            if key.startswith("phase_guardrails.active_weekly_kj_band")
+        ),
+        "",
+    )
+    if band:
+        lines.append(f"- Active load governance: {band}")
+
+    lines.extend(["", "**Week Summary**"])
+    objective = week_summary.get("week_objective")
+    if objective:
+        lines.append(f"- Objective: {objective}")
+    planned_load = week_summary.get("planned_weekly_load_kj")
+    if planned_load:
+        lines.append(f"- Planned weekly load: {planned_load}")
+    if workouts:
+        lines.append("- Planned workouts:")
+        lines.extend(workouts)
+
+    lines.extend(["", "**Pending Status**"])
+    if pending:
+        lines.append(f"- Pending operation: {str(pending.get('summary') or 'Pending coach operation exists.')}")
+    else:
+        lines.append("- No pending coach operation.")
+    return "\n".join(lines)
 
 
 def _json_result(payload: object) -> str:
@@ -593,6 +707,15 @@ if pending:
     else:
         st.info(f"Pending coach operation ready to apply. {summary}")
 messages = _coach_messages()
+if not messages:
+    intro = _coach_intro_message(
+        year=year,
+        week=week,
+        payloads=_coach_memory_payloads(athlete_id, year, week),
+        pending=pending,
+    )
+    if intro:
+        messages.append({"role": "assistant", "content": intro})
 st.info(f"Summary: {_coach_summary(messages)}")
 for message in messages:
     role = str(message.get("role") or "assistant")

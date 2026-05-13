@@ -14,6 +14,7 @@ from rps.crewai_runtime.models import (
     CoachOperationPreviewModel,
 )
 from rps.orchestrator.advisory_actions import run_feed_forward_chain
+from rps.orchestrator.context_snapshots import save_advisory_memory
 from rps.orchestrator.plan_week import create_performance_report
 from rps.orchestrator.week_plan_edits import (
     apply_week_plan_edit,
@@ -30,6 +31,34 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 JsonMap = dict[str, Any]
+
+
+def _refresh_week_advisory_memory(
+    *,
+    store: LocalArtifactStore,
+    athlete_id: str,
+    year: int,
+    week: int,
+    run_id: str,
+    week_plan_payload: JsonMap | None,
+) -> None:
+    """Best-effort refresh of advisory memory after a successful week-plan change."""
+
+    try:
+        season_plan_payload = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
+    except Exception:
+        season_plan_payload = None
+    try:
+        save_advisory_memory(
+            store,
+            athlete_id,
+            target_week=IsoWeek(year=year, week=week),
+            run_id=run_id,
+            season_plan_payload=season_plan_payload if isinstance(season_plan_payload, dict) else {},
+            week_plan_payload=week_plan_payload if isinstance(week_plan_payload, dict) else {},
+        )
+    except Exception:
+        return
 
 
 class _HasToJson(Protocol):
@@ -227,6 +256,20 @@ def apply_week_plan_preview(
                 run_id=run_id,
             )
         )
+    if result.ok:
+        meta = document.get("meta") if isinstance(document, dict) else None
+        iso_week = meta.get("iso_week") if isinstance(meta, dict) else None
+        if isinstance(iso_week, str) and "-" in iso_week:
+            year_text, week_text = iso_week.split("-", 1)
+            if year_text.isdigit() and week_text.isdigit():
+                _refresh_week_advisory_memory(
+                    store=LocalArtifactStore(root=workspace_root),
+                    athlete_id=athlete_id,
+                    year=int(year_text),
+                    week=int(week_text),
+                    run_id=run_id,
+                    week_plan_payload=document if isinstance(document, dict) else None,
+                )
     return CoachOperationApplyResultModel(
         operation="apply_artifact_edit",
         ok=result.ok,
@@ -299,6 +342,20 @@ def apply_scoped_week_replan_operation(
                 path=None,
                 run_id=f"{run_id}_export",
             )
+        )
+    if export_result.get("ok"):
+        week_plan_payload = (
+            store.load_version(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+            if store.exists(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+            else None
+        )
+        _refresh_week_advisory_memory(
+            store=store,
+            athlete_id=athlete_id,
+            year=year,
+            week=week,
+            run_id=run_id,
+            week_plan_payload=week_plan_payload if isinstance(week_plan_payload, dict) else None,
         )
     return CoachOperationApplyResultModel(
         operation="apply_scoped_replan",

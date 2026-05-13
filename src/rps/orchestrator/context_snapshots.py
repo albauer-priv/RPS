@@ -18,6 +18,7 @@ from rps.orchestrator.resolved_context import (
     build_resolved_recovery_context_block,
     build_resolved_zone_model_context_block,
 )
+from rps.orchestrator.week_plan_edits import list_week_plan_workouts
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
@@ -137,6 +138,41 @@ def _build_advisory_week_block(week_plan_payload: JsonMap | None) -> str:
         lines.append(f"week_objective: {objective}")
     if isinstance(load, (int, float)):
         lines.append(f"planned_weekly_load_kj: {int(load)}")
+    return "\n".join(lines) + "\n"
+
+
+def _build_current_week_plan_block(week_plan_payload: JsonMap | None) -> str:
+    """Return a compact selected-week workout summary for Coach memory."""
+
+    if not isinstance(week_plan_payload, dict):
+        return ""
+    workouts = list_week_plan_workouts(week_plan_payload)
+    if not workouts:
+        return ""
+    lines = [
+        "**Current Week Plan Snapshot**",
+        "Use this derived current-week plan summary directly before asking tools to rediscover the same workout list.",
+    ]
+    for row in workouts:
+        day = _as_str(row.get("day"))
+        date_label = _as_str(row.get("date"))
+        role = _as_str(row.get("day_role"))
+        title = _as_str(row.get("title"))
+        duration = _as_str(row.get("duration")) or _as_str(row.get("planned_duration"))
+        planned_kj = _as_str(row.get("planned_kj"))
+        start = _as_str(row.get("start"))
+        line = f"- {day} {date_label}"
+        if role:
+            line += f" | {role}"
+        if title:
+            line += f" | {title}"
+        if duration:
+            line += f" | {duration}"
+        if planned_kj:
+            line += f" | {planned_kj} kJ"
+        if start:
+            line += f" | start {start}"
+        lines.append(line)
     return "\n".join(lines) + "\n"
 
 
@@ -581,6 +617,7 @@ def build_advisory_memory_document(
         {
             "season": _build_advisory_season_block(season_plan_payload),
             "week": _build_advisory_week_block(week_plan_payload),
+            "current_week_plan": _build_current_week_plan_block(week_plan_payload),
             "des_report": _build_advisory_report_block(des_analysis_payload),
             "season_phase_feed_forward": _build_advisory_season_ff_block(season_phase_feed_forward_payload),
             "phase_feed_forward": _build_advisory_phase_ff_block(phase_feed_forward_payload),

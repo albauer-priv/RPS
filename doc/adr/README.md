@@ -50,6 +50,7 @@ This folder contains the ADR log for RPS.
 - ADR-039: Coach Flow Router and Runtime Telemetry
 - ADR-040: CrewAI Event Listener Runtime Telemetry
 - ADR-041: CrewAI Runtime Event Payload Cleanup
+- ADR-042: Coach Week-Plan Memory and Intro Summary
 
 ## Process (Short)
 

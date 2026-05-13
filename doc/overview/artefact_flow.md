@@ -322,6 +322,7 @@ flowchart LR
 - Non-binding narrative memory is stored as:
   - `advisory_memory_yyyy-ww.json`
 - Planners and Coach consume snapshot memory first and use raw artefacts only for missing detail or traceability.
+- Coach-facing advisory memory may include the selected-week objective, planned weekly load, and a compact current-week workout list derived from the latest `WEEK_PLAN`.
 
 **Outputs (Artefacts)**
 - `athlete_state_snapshot_yyyy-ww.json` (derived)

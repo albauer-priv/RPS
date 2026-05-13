@@ -17,7 +17,20 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
         },
         week_plan_payload={
             "meta": {"artifact_type": "WEEK_PLAN", "version_key": "2026-18__20260427_102637", "run_id": "week"},
-            "data": {"week_summary": {"week_objective": "Absorb and rebuild.", "planned_weekly_load_kj": 8028}},
+            "data": {
+                "week_summary": {"week_objective": "Absorb and rebuild.", "planned_weekly_load_kj": 8028},
+                "agenda": [
+                    {
+                        "day": "Tue",
+                        "date": "2026-04-28",
+                        "day_role": "QUALITY",
+                        "planned_duration": "01:30",
+                        "planned_kj": 980,
+                        "workout_id": "w1",
+                    }
+                ],
+                "workouts": [{"workout_id": "w1", "title": "Tempo Session", "start": "18:00", "duration": "01:30"}],
+            },
         },
         des_analysis_payload={
             "meta": {"artifact_type": "DES_ANALYSIS_REPORT", "version_key": "2026-18__20260427_090000", "run_id": "des"},
@@ -43,9 +56,11 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
     prompt_blocks = snapshot["data"]["prompt_blocks"]
     assert "season" in prompt_blocks
     assert "week" in prompt_blocks
+    assert "current_week_plan" in prompt_blocks
     assert "des_report" in prompt_blocks
     assert "season_phase_feed_forward" in prompt_blocks
     assert "phase_feed_forward" in prompt_blocks
+    assert "Tempo Session" in prompt_blocks["current_week_plan"]
 
 
 def test_build_advisory_memory_prompt_block_marks_memory_as_non_binding():
