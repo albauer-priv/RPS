@@ -132,7 +132,12 @@ def run_coach_turn(
             "Current user message:",
             user_message,
             "",
-            "Answer directly to the user. Be explicit about whether a preview exists, whether confirmation is required, and whether any operation was only previewed.",
+            (
+                "Answer directly to the user. Mention preview/confirmation status only when it is relevant to the "
+                "current answer or a pending operation actually exists. If this chat already showed a startup "
+                "context summary and no material context changed, do not restate the full athlete/context boilerplate. "
+                "Reply in the same language as the current user message unless the user explicitly asks for another language."
+            ),
         ]
     )
     task = Task(

@@ -35,6 +35,13 @@ from rps.orchestrator.context_snapshots import (
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
 from rps.prompts.loader import PromptLoader
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.ui.coach_turn_helpers import (
+    build_scoped_preview_message,
+    detect_reply_language,
+    is_direct_week_adjust_request,
+    is_preview_creation_request,
+    localized_preview_created_reply,
+)
 from rps.ui.run_store import append_run, update_run
 from rps.ui.shared import (
     SETTINGS,
@@ -305,11 +312,9 @@ def _coach_intro_message(
             lines.append("- Open planned day details:")
             lines.extend(open_planned_days)
 
-    lines.extend(["", "**Pending Status**"])
     if pending:
+        lines.extend(["", "**Pending Status**"])
         lines.append(f"- Pending operation: {str(pending.get('summary') or 'Pending coach operation exists.')}")
-    else:
-        lines.append("- No pending coach operation.")
     return "\n".join(lines)
 
 
@@ -767,7 +772,10 @@ instructions = (
     f"Active coach scope: athlete={athlete_id}, iso_week={year:04d}-{week:02d}.\n"
     "You can inspect plan context, preview bounded week-plan edits, preview scoped week replans, "
     "preview report/feed-forward runs, and apply only after explicit confirmation.\n"
-    "Never claim that a change was stored before apply_pending_coach_operation succeeds."
+    "Never claim that a change was stored before apply_pending_coach_operation succeeds.\n"
+    "Reply in the same language as the current user message unless the user explicitly asks for another language.\n"
+    "If the user asks for a broad week adjustment without exact workout-level parameters, prefer preview_scoped_week_replan "
+    "over low-level edit tools."
 )
 model = os.getenv("RPS_LLM_MODEL_COACH") or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5-mini"
 base_url = os.getenv("RPS_LLM_BASE_URL_COACH") or os.getenv("RPS_LLM_BASE_URL")
@@ -820,52 +828,82 @@ if prompt:
         st.session_state[COACH_ACTIVE_RUN_ID_KEY] = turn_run_id
         with st.spinner("Coach is thinking…"):
             try:
-                flow_result = run_coach_flow(
-                    workspace_root=Path(SETTINGS.workspace_root),
-                    athlete_id=athlete_id,
-                    run_id=turn_run_id,
-                    user_message=user_prompt,
-                    has_pending_operation=bool(_coach_pending()),
-                    chat_runner=lambda: run_coach_turn(
-                        instructions=instructions,
-                        user_message=user_prompt,
-                        history=messages[:-1],
-                        tools=tools,
-                        agent_name="coach",
-                        model_override=model,
+                language = detect_reply_language(user_prompt, messages[:-1])
+                pending_before_turn = _coach_pending()
+                if not pending_before_turn and (
+                    is_direct_week_adjust_request(user_prompt)
+                    or is_preview_creation_request(user_prompt)
+                ):
+                    preview = preview_scoped_week_replan_operation(
+                        year=year,
+                        week=week,
+                        message=build_scoped_preview_message(messages[:-1], user_prompt),
+                    )
+                    st.session_state[COACH_PENDING_KEY] = preview.model_dump()
+                    reply = localized_preview_created_reply(
+                        language=language,
+                        iso_week=f"{year:04d}-{week:02d}",
+                        summary=preview.summary,
+                    )
+                    update_run(
+                        SETTINGS.workspace_root,
+                        athlete_id,
+                        turn_run_id,
+                        {
+                            "status": "DONE",
+                            "current_step": None,
+                            "route": "direct_preview_scoped_replan",
+                            "message": user_prompt,
+                            "finished_at": datetime.now(UTC).isoformat(),
+                        },
+                    )
+                else:
+                    flow_result = run_coach_flow(
                         workspace_root=Path(SETTINGS.workspace_root),
                         athlete_id=athlete_id,
                         run_id=turn_run_id,
-                    ),
-                    apply_runner=lambda: next(
-                        tool.handler()
-                        for tool in tools
-                        if tool.name == "apply_pending_coach_operation"
-                    ),
-                    discard_runner=lambda: next(
-                        tool.handler()
-                        for tool in tools
-                        if tool.name == "discard_pending_coach_operation"
-                    ),
-                    show_pending_runner=lambda: next(
-                        tool.handler()
-                        for tool in tools
-                        if tool.name == "show_pending_coach_operation"
-                    ),
-                )
-                reply = flow_result["response"]
-                update_run(
-                    SETTINGS.workspace_root,
-                    athlete_id,
-                    turn_run_id,
-                    {
-                        "status": "DONE",
-                        "current_step": None,
-                        "route": flow_result.get("route"),
-                        "message": user_prompt,
-                        "finished_at": datetime.now(UTC).isoformat(),
-                    },
-                )
+                        user_message=user_prompt,
+                        has_pending_operation=bool(_coach_pending()),
+                        chat_runner=lambda: run_coach_turn(
+                            instructions=instructions,
+                            user_message=user_prompt,
+                            history=messages[:-1],
+                            tools=tools,
+                            agent_name="coach",
+                            model_override=model,
+                            workspace_root=Path(SETTINGS.workspace_root),
+                            athlete_id=athlete_id,
+                            run_id=turn_run_id,
+                        ),
+                        apply_runner=lambda: next(
+                            tool.handler()
+                            for tool in tools
+                            if tool.name == "apply_pending_coach_operation"
+                        ),
+                        discard_runner=lambda: next(
+                            tool.handler()
+                            for tool in tools
+                            if tool.name == "discard_pending_coach_operation"
+                        ),
+                        show_pending_runner=lambda: next(
+                            tool.handler()
+                            for tool in tools
+                            if tool.name == "show_pending_coach_operation"
+                        ),
+                    )
+                    reply = flow_result["response"]
+                    update_run(
+                        SETTINGS.workspace_root,
+                        athlete_id,
+                        turn_run_id,
+                        {
+                            "status": "DONE",
+                            "current_step": None,
+                            "route": flow_result.get("route"),
+                            "message": user_prompt,
+                            "finished_at": datetime.now(UTC).isoformat(),
+                        },
+                    )
             except Exception as exc:
                 reply = f"Coach turn failed: {exc}"
                 update_run(

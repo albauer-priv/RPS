@@ -9,8 +9,13 @@ from rps.workspace.types import ArtifactType
 
 
 @pytest.fixture(autouse=True)
-def _env_setup(monkeypatch):
+def _env_setup(monkeypatch, tmp_path):
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("ATHLETE_WORKSPACE_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        "rps.orchestrator.context_snapshots.fetch_current_week_activities_actual_payload",
+        lambda **_: None,
+    )
 
 
 def test_coach_summary_above_input():
@@ -293,3 +298,5 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     assert "Completed sessions so far: 1" in intro_text
     assert "**Plan vs Actual**" in intro_text
     assert "- 2026-05-12 Ride, moving_time 01:33:00, work_kj 1017.0, load_tss 96.0, if 0.78" in intro_text
+    assert "**Pending Status**" not in intro_text
+    assert "No pending coach operation." not in intro_text

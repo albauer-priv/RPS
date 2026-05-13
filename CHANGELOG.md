@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added compact CrewAI runtime label normalization for `CREW_*`, `CREW_TASK_*`, and `TOOL_*` telemetry, preventing prompt-sized task payloads and generic `crew` labels from polluting `events.jsonl` and UI history.
 - Added richer Coach-preferred advisory memory with a concrete `Current Week Plan Snapshot`, plus a one-time deterministic startup summary in the Coach chat for each fresh athlete/week context.
 - Added a dedicated `CURRENT_WEEK_STATUS_SNAPSHOT` artefact under `data/context/`, so Coach now consumes persisted current-week actuals and deterministic plan-vs-actual status from snapshot memory instead of reading current-week raw actuals directly.
+- Added explicit Coach prompt/runtime guidance to suppress repeated athlete-context boilerplate on normal follow-up turns once a startup context summary was already shown.
+- Added explicit Coach language alignment and a deterministic scoped-preview fallback, so broad week-adjustment requests and follow-up `preview erstellen` turns can create `preview_scoped_week_replan` without relying on low-level workout-edit parameters.
 
 ### Changed
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
@@ -36,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Direct runtime telemetry now relies on CrewAI listener events for lifecycle coverage, while `ARTEFACT_WRITTEN` remains an explicit RPS-owned persistence-boundary event.
 - Coach-applied week-plan edits and scoped replans now refresh `ADVISORY_MEMORY`, so the central memory stays aligned with the latest selected-week artefacts.
 - Coach startup summaries now include dedicated `Current Week Actuals` and `Plan vs Actual` sections derived from `CURRENT_WEEK_STATUS_SNAPSHOT`, while `PLANNING_CONTEXT_SNAPSHOT` keeps the stable historical reference-week activity context unchanged.
+- Coach startup summaries now omit the dedicated `Pending Status` section when no pending operation exists, reducing repeated no-op boilerplate on page open.
+- Coach turn instructions now explicitly reply in the language of the current user message, and the Coach page can create a scoped week-replan preview directly before any model turn when the user asks for a broad weekly adjustment.
 
 ### Removed
 - Removed the remaining LiteLLM-era runtime stack: `rps.openai.litellm_runtime`, `rps.openai.client`, `rps.openai.streaming`, `rps.openai.response_utils`, `rps.openai.runtime`, `rps.agents.runner`, `rps.agents.runner_strict`, `rps.agents.multi_output_runner`, and `rps.ui.rps_chatbot`.
