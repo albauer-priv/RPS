@@ -352,16 +352,11 @@ def run_coach_flow(
     athlete_id: str,
     run_id: str,
     user_message: str,
-    has_pending_operation: bool,
     chat_runner: Callable[[], str],
-    apply_runner: Callable[[], str],
-    discard_runner: Callable[[], str],
-    show_pending_runner: Callable[[], str],
 ) -> dict[str, str]:
-    """Route one coach turn through an explicit Flow wrapper."""
+    """Run one conversational coach turn through a simple Flow wrapper."""
 
     Flow, start, listen, router = _load_flow_symbols()
-    normalized_message = user_message.strip().lower()
 
     class CoachOuterFlow(Flow[CoachFlowState]):
         @start()
@@ -371,14 +366,7 @@ def run_coach_flow(
 
         @router(bootstrap)
         def route_turn(self, _message: str) -> str:
-            if has_pending_operation and normalized_message in {"yes", "confirm", "apply", "do it", "go ahead"}:
-                route_name = "apply_pending"
-            elif has_pending_operation and normalized_message in {"no", "cancel", "discard", "drop it"}:
-                route_name = "discard_pending"
-            elif normalized_message in {"pending", "show pending", "what is pending", "status"}:
-                route_name = "show_pending"
-            else:
-                route_name = "chat_turn"
+            route_name = "conversational_turn"
             self.state.route = route_name
             emit_runtime_event(
                 root=workspace_root,
@@ -390,24 +378,9 @@ def run_coach_flow(
             )
             return route_name
 
-        @listen("chat_turn")
+        @listen("conversational_turn")
         def run_chat_turn(self) -> str:
             self.state.response = chat_runner()
-            return self.state.response
-
-        @listen("apply_pending")
-        def run_apply_pending(self) -> str:
-            self.state.response = apply_runner()
-            return self.state.response
-
-        @listen("discard_pending")
-        def run_discard_pending(self) -> str:
-            self.state.response = discard_runner()
-            return self.state.response
-
-        @listen("show_pending")
-        def run_show_pending(self) -> str:
-            self.state.response = show_pending_runner()
             return self.state.response
 
     flow = CoachOuterFlow()

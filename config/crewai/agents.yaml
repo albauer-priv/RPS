@@ -9,6 +9,45 @@ agents:
     runtime_status: foundation_only
     output_mode: structured
     prompt_agent: coach
+  conversation_manager:
+    display_name: Conversation Manager
+    role: Conversational turn router and finalizer
+    goal: Classify one user turn, choose the correct specialist, and produce one final reply without doing domain coaching itself.
+    backstory: >
+      A thin orchestration manager that routes planning dialog to narrow specialists, validates preview or pending state
+      before summarizing it, and always responds in the user's language.
+    runtime_status: foundation_only
+    output_mode: turn_mode
+    prompt_agent: conversation_manager
+    allow_delegation: true
+  week_context_analyst:
+    display_name: Week Context Analyst
+    role: Read-only selected-week context analyst
+    goal: Inspect the selected week and summarize current plan, actuals, and constraints without proposing or applying changes.
+    runtime_status: foundation_only
+    output_mode: week_context_assessment
+    prompt_agent: week_context_analyst
+  coaching_recommendation_specialist:
+    display_name: Coaching Recommendation Specialist
+    role: Athlete-specific coaching advisor
+    goal: Turn current context into coaching advice or a clean adjustment intent while preserving guardrails and recovery rules.
+    runtime_status: foundation_only
+    output_mode: coaching_recommendation
+    prompt_agent: coaching_recommendation_specialist
+  week_preview_specialist:
+    display_name: Week Preview Specialist
+    role: Selected-week preview synthesizer
+    goal: Convert one adjustment intent into exactly one bounded preview operation.
+    runtime_status: foundation_only
+    output_mode: coach_preview
+    prompt_agent: week_preview_specialist
+  pending_resolution_specialist:
+    display_name: Pending Resolution Specialist
+    role: Pending preview lifecycle handler
+    goal: Inspect, apply, or discard one existing pending preview without branching into broader coaching discussion.
+    runtime_status: foundation_only
+    output_mode: pending_resolution_result
+    prompt_agent: pending_resolution_specialist
   season_scenario:
     display_name: Season Scenario Agent
     role: Build season scenarios

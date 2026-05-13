@@ -2,9 +2,52 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+
+class TurnModeModel(BaseModel):
+    """Manager output for routing one conversational planning turn."""
+
+    mode: Literal["analyze", "recommend", "create_preview", "resolve_pending"]
+    rationale: str | None = None
+
+
+class WeekContextAssessmentModel(BaseModel):
+    """Structured read-only summary of the selected week context."""
+
+    summary: str
+    key_constraints: list[str] = Field(default_factory=list)
+    completed_vs_planned: list[str] = Field(default_factory=list)
+    likely_change_request: bool = False
+
+
+class CoachingRecommendationModel(BaseModel):
+    """Structured coaching guidance for advisory-only turns."""
+
+    recommendation: str
+    rationale: list[str] = Field(default_factory=list)
+    preview_recommended: bool = False
+
+
+class AdjustmentIntentModel(BaseModel):
+    """Structured change intent before preview creation."""
+
+    summary: str
+    message_for_preview: str
+    recommended_tool: str = "preview_scoped_week_replan"
+    constraints_to_preserve: list[str] = Field(default_factory=list)
+
+
+class PendingResolutionResultModel(BaseModel):
+    """Structured result for pending preview inspection/apply/discard turns."""
+
+    action: str
+    ok: bool
+    summary: str
+    requires_confirmation: bool | None = None
+    warnings: list[str] = Field(default_factory=list)
 
 
 class ArtifactWriteModel(BaseModel):

@@ -7,7 +7,12 @@ from pathlib import Path
 
 import streamlit as st
 
-from rps.crewai_runtime.coach_chat import CoachTool, run_coach_turn
+from rps.crewai_runtime.coach_chat import (
+    CoachTool,
+    ConversationalSurface,
+    SpecialistToolsets,
+    run_conversational_turn,
+)
 from rps.orchestrator.week_plan_edits import (
     WeekPlanApplyResult,
     apply_week_plan_edit,
@@ -18,7 +23,6 @@ from rps.orchestrator.week_plan_edits import (
     preview_update_workout_text,
 )
 from rps.orchestrator.week_revision import revise_week_plan
-from rps.prompts.loader import PromptLoader
 from rps.ui.intervals_post import delete_posted_workouts, post_to_intervals_commit
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
@@ -285,6 +289,34 @@ def _workout_editor_tools(
     ]
 
 
+def _workout_editor_toolsets(tools: list[CoachTool]) -> SpecialistToolsets:
+    """Return strict per-specialist tool visibility for the Workout Editor crew."""
+
+    by_name = {tool.name: tool for tool in tools}
+    return SpecialistToolsets(
+        context=[by_name[name] for name in ["list_current_week_plan_workouts"] if name in by_name],
+        recommendation=[],
+        preview=[
+            by_name[name]
+            for name in [
+                "preview_move_workout",
+                "preview_change_start_time",
+                "preview_update_workout_text",
+            ]
+            if name in by_name
+        ],
+        pending=[
+            by_name[name]
+            for name in [
+                "show_pending_week_plan_edit",
+                "apply_pending_week_plan_edit",
+                "discard_pending_week_plan_edit",
+            ]
+            if name in by_name
+        ],
+    )
+
+
 state = init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
@@ -402,13 +434,25 @@ if pending:
 if not isinstance(week_plan_payload, dict):
     st.info("Workout Editor requires an existing WEEK_PLAN for the selected ISO week.")
 else:
-    prompt_loader = PromptLoader(SETTINGS.prompts_dir)
-    instructions = prompt_loader.combined_system_prompt("workout_editor")
-    instructions = (
-        f"{instructions}\n\n"
-        f"Current editor scope: athlete={athlete_id}, iso_week={version_key}.\n"
-        "All changes apply only to this selected ISO week.\n"
-        "You must use the provided tools; do not pretend a change was stored before apply_pending_week_plan_edit succeeds."
+    editor_tools = _workout_editor_tools(
+        store=store,
+        athlete_id=athlete_id,
+        year=year,
+        week=week,
+        version_key=version_key,
+    )
+    toolsets = _workout_editor_toolsets(editor_tools)
+    surface = ConversationalSurface(
+        name="workout_editor",
+        scope_summary=f"athlete={athlete_id}, iso_week={version_key}",
+        shared_context=(
+            f"Current editor scope: athlete={athlete_id}, iso_week={version_key}.\n"
+            "All changes apply only to this selected ISO week.\n"
+            "No claim of persistence is allowed before apply succeeds.\n"
+            "This surface is the bounded Workout Editor chat for selected-week workout edits.\n"
+            f"Current pending editor operation: {json.dumps(_editor_pending(), ensure_ascii=False) if _editor_pending() else 'none'}"
+        ),
+        prompts_dir=SETTINGS.prompts_dir,
     )
     messages = st.session_state.setdefault(EDITOR_CHAT_KEY, [])
     if not isinstance(messages, list):
@@ -432,20 +476,16 @@ else:
         with st.chat_message("user"):
             st.markdown(prompt)
         try:
-            reply = run_coach_turn(
-                instructions=instructions,
+            reply = run_conversational_turn(
+                surface=surface,
                 user_message=prompt,
                 history=messages[:-1],
-                tools=_workout_editor_tools(
-                    store=store,
-                    athlete_id=athlete_id,
-                    year=year,
-                    week=week,
-                    version_key=version_key,
-                ),
-                agent_name="workout_editor",
+                toolsets=toolsets,
                 model_override=SETTINGS.model_for_agent("workout_editor"),
                 temperature_override=SETTINGS.temperature_for_agent("workout_editor"),
+                workspace_root=Path(SETTINGS.workspace_root),
+                athlete_id=athlete_id,
+                run_id=make_ui_run_id(f"workout_editor_chat_{year}_{week:02d}"),
             )
         except Exception as exc:
             reply = f"Workout editor failed: {exc}"

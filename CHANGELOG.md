@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a shared manager-plus-specialist conversational CrewAI runtime for `Coach` and `Workout Editor`, with agent-specific knowledge injection, strict per-specialist tool visibility, and page-level bridge heuristics removed from Coach.
 - Added an active Coach operation layer on top of the existing runtime: Coach can now inspect selected-week plan context, preview/apply bounded `WEEK_PLAN` edits, preview/apply scoped week replans, and trigger DES report / feed-forward runs through explicit operation tools with mandatory preview + confirm semantics.
 - Added initial CrewAI foundation files under `config/crewai/` and `src/rps/crewai_runtime/`, including YAML agent/task definitions, typed operation result models, and a runtime compatibility helper that reports the current Python `3.14` blocker for full CrewAI activation.
 - Added a CrewAI-only agent runtime gateway under `src/rps/agents/runtime.py`, so planner/advisory flows now route through one cutover point without any legacy backend fallback.
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added explicit Coach language alignment and a deterministic scoped-preview fallback, so broad week-adjustment requests and follow-up `preview erstellen` turns can create `preview_scoped_week_replan` without relying on low-level workout-edit parameters.
 
 ### Changed
+- Coach and Workout Editor chats now route through the same small-sliced conversational runtime: a thin manager classifies the turn, narrow specialists own context/advice/preview/pending work, and the outer Coach flow is telemetry-only instead of phrase-routing preview/apply semantics.
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
 - Advisory report/feed-forward execution now has reusable orchestrator helpers instead of only page-local wiring, so the same actions can be invoked from the active Coach surface.
 - All planner/advisory orchestrators and shared UI runtime helpers now import the unified runtime gateway, and Coach shows the effective CrewAI runtime state directly.

@@ -1,4 +1,46 @@
 tasks:
+  classify_turn:
+    agent: conversation_manager
+    kind: internal_reasoning
+    output: turn_mode
+    description: Classify one conversational turn into analyze, recommend, create_preview, or resolve_pending.
+    expected_output: A structured turn mode with a short routing rationale.
+  finalize_reply:
+    agent: conversation_manager
+    kind: internal_reasoning
+    output: coaching_recommendation
+    description: Produce the final user-facing reply from one specialist result without changing the specialist decision.
+    expected_output: A structured final-reply wrapper whose recommendation field contains the final assistant reply.
+  analyze_week_context:
+    agent: week_context_analyst
+    kind: internal_reasoning
+    output: week_context_assessment
+    description: Inspect the current selected week and summarize plan, actuals, constraints, and likely change direction.
+    expected_output: A structured selected-week context assessment.
+  form_coaching_recommendation:
+    agent: coaching_recommendation_specialist
+    kind: internal_reasoning
+    output: coaching_recommendation
+    description: Turn a week-context assessment into direct coaching guidance for an advisory-only turn.
+    expected_output: A structured coaching recommendation.
+  form_adjustment_intent:
+    agent: coaching_recommendation_specialist
+    kind: internal_reasoning
+    output: adjustment_intent
+    description: Turn a week-context assessment and user request into one clean adjustment intent for preview creation.
+    expected_output: A structured adjustment intent suitable for one preview operation.
+  create_week_preview:
+    agent: week_preview_specialist
+    kind: operation
+    output: coach_preview
+    description: Create exactly one bounded selected-week preview from a structured adjustment intent.
+    expected_output: A structured coach preview result for the selected week.
+  resolve_pending_operation:
+    agent: pending_resolution_specialist
+    kind: operation
+    output: pending_resolution_result
+    description: Inspect, apply, or discard the existing pending preview operation for the current chat surface.
+    expected_output: A structured pending-resolution result.
   coach_read_context:
     agent: coach
     kind: operation

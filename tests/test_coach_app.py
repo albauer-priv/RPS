@@ -44,17 +44,20 @@ def test_coach_source_exposes_active_operation_tools():
     assert "apply_pending_coach_operation" in source
     assert "preview_run_performance_report" in source
     assert "preview_run_feed_forward" in source
+    assert "run_conversational_turn(" in source
 
 
 def test_coach_source_no_longer_depends_on_rps_chatbot():
     source = Path("src/rps/ui/pages/coach.py").read_text(encoding="utf-8")
     assert "rps_chatbot" not in source
     assert "run_coach_flow(" in source
+    assert "coach_turn_helpers" not in source
 
 
 def test_workouts_editor_source_no_longer_depends_on_rps_chatbot():
     source = Path("src/rps/ui/pages/plan/workouts.py").read_text(encoding="utf-8")
     assert "rps_chatbot" not in source
+    assert "run_conversational_turn(" in source
 
 
 def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):

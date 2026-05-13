@@ -25,15 +25,20 @@ from rps.crewai_runtime.flows import (
     run_week_flow,
 )
 from rps.crewai_runtime.models import (
+    AdjustmentIntentModel,
     ArtifactEnvelopeModel,
+    CoachingRecommendationModel,
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
     ConstraintAuditModel,
     LoadGovernanceAuditModel,
+    PendingResolutionResultModel,
     PhaseBundleModel,
     SeasonEventAnchorModel,
     SeasonMacrocycleDraftModel,
     SeasonPlanAuditModel,
+    TurnModeModel,
+    WeekContextAssessmentModel,
 )
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs, resolve_crewai_provider_config
 from rps.orchestrator.coach_operations import (
@@ -208,11 +213,13 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
 
     agent_defs = bundle.agents["agents"]
     task_defs = bundle.tasks["tasks"]
-    assert "coach" in agent_defs
+    assert "conversation_manager" in agent_defs
+    assert "coaching_recommendation_specialist" in agent_defs
     assert "week_planner" in agent_defs
     assert "season_planner_manager" in agent_defs
     assert "phase_architect_manager" in agent_defs
-    assert task_defs["coach_apply_scoped_replan"]["agent"] == "coach"
+    assert task_defs["classify_turn"]["agent"] == "conversation_manager"
+    assert task_defs["create_week_preview"]["agent"] == "week_preview_specialist"
     assert task_defs["week_plan"]["agent"] == "week_planner"
     assert task_defs["season_plan"]["agent"] == "season_planner_manager"
     assert task_defs["phase_guardrails"]["agent"] == "phase_architect_manager"
@@ -223,16 +230,22 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     agents = build_agent_blueprints(bundle)
     tasks = build_task_blueprints(bundle)
 
-    assert agents["coach"].goal
+    assert agents["conversation_manager"].goal
     assert agents["season_plan_auditor"].goal
     assert agents["season_plan_auditor"].config["prompt_agent"] == "season_plan_auditor"
     assert agents["guardrails_specialist"].config["prompt_agent"] == "guardrails_specialist"
-    assert tasks["coach_preview_artifact_edit"].output_kind == "coach_preview"
+    assert tasks["classify_turn"].output_kind == "turn_mode"
+    assert tasks["form_adjustment_intent"].output_kind == "adjustment_intent"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
     assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle"
 
 
 def test_output_model_registry_resolves_known_output_kinds() -> None:
+    assert output_model_for_kind("turn_mode") is TurnModeModel
+    assert output_model_for_kind("week_context_assessment") is WeekContextAssessmentModel
+    assert output_model_for_kind("coaching_recommendation") is CoachingRecommendationModel
+    assert output_model_for_kind("adjustment_intent") is AdjustmentIntentModel
+    assert output_model_for_kind("pending_resolution_result") is PendingResolutionResultModel
     assert output_model_for_kind("artifact_envelope") is ArtifactEnvelopeModel
     assert output_model_for_kind("coach_preview") is CoachOperationPreviewModel
     assert output_model_for_kind("coach_apply") is CoachOperationApplyResultModel
@@ -284,15 +297,11 @@ def test_coach_flow_routes_confirmation_and_records_events(monkeypatch, tmp_path
         athlete_id="athlete",
         run_id="run-1",
         user_message="confirm",
-        has_pending_operation=True,
         chat_runner=lambda: "chat",
-        apply_runner=lambda: "applied",
-        discard_runner=lambda: "discarded",
-        show_pending_runner=lambda: "pending",
     )
 
-    assert result["route"] == "apply_pending"
-    assert result["response"] == "applied"
+    assert result["route"] == "conversational_turn"
+    assert result["response"] == "chat"
     events = load_events(tmp_path, "athlete", "run-1")
     event_types = [str(event.get("type")) for event in events]
     assert "FLOW_STARTED" in event_types

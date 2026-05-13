@@ -11,11 +11,14 @@ from typing import Any
 from .compat import crewai_runtime_status
 from .config import CrewAIConfigBundle, load_crewai_config_bundle
 from .models import (
+    AdjustmentIntentModel,
     ArtifactEnvelopeModel,
+    CoachingRecommendationModel,
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
     ConstraintAuditModel,
     LoadGovernanceAuditModel,
+    PendingResolutionResultModel,
     PhaseBundleModel,
     PhaseGuardrailsPayloadModel,
     PhasePreviewPayloadModel,
@@ -23,6 +26,8 @@ from .models import (
     SeasonEventAnchorModel,
     SeasonMacrocycleDraftModel,
     SeasonPlanAuditModel,
+    TurnModeModel,
+    WeekContextAssessmentModel,
 )
 
 JsonMap = dict[str, Any]
@@ -109,6 +114,11 @@ def output_model_for_kind(output_kind: str) -> type[Any]:
     """Resolve the typed output model for a configured task output kind."""
 
     registry: dict[str, type[Any]] = {
+        "turn_mode": TurnModeModel,
+        "week_context_assessment": WeekContextAssessmentModel,
+        "coaching_recommendation": CoachingRecommendationModel,
+        "adjustment_intent": AdjustmentIntentModel,
+        "pending_resolution_result": PendingResolutionResultModel,
         "artifact_envelope": ArtifactEnvelopeModel,
         "coach_preview": CoachOperationPreviewModel,
         "coach_apply": CoachOperationApplyResultModel,

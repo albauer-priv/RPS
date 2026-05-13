@@ -8,9 +8,13 @@ from pathlib import Path
 
 import streamlit as st
 
-from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.runtime import resolve_agent_runtime_selection
-from rps.crewai_runtime.coach_chat import CoachTool, run_coach_turn
+from rps.crewai_runtime.coach_chat import (
+    CoachTool,
+    ConversationalSurface,
+    SpecialistToolsets,
+    run_conversational_turn,
+)
 from rps.crewai_runtime.flows import run_coach_flow
 from rps.orchestrator.coach_operations import (
     apply_feed_forward_operation,
@@ -33,15 +37,7 @@ from rps.orchestrator.context_snapshots import (
     ensure_current_week_status_snapshot,
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
-from rps.prompts.loader import PromptLoader
-from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
-from rps.ui.coach_turn_helpers import (
-    build_scoped_preview_message,
-    detect_reply_language,
-    is_direct_week_adjust_request,
-    is_preview_creation_request,
-    localized_preview_created_reply,
-)
+from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers
 from rps.ui.run_store import append_run, update_run
 from rps.ui.shared import (
     SETTINGS,
@@ -659,6 +655,33 @@ def _active_coach_functions(
     ]
 
 
+def _coach_specialist_toolsets(tools: list[CoachTool]) -> SpecialistToolsets:
+    """Return strict per-specialist tool visibility for the Coach conversational crew."""
+
+    by_name = {tool.name: tool for tool in tools}
+    context_names = [
+        "read_current_plan_context",
+        "list_current_week_plan_workouts",
+    ]
+    preview_names = [
+        "preview_move_workout",
+        "preview_change_start_time",
+        "preview_update_workout_text",
+        "preview_scoped_week_replan",
+    ]
+    pending_names = [
+        "show_pending_coach_operation",
+        "apply_pending_coach_operation",
+        "discard_pending_coach_operation",
+    ]
+    return SpecialistToolsets(
+        context=[by_name[name] for name in context_names if name in by_name],
+        recommendation=[],
+        preview=[by_name[name] for name in preview_names if name in by_name],
+        pending=[by_name[name] for name in pending_names if name in by_name],
+    )
+
+
 init_ui_state()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
@@ -682,100 +705,73 @@ ctx = ReadToolContext(
     workspace_root=SETTINGS.workspace_root,
 )
 handlers = read_tool_handlers(ctx)
-tools: list[CoachTool] = []
-for spec in read_tool_defs():
-    raw_name = spec.get("name")
-    if not isinstance(raw_name, str):
-        continue
-    name = raw_name
-    handler = handlers.get(name)
-    if handler is None:
-        continue
-    description = spec.get("description", "")
-    if not isinstance(description, str):
-        description = ""
-    parameters = spec.get("parameters", {})
-    if not isinstance(parameters, dict):
-        parameters = {}
-
-    def _wrap(h=handler):
-        return lambda **kwargs: _json_result(h(kwargs))
-
-    tools.append(
-        CoachTool(
-            name=name,
-            description=description,
-            parameters=parameters,
-            handler=_wrap(),
-        )
-    )
-
-tools.extend(
-    _active_coach_functions(
-        store=LocalArtifactStore(root=SETTINGS.workspace_root),
-        athlete_id=athlete_id,
-        year=year,
-        week=week,
-    )
+tools = _active_coach_functions(
+    store=LocalArtifactStore(root=SETTINGS.workspace_root),
+    athlete_id=athlete_id,
+    year=year,
+    week=week,
 )
-
-prompt_loader = PromptLoader(SETTINGS.prompts_dir)
-base_prompt = prompt_loader.combined_system_prompt("coach")
-base_prompt = base_prompt.replace("SEASON_BRIEF_YEAR", str(year))
-injected = build_injection_block("coach", mode="coach")
-
-instructions = base_prompt
-if injected:
-    instructions = f"{base_prompt}\n\n{injected}"
+toolsets = _coach_specialist_toolsets(tools)
 
 preload_enabled = os.getenv("RPS_COACH_PRELOAD_ARTIFACTS", "1").lower() in {"1", "true", "yes"}
+per_artifact_max = int(os.getenv("RPS_COACH_PRELOAD_MAX_CHARS", "12000"))
+snapshot_blocks: list[str] = []
+context_chunks: list[str] = []
+
+def _stringify(value: object) -> str:
+    text = json.dumps(value, ensure_ascii=False)
+    if len(text) > per_artifact_max:
+        return text[:per_artifact_max] + "...(truncated)"
+    return text
+
+def _append_context(label: str, fn, args: dict[str, object]) -> None:
+    try:
+        result = fn(args)
+    except Exception as exc:
+        result = {"ok": False, "error": str(exc)}
+    context_chunks.append(f"{label}:\n{_stringify(result)}")
+
 if preload_enabled:
-    per_artifact_max = int(os.getenv("RPS_COACH_PRELOAD_MAX_CHARS", "12000"))
-    snapshot_blocks: list[str] = []
-    context_chunks: list[str] = []
-
-    def _stringify(value: object) -> str:
-        text = json.dumps(value, ensure_ascii=False)
-        if len(text) > per_artifact_max:
-            return text[:per_artifact_max] + "...(truncated)"
-        return text
-
-    def _append_context(label: str, fn, args: dict[str, object]) -> None:
-        try:
-            result = fn(args)
-        except Exception as exc:
-            result = {"ok": False, "error": str(exc)}
-        context_chunks.append(f"{label}:\n{_stringify(result)}")
-
     with suppress(Exception):
         snapshot_blocks = _coach_memory_blocks(athlete_id, year, week)
-
-    if snapshot_blocks:
-        instructions = (
-            f"{instructions}\n\n"
-            "Workspace memory (auto-loaded, preferred). Use these derived blocks before raw artefact reads:\n"
-            + "\n\n".join(snapshot_blocks)
-        )
-    else:
+    if not snapshot_blocks:
         for label, handler_name, args in _coach_preload_specs(year, week):
-            _append_context(label, handlers[handler_name], args)
+            handler = handlers.get(handler_name)
+            if handler is None:
+                continue
+            _append_context(label, handler, args)
 
-        if context_chunks:
-            instructions = (
-                f"{instructions}\n\n"
-                "Workspace artifacts (auto-loaded fallback). Use these instead of asking for missing artifacts:\n"
-                + "\n\n".join(context_chunks)
-            )
+conversation_context_parts: list[str] = []
+if snapshot_blocks:
+    conversation_context_parts.append(
+        "Workspace memory (preferred, code-owned):\n" + "\n\n".join(snapshot_blocks)
+    )
+elif context_chunks:
+    conversation_context_parts.append(
+        "Workspace artifacts (fallback raw reads):\n" + "\n\n".join(context_chunks)
+    )
+conversation_context_parts.append(
+    "\n".join(
+        [
+            f"Active coach scope: athlete={athlete_id}, iso_week={year:04d}-{week:02d}.",
+            "No claim of persistence is allowed before apply succeeds.",
+            "This surface is the active Coach chat for selected-week analysis, coaching, previews, and pending-resolution.",
+        ]
+    )
+)
+pending_snapshot = _coach_pending()
+if pending_snapshot:
+    conversation_context_parts.append(
+        "Current pending coach operation snapshot:\n"
+        + json.dumps(pending_snapshot, ensure_ascii=False, indent=2)
+    )
+conversation_context = "\n\n".join(part for part in conversation_context_parts if part.strip())
 
-instructions = (
-    f"{instructions}\n\n"
-    f"Active coach scope: athlete={athlete_id}, iso_week={year:04d}-{week:02d}.\n"
-    "You can inspect plan context, preview bounded week-plan edits, preview scoped week replans, "
-    "preview report/feed-forward runs, and apply only after explicit confirmation.\n"
-    "Never claim that a change was stored before apply_pending_coach_operation succeeds.\n"
-    "Reply in the same language as the current user message unless the user explicitly asks for another language.\n"
-    "If the user asks for a broad week adjustment without exact workout-level parameters, prefer preview_scoped_week_replan "
-    "over low-level edit tools."
+surface = ConversationalSurface(
+    name="coach",
+    scope_summary=f"athlete={athlete_id}, iso_week={year:04d}-{week:02d}",
+    shared_context=conversation_context,
+    prompts_dir=SETTINGS.prompts_dir,
 )
 model = os.getenv("RPS_LLM_MODEL_COACH") or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5-mini"
 base_url = os.getenv("RPS_LLM_BASE_URL_COACH") or os.getenv("RPS_LLM_BASE_URL")
@@ -828,82 +824,36 @@ if prompt:
         st.session_state[COACH_ACTIVE_RUN_ID_KEY] = turn_run_id
         with st.spinner("Coach is thinking…"):
             try:
-                language = detect_reply_language(user_prompt, messages[:-1])
-                pending_before_turn = _coach_pending()
-                if not pending_before_turn and (
-                    is_direct_week_adjust_request(user_prompt)
-                    or is_preview_creation_request(user_prompt)
-                ):
-                    preview = preview_scoped_week_replan_operation(
-                        year=year,
-                        week=week,
-                        message=build_scoped_preview_message(messages[:-1], user_prompt),
-                    )
-                    st.session_state[COACH_PENDING_KEY] = preview.model_dump()
-                    reply = localized_preview_created_reply(
-                        language=language,
-                        iso_week=f"{year:04d}-{week:02d}",
-                        summary=preview.summary,
-                    )
-                    update_run(
-                        SETTINGS.workspace_root,
-                        athlete_id,
-                        turn_run_id,
-                        {
-                            "status": "DONE",
-                            "current_step": None,
-                            "route": "direct_preview_scoped_replan",
-                            "message": user_prompt,
-                            "finished_at": datetime.now(UTC).isoformat(),
-                        },
-                    )
-                else:
-                    flow_result = run_coach_flow(
+                flow_result = run_coach_flow(
+                    workspace_root=Path(SETTINGS.workspace_root),
+                    athlete_id=athlete_id,
+                    run_id=turn_run_id,
+                    user_message=user_prompt,
+                    chat_runner=lambda: run_conversational_turn(
+                        surface=surface,
+                        user_message=user_prompt,
+                        history=messages[:-1],
+                        toolsets=toolsets,
+                        model_override=model,
+                        temperature_override=SETTINGS.temperature_for_agent("coach"),
                         workspace_root=Path(SETTINGS.workspace_root),
                         athlete_id=athlete_id,
                         run_id=turn_run_id,
-                        user_message=user_prompt,
-                        has_pending_operation=bool(_coach_pending()),
-                        chat_runner=lambda: run_coach_turn(
-                            instructions=instructions,
-                            user_message=user_prompt,
-                            history=messages[:-1],
-                            tools=tools,
-                            agent_name="coach",
-                            model_override=model,
-                            workspace_root=Path(SETTINGS.workspace_root),
-                            athlete_id=athlete_id,
-                            run_id=turn_run_id,
-                        ),
-                        apply_runner=lambda: next(
-                            tool.handler()
-                            for tool in tools
-                            if tool.name == "apply_pending_coach_operation"
-                        ),
-                        discard_runner=lambda: next(
-                            tool.handler()
-                            for tool in tools
-                            if tool.name == "discard_pending_coach_operation"
-                        ),
-                        show_pending_runner=lambda: next(
-                            tool.handler()
-                            for tool in tools
-                            if tool.name == "show_pending_coach_operation"
-                        ),
-                    )
-                    reply = flow_result["response"]
-                    update_run(
-                        SETTINGS.workspace_root,
-                        athlete_id,
-                        turn_run_id,
-                        {
-                            "status": "DONE",
-                            "current_step": None,
-                            "route": flow_result.get("route"),
-                            "message": user_prompt,
-                            "finished_at": datetime.now(UTC).isoformat(),
-                        },
-                    )
+                    ),
+                )
+                reply = flow_result["response"]
+                update_run(
+                    SETTINGS.workspace_root,
+                    athlete_id,
+                    turn_run_id,
+                    {
+                        "status": "DONE",
+                        "current_step": None,
+                        "route": flow_result.get("route"),
+                        "message": user_prompt,
+                        "finished_at": datetime.now(UTC).isoformat(),
+                    },
+                )
             except Exception as exc:
                 reply = f"Coach turn failed: {exc}"
                 update_run(
