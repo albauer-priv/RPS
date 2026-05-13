@@ -134,7 +134,13 @@ def _row_summary(row: dict[str, str] | None) -> str:
     start = row.get("start") or "-"
     duration = row.get("duration") or row.get("planned_duration") or "-"
     planned_kj = row.get("planned_kj") or "-"
-    return f"{title} | {day_role} | start {start} | duration {duration} | {planned_kj} kJ"
+    return (
+        f"Workout: {title}; "
+        f"Role: {day_role}; "
+        f"Start: {start}; "
+        f"Duration: {duration}; "
+        f"Load: {planned_kj} kJ"
+    )
 
 
 def _change_rows(before: list[dict[str, str]], after: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -160,22 +166,42 @@ def _change_rows(before: list[dict[str, str]], after: list[dict[str, str]]) -> l
             {
                 "date": str(row.get("date") or ""),
                 "day": str(row.get("day") or ""),
+                "workout": str((after_row or before_row or {}).get("title") or "-"),
                 "before": before_text,
                 "after": after_text,
+                "title_before": str((before_row or {}).get("title") or "-"),
+                "title_after": str((after_row or {}).get("title") or "-"),
+                "day_role_before": str((before_row or {}).get("day_role") or "-"),
+                "day_role_after": str((after_row or {}).get("day_role") or "-"),
+                "start_before": str((before_row or {}).get("start") or "-"),
+                "start_after": str((after_row or {}).get("start") or "-"),
+                "duration_before": str(((before_row or {}).get("duration") or (before_row or {}).get("planned_duration") or "-")),
+                "duration_after": str(((after_row or {}).get("duration") or (after_row or {}).get("planned_duration") or "-")),
+                "planned_kj_before": str((before_row or {}).get("planned_kj") or "-"),
+                "planned_kj_after": str((after_row or {}).get("planned_kj") or "-"),
             }
         )
     return changes
 
 
+def _md_cell(value: str) -> str:
+    return str(value or "-").replace("|", "\\|").replace("\n", "<br>")
+
+
 def _change_table_markdown(changes: list[dict[str, str]]) -> str:
     if not changes:
-        return "| Date | Day | Before | After |\n|---|---|---|---|\n| - | - | No visible changes | No visible changes |"
-    lines = ["| Date | Day | Before | After |", "|---|---|---|---|"]
+        return (
+            "| Date | Day | Workout | Before | After |\n"
+            "|---|---|---|---|---|\n"
+            "| - | - | - | No visible changes | No visible changes |"
+        )
+    lines = ["| Date | Day | Workout | Before | After |", "|---|---|---|---|---|"]
     for row in changes:
-        before = str(row.get("before") or "-").replace("\n", " ")
-        after = str(row.get("after") or "-").replace("\n", " ")
+        before = _md_cell(str(row.get("before") or "-"))
+        after = _md_cell(str(row.get("after") or "-"))
+        workout = _md_cell(str(row.get("workout") or "-"))
         lines.append(
-            f"| {row.get('date') or '-'} | {row.get('day') or '-'} | {before} | {after} |"
+            f"| {_md_cell(str(row.get('date') or '-'))} | {_md_cell(str(row.get('day') or '-'))} | {workout} | {before} | {after} |"
         )
     return "\n".join(lines)
 

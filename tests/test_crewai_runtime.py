@@ -406,7 +406,11 @@ def test_preview_scoped_week_replan_returns_true_preview_metadata(monkeypatch, t
     assert preview.document == preview_document
     metadata = preview.metadata
     assert metadata["change_rows"]
-    assert "| Date | Day | Before | After |" in metadata["change_table_markdown"]
+    assert "| Date | Day | Workout | Before | After |" in metadata["change_table_markdown"]
+    first_change = metadata["change_rows"][0]
+    assert first_change["workout"] == "Aerobic Endurance"
+    assert "Workout: Aerobic Endurance;" in first_change["before"]
+    assert "Duration: 01:10:00;" in first_change["after"]
     assert "before.json" in metadata["diff_text"]
 
 

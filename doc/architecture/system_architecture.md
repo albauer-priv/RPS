@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-12
+Last-Updated: 2026-05-13
 Owner: Architecture
 ---
 # System Architecture
 
 Version: 2.3  
 Status: Updated  
-Last-Updated: 2026-05-12
+Last-Updated: 2026-05-13
 
 ---
 
@@ -25,7 +25,7 @@ It covers:
 - runtime storage and traceability
 
 It is a system document, not a coaching manual.
-See [doc/adr/README.md](../adr/README.md) for architecture decisions.
+See [doc/adr/README.md](../adr/README.md) for architecture decisions. See [doc/architecture/crewai_flows.md](crewai_flows.md) for the canonical CrewAI flow and specialist-crew catalog.
 
 ---
 
@@ -130,7 +130,7 @@ flowchart TB
 
 ## 3. Agent Roles & Responsibilities
 
-See [doc/architecture/agents.md](agents.md) for the canonical registry of agents, modes, and IO.
+See [doc/architecture/agents.md](agents.md) for the canonical registry of agents, modes, and IO, and [doc/architecture/crewai_flows.md](crewai_flows.md) for flow responsibilities, specialist usage, tool surfaces, and outputs.
 
 ### 3.1 Performance-Analyst
 - Diagnostic only, advisory output.

@@ -163,7 +163,6 @@ def _build_current_week_plan_block(week_plan_payload: JsonMap | None) -> str:
         title = _as_str(row.get("title"))
         duration = _as_str(row.get("duration")) or _as_str(row.get("planned_duration"))
         planned_kj = _as_str(row.get("planned_kj"))
-        start = _as_str(row.get("start"))
         lines.append(
             "- "
             + " | ".join(
@@ -174,7 +173,6 @@ def _build_current_week_plan_block(week_plan_payload: JsonMap | None) -> str:
                     title or "-",
                     duration or "-",
                     (planned_kj + " kJ") if planned_kj else "-",
-                    start or "-",
                 ]
             )
         )
@@ -203,6 +201,17 @@ def _format_duration(seconds: int) -> str:
     hours, remainder = divmod(seconds, 3600)
     minutes, secs = divmod(remainder, 60)
     return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
+def _weekday_label(date_text: str) -> str:
+    """Return Mon..Sun for an ISO date string, or '-' when unavailable."""
+
+    if not date_text:
+        return "-"
+    try:
+        return date.fromisoformat(date_text).strftime("%a")
+    except ValueError:
+        return "-"
 
 
 def _build_advisory_report_block(des_analysis_payload: JsonMap | None) -> str:
@@ -320,8 +329,14 @@ def _build_current_week_actuals_block(current_week_actual_payload: JsonMap | Non
     if completed_sessions:
         lines.append("completed_sessions_table:")
         for activity in completed_sessions:
-            day = _as_str(activity.get("day"))[:10] or "-"
+            date_label = _as_str(activity.get("day"))[:10] or "-"
+            day = _weekday_label(date_label)
             session_type = _as_str(activity.get("type")) or "activity"
+            what_label = (
+                _as_str(activity.get("name"))
+                or _as_str(activity.get("title"))
+                or session_type
+            )
             moving_time = _as_str(activity.get("moving_time")) or "-"
             work_kj = activity.get("work_kj")
             work_label = f"{int(round(float(work_kj)))} kJ" if isinstance(work_kj, (int, float)) else "-"
@@ -336,11 +351,13 @@ def _build_current_week_actuals_block(current_week_actual_payload: JsonMap | Non
                 + " | ".join(
                     [
                         day,
+                        date_label,
                         session_type,
+                        what_label,
                         moving_time,
                         work_label,
-                        load_label,
                         if_label,
+                        load_label,
                     ]
                 )
             )
@@ -360,6 +377,7 @@ def _build_plan_vs_actual_block(
         return ""
 
     planned_dates: dict[str, str] = {}
+    planned_rows_by_date: dict[str, dict[str, str]] = {}
     for row in workouts:
         if not isinstance(row, dict):
             continue
@@ -367,6 +385,7 @@ def _build_plan_vs_actual_block(
         title = _as_str(row.get("title")) or _as_str(row.get("day_role")) or "Planned workout"
         if date_label:
             planned_dates[date_label] = title
+            planned_rows_by_date[date_label] = row
 
     completed_dates: dict[str, str] = {}
     for activity in completed_sessions:
@@ -400,9 +419,22 @@ def _build_plan_vs_actual_block(
     if isinstance(planned_load, (int, float)):
         lines.append(f"planned_weekly_load_kj: {int(planned_load)}")
     if open_days:
-        lines.append("open_planned_days:")
+        lines.append("open_planned_days_table:")
         for day in open_days:
-            lines.append(f"- {day} | {planned_dates[day]}")
+            row = planned_rows_by_date.get(day, {})
+            lines.append(
+                "- "
+                + " | ".join(
+                    [
+                        _as_str(row.get("day")) or "-",
+                        day,
+                        _as_str(row.get("day_role")) or "-",
+                        _as_str(row.get("title")) or planned_dates[day],
+                        _as_str(row.get("duration")) or _as_str(row.get("planned_duration")) or "-",
+                        ((_as_str(row.get("planned_kj")) + " kJ") if _as_str(row.get("planned_kj")) else "-"),
+                    ]
+                )
+            )
     if unplanned_days:
         lines.append("unplanned_completed_days:")
         for day in unplanned_days:

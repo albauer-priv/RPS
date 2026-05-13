@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-12
+Last-Updated: 2026-05-13
 Owner: Architecture
 ---
 # Agents and Responsibilities
@@ -36,6 +36,7 @@ This document is the canonical registry of agents, their roles, modes, and artif
 
 ## Related Docs
 
+- CrewAI flow catalog: [doc/architecture/crewai_flows.md](crewai_flows.md)
 - UI flows: [doc/ui/ui_spec.md](../ui/ui_spec.md)
 - Orchestration flow: [doc/overview/artefact_flow.md](../overview/artefact_flow.md)
 - Planning sequence: [doc/overview/how_to_plan.md](../overview/how_to_plan.md)
