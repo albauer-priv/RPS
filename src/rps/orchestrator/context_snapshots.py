@@ -209,7 +209,7 @@ def _weekday_label(date_text: str) -> str:
     if not date_text:
         return "-"
     try:
-        return date.fromisoformat(date_text).strftime("%a")
+        return datetime.strptime(date_text, "%Y-%m-%d").strftime("%a")
     except ValueError:
         return "-"
 
@@ -452,10 +452,10 @@ def _build_plan_vs_actual_block(
                 "- "
                 + " | ".join(
                     [
-                        _as_str(row.get("day")) or "-",
                         day,
-                        _as_str(row.get("day_role")) or "-",
                         _as_str(row.get("title")) or planned_dates[day],
+                        _as_str(row.get("day")) or "-",
+                        _as_str(row.get("day_role")) or "-",
                         _as_str(row.get("duration")) or _as_str(row.get("planned_duration")) or "-",
                         ((_as_str(row.get("planned_kj")) + " kJ") if _as_str(row.get("planned_kj")) else "-"),
                     ]

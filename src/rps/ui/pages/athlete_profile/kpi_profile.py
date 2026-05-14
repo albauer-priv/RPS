@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, date, datetime
 
 import streamlit as st
@@ -108,7 +109,8 @@ st.title("KPI Profile")
 
 init_ui_state()
 render_global_sidebar()
-athlete_id = get_athlete_id()
+athlete_id = os.getenv("ATHLETE_ID") or get_athlete_id()
+st.session_state["athlete_id"] = athlete_id
 announce_log_file(athlete_id)
 
 st.caption(f"Athlete: {athlete_id}")
@@ -136,13 +138,17 @@ try:
 except (FileNotFoundError, ValueError):
     current_profile_key = None
 
-selectbox_key = "kpi_profile_selected_key"
-if current_profile_key and st.session_state.get(selectbox_key) not in profile_keys:
-    st.session_state[selectbox_key] = current_profile_key
-elif selectbox_key not in st.session_state or st.session_state.get(selectbox_key) not in profile_keys:
-    st.session_state[selectbox_key] = profile_keys[0]
+selected_index = 0
+if current_profile_key and current_profile_key in profile_keys:
+    selected_index = profile_keys.index(current_profile_key)
+selectbox_key = f"kpi_profile_selected_key__{athlete_id}__{current_profile_key or 'default'}"
 
-selected_key = st.selectbox("Select KPI Profile", options=profile_keys, key=selectbox_key)
+selected_key = st.selectbox(
+    "Select KPI Profile",
+    options=profile_keys,
+    index=selected_index,
+    key=selectbox_key,
+)
 
 selected_payload = json.loads(profile_map[selected_key].read_text(encoding="utf-8"))
 meta = selected_payload.get("meta", {}) if isinstance(selected_payload, dict) else {}
@@ -198,10 +204,11 @@ if st.button("Use this KPI Profile"):
         run_id=run_id,
         update_latest=True,
     )
+    latest_path = store.latest_path(athlete_id, ArtifactType.KPI_PROFILE)
+    latest_path.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     # Ensure a canonical inputs copy exists (kpi_profile.json) alongside versioned input.
     inputs_path = store.type_dir(athlete_id, ArtifactType.KPI_PROFILE) / "kpi_profile.json"
     inputs_path.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    st.session_state[selectbox_key] = selected_key
     set_status(
         status_state="done",
         title="KPI Profile",

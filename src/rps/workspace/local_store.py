@@ -35,6 +35,24 @@ PARTITIONED_WEEK_ARTIFACTS = {
 }
 
 
+def _preserve_explicit_version_key(
+    version_key: str,
+    artifact_type: ArtifactType,
+    created_at: str,
+) -> str:
+    """Keep an explicit valid timestamp suffix when the caller already provided one."""
+
+    if artifact_type in WEEK_SCOPED_ARTIFACTS:
+        base, suffix = split_week_version_key(version_key)
+        if base and suffix:
+            return f"{base}__{suffix}"
+    if artifact_type in RANGE_SCOPED_ARTIFACTS:
+        base, suffix = split_range_version_key(version_key)
+        if base and suffix:
+            return f"{base}__{suffix}"
+    return normalize_version_key(version_key, created_at, artifact_type=artifact_type)
+
+
 def _as_map(value: object) -> JsonMap:
     """Return a mapping when the value is dict-like."""
     return value if isinstance(value, dict) else {}
@@ -449,10 +467,10 @@ class LocalArtifactStore:
         self.ensure_workspace(athlete_id)
 
         stored_created_at = utc_iso_now()
-        normalized_key = normalize_version_key(
+        normalized_key = _preserve_explicit_version_key(
             version_key,
-            stored_created_at,
             artifact_type=artifact_type,
+            created_at=stored_created_at,
         )
         meta = ArtifactMeta(
             artifact_type=artifact_type,
@@ -539,10 +557,10 @@ class LocalArtifactStore:
         self.ensure_workspace(athlete_id)
 
         stored_created_at = utc_iso_now()
-        normalized_key = normalize_version_key(
+        normalized_key = _preserve_explicit_version_key(
             version_key,
-            stored_created_at,
             artifact_type=artifact_type,
+            created_at=stored_created_at,
         )
         meta_doc = None
         if isinstance(document, dict):

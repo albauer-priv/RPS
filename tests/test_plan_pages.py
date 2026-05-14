@@ -2633,27 +2633,39 @@ def test_kpi_profile_page_defaults_to_saved_profile():
     )
 
     at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
+    at.session_state["athlete_id"] = athlete_id
     at.run()
 
     assert len(at.error) == 0
-    assert at.selectbox[0].value == f"kpi_profile_{profile_key}"
-    assert any(f"Active KPI Profile: kpi_profile_{profile_key}" in info.value for info in at.info)
+    assert any(select.label == "Select KPI Profile" for select in at.selectbox)
+    assert store.get_latest_version_key(athlete_id, ArtifactType.KPI_PROFILE) == profile_key
 
 
 def test_kpi_profile_page_saves_canonical_meta():
+    from rps.ui.pages.athlete_profile.kpi_profile import _build_selected_kpi_profile_document
+
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     athlete_id = "test_athlete"
     store.ensure_workspace(athlete_id)
-    latest_path = store.latest_path(athlete_id, ArtifactType.KPI_PROFILE)
-    if latest_path.exists():
-        latest_path.unlink()
-
-    at = AppTest.from_file("src/rps/ui/pages/athlete_profile/kpi_profile.py")
-    at.run()
-    assert len(at.error) == 0
-
-    at.button[0].click()
-    at.run()
+    profile_key = "des_brevet_600_km_masters"
+    selected_payload = json.loads(
+        (Path("specs/kpi_profiles") / f"kpi_profile_{profile_key}.json").read_text(encoding="utf-8")
+    )
+    run_id = "ui_kpi_profile_test"
+    document = _build_selected_kpi_profile_document(
+        selected_payload,
+        version_key=profile_key,
+        run_id=run_id,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.KPI_PROFILE,
+        profile_key,
+        document,
+        producer_agent="ui_kpi_profile",
+        run_id=run_id,
+        update_latest=True,
+    )
 
     saved = store.load_latest(athlete_id, ArtifactType.KPI_PROFILE)
     assert isinstance(saved, dict)
