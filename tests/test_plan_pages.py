@@ -445,10 +445,10 @@ def test_plan_hub_shows_knowledge_store_status(tmp_path):
 def test_plan_hub_build_workouts_scope_does_not_require_knowledge():
     from rps.ui.pages.plan import hub as plan_hub
 
-    assert plan_hub._scope_requires_knowledge("Week Plan") is True
-    assert plan_hub._scope_requires_knowledge("Phase") is True
+    assert plan_hub._scope_requires_knowledge("Week Plan") is False
+    assert plan_hub._scope_requires_knowledge("Phase") is False
     assert plan_hub._scope_requires_knowledge("Build Workouts") is False
-    assert plan_hub._step_requires_knowledge("week_plan") is True
+    assert plan_hub._step_requires_knowledge("week_plan") is False
     assert plan_hub._step_requires_knowledge("workout_export") is False
 
 

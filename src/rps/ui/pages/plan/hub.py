@@ -1363,13 +1363,20 @@ def _render_direct_step_actions(
 
 
 def _scope_requires_knowledge(scope: str | None) -> bool:
-    """Return whether the given planning scope still depends on the knowledge store."""
-    return scope != "Build Workouts"
+    """Return whether the given planning scope is hard-blocked by knowledge-store readiness."""
+
+    # Planning runtime is now skills-first. Vectorstore readiness may still be
+    # useful for retrieval-backed enrichment, but it must not globally disable
+    # season/phase/week planning actions in Plan Hub.
+    del scope
+    return False
 
 
 def _step_requires_knowledge(step_key: str) -> bool:
-    """Return whether the readiness-card direct action for a step depends on the knowledge store."""
-    return step_key != "workout_export"
+    """Return whether the direct action is hard-blocked by knowledge-store readiness."""
+
+    del step_key
+    return False
 
 
 state = init_ui_state()
@@ -1433,7 +1440,7 @@ if active_run and active_run.get("status") in {"QUEUED", "RUNNING"}:
 run_state = bool(active_run and active_run.get("status") in {"QUEUED", "RUNNING"})
 st.session_state["plan_hub_running"] = run_state
 scope_lock = run_state
-planning_locked = scope_lock or not knowledge_ready
+planning_locked = scope_lock
 
 if run_state:
     st.session_state["plan_hub_autorefresh_ts"] = time.time()
@@ -1491,8 +1498,8 @@ st.caption("Review required artefacts and resolve missing or stale steps before 
 st.caption(overall_message)
 if not knowledge_ready:
     st.info(
-        "Agent-backed planning actions stay disabled until the knowledge store is ready. "
-        "Build Workouts remains available because it now runs locally."
+        "Knowledge store is not ready. Planning can still run with the skills-first runtime, "
+        "but retrieval-backed context may be reduced until the store is rebuilt."
     )
 phase_step = readiness_map.get("phase")
 week_plan_step = readiness_map.get("week_plan")
@@ -1648,7 +1655,7 @@ for col, steps in zip(
                     step,
                     athlete_id=hub_scope["athlete_id"],
                     base_week=IsoWeek(hub_scope["iso_year"], hub_scope["iso_week"]),
-                    scope_lock=scope_lock or (not knowledge_ready and _step_requires_knowledge(step.key)),
+                    scope_lock=scope_lock,
                     default_phase_label=hub_scope.get("phase_label"),
                 )
 
@@ -1819,7 +1826,7 @@ if not has_blockers:
         col_scoped, col_orchestrated = st.columns(2)
         run_scoped = col_scoped.button(
             "Run scoped",
-            disabled=scope_lock or (run_mode != "Scoped") or (not knowledge_ready and _scope_requires_knowledge(scope)),
+            disabled=scope_lock or (run_mode != "Scoped"),
         )
         run_orchestrated = col_orchestrated.button(
             "Run orchestrated",
@@ -1827,9 +1834,6 @@ if not has_blockers:
         )
 
     if run_week:
-        if not knowledge_ready:
-            st.warning("Knowledge store is not ready. Rebuild it before planning.")
-            st.stop()
         if _override_required("Week Plan", target_readiness):
             st.warning("This week already has planning artifacts. Use a scoped run with an override.")
             st.stop()
@@ -1877,9 +1881,6 @@ if not has_blockers:
         st.info("Run requested.")
 
     if run_orchestrated:
-        if not knowledge_ready:
-            st.warning("Knowledge store is not ready. Rebuild it before planning.")
-            st.stop()
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
             hub_scope["athlete_id"],
@@ -1922,9 +1923,6 @@ if not has_blockers:
         st.info("Run requested.")
 
     if run_scoped:
-        if not knowledge_ready and _scope_requires_knowledge(scope):
-            st.warning("Knowledge store is not ready. Rebuild it before planning.")
-            st.stop()
         desired_subtype = PLANNING_SCOPE_SUBTYPE.get(scope or "", "scoped")
         block_reason = _planning_block_reason(
             SETTINGS.workspace_root,
