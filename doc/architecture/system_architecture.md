@@ -6,12 +6,6 @@ Owner: Architecture
 ---
 # System Architecture
 
-Version: 2.3  
-Status: Updated  
-Last-Updated: 2026-05-13
-
----
-
 Note: In this documentation, “season” refers to season-level planning. The season plan is the season artefact.
 
 ## 1. Purpose & Scope
@@ -38,10 +32,11 @@ Agents communicate via validated artifacts and never share implicit state.
 
 ```mermaid
 flowchart TD
-  AP[athlete_profile] --> SS["Season-Scenario-Agent"]
+  AP[athlete_profile] --> SS["Season Scenario Surface"]
   KP[kpi_profile] --> SS
   SS --> SC[season_scenarios]
-  SC -. advisory .-> MA["Season-Planner"]
+  SC --> SEL[season_scenario_selection]
+  SEL --> MA["Season Planning Runtime"]
   KP --> MA
   PE[planning_events] -. info .-> SS
   LG[logistics] -. info .-> SS
@@ -50,13 +45,13 @@ flowchart TD
   MA --> MO[season_plan]
   MA -. optional .-> SPFF[season_phase_feed_forward]
 
-  MO --> ME["Phase-Architect"]
+  MO --> ME["Phase Planning Runtime"]
   SPFF -. optional .-> ME
   ME --> BG[phase_guardrails]
   ME --> BEA[phase_structure]
   ME -. optional .-> BEP[phase_preview]
 
-  BG --> MI["Week-Planner"]
+  BG --> MI["Week Planning Runtime"]
   BEA --> MI
   MI --> WP[week_plan]
   WP --> WB["Local Workout Export"]
@@ -69,7 +64,7 @@ flowchart TD
   DP --> WL[wellness]
   VA["Validation\nvalidate_outputs.py"] -. checks .-> AA
   VA -. checks .-> AT
-  AA --> PA["Performance-Analyst"]
+  AA --> PA["Performance Report Runtime"]
   AT --> PA
   ZM -. info .-> ME
   ZM -. info .-> MI
@@ -84,7 +79,8 @@ flowchart TD
 1. **CrewAI Runtime**
    - CrewAI Agent/Task execution with typed outputs and workspace tools.
    - Outer Season, Phase, Week, Report, Feed-Forward, and Coach turn routing now runs through CrewAI Flow wrappers.
-   - Inner Season and Phase specialist execution now runs as hierarchical multi-agent crews.
+   - Season, Phase, Week, and Report use planning/review/writer staging internally.
+   - Specialist agents are single-method skill carriers; writer agents serialize only final envelopes.
 2. **Local Vector Stores**
    - Local knowledge base (sources in repo; embeddings built locally).
 3. **Prompt Loader**
@@ -132,7 +128,7 @@ flowchart TB
 
 See [doc/architecture/agents.md](agents.md) for the canonical registry of agents, modes, and IO, and [doc/architecture/crewai_flows.md](crewai_flows.md) for flow responsibilities, specialist usage, tool surfaces, and outputs.
 
-### 3.1 Performance-Analyst
+### 3.1 Performance Report Runtime
 - Diagnostic only, advisory output.
 - Consumes factual data + planning context.
 - Produces `des_analysis_report` (advisory).
@@ -148,29 +144,33 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 - Validation helper: `scripts/validate_outputs.py`.
 - Outputs are CSV+JSON under `data/` plus mirrored `latest/` copies.
 
-### 3.2 Season-Scenario-Agent
+### 3.2 Season Scenario Surface
 - Produces `season_scenarios` (informational).
-- Uses Athlete Profile + Planning Events + Logistics + KPI Profile + Availability to propose A/B/C options.
-- No planning decisions; Season-Planner remains binding authority.
+- Produces `season_scenario_selection` as the selected scenario state.
+- Uses Athlete Profile + Planning Events + Logistics + KPI Profile + Availability to propose scenario options.
+- No binding planning decisions; season planning runtime remains binding authority.
 
-### 3.3 Season-Planner
+### 3.3 Season Planning Runtime
 - Defines long-term intent (8–32 weeks).
 - Produces `season_plan` and optional `season_phase_feed_forward`.
 - Uses wellness `body_mass_kg` + Availability to anchor kJ corridor math.
 - Is the first binding planning authority after advisory season scenarios.
 - Owns final cadence selection, macrocycle structure, and season-level feed-forward decisions.
+- Uses planning crew -> review crew -> writer crew internally.
 - **Important:** Season phases define ISO week ranges, but MUST NOT define phase-artefact outputs.
 
-### 3.4 Phase-Architect
+### 3.4 Phase Planning Runtime
 - Converts season phase intent into phase guardrails and phase structure.
 - Applies the season-selected cadence within the exact phase range and must not invent a new default cadence.
 - Owns phase-level deltas via `phase_feed_forward`.
+- Uses planning crew -> review crew -> writer crew internally.
 - **Phase ranges are derived from season phases**, not calendar alignment.
 
-### 3.5 Week-Planner
+### 3.5 Week Planning Runtime
 - Produces weekly execution plan (`week_plan`).
 - Must comply with governance + phase structure.
 - Must not introduce progression or deload logic of its own.
+- Uses planning crew -> review crew -> writer crew internally.
 
 ### 3.6 Workout Export
 - Deterministic conversion into Intervals.icu JSON (raw export payload).
@@ -264,21 +264,21 @@ These are runtime access expectations per agent/mode. Static references should
 come from configured CrewAI knowledge sources first; athlete artefacts come from
 workspace tools.
 
-Season-Planner
+Season Planning Runtime
 - Mode A: Athlete profile + planning events + logistics via `workspace_get_input`, KPI via `workspace_get_latest(KPI_PROFILE)`.
 - Mode B: Athlete profile + planning events + logistics, KPI, existing season plan via `workspace_get_latest(SEASON_PLAN)`.
 - Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)` plus planning events/logistics (optional context).
 
-Phase-Architect
+Phase Planning Runtime
 - Mode A (new phase): `workspace_get_phase_context(year, week)` and optional `offset_phases=1`; optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_TREND`, planning events/logistics.
 - Mode B (update): `workspace_get_phase_context`, optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, planning events/logistics.
 - Mode C (no-change): `workspace_get_phase_context`, optional planning events/logistics.
 
-Week-Planner
+Week Planning Runtime
 - Mode A/B: `workspace_get_phase_context`, optional planning events/logistics.
 - Mode C: `workspace_get_phase_context`, optional `PHASE_FEED_FORWARD`, planning events/logistics.
 
-Performance-Analyst
+Performance Report Runtime
 - Required: `ACTIVITIES_ACTUAL`, `ACTIVITIES_TREND`, `KPI_PROFILE` via `workspace_get_latest`.
 - Optional: `SEASON_PLAN`, `workspace_get_phase_context`, planning events/logistics.
 
@@ -310,16 +310,29 @@ File search is forced by default; use `--no-file-search` if you need to disable 
 The runtime now separates methodology, factual knowledge, memory, and output enforcement.
 
 Configuration:
-- Skills and shared methodology: `config/crewai/skills.yaml`
+- Skills and skill attachment policy: `config/crewai/skills.yaml`
 - Static factual knowledge: `config/crewai/knowledge_sources.yaml`
 - Memory policy: `config/crewai/memory_policy.yaml`
 - Task output and guardrails: `config/crewai/task_policies.yaml`
+- Crew planning / agent reasoning / model routing: `config/crewai/runtime_profiles.yaml`
 
 Model:
 - Repo-local Skills carry procedures, guidance, and reusable planning methodology.
 - CrewAI `knowledge_sources` carry factual/reference corpora that benefit from retrieval.
 - Prompt files are reduced to role/scope/runtime-local framing.
 - Contracts and schemas remain explicit authoritative files outside the skill system.
+
+Current attachment model:
+- one method skill per agent
+- crew-level skills only for operational cross-cutting guidance
+- `SKILL.md` is the primary operational method
+- `references/` are supplementary and not required for automatic prompt injection
+
+Current planning runtime:
+- Season, Phase, Week, and Report use planning/review/writer stages
+- review stages decide approve, reject, or bounded replan
+- writer stages serialize only approved outputs
+- validated workspace persistence remains code-owned after writer output normalization
 
 #### 4.1.4 Operational Limits
 

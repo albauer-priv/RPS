@@ -1,17 +1,10 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-12
+Last-Updated: 2026-05-14
 Owner: Overview
 ---
 # Artefact Flow
-
-Version: 2.2  
-Status: Updated  
-Last-Updated: 2026-05-12  
-Format: GitHub-renderable Markdown + Mermaid
-
----
 
 ## 1. Flow Overview (End-to-End)
 
@@ -19,12 +12,12 @@ Format: GitHub-renderable Markdown + Mermaid
 flowchart TD
   %% Actors / Components
   U[User]:::actor
-  SS["Season-Scenario-Agent"]:::agent
-  MA["Season-Planner"]:::agent
-  ME["Phase-Architect"]:::agent
-  MI["Week-Planner"]:::agent
+  SS["Season Scenario Surface"]:::agent
+  MA["Season Planning Runtime"]:::agent
+  ME["Phase Planning Runtime"]:::agent
+  MI["Week Planning Runtime"]:::agent
   WB["Local Workout Export"]:::component
-  PA["Performance-Analyst"]:::agent
+  PA["Performance Report Runtime"]:::agent
   I["Intervals.icu"]:::external
   EXP["intervals_data.py"]:::script
   VAL["validate_outputs.py"]:::script
@@ -38,6 +31,7 @@ flowchart TD
   LG["logistics_*.json"]:::artefact
   AV["availability_yyyy-ww.json"]:::artefact
   SC["season_scenarios_yyyy-ww--yyyy-ww.json"]:::artefact
+  SEL["season_scenario_selection_yyyy-ww.json"]:::artefact
   MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact
   SPFF["season_phase_feed_forward_yyyy-ww.json"]:::artefact
   BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact
@@ -58,7 +52,7 @@ flowchart TD
   U --> AV
   AV --> SS
   U --> KP --> SS
-  SS --> SC --> MA
+  SS --> SC --> SEL --> MA
   KP --> MA
   KP --> PA
   U --> PE --> MA
@@ -126,7 +120,7 @@ flowchart TD
 
 ## 2. Detail Flows
 
-### 2.1 Season-Scenario Detail Flow
+### 2.1 Season Scenario Detail Flow
 
 **Inputs (Artefacts)**
 - `athlete_profile_*.json` (user-authored profile + goals)
@@ -137,27 +131,29 @@ flowchart TD
 
 **Processing (Conceptual)**
 - Extract season goals, constraints, and event priorities.
-- Propose three scenario options (A/B/C) with clear trade-offs.
-- Store scenarios for Season-Planner consumption (advisory only).
+- Propose scenario options with clear trade-offs.
+- Store scenarios and selected scenario for season-planning consumption.
 
 **Outputs (Artefacts)**
 - `season_scenarios_yyyy-ww--yyyy-ww.json` (informational)
+- `season_scenario_selection_yyyy-ww.json` (binding selection state for downstream season planning)
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> SS["Season-Scenario-Agent"]:::agent
+  U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> SS["Season Scenario Surface"]:::agent
   U --> AV["availability_*.json"]:::artefact --> SS
   U --> KP["kpi_profile_des_*.json"]:::artefact --> SS
   U --> PE["planning_events_*.json"]:::artefact --> SS
   U --> LG["logistics_*.json"]:::artefact --> SS
   SS --> SC["season_scenarios_yyyy-ww--yyyy-ww.json"]:::artefact
+  SS --> SEL["season_scenario_selection_yyyy-ww.json"]:::artefact
   classDef actor fill:#f6f6f6,stroke:#333,stroke-width:1px;
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
   classDef script fill:#f3f0ff,stroke:#5b4db8,stroke-width:1px,stroke-dasharray: 2 2;
 ```
 
-### 2.2 Season-Planner Detail Flow
+### 2.2 Season Planning Detail Flow
 
 **Inputs (Artefacts)**
 - `athlete_profile_*.json` (user-authored profile + goals)
@@ -166,23 +162,23 @@ flowchart LR
 - `planning_events_*.json` (A/B/C events)
 - `logistics_*.json` (contextual)
 - `season_scenarios_yyyy-ww--yyyy-ww.json` (advisory, if available)
+- `season_scenario_selection_yyyy-ww.json` (selected scenario intent)
 - `des_analysis_report_yyyy-ww.json` (advisory)
 - `activities_actual_yyyy-ww.json` / `activities_trend_yyyy-ww.json` (informational, if available)
 - `wellness_yyyy-ww.json` (informational; body_mass_kg used for kJ/kg/h corridor math)
 
 **Processing (Conceptual)**
 - Determine season intent, priorities, and constraints (8-32 weeks horizon).
-- Define phase structure and load corridors (availability weekly hours + wellness body_mass_kg).
-- Emit optional feed-forward if the next phase needs explicit guidance.
-- Season flow (agent tasks / UI):
-  1) **Season-Scenario-Agent** → `CREATE_SEASON_SCENARIOS` (stores `season_scenarios_yyyy-ww--yyyy-ww.json`)
-  2) **Season-Scenario-Agent** → `CREATE_SEASON_SCENARIO_SELECTION` (stores `season_scenario_selection_yyyy-ww.json`)
-  3) **Season-Planner** → `CREATE_SEASON_PLAN` (writes `season_plan_yyyy-ww--yyyy-ww.json`)
+- Define phase structure and load corridors.
+- Run the internal planning/review/writer chain:
+  1) Season planning crew drafts an internal season bundle
+  2) Season review crew approves, rejects, or requests bounded replan
+  3) Season writer crew serializes the final `SEASON_PLAN`
 
 **Outputs (Artefacts)**
 - `season_plan_yyyy-ww--yyyy-ww.json` (binding)
 - `season_phase_feed_forward_yyyy-ww.json` (optional)
-- `season_phase_feed_forward_yyyy-ww.json` is authored by **Season-Planner**; `des_analysis_report` is advisory input only.
+- `season_phase_feed_forward_yyyy-ww.json` is authored by the season planning runtime; `des_analysis_report` is advisory input only.
 
 **Version-Key Semantics**
 - `season_phase_feed_forward_yyyy-ww.json` is selected-week scoped.
@@ -191,20 +187,18 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> MA["Season-Planner"]:::agent
+  U[User]:::actor --> AP["athlete_profile_*.json"]:::artefact --> MA["Season Planning Runtime"]:::agent
   U --> AV["availability_*.json"]:::artefact --> MA
   U --> KP["kpi_profile_des_*.json"]:::artefact --> MA
   U --> PE["planning_events_*.json"]:::artefact --> MA
   U --> LG["logistics_*.json"]:::artefact --> MA
   SC["season_scenarios_yyyy-ww--yyyy-ww.json"]:::artefact -. advisory .-> MA
+  SEL["season_scenario_selection_yyyy-ww.json"]:::artefact --> MA
   DR["des_analysis_report_yyyy-ww.json"]:::artefact -. advisory .-> MA
   AA["activities_actual_yyyy-ww.json"]:::artefact -. info .-> MA
   AT["activities_trend_yyyy-ww.json"]:::artefact -. info .-> MA
   AV["availability_yyyy-ww.json"]:::artefact -. info .-> MA
   WL["wellness_yyyy-ww.json"]:::artefact -. info .-> MA
-
-  SS["Season-Scenario-Agent"]:::agent --> SC
-  SS --> SEL["season_scenario_selection_yyyy-ww.json"]:::artefact --> MA
 
   MA --> MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact
   MA -. optional .-> SPFF["season_phase_feed_forward_yyyy-ww.json"]:::artefact
@@ -217,7 +211,7 @@ flowchart LR
 
 ---
 
-### 2.3 Phase-Architect Detail Flow
+### 2.3 Phase Planning Detail Flow
 
 **Inputs (Artefacts)**
 - `season_plan_yyyy-ww--yyyy-ww.json` (binding)
@@ -234,10 +228,10 @@ flowchart LR
 - `wellness_yyyy-ww.json` (informational)
 
 **Processing (Conceptual)**
-- Convert season phase intent into a phase (governance + phase structure).
-- Phase range is derived from season phase boundaries (not calendar-aligned).
-- Optional preview or feed-forward on explicit request.
-- Consumes the latest `ZONE_MODEL` (Data-Pipeline) when IF defaults are needed.
+- Convert season phase intent into one exact-range phase bundle.
+- Phase range is derived from season phase boundaries.
+- Run the internal planning/review/writer chain before persistence.
+- Consumes the latest `ZONE_MODEL` when IF defaults are needed.
 
 **Outputs (Artefacts)**
 - `phase_guardrails_yyyy-ww--yyyy-ww.json` (binding)
@@ -247,7 +241,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact --> ME["Phase-Architect"]:::agent
+  MO["season_plan_yyyy-ww--yyyy-ww.json"]:::artefact --> ME["Phase Planning Runtime"]:::agent
   SPFF["season_phase_feed_forward_yyyy-ww.json"]:::artefact -. optional .-> ME
   PE["planning_events_*.json"]:::artefact -. info .-> ME
   LG["logistics_*.json"]:::artefact -. info .-> ME
@@ -268,7 +262,7 @@ flowchart LR
 
 ---
 
-### 2.4 Week-Planner Detail Flow
+### 2.4 Week Planning Detail Flow
 
 **Inputs (Artefacts)**
 - `phase_guardrails_yyyy-ww--yyyy-ww.json`
@@ -283,14 +277,15 @@ flowchart LR
 
 **Processing (Conceptual)**
 - Create a weekly agenda aligned to governance and phase structure.
-- Define sessions and constraints; avoid violating phase rules.
+- Build workout-ready week intent.
+- Run the internal planning/review/writer chain before persistence.
 
 **Outputs (Artefacts)**
 - `week_plan_yyyy-ww.json`
 
 ```mermaid
 flowchart LR
-  BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact --> MI["Week-Planner"]:::agent
+  BG["phase_guardrails_yyyy-ww--yyyy-ww.json"]:::artefact --> MI["Week Planning Runtime"]:::agent
   BEA["phase_structure_yyyy-ww--yyyy-ww.json"]:::artefact --> MI
   BFF["phase_feed_forward_yyyy-ww.json"]:::artefact -. optional .-> MI
   ZM["zone_model_power_<FTP>W.json"]:::artefact -. info .-> MI
@@ -433,7 +428,7 @@ flowchart LR
 
 ---
 
-### 2.8 Performance-Analyst Detail Flow
+### 2.8 Performance Report Detail Flow
 
 **Inputs (Artefacts)**
 - `activities_actual_yyyy-ww.json`
@@ -451,11 +446,11 @@ flowchart LR
 
 **Outputs (Artefacts)**
 - `des_analysis_report_yyyy-ww.json`
-- No feed-forward artefact is authored here; feed-forward flows consume this report and then route to Season-Planner or Phase-Architect.
+- No feed-forward artefact is authored here; feed-forward flows consume this report and then route to the season or phase planning runtime.
 
 ```mermaid
 flowchart LR
-  AA["activities_actual_yyyy-ww.json"]:::artefact --> PA["Performance-Analyst"]:::agent
+  AA["activities_actual_yyyy-ww.json"]:::artefact --> PA["Performance Report Runtime"]:::agent
   AT["activities_trend_yyyy-ww.json"]:::artefact --> PA
   KP["kpi_profile_des_*.json"]:::artefact --> PA
   BEA["phase_structure_yyyy-ww--yyyy-ww.json"]:::artefact --> PA
@@ -508,22 +503,23 @@ flowchart LR
 - `availability_yyyy-ww.json`
 - `kpi_profile_des_*.json`
 
-### 3.2 Season-Scenario-Agent
+### 3.2 Season Scenario Surface
 
 See [doc/architecture/agents.md](../architecture/agents.md) for the canonical agent registry.
 - `season_scenarios_yyyy-ww--yyyy-ww.json`
+- `season_scenario_selection_yyyy-ww.json`
 
-### 3.3 Season-Planner
+### 3.3 Season Planning Runtime
 - `season_plan_yyyy-ww--yyyy-ww.json`
 - `season_phase_feed_forward_yyyy-ww.json` (optional)
 
-### 3.4 Phase-Architect
+### 3.4 Phase Planning Runtime
 - `phase_guardrails_yyyy-ww--yyyy-ww.json`
 - `phase_structure_yyyy-ww--yyyy-ww.json`
 - `phase_preview_yyyy-ww--yyyy-ww.json` (optional)
 - `phase_feed_forward_yyyy-ww.json` (optional)
 
-### 3.5 Week-Planner
+### 3.5 Week Planning Runtime
 - `week_plan_yyyy-ww.json`
 
 ### 3.6 Workout Export / Posting
@@ -537,7 +533,7 @@ See [doc/architecture/agents.md](../architecture/agents.md) for the canonical ag
 - `wellness_yyyy-ww.json`
 - Raw CSVs (implementation detail)
 
-### 3.8 Performance-Analyst
+### 3.8 Performance Report Runtime
 - `des_analysis_report_yyyy-ww.json`
 - Diagnostic only; does not own `season_phase_feed_forward` or `phase_feed_forward`
 
@@ -558,7 +554,7 @@ See [doc/architecture/agents.md](../architecture/agents.md) for the canonical ag
 ---
 
 ## End of Document
-### 2.4 Week-Planner / Workout Export Consistency Rule
+### 4.1 Week Planning / Workout Export Consistency Rule
 
 - `WEEK_PLAN` store is not based on schema validation alone.
 - Before a `WEEK_PLAN` is stored, the guarded store normalizes linked workout metadata from deterministic workout-local data where possible:
