@@ -2,11 +2,53 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from .config import CrewAIConfigBundle
 
 JsonMap = dict[str, Any]
+
+
+def _mirror_openai_env_from_rps() -> None:
+    """Expose RPS OpenAI env vars under the names CrewAI/OpenAI helpers expect."""
+
+    mappings = {
+        "OPENAI_API_KEY": os.getenv("RPS_LLM_API_KEY"),
+        "OPENAI_BASE_URL": os.getenv("RPS_LLM_BASE_URL"),
+        "OPENAI_ORG_ID": os.getenv("RPS_LLM_ORG_ID"),
+        "OPENAI_PROJECT_ID": os.getenv("RPS_LLM_PROJECT_ID"),
+    }
+    for key, value in mappings.items():
+        if value and not os.getenv(key):
+            os.environ[key] = value
+
+
+def _normalize_embedder_config(embedder: JsonMap) -> JsonMap:
+    """Inject missing provider credentials into the CrewAI memory embedder config."""
+
+    normalized = dict(embedder or {})
+    provider = str(normalized.get("provider") or "").strip().lower()
+    raw_config = normalized.get("config")
+    config = dict(raw_config) if isinstance(raw_config, dict) else {}
+
+    if provider == "openai":
+        api_key = os.getenv("OPENAI_API_KEY") or os.getenv("RPS_LLM_API_KEY")
+        if api_key and not config.get("api_key"):
+            config["api_key"] = api_key
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("RPS_LLM_BASE_URL")
+        if base_url:
+            config.setdefault("base_url", base_url)
+            config.setdefault("api_base", base_url)
+        org_id = os.getenv("OPENAI_ORG_ID") or os.getenv("RPS_LLM_ORG_ID")
+        if org_id and not config.get("organization"):
+            config["organization"] = org_id
+        project_id = os.getenv("OPENAI_PROJECT_ID") or os.getenv("RPS_LLM_PROJECT_ID")
+        if project_id and not config.get("project"):
+            config["project"] = project_id
+
+    normalized["config"] = config
+    return normalized
 
 
 def _render_template(template: str, **values: str) -> str:
@@ -67,11 +109,12 @@ def build_memory_instance(crewai_module: Any, *, storage: str | None, embedder: 
     Memory = getattr(crewai_module, "Memory", None)
     if Memory is None:
         return None
+    _mirror_openai_env_from_rps()
     kwargs: JsonMap = {}
     if storage:
         kwargs["storage"] = storage
     if embedder:
-        kwargs["embedder"] = embedder
+        kwargs["embedder"] = _normalize_embedder_config(embedder)
     if llm:
         kwargs["llm"] = llm
     return Memory(**kwargs)

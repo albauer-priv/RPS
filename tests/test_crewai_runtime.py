@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import types
 from pathlib import Path
@@ -35,7 +36,11 @@ from rps.crewai_runtime.knowledge import (
     resolve_agent_knowledge_profile,
     resolve_crew_knowledge_profile,
 )
-from rps.crewai_runtime.memory import resolve_agent_memory_profile, resolve_crew_memory_profile
+from rps.crewai_runtime.memory import (
+    build_memory_instance,
+    resolve_agent_memory_profile,
+    resolve_crew_memory_profile,
+)
 from rps.crewai_runtime.models import (
     AdjustmentIntentModel,
     ArtifactEnvelopeModel,
@@ -300,6 +305,35 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     kwargs = build_task_guardrail_kwargs(tasks["week_plan"], bundle.task_policies)
     assert kwargs["guardrail_max_retries"] == 2
     assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
+
+
+def test_build_memory_instance_injects_rps_openai_credentials(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeMemory:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    crewai_module = SimpleNamespace(Memory=FakeMemory)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-rps-key")
+    monkeypatch.setenv("RPS_LLM_BASE_URL", "https://example.invalid/v1")
+
+    memory = build_memory_instance(
+        crewai_module,
+        storage="runtime/athletes/i150546/memory/test",
+        embedder={"provider": "openai", "config": {"model_name": "text-embedding-3-small"}},
+        llm=None,
+    )
+
+    assert memory is not None
+    embedder = captured["embedder"]
+    assert isinstance(embedder, dict)
+    assert embedder["config"]["api_key"] == "test-rps-key"
+    assert embedder["config"]["base_url"] == "https://example.invalid/v1"
+    assert embedder["config"]["api_base"] == "https://example.invalid/v1"
+    assert os.environ["OPENAI_API_KEY"] == "test-rps-key"
 
 
 def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
