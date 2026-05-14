@@ -1,14 +1,10 @@
----
-Version: 1.0
-Status: Updated
-Last-Updated: 2026-05-14
-Owner: Planning Specs
----
-# Load Estimation Week
+# Week Load Estimation
 
-## Week responsibilities
+Week planning turns corridor logic into executable day and workout targets.
 
-- Convert phase guardrails into concrete workout and weekly load targets for one ISO week.
-- Keep day roles coherent with recovery constraints, logistics, and current-week actuals.
-- When revising a week, preserve intent and lower risk rather than adding compensatory stress.
-- Workout text and planned kJ must agree with the selected week document.
+Use:
+- active weekly corridor
+- phase intent and week role structure
+- durable distribution across key sessions, endurance, and recovery
+
+The target is a realistic week, not mathematical perfection.

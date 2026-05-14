@@ -28,6 +28,13 @@ Notes: >
   never override governance.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/report/context-analysis/SKILL.md`
+> - `skills/report/analysis-methodology/SKILL.md`
+> - `skills/week/constraint-analysis/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Wellness — Interface Template v1.0
 
 ## Purpose

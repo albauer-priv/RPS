@@ -20,6 +20,15 @@ Notes: >
   artefact headers and lineage consistency and is required for CI validation.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/shared/traceability-and-naming/SKILL.md`
+> - `skills/season/artifact-writing/SKILL.md`
+> - `skills/phase/artifact-writing/SKILL.md`
+> - `skills/week/artifact-writing/SKILL.md`
+> - `skills/report/artifact-writing/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Traceability Specification
 
 ## 1. Purpose

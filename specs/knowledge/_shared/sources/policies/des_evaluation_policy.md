@@ -24,6 +24,11 @@ Purpose: >
 
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/report/analysis-methodology/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # DES Evaluation Policy
 
 ---

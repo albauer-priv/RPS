@@ -740,6 +740,7 @@ def _execute_crewai_hierarchical_crew(
         else:
             description = _build_internal_task_description(
                 runtime,
+                agent_name=agent_name,
                 prompt_agent=prompt_agent,
                 bundle=bundle,
                 crew_name=crew_name,
@@ -818,6 +819,7 @@ def _execute_crewai_hierarchical_crew(
 def _build_internal_task_description(
     runtime: AgentRuntime,
     *,
+    agent_name: str,
     prompt_agent: str,
     bundle: Any,
     crew_name: str,
@@ -830,7 +832,7 @@ def _build_internal_task_description(
     prompt = runtime.prompt_loader.combined_system_prompt(prompt_agent)
     skill_block = render_skill_prompt_block(
         root=ROOT,
-        profile=resolve_agent_skill_profile(bundle, agent_name=prompt_agent, crew_name=crew_name),
+        profile=resolve_agent_skill_profile(bundle, agent_name=agent_name, crew_name=crew_name),
     )
     parts = [
         "System and agent instructions:",
@@ -1061,6 +1063,7 @@ def _run_single_internal_document(
     ]
     description = _build_internal_task_description(
         runtime,
+        agent_name=task_blueprint.agent,
         prompt_agent=_resolve_prompt_agent_name(task_blueprint.agent, agent_blueprint),
         bundle=bundle,
         crew_name=crew_name,

@@ -31,6 +31,14 @@ Notes: >
   It intentionally excludes nutrition/fueling/recovery semantics.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/shared/load-estimation-core/SKILL.md`
+> - `skills/season/load-governance/SKILL.md`
+> - `skills/phase/guardrails-authoring/SKILL.md`
+> - `skills/week/load-estimation-week/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # LoadEstimationSpec (Planning Corridors Only)
 
 This specification defines the **single source of truth** for estimating training load metrics used to:

@@ -1,10 +1,10 @@
 # Load Estimation Trace Flags
 
-Every planning layer should be able to explain:
-- which IF reference source was used
-- whether segment parsing or fallback estimation was used
-- whether uncertainty or fallback assumptions were active
+When available, emit and preserve:
+- zone-model identifiers and schema version
+- resolved `IF_ref_load`
+- `IF_ref_load_source`
+- `used_fallback_IF_direct`
+- `segment_parse_status`
 
-Trace expectations:
-- confidence claims must reflect input quality
-- fallback use should be visible to reviewers and auditors
+These values explain why a corridor or workout estimate looks the way it does.

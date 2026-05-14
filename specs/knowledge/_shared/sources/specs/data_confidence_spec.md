@@ -19,6 +19,12 @@ Notes: >
   interpretation and decision-making.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/shared/traceability-and-naming/SKILL.md`
+> - `skills/report/context-analysis/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Data Confidence Specification
 
 ## Schema Reference (Normative)

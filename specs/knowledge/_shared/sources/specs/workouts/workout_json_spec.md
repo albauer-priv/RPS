@@ -21,6 +21,13 @@ Notes: >
   It MUST NOT introduce, modify, interpret, or decide any training content.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/week/workout-text-authoring/SKILL.md`
+> - `skills/week/workout-syntax-review/SKILL.md`
+> - `skills/week/artifact-writing/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 
 
 # ⚙️ Workout Guideline - Workout Export (JSON / intervals.icu)
@@ -145,7 +152,8 @@ The Workout Export:
 3. Leaves repetition lines like `3x`, `5x`, `8x` unchanged.
 4. Does not remove any content lines as long as they conform to syntax.
 
-The result is a text block with line breaks (`\n`) that is used directly as `description`.
+The result is a text block with line breaks (`
+`) that is used directly as `description`.
 
 ---
 
@@ -207,12 +215,14 @@ For `description`:
   - Digits: `0-9`
   - Special characters: `% - + : .`
   - Unit markers: `m`, `s`, `h`
-  - Spaces and `\n` (line break)
+  - Spaces and `
+` (line break)
 
 - Not allowed:
   - Backslashes `\` (except JSON escape sequences)
   - Tabs
-  - Control characters (except linefeed `\n`)
+  - Control characters (except linefeed `
+`)
 - Meta lines such as `# Title:`, `# Notes:`, `# Date:`, `# Start:`, `# Duration:`
 
 ### 5.1 Layout Rules

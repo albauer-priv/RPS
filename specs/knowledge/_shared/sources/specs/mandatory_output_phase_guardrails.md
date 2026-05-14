@@ -1,3 +1,9 @@
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/phase/artifact-writing/SKILL.md`
+> - `skills/phase/guardrails-authoring/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Mandatory Output Chapter
 
 Purpose

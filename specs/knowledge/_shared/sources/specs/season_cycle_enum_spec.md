@@ -17,6 +17,12 @@ Notes: >
   These are labels only and must match exactly.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/phase/structure-authoring/SKILL.md`
+> - `skills/season/macrocycle-architecture/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # SEASON CYCLE ENUM SPECIFICATION
 
 ## Schema Reference (Normative)

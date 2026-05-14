@@ -1,12 +1,19 @@
 # Per-Workout Load Math
 
-Binding math concepts:
-- derive representative session intensity from parsed segments
-- clamp raw segment intensities before power weighting
-- compute raw mechanical kJ from FTP, representative intensity, and duration
-- normalize governance load through athlete-aware IF reference and alpha exponent
-- round only at output boundaries
+## Segment handling
+- parse `t_i_sec` and target factor `r_i`
+- percent targets become `pct/100`
+- ranges use their midpoint
+- domain-only targets use deterministic default IF values
 
-Fallback rules:
-- if no parseable segments exist, use IF-direct fallback by canonical domain default
-- zero-duration sessions produce zero outputs
+## Core formulas
+- `r_mean = sum(t_i * r_i) / sum(t_i)`
+- `r_eq = (sum(t_i * r_i^4) / sum(t_i))^(1/4)`
+- `planned_if_raw = clamp(r_eq, 0.0, 1.3)`
+- `planned_kj_raw = ftp_watts * r_mean * T_sec / 1000`
+- `planned_load_kj_raw = planned_kj_raw * (planned_if_raw / IF_ref_load)^1.3`
+
+## Edge cases
+- zero duration -> zero outputs
+- invalid negative durations -> hard invalid
+- use IF-direct fallback only when segment structure is unavailable

@@ -26,6 +26,16 @@ Notes: >
   decision logic resides in KPI profiles and governance artefacts.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/shared/durability-methodology/SKILL.md`
+> - `skills/season/event-priority-anchoring/SKILL.md`
+> - `skills/season/macrocycle-architecture/SKILL.md`
+> - `skills/season/audit/SKILL.md`
+> - `skills/week/recommendation-and-adjustment/SKILL.md`
+> - `skills/week/revision-methodology/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 
 
 

@@ -1,8 +1,40 @@
 ---
 name: artifact-writing
-description: Serialize phase outputs into persistence-safe artefact envelopes.
+description: Serialize approved phase artifacts without adding planning content.
 metadata:
   author: rps
-  version: "1.0"
+  version: "3.0"
 ---
-Return only canonical phase artefact envelopes with complete meta and data objects.
+Write approved phase artefacts only: `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`.
+
+Method:
+1. Emit exactly one `{meta,data}` envelope per artefact.
+2. Preserve approved phase content faithfully. No new planning decisions during writing.
+3. Use exact constants and range semantics expected by each schema.
+4. Validate each artefact against its own schema before any store call.
+
+`PHASE_GUARDRAILS` rules:
+- `iso_week` is the first week of `iso_week_range`.
+- `temporal_scope` must be copied from upstream, not computed.
+- propagate season global constraints exactly where required.
+- `weekly_kj_bands` must be the final approved S5 output band, not a widened or re-expanded corridor.
+- `explicit_forbidden_content` must contain exactly the required six strings.
+- all required self-check booleans must be present and true.
+
+`PHASE_STRUCTURE` rules:
+- `load_ranges.weekly_kj_bands` must copy phase-guardrails bands exactly.
+- `load_ranges.source` must be the actual stored phase-guardrails filename.
+- week-role coverage must match the full phase range.
+- no workouts, interval structures, zones, %FTP, or day-by-day kJ targets.
+
+`PHASE_PREVIEW` rules:
+- derive from stored `PHASE_STRUCTURE` for the exact range.
+- `traceability` may contain only `derived_from` and `conflict_resolution`.
+- `derived_from` must include the stored phase-structure filename.
+- preview remains semantic and structural, not workout-detailed.
+
+Hard rules:
+- stop on any schema error
+- stop if a required upstream stored filename cannot be resolved
+- stop if verbatim propagated season constraints are missing where mandated
+- do not add narrative that contradicts the emitted numeric or semantic content

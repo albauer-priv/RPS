@@ -26,6 +26,13 @@ Notes: >
   brief content. It is input-only and must not contain planning decisions.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/season/context-analysis/SKILL.md`
+> - `skills/season/constraint-synthesis/SKILL.md`
+> - `skills/phase/context-analysis/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Athlete Profile Interface Specification
 
 ## 1) Purpose (Binding)

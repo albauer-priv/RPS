@@ -10,6 +10,13 @@ import yaml
 
 JsonMap = dict[str, Any]
 
+OPERATIONAL_CREW_SKILLS: tuple[str, ...] = (
+    "skills/shared/runtime-boundaries",
+    "skills/shared/resolved-context-consumption",
+    "skills/shared/traceability-and-naming",
+    "skills/shared/replan-instruction-authoring",
+)
+
 
 @dataclass(frozen=True)
 class CrewAIConfigBundle:
@@ -50,12 +57,16 @@ def load_crewai_config_bundle(
 
     agent_defs = agents.get("agents")
     task_defs = tasks.get("tasks")
+    skill_agent_defs = skills.get("agents") or {}
+    skill_crew_defs = skills.get("crews") or {}
     if not isinstance(agent_defs, dict):
         raise ValueError("config/crewai/agents.yaml must contain an 'agents' mapping.")
     if not isinstance(task_defs, dict):
         raise ValueError("config/crewai/tasks.yaml must contain a 'tasks' mapping.")
-    if not isinstance(skills.get("agents") or {}, dict):
+    if not isinstance(skill_agent_defs, dict):
         raise ValueError("config/crewai/skills.yaml must contain an 'agents' mapping.")
+    if not isinstance(skill_crew_defs, dict):
+        raise ValueError("config/crewai/skills.yaml must contain a 'crews' mapping.")
     if not isinstance(knowledge_sources.get("agents") or {}, dict):
         raise ValueError("config/crewai/knowledge_sources.yaml must contain an 'agents' mapping.")
     if not isinstance(memory_policy.get("crews") or {}, dict):
@@ -90,17 +101,19 @@ def load_crewai_config_bundle(
     if unknown_knowledge_agents:
         unique = ", ".join(unknown_knowledge_agents)
         raise ValueError(f"Unknown agent references in knowledge_sources.yaml: {unique}")
-    unknown_skill_agents = sorted(set((skills.get("agents") or {}).keys()) - set(agent_defs.keys()))
+
+    unknown_skill_agents = sorted(set(skill_agent_defs.keys()) - set(agent_defs.keys()))
     if unknown_skill_agents:
         unique = ", ".join(unknown_skill_agents)
         raise ValueError(f"Unknown agent references in skills.yaml: {unique}")
+
     runtime_agent_defs = runtime_profiles.get("agents") or {}
     unknown_runtime_agents = sorted(set(runtime_agent_defs.keys()) - set(agent_defs.keys()))
     if unknown_runtime_agents:
         unique = ", ".join(unknown_runtime_agents)
         raise ValueError(f"Unknown agent references in runtime_profiles.yaml: {unique}")
 
-    known_crews = set((skills.get("crews") or {}).keys()) | set((memory_policy.get("crews") or {}).keys())
+    known_crews = set(skill_crew_defs.keys()) | set((memory_policy.get("crews") or {}).keys())
     runtime_crew_defs = runtime_profiles.get("crews") or {}
     unknown_runtime_crews = sorted(set(runtime_crew_defs.keys()) - known_crews)
     if unknown_runtime_crews:
@@ -147,20 +160,42 @@ def load_crewai_config_bundle(
                 raise ValueError(
                     f"Runtime reasoning.max_attempts for agent '{agent_name}' must be a positive integer."
                 )
-    skill_bundle_defs = skills.get("bundles") or {}
-    configured_skill_paths: list[str] = []
-    for bundle_def in skill_bundle_defs.values():
-        if isinstance(bundle_def, dict):
-            configured_skill_paths.extend(
-                str(item) for item in (bundle_def.get("skills") or []) if isinstance(item, str)
-            )
+
     base_root = root or Path.cwd()
+    configured_skill_paths: set[str] = set()
+    for crew_name, crew_def in skill_crew_defs.items():
+        if not isinstance(crew_def, dict):
+            raise ValueError(f"Crew skill profile for '{crew_name}' must be a mapping.")
+        crew_skills = crew_def.get("skills") or []
+        if not isinstance(crew_skills, list) or not all(isinstance(item, str) for item in crew_skills):
+            raise ValueError(f"Crew skill profile for '{crew_name}' must contain a string list in 'skills'.")
+        invalid = sorted(set(crew_skills) - set(OPERATIONAL_CREW_SKILLS))
+        if invalid:
+            unique = ", ".join(invalid)
+            raise ValueError(f"Crew '{crew_name}' attaches non-operational skills: {unique}")
+        configured_skill_paths.update(crew_skills)
+
+    for agent_name, agent_def in skill_agent_defs.items():
+        if not isinstance(agent_def, dict):
+            raise ValueError(f"Agent skill profile for '{agent_name}' must be a mapping.")
+        skill_value = agent_def.get("skill")
+        if not isinstance(skill_value, str) or not skill_value:
+            raise ValueError(f"Agent '{agent_name}' must declare exactly one non-empty 'skill' string.")
+        extra_skills = agent_def.get("skills")
+        if extra_skills is not None:
+            raise ValueError(f"Agent '{agent_name}' must not declare 'skills'; use exactly one 'skill'.")
+        extra_bundles = agent_def.get("bundles")
+        if extra_bundles is not None:
+            raise ValueError(f"Agent '{agent_name}' must not declare 'bundles'; use exactly one 'skill'.")
+        configured_skill_paths.add(skill_value)
+
+    missing_skill_agents = sorted(set(agent_defs.keys()) - set(skill_agent_defs.keys()))
+    if missing_skill_agents:
+        unique = ", ".join(missing_skill_agents)
+        raise ValueError(f"Missing skill assignments in skills.yaml for agents: {unique}")
+
     missing_skills = sorted(
-        {
-            skill_path
-            for skill_path in configured_skill_paths
-            if not ((base_root / skill_path) / "SKILL.md").exists()
-        }
+        skill_path for skill_path in configured_skill_paths if not ((base_root / skill_path) / "SKILL.md").exists()
     )
     if missing_skills:
         unique = ", ".join(missing_skills)

@@ -20,6 +20,12 @@ Notes: >
   Informational mapping of workout types to KPI signals. Non-decision content.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/phase/intensity-distribution/SKILL.md`
+> - `skills/report/analysis-methodology/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # KPI Signal Effects by Workout Type (Informational)
 
 > **Purpose**  

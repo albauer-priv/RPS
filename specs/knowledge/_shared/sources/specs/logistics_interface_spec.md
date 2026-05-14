@@ -26,6 +26,15 @@ Notes: >
   travel, and planning context. Input‑only.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/season/context-analysis/SKILL.md`
+> - `skills/season/constraint-synthesis/SKILL.md`
+> - `skills/phase/context-analysis/SKILL.md`
+> - `skills/week/constraint-analysis/SKILL.md`
+> - `skills/report/context-analysis/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Logistics Interface Specification
 
 ## 1) Purpose (Binding)

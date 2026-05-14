@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added `config/crewai/runtime_profiles.yaml` plus runtime wiring for explicit CrewAI planning, agent reasoning, and per-role model routing defaults across planning, review, writer, and conversational crews.
+- Added a strict single-method skill attachment model for CrewAI agents, dedicated per-role skill packages for managers/reviewers/week syntax handling, and richer skill reference content derived from the planning specs and policies.
 
 ### Changed
+- Validated the prose-to-skill migration file-by-file, added `doc/architecture/skills_source_migration_audit.md`, and marked the migrated planning prose sources under `specs/knowledge/_shared/sources/` as `Superseded` so they no longer compete as canonical runtime planning sources.
 - CrewAI backend and conversational Coach/Workout Editor builders now apply repo-owned planning/reasoning/model policy directly to `Crew(...)` and `Agent(...)`, while still allowing environment overrides for crew planning and per-agent provider settings.
+- CrewAI skill resolution now enforces one method skill per agent plus operational crew-level skills only, while the runtime skill prompt block remains `SKILL.md`-only and the operative planning logic has been moved out of thin references into the skill bodies themselves.
 
 ## [0.12.0] - 2026-05-14
 

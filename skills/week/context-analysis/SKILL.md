@@ -1,11 +1,16 @@
 ---
 name: context-analysis
-description: Selected-week factual context analysis for planning and conversational surfaces.
+description: Summarize the selected week plan, actuals, and active constraints without proposing changes.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
-Analyze one selected week factually:
-- Summarize plan, actuals, open days, and active constraints.
-- Separate observed facts from recommendations.
-- Prefer snapshot memory and read-only tools before any broader inference.
+Inspect the selected week factually.
+
+Return:
+- current plan shape
+- actual execution signal
+- active corridor and role constraints
+- likely change pressure
+
+Do not recommend or revise here.

@@ -1,8 +1,13 @@
 ---
 name: pending-resolution
-description: Inspect, apply, or discard one existing pending operation without branching the discussion.
+description: Handle inspect/apply/discard for one existing pending preview operation.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
-Handle only the current pending preview/apply lifecycle. Never create a new preview here.
+Resolve one pending preview lifecycle action.
+
+Rules:
+- inspect, apply, or discard only the current pending operation
+- do not branch into broader planning discussion
+- report exact effect and remaining state clearly

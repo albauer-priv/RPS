@@ -255,6 +255,12 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.4-mini"
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.4"
     assert bundle.runtime_profiles["agents"]["week_artifact_writer"]["reasoning"]["enabled"] is False
+    assert bundle.skills["agents"]["week_revision_specialist"]["skill"] == "skills/week/revision-methodology"
+    assert bundle.skills["crews"]["coach_conversation"]["skills"] == [
+        "skills/shared/runtime-boundaries",
+        "skills/shared/resolved-context-consumption",
+        "skills/shared/traceability-and-naming",
+    ]
     assert task_defs["classify_turn"]["agent"] == "conversation_manager"
     assert task_defs["create_week_preview"]["agent"] == "week_revision_specialist"
     assert task_defs["week_plan"]["agent"] == "week_artifact_writer"
@@ -272,7 +278,8 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert agents["season_plan_auditor"].config["prompt_agent"] == "season_plan_auditor"
     assert agents["phase_guardrail_band_specialist"].config["prompt_agent"] == "guardrails_specialist"
     assert agents["week_recommendation_specialist"].knowledge_profile["sources"]
-    assert agents["week_recommendation_specialist"].skill_profile["paths"]
+    assert agents["week_recommendation_specialist"].skill_profile["agent_skill"] == "skills/week/recommendation-and-adjustment"
+    assert agents["week_recommendation_specialist"].skill_profile["paths"] == ["skills/week/recommendation-and-adjustment"]
     assert tasks["classify_turn"].output_kind == "turn_mode"
     assert tasks["form_adjustment_intent"].output_kind == "adjustment_intent"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
@@ -325,8 +332,49 @@ def test_skill_prompt_block_renders_configured_skills() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
     profile = resolve_agent_skill_profile(bundle, agent_name="week_revision_specialist", crew_name="coach_conversation")
     skill_block = render_skill_prompt_block(root=Path("."), profile=profile)
+    assert profile["agent_skill"] == "skills/week/revision-methodology"
+    assert profile["crew_skills"] == [
+        "skills/shared/runtime-boundaries",
+        "skills/shared/resolved-context-consumption",
+        "skills/shared/traceability-and-naming",
+    ]
     assert "skills/week/revision-methodology/SKILL.md" in skill_block
     assert "skills/shared/runtime-boundaries/SKILL.md" in skill_block
+
+
+def test_skill_config_validation_rejects_non_operational_crew_skill(tmp_path: Path) -> None:
+    root = tmp_path
+    crewai_dir = root / "config" / "crewai"
+    crewai_dir.mkdir(parents=True)
+    (root / "skills").symlink_to(Path("skills").resolve(), target_is_directory=True)
+    source_dir = Path("config/crewai")
+    for name in [
+        "agents.yaml",
+        "tasks.yaml",
+        "skills.yaml",
+        "knowledge_sources.yaml",
+        "memory_policy.yaml",
+        "task_policies.yaml",
+        "flow_persistence.yaml",
+        "runtime_profiles.yaml",
+    ]:
+        (crewai_dir / name).write_text((source_dir / name).read_text(encoding="utf-8"), encoding="utf-8")
+    skills_path = crewai_dir / "skills.yaml"
+    skills_path.write_text(
+        skills_path.read_text(encoding="utf-8").replace(
+            "skills/shared/runtime-boundaries",
+            "skills/week/revision-methodology",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        load_crewai_config_bundle(root=root)
+    except ValueError as exc:
+        assert "non-operational skills" in str(exc)
+    else:  # pragma: no cover - defensive failure path
+        raise AssertionError("Expected load_crewai_config_bundle() to reject a crew-level method skill.")
 
 
 def test_runtime_profile_validation_rejects_unknown_model(tmp_path: Path) -> None:

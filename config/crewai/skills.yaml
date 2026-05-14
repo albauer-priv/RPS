@@ -1,284 +1,187 @@
-bundles:
-  shared_runtime_bundle:
+crews:
+  coach_conversation:
     skills:
       - skills/shared/runtime-boundaries
       - skills/shared/resolved-context-consumption
-  shared_methodology_bundle:
-    skills:
-      - skills/shared/durability-methodology
-  shared_trace_bundle:
-    skills:
       - skills/shared/traceability-and-naming
-  shared_load_math_bundle:
-    skills:
-      - skills/shared/load-estimation-core
-  shared_replan_bundle:
-    skills:
-      - skills/shared/replan-instruction-authoring
-  week_context_bundle:
-    skills:
-      - skills/week/context-analysis
-  week_constraints_bundle:
-    skills:
-      - skills/week/context-analysis
-  week_load_target_bundle:
-    skills:
-      - skills/week/load-estimation-week
-  week_revision_bundle:
-    skills:
-      - skills/week/recommendation-and-adjustment
-      - skills/week/revision-methodology
-  week_workout_authoring_bundle:
-    skills:
-      - skills/week/workout-text-authoring
-  week_review_bundle:
-    skills:
-      - skills/shared/replan-instruction-authoring
-      - skills/week/workout-text-authoring
-  week_writer_bundle:
-    skills:
-      - skills/week/artifact-writing
-  phase_guardrails_bundle:
-    skills:
-      - skills/phase/context-analysis
-      - skills/phase/guardrails-authoring
-      - skills/phase/load-estimation-phase
-  phase_structure_bundle:
-    skills:
-      - skills/phase/structure-authoring
-  phase_cadence_bundle:
-    skills:
-      - skills/phase/cadence-recovery
-  phase_intensity_bundle:
-    skills:
-      - skills/phase/intensity-distribution
-  phase_event_integration_bundle:
-    skills:
-      - skills/phase/intensity-distribution
-  phase_review_bundle:
-    skills:
-      - skills/phase/constraint-audit
-      - skills/phase/load-governance-audit
-      - skills/shared/replan-instruction-authoring
-  phase_writer_bundle:
-    skills:
-      - skills/phase/artifact-writing
-      - skills/phase/feed-forward
-  season_event_bundle:
-    skills:
-      - skills/season/context-analysis
-      - skills/season/scenario-interpretation
-      - skills/season/event-priority-anchoring
-  season_macrocycle_bundle:
-    skills:
-      - skills/season/macrocycle-architecture
-  season_governance_bundle:
-    skills:
-      - skills/season/load-governance
-      - skills/season/load-estimation-season
-  season_review_bundle:
-    skills:
-      - skills/season/audit
-      - skills/shared/replan-instruction-authoring
-  season_writer_bundle:
-    skills:
-      - skills/season/artifact-writing
-      - skills/season/feed-forward
-  conversation_ops_bundle:
-    skills:
-      - skills/conversation/routing-and-finalization
-      - skills/conversation/pending-resolution
-  report_diagnostics_bundle:
-    skills:
-      - skills/report/analysis-methodology
-  report_writer_bundle:
-    skills:
-      - skills/report/artifact-writing
-
-crews:
-  coach_conversation:
-    bundles:
-      - shared_runtime_bundle
-      - shared_methodology_bundle
-      - shared_trace_bundle
-      - shared_load_math_bundle
-      - conversation_ops_bundle
   workout_editor_conversation:
-    bundles:
-      - shared_runtime_bundle
-      - shared_methodology_bundle
-      - shared_trace_bundle
-      - shared_load_math_bundle
-      - conversation_ops_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/resolved-context-consumption
+      - skills/shared/traceability-and-naming
   season_planning:
-    bundles:
-      - shared_runtime_bundle
-      - shared_methodology_bundle
-      - shared_trace_bundle
-      - shared_load_math_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/resolved-context-consumption
+      - skills/shared/traceability-and-naming
   season_review:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
-      - shared_replan_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
+      - skills/shared/replan-instruction-authoring
   season_writer:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
   phase_planning:
-    bundles:
-      - shared_runtime_bundle
-      - shared_methodology_bundle
-      - shared_trace_bundle
-      - shared_load_math_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/resolved-context-consumption
+      - skills/shared/traceability-and-naming
   phase_review:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
-      - shared_replan_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
+      - skills/shared/replan-instruction-authoring
   phase_writer:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
   week_planning:
-    bundles:
-      - shared_runtime_bundle
-      - shared_methodology_bundle
-      - shared_trace_bundle
-      - shared_load_math_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/resolved-context-consumption
+      - skills/shared/traceability-and-naming
   week_review:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
-      - shared_replan_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
+      - skills/shared/replan-instruction-authoring
   week_writer:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
   report_planning:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
-      - shared_methodology_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/resolved-context-consumption
+      - skills/shared/traceability-and-naming
   report_review:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
-      - shared_replan_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
+      - skills/shared/replan-instruction-authoring
   report_writer:
-    bundles:
-      - shared_runtime_bundle
-      - shared_trace_bundle
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
 
 agents:
+  coach:
+    skill: skills/conversation/guarded-operations
   conversation_manager:
-    bundles: [conversation_ops_bundle]
-  week_context_specialist:
-    bundles: [week_context_bundle]
-  week_constraint_specialist:
-    bundles: [week_constraints_bundle]
-  week_recommendation_specialist:
-    bundles: [week_revision_bundle, shared_methodology_bundle, shared_load_math_bundle]
-  week_load_target_specialist:
-    bundles: [week_load_target_bundle, shared_load_math_bundle]
-  week_revision_specialist:
-    bundles: [week_revision_bundle, week_load_target_bundle]
-  week_workout_authoring_specialist:
-    bundles: [week_workout_authoring_bundle]
-  week_consistency_auditor:
-    bundles: [week_review_bundle]
-  week_load_governance_reviewer:
-    bundles: [week_review_bundle, shared_load_math_bundle]
-  week_workout_syntax_reviewer:
-    bundles: [week_review_bundle, week_workout_authoring_bundle]
-  week_plan_manager:
-    bundles: [week_context_bundle, week_constraints_bundle, week_load_target_bundle, week_revision_bundle, week_workout_authoring_bundle]
-  week_review_manager:
-    bundles: [week_review_bundle]
+    skill: skills/conversation/routing-and-finalization
   pending_resolution_specialist:
-    bundles: [conversation_ops_bundle]
+    skill: skills/conversation/pending-resolution
+
+  week_context_specialist:
+    skill: skills/week/context-analysis
+  week_constraint_specialist:
+    skill: skills/week/constraint-analysis
+  week_recommendation_specialist:
+    skill: skills/week/recommendation-and-adjustment
+  week_load_target_specialist:
+    skill: skills/week/load-estimation-week
+  week_revision_specialist:
+    skill: skills/week/revision-methodology
+  week_workout_authoring_specialist:
+    skill: skills/week/workout-text-authoring
+  week_consistency_auditor:
+    skill: skills/week/consistency-audit
+  week_load_governance_reviewer:
+    skill: skills/week/load-governance-review
+  week_workout_syntax_reviewer:
+    skill: skills/week/workout-syntax-review
+  week_plan_manager:
+    skill: skills/week/plan-synthesis
+  week_review_manager:
+    skill: skills/week/review-decision
+  week_planner:
+    skill: skills/week/plan-synthesis
+  week_artifact_writer:
+    skill: skills/week/artifact-writing
 
   season_scenario:
-    bundles: [season_event_bundle]
+    skill: skills/season/scenario-generation
   season_planner:
-    bundles: [season_event_bundle]
+    skill: skills/season/context-analysis
   season_context_specialist:
-    bundles: [season_event_bundle]
+    skill: skills/season/context-analysis
   scenario_interpreter:
-    bundles: [season_event_bundle]
+    skill: skills/season/scenario-interpretation
   event_priority_specialist:
-    bundles: [season_event_bundle]
+    skill: skills/season/event-priority-anchoring
   peak_window_specialist:
-    bundles: [season_event_bundle]
+    skill: skills/season/macrocycle-architecture
   macrocycle_architect:
-    bundles: [season_macrocycle_bundle, shared_methodology_bundle]
+    skill: skills/season/macrocycle-architecture
   season_constraint_specialist:
-    bundles: [season_event_bundle]
+    skill: skills/season/constraint-synthesis
   season_historical_context_specialist:
-    bundles: [season_governance_bundle, shared_methodology_bundle]
+    skill: skills/season/historical-context
   season_kpi_guidance_specialist:
-    bundles: [shared_methodology_bundle]
+    skill: skills/season/kpi-guidance
   season_load_corridor_specialist:
-    bundles: [season_governance_bundle, shared_load_math_bundle]
+    skill: skills/season/load-governance
   season_progression_specialist:
-    bundles: [season_governance_bundle, shared_methodology_bundle]
+    skill: skills/season/load-governance
   season_plan_manager:
-    bundles: [season_event_bundle, season_macrocycle_bundle, season_governance_bundle]
+    skill: skills/season/plan-synthesis
   season_plan_auditor:
-    bundles: [season_review_bundle]
+    skill: skills/season/audit
   season_governance_auditor:
-    bundles: [season_review_bundle, season_governance_bundle]
+    skill: skills/season/governance-review
   season_constraints_reviewer:
-    bundles: [season_review_bundle]
+    skill: skills/season/constraint-synthesis
   season_review_manager:
-    bundles: [season_review_bundle]
+    skill: skills/season/review-decision
   season_artifact_writer:
-    bundles: [season_writer_bundle]
+    skill: skills/season/artifact-writing
   season_feed_forward_manager:
-    bundles: [season_writer_bundle]
+    skill: skills/season/feed-forward
 
   phase_architect:
-    bundles: [phase_guardrails_bundle]
+    skill: skills/phase/context-analysis
   phase_context_specialist:
-    bundles: [phase_guardrails_bundle]
+    skill: skills/phase/context-analysis
   phase_guardrail_band_specialist:
-    bundles: [phase_guardrails_bundle, shared_load_math_bundle]
+    skill: skills/phase/guardrails-authoring
   phase_execution_rules_specialist:
-    bundles: [phase_guardrails_bundle]
+    skill: skills/phase/execution-rules
   phase_structure_specialist:
-    bundles: [phase_structure_bundle]
+    skill: skills/phase/structure-authoring
   phase_cadence_recovery_specialist:
-    bundles: [phase_cadence_bundle, shared_methodology_bundle]
+    skill: skills/phase/cadence-recovery
   phase_intensity_distribution_specialist:
-    bundles: [phase_intensity_bundle, shared_methodology_bundle]
+    skill: skills/phase/intensity-distribution
   phase_event_integration_specialist:
-    bundles: [phase_event_integration_bundle]
+    skill: skills/phase/event-integration
   phase_preview_synthesizer:
-    bundles: [phase_structure_bundle]
-  phase_bundle_manager:
-    bundles: [phase_guardrails_bundle, phase_structure_bundle, phase_cadence_bundle, phase_intensity_bundle]
+    skill: skills/phase/preview-synthesis
   phase_constraint_auditor:
-    bundles: [phase_review_bundle]
+    skill: skills/phase/constraint-audit
   phase_governance_auditor:
-    bundles: [phase_review_bundle, shared_load_math_bundle]
+    skill: skills/phase/load-governance-audit
   phase_structure_reviewer:
-    bundles: [phase_review_bundle]
+    skill: skills/phase/structure-review
   phase_preview_reviewer:
-    bundles: [phase_review_bundle]
+    skill: skills/phase/preview-review
+  phase_bundle_manager:
+    skill: skills/phase/bundle-synthesis
   phase_review_manager:
-    bundles: [phase_review_bundle]
-  phase_artifact_writer:
-    bundles: [phase_writer_bundle]
+    skill: skills/phase/review-decision
   phase_feed_forward_manager:
-    bundles: [phase_writer_bundle]
+    skill: skills/phase/feed-forward
+  phase_artifact_writer:
+    skill: skills/phase/artifact-writing
 
   performance_analysis:
-    bundles: [report_diagnostics_bundle]
+    skill: skills/report/analysis-methodology
   performance_context_specialist:
-    bundles: [report_diagnostics_bundle]
+    skill: skills/report/context-analysis
   des_diagnostic_specialist:
-    bundles: [report_diagnostics_bundle, shared_methodology_bundle]
+    skill: skills/report/analysis-methodology
   des_review_manager:
-    bundles: [report_diagnostics_bundle, shared_replan_bundle]
+    skill: skills/report/review-decision
   report_artifact_writer:
-    bundles: [report_writer_bundle]
+    skill: skills/report/artifact-writing

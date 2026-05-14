@@ -17,6 +17,11 @@ Notes: >
   This policy MUST NOT be used by Season or Phase.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/week/load-estimation-week/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Load Distribution Policy (Optional)
 
 ## Purpose

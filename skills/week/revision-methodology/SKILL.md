@@ -1,12 +1,19 @@
 ---
 name: revision-methodology
-description: Convert bounded week revision intent into one coherent candidate week revision.
+description: Convert one bounded week intent into a coherent candidate revision while preserving upstream authority.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
-Create bounded week revisions:
-- Keep the selected week inside phase guardrails.
-- Revise only the scope requested.
-- Preserve recovery protection and role coherence.
-- For preview mode, describe before/after impact cleanly and avoid persistence claims.
+Revise the week conservatively and traceably.
+
+Method:
+1. Preserve phase intent, active corridor, and protected recovery structure.
+2. Change only the minimum needed to satisfy the requested intent.
+3. Keep week logic consistent before workout text details are refined.
+4. Return one bounded candidate, not multiple variants.
+
+Hard rules:
+- no hidden scope expansion
+- no downstream load compression to compensate for missed work
+- do not rewrite unrelated days

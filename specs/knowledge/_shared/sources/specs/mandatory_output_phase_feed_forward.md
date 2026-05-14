@@ -1,3 +1,8 @@
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/phase/feed-forward/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Mandatory Output Chapter
 
 Purpose

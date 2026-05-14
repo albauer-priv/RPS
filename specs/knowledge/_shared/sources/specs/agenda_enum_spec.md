@@ -20,6 +20,14 @@ Notes: >
   this spec defines meanings and combination constraints.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/phase/execution-rules/SKILL.md`
+> - `skills/phase/structure-authoring/SKILL.md`
+> - `skills/week/workout-text-authoring/SKILL.md`
+> - `skills/week/workout-syntax-review/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # AGENDA ENUM SPECIFICATION
 ​
 This document defines the **authoritative agenda semantics**

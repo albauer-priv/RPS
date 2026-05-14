@@ -57,6 +57,7 @@ This folder contains the ADR log for RPS.
 - ADR-046: CrewAI State, Memory, Knowledge, and Guardrail Separation
 - ADR-047: CrewAI Skills as the Unified Methodology Layer
 - ADR-048: Skills-First Multi-Crew Planning Runtime
+- ADR-049: Single-Method Skill Attachment Model
 
 ## Process (Short)
 

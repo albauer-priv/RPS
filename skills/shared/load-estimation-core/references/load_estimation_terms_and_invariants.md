@@ -1,11 +1,12 @@
 # Load Estimation Terms and Invariants
 
-Terminology:
+## Terms
 - `planned_kj`: mechanical work estimate
 - `planned_if`: session intensity factor
-- `planned_weekly_load_kj`: stress-weighted governance metric
+- `planned_load_kj`: governance load metric used for corridors and bands
 
-Invariants:
-- IF is applied exactly once in governance load.
-- `weekly_kj_bands` always refer to governance load, not raw mechanical work.
-- `IF_ref_load` is a normalization anchor, not a second intensity multiplier.
+## Invariants
+- `weekly_kj_bands` refer to governance load, not raw mechanical work
+- `IF_ref_load` is a normalization constant, not a second intensity factor
+- intensity weighting is applied exactly once
+- rounding happens only at output, never in intermediate math

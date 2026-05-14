@@ -21,6 +21,12 @@ Notes: >
   planning decisions and must not be interpreted as a workout prescription.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/week/workout-text-authoring/SKILL.md`
+> - `skills/week/workout-syntax-review/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 
 
 
@@ -114,7 +120,8 @@ Notes: >
 
 <non-space-non-newline-char> ::= (* any char except " " and newline *)
 
-<newline> ::= "\n"  (* or environment-specific newline *)
+<newline> ::= "
+"  (* or environment-specific newline *)
 
 <integer> ::= <digit> { <digit> }
 

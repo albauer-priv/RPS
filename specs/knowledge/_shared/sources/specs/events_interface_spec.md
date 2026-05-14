@@ -30,6 +30,10 @@ Notes: >
   historical reference only.
 ---
 
+> Status: Deprecated legacy planning-events source.
+> Canonical planning-event input now lives in `specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md`.
+> Runtime context skills were validated against the newer planning-events interface, not this legacy file.
+
 # 📅 Events — Interface Template v1.0
 
 ## Purpose

@@ -1,7 +1,8 @@
 # Intervals Export Constraints
 
-Workout text must remain export-safe:
-- preserve canonical section headings
-- keep loops and step syntax parseable by the project subset
-- do not inject meta lines into workout text
-- export transformation must not change training meaning
+Export-safe workout text must:
+- stay inside the project subset
+- avoid unsupported shorthand
+- use time durations only
+- avoid HR, pace, zone, and absolute-watt targets
+- preserve section and loop structure so Intervals.icu parsing remains deterministic

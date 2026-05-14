@@ -34,6 +34,12 @@ Notes: >
   v1.2: structured Warmup/Cooldown rules and QUALITY intent lookup guidance.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/week/workout-text-authoring/SKILL.md`
+> - `skills/week/workout-syntax-review/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # WORKOUT_POLICY
 
 

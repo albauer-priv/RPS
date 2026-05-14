@@ -18,6 +18,14 @@ Notes: >
   derivation in Season/Phase, and weekly execution planning in Week.
 ---
 
+> Status: Superseded as a canonical planning-runtime source.
+> Canonical runtime method logic now lives in:
+> - `skills/season/load-governance/SKILL.md`
+> - `skills/phase/guardrails-authoring/SKILL.md`
+> - `skills/phase/cadence-recovery/SKILL.md`
+> - `skills/week/load-estimation-week/SKILL.md`
+> This file remains as legacy source material and migration evidence.
+
 # Progressive Overload Policy (kJ-based)
 
 ## Phase Cadence, Deload and Re-Entry Rules for Phase Planning (2:1 / 3:1 / 2:1:1)
