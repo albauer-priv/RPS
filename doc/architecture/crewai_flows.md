@@ -114,6 +114,139 @@ Operational contract:
 - the wrapper does not interpret preview/apply/discard semantics
 - all conversational reasoning is delegated into the shared specialist crew
 
+## Planning Specialist Crews
+
+Season, Phase, and Week do not share the conversational crew. They use dedicated planning execution paths.
+
+## Season Planning Flow
+
+Season planning uses an outer Flow plus an inner hierarchical planning crew.
+
+### Season Runtime Shape
+
+```mermaid
+flowchart TD
+  INPUT["Season request + athlete workspace context"] --> OUTER["run_season_flow
+route by AgentTask"]
+  OUTER --> MANAGER["season_planner_manager
+final persisted task: season_plan"]
+  SCENARIO["scenario_interpreter"] --> MANAGER
+  EVENTS["event_priority_anchor_specialist"] --> MANAGER
+  MACRO["macrocycle_architect"] --> MANAGER
+  CONSTRAINTS["constraint_specialist"] --> MANAGER
+  HISTORY["historical_context_specialist"] --> MANAGER
+  KPI["kpi_guidance_specialist"] --> MANAGER
+  LOAD["load_governance_specialist"] --> MANAGER
+  AUDIT["season_plan_auditor"] --> MANAGER
+  MANAGER --> OUTPUT["Persisted SEASON_PLAN
+or SEASON_PHASE_FEED_FORWARD"]
+```
+
+### Season Specialists
+
+| Specialist | Role in flow | Main input | Tools | Output |
+| --- | --- | --- | --- | --- |
+| `season_planner_manager` | binding season authority and final author | all prior specialist outputs + user request | shared workspace read + `knowledge_search` | final artifact envelope |
+| `scenario_interpreter` | interpret selected scenario as advisory intent | season scenarios / scenario selection context | shared workspace read + `knowledge_search` | `season_event_anchor` |
+| `event_priority_anchor_specialist` | classify and anchor events | planning events, logistics | shared workspace read + `knowledge_search` | `season_event_anchor` |
+| `macrocycle_architect` | reverse-plan macrocycle and cadence | event anchors, season intent | shared workspace read + `knowledge_search` | `season_macrocycle_draft` |
+| `constraint_specialist` | summarize binding athlete and logistics constraints | athlete profile, availability, logistics | shared workspace read + `knowledge_search` | `constraint_audit` |
+| `historical_context_specialist` | inject recent load/recovery context | activities trend, wellness | shared workspace read + `knowledge_search` | `constraint_audit` |
+| `kpi_guidance_specialist` | align planning with KPI profile | KPI profile, planning constraints | shared workspace read + `knowledge_search` | `constraint_audit` |
+| `load_governance_specialist` | validate season corridor plausibility | season draft, wellness, load estimation context | shared workspace read + `knowledge_search` | `load_governance_audit` |
+| `season_plan_auditor` | final audit before persistence | manager draft + specialist outputs | shared workspace read + `knowledge_search` | `season_plan_audit` |
+
+### Season Inputs, Tools, Outputs
+
+| Area | Season flow |
+| --- | --- |
+| Outer flow entry | `run_season_flow(...)` |
+| Inner execution | hierarchical crew for `CREATE_SEASON_PLAN`; single-task execution for `CREATE_SEASON_SCENARIOS` / `CREATE_SEASON_SCENARIO_SELECTION` |
+| Main inputs | athlete profile, planning events, logistics, availability, wellness, KPI profile, optional season scenarios and selection |
+| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers and `knowledge_search` |
+| Main outputs | `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, `SEASON_PLAN`, optional `SEASON_PHASE_FEED_FORWARD` |
+| Persistence boundary | guarded validated store after manager output normalization |
+
+## Phase Planning Flow
+
+Phase planning uses an outer Flow plus one hierarchical bundle crew that produces a private `PhaseBundle` before deterministic artifact splitting.
+
+### Phase Runtime Shape
+
+```mermaid
+flowchart TD
+  INPUT["Phase request + selected phase context"] --> OUTER["run_phase_flow"]
+  OUTER --> MANAGER["phase_architect_manager
+final internal task: phase_bundle_finalize"]
+  GUARD["guardrails_specialist"] --> MANAGER
+  STRUCT["structure_specialist"] --> MANAGER
+  CADENCE["cadence_recovery_integrator"] --> MANAGER
+  INTENSITY["intensity_distribution_specialist"] --> MANAGER
+  PREVIEW["preview_synthesizer"] --> MANAGER
+  CONSTRAINT["constraint_auditor"] --> MANAGER
+  LOAD["load_governance_auditor"] --> MANAGER
+  MANAGER --> BUNDLE["Internal PhaseBundle"]
+  BUNDLE --> SPLIT["Deterministic artifact split"]
+  SPLIT --> OUTPUT["Persisted PHASE_GUARDRAILS / PHASE_STRUCTURE / PHASE_PREVIEW"]
+```
+
+### Phase Specialists
+
+| Specialist | Role in flow | Main input | Tools | Output |
+| --- | --- | --- | --- | --- |
+| `phase_architect_manager` | binding phase authority and bundle finalizer | all prior specialist outputs + user request | shared workspace read + `knowledge_search` | `phase_bundle` internally, artifact envelope for feed-forward |
+| `guardrails_specialist` | draft weekly load/governance rules | season plan, phase range, load context | shared workspace read + `knowledge_search` | `phase_guardrails_payload` |
+| `structure_specialist` | draft week skeleton and structure | phase range, season intent | shared workspace read + `knowledge_search` | `phase_structure_payload` |
+| `cadence_recovery_integrator` | apply season cadence and recovery rhythm | season cadence + phase context | shared workspace read + `knowledge_search` | `phase_structure_payload` |
+| `intensity_distribution_specialist` | shape phase intensity handling | guardrails and structure context | shared workspace read + `knowledge_search` | `phase_structure_payload` |
+| `preview_synthesizer` | produce derived preview narrative | structure + guardrails drafts | shared workspace read + `knowledge_search` | `phase_preview_payload` |
+| `constraint_auditor` | audit constraint consistency | availability, logistics, planning events, season feed-forward | shared workspace read + `knowledge_search` | `constraint_audit` |
+| `load_governance_auditor` | audit corridor coherence and compression risk | guardrails + load context | shared workspace read + `knowledge_search` | `load_governance_audit` |
+
+### Phase Inputs, Tools, Outputs
+
+| Area | Phase flow |
+| --- | --- |
+| Outer flow entry | `run_phase_flow(...)` |
+| Inner execution | hierarchical bundle crew via `run_phase_bundle_crewai(...)` |
+| Main inputs | `SEASON_PLAN`, selected phase range, availability, wellness, zone model, planning events, logistics, optional season feed-forward |
+| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers and `knowledge_search` |
+| Main outputs | `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, `PHASE_PREVIEW`, optional `PHASE_FEED_FORWARD` |
+| Persistence boundary | manager returns one internal `PhaseBundle`; code-owned split + guarded validated store persists the requested public artifacts |
+
+## Week Planning Flow
+
+Week planning currently uses an outer Flow plus a single persisted-artifact planner task. It does not use a multi-specialist crew.
+
+### Week Runtime Shape
+
+```mermaid
+flowchart TD
+  INPUT["Week request + selected week context"] --> OUTER["run_week_flow"]
+  OUTER --> WEEK["week_planner
+week_plan task"]
+  WEEK --> NORMALIZE["Normalization + consistency checks"]
+  NORMALIZE --> OUTPUT["Persisted WEEK_PLAN
+or preview-only candidate WEEK_PLAN"]
+```
+
+### Week Planner Role
+
+| Agent | Role in flow | Main input | Tools | Output |
+| --- | --- | --- | --- | --- |
+| `week_planner` | binding week-plan author for create/revise runs | `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, optional `PHASE_FEED_FORWARD`, availability, wellness, planning events, logistics, optional existing `WEEK_PLAN` | shared workspace read + `knowledge_search` | artifact envelope for `WEEK_PLAN` |
+
+### Week Inputs, Tools, Outputs
+
+| Area | Week flow |
+| --- | --- |
+| Outer flow entry | `run_week_flow(...)` |
+| Inner execution | single persisted-artifact task via `run_agent_multi_output(...)` or `run_agent_multi_output_preview(...)` |
+| Main inputs | `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, optional `PHASE_FEED_FORWARD`, availability, wellness, planning events, logistics, optional existing `WEEK_PLAN` |
+| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers and `knowledge_search` |
+| Main outputs | persisted `WEEK_PLAN` or preview-only candidate `WEEK_PLAN` |
+| Persistence boundary | guarded validated store on normal path; preview path returns a candidate document without persistence |
+
 ## Shared Conversational Crew
 
 The Coach and Workout Editor both use the shared runtime in `src/rps/crewai_runtime/coach_chat.py`.

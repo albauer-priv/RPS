@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added a canonical CrewAI flow catalog in `doc/architecture/crewai_flows.md`, documenting outer flow entrypoints, specialist crews, per-surface toolsets, inputs, and outputs for planning, advisory, Coach, and Workout Editor runtime paths.
+- Added a canonical CrewAI flow catalog in `doc/architecture/crewai_flows.md`, documenting outer flow entrypoints, Season/Phase/Week planning flows, specialist crews, per-surface toolsets, inputs, outputs, and runtime diagrams for planning, advisory, Coach, and Workout Editor paths.
 - Added a shared manager-plus-specialist conversational CrewAI runtime for `Coach` and `Workout Editor`, with agent-specific knowledge injection, strict per-specialist tool visibility, and page-level bridge heuristics removed from Coach.
 - Added an active Coach operation layer on top of the existing runtime: Coach can now inspect selected-week plan context, preview/apply bounded `WEEK_PLAN` edits, preview/apply scoped week replans, and trigger DES report / feed-forward runs through explicit operation tools with mandatory preview + confirm semantics.
 - Added initial CrewAI foundation files under `config/crewai/` and `src/rps/crewai_runtime/`, including YAML agent/task definitions, typed operation result models, and a runtime compatibility helper that reports the current Python `3.14` blocker for full CrewAI activation.
