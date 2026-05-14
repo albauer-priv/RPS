@@ -9,11 +9,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-from rps.agents.knowledge_injection import build_contract_injection_block
 from rps.agents.output_normalization import (
     extract_planning_events_document,
-    injection_mode_for_tasks,
-    load_shared_knowledge_source,
     normalize_phase_guardrails_document,
     normalize_season_scenarios_document,
     normalize_workout_percent_ranges,
@@ -37,6 +34,11 @@ from rps.crewai_runtime.memory import (
     resolve_crew_memory_profile,
 )
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs
+from rps.crewai_runtime.skills import (
+    build_crewai_skill_kwargs,
+    render_skill_prompt_block,
+    resolve_agent_skill_profile,
+)
 from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
@@ -67,14 +69,14 @@ _TASK_BLUEPRINT_BY_AGENT_TASK = {
 _CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
     ArtifactType.SEASON_SCENARIOS: "Season-Scenario-Agent",
     ArtifactType.SEASON_SCENARIO_SELECTION: "Season-Scenario-Agent",
-    ArtifactType.SEASON_PLAN: "Season-Planner",
-    ArtifactType.SEASON_PHASE_FEED_FORWARD: "Season-Planner",
-    ArtifactType.PHASE_GUARDRAILS: "Phase-Architect",
-    ArtifactType.PHASE_STRUCTURE: "Phase-Architect",
-    ArtifactType.PHASE_PREVIEW: "Phase-Architect",
-    ArtifactType.PHASE_FEED_FORWARD: "Phase-Architect",
-    ArtifactType.WEEK_PLAN: "Week-Planner",
-    ArtifactType.DES_ANALYSIS_REPORT: "Performance-Analyst",
+    ArtifactType.SEASON_PLAN: "Season-Artifact-Writer",
+    ArtifactType.SEASON_PHASE_FEED_FORWARD: "Season-Artifact-Writer",
+    ArtifactType.PHASE_GUARDRAILS: "Phase-Artifact-Writer",
+    ArtifactType.PHASE_STRUCTURE: "Phase-Artifact-Writer",
+    ArtifactType.PHASE_PREVIEW: "Phase-Artifact-Writer",
+    ArtifactType.PHASE_FEED_FORWARD: "Phase-Artifact-Writer",
+    ArtifactType.WEEK_PLAN: "Week-Artifact-Writer",
+    ArtifactType.DES_ANALYSIS_REPORT: "Report-Artifact-Writer",
 }
 
 _SEASON_INTERNAL_TASKS: tuple[str, ...] = (
@@ -98,23 +100,6 @@ _PHASE_INTERNAL_TASKS: tuple[str, ...] = (
     "phase_load_governance_audit",
     "phase_bundle_finalize",
 )
-
-
-def _mandatory_output_doc_for_schema(schema_file: str) -> str | None:
-    mandatory_by_schema = {
-        "season_scenarios.schema.json": "mandatory_output_season_scenarios.md",
-        "season_scenario_selection.schema.json": "mandatory_output_season_scenario_selection.md",
-        "season_plan.schema.json": "mandatory_output_season_plan.md",
-        "season_phase_feed_forward.schema.json": "mandatory_output_season_phase_feed_forward.md",
-        "phase_guardrails.schema.json": "mandatory_output_phase_guardrails.md",
-        "phase_structure.schema.json": "mandatory_output_phase_structure.md",
-        "phase_preview.schema.json": "mandatory_output_phase_preview.md",
-        "phase_feed_forward.schema.json": "mandatory_output_phase_feed_forward.md",
-        "week_plan.schema.json": "mandatory_output_week_plan.md",
-        "des_analysis_report.schema.json": "mandatory_output_des_analysis_report.md",
-    }
-    return mandatory_by_schema.get(schema_file)
-
 
 def _fill_season_plan(document: JsonMap) -> JsonMap:
     """Normalize common SEASON_PLAN placement issues."""
@@ -187,7 +172,7 @@ def _normalize_week_plan_meta(document: JsonMap) -> JsonMap:
     meta["schema_id"] = "WeekPlanInterface"
     meta["schema_version"] = "1.2"
     meta["authority"] = "Binding"
-    meta["owner_agent"] = "Week-Planner"
+    meta["owner_agent"] = "Week-Artifact-Writer"
     if "notes" not in meta or meta.get("notes") is None:
         meta["notes"] = ""
     document["meta"] = meta
@@ -307,6 +292,12 @@ def _build_crewai_agent(
         profile=resolve_agent_knowledge_profile(bundle, agent_name=blueprint.name),
     )
     kwargs.update(knowledge_kwargs)
+    skill_profile = resolve_agent_skill_profile(bundle, agent_name=blueprint.name, crew_name=crew_name)
+    kwargs.update(build_crewai_skill_kwargs(root=ROOT, profile=skill_profile))
+    skill_block = render_skill_prompt_block(root=ROOT, profile=skill_profile)
+    if skill_block:
+        kwargs["goal"] = f"{kwargs['goal']}\n\n{skill_block}"
+        kwargs["backstory"] = f"{kwargs['backstory']}\n\n{skill_block}"
     agent_memory = build_agent_memory_value(
         shared_memory=shared_memory,
         profile=resolve_agent_memory_profile(
@@ -372,6 +363,19 @@ def _extract_typed_output(result: object, task_obj: object) -> Any:
     if pydantic_output is None and hasattr(result, "model_dump"):
         pydantic_output = result
     return pydantic_output
+
+
+def _extract_json_output(result: object, task_obj: object) -> JsonMap | None:
+    """Extract JSON task output from a CrewAI task result when configured via output_json."""
+
+    task_output = getattr(task_obj, "output", None)
+    for candidate in (
+        getattr(task_output, "json_dict", None),
+        getattr(result, "json_dict", None),
+    ):
+        if isinstance(candidate, dict):
+            return candidate
+    return None
 
 
 def _execute_crewai_task(
@@ -446,6 +450,14 @@ def _execute_crewai_task(
     else:
         result = crew.kickoff()
     if task_blueprint.output_kind == "artifact_envelope":
+        json_output = _extract_json_output(result, crew_task)
+        if isinstance(json_output, dict):
+            return json_output
+        pydantic_output = _extract_typed_output(result, crew_task)
+        if pydantic_output is not None:
+            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+            if isinstance(document, dict):
+                return document
         raw = _extract_raw_output_text(result, crew_task)
         if not raw:
             raise RuntimeError(f"CrewAI task '{task_blueprint.name}' produced no raw artifact output.")
@@ -478,9 +490,9 @@ def _build_crewai_task(
     }
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
-    if output_mode == "json" and task_blueprint.output_kind != "artifact_envelope":
+    if output_mode == "json":
         kwargs["output_json"] = output_model_for_kind(task_blueprint.output_kind)
-    elif output_mode == "pydantic" and task_blueprint.output_kind != "artifact_envelope":
+    elif output_mode == "pydantic":
         kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
     kwargs.update(guardrail_kwargs)
     if context_tasks:
@@ -539,6 +551,19 @@ def _execute_crewai_hierarchical_crew(
             shared_memory=shared_memory,
         )
 
+    if manager_agent_name not in agents_by_name:
+        manager_blueprint = agent_blueprints[manager_agent_name]
+        agents_by_name[manager_agent_name] = _build_crewai_agent(
+            agent_cls,
+            bundle=bundle,
+            blueprint=manager_blueprint,
+            llm=llm,
+            tools=tools,
+            athlete_id=athlete_id or "unknown",
+            crew_name=crew_name,
+            shared_memory=shared_memory,
+        )
+
     manager_agent = agents_by_name[manager_agent_name]
     crew_tasks: list[object] = []
     prior_tasks: list[object] = []
@@ -550,6 +575,8 @@ def _execute_crewai_hierarchical_crew(
         if task_name == final_task_name and final_public_task is not None:
             description = _build_task_description(
                 runtime,
+                bundle=bundle,
+                crew_name=crew_name,
                 agent_name=manager_agent_name,
                 task=final_public_task,
                 user_input=user_input,
@@ -566,6 +593,8 @@ def _execute_crewai_hierarchical_crew(
             description = _build_internal_task_description(
                 runtime,
                 prompt_agent=prompt_agent,
+                bundle=bundle,
+                crew_name=crew_name,
                 task_blueprint=task_blueprint,
                 user_input=user_input,
             )
@@ -611,6 +640,14 @@ def _execute_crewai_hierarchical_crew(
         result = crew.kickoff()
     final_output_kind = str(task_blueprints[final_task_name].output_kind)
     if final_output_kind == "artifact_envelope":
+        json_output = _extract_json_output(result, final_task_obj)
+        if isinstance(json_output, dict):
+            return json_output
+        pydantic_output = _extract_typed_output(result, final_task_obj)
+        if pydantic_output is not None:
+            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+            if isinstance(document, dict):
+                return document
         raw = _extract_raw_output_text(result, final_task_obj)
         if not raw:
             raise RuntimeError(f"CrewAI crew final task '{final_task_name}' produced no raw artifact output.")
@@ -629,6 +666,8 @@ def _build_internal_task_description(
     runtime: AgentRuntime,
     *,
     prompt_agent: str,
+    bundle: Any,
+    crew_name: str,
     task_blueprint: Any,
     user_input: str,
     context_blocks: list[str] | None = None,
@@ -636,13 +675,16 @@ def _build_internal_task_description(
     """Build a specialist-task description with top-level prompt context."""
 
     prompt = runtime.prompt_loader.combined_system_prompt(prompt_agent)
-    injected_block = build_contract_injection_block(prompt_agent)
+    skill_block = render_skill_prompt_block(
+        root=ROOT,
+        profile=resolve_agent_skill_profile(bundle, agent_name=prompt_agent, crew_name=crew_name),
+    )
     parts = [
         "System and agent instructions:",
         prompt,
     ]
-    if injected_block and injected_block not in prompt:
-        parts.extend(["", "Injected runtime contracts:", injected_block])
+    if skill_block and skill_block not in prompt:
+        parts.extend(["", "Activated skills:", skill_block])
     parts.extend(
         [
             "",
@@ -705,7 +747,7 @@ def _run_season_plan_document(
         process_cls=process_cls,
         runtime=runtime,
         bundle=bundle,
-        manager_agent_name=task_blueprint.agent,
+        manager_agent_name="season_plan_manager",
         crew_name="season_planning",
         crew_task_names=(*_SEASON_INTERNAL_TASKS, task_blueprint.name),
         final_task_name=task_blueprint.name,
@@ -826,8 +868,6 @@ def run_phase_bundle_crewai(
     bundle = load_crewai_config_bundle(root=ROOT)
     agent_blueprints = build_agent_blueprints(bundle)
     task_blueprints = build_task_blueprints(bundle)
-    manager_task_blueprint = task_blueprints["phase_bundle_finalize"]
-
     llm = _build_crewai_llm(
         LLM,
         runtime,
@@ -885,7 +925,7 @@ def run_phase_bundle_crewai(
                 output_spec=output_spec,
                 document=document,
                 run_id=run_id,
-                producer_agent=manager_task_blueprint.agent,
+                producer_agent="phase_artifact_writer",
                 update_latest=True,
             )
         except SchemaValidationError as exc:
@@ -983,6 +1023,8 @@ def _build_crewai_tooling(
 def _build_task_description(
     runtime: AgentRuntime,
     *,
+    bundle: Any,
+    crew_name: str,
     agent_name: str,
     task: AgentTask,
     user_input: str,
@@ -990,29 +1032,16 @@ def _build_task_description(
     """Compose the final CrewAI task description from prompts, injections, and user input."""
 
     prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
-    mode = injection_mode_for_tasks([task])
-    injected_block = build_contract_injection_block(agent_name, mode=mode)
-    spec = OUTPUT_SPECS[task]
-    mandatory_doc_name = _mandatory_output_doc_for_schema(spec.schema_file)
-    mandatory_doc = (
-        load_shared_knowledge_source("specs", mandatory_doc_name)
-        if mandatory_doc_name
-        else None
+    skill_block = render_skill_prompt_block(
+        root=ROOT,
+        profile=resolve_agent_skill_profile(bundle, agent_name=agent_name, crew_name=crew_name),
     )
     parts = [
         "System and agent instructions:",
         prompt,
     ]
-    if injected_block and injected_block not in prompt:
-        parts.extend(["", "Injected runtime context:", injected_block])
-    if mandatory_doc:
-        parts.extend(
-            [
-                "",
-                f"Mandatory JSON output rules for {spec.artifact_type.value}:",
-                mandatory_doc,
-            ]
-        )
+    if skill_block and skill_block not in prompt:
+        parts.extend(["", "Activated skills:", skill_block])
     parts.extend(
         [
             "",
@@ -1089,6 +1118,14 @@ def _run_single_task_document_crewai(
     else:
         description = _build_task_description(
             runtime,
+            bundle=bundle,
+            crew_name=(
+                "week_planning"
+                if task == AgentTask.CREATE_WEEK_PLAN
+                else "report_advisory"
+                if task == AgentTask.CREATE_DES_ANALYSIS_REPORT
+                else "season_planning"
+            ),
             agent_name=agent_name,
             task=task,
             user_input=user_input,

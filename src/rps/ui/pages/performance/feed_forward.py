@@ -5,7 +5,6 @@ from datetime import date
 
 import streamlit as st
 
-from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
 from rps.agents.runtime import run_agent_multi_output
 from rps.agents.tasks import AgentTask
@@ -16,7 +15,7 @@ from rps.orchestrator.context_snapshots import (
     save_athlete_state_snapshot,
     save_planning_context_snapshot,
 )
-from rps.orchestrator.plan_week import _mode_for_task, create_performance_report
+from rps.orchestrator.plan_week import create_performance_report
 from rps.ui.feed_forward_context import (
     build_resolved_des_evaluation_context,
     build_resolved_season_phase_feed_forward_context,
@@ -319,7 +318,7 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
         )
         runtime = multi_runtime_for("season_planner")
         spec = AGENTS["season_planner"]
-        injected_block = build_injection_block("season_planner", mode=_mode_for_task(AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD))
+        injected_block = ""
         run_id = make_ui_run_id(f"season_phase_feed_forward_{year}_{week:02d}")
         set_status(
             status_state="running",
@@ -410,7 +409,7 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
             )
             runtime = multi_runtime_for("phase_architect")
             spec = AGENTS["phase_architect"]
-            injected_block = build_injection_block("phase_architect", mode=_mode_for_task(AgentTask.CREATE_PHASE_FEED_FORWARD))
+            injected_block = ""
             run_id = make_ui_run_id(f"phase_feed_forward_{year}_{week:02d}")
             set_status(
                 status_state="running",

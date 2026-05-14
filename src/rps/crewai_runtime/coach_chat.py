@@ -12,7 +12,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from rps.agents.knowledge_injection import build_contract_injection_block
 from rps.prompts.loader import PromptLoader
 
 from .compat import crewai_runtime_status
@@ -25,6 +24,11 @@ from .memory import (
     resolve_crew_memory_profile,
 )
 from .provider import build_crewai_llm_kwargs
+from .skills import (
+    build_crewai_skill_kwargs,
+    render_skill_prompt_block,
+    resolve_agent_skill_profile,
+)
 from .telemetry import runtime_event_scope
 
 logger = logging.getLogger(__name__)
@@ -84,16 +88,16 @@ def build_runtime_profile(*, surface_name: str, toolsets: SpecialistToolsets) ->
         "surface": surface_name,
         "knowledge_modes": {
             "conversation_manager": surface_name,
-            "week_context_analyst": surface_name,
-            "coaching_recommendation_specialist": surface_name,
-            "week_preview_specialist": surface_name,
+            "week_context_specialist": surface_name,
+            "week_recommendation_specialist": surface_name,
+            "week_revision_specialist": surface_name,
             "pending_resolution_specialist": surface_name,
         },
         "tool_names": {
             "conversation_manager": [],
-            "week_context_analyst": _tool_name_map(toolsets.context),
-            "coaching_recommendation_specialist": _tool_name_map(toolsets.recommendation),
-            "week_preview_specialist": _tool_name_map(toolsets.preview),
+            "week_context_specialist": _tool_name_map(toolsets.context),
+            "week_recommendation_specialist": _tool_name_map(toolsets.recommendation),
+            "week_revision_specialist": _tool_name_map(toolsets.preview),
             "pending_resolution_specialist": _tool_name_map(toolsets.pending),
         },
     }
@@ -156,9 +160,10 @@ def _build_agent(
     )
     prompt_loader = PromptLoader(prompts_dir)
     prompt = prompt_loader.combined_system_prompt(agent_name)
-    injected = build_contract_injection_block(agent_name, mode=surface_name)
-    if injected:
-        prompt = f"{prompt}\n\n{injected}"
+    skill_profile = resolve_agent_skill_profile(bundle, agent_name=agent_name, crew_name=surface_name + "_conversation")
+    skill_block = render_skill_prompt_block(root=Path.cwd(), profile=skill_profile)
+    if skill_block:
+        prompt = f"{prompt}\n\n{skill_block}"
     kwargs: JsonMap = {
         "role": str(agent_cfg.get("role") or agent_name.replace("_", " ").title()),
         "goal": prompt,
@@ -172,6 +177,12 @@ def _build_agent(
         build_crewai_knowledge_kwargs(
             root=Path.cwd(),
             profile=resolve_agent_knowledge_profile(bundle, agent_name=agent_name),
+        )
+    )
+    kwargs.update(
+        build_crewai_skill_kwargs(
+            root=Path.cwd(),
+            profile=skill_profile,
         )
     )
     agent_memory = build_agent_memory_value(
@@ -401,7 +412,7 @@ def run_conversational_turn(
     def _analyze() -> WeekContextAssessmentModel:
         return _run_structured_task(
             task_name="analyze_week_context",
-            agent_name="week_context_analyst",
+            agent_name="week_context_specialist",
             description="\n".join(
                 [
                     shared,
@@ -423,7 +434,7 @@ def run_conversational_turn(
     def _recommend(context_result: WeekContextAssessmentModel) -> CoachingRecommendationModel:
         return _run_structured_task(
             task_name="form_coaching_recommendation",
-            agent_name="coaching_recommendation_specialist",
+            agent_name="week_recommendation_specialist",
             description="\n".join(
                 [
                     shared,
@@ -447,7 +458,7 @@ def run_conversational_turn(
     def _intent(context_result: WeekContextAssessmentModel) -> AdjustmentIntentModel:
         return _run_structured_task(
             task_name="form_adjustment_intent",
-            agent_name="coaching_recommendation_specialist",
+            agent_name="week_recommendation_specialist",
             description="\n".join(
                 [
                     shared,
@@ -472,7 +483,7 @@ def run_conversational_turn(
     def _preview(intent_result: AdjustmentIntentModel) -> CoachPreviewSummaryModel:
         return _run_structured_task(
             task_name="create_week_preview",
-            agent_name="week_preview_specialist",
+            agent_name="week_revision_specialist",
             description="\n".join(
                 [
                     shared,

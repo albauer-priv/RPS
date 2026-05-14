@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a skills-first unified CrewAI planning layer under `skills/` plus `config/crewai/skills.yaml`, so Coach, Workout Editor, and planning flows now share explicit week/phase/season methodology bundles instead of runtime markdown injection.
+- Added shared week-domain specialist prompts (`week_context_specialist`, `week_recommendation_specialist`, `week_revision_specialist`) and dedicated writer prompts (`season_artifact_writer`, `phase_artifact_writer`, `week_artifact_writer`, `report_artifact_writer`) for persisted artifact ownership.
+- Added decomposed load-estimation source docs (`load_estimation_core.md`, `load_estimation_season.md`, `load_estimation_phase.md`, `load_estimation_week.md`) and removed runtime chapter slicing as a knowledge-delivery mechanism.
+
+### Changed
+- Recut CrewAI agent/task config to shared specialist names and writer-agent ownership, splitting `season_planner_manager` into `season_plan_manager` / `season_feed_forward_manager` and `phase_architect_manager` into `phase_bundle_manager` / `phase_feed_forward_manager`.
+- Replaced the old prompt-injection runtime path with skill resolution helpers in `src/rps/crewai_runtime/skills.py`; `config/agent_knowledge_injection.yaml` and `src/rps/agents/knowledge_injection.py` are removed from runtime use.
+- Persisted artifact tasks now default to `output_json` plus envelope guardrails instead of prompt-only mandatory-output guidance.
+
+### Removed
+- Removed the YAML-backed `agent_knowledge_injection` runtime path and its `load_estimation_spec.md` heading-slicing logic.
+
 - Added separate CrewAI policy/config layers for flow persistence, memory scopes, static knowledge sources, and task guardrail/output-mode policy under `config/crewai/`, plus new runtime helpers in `src/rps/crewai_runtime/` for guardrail resolution, knowledge-source mapping, and memory-profile wiring.
 - Added a contract-only injection path via `build_contract_injection_block(...)`, so CrewAI runtime construction can keep explicit operational/contracts in prompts while static reference material moves into separate knowledge-source config.
 - Added CrewAI runbooks for flow persistence, memory policy, static knowledge, and prompt/guardrail debugging under `doc/runbooks/`.

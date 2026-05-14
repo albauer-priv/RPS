@@ -33,6 +33,7 @@ from .models import (
     TurnModeModel,
     WeekContextAssessmentModel,
 )
+from .skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
 
 JsonMap = dict[str, Any]
 
@@ -46,6 +47,7 @@ class AgentBlueprint:
     goal: str
     backstory: str
     knowledge_profile: JsonMap
+    skill_profile: JsonMap
     memory_profile: JsonMap
     config: JsonMap
 
@@ -90,6 +92,7 @@ def build_agent_blueprints(bundle: CrewAIConfigBundle) -> dict[str, AgentBluepri
             goal=goal,
             backstory=backstory,
             knowledge_profile=resolve_agent_knowledge_profile(bundle, agent_name=name),
+            skill_profile=resolve_agent_skill_profile(bundle, agent_name=name),
             memory_profile={},
             config=raw,
         )
@@ -199,6 +202,12 @@ def build_crewai_bindings(
             profile=blueprint.knowledge_profile,
         )
         kwargs.update(knowledge_kwargs)
+        kwargs.update(
+            build_crewai_skill_kwargs(
+                root=(root or Path.cwd()),
+                profile=blueprint.skill_profile,
+            )
+        )
         agent_memory_value = build_agent_memory_value(
             shared_memory=shared_memory,
             profile=resolve_agent_memory_profile(

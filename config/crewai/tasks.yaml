@@ -12,25 +12,25 @@ tasks:
     description: Produce the final user-facing reply from one specialist result without changing the specialist decision.
     expected_output: A structured final-reply wrapper whose recommendation field contains the final assistant reply.
   analyze_week_context:
-    agent: week_context_analyst
+    agent: week_context_specialist
     kind: internal_reasoning
     output: week_context_assessment
     description: Inspect the current selected week and summarize plan, actuals, constraints, and likely change direction.
     expected_output: A structured selected-week context assessment.
   form_coaching_recommendation:
-    agent: coaching_recommendation_specialist
+    agent: week_recommendation_specialist
     kind: internal_reasoning
     output: coaching_recommendation
     description: Turn a week-context assessment into direct coaching guidance for an advisory-only turn.
     expected_output: A structured coaching recommendation.
   form_adjustment_intent:
-    agent: coaching_recommendation_specialist
+    agent: week_recommendation_specialist
     kind: internal_reasoning
     output: adjustment_intent
     description: Turn a week-context assessment and user request into one clean adjustment intent for preview creation.
     expected_output: A structured adjustment intent suitable for one preview operation.
   create_week_preview:
-    agent: week_preview_specialist
+    agent: week_revision_specialist
     kind: operation
     output: coach_preview_summary
     description: Create exactly one bounded selected-week preview from a structured adjustment intent.
@@ -102,7 +102,7 @@ tasks:
     description: Create the season-scenarios artifact envelope for the selected planning horizon.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   season_plan:
-    agent: season_planner_manager
+    agent: season_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the season-plan artifact envelope for the selected planning horizon.
@@ -156,25 +156,25 @@ tasks:
     description: Audit the proposed season-plan authority boundaries before persistence.
     expected_output: A structured season-plan audit with warnings and blocking issues.
   season_phase_feed_forward:
-    agent: season_planner_manager
+    agent: season_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week season-to-phase feed-forward artifact envelope.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   phase_guardrails:
-    agent: phase_architect_manager
+    agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the phase-guardrails artifact envelope for the exact phase range.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   phase_structure:
-    agent: phase_architect_manager
+    agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the phase-structure artifact envelope for the exact phase range.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   phase_preview:
-    agent: phase_architect_manager
+    agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the phase-preview artifact envelope for the exact phase range.
@@ -222,25 +222,25 @@ tasks:
     description: Audit phase corridor coherence, durability-first policy, and compression risk.
     expected_output: A structured phase load-governance audit.
   phase_bundle_finalize:
-    agent: phase_architect_manager
+    agent: phase_bundle_manager
     kind: internal_reasoning
     output: phase_bundle
     description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before deterministic artifact splitting.
     expected_output: A structured PhaseBundle that is not persisted directly and contains nested full phase artefact envelopes for guardrails, structure, and preview.
   phase_feed_forward:
-    agent: phase_architect_manager
+    agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week phase feed-forward artifact envelope.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   week_plan:
-    agent: week_planner
+    agent: week_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create or revise the week-plan artifact envelope for the selected ISO week.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   des_analysis_report:
-    agent: performance_analysis
+    agent: report_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the DES analysis report artifact envelope for the selected ISO week.

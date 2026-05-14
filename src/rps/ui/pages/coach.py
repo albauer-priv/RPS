@@ -69,6 +69,7 @@ def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str,
         ("planning_events", "workspace_get_input", {"input_type": "planning_events"}),
         ("logistics", "workspace_get_input", {"input_type": "logistics"}),
         ("availability", "workspace_get_input", {"input_type": "availability"}),
+        ("activities_actual", "workspace_get_version", {"artifact_type": "ACTIVITIES_ACTUAL", "version_key": week_key}),
         ("activities_trend", "workspace_get_version", {"artifact_type": "ACTIVITIES_TREND", "version_key": week_key}),
         ("season_plan", "workspace_get_latest", {"artifact_type": "SEASON_PLAN"}),
         ("phase_preview", "workspace_get_version", {"artifact_type": "PHASE_PREVIEW", "version_key": week_key}),
@@ -849,7 +850,7 @@ if preload_enabled:
 conversation_context_parts: list[str] = []
 if snapshot_blocks:
     conversation_context_parts.append(
-        "Workspace memory (preferred, code-owned):\n" + "\n\n".join(snapshot_blocks)
+        "Workspace memory (auto-loaded, preferred).\n" + "\n\n".join(snapshot_blocks)
     )
 elif context_chunks:
     conversation_context_parts.append(

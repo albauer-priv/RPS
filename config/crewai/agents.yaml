@@ -3,9 +3,7 @@ agents:
     display_name: Active Planning Coach
     role: Conversational planning orchestrator
     goal: Read plan context, preview safe changes, and coordinate confirmed planning actions.
-    backstory: >
-      A planning assistant that works against strict artefact boundaries and never writes outside
-      guarded store operations.
+    backstory: A bounded planning assistant that never writes outside guarded store operations.
     runtime_status: foundation_only
     output_mode: structured
     prompt_agent: coach
@@ -13,34 +11,32 @@ agents:
     display_name: Conversation Manager
     role: Conversational turn router and finalizer
     goal: Classify one user turn, choose the correct specialist, and produce one final reply without doing domain coaching itself.
-    backstory: >
-      A thin orchestration manager that routes planning dialog to narrow specialists, validates preview or pending state
-      before summarizing it, and always responds in the user's language.
+    backstory: Thin orchestration manager for Coach and Workout Editor.
     runtime_status: foundation_only
     output_mode: turn_mode
     prompt_agent: conversation_manager
     allow_delegation: true
-  week_context_analyst:
-    display_name: Week Context Analyst
+  week_context_specialist:
+    display_name: Week Context Specialist
     role: Read-only selected-week context analyst
     goal: Inspect the selected week and summarize current plan, actuals, and constraints without proposing or applying changes.
     runtime_status: foundation_only
     output_mode: week_context_assessment
-    prompt_agent: week_context_analyst
-  coaching_recommendation_specialist:
-    display_name: Coaching Recommendation Specialist
-    role: Athlete-specific coaching advisor
+    prompt_agent: week_context_specialist
+  week_recommendation_specialist:
+    display_name: Week Recommendation Specialist
+    role: Athlete-specific week recommendation advisor
     goal: Turn current context into coaching advice or a clean adjustment intent while preserving guardrails and recovery rules.
     runtime_status: foundation_only
     output_mode: coaching_recommendation
-    prompt_agent: coaching_recommendation_specialist
-  week_preview_specialist:
-    display_name: Week Preview Specialist
+    prompt_agent: week_recommendation_specialist
+  week_revision_specialist:
+    display_name: Week Revision Specialist
     role: Selected-week preview synthesizer
-    goal: Convert one adjustment intent into exactly one bounded preview operation.
+    goal: Convert one adjustment intent into exactly one bounded preview or candidate week revision.
     runtime_status: foundation_only
     output_mode: coach_preview
-    prompt_agent: week_preview_specialist
+    prompt_agent: week_revision_specialist
   pending_resolution_specialist:
     display_name: Pending Resolution Specialist
     role: Pending preview lifecycle handler
@@ -56,20 +52,35 @@ agents:
     output_mode: artifact_envelope
     prompt_agent: season_scenario
   season_planner:
-    display_name: Season Planner
-    role: Produce season plans and season-phase feed forward
-    goal: Create season-level planning artefacts and revisions.
+    display_name: Season Planner Surface
+    role: Season planning task scope controller
+    goal: Frame season planning requests for the underlying specialist crew.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: season_planner
-  season_planner_manager:
-    display_name: Season Planner Manager
+  season_plan_manager:
+    display_name: Season Plan Manager
     role: Binding season planning authority
-    goal: Resolve scenario guidance into a binding season plan and season-level feed-forward decisions.
+    goal: Resolve scenario guidance into a binding season plan without serializing the final envelope itself.
     runtime_status: foundation_only
     output_mode: artifact_envelope
-    prompt_agent: season_planner_manager
+    prompt_agent: season_plan_manager
     allow_delegation: true
+  season_feed_forward_manager:
+    display_name: Season Feed Forward Manager
+    role: Binding season feed-forward authority
+    goal: Convert completed-week evidence into season-to-phase feed-forward guidance.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: season_feed_forward_manager
+    allow_delegation: true
+  season_artifact_writer:
+    display_name: Season Artifact Writer
+    role: Persisted season artefact serializer
+    goal: Return only the final season-level artefact envelope.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: season_artifact_writer
   scenario_interpreter:
     display_name: Scenario Interpreter
     role: Interpret advisory season scenarios
@@ -127,20 +138,35 @@ agents:
     output_mode: season_plan_audit
     prompt_agent: season_plan_auditor
   phase_architect:
-    display_name: Phase Architect
-    role: Produce phase artefacts and phase feed forward
-    goal: Create phase-anchored planning artefacts.
+    display_name: Phase Architect Surface
+    role: Phase planning task scope controller
+    goal: Frame phase planning requests for the underlying specialist crew.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: phase_architect
-  phase_architect_manager:
-    display_name: Phase Architect Manager
+  phase_bundle_manager:
+    display_name: Phase Bundle Manager
     role: Binding phase planning authority
     goal: Convert season governance into binding phase outputs and phase deltas without redefining season authority.
     runtime_status: foundation_only
     output_mode: artifact_envelope
-    prompt_agent: phase_architect_manager
+    prompt_agent: phase_bundle_manager
     allow_delegation: true
+  phase_feed_forward_manager:
+    display_name: Phase Feed Forward Manager
+    role: Binding phase feed-forward authority
+    goal: Convert completed-week evidence into phase feed-forward guidance.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: phase_feed_forward_manager
+    allow_delegation: true
+  phase_artifact_writer:
+    display_name: Phase Artifact Writer
+    role: Persisted phase artefact serializer
+    goal: Return only the final phase-level artefact envelope.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: phase_artifact_writer
   guardrails_specialist:
     display_name: Guardrails Specialist
     role: Phase guardrails author
@@ -191,16 +217,37 @@ agents:
     output_mode: load_governance_audit
     prompt_agent: load_governance_auditor
   week_planner:
-    display_name: Week Planner
-    role: Produce and revise week plans
-    goal: Create week-scoped plans within phase guardrails.
+    display_name: Week Planner Surface
+    role: Week planning task scope controller
+    goal: Frame week planning requests for the week artifact writer.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: week_planner
+  week_artifact_writer:
+    display_name: Week Artifact Writer
+    role: Persisted week artefact serializer
+    goal: Return only the final week-plan artefact envelope.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: week_artifact_writer
   performance_analysis:
-    display_name: Performance Analysis
-    role: Produce durability analysis reports
-    goal: Create advisory performance artefacts for selected ISO weeks.
+    display_name: Performance Analysis Surface
+    role: Report-generation task scope controller
+    goal: Frame completed-week report requests for the advisory analysis specialists.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: performance_analysis
+  performance_analysis_specialist:
+    display_name: Performance Analysis Specialist
+    role: Produce durability analysis findings
+    goal: Create advisory performance findings for selected ISO weeks.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: performance_analysis_specialist
+  report_artifact_writer:
+    display_name: Report Artifact Writer
+    role: Persisted advisory artefact serializer
+    goal: Return only the final DES analysis report artefact envelope.
+    runtime_status: foundation_only
+    output_mode: artifact_envelope
+    prompt_agent: report_artifact_writer

@@ -25,8 +25,9 @@ This document is the canonical registry of agents, their roles, modes, and artif
 
 - Modes are referenced by orchestrators and UI run scopes.
 - Prompts are in [prompts/agents/*.md](prompts/agents/*.md).
-- Static reference knowledge is now mapped in `config/crewai/knowledge_sources.yaml`.
-- Prompt-level runtime/contract injection remains in `config/agent_knowledge_injection.yaml` and is narrowed through `build_contract_injection_block(...)` for CrewAI-backed execution.
+- Static factual knowledge is mapped in `config/crewai/knowledge_sources.yaml`.
+- Methodology and guidance now come from repo-local skills configured in `config/crewai/skills.yaml`.
+- Prompt files are reduced to runtime-local scope and no longer act as the primary knowledge-delivery mechanism.
 - CrewAI runtime now executes internal specialist roles for `Season-Planner` and `Phase-Architect`; these sub-roles are not independent top-level artefact authorities and only feed manager-authored persisted outputs.
 - Season and Phase specialists now use dedicated prompt slices instead of reusing the top-level planner prompts.
 - Outer Season and Phase orchestration is wrapped in CrewAI Flows; grouped Phase runs reuse one internal `PhaseBundle` before deterministic public artefact persistence.

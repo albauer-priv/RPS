@@ -10,10 +10,11 @@ defaults:
       - typed_output_present
     guardrail_max_retries: 2
   persisted_artifact:
-    output_mode: prompt_only
+    output_mode: json
     guardrails:
       - artifact_envelope_basic
-    guardrail_max_retries: 1
+      - artifact_meta_data_present
+    guardrail_max_retries: 2
 
 tasks:
   finalize_reply:
@@ -50,43 +51,3 @@ tasks:
       - typed_output_present
       - phase_bundle_integrity
     guardrail_max_retries: 2
-  season_plan:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  season_phase_feed_forward:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  phase_guardrails:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  phase_structure:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  phase_preview:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  phase_feed_forward:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  week_plan:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present
-  des_analysis_report:
-    output_mode: prompt_only
-    guardrails:
-      - artifact_envelope_basic
-      - artifact_meta_data_present

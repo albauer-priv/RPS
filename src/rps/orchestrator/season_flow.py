@@ -5,19 +5,18 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
-from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
 from rps.agents.runtime import AgentRuntime
+from rps.agents.runtime import run_agent_multi_output as run_agent_multi_output_direct
 from rps.agents.tasks import AgentTask
+from rps.crewai_runtime.compat import crewai_runtime_status
 from rps.crewai_runtime.flows import run_season_flow
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
     save_advisory_memory,
     save_athlete_state_snapshot,
 )
-from rps.orchestrator.resolved_context import (
-    build_resolved_activity_context_block,
-)
+from rps.orchestrator.resolved_context import build_resolved_activity_context_block
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -27,6 +26,52 @@ AMBITION_IF_RANGE_LENGTH = 2
 
 JsonMap = dict[str, object]
 OrchestratorResult = dict[str, object]
+
+
+def run_agent_multi_output(
+    runtime_for: Callable[[str], AgentRuntime],
+    *,
+    agent_name: str,
+    athlete_id: str,
+    task: AgentTask,
+    user_input: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+    force_file_search: bool = True,
+    max_num_results: int = 20,
+    workspace_root=None,
+) -> OrchestratorResult:
+    """Compatibility dispatcher for season orchestration tests and wrappers."""
+
+    if crewai_runtime_status().ok:
+        return run_season_flow(
+            runtime_for=runtime_for,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            task=task,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+            force_file_search=force_file_search,
+            max_num_results=max_num_results,
+            workspace_root=workspace_root,
+        )
+
+    return run_agent_multi_output_direct(
+        runtime_for(agent_name),
+        agent_name=agent_name,
+        athlete_id=athlete_id,
+        tasks=[task],
+        user_input=user_input,
+        run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
+        force_file_search=force_file_search,
+        max_num_results=max_num_results,
+        workspace_root=workspace_root,
+    )
 
 
 def _load_latest_payload(
@@ -114,7 +159,7 @@ def create_season_scenarios(
 ) -> OrchestratorResult:
     """Create season scenarios for the target ISO week."""
     spec = AGENTS["season_scenario"]
-    injected_block = build_injection_block("season_scenario", mode="scenario")
+    injected_block = ""
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
     athlete_state_snapshot_block = ""
     try:
@@ -156,11 +201,11 @@ def create_season_scenarios(
         f"{athlete_state_snapshot_block}"
         f"{override_line}"
         f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_SCENARIOS."
+        "Return only the final schema-compliant SEASON_SCENARIOS artifact envelope."
     )
     logger.info("Creating season scenarios athlete=%s iso_week=%04d-W%02d", athlete_id, year, week)
-    return run_season_flow(
-        runtime_for=runtime_for,
+    return run_agent_multi_output(
+        runtime_for,
         agent_name=spec.name,
         athlete_id=athlete_id,
         task=AgentTask.CREATE_SEASON_SCENARIOS,
@@ -191,7 +236,7 @@ def select_season_scenario(
 ) -> OrchestratorResult:
     """Select a season scenario for the target ISO week."""
     spec = AGENTS["season_scenario"]
-    injected_block = build_injection_block("season_scenario", mode="scenario")
+    injected_block = ""
     rationale_line = f"Rationale: {rationale.strip()}. " if rationale else ""
     kpi_line = ""
     if isinstance(kpi_selection, dict):
@@ -219,7 +264,7 @@ def select_season_scenario(
         f"{rationale_line}"
         f"{kpi_line}"
         f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_SCENARIO_SELECTION. "
+        "Return only the final schema-compliant SEASON_SCENARIO_SELECTION artifact envelope. "
         "Always include kpi_moving_time_rate_guidance_selection (set to null if not provided)."
     )
     logger.info(
@@ -229,8 +274,8 @@ def select_season_scenario(
         week,
         selected,
     )
-    return run_season_flow(
-        runtime_for=runtime_for,
+    return run_agent_multi_output(
+        runtime_for,
         agent_name=spec.name,
         athlete_id=athlete_id,
         task=AgentTask.CREATE_SEASON_SCENARIO_SELECTION,
@@ -260,7 +305,7 @@ def create_season_plan(
 ) -> OrchestratorResult:
     """Create the season plan for the selected scenario."""
     spec = AGENTS["season_planner"]
-    injected_block = build_injection_block("season_planner", mode="season_plan")
+    injected_block = ""
     scenario_line = f"Scenario {selected.upper()}. " if selected else ""
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
     user_data_block = ""
@@ -340,7 +385,7 @@ def create_season_plan(
         f"{resolved_activity_block}"
         f"{override_line}"
         f"{injected_block}"
-        "Follow the Mandatory Output Chapter for SEASON_PLAN."
+        "Return only the final schema-compliant SEASON_PLAN artifact envelope."
     )
     logger.info(
         "Creating season plan athlete=%s iso_week=%04d-W%02d scenario=%s",
@@ -349,8 +394,8 @@ def create_season_plan(
         week,
         selected or "latest",
     )
-    result = run_season_flow(
-        runtime_for=runtime_for,
+    result = run_agent_multi_output(
+        runtime_for,
         agent_name=spec.name,
         athlete_id=athlete_id,
         task=AgentTask.CREATE_SEASON_PLAN,

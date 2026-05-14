@@ -39,29 +39,35 @@ agents:
   conversation_manager:
     scope_template: /athlete/{athlete_id}/coach/session/{surface}
     mode: scope
-  week_context_analyst:
+  week_context_specialist:
     scope_template: /athlete/{athlete_id}/coach/session/{surface}/context
     mode: scope
-  coaching_recommendation_specialist:
+  week_recommendation_specialist:
     scope_template: /athlete/{athlete_id}/coach/preferences
     additional_read_scopes:
       - /athlete/{athlete_id}/coach/accepted_patterns
     mode: slice_read_only
-  week_preview_specialist:
+  week_revision_specialist:
     scope_template: /athlete/{athlete_id}/coach/accepted_patterns
     mode: scope
   pending_resolution_specialist:
     scope_template: /athlete/{athlete_id}/coach/session/{surface}/pending
     mode: scope
-  season_planner_manager:
+  season_plan_manager:
     scope_template: /athlete/{athlete_id}/planning/season/nonbinding/manager
     mode: scope
-  phase_architect_manager:
+  season_feed_forward_manager:
+    scope_template: /athlete/{athlete_id}/advisory/feed_forward/season_manager
+    mode: scope
+  phase_bundle_manager:
     scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/manager
     mode: scope
-  week_planner:
-    scope_template: /athlete/{athlete_id}/planning/week/nonbinding/planner
+  phase_feed_forward_manager:
+    scope_template: /athlete/{athlete_id}/advisory/feed_forward/phase_manager
     mode: scope
-  performance_analysis:
+  week_artifact_writer:
+    scope_template: /athlete/{athlete_id}/planning/week/nonbinding/writer
+    mode: scope
+  performance_analysis_specialist:
     scope_template: /athlete/{athlete_id}/advisory/report/analyst
     mode: scope

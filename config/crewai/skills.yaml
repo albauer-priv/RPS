@@ -1,0 +1,156 @@
+bundles:
+  shared_runtime:
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/resolved-context-consumption
+      - skills/shared/traceability-and-naming
+  durability_methodology:
+    skills:
+      - skills/shared/durability-methodology
+      - skills/shared/load-estimation-core
+  week_domain:
+    skills:
+      - skills/week/context-analysis
+      - skills/week/recommendation-and-adjustment
+      - skills/week/revision-methodology
+      - skills/week/load-estimation-week
+      - skills/week/workout-text-authoring
+  week_writer:
+    skills:
+      - skills/week/artifact-writing
+  phase_domain:
+    skills:
+      - skills/phase/context-analysis
+      - skills/phase/guardrails-authoring
+      - skills/phase/structure-authoring
+      - skills/phase/cadence-recovery
+      - skills/phase/intensity-distribution
+      - skills/phase/constraint-audit
+      - skills/phase/load-governance-audit
+      - skills/phase/load-estimation-phase
+  phase_writer:
+    skills:
+      - skills/phase/artifact-writing
+      - skills/phase/feed-forward
+  season_domain:
+    skills:
+      - skills/season/context-analysis
+      - skills/season/scenario-interpretation
+      - skills/season/event-priority-anchoring
+      - skills/season/macrocycle-architecture
+      - skills/season/constraint-synthesis
+      - skills/season/load-governance
+      - skills/season/load-estimation-season
+      - skills/season/audit
+  season_writer:
+    skills:
+      - skills/season/artifact-writing
+      - skills/season/feed-forward
+  conversation_ops:
+    skills:
+      - skills/conversation/routing-and-finalization
+      - skills/conversation/pending-resolution
+  report_writer:
+    skills:
+      - skills/report/artifact-writing
+
+crews:
+  coach_conversation:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+      - conversation_ops
+  workout_editor_conversation:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+      - conversation_ops
+  season_planning:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+      - season_domain
+  phase_planning:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+      - phase_domain
+  week_planning:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+      - week_domain
+  report_advisory:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+  feed_forward_advisory:
+    bundles:
+      - shared_runtime
+      - durability_methodology
+
+agents:
+  conversation_manager:
+    bundles: [conversation_ops]
+  week_context_specialist:
+    bundles: [week_domain]
+  week_recommendation_specialist:
+    bundles: [week_domain, durability_methodology]
+  week_revision_specialist:
+    bundles: [week_domain]
+  pending_resolution_specialist:
+    bundles: [conversation_ops]
+  season_scenario:
+    bundles: [season_domain]
+  season_planner:
+    bundles: [season_domain]
+  season_plan_manager:
+    bundles: [season_domain, durability_methodology]
+  season_feed_forward_manager:
+    bundles: [season_domain, durability_methodology]
+  season_artifact_writer:
+    bundles: [season_writer]
+  scenario_interpreter:
+    bundles: [season_domain]
+  event_priority_anchor_specialist:
+    bundles: [season_domain]
+  macrocycle_architect:
+    bundles: [season_domain, durability_methodology]
+  load_governance_specialist:
+    bundles: [season_domain, durability_methodology]
+  constraint_specialist:
+    bundles: [season_domain]
+  historical_context_specialist:
+    bundles: [season_domain, durability_methodology]
+  kpi_guidance_specialist:
+    bundles: [durability_methodology]
+  season_plan_auditor:
+    bundles: [season_domain]
+  phase_architect:
+    bundles: [phase_domain]
+  phase_bundle_manager:
+    bundles: [phase_domain, durability_methodology]
+  phase_feed_forward_manager:
+    bundles: [phase_domain, durability_methodology]
+  phase_artifact_writer:
+    bundles: [phase_writer]
+  guardrails_specialist:
+    bundles: [phase_domain, durability_methodology]
+  structure_specialist:
+    bundles: [phase_domain, durability_methodology]
+  cadence_recovery_integrator:
+    bundles: [phase_domain]
+  intensity_distribution_specialist:
+    bundles: [phase_domain, durability_methodology]
+  preview_synthesizer:
+    bundles: [phase_domain]
+  constraint_auditor:
+    bundles: [phase_domain]
+  load_governance_auditor:
+    bundles: [phase_domain, durability_methodology]
+  week_artifact_writer:
+    bundles: [week_writer, week_domain]
+  performance_analysis_specialist:
+    bundles: [durability_methodology]
+  report_artifact_writer:
+    bundles: [report_writer]

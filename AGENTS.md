@@ -93,7 +93,8 @@ This file is the **README for coding agents** working in this repository. It con
 * `doc/overview/how_to_plan.md`: Planner roles & responsibilities and end-to-end flow.
 * `doc/architecture/subsystems/intervals_posting.md`: Intervals posting semantics, receipts, and external_id strategy.
 * `doc/ui/pages/plan_hub.md`: Plan Hub proposal with readiness rules and layout.
-* `config/agent_knowledge_injection.yaml`: Knowledge injection per agent/mode.
+* `config/crewai/skills.yaml`: Skill assignment per crew/agent.
+* `config/crewai/knowledge_sources.yaml`: Static factual knowledge bundles.
 * `prompts/agents/*.md`: Agent prompts (Season/Phase/Week/Coach/etc.).
 * `specs/schemas/**`: JSON schemas (esp. artifact interfaces).
 

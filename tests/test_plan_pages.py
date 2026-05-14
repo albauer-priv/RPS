@@ -612,7 +612,6 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
@@ -704,7 +703,6 @@ def test_create_season_plan_includes_selected_kpi_guidance(
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
@@ -879,7 +877,6 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_agent_multi_output",
         lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},
@@ -899,8 +896,8 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
     )
 
     assert any(step["agent"] == "phase_architect" for step in result.steps)
-    assert any(run_id.endswith("_phase_create_phase_structure") for run_id in run_ids)
-    assert any(run_id.endswith("_phase_create_phase_preview") for run_id in run_ids)
+    assert run_ids == ["test_run_phase_bundle"]
+    assert not result.ok
 
 
 def test_plan_week_force_phase_guardrails_and_structure_reruns_preview(
@@ -964,7 +961,6 @@ def test_plan_week_force_phase_guardrails_and_structure_reruns_preview(
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_agent_multi_output",
         lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},
@@ -983,10 +979,8 @@ def test_plan_week_force_phase_guardrails_and_structure_reruns_preview(
         force_steps=["PHASE_GUARDRAILS", "PHASE_STRUCTURE"],
     )
 
+    assert run_ids == ["test_run_phase_bundle"]
     assert result.ok
-    assert any(run_id.endswith("_phase_create_phase_guardrails") for run_id in run_ids)
-    assert any(run_id.endswith("_phase_create_phase_structure") for run_id in run_ids)
-    assert any(run_id.endswith("_phase_create_phase_preview") for run_id in run_ids)
 
 
 def test_plan_week_force_phase_guardrails_runs_in_isolation(
@@ -1026,7 +1020,6 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
 
     def _fake_run_agent_multi_output(*_args, **kwargs):
         task_value = kwargs["tasks"][0].value
@@ -1174,7 +1167,6 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._resolve_latest_historical_week_versions", lambda *_args, **_kwargs: {})
     monkeypatch.setattr("rps.orchestrator.plan_week.save_athlete_state_snapshot", lambda *_args, **_kwargs: {})
     monkeypatch.setattr("rps.orchestrator.plan_week.save_planning_context_snapshot", lambda *_args, **_kwargs: {})
@@ -1361,7 +1353,6 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     )
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
 
     def _fake_run_agent_multi_output(*_args, **kwargs):
         captured_inputs.append(kwargs["user_input"])
@@ -1480,7 +1471,6 @@ def test_plan_week_week_planner_uses_historical_activity_versions(
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
 
     def _fake_run_agent_multi_output(*_args, **kwargs):
         captured_inputs.append(kwargs["user_input"])
@@ -1680,7 +1670,6 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
     )
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
 
     def _fake_run_agent_multi_output(*_args, **kwargs):
         captured_inputs.append(kwargs["user_input"])
@@ -1722,7 +1711,6 @@ def test_create_season_plan_injects_resolved_logistics_and_zone_context(
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
@@ -1842,7 +1830,6 @@ def test_create_season_plan_uses_historical_activity_versions(
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
@@ -1920,7 +1907,6 @@ def test_create_season_scenarios_injects_resolved_context(
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.season_flow.build_injection_block", lambda *_args, **_kwargs: "")
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
@@ -2045,7 +2031,6 @@ def test_plan_week_injects_resolved_activity_context(
         return {"ok": True, "produced": True, "tasks": task_values}
 
     monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_workout_export",
         lambda **_kwargs: {"ran": False, "result": {"ok": True, "produced": False}},
@@ -2485,7 +2470,6 @@ def test_plan_week_injects_resolved_logistics_and_zone_context(
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
 
     def _fake_run_agent_multi_output(*_args, **kwargs):
         captured_inputs.append(kwargs["user_input"])
@@ -2571,7 +2555,6 @@ def test_plan_week_skips_export_when_week_plan_creation_fails(
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr("rps.orchestrator.plan_week.build_injection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_agent_multi_output",
         lambda *_args, **_kwargs: {"ok": False, "produced": False},

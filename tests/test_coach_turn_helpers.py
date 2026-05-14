@@ -20,13 +20,13 @@ def test_runtime_profile_assigns_tools_per_specialist() -> None:
 
     profile = build_runtime_profile(surface_name="coach", toolsets=toolsets)
 
-    assert profile["knowledge_modes"]["coaching_recommendation_specialist"] == "coach"
-    assert profile["tool_names"]["week_context_analyst"] == [
+    assert profile["knowledge_modes"]["week_recommendation_specialist"] == "coach"
+    assert profile["tool_names"]["week_context_specialist"] == [
         "read_current_plan_context",
         "list_current_week_plan_workouts",
     ]
-    assert profile["tool_names"]["coaching_recommendation_specialist"] == []
-    assert profile["tool_names"]["week_preview_specialist"] == ["preview_scoped_week_replan"]
+    assert profile["tool_names"]["week_recommendation_specialist"] == []
+    assert profile["tool_names"]["week_revision_specialist"] == ["preview_scoped_week_replan"]
     assert profile["tool_names"]["pending_resolution_specialist"] == [
         "show_pending_coach_operation",
         "apply_pending_coach_operation",

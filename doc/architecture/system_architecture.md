@@ -305,27 +305,21 @@ Tools available to agents:
 These tool sets are wired by the runtime and are consistent across agents.
 File search is forced by default; use `--no-file-search` if you need to disable it.
 
-### 4.2 Runtime Knowledge Injection (Base + Mode Bundles)
+### 4.2 Runtime Skills, Knowledge, and Contracts
 
-The runtime now separates static knowledge from prompt-level contract injection.
+The runtime now separates methodology, factual knowledge, memory, and output enforcement.
 
 Configuration:
-- Static knowledge: `config/crewai/knowledge_sources.yaml`
-- Prompt/runtime contracts: `config/agent_knowledge_injection.yaml`
+- Skills and shared methodology: `config/crewai/skills.yaml`
+- Static factual knowledge: `config/crewai/knowledge_sources.yaml`
 - Memory policy: `config/crewai/memory_policy.yaml`
 - Task output and guardrails: `config/crewai/task_policies.yaml`
 
 Model:
-- Static domain references are attached through CrewAI `knowledge_sources`.
-- Prompt injection is narrowed to runtime instructions, authority boundaries, and retained mandatory-output contracts where strict structured-output replacement is not yet safe.
-
-Effective injection for a run:
-- base `inject` + selected bundle `inject` (+ any mode-specific `inject`)
-- duplicates are removed while preserving order
-
-Modes are chosen by the orchestrator/runner based on the task
-(for example: `season_plan` vs `feed_forward`, or
-`phase_guardrails` vs `phase_structure`, or `coach`).
+- Repo-local Skills carry procedures, guidance, and reusable planning methodology.
+- CrewAI `knowledge_sources` carry factual/reference corpora that benefit from retrieval.
+- Prompt files are reduced to role/scope/runtime-local framing.
+- Contracts and schemas remain explicit authoritative files outside the skill system.
 
 #### 4.1.4 Operational Limits
 

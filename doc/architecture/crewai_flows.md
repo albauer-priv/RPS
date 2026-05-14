@@ -336,22 +336,23 @@ Defined in `src/rps/ui/pages/plan/workouts.py`.
 
 | Specialist | Tools |
 | --- | --- |
-| `week_context_analyst` | `list_current_week_plan_workouts` |
-| `coaching_recommendation_specialist` | none |
-| `week_preview_specialist` | `preview_move_workout`, `preview_change_start_time`, `preview_update_workout_text` |
+| `week_context_specialist` | `list_current_week_plan_workouts` |
+| `week_recommendation_specialist` | none |
+| `week_revision_specialist` | `preview_move_workout`, `preview_change_start_time`, `preview_update_workout_text` |
 | `pending_resolution_specialist` | `show_pending_week_plan_edit`, `apply_pending_week_plan_edit`, `discard_pending_week_plan_edit` |
 
-## Knowledge Injection by Specialist
+## Skills and Knowledge by Specialist
 
-Knowledge injection is configured in `config/agent_knowledge_injection.yaml`.
+Shared methodology is configured in `config/crewai/skills.yaml`.
+Static factual corpora are configured in `config/crewai/knowledge_sources.yaml`.
 
 | Specialist | Injected emphasis |
 | --- | --- |
-| `conversation_manager` | traceability and file-naming rules only |
-| `week_context_analyst` | interface-level athlete/event/logistics/availability/wellness specs |
-| `coaching_recommendation_specialist` | load estimation, durability-first principles, durability evidence, overload policy, KPI signal policy |
-| `week_preview_specialist` | phase/week and week/export contracts plus mandatory week output spec |
-| `pending_resolution_specialist` | traceability only |
+| `conversation_manager` | routing/finalization plus shared runtime-boundary skills |
+| `week_context_specialist` | shared runtime skills plus factual interface knowledge |
+| `week_recommendation_specialist` | shared week-domain and durability methodology skills |
+| `week_revision_specialist` | shared week revision and workout authoring skills |
+| `pending_resolution_specialist` | bounded pending-resolution operations only |
 
 This split is intentional:
 - domain coaching knowledge is concentrated in the recommendation specialist
@@ -407,6 +408,7 @@ Safe behavior expectations:
 - Shared conversational runtime: `src/rps/crewai_runtime/coach_chat.py`
 - Agent definitions: `config/crewai/agents.yaml`
 - Task definitions: `config/crewai/tasks.yaml`
-- Knowledge injection: `config/agent_knowledge_injection.yaml`
+- Skills: `config/crewai/skills.yaml`
+- Knowledge bundles: `config/crewai/knowledge_sources.yaml`
 - Coach surface wiring: `src/rps/ui/pages/coach.py`
 - Workout Editor surface wiring: `src/rps/ui/pages/plan/workouts.py`

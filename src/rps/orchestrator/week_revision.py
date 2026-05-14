@@ -5,12 +5,10 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
-from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime.flows import run_week_flow
-from rps.orchestrator.plan_week import _mode_for_task
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +18,13 @@ OrchestratorResult = dict[str, object]
 def _build_revision_user_input(*, year: int, week: int, message: str) -> str:
     """Build the common user-input payload for week revision and preview runs."""
 
-    injected_block = build_injection_block("week_planner", mode=_mode_for_task(AgentTask.CREATE_WEEK_PLAN))
+    injected_block = ""
     return (
         f"Target ISO week: year={year}, week={week} (ISO {year:04d}-{week:02d}). "
         "Revise the week plan based on the following coach message. "
         f"Message: {message}\n"
         f"{injected_block}"
-        "Follow the Mandatory Output Chapter for WEEK_PLAN."
+        "Return only the final schema-compliant WEEK_PLAN artifact envelope."
     )
 
 

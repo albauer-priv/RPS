@@ -9,11 +9,12 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from rps.agents.knowledge_injection import build_injection_block
 from rps.agents.registry import AGENTS
-from rps.agents.runtime import AgentRuntime, run_agent_multi_output
+from rps.agents.runtime import AgentRuntime
+from rps.agents.runtime import run_agent_multi_output as run_agent_multi_output_direct
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
+from rps.crewai_runtime.compat import crewai_runtime_status
 from rps.crewai_runtime.flows import run_phase_flow, run_report_flow, run_week_flow
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.context_snapshots import (
@@ -49,6 +50,74 @@ AMBITION_IF_RANGE_LENGTH = 2
 JsonMap = dict[str, object]
 OrchestratorResult = dict[str, object]
 StepRecord = dict[str, object]
+
+
+def run_agent_multi_output(
+    runtime: AgentRuntime,
+    *,
+    agent_name: str,
+    agent_vs_name: str,
+    athlete_id: str,
+    tasks: list[AgentTask],
+    user_input: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+    force_file_search: bool = True,
+    max_num_results: int = 20,
+    stream_handlers=None,
+) -> dict[str, object]:
+    """Compatibility dispatcher used by plan-week orchestration and tests."""
+
+    if tasks and all(
+        task
+        in {
+            AgentTask.CREATE_PHASE_GUARDRAILS,
+            AgentTask.CREATE_PHASE_STRUCTURE,
+            AgentTask.CREATE_PHASE_PREVIEW,
+            AgentTask.CREATE_PHASE_FEED_FORWARD,
+        }
+        for task in tasks
+    ):
+        return run_phase_flow(
+            runtime,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            tasks=tasks,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+            workspace_root=runtime.workspace_root,
+        )
+    if tasks and all(task == AgentTask.CREATE_WEEK_PLAN for task in tasks):
+        return run_week_flow(
+            runtime_for=lambda _agent_name: runtime,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            tasks=tasks,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+            force_file_search=force_file_search,
+            max_num_results=max_num_results,
+            workspace_root=runtime.workspace_root,
+        )
+    return run_agent_multi_output_direct(
+        runtime,
+        agent_name=agent_name,
+        agent_vs_name=agent_vs_name,
+        athlete_id=athlete_id,
+        tasks=tasks,
+        user_input=user_input,
+        run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
+        force_file_search=force_file_search,
+        max_num_results=max_num_results,
+        stream_handlers=stream_handlers,
+    )
 
 
 def _format_screen_text(text: str) -> str:
@@ -226,8 +295,8 @@ def create_performance_report(
     _flow_wrapped: bool = False,
 ) -> OrchestratorResult:
     """Create a DES analysis report for the requested ISO week."""
-    if not _flow_wrapped:
-        spec = AGENTS["performance_analyst"]
+    if not _flow_wrapped and crewai_runtime_status().ok:
+        spec = AGENTS["performance_analysis"]
         return run_report_flow(
             lambda: create_performance_report(
                 runtime_for,
@@ -365,8 +434,7 @@ def create_performance_report(
         spec = AGENTS["performance_analysis"]
         message = f"Running Performance-Analyst for ISO week {report_label}."
         _log(message)
-        mode = _mode_for_task(AgentTask.CREATE_DES_ANALYSIS_REPORT)
-        injected_block = build_injection_block("performance_analysis", mode=mode)
+        injected_block = ""
         stream_chunks: list[str] = []
         def _on_reasoning_chunk(delta: str) -> None:
             stream_chunks.append(delta)
@@ -811,16 +879,16 @@ def plan_week(
             )
         spec = AGENTS["phase_architect"]
         phase_task_labels = ", ".join(task.value for task in phase_tasks)
-        mode = _mode_for_task(phase_tasks[0])
-        injected_block = build_injection_block("phase_architect", mode=mode)
+        injected_block = ""
         message = (
             f"Running Phase-Architect Flow for phase range {phase_range_label} "
             f"covering tasks: {phase_task_labels}."
         )
         _log(message)
-        out = run_phase_flow(
+        out = run_agent_multi_output(
             runtime_for(spec.name),
             agent_name=spec.name,
+            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=phase_tasks,
             user_input=(
@@ -839,7 +907,6 @@ def plan_week(
             run_id=f"{run_id}_phase_bundle",
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            workspace_root=runtime_for(spec.name).workspace_root,
         )
         steps.append({"agent": "phase_architect", "tasks": [task.value for task in phase_tasks], "result": out})
         if out.get("ok") and out.get("produced"):
@@ -1039,11 +1106,11 @@ def plan_week(
         spec = AGENTS["week_planner"]
         message = f"Running Week-Planner for ISO week {target_label}."
         _log(message)
-        mode = _mode_for_task(AgentTask.CREATE_WEEK_PLAN)
-        injected_block = build_injection_block("week_planner", mode=mode)
-        out = run_week_flow(
-            runtime_for=runtime_for,
+        injected_block = ""
+        out = run_agent_multi_output(
+            runtime_for(spec.name),
             agent_name=spec.name,
+            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=week_tasks,
             user_input=(
@@ -1063,7 +1130,6 @@ def plan_week(
             run_id=f"{run_id}_week",
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            workspace_root=runtime_for(spec.name).workspace_root,
             force_file_search=force_file_search,
             max_num_results=max_num_results,
         )

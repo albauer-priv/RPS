@@ -17,6 +17,7 @@ class CrewAIConfigBundle:
 
     agents: JsonMap
     tasks: JsonMap
+    skills: JsonMap
     knowledge_sources: JsonMap
     memory_policy: JsonMap
     task_policies: JsonMap
@@ -39,6 +40,7 @@ def load_crewai_config_bundle(
     base = (root or Path.cwd()) / "config" / "crewai"
     agents = _load_yaml(base / "agents.yaml")
     tasks = _load_yaml(base / "tasks.yaml")
+    skills = _load_yaml(base / "skills.yaml")
     knowledge_sources = _load_yaml(base / "knowledge_sources.yaml")
     memory_policy = _load_yaml(base / "memory_policy.yaml")
     task_policies = _load_yaml(base / "task_policies.yaml")
@@ -50,6 +52,8 @@ def load_crewai_config_bundle(
         raise ValueError("config/crewai/agents.yaml must contain an 'agents' mapping.")
     if not isinstance(task_defs, dict):
         raise ValueError("config/crewai/tasks.yaml must contain a 'tasks' mapping.")
+    if not isinstance(skills.get("agents") or {}, dict):
+        raise ValueError("config/crewai/skills.yaml must contain an 'agents' mapping.")
     if not isinstance(knowledge_sources.get("agents") or {}, dict):
         raise ValueError("config/crewai/knowledge_sources.yaml must contain an 'agents' mapping.")
     if not isinstance(memory_policy.get("crews") or {}, dict):
@@ -76,6 +80,28 @@ def load_crewai_config_bundle(
     if unknown_knowledge_agents:
         unique = ", ".join(unknown_knowledge_agents)
         raise ValueError(f"Unknown agent references in knowledge_sources.yaml: {unique}")
+    unknown_skill_agents = sorted(set((skills.get("agents") or {}).keys()) - set(agent_defs.keys()))
+    if unknown_skill_agents:
+        unique = ", ".join(unknown_skill_agents)
+        raise ValueError(f"Unknown agent references in skills.yaml: {unique}")
+    skill_bundle_defs = skills.get("bundles") or {}
+    configured_skill_paths: list[str] = []
+    for bundle_def in skill_bundle_defs.values():
+        if isinstance(bundle_def, dict):
+            configured_skill_paths.extend(
+                str(item) for item in (bundle_def.get("skills") or []) if isinstance(item, str)
+            )
+    base_root = root or Path.cwd()
+    missing_skills = sorted(
+        {
+            skill_path
+            for skill_path in configured_skill_paths
+            if not ((base_root / skill_path) / "SKILL.md").exists()
+        }
+    )
+    if missing_skills:
+        unique = ", ".join(missing_skills)
+        raise ValueError(f"Configured CrewAI skills are missing SKILL.md: {unique}")
 
     task_policy_defs = task_policies.get("tasks") or {}
     unknown_policy_tasks = sorted(set(task_policy_defs.keys()) - set(task_defs.keys()))
@@ -86,6 +112,7 @@ def load_crewai_config_bundle(
     return CrewAIConfigBundle(
         agents=agents,
         tasks=tasks,
+        skills=skills,
         knowledge_sources=knowledge_sources,
         memory_policy=memory_policy,
         task_policies=task_policies,
