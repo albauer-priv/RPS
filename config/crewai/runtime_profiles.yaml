@@ -1,0 +1,317 @@
+allowed_models:
+  - gpt-5.4
+  - gpt-5.4-mini
+  - gpt-5.4-nano
+  - gpt-4.1-mini
+  - gpt-4o-mini
+  - gpt-4.1
+
+crews:
+  coach_conversation:
+    planning:
+      enabled: false
+  workout_editor_conversation:
+    planning:
+      enabled: false
+  season_planning:
+    planning:
+      enabled: true
+      model: gpt-5.4
+  season_review:
+    planning:
+      enabled: false
+  season_writer:
+    planning:
+      enabled: false
+  phase_planning:
+    planning:
+      enabled: true
+      model: gpt-5.4-mini
+  phase_review:
+    planning:
+      enabled: false
+  phase_writer:
+    planning:
+      enabled: false
+  week_planning:
+    planning:
+      enabled: false
+  week_review:
+    planning:
+      enabled: false
+  week_writer:
+    planning:
+      enabled: false
+  report_planning:
+    planning:
+      enabled: false
+  report_review:
+    planning:
+      enabled: false
+  report_writer:
+    planning:
+      enabled: false
+
+agents:
+  coach:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  conversation_manager:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  week_context_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  week_constraint_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  week_recommendation_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 1
+  week_load_target_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 1
+  week_revision_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 1
+  week_workout_authoring_specialist:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+  week_consistency_auditor:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 1
+  week_load_governance_reviewer:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 1
+  week_workout_syntax_reviewer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+  week_plan_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  week_review_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  pending_resolution_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+
+  season_scenario:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  season_planner:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  season_context_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  season_plan_manager:
+    model: gpt-5.4
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  season_review_manager:
+    model: gpt-5.4
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  season_feed_forward_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  season_artifact_writer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+  scenario_interpreter:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  event_priority_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  peak_window_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  macrocycle_architect:
+    model: gpt-5.4
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  season_load_corridor_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  season_progression_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  season_constraint_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  season_historical_context_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  season_kpi_guidance_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  season_plan_auditor:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  season_governance_auditor:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  season_constraints_reviewer:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+
+  phase_architect:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  phase_context_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  phase_bundle_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  phase_review_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  phase_feed_forward_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  phase_artifact_writer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+  phase_guardrail_band_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_execution_rules_specialist:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+  phase_structure_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_cadence_recovery_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_intensity_distribution_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_event_integration_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_preview_synthesizer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+  phase_constraint_auditor:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_governance_auditor:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_structure_reviewer:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  phase_preview_reviewer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+
+  week_planner:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  week_artifact_writer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false
+
+  performance_analysis:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  performance_context_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  des_diagnostic_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 2
+  des_review_manager:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: true
+      max_attempts: 3
+  report_artifact_writer:
+    model: gpt-4.1-mini
+    reasoning:
+      enabled: false

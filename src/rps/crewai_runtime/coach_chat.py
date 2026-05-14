@@ -23,7 +23,11 @@ from .memory import (
     resolve_agent_memory_profile,
     resolve_crew_memory_profile,
 )
-from .provider import build_crewai_llm_kwargs
+from .provider import (
+    build_crewai_llm_kwargs,
+    build_crewai_planning_llm_kwargs,
+    resolve_crewai_planning_enabled,
+)
 from .skills import (
     build_crewai_skill_kwargs,
     render_skill_prompt_block,
@@ -34,6 +38,18 @@ from .telemetry import runtime_event_scope
 logger = logging.getLogger(__name__)
 
 JsonMap = dict[str, Any]
+
+
+def _agent_runtime_profile(bundle: Any, agent_name: str) -> JsonMap:
+    profiles = bundle.runtime_profiles.get("agents") or {}
+    profile = profiles.get(agent_name) or {}
+    return profile if isinstance(profile, dict) else {}
+
+
+def _crew_runtime_profile(bundle: Any, crew_name: str) -> JsonMap:
+    profiles = bundle.runtime_profiles.get("crews") or {}
+    profile = profiles.get(crew_name) or {}
+    return profile if isinstance(profile, dict) else {}
 
 
 @dataclass(frozen=True)
@@ -151,11 +167,16 @@ def _build_agent(
     LLM = getattr(crewai, "LLM")
     bundle = load_crewai_config_bundle(root=Path.cwd())
     agent_cfg = (bundle.agents.get("agents") or {}).get(agent_name) or {}
+    runtime_profile = _agent_runtime_profile(bundle, agent_name)
+    reasoning_profile = runtime_profile.get("reasoning") or {}
     llm = LLM(
         **build_crewai_llm_kwargs(
             agent_name,
-            model_override=model_override,
+            model_override=model_override or runtime_profile.get("model"),
             temperature_override=temperature_override,
+            reasoning_effort_override=runtime_profile.get("reasoning_effort"),
+            reasoning_summary_override=runtime_profile.get("reasoning_summary"),
+            max_completion_tokens_override=runtime_profile.get("max_completion_tokens"),
         )
     )
     prompt_loader = PromptLoader(prompts_dir)
@@ -173,6 +194,11 @@ def _build_agent(
         "allow_delegation": False,
         "verbose": False,
     }
+    if bool(reasoning_profile.get("enabled", False)):
+        kwargs["reasoning"] = True
+        max_attempts = reasoning_profile.get("max_attempts")
+        if isinstance(max_attempts, int) and max_attempts > 0:
+            kwargs["max_reasoning_attempts"] = max_attempts
     kwargs.update(
         build_crewai_knowledge_kwargs(
             root=Path.cwd(),
@@ -281,7 +307,27 @@ def _run_structured_task(
         agent=agent,
         output_pydantic=output_model,
     )
-    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False, **crew_memory_kwargs)
+    planning_profile = (_crew_runtime_profile(bundle, crew_name).get("planning") or {})
+    planning_enabled = resolve_crewai_planning_enabled(
+        crew_name,
+        default_enabled=bool(planning_profile.get("enabled", False)),
+    )
+    crew_kwargs: JsonMap = {
+        "agents": [agent],
+        "tasks": [task],
+        "process": Process.sequential,
+        "verbose": False,
+    }
+    if planning_enabled:
+        planning_llm_kwargs = build_crewai_planning_llm_kwargs(
+            crew_name,
+            default_model=planning_profile.get("model") if isinstance(planning_profile.get("model"), str) else None,
+        )
+        if planning_llm_kwargs:
+            crew_kwargs["planning"] = True
+            crew_kwargs["planning_llm"] = getattr(crewai, "LLM")(**planning_llm_kwargs)
+    crew_kwargs.update(crew_memory_kwargs)
+    crew = Crew(**crew_kwargs)
     result = crew.kickoff()
     return _extract_model(task, result, output_model)
 
@@ -331,7 +377,27 @@ def _run_text_task(
         expected_output=expected_output,
         agent=agent,
     )
-    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False, **crew_memory_kwargs)
+    planning_profile = (_crew_runtime_profile(bundle, crew_name).get("planning") or {})
+    planning_enabled = resolve_crewai_planning_enabled(
+        crew_name,
+        default_enabled=bool(planning_profile.get("enabled", False)),
+    )
+    crew_kwargs: JsonMap = {
+        "agents": [agent],
+        "tasks": [task],
+        "process": Process.sequential,
+        "verbose": False,
+    }
+    if planning_enabled:
+        planning_llm_kwargs = build_crewai_planning_llm_kwargs(
+            crew_name,
+            default_model=planning_profile.get("model") if isinstance(planning_profile.get("model"), str) else None,
+        )
+        if planning_llm_kwargs:
+            crew_kwargs["planning"] = True
+            crew_kwargs["planning_llm"] = getattr(crewai, "LLM")(**planning_llm_kwargs)
+    crew_kwargs.update(crew_memory_kwargs)
+    crew = Crew(**crew_kwargs)
     result = crew.kickoff()
     return _extract_text(task, result)
 

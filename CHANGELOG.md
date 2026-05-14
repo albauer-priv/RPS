@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added `config/crewai/runtime_profiles.yaml` plus runtime wiring for explicit CrewAI planning, agent reasoning, and per-role model routing defaults across planning, review, writer, and conversational crews.
+
+### Changed
+- CrewAI backend and conversational Coach/Workout Editor builders now apply repo-owned planning/reasoning/model policy directly to `Crew(...)` and `Agent(...)`, while still allowing environment overrides for crew planning and per-agent provider settings.
+
 ## [0.12.0] - 2026-05-14
 
 ### Added

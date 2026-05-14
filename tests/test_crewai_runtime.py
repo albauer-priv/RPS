@@ -10,6 +10,7 @@ from rps.agents import runtime as agent_runtime
 from rps.agents.crewai_backend import run_agent_multi_output_crewai
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
+from rps.core.config import load_app_settings
 from rps.crewai_runtime import crewai_runtime_status, load_crewai_config_bundle
 from rps.crewai_runtime import telemetry as crewai_telemetry
 from rps.crewai_runtime.bindings import (
@@ -59,7 +60,12 @@ from rps.crewai_runtime.models import (
     WeekPlanBundleModel,
     WeekReviewDecisionModel,
 )
-from rps.crewai_runtime.provider import build_crewai_llm_kwargs, resolve_crewai_provider_config
+from rps.crewai_runtime.provider import (
+    build_crewai_llm_kwargs,
+    build_crewai_planning_llm_kwargs,
+    resolve_crewai_planning_enabled,
+    resolve_crewai_provider_config,
+)
 from rps.crewai_runtime.skills import render_skill_prompt_block, resolve_agent_skill_profile
 from rps.orchestrator.coach_operations import (
     preview_feed_forward_operation,
@@ -245,6 +251,10 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert "week_plan_manager" in knowledge_defs
     assert flow_defs["season"]["persist"] is True
     assert flow_defs["coach"]["persist"] is False
+    assert bundle.runtime_profiles["crews"]["season_planning"]["planning"]["enabled"] is True
+    assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.4-mini"
+    assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.4"
+    assert bundle.runtime_profiles["agents"]["week_artifact_writer"]["reasoning"]["enabled"] is False
     assert task_defs["classify_turn"]["agent"] == "conversation_manager"
     assert task_defs["create_week_preview"]["agent"] == "week_revision_specialist"
     assert task_defs["week_plan"]["agent"] == "week_artifact_writer"
@@ -317,6 +327,37 @@ def test_skill_prompt_block_renders_configured_skills() -> None:
     skill_block = render_skill_prompt_block(root=Path("."), profile=profile)
     assert "skills/week/revision-methodology/SKILL.md" in skill_block
     assert "skills/shared/runtime-boundaries/SKILL.md" in skill_block
+
+
+def test_runtime_profile_validation_rejects_unknown_model(tmp_path: Path) -> None:
+    root = tmp_path
+    crewai_dir = root / "config" / "crewai"
+    crewai_dir.mkdir(parents=True)
+    (root / "skills").symlink_to(Path("skills").resolve(), target_is_directory=True)
+    source_dir = Path("config/crewai")
+    for name in [
+        "agents.yaml",
+        "tasks.yaml",
+        "skills.yaml",
+        "knowledge_sources.yaml",
+        "memory_policy.yaml",
+        "task_policies.yaml",
+        "flow_persistence.yaml",
+        "runtime_profiles.yaml",
+    ]:
+        (crewai_dir / name).write_text((source_dir / name).read_text(encoding="utf-8"), encoding="utf-8")
+    runtime_profiles_path = crewai_dir / "runtime_profiles.yaml"
+    runtime_profiles_path.write_text(
+        runtime_profiles_path.read_text(encoding="utf-8").replace("gpt-5.4-mini", "bad-model", 1),
+        encoding="utf-8",
+    )
+
+    try:
+        load_crewai_config_bundle(root=root)
+    except ValueError as exc:
+        assert "Unknown model references in runtime_profiles.yaml" in str(exc)
+    else:  # pragma: no cover - defensive failure path
+        raise AssertionError("Expected load_crewai_config_bundle() to reject an unknown runtime-profile model.")
 
 
 def test_artifact_envelope_guardrail_rejects_missing_meta_and_accepts_basic_shape() -> None:
@@ -624,9 +665,13 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         def __init__(self, **kwargs):
             self.kwargs = kwargs
 
+    created_agents: list[dict[str, object]] = []
+
     class FakeAgent:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
+            self.llm = kwargs.get("llm")
+            created_agents.append(kwargs)
 
     class FakeTask:
         def __init__(self, **kwargs):
@@ -634,12 +679,13 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
             self.output_pydantic = kwargs.get("output_pydantic")
             self.output = None
 
-    captured_crew: dict[str, object] = {}
+    captured_crew: dict[str, object] = {"crews": []}
 
     class FakeCrew:
         def __init__(self, *, tasks, **kwargs):
             self.tasks = tasks
             self.kwargs = kwargs
+            captured_crew["crews"].append(kwargs)
             captured_crew["agents"] = kwargs.get("agents", [])
             captured_crew["max_agents"] = max(
                 int(captured_crew.get("max_agents", 0)),
@@ -753,6 +799,16 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert isinstance(captured_crew["agents"], list)
     assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["manager_agent"] is not None
+    planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
+    assert planning_crews
+    assert getattr(planning_crews[0].get("planning_llm"), "kwargs", {}).get("model") == "gpt-5.4"
+    macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
+    assert macrocycle_agent["reasoning"] is True
+    assert macrocycle_agent["max_reasoning_attempts"] == 2
+    assert getattr(macrocycle_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4"
+    writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted season artefact serializer")
+    assert "reasoning" not in writer_agent
+    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-4.1-mini"
 
 
 def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
@@ -765,9 +821,13 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
 
+    created_agents: list[dict[str, object]] = []
+
     class FakeAgent:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
+            self.llm = kwargs.get("llm")
+            created_agents.append(kwargs)
 
     class FakeTask:
         def __init__(self, **kwargs):
@@ -776,12 +836,13 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
             self.description = kwargs["description"]
             self.output = None
 
-    captured_crew: dict[str, object] = {}
+    captured_crew: dict[str, object] = {"crews": []}
 
     class FakeCrew:
         def __init__(self, *, tasks, **kwargs):
             self.tasks = tasks
             self.kwargs = kwargs
+            captured_crew["crews"].append(kwargs)
             captured_crew["agents"] = kwargs.get("agents", [])
             captured_crew["max_agents"] = max(
                 int(captured_crew.get("max_agents", 0)),
@@ -919,6 +980,16 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert isinstance(captured_crew["agents"], list)
     assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["manager_agent"] is not None
+    planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
+    assert planning_crews
+    assert getattr(planning_crews[0].get("planning_llm"), "kwargs", {}).get("model") == "gpt-5.4-mini"
+    band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")
+    assert band_agent["reasoning"] is True
+    assert band_agent["max_reasoning_attempts"] == 2
+    assert getattr(band_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+    writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted phase artefact serializer")
+    assert "reasoning" not in writer_agent
+    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-4.1-mini"
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:
@@ -1229,3 +1300,23 @@ def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> 
     assert config.model == "openai/gpt-5-nano"
     assert kwargs["api_key"] == "coach-key"
     assert kwargs["model"] == "openai/gpt-5-nano"
+
+
+def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
+    monkeypatch.setenv("RPS_LLM_BASE_URL", "https://api.openai.com/v1")
+    monkeypatch.setenv("RPS_CREW_PLANNING_SEASON_PLANNING", "false")
+    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-4.1")
+
+    assert resolve_crewai_planning_enabled("season_planning", default_enabled=True) is False
+    planning_kwargs = build_crewai_planning_llm_kwargs(
+        "season_planning",
+        default_model="gpt-5.4",
+    )
+    assert planning_kwargs is not None
+    assert planning_kwargs["model"] == "gpt-4.1"
+    assert planning_kwargs["api_key"] == "global-key"
+
+    settings = load_app_settings()
+    assert settings.planning_enabled_for_crew("season_planning", True) is False
+    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-4.1"

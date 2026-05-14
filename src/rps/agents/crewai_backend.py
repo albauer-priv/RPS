@@ -21,7 +21,7 @@ from rps.crewai_runtime.bindings import (
     build_task_blueprints,
     output_model_for_kind,
 )
-from rps.crewai_runtime.config import load_crewai_config_bundle
+from rps.crewai_runtime.config import CrewAIConfigBundle, load_crewai_config_bundle
 from rps.crewai_runtime.guardrails import build_task_guardrail_kwargs
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
@@ -33,7 +33,11 @@ from rps.crewai_runtime.memory import (
     resolve_agent_memory_profile,
     resolve_crew_memory_profile,
 )
-from rps.crewai_runtime.provider import build_crewai_llm_kwargs
+from rps.crewai_runtime.provider import (
+    build_crewai_llm_kwargs,
+    build_crewai_planning_llm_kwargs,
+    resolve_crewai_planning_enabled,
+)
 from rps.crewai_runtime.skills import (
     build_crewai_skill_kwargs,
     render_skill_prompt_block,
@@ -135,6 +139,53 @@ _WEEK_REVIEW_TASKS: tuple[str, ...] = (
     "week_workout_syntax_review",
     "week_review",
 )
+
+
+def _resolve_agent_runtime_profile(bundle: CrewAIConfigBundle, agent_name: str) -> JsonMap:
+    """Return the runtime-model/reasoning profile for one agent."""
+
+    profiles = bundle.runtime_profiles.get("agents") or {}
+    profile = profiles.get(agent_name) or {}
+    if not isinstance(profile, dict):
+        return {}
+    return profile
+
+
+def _resolve_crew_runtime_profile(bundle: CrewAIConfigBundle, crew_name: str) -> JsonMap:
+    """Return the runtime planning profile for one crew."""
+
+    profiles = bundle.runtime_profiles.get("crews") or {}
+    profile = profiles.get(crew_name) or {}
+    if not isinstance(profile, dict):
+        return {}
+    return profile
+
+
+def _build_crewai_planning_llm(
+    crewai_llm_cls: Any,
+    *,
+    bundle: CrewAIConfigBundle,
+    crew_name: str,
+) -> object | None:
+    """Instantiate the dedicated crew-planning LLM when configured."""
+
+    crew_profile = _resolve_crew_runtime_profile(bundle, crew_name)
+    planning_profile = crew_profile.get("planning") or {}
+    if not isinstance(planning_profile, dict):
+        return None
+    enabled = resolve_crewai_planning_enabled(
+        crew_name,
+        default_enabled=bool(planning_profile.get("enabled", False)),
+    )
+    if not enabled:
+        return None
+    kwargs = build_crewai_planning_llm_kwargs(
+        crew_name,
+        default_model=planning_profile.get("model") if isinstance(planning_profile.get("model"), str) else None,
+    )
+    if not kwargs:
+        return None
+    return crewai_llm_cls(**kwargs)
 
 def _fill_season_plan(document: JsonMap) -> JsonMap:
     """Normalize common SEASON_PLAN placement issues."""
@@ -290,6 +341,9 @@ def _build_crewai_llm(
     agent_name: str,
     model_override: str | None,
     temperature_override: float | None,
+    reasoning_effort_override: str | None = None,
+    reasoning_summary_override: str | None = None,
+    max_completion_tokens_override: int | None = None,
 ) -> object:
     """Instantiate the CrewAI LLM wrapper for the given agent."""
 
@@ -300,9 +354,21 @@ def _build_crewai_llm(
             temperature_override=(
                 temperature_override if temperature_override is not None else runtime.temperature
             ),
-            reasoning_effort_override=runtime.reasoning_effort,
-            reasoning_summary_override=runtime.reasoning_summary,
-            max_completion_tokens_override=runtime.max_completion_tokens,
+            reasoning_effort_override=(
+                reasoning_effort_override
+                if reasoning_effort_override is not None
+                else runtime.reasoning_effort
+            ),
+            reasoning_summary_override=(
+                reasoning_summary_override
+                if reasoning_summary_override is not None
+                else runtime.reasoning_summary
+            ),
+            max_completion_tokens_override=(
+                max_completion_tokens_override
+                if max_completion_tokens_override is not None
+                else runtime.max_completion_tokens
+            ),
         )
     )
 
@@ -310,18 +376,33 @@ def _build_crewai_llm(
 def _build_crewai_agent(
     agent_cls: Any,
     *,
+    crewai_llm_cls: Any,
+    runtime: AgentRuntime,
     bundle: Any,
     blueprint: Any,
-    llm: object,
     tools: list[Any],
     athlete_id: str,
     crew_name: str,
     surface: str = "default",
     shared_memory: Any | None = None,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> object:
     """Instantiate one CrewAI agent from a blueprint."""
 
     config = getattr(blueprint, "config", {}) or {}
+    runtime_profile = _resolve_agent_runtime_profile(bundle, blueprint.name)
+    reasoning_profile = runtime_profile.get("reasoning") or {}
+    llm = _build_crewai_llm(
+        crewai_llm_cls,
+        runtime,
+        agent_name=blueprint.name,
+        model_override=model_override or runtime_profile.get("model"),
+        temperature_override=temperature_override,
+        reasoning_effort_override=runtime_profile.get("reasoning_effort"),
+        reasoning_summary_override=runtime_profile.get("reasoning_summary"),
+        max_completion_tokens_override=runtime_profile.get("max_completion_tokens"),
+    )
     kwargs: dict[str, Any] = {
         "role": blueprint.role,
         "goal": blueprint.goal,
@@ -331,6 +412,11 @@ def _build_crewai_agent(
         "allow_delegation": bool(config.get("allow_delegation", False)),
         "verbose": bool(config.get("verbose", False)),
     }
+    if bool(reasoning_profile.get("enabled", False)):
+        kwargs["reasoning"] = True
+        max_attempts = reasoning_profile.get("max_attempts")
+        if isinstance(max_attempts, int) and max_attempts > 0:
+            kwargs["max_reasoning_attempts"] = max_attempts
     knowledge_kwargs = build_crewai_knowledge_kwargs(
         root=ROOT,
         profile=resolve_agent_knowledge_profile(bundle, agent_name=blueprint.name),
@@ -425,20 +511,21 @@ def _extract_json_output(result: object, task_obj: object) -> JsonMap | None:
 def _execute_crewai_task(
     *,
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
     runtime: AgentRuntime,
-    agent_name: str,
     bundle: Any,
     agent_blueprint: Any,
     task_blueprint: Any,
-    llm: object,
     tools: list[Any],
     description: str,
     crew_name: str,
     athlete_id: str | None = None,
     run_id: str | None = None,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> Any:
     """Execute one CrewAI task and return its typed output."""
 
@@ -454,13 +541,16 @@ def _execute_crewai_task(
     shared_memory = crew_memory_kwargs.get("memory")
     agent = _build_crewai_agent(
         agent_cls,
+        crewai_llm_cls=crewai_llm_cls,
+        runtime=runtime,
         bundle=bundle,
         blueprint=agent_blueprint,
-        llm=llm,
         tools=tools,
         athlete_id=athlete_id or "unknown",
         crew_name=crew_name,
         shared_memory=shared_memory,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
     crew_task_kwargs: dict[str, Any] = {
         "description": description,
@@ -476,13 +566,18 @@ def _execute_crewai_task(
     crew_task_kwargs.update(guardrail_kwargs)
     crew_task = task_cls(**crew_task_kwargs)
     process = getattr(process_cls, "sequential")
-    crew = crew_cls(
-        agents=[agent],
-        tasks=[crew_task],
-        process=process,
-        verbose=bool(task_blueprint.config.get("verbose", False)),
-        **crew_memory_kwargs,
-    )
+    planning_llm = _build_crewai_planning_llm(crewai_llm_cls, bundle=bundle, crew_name=crew_name)
+    crew_kwargs: dict[str, Any] = {
+        "agents": [agent],
+        "tasks": [crew_task],
+        "process": process,
+        "verbose": bool(task_blueprint.config.get("verbose", False)),
+    }
+    if planning_llm is not None:
+        crew_kwargs["planning"] = True
+        crew_kwargs["planning_llm"] = planning_llm
+    crew_kwargs.update(crew_memory_kwargs)
+    crew = crew_cls(**crew_kwargs)
     if athlete_id and run_id:
         with runtime_event_scope(
             root=runtime.workspace_root,
@@ -547,6 +642,7 @@ def _build_crewai_task(
 def _execute_crewai_hierarchical_crew(
     *,
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
@@ -558,12 +654,13 @@ def _execute_crewai_hierarchical_crew(
     final_task_name: str,
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
-    llm: object,
     tools: list[Any],
     user_input: str,
     final_public_task: AgentTask | None = None,
     athlete_id: str | None = None,
     run_id: str | None = None,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> Any:
     """Execute one real multi-agent hierarchical crew and return the final typed output."""
 
@@ -586,29 +683,36 @@ def _execute_crewai_hierarchical_crew(
         agent_blueprint = agent_blueprints[agent_name]
         agents_by_name[agent_name] = _build_crewai_agent(
             agent_cls,
+            crewai_llm_cls=crewai_llm_cls,
+            runtime=runtime,
             bundle=bundle,
             blueprint=agent_blueprint,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id or "unknown",
             crew_name=crew_name,
             shared_memory=shared_memory,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
 
     if manager_agent_name not in agents_by_name:
         manager_blueprint = agent_blueprints[manager_agent_name]
         agents_by_name[manager_agent_name] = _build_crewai_agent(
             agent_cls,
+            crewai_llm_cls=crewai_llm_cls,
+            runtime=runtime,
             bundle=bundle,
             blueprint=manager_blueprint,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id or "unknown",
             crew_name=crew_name,
             shared_memory=shared_memory,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
 
     manager_agent = agents_by_name[manager_agent_name]
+    manager_llm = getattr(manager_agent, "llm", None)
     crew_tasks: list[object] = []
     prior_tasks: list[object] = []
     final_task_obj: object | None = None
@@ -670,7 +774,12 @@ def _execute_crewai_hierarchical_crew(
         crew_kwargs.update(crew_memory_kwargs)
     if hierarchical is not None:
         crew_kwargs["manager_agent"] = manager_agent
-        crew_kwargs["manager_llm"] = llm
+        if manager_llm is not None:
+            crew_kwargs["manager_llm"] = manager_llm
+    planning_llm = _build_crewai_planning_llm(crewai_llm_cls, bundle=bundle, crew_name=crew_name)
+    if planning_llm is not None:
+        crew_kwargs["planning"] = True
+        crew_kwargs["planning_llm"] = planning_llm
     crew = crew_cls(**crew_kwargs)
     if athlete_id and run_id:
         with runtime_event_scope(
@@ -774,18 +883,20 @@ def _run_season_plan_document(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    llm: object,
     tools: list[Any],
-    task_blueprint: Any,
     athlete_id: str,
     run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute the hierarchical season planning crew and return the internal bundle."""
     pydantic_output = _execute_crewai_hierarchical_crew(
         agent_cls=agent_cls,
+        crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
         task_cls=task_cls,
         process_cls=process_cls,
@@ -797,12 +908,13 @@ def _run_season_plan_document(
         final_task_name="season_plan_finalize",
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
-        llm=llm,
         tools=tools,
         user_input=user_input,
         final_public_task=None,
         athlete_id=athlete_id,
         run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
     document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(document, dict):
@@ -818,18 +930,21 @@ def _run_phase_bundle_document(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    llm: object,
     tools: list[Any],
     athlete_id: str,
     run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute the hierarchical phase planning crew and return the internal PhaseBundle."""
     final_task_name = _PHASE_PLANNING_TASKS[-1]
     pydantic_output = _execute_crewai_hierarchical_crew(
         agent_cls=agent_cls,
+        crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
         task_cls=task_cls,
         process_cls=process_cls,
@@ -841,12 +956,13 @@ def _run_phase_bundle_document(
         final_task_name=final_task_name,
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
-        llm=llm,
         tools=tools,
         user_input=user_input,
         final_public_task=None,
         athlete_id=athlete_id,
         run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
     bundle_document = (
         pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
@@ -869,13 +985,15 @@ def _run_review_decision_document(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    llm: object,
     tools: list[Any],
     athlete_id: str,
     run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute a review crew against a planning bundle and return its decision."""
 
@@ -885,6 +1003,7 @@ def _run_review_decision_document(
     )
     pydantic_output = _execute_crewai_hierarchical_crew(
         agent_cls=agent_cls,
+        crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
         task_cls=task_cls,
         process_cls=process_cls,
@@ -896,12 +1015,13 @@ def _run_review_decision_document(
         final_task_name=final_task_name,
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
-        llm=llm,
         tools=tools,
         user_input=review_input,
         final_public_task=None,
         athlete_id=athlete_id,
         run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
     decision = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(decision, dict):
@@ -920,13 +1040,15 @@ def _run_single_internal_document(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    llm: object,
     tools: list[Any],
     athlete_id: str,
     run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute a single internal typed CrewAI task and return its document payload."""
 
@@ -947,20 +1069,21 @@ def _run_single_internal_document(
     )
     pydantic_output = _execute_crewai_task(
         agent_cls=agent_cls,
+        crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
         task_cls=task_cls,
         process_cls=process_cls,
         runtime=runtime,
-        agent_name=task_blueprint.agent,
         bundle=bundle,
         agent_blueprint=agent_blueprint,
         task_blueprint=task_blueprint,
-        llm=llm,
         tools=tools,
         description=description,
         crew_name=crew_name,
         athlete_id=athlete_id,
         run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
     document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(document, dict):
@@ -980,13 +1103,15 @@ def _run_writer_document(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     agent_cls: Any,
+    crewai_llm_cls: Any,
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    llm: object,
     tools: list[Any],
     athlete_id: str,
     run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute a writer task from approved bundle + review context and return the final document."""
 
@@ -1007,20 +1132,21 @@ def _run_writer_document(
     )
     document = _execute_crewai_task(
         agent_cls=agent_cls,
+        crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
         task_cls=task_cls,
         process_cls=process_cls,
         runtime=runtime,
-        agent_name=task_blueprint.agent,
         bundle=bundle,
         agent_blueprint=agent_blueprint,
         task_blueprint=task_blueprint,
-        llm=llm,
         tools=tools,
         description=description,
         crew_name=crew_name,
         athlete_id=athlete_id,
         run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
     )
     if not isinstance(document, dict):
         raise RuntimeError(f"Writer task '{blueprint_name}' did not return an artifact object.")
@@ -1155,13 +1281,6 @@ def run_phase_bundle_crewai(
     bundle = load_crewai_config_bundle(root=ROOT)
     agent_blueprints = build_agent_blueprints(bundle)
     task_blueprints = build_task_blueprints(bundle)
-    llm = _build_crewai_llm(
-        LLM,
-        runtime,
-        agent_name=agent_name,
-        model_override=model_override,
-        temperature_override=temperature_override,
-    )
     tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
 
     try:
@@ -1173,13 +1292,15 @@ def run_phase_bundle_crewai(
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
+                crewai_llm_cls=LLM,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                llm=llm,
                 tools=tools,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             )
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
@@ -1195,13 +1316,15 @@ def run_phase_bundle_crewai(
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
+                crewai_llm_cls=LLM,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                llm=llm,
                 tools=tools,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             )
 
         planning_bundle, review_decision = _run_multicrew_cycle(
@@ -1231,13 +1354,15 @@ def run_phase_bundle_crewai(
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
+                crewai_llm_cls=LLM,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                llm=llm,
                 tools=tools,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             )
             document = _normalize_document(output_spec, document, loaded_inputs)
             saved = _persist_artifact_document(
@@ -1401,13 +1526,6 @@ def _run_single_task_document_crewai(
     task_blueprint = task_blueprints[blueprint_name]
     agent_blueprint = agent_blueprints[task_blueprint.agent]
 
-    llm = _build_crewai_llm(
-        LLM,
-        runtime,
-        agent_name=agent_name,
-        model_override=model_override,
-        temperature_override=temperature_override,
-    )
     tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
 
     if task == AgentTask.CREATE_SEASON_PLAN:
@@ -1419,14 +1537,15 @@ def _run_single_task_document_crewai(
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
+                crewai_llm_cls=LLM,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                llm=llm,
                 tools=tools,
-                task_blueprint=task_blueprint,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             )
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
@@ -1442,13 +1561,15 @@ def _run_single_task_document_crewai(
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
+                crewai_llm_cls=LLM,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                llm=llm,
                 tools=tools,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             )
 
         planning_bundle, review_decision = _run_multicrew_cycle(
@@ -1470,35 +1591,39 @@ def _run_single_task_document_crewai(
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
             agent_cls=Agent,
+            crewai_llm_cls=LLM,
             crew_cls=Crew,
             task_cls=Task,
             process_cls=Process,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
     elif task == AgentTask.CREATE_WEEK_PLAN:
         def _planning_runner(loop_input: str) -> JsonMap:
             return _execute_crewai_hierarchical_crew(
-                agent_cls=Agent,
-                crew_cls=Crew,
-                task_cls=Task,
-                process_cls=Process,
-                runtime=runtime,
-                bundle=bundle,
+            agent_cls=Agent,
+            crewai_llm_cls=LLM,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            runtime=runtime,
+            bundle=bundle,
                 manager_agent_name="week_plan_manager",
                 crew_name="week_planning",
                 crew_task_names=_WEEK_PLANNING_TASKS,
                 final_task_name="week_plan_finalize",
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
-                llm=llm,
                 tools=tools,
                 user_input=loop_input,
                 final_public_task=None,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             ).model_dump()
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
@@ -1514,13 +1639,15 @@ def _run_single_task_document_crewai(
                 task_blueprints=task_blueprints,
                 agent_blueprints=agent_blueprints,
                 agent_cls=Agent,
+                crewai_llm_cls=LLM,
                 crew_cls=Crew,
                 task_cls=Task,
                 process_cls=Process,
-                llm=llm,
                 tools=tools,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                model_override=model_override,
+                temperature_override=temperature_override,
             )
 
         planning_bundle, review_decision = _run_multicrew_cycle(
@@ -1542,13 +1669,15 @@ def _run_single_task_document_crewai(
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
             agent_cls=Agent,
+            crewai_llm_cls=LLM,
             crew_cls=Crew,
             task_cls=Task,
             process_cls=Process,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
     elif task == AgentTask.CREATE_DES_ANALYSIS_REPORT:
         planning_bundle = _run_single_internal_document(
@@ -1561,13 +1690,15 @@ def _run_single_task_document_crewai(
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
             agent_cls=Agent,
+            crewai_llm_cls=LLM,
             crew_cls=Crew,
             task_cls=Task,
             process_cls=Process,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
         review_decision = _run_single_internal_document(
             runtime=runtime,
@@ -1579,13 +1710,15 @@ def _run_single_task_document_crewai(
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
             agent_cls=Agent,
+            crewai_llm_cls=LLM,
             crew_cls=Crew,
             task_cls=Task,
             process_cls=Process,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
         status = str(review_decision.get("status") or "").lower()
         if status != "approved":
@@ -1604,13 +1737,15 @@ def _run_single_task_document_crewai(
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
             agent_cls=Agent,
+            crewai_llm_cls=LLM,
             crew_cls=Crew,
             task_cls=Task,
             process_cls=Process,
-            llm=llm,
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
     else:
         description = _build_task_description(
@@ -1629,15 +1764,14 @@ def _run_single_task_document_crewai(
         )
         pydantic_output = _execute_crewai_task(
             agent_cls=Agent,
+            crewai_llm_cls=LLM,
             crew_cls=Crew,
             task_cls=Task,
             process_cls=Process,
             runtime=runtime,
-            agent_name=agent_name,
             bundle=bundle,
             agent_blueprint=agent_blueprint,
             task_blueprint=task_blueprint,
-            llm=llm,
             tools=tools,
             description=description,
             crew_name=(
@@ -1649,6 +1783,8 @@ def _run_single_task_document_crewai(
             ),
             athlete_id=athlete_id,
             run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
         )
         document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
 

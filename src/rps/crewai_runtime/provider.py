@@ -21,6 +21,18 @@ def _resolve_env(base_key: str, agent_name: str | None) -> str | None:
     return os.getenv(base_key)
 
 
+def _resolve_bool_env(base_key: str, scope_name: str | None) -> bool | None:
+    raw = _resolve_env(base_key, scope_name)
+    if raw is None:
+        return None
+    value = raw.strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    return None
+
+
 @dataclass(frozen=True)
 class CrewAIProviderConfig:
     """Resolved provider configuration for a single CrewAI agent."""
@@ -119,4 +131,52 @@ def build_crewai_llm_kwargs(
         kwargs["reasoning_effort"] = config.reasoning_effort
     if config.max_completion_tokens is not None:
         kwargs["max_completion_tokens"] = config.max_completion_tokens
+    return kwargs
+
+
+def resolve_crewai_planning_enabled(crew_name: str, *, default_enabled: bool) -> bool:
+    """Resolve optional env override for CrewAI crew-level planning."""
+
+    override = _resolve_bool_env("RPS_CREW_PLANNING", crew_name)
+    if override is None:
+        return default_enabled
+    return override
+
+
+def resolve_crewai_planning_model(
+    crew_name: str,
+    *,
+    default_model: str | None,
+) -> str | None:
+    """Resolve the crew-level planning model with dedicated overrides."""
+
+    return _resolve_env("RPS_CREW_PLANNING_LLM", crew_name) or default_model
+
+
+def build_crewai_planning_llm_kwargs(
+    crew_name: str,
+    *,
+    default_model: str | None,
+) -> dict[str, object] | None:
+    """Build keyword arguments for a crew-level planning LLM."""
+
+    model = resolve_crewai_planning_model(crew_name, default_model=default_model)
+    if not model:
+        return None
+    api_key = _resolve_env("RPS_LLM_API_KEY", None)
+    if not api_key:
+        raise RuntimeError("RPS_LLM_API_KEY is required")
+    kwargs: dict[str, object] = {
+        "model": model,
+        "api_key": api_key,
+    }
+    base_url = _resolve_env("RPS_LLM_BASE_URL", None)
+    org_id = _resolve_env("RPS_LLM_ORG_ID", None)
+    project_id = _resolve_env("RPS_LLM_PROJECT_ID", None)
+    if base_url:
+        kwargs["base_url"] = base_url
+    if org_id:
+        kwargs["organization"] = org_id
+    if project_id:
+        kwargs["project"] = project_id
     return kwargs

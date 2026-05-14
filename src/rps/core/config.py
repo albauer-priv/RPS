@@ -32,6 +32,8 @@ class AppSettings:
     openai_reasoning_summary_overrides: dict[str, str]
     openai_max_completion_tokens: int | None
     openai_max_completion_tokens_overrides: dict[str, int]
+    crew_planning_overrides: dict[str, bool]
+    crew_planning_model_overrides: dict[str, str]
     workspace_root: Path
     schema_dir: Path
     prompts_dir: Path
@@ -62,6 +64,16 @@ class AppSettings:
         """Return max completion tokens override for an agent, or the default."""
         key = normalize_agent_name(agent_name)
         return self.openai_max_completion_tokens_overrides.get(key, self.openai_max_completion_tokens)
+
+    def planning_enabled_for_crew(self, crew_name: str, default_enabled: bool = False) -> bool:
+        """Return the crew planning override, or the provided default."""
+        key = normalize_agent_name(crew_name)
+        return self.crew_planning_overrides.get(key, default_enabled)
+
+    def planning_model_for_crew(self, crew_name: str, default_model: str | None = None) -> str | None:
+        """Return the crew planning-model override, or the provided default."""
+        key = normalize_agent_name(crew_name)
+        return self.crew_planning_model_overrides.get(key, default_model)
 
 
 def normalize_agent_name(value: str) -> str:
@@ -186,6 +198,31 @@ def load_app_settings() -> AppSettings:
         if agent_key:
             max_completion_overrides[agent_key] = parsed
 
+    crew_planning_overrides: dict[str, bool] = {}
+    for key, value in os.environ.items():
+        if (
+            not key.startswith("RPS_CREW_PLANNING_")
+            or key == "RPS_CREW_PLANNING_LLM"
+            or key.startswith("RPS_CREW_PLANNING_LLM_")
+        ):
+            continue
+        normalized = normalize_agent_name(key[len("RPS_CREW_PLANNING_"):])
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            crew_planning_overrides[normalized] = True
+        elif lowered in {"0", "false", "no", "off"}:
+            crew_planning_overrides[normalized] = False
+
+    crew_planning_model_overrides: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("RPS_CREW_PLANNING_LLM_") or key == "RPS_CREW_PLANNING_LLM":
+            continue
+        if not value:
+            continue
+        crew_key = normalize_agent_name(key[len("RPS_CREW_PLANNING_LLM_"):])
+        if crew_key:
+            crew_planning_model_overrides[crew_key] = value
+
     base_url = os.getenv("RPS_LLM_BASE_URL")
     default_model = os.getenv("RPS_LLM_MODEL")
     if not default_model:
@@ -209,6 +246,8 @@ def load_app_settings() -> AppSettings:
         openai_reasoning_summary_overrides=reasoning_summary_overrides,
         openai_max_completion_tokens=default_max_completion,
         openai_max_completion_tokens_overrides=max_completion_overrides,
+        crew_planning_overrides=crew_planning_overrides,
+        crew_planning_model_overrides=crew_planning_model_overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "runtime/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "specs/schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),
