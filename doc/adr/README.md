@@ -54,6 +54,7 @@ This folder contains the ADR log for RPS.
 - ADR-043: Coach Current Week Actuals Context
 - ADR-044: Coach Current Week Status Snapshot
 - ADR-045: Coach Hierarchical Conversational Crew
+- ADR-046: CrewAI State, Memory, Knowledge, and Guardrail Separation
 
 ## Process (Short)
 

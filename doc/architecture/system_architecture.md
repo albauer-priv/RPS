@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-13
+Last-Updated: 2026-05-14
 Owner: Architecture
 ---
 # System Architecture
@@ -182,7 +182,7 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 
 - **Prompts** live in `prompts/` and are loaded at runtime.
 - **Knowledge sources** live in `specs/knowledge/` and are synced to a local Qdrant vector store.
-- At runtime, agents use the `knowledge_search` function tool for retrieval.
+- At runtime, agents prefer CrewAI `knowledge_sources` for static domain references, while `knowledge_search` remains available for runtime or precise filtered retrieval.
 
 ### 4.1 Vector Stores
 
@@ -254,13 +254,14 @@ Example filters:
 - Templates: `type=Template` + `template_for=ATHLETE_PROFILE`
 - Schemas: `doc_type=JsonSchema` + `schema_id=week_plan.schema.json`
 
-`knowledge_search` is for static knowledge sources only. Runtime athlete artifacts
-are fetched via workspace tools.
+`knowledge_search` is no longer the primary static-reference path when a CrewAI
+knowledge-source profile exists. Runtime athlete artifacts are always fetched via
+workspace tools.
 
 #### 4.1.4 Agent Access Hints (Summary)
 
-These are runtime access expectations per agent/mode. Knowledge sources should be
-queried via `knowledge_search` with attribute filters; athlete artefacts come from
+These are runtime access expectations per agent/mode. Static references should
+come from configured CrewAI knowledge sources first; athlete artefacts come from
 workspace tools.
 
 Season-Planner
@@ -306,17 +307,17 @@ File search is forced by default; use `--no-file-search` if you need to disable 
 
 ### 4.2 Runtime Knowledge Injection (Base + Mode Bundles)
 
-In addition to `knowledge_search`, the runtime injects selected knowledge files
-directly into the system prompt.
+The runtime now separates static knowledge from prompt-level contract injection.
 
 Configuration:
-- `config/agent_knowledge_injection.yaml`
+- Static knowledge: `config/crewai/knowledge_sources.yaml`
+- Prompt/runtime contracts: `config/agent_knowledge_injection.yaml`
+- Memory policy: `config/crewai/memory_policy.yaml`
+- Task output and guardrails: `config/crewai/task_policies.yaml`
 
 Model:
-- Base phase (always injected): `agents.<agent>.inject`
-- Mode phase (one bundle per run):
-  - `agents.<agent>.modes.<mode>.bundle_id`
-  - `agents.<agent>.bundles[].inject`
+- Static domain references are attached through CrewAI `knowledge_sources`.
+- Prompt injection is narrowed to runtime instructions, authority boundaries, and retained mandatory-output contracts where strict structured-output replacement is not yet safe.
 
 Effective injection for a run:
 - base `inject` + selected bundle `inject` (+ any mode-specific `inject`)

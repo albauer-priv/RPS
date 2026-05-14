@@ -12,10 +12,18 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from rps.agents.knowledge_injection import build_injection_block
+from rps.agents.knowledge_injection import build_contract_injection_block
 from rps.prompts.loader import PromptLoader
 
 from .compat import crewai_runtime_status
+from .config import load_crewai_config_bundle
+from .knowledge import build_crewai_knowledge_kwargs, resolve_agent_knowledge_profile
+from .memory import (
+    build_agent_memory_value,
+    build_crew_memory_kwargs,
+    resolve_agent_memory_profile,
+    resolve_crew_memory_profile,
+)
 from .provider import build_crewai_llm_kwargs
 from .telemetry import runtime_event_scope
 
@@ -132,9 +140,13 @@ def _build_agent(
     temperature_override: float | None,
     prompts_dir: Path,
     surface_name: str,
+    athlete_id: str,
+    shared_memory: Any | None = None,
 ) -> Any:
     Agent = getattr(crewai, "Agent")
     LLM = getattr(crewai, "LLM")
+    bundle = load_crewai_config_bundle(root=Path.cwd())
+    agent_cfg = (bundle.agents.get("agents") or {}).get(agent_name) or {}
     llm = LLM(
         **build_crewai_llm_kwargs(
             agent_name,
@@ -144,18 +156,40 @@ def _build_agent(
     )
     prompt_loader = PromptLoader(prompts_dir)
     prompt = prompt_loader.combined_system_prompt(agent_name)
-    injected = build_injection_block(agent_name, mode=surface_name)
+    injected = build_contract_injection_block(agent_name, mode=surface_name)
     if injected:
         prompt = f"{prompt}\n\n{injected}"
-    return Agent(
-        role=agent_name.replace("_", " ").title(),
-        goal=prompt,
-        backstory=prompt,
-        llm=llm,
-        tools=_build_crewai_tools(tool_specs),
-        allow_delegation=False,
-        verbose=False,
+    kwargs: JsonMap = {
+        "role": str(agent_cfg.get("role") or agent_name.replace("_", " ").title()),
+        "goal": prompt,
+        "backstory": str(agent_cfg.get("backstory") or prompt),
+        "llm": llm,
+        "tools": _build_crewai_tools(tool_specs),
+        "allow_delegation": False,
+        "verbose": False,
+    }
+    kwargs.update(
+        build_crewai_knowledge_kwargs(
+            root=Path.cwd(),
+            profile=resolve_agent_knowledge_profile(bundle, agent_name=agent_name),
+        )
     )
+    agent_memory = build_agent_memory_value(
+        shared_memory=shared_memory,
+        profile=resolve_agent_memory_profile(
+            bundle,
+            agent_name=agent_name,
+            athlete_id=athlete_id,
+            surface=surface_name,
+        ),
+    )
+    if agent_memory is not None:
+        kwargs["memory"] = agent_memory
+    for template_field in ("system_template", "prompt_template", "response_template"):
+        value = agent_cfg.get(template_field)
+        if isinstance(value, str) and value:
+            kwargs[template_field] = value
+    return Agent(**kwargs)
 
 
 def _extract_model(task: Any, result: Any, model_cls: type[BaseModel]) -> BaseModel:
@@ -201,11 +235,23 @@ def _run_structured_task(
     temperature_override: float | None,
     prompts_dir: Path,
     surface_name: str,
+    athlete_id: str,
 ) -> BaseModel:
     crewai = import_module("crewai")
     Crew = getattr(crewai, "Crew")
     Process = getattr(crewai, "Process")
     Task = getattr(crewai, "Task")
+    bundle = load_crewai_config_bundle(root=Path.cwd())
+    crew_name = "coach_conversation" if surface_name == "coach" else "workout_editor_conversation"
+    crew_memory_kwargs = build_crew_memory_kwargs(
+        crewai,
+        profile=resolve_crew_memory_profile(
+            bundle,
+            crew_name=crew_name,
+            athlete_id=athlete_id,
+            surface=surface_name,
+        ),
+    )
     agent = _build_agent(
         crewai,
         agent_name=agent_name,
@@ -214,6 +260,8 @@ def _run_structured_task(
         temperature_override=temperature_override,
         prompts_dir=prompts_dir,
         surface_name=surface_name,
+        athlete_id=athlete_id,
+        shared_memory=crew_memory_kwargs.get("memory"),
     )
     task = Task(
         name=task_name,
@@ -222,7 +270,7 @@ def _run_structured_task(
         agent=agent,
         output_pydantic=output_model,
     )
-    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
+    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False, **crew_memory_kwargs)
     result = crew.kickoff()
     return _extract_model(task, result, output_model)
 
@@ -238,11 +286,23 @@ def _run_text_task(
     temperature_override: float | None,
     prompts_dir: Path,
     surface_name: str,
+    athlete_id: str,
 ) -> str:
     crewai = import_module("crewai")
     Crew = getattr(crewai, "Crew")
     Process = getattr(crewai, "Process")
     Task = getattr(crewai, "Task")
+    bundle = load_crewai_config_bundle(root=Path.cwd())
+    crew_name = "coach_conversation" if surface_name == "coach" else "workout_editor_conversation"
+    crew_memory_kwargs = build_crew_memory_kwargs(
+        crewai,
+        profile=resolve_crew_memory_profile(
+            bundle,
+            crew_name=crew_name,
+            athlete_id=athlete_id,
+            surface=surface_name,
+        ),
+    )
     agent = _build_agent(
         crewai,
         agent_name=agent_name,
@@ -251,6 +311,8 @@ def _run_text_task(
         temperature_override=temperature_override,
         prompts_dir=prompts_dir,
         surface_name=surface_name,
+        athlete_id=athlete_id,
+        shared_memory=crew_memory_kwargs.get("memory"),
     )
     task = Task(
         name=task_name,
@@ -258,7 +320,7 @@ def _run_text_task(
         expected_output=expected_output,
         agent=agent,
     )
-    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
+    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False, **crew_memory_kwargs)
     result = crew.kickoff()
     return _extract_text(task, result)
 
@@ -333,6 +395,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _analyze() -> WeekContextAssessmentModel:
@@ -354,6 +417,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _recommend(context_result: WeekContextAssessmentModel) -> CoachingRecommendationModel:
@@ -377,6 +441,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _intent(context_result: WeekContextAssessmentModel) -> AdjustmentIntentModel:
@@ -401,6 +466,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _preview(intent_result: AdjustmentIntentModel) -> CoachPreviewSummaryModel:
@@ -424,6 +490,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _resolve_pending() -> PendingResolutionResultModel:
@@ -445,6 +512,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _finalize(mode: str, payload: BaseModel) -> str:
@@ -469,6 +537,7 @@ def run_conversational_turn(
             temperature_override=temperature_override,
             prompts_dir=surface.prompts_dir,
             surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
         )
 
     def _run() -> str:

@@ -1,0 +1,92 @@
+defaults:
+  internal_reasoning:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+    guardrail_max_retries: 2
+  operation:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+    guardrail_max_retries: 2
+  persisted_artifact:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+    guardrail_max_retries: 1
+
+tasks:
+  finalize_reply:
+    guardrails:
+      - typed_output_present
+      - coaching_recommendation_text_present
+  form_adjustment_intent:
+    guardrails:
+      - typed_output_present
+      - adjustment_intent_has_preview_message
+  create_week_preview:
+    guardrails:
+      - typed_output_present
+      - coach_preview_summary_complete
+  resolve_pending_operation:
+    guardrails:
+      - typed_output_present
+      - pending_resolution_summary_present
+  season_plan_audit:
+    guardrails:
+      - typed_output_present
+      - audit_lists_are_lists
+  phase_constraint_audit:
+    guardrails:
+      - typed_output_present
+      - audit_lists_are_lists
+  phase_load_governance_audit:
+    guardrails:
+      - typed_output_present
+      - audit_lists_are_lists
+  phase_bundle_finalize:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - phase_bundle_integrity
+    guardrail_max_retries: 2
+  season_plan:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  season_phase_feed_forward:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  phase_guardrails:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  phase_structure:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  phase_preview:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  phase_feed_forward:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  week_plan:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+  des_analysis_report:
+    output_mode: prompt_only
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present

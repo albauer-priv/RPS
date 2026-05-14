@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 from rps.agents import runtime as agent_runtime
 from rps.agents.crewai_backend import run_agent_multi_output_crewai
+from rps.agents.knowledge_injection import build_contract_injection_block
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime import crewai_runtime_status, load_crewai_config_bundle
@@ -25,6 +26,16 @@ from rps.crewai_runtime.flows import (
     run_season_flow,
     run_week_flow,
 )
+from rps.crewai_runtime.guardrails import (
+    artifact_envelope_basic,
+    build_task_guardrail_kwargs,
+    resolve_task_policy,
+)
+from rps.crewai_runtime.knowledge import (
+    resolve_agent_knowledge_profile,
+    resolve_crew_knowledge_profile,
+)
+from rps.crewai_runtime.memory import resolve_agent_memory_profile, resolve_crew_memory_profile
 from rps.crewai_runtime.models import (
     AdjustmentIntentModel,
     ArtifactEnvelopeModel,
@@ -216,11 +227,16 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
 
     agent_defs = bundle.agents["agents"]
     task_defs = bundle.tasks["tasks"]
+    knowledge_defs = bundle.knowledge_sources["agents"]
+    flow_defs = bundle.flow_persistence["flows"]
     assert "conversation_manager" in agent_defs
     assert "coaching_recommendation_specialist" in agent_defs
     assert "week_planner" in agent_defs
     assert "season_planner_manager" in agent_defs
     assert "phase_architect_manager" in agent_defs
+    assert "week_planner" in knowledge_defs
+    assert flow_defs["season"]["persist"] is True
+    assert flow_defs["coach"]["persist"] is False
     assert task_defs["classify_turn"]["agent"] == "conversation_manager"
     assert task_defs["create_week_preview"]["agent"] == "week_preview_specialist"
     assert task_defs["week_plan"]["agent"] == "week_planner"
@@ -237,10 +253,74 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert agents["season_plan_auditor"].goal
     assert agents["season_plan_auditor"].config["prompt_agent"] == "season_plan_auditor"
     assert agents["guardrails_specialist"].config["prompt_agent"] == "guardrails_specialist"
+    assert agents["coaching_recommendation_specialist"].knowledge_profile["sources"]
     assert tasks["classify_turn"].output_kind == "turn_mode"
     assert tasks["form_adjustment_intent"].output_kind == "adjustment_intent"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
     assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle"
+    assert tasks["phase_bundle_finalize"].execution_policy["guardrails"] == ("typed_output_present", "phase_bundle_integrity")
+
+
+def test_task_policy_resolution_and_guardrail_kwargs() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    tasks = build_task_blueprints(bundle)
+
+    preview_policy = resolve_task_policy(tasks["create_week_preview"], bundle.task_policies)
+    artifact_policy = resolve_task_policy(tasks["week_plan"], bundle.task_policies)
+
+    assert preview_policy.output_mode == "pydantic"
+    assert "coach_preview_summary_complete" in preview_policy.guardrails
+    assert artifact_policy.output_mode == "prompt_only"
+    kwargs = build_task_guardrail_kwargs(tasks["week_plan"], bundle.task_policies)
+    assert kwargs["guardrail_max_retries"] == 1
+    assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
+
+
+def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+
+    coach_knowledge = resolve_agent_knowledge_profile(bundle, agent_name="coaching_recommendation_specialist")
+    season_knowledge = resolve_crew_knowledge_profile(bundle, crew_name="season_planning")
+    coach_memory = resolve_crew_memory_profile(
+        bundle,
+        crew_name="coach_conversation",
+        athlete_id="i150546",
+        surface="coach",
+    )
+    specialist_memory = resolve_agent_memory_profile(
+        bundle,
+        agent_name="coaching_recommendation_specialist",
+        athlete_id="i150546",
+        surface="coach",
+    )
+
+    assert coach_knowledge["sources"]
+    assert season_knowledge["sources"]
+    assert coach_memory["enabled"] is True
+    assert coach_memory["scope"] == "/athlete/i150546/coach/shared"
+    assert specialist_memory["mode"] == "slice_read_only"
+    assert "/athlete/i150546/coach/accepted_patterns" in specialist_memory["additional_read_scopes"]
+
+
+def test_contract_injection_block_filters_out_static_reference_material() -> None:
+    contract_block = build_contract_injection_block("week_planner", mode="week_plan")
+    assert "mandatory_output_week_plan.md" in contract_block
+    assert "phase__week_contract.md" in contract_block
+    assert "principles_durability_first_cycling.md" not in contract_block
+
+
+def test_artifact_envelope_guardrail_rejects_missing_meta_and_accepts_basic_shape() -> None:
+    ok, payload = artifact_envelope_basic(
+        SimpleNamespace(
+            raw=json.dumps({"meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface"}, "data": {}})
+        )
+    )
+    assert ok is True
+    assert payload["meta"]["artifact_type"] == "WEEK_PLAN"
+
+    failed, message = artifact_envelope_basic(SimpleNamespace(raw=json.dumps({"data": {}})))
+    assert failed is False
+    assert "top-level 'meta' and 'data'" in message
 
 
 def test_output_model_registry_resolves_known_output_kinds() -> None:

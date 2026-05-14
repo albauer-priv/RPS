@@ -1,0 +1,19 @@
+flows:
+  season:
+    persist: true
+    storage: sqlite_default
+  phase:
+    persist: true
+    storage: sqlite_default
+  week:
+    persist: true
+    storage: sqlite_default
+  report:
+    persist: true
+    storage: sqlite_default
+  feed_forward:
+    persist: true
+    storage: sqlite_default
+  coach:
+    persist: false
+    storage: none

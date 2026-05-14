@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-13
+Last-Updated: 2026-05-14
 Owner: Architecture
 ---
 # Agents and Responsibilities
@@ -24,11 +24,15 @@ This document is the canonical registry of agents, their roles, modes, and artif
 ## Mode Notes
 
 - Modes are referenced by orchestrators and UI run scopes.
-- Prompts are in [prompts/agents/*.md](prompts/agents/*.md) and knowledge injection is configured in `config/agent_knowledge_injection.yaml`.
+- Prompts are in [prompts/agents/*.md](prompts/agents/*.md).
+- Static reference knowledge is now mapped in `config/crewai/knowledge_sources.yaml`.
+- Prompt-level runtime/contract injection remains in `config/agent_knowledge_injection.yaml` and is narrowed through `build_contract_injection_block(...)` for CrewAI-backed execution.
 - CrewAI runtime now executes internal specialist roles for `Season-Planner` and `Phase-Architect`; these sub-roles are not independent top-level artefact authorities and only feed manager-authored persisted outputs.
 - Season and Phase specialists now use dedicated prompt slices instead of reusing the top-level planner prompts.
 - Outer Season and Phase orchestration is wrapped in CrewAI Flows; grouped Phase runs reuse one internal `PhaseBundle` before deterministic public artefact persistence.
 - Outer Week, Report, and Feed-Forward orchestration now also uses CrewAI Flow wrappers.
+- CrewAI task execution policy is now explicit per task family via `config/crewai/task_policies.yaml`, including output mode and function guardrails.
+- CrewAI shared and scoped memory policy is now explicit via `config/crewai/memory_policy.yaml`; memory remains assistive and must not replace artifact truth.
 - Coach turn execution now routes through a dedicated CrewAI Flow wrapper before falling back to the tool-driven chat turn, so explicit confirm/discard/status messages are first-class flow routes.
 - Coach now consumes a dedicated `CURRENT_WEEK_STATUS_SNAPSHOT` for current-week actuals and plan-vs-actual status, while the planning snapshot keeps the last complete historical reference week for stable planning context.
 - Season and Phase specialist work now runs inside one hierarchical CrewAI crew per run instead of repeated one-task crew executions.

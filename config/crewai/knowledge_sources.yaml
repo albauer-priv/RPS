@@ -1,0 +1,282 @@
+bundles:
+  durability_core:
+    sources:
+      - path: specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md
+      - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
+      - path: specs/knowledge/_shared/sources/policies/progressive_overload_policy.md
+      - path: specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md
+  coach_static:
+    sources:
+      - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
+      - path: specs/knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+  season_static:
+    sources:
+      - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
+      - path: specs/knowledge/_shared/sources/specs/athlete_profile_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/season_cycle_enum_spec.md
+      - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
+  phase_static:
+    sources:
+      - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
+      - path: specs/knowledge/_shared/sources/specs/data_confidence_spec.md
+      - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
+      - path: specs/knowledge/_shared/sources/specs/season_cycle_enum_spec.md
+      - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/availability_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/wellness_interface_spec.md
+      - path: specs/knowledge/_shared/sources/principles/evidence_layer_durability.md
+  week_static:
+    sources:
+      - path: specs/knowledge/_shared/sources/specs/load_estimation_spec.md
+      - path: specs/knowledge/_shared/sources/policies/workout_policy.md
+      - path: specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
+      - path: specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
+      - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md
+      - path: specs/knowledge/_shared/sources/specs/agenda_enum_spec.md
+  report_static:
+    sources:
+      - path: specs/knowledge/_shared/sources/policies/des_evaluation_policy.md
+      - path: specs/knowledge/_shared/sources/specs/data_confidence_spec.md
+      - path: specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md
+      - path: specs/knowledge/_shared/sources/specs/logistics_interface_spec.md
+
+crews:
+  coach_conversation:
+    bundles:
+      - coach_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  workout_editor_conversation:
+    bundles:
+      - coach_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  season_planning:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 12
+      score_threshold: 0.45
+  phase_planning:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 12
+      score_threshold: 0.45
+  week_planning:
+    bundles:
+      - week_static
+      - durability_core
+    knowledge_config:
+      results_limit: 10
+      score_threshold: 0.45
+  report_advisory:
+    bundles:
+      - report_static
+      - durability_core
+    knowledge_config:
+      results_limit: 10
+      score_threshold: 0.45
+  feed_forward_advisory:
+    bundles:
+      - report_static
+      - durability_core
+    knowledge_config:
+      results_limit: 10
+      score_threshold: 0.45
+
+agents:
+  conversation_manager:
+    bundles:
+      - coach_static
+    knowledge_config:
+      results_limit: 4
+      score_threshold: 0.5
+  week_context_analyst:
+    bundles:
+      - coach_static
+    knowledge_config:
+      results_limit: 4
+      score_threshold: 0.5
+  coaching_recommendation_specialist:
+    bundles:
+      - coach_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  week_preview_specialist:
+    bundles:
+      - coach_static
+    knowledge_config:
+      results_limit: 4
+      score_threshold: 0.5
+  pending_resolution_specialist:
+    bundles: []
+    knowledge_config:
+      results_limit: 2
+      score_threshold: 0.6
+  season_scenario:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 10
+      score_threshold: 0.45
+  season_planner:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 12
+      score_threshold: 0.45
+  season_planner_manager:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 12
+      score_threshold: 0.45
+  scenario_interpreter:
+    bundles:
+      - season_static
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  event_priority_anchor_specialist:
+    bundles:
+      - season_static
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  macrocycle_architect:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  load_governance_specialist:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  constraint_specialist:
+    bundles:
+      - season_static
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  historical_context_specialist:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  kpi_guidance_specialist:
+    bundles:
+      - durability_core
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  season_plan_auditor:
+    bundles:
+      - season_static
+      - durability_core
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  phase_architect:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 12
+      score_threshold: 0.45
+  phase_architect_manager:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 12
+      score_threshold: 0.45
+  guardrails_specialist:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  structure_specialist:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  cadence_recovery_integrator:
+    bundles:
+      - phase_static
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  intensity_distribution_specialist:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 8
+      score_threshold: 0.45
+  preview_synthesizer:
+    bundles:
+      - phase_static
+    knowledge_config:
+      results_limit: 4
+      score_threshold: 0.5
+  constraint_auditor:
+    bundles:
+      - phase_static
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  load_governance_auditor:
+    bundles:
+      - phase_static
+      - durability_core
+    knowledge_config:
+      results_limit: 6
+      score_threshold: 0.5
+  week_planner:
+    bundles:
+      - week_static
+      - durability_core
+    knowledge_config:
+      results_limit: 10
+      score_threshold: 0.45
+  performance_analysis:
+    bundles:
+      - report_static
+      - durability_core
+    knowledge_config:
+      results_limit: 10
+      score_threshold: 0.45

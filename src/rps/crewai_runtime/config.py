@@ -1,4 +1,4 @@
-"""YAML configuration loader for future CrewAI agent/task definitions."""
+"""YAML configuration loader for CrewAI runtime definitions."""
 
 from __future__ import annotations
 
@@ -17,6 +17,10 @@ class CrewAIConfigBundle:
 
     agents: JsonMap
     tasks: JsonMap
+    knowledge_sources: JsonMap
+    memory_policy: JsonMap
+    task_policies: JsonMap
+    flow_persistence: JsonMap
 
 
 def _load_yaml(path: Path) -> JsonMap:
@@ -35,6 +39,10 @@ def load_crewai_config_bundle(
     base = (root or Path.cwd()) / "config" / "crewai"
     agents = _load_yaml(base / "agents.yaml")
     tasks = _load_yaml(base / "tasks.yaml")
+    knowledge_sources = _load_yaml(base / "knowledge_sources.yaml")
+    memory_policy = _load_yaml(base / "memory_policy.yaml")
+    task_policies = _load_yaml(base / "task_policies.yaml")
+    flow_persistence = _load_yaml(base / "flow_persistence.yaml")
 
     agent_defs = agents.get("agents")
     task_defs = tasks.get("tasks")
@@ -42,6 +50,14 @@ def load_crewai_config_bundle(
         raise ValueError("config/crewai/agents.yaml must contain an 'agents' mapping.")
     if not isinstance(task_defs, dict):
         raise ValueError("config/crewai/tasks.yaml must contain a 'tasks' mapping.")
+    if not isinstance(knowledge_sources.get("agents") or {}, dict):
+        raise ValueError("config/crewai/knowledge_sources.yaml must contain an 'agents' mapping.")
+    if not isinstance(memory_policy.get("crews") or {}, dict):
+        raise ValueError("config/crewai/memory_policy.yaml must contain a 'crews' mapping.")
+    if not isinstance(task_policies.get("tasks") or {}, dict):
+        raise ValueError("config/crewai/task_policies.yaml must contain a 'tasks' mapping.")
+    if not isinstance(flow_persistence.get("flows") or {}, dict):
+        raise ValueError("config/crewai/flow_persistence.yaml must contain a 'flows' mapping.")
 
     unknown_agents: list[str] = []
     for task_name, task_def in task_defs.items():
@@ -54,4 +70,24 @@ def load_crewai_config_bundle(
         unique = ", ".join(sorted(set(unknown_agents)))
         raise ValueError(f"Unknown agent references in tasks.yaml: {unique}")
 
-    return CrewAIConfigBundle(agents=agents, tasks=tasks)
+    unknown_knowledge_agents = sorted(
+        set((knowledge_sources.get("agents") or {}).keys()) - set(agent_defs.keys())
+    )
+    if unknown_knowledge_agents:
+        unique = ", ".join(unknown_knowledge_agents)
+        raise ValueError(f"Unknown agent references in knowledge_sources.yaml: {unique}")
+
+    task_policy_defs = task_policies.get("tasks") or {}
+    unknown_policy_tasks = sorted(set(task_policy_defs.keys()) - set(task_defs.keys()))
+    if unknown_policy_tasks:
+        unique = ", ".join(unknown_policy_tasks)
+        raise ValueError(f"Unknown task references in task_policies.yaml: {unique}")
+
+    return CrewAIConfigBundle(
+        agents=agents,
+        tasks=tasks,
+        knowledge_sources=knowledge_sources,
+        memory_policy=memory_policy,
+        task_policies=task_policies,
+        flow_persistence=flow_persistence,
+    )

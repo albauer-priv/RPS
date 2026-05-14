@@ -1,0 +1,67 @@
+default_embedder:
+  provider: openai
+  config:
+    model_name: text-embedding-3-small
+
+default_llm: null
+
+crews:
+  coach_conversation:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/coach/shared
+    storage_template: runtime/athletes/{athlete_id}/memory/coach
+  workout_editor_conversation:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/workout_editor/shared
+    storage_template: runtime/athletes/{athlete_id}/memory/workout_editor
+  season_planning:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_season
+  phase_planning:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_phase
+  week_planning:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_week
+  report_advisory:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/advisory/report
+    storage_template: runtime/athletes/{athlete_id}/memory/report
+  feed_forward_advisory:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/advisory/feed_forward
+    storage_template: runtime/athletes/{athlete_id}/memory/feed_forward
+
+agents:
+  conversation_manager:
+    scope_template: /athlete/{athlete_id}/coach/session/{surface}
+    mode: scope
+  week_context_analyst:
+    scope_template: /athlete/{athlete_id}/coach/session/{surface}/context
+    mode: scope
+  coaching_recommendation_specialist:
+    scope_template: /athlete/{athlete_id}/coach/preferences
+    additional_read_scopes:
+      - /athlete/{athlete_id}/coach/accepted_patterns
+    mode: slice_read_only
+  week_preview_specialist:
+    scope_template: /athlete/{athlete_id}/coach/accepted_patterns
+    mode: scope
+  pending_resolution_specialist:
+    scope_template: /athlete/{athlete_id}/coach/session/{surface}/pending
+    mode: scope
+  season_planner_manager:
+    scope_template: /athlete/{athlete_id}/planning/season/nonbinding/manager
+    mode: scope
+  phase_architect_manager:
+    scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/manager
+    mode: scope
+  week_planner:
+    scope_template: /athlete/{athlete_id}/planning/week/nonbinding/planner
+    mode: scope
+  performance_analysis:
+    scope_template: /athlete/{athlete_id}/advisory/report/analyst
+    mode: scope

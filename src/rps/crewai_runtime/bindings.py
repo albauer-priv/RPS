@@ -10,6 +10,9 @@ from typing import Any
 
 from .compat import crewai_runtime_status
 from .config import CrewAIConfigBundle, load_crewai_config_bundle
+from .guardrails import build_task_guardrail_kwargs, resolve_task_policy
+from .knowledge import build_crewai_knowledge_kwargs, resolve_agent_knowledge_profile
+from .memory import build_agent_memory_value, build_crew_memory_kwargs, resolve_agent_memory_profile
 from .models import (
     AdjustmentIntentModel,
     ArtifactEnvelopeModel,
@@ -42,6 +45,8 @@ class AgentBlueprint:
     role: str
     goal: str
     backstory: str
+    knowledge_profile: JsonMap
+    memory_profile: JsonMap
     config: JsonMap
 
 
@@ -54,6 +59,7 @@ class TaskBlueprint:
     description: str
     expected_output: str
     output_kind: str
+    execution_policy: JsonMap
     config: JsonMap
 
 
@@ -83,6 +89,8 @@ def build_agent_blueprints(bundle: CrewAIConfigBundle) -> dict[str, AgentBluepri
             role=role,
             goal=goal,
             backstory=backstory,
+            knowledge_profile=resolve_agent_knowledge_profile(bundle, agent_name=name),
+            memory_profile={},
             config=raw,
         )
     return blueprints
@@ -106,6 +114,10 @@ def build_task_blueprints(bundle: CrewAIConfigBundle) -> dict[str, TaskBlueprint
             description=description,
             expected_output=expected_output,
             output_kind=output_kind,
+            execution_policy=resolve_task_policy(
+                type("TaskProxy", (), {"name": name, "config": raw})(),
+                bundle.task_policies,
+            ).__dict__,
             config=raw,
         )
     return blueprints
@@ -161,6 +173,18 @@ def build_crewai_bindings(
     agent_blueprints = build_agent_blueprints(bundle)
     task_blueprints = build_task_blueprints(bundle)
 
+    crew_memory_kwargs = build_crew_memory_kwargs(
+        crewai,
+        profile={
+            "enabled": False,
+            "scope": "",
+            "storage": "",
+            "embedder": {},
+            "llm": None,
+        },
+    )
+    shared_memory = crew_memory_kwargs.get("memory")
+
     agents: dict[str, object] = {}
     for name, blueprint in agent_blueprints.items():
         llm = llm_factory(name, blueprint) if llm_factory else None
@@ -170,6 +194,26 @@ def build_crewai_bindings(
             "backstory": blueprint.backstory,
             "verbose": bool(blueprint.config.get("verbose", False)),
         }
+        knowledge_kwargs = build_crewai_knowledge_kwargs(
+            root=(root or Path.cwd()),
+            profile=blueprint.knowledge_profile,
+        )
+        kwargs.update(knowledge_kwargs)
+        agent_memory_value = build_agent_memory_value(
+            shared_memory=shared_memory,
+            profile=resolve_agent_memory_profile(
+                bundle,
+                agent_name=name,
+                athlete_id="global",
+                surface="default",
+            ),
+        )
+        if agent_memory_value is not None:
+            kwargs["memory"] = agent_memory_value
+        for field in ("system_template", "prompt_template", "response_template"):
+            value = blueprint.config.get(field)
+            if isinstance(value, str) and value:
+                kwargs[field] = value
         if llm is not None:
             kwargs["llm"] = llm
         agents[name] = Agent(**kwargs)
@@ -180,8 +224,14 @@ def build_crewai_bindings(
             "description": blueprint.description,
             "expected_output": blueprint.expected_output,
             "agent": agents[blueprint.agent],
-            "output_pydantic": output_model_for_kind(blueprint.output_kind),
         }
+        guardrail_kwargs = build_task_guardrail_kwargs(blueprint, bundle.task_policies)
+        output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
+        if output_mode == "json":
+            task_kwargs["output_json"] = output_model_for_kind(blueprint.output_kind)
+        elif output_mode == "pydantic":
+            task_kwargs["output_pydantic"] = output_model_for_kind(blueprint.output_kind)
+        task_kwargs.update(guardrail_kwargs)
         tools = tools_factory(blueprint) if tools_factory else []
         if tools:
             task_kwargs["tools"] = tools

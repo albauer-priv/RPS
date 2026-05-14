@@ -14,6 +14,8 @@ from rps.agents.runtime import AgentRuntime, run_agent_multi_output, run_agent_m
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
 
+from .config import load_crewai_config_bundle
+
 JsonMap = dict[str, Any]
 
 
@@ -21,6 +23,12 @@ class SeasonFlowState(BaseModel):
     """Structured state for season outer orchestration."""
 
     action: str = ""
+    source_versions: JsonMap = Field(default_factory=dict)
+    intermediate_summaries: list[str] = Field(default_factory=list)
+    normalization_summary: JsonMap = Field(default_factory=dict)
+    persistence_summary: JsonMap = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
     result: JsonMap = Field(default_factory=dict)
 
 
@@ -28,27 +36,52 @@ class PhaseFlowState(BaseModel):
     """Structured state for phase outer orchestration."""
 
     requested_tasks: list[str] = Field(default_factory=list)
+    phase_range: str = ""
+    source_versions: JsonMap = Field(default_factory=dict)
+    bundle_summary: JsonMap = Field(default_factory=dict)
+    persistence_summary: JsonMap = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
     result: JsonMap = Field(default_factory=dict)
 
 
 class WeekFlowState(BaseModel):
     """Structured state for week outer orchestration."""
 
+    target_week: str = ""
+    preview_only: bool = False
+    source_versions: JsonMap = Field(default_factory=dict)
+    loaded_inputs_summary: JsonMap = Field(default_factory=dict)
+    candidate_week_plan: JsonMap = Field(default_factory=dict)
+    normalization_summary: JsonMap = Field(default_factory=dict)
+    diff_summary: JsonMap = Field(default_factory=dict)
+    persistence_summary: JsonMap = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
     result: JsonMap = Field(default_factory=dict)
 
 
 class ReportFlowState(BaseModel):
     """Structured state for report outer orchestration."""
 
+    target_week: str = ""
+    source_versions: JsonMap = Field(default_factory=dict)
+    persistence_summary: JsonMap = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
     result: JsonMap = Field(default_factory=dict)
 
 
 class FeedForwardFlowState(BaseModel):
     """Structured state for advisory chain orchestration."""
 
+    target_week: str = ""
+    source_versions: JsonMap = Field(default_factory=dict)
     report_result: JsonMap = Field(default_factory=dict)
     season_phase_result: JsonMap = Field(default_factory=dict)
     phase_result: JsonMap = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
 
 
 class CoachFlowState(BaseModel):
@@ -56,10 +89,13 @@ class CoachFlowState(BaseModel):
 
     user_message: str = ""
     route: str = ""
+    pending_summary: JsonMap = Field(default_factory=dict)
+    recalled_memory_summary: list[str] = Field(default_factory=list)
+    stored_memory_summary: list[str] = Field(default_factory=list)
     response: str = ""
 
 
-def _load_flow_symbols() -> tuple[Any, Any, Any, Any]:
+def _load_flow_symbols() -> tuple[Any, Any, Any, Any, Any]:
     """Load CrewAI Flow primitives lazily for runtime-safe imports."""
 
     flow_module = import_module("crewai.flow.flow")
@@ -67,7 +103,28 @@ def _load_flow_symbols() -> tuple[Any, Any, Any, Any]:
     start = getattr(flow_module, "start")
     listen = getattr(flow_module, "listen")
     router = getattr(flow_module, "router")
-    return Flow, start, listen, router
+    try:
+        persist_module = import_module("crewai.flow.persistence")
+    except Exception:
+        persist = None
+    else:
+        persist = getattr(persist_module, "persist", None)
+    return Flow, start, listen, router, persist
+
+
+def _flow_should_persist(flow_name: str) -> bool:
+    bundle = load_crewai_config_bundle(root=Path.cwd())
+    flow_cfg = (bundle.flow_persistence.get("flows") or {}).get(flow_name) or {}
+    return bool(flow_cfg.get("persist", False))
+
+
+def _decorate_persist(flow_cls: type[Any], flow_name: str, persist_decorator: Any | None) -> type[Any]:
+    if not _flow_should_persist(flow_name) or persist_decorator is None:
+        return flow_cls
+    try:
+        return persist_decorator(flow_cls)
+    except TypeError:
+        return persist_decorator()(flow_cls)
 
 
 def run_season_flow(
@@ -95,7 +152,7 @@ def run_season_flow(
     if action is None:
         raise ValueError(f"Unsupported season flow task: {task.value}")
 
-    Flow, start, listen, router = _load_flow_symbols()
+    Flow, start, listen, router, persist = _load_flow_symbols()
 
     class SeasonOuterFlow(Flow[SeasonFlowState]):
         @start()
@@ -121,6 +178,7 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            self.state.persistence_summary = {"task": AgentTask.CREATE_SEASON_SCENARIOS.value, "persisted": True}
             return self.state.result
 
         @listen("season_scenario_selection")
@@ -138,6 +196,7 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            self.state.persistence_summary = {"task": AgentTask.CREATE_SEASON_SCENARIO_SELECTION.value, "persisted": True}
             return self.state.result
 
         @listen("season_plan")
@@ -155,8 +214,10 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            self.state.persistence_summary = {"task": AgentTask.CREATE_SEASON_PLAN.value, "persisted": True}
             return self.state.result
 
+    SeasonOuterFlow = _decorate_persist(SeasonOuterFlow, "season", persist)
     flow = SeasonOuterFlow()
     flow.state.action = action
     if workspace_root is not None:
@@ -184,7 +245,7 @@ def run_phase_flow(
     if not tasks:
         return {"ok": True, "produced": {}}
 
-    Flow, start, listen, _router = _load_flow_symbols()
+    Flow, start, listen, _router, persist = _load_flow_symbols()
 
     class PhaseOuterFlow(Flow[PhaseFlowState]):
         @start()
@@ -203,8 +264,10 @@ def run_phase_flow(
                 model_override=model_override,
                 temperature_override=temperature_override,
             )
+            self.state.persistence_summary = {"tasks": list(self.state.requested_tasks), "persisted": True}
             return self.state.result
 
+    PhaseOuterFlow = _decorate_persist(PhaseOuterFlow, "phase", persist)
     flow = PhaseOuterFlow()
     flow.state.requested_tasks = [task.value for task in tasks]
     if workspace_root is not None:
@@ -232,7 +295,7 @@ def run_week_flow(
 ) -> JsonMap:
     """Execute the outer Week chain through a CrewAI Flow wrapper."""
 
-    Flow, start, listen, _router = _load_flow_symbols()
+    Flow, start, listen, _router, persist = _load_flow_symbols()
 
     class WeekOuterFlow(Flow[WeekFlowState]):
         @start()
@@ -255,8 +318,11 @@ def run_week_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
+            self.state.preview_only = preview_only
+            self.state.persistence_summary = {"persisted": not preview_only}
             return self.state.result
 
+    WeekOuterFlow = _decorate_persist(WeekOuterFlow, "week", persist)
     flow = WeekOuterFlow()
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="week_flow"):
@@ -275,7 +341,7 @@ def run_report_flow(
 ) -> JsonMap:
     """Execute report generation through a CrewAI Flow wrapper."""
 
-    Flow, start, listen, _router = _load_flow_symbols()
+    Flow, start, listen, _router, persist = _load_flow_symbols()
 
     class ReportOuterFlow(Flow[ReportFlowState]):
         @start()
@@ -285,8 +351,10 @@ def run_report_flow(
         @listen(bootstrap)
         def run_report(self, _label: str) -> JsonMap:
             self.state.result = report_runner()
+            self.state.persistence_summary = {"persisted": bool(self.state.result.get("ok"))}
             return self.state.result
 
+    ReportOuterFlow = _decorate_persist(ReportOuterFlow, "report", persist)
     flow = ReportOuterFlow()
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="report_flow"):
@@ -307,7 +375,7 @@ def run_feed_forward_flow(
 ) -> dict[str, JsonMap]:
     """Execute report -> season delta -> phase delta through a CrewAI Flow wrapper."""
 
-    Flow, start, listen, _router = _load_flow_symbols()
+    Flow, start, listen, _router, persist = _load_flow_symbols()
 
     class FeedForwardOuterFlow(Flow[FeedForwardFlowState]):
         @start()
@@ -335,6 +403,7 @@ def run_feed_forward_flow(
             self.state.phase_result = phase_runner()
             return self.state.phase_result
 
+    FeedForwardOuterFlow = _decorate_persist(FeedForwardOuterFlow, "feed_forward", persist)
     flow = FeedForwardOuterFlow()
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="feed_forward_flow"):
@@ -358,7 +427,7 @@ def run_coach_flow(
 ) -> dict[str, str]:
     """Run one conversational coach turn through a simple Flow wrapper."""
 
-    Flow, start, listen, router = _load_flow_symbols()
+    Flow, start, listen, router, _persist = _load_flow_symbols()
 
     class CoachOuterFlow(Flow[CoachFlowState]):
         @start()

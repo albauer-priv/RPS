@@ -1,4 +1,4 @@
-"""Shared agent knowledge injection loader based on YAML configuration."""
+"""Shared agent injection loader for legacy full injection and CrewAI contract-only use."""
 
 from __future__ import annotations
 
@@ -197,6 +197,20 @@ def resolve_agent_injection_items(agent_name: str, mode: str | None = None) -> l
     return _dedupe_items([*base_items, *bundle_items, *mode_items])
 
 
+def _is_contract_item(path_str: str) -> bool:
+    """Return whether an injected file belongs to explicit runtime/contract framing."""
+
+    normalized = path_str.replace("\\", "/")
+    name = Path(normalized).name
+    if "/contracts/" in normalized:
+        return True
+    if "/schemas/" in normalized:
+        return True
+    if name.startswith("mandatory_output_"):
+        return True
+    return name in {"traceability_spec.md", "file_naming_spec.md", "data_confidence_spec.md"}
+
+
 def build_injection_block(agent_name: str, mode: str | None = None) -> str:
     """Render injected knowledge content for use in an agent prompt."""
     items = resolve_agent_injection_items(agent_name, mode=mode)
@@ -211,6 +225,50 @@ def build_injection_block(agent_name: str, mode: str | None = None) -> str:
         )
     ]
     for item in items:
+        path_str = None
+        label = None
+        section = None
+        if isinstance(item, dict):
+            path_str = item.get("path")
+            label = item.get("label")
+            section = item.get("section")
+        elif isinstance(item, str):
+            path_str = item
+        if not path_str:
+            continue
+        path = (ROOT / path_str).resolve()
+        header = label or str(path)
+        try:
+            content = path.read_text(encoding="utf-8")
+            if path.name == "load_estimation_spec.md":
+                content = extract_load_estimation_section(content, section)
+            chunks.append(f"{header}:\n\"\"\"\n{content}\n\"\"\"\n")
+        except FileNotFoundError:
+            chunks.append(f"{header}: MISSING\n")
+    return "\n".join(chunks)
+
+
+def build_contract_injection_block(agent_name: str, mode: str | None = None) -> str:
+    """Render only the explicit contract/runtime subset of injected knowledge."""
+
+    items = resolve_agent_injection_items(agent_name, mode=mode)
+    filtered_items: list[Any] = []
+    for item in items:
+        path_str = item.get("path") if isinstance(item, dict) else item if isinstance(item, str) else None
+        if isinstance(path_str, str) and _is_contract_item(path_str):
+            filtered_items.append(item)
+    if not filtered_items:
+        return ""
+
+    chunks: list[str] = [
+        (
+            "Injected runtime contracts and operational instructions "
+            f"(mode={mode}; read in full; do NOT file_search these files):"
+            if mode
+            else "Injected runtime contracts and operational instructions (read in full; do NOT file_search these files):"
+        )
+    ]
+    for item in filtered_items:
         path_str = None
         label = None
         section = None

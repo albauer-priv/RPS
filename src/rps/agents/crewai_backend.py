@@ -9,7 +9,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-from rps.agents.knowledge_injection import build_injection_block
+from rps.agents.knowledge_injection import build_contract_injection_block
 from rps.agents.output_normalization import (
     extract_planning_events_document,
     injection_mode_for_tasks,
@@ -25,6 +25,17 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
 )
 from rps.crewai_runtime.config import load_crewai_config_bundle
+from rps.crewai_runtime.guardrails import build_task_guardrail_kwargs
+from rps.crewai_runtime.knowledge import (
+    build_crewai_knowledge_kwargs,
+    resolve_agent_knowledge_profile,
+)
+from rps.crewai_runtime.memory import (
+    build_agent_memory_value,
+    build_crew_memory_kwargs,
+    resolve_agent_memory_profile,
+    resolve_crew_memory_profile,
+)
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs
 from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
@@ -270,21 +281,49 @@ def _build_crewai_llm(
 def _build_crewai_agent(
     agent_cls: Any,
     *,
+    bundle: Any,
     blueprint: Any,
     llm: object,
     tools: list[Any],
+    athlete_id: str,
+    crew_name: str,
+    surface: str = "default",
+    shared_memory: Any | None = None,
 ) -> object:
     """Instantiate one CrewAI agent from a blueprint."""
 
     config = getattr(blueprint, "config", {}) or {}
+    kwargs: dict[str, Any] = {
+        "role": blueprint.role,
+        "goal": blueprint.goal,
+        "backstory": blueprint.backstory,
+        "llm": llm,
+        "tools": tools,
+        "allow_delegation": bool(config.get("allow_delegation", False)),
+        "verbose": bool(config.get("verbose", False)),
+    }
+    knowledge_kwargs = build_crewai_knowledge_kwargs(
+        root=ROOT,
+        profile=resolve_agent_knowledge_profile(bundle, agent_name=blueprint.name),
+    )
+    kwargs.update(knowledge_kwargs)
+    agent_memory = build_agent_memory_value(
+        shared_memory=shared_memory,
+        profile=resolve_agent_memory_profile(
+            bundle,
+            agent_name=blueprint.name,
+            athlete_id=athlete_id,
+            surface=surface,
+        ),
+    )
+    if agent_memory is not None:
+        kwargs["memory"] = agent_memory
+    for field in ("system_template", "prompt_template", "response_template"):
+        value = config.get(field)
+        if isinstance(value, str) and value:
+            kwargs[field] = value
     return agent_cls(
-        role=blueprint.role,
-        goal=blueprint.goal,
-        backstory=blueprint.backstory,
-        llm=llm,
-        tools=tools,
-        allow_delegation=bool(config.get("allow_delegation", False)),
-        verbose=bool(config.get("verbose", False)),
+        **kwargs,
     )
 
 
@@ -343,29 +382,50 @@ def _execute_crewai_task(
     process_cls: Any,
     runtime: AgentRuntime,
     agent_name: str,
+    bundle: Any,
     agent_blueprint: Any,
     task_blueprint: Any,
     llm: object,
     tools: list[Any],
     description: str,
+    crew_name: str,
     athlete_id: str | None = None,
     run_id: str | None = None,
 ) -> Any:
     """Execute one CrewAI task and return its typed output."""
 
+    crew_memory_kwargs = build_crew_memory_kwargs(
+        import_module("crewai"),
+        profile=resolve_crew_memory_profile(
+            bundle,
+            crew_name=crew_name,
+            athlete_id=athlete_id or "unknown",
+            surface="default",
+        ),
+    )
+    shared_memory = crew_memory_kwargs.get("memory")
     agent = _build_crewai_agent(
         agent_cls,
+        bundle=bundle,
         blueprint=agent_blueprint,
         llm=llm,
         tools=tools,
+        athlete_id=athlete_id or "unknown",
+        crew_name=crew_name,
+        shared_memory=shared_memory,
     )
     crew_task_kwargs: dict[str, Any] = {
         "description": description,
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
     }
-    if task_blueprint.output_kind != "artifact_envelope":
+    guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
+    output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
+    if output_mode == "json" and task_blueprint.output_kind != "artifact_envelope":
+        crew_task_kwargs["output_json"] = output_model_for_kind(task_blueprint.output_kind)
+    elif output_mode == "pydantic" and task_blueprint.output_kind != "artifact_envelope":
         crew_task_kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
+    crew_task_kwargs.update(guardrail_kwargs)
     crew_task = task_cls(**crew_task_kwargs)
     process = getattr(process_cls, "sequential")
     crew = crew_cls(
@@ -373,6 +433,7 @@ def _execute_crewai_task(
         tasks=[crew_task],
         process=process,
         verbose=bool(task_blueprint.config.get("verbose", False)),
+        **crew_memory_kwargs,
     )
     if athlete_id and run_id:
         with runtime_event_scope(
@@ -402,6 +463,7 @@ def _execute_crewai_task(
 def _build_crewai_task(
     *,
     task_cls: Any,
+    bundle: Any,
     task_blueprint: Any,
     agent: object,
     description: str,
@@ -414,8 +476,13 @@ def _build_crewai_task(
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
     }
-    if task_blueprint.output_kind != "artifact_envelope":
+    guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
+    output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
+    if output_mode == "json" and task_blueprint.output_kind != "artifact_envelope":
+        kwargs["output_json"] = output_model_for_kind(task_blueprint.output_kind)
+    elif output_mode == "pydantic" and task_blueprint.output_kind != "artifact_envelope":
         kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
+    kwargs.update(guardrail_kwargs)
     if context_tasks:
         kwargs["context"] = context_tasks
     return task_cls(**kwargs)
@@ -428,7 +495,9 @@ def _execute_crewai_hierarchical_crew(
     task_cls: Any,
     process_cls: Any,
     runtime: AgentRuntime,
+    bundle: Any,
     manager_agent_name: str,
+    crew_name: str,
     crew_task_names: tuple[str, ...],
     final_task_name: str,
     task_blueprints: dict[str, Any],
@@ -442,6 +511,16 @@ def _execute_crewai_hierarchical_crew(
 ) -> Any:
     """Execute one real multi-agent hierarchical crew and return the final typed output."""
 
+    crew_memory_kwargs = build_crew_memory_kwargs(
+        import_module("crewai"),
+        profile=resolve_crew_memory_profile(
+            bundle,
+            crew_name=crew_name,
+            athlete_id=athlete_id or "unknown",
+            surface="default",
+        ),
+    )
+    shared_memory = crew_memory_kwargs.get("memory")
     agents_by_name: dict[str, object] = {}
     for task_name in crew_task_names:
         task_blueprint = task_blueprints[task_name]
@@ -451,9 +530,13 @@ def _execute_crewai_hierarchical_crew(
         agent_blueprint = agent_blueprints[agent_name]
         agents_by_name[agent_name] = _build_crewai_agent(
             agent_cls,
+            bundle=bundle,
             blueprint=agent_blueprint,
             llm=llm,
             tools=tools,
+            athlete_id=athlete_id or "unknown",
+            crew_name=crew_name,
+            shared_memory=shared_memory,
         )
 
     manager_agent = agents_by_name[manager_agent_name]
@@ -488,6 +571,7 @@ def _execute_crewai_hierarchical_crew(
             )
         crew_task = _build_crewai_task(
             task_cls=task_cls,
+            bundle=bundle,
             task_blueprint=task_blueprint,
             agent=agents_by_name[agent_name],
             description=description,
@@ -509,6 +593,8 @@ def _execute_crewai_hierarchical_crew(
         "process": process,
         "verbose": False,
     }
+    if crew_memory_kwargs:
+        crew_kwargs.update(crew_memory_kwargs)
     if hierarchical is not None:
         crew_kwargs["manager_agent"] = manager_agent
         crew_kwargs["manager_llm"] = llm
@@ -550,15 +636,22 @@ def _build_internal_task_description(
     """Build a specialist-task description with top-level prompt context."""
 
     prompt = runtime.prompt_loader.combined_system_prompt(prompt_agent)
+    injected_block = build_contract_injection_block(prompt_agent)
     parts = [
         "System and agent instructions:",
         prompt,
-        "",
-        f"Internal specialist task: {task_blueprint.description}",
-        "",
-        "User request:",
-        user_input,
     ]
+    if injected_block and injected_block not in prompt:
+        parts.extend(["", "Injected runtime contracts:", injected_block])
+    parts.extend(
+        [
+            "",
+            f"Internal specialist task: {task_blueprint.description}",
+            "",
+            "User request:",
+            user_input,
+        ]
+    )
     if context_blocks:
         parts.extend(["", "Internal context from prior specialist tasks:"])
         parts.extend(context_blocks)
@@ -590,6 +683,7 @@ def _phase_document_from_bundle(bundle_document: JsonMap, artifact_type: Artifac
 def _run_season_plan_document(
     *,
     runtime: AgentRuntime,
+    bundle: Any,
     user_input: str,
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
@@ -610,7 +704,9 @@ def _run_season_plan_document(
         task_cls=task_cls,
         process_cls=process_cls,
         runtime=runtime,
+        bundle=bundle,
         manager_agent_name=task_blueprint.agent,
+        crew_name="season_planning",
         crew_task_names=(*_SEASON_INTERNAL_TASKS, task_blueprint.name),
         final_task_name=task_blueprint.name,
         task_blueprints=task_blueprints,
@@ -631,6 +727,7 @@ def _run_season_plan_document(
 def _run_phase_bundle_document(
     *,
     runtime: AgentRuntime,
+    bundle: Any,
     user_input: str,
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
@@ -651,7 +748,9 @@ def _run_phase_bundle_document(
         task_cls=task_cls,
         process_cls=process_cls,
         runtime=runtime,
+        bundle=bundle,
         manager_agent_name=task_blueprints[final_task_name].agent,
+        crew_name="phase_planning",
         crew_task_names=_PHASE_INTERNAL_TASKS,
         final_task_name=final_task_name,
         task_blueprints=task_blueprints,
@@ -741,6 +840,7 @@ def run_phase_bundle_crewai(
     try:
         bundle_document = _run_phase_bundle_document(
             runtime=runtime,
+            bundle=bundle,
             user_input=user_input,
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
@@ -891,7 +991,7 @@ def _build_task_description(
 
     prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
     mode = injection_mode_for_tasks([task])
-    injected_block = build_injection_block(agent_name, mode=mode)
+    injected_block = build_contract_injection_block(agent_name, mode=mode)
     spec = OUTPUT_SPECS[task]
     mandatory_doc_name = _mandatory_output_doc_for_schema(spec.schema_file)
     mandatory_doc = (
@@ -972,6 +1072,7 @@ def _run_single_task_document_crewai(
     if task == AgentTask.CREATE_SEASON_PLAN:
         document = _run_season_plan_document(
             runtime=runtime,
+            bundle=bundle,
             user_input=user_input,
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
@@ -999,11 +1100,19 @@ def _run_single_task_document_crewai(
             process_cls=Process,
             runtime=runtime,
             agent_name=agent_name,
+            bundle=bundle,
             agent_blueprint=agent_blueprint,
             task_blueprint=task_blueprint,
             llm=llm,
             tools=tools,
             description=description,
+            crew_name=(
+                "week_planning"
+                if task == AgentTask.CREATE_WEEK_PLAN
+                else "report_advisory"
+                if task == AgentTask.CREATE_DES_ANALYSIS_REPORT
+                else "season_planning"
+            ),
             athlete_id=athlete_id,
             run_id=run_id,
         )

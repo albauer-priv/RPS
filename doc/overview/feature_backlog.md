@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-12
+Last-Updated: 2026-05-14
 Owner: Product
 ---
 # Feature Backlog
@@ -92,6 +92,8 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_workout_editor_swap_days — support bounded swap of two occupied workout days instead of move-to-empty-day only.
 - [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
 - [ ] Manual active `Coach` smoke pass — verify context read, bounded edit preview/apply, scoped replan preview/apply, report preview/apply, and feed-forward preview/apply against a real athlete week in the UI.
+- [ ] Manual CrewAI-compatible end-to-end smoke pass — run Season, Phase, Week, Coach, and Workout Editor in a CrewAI-capable Python 3.13/container runtime and validate flow persistence, memory/knowledge wiring, and preview/apply paths.
+- [ ] FEAT_mandatory_output_audit_and_structured_output_migration — audit remaining `mandatory_output_*` families and migrate safe artifact/task families to `output_json` / `output_pydantic` plus guardrails; retain prompt-level contracts only where structured outputs remain unsafe.
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.
 - [ ] FEAT_run_progress_ui — progress indicators for long-running planning jobs.

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added separate CrewAI policy/config layers for flow persistence, memory scopes, static knowledge sources, and task guardrail/output-mode policy under `config/crewai/`, plus new runtime helpers in `src/rps/crewai_runtime/` for guardrail resolution, knowledge-source mapping, and memory-profile wiring.
+- Added a contract-only injection path via `build_contract_injection_block(...)`, so CrewAI runtime construction can keep explicit operational/contracts in prompts while static reference material moves into separate knowledge-source config.
+- Added CrewAI runbooks for flow persistence, memory policy, static knowledge, and prompt/guardrail debugging under `doc/runbooks/`.
 - Added a canonical CrewAI flow catalog in `doc/architecture/crewai_flows.md`, documenting outer flow entrypoints, Season/Phase/Week planning flows, specialist crews, per-surface toolsets, inputs, outputs, and runtime diagrams for planning, advisory, Coach, and Workout Editor paths.
 - Added a shared manager-plus-specialist conversational CrewAI runtime for `Coach` and `Workout Editor`, with agent-specific knowledge injection, strict per-specialist tool visibility, and page-level bridge heuristics removed from Coach.
 - Added an active Coach operation layer on top of the existing runtime: Coach can now inspect selected-week plan context, preview/apply bounded `WEEK_PLAN` edits, preview/apply scoped week replans, and trigger DES report / feed-forward runs through explicit operation tools with mandatory preview + confirm semantics.
@@ -29,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added explicit Coach language alignment and a deterministic scoped-preview fallback, so broad week-adjustment requests and follow-up `preview erstellen` turns can create `preview_scoped_week_replan` without relying on low-level workout-edit parameters.
 
 ### Changed
+- CrewAI outer flow state models now carry richer typed state and compat-safe persist-policy decoration for Season, Phase, Week, Report, and Feed-Forward flows.
+- CrewAI backend and conversational coach runtime now resolve task execution policy (`output_pydantic` / `output_json` / prompt-only), function guardrails, shared memory, scoped agent memory, and static knowledge profiles from explicit config instead of assuming broad prompt injection everywhere.
 - Coach and Workout Editor chats now route through the same small-sliced conversational runtime: a thin manager classifies the turn, narrow specialists own context/advice/preview/pending work, and the outer Coach flow is telemetry-only instead of phrase-routing preview/apply semantics.
 - Coach prompt and UI semantics are no longer read-only; the page now acts as an active planning surface while keeping all persisted writes behind existing guarded store and deterministic orchestration helpers.
 - Advisory report/feed-forward execution now has reusable orchestrator helpers instead of only page-local wiring, so the same actions can be invoked from the active Coach surface.

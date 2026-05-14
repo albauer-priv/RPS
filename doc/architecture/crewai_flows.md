@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-13
+Last-Updated: 2026-05-14
 Owner: Architecture
 ---
 # CrewAI Flows and Specialist Crews
@@ -12,6 +12,23 @@ Use this together with:
 - [doc/architecture/agents.md](agents.md) for the top-level agent registry
 - [doc/architecture/system_architecture.md](system_architecture.md) for the broader system context
 - [doc/adr/ADR-045-coach-hierarchical-conversational-crew.md](../adr/ADR-045-coach-hierarchical-conversational-crew.md) for the Coach/Workout conversational runtime decision
+- [doc/adr/ADR-046-crewai-state-memory-knowledge-guardrails.md](../adr/ADR-046-crewai-state-memory-knowledge-guardrails.md) for runtime policy separation
+
+## Runtime Policy Layers
+
+CrewAI runtime wiring is now split into explicit policy layers:
+
+- `flow_persistence.yaml`
+- `memory_policy.yaml`
+- `knowledge_sources.yaml`
+- `task_policies.yaml`
+
+Boundary rules:
+
+- validated workspace artifacts remain authoritative truth
+- static domain references belong in knowledge-source config
+- runtime instructions and retained mandatory contracts remain prompt-level
+- task output enforcement prefers structured output plus function guardrails
 
 ## Purpose
 
@@ -163,7 +180,7 @@ or SEASON_PHASE_FEED_FORWARD"]
 | Outer flow entry | `run_season_flow(...)` |
 | Inner execution | hierarchical crew for `CREATE_SEASON_PLAN`; single-task execution for `CREATE_SEASON_SCENARIOS` / `CREATE_SEASON_SCENARIO_SELECTION` |
 | Main inputs | athlete profile, planning events, logistics, availability, wellness, KPI profile, optional season scenarios and selection |
-| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers and `knowledge_search` |
+| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers; configured static references should come from CrewAI knowledge sources before `knowledge_search` |
 | Main outputs | `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, `SEASON_PLAN`, optional `SEASON_PHASE_FEED_FORWARD` |
 | Persistence boundary | guarded validated store after manager output normalization |
 
@@ -210,7 +227,7 @@ final internal task: phase_bundle_finalize"]
 | Outer flow entry | `run_phase_flow(...)` |
 | Inner execution | hierarchical bundle crew via `run_phase_bundle_crewai(...)` |
 | Main inputs | `SEASON_PLAN`, selected phase range, availability, wellness, zone model, planning events, logistics, optional season feed-forward |
-| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers and `knowledge_search` |
+| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers; configured static references should come from CrewAI knowledge sources before `knowledge_search` |
 | Main outputs | `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, `PHASE_PREVIEW`, optional `PHASE_FEED_FORWARD` |
 | Persistence boundary | manager returns one internal `PhaseBundle`; code-owned split + guarded validated store persists the requested public artifacts |
 
@@ -243,7 +260,7 @@ or preview-only candidate WEEK_PLAN"]
 | Outer flow entry | `run_week_flow(...)` |
 | Inner execution | single persisted-artifact task via `run_agent_multi_output(...)` or `run_agent_multi_output_preview(...)` |
 | Main inputs | `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, optional `PHASE_FEED_FORWARD`, availability, wellness, planning events, logistics, optional existing `WEEK_PLAN` |
-| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers and `knowledge_search` |
+| Tool surface | full shared workspace read toolset from `read_tool_defs()`, including workspace getters/resolvers; configured static references should come from CrewAI knowledge sources before `knowledge_search` |
 | Main outputs | persisted `WEEK_PLAN` or preview-only candidate `WEEK_PLAN` |
 | Persistence boundary | guarded validated store on normal path; preview path returns a candidate document without persistence |
 
