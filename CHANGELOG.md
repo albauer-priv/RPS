@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-05-14
+
 ### Added
 - Added a skills-first multi-crew planning runtime foundation: Season, Phase, Week, and Report task graphs now have explicit planning/review/writer task families in `config/crewai/tasks.yaml`, plus typed bundle/review/replan models in `src/rps/crewai_runtime/models.py`.
 - Added canonical skill reference material for durability, load estimation, progression, cadence/re-entry, workout authoring, and DES diagnostics under `skills/**/references/`, so planning methodology now lives with the activated skills instead of legacy prose-only specs.
