@@ -160,10 +160,30 @@ def _flow_should_persist(flow_name: str) -> bool:
 def _decorate_persist(flow_cls: type[Any], flow_name: str, persist_decorator: Any | None) -> type[Any]:
     if not _flow_should_persist(flow_name) or persist_decorator is None:
         return flow_cls
+
+    # CrewAI has documented both `@persist` and `@persist()` styles across
+    # versions/examples. Try the decorator-factory form first because a direct
+    # call can otherwise return the inner decorator function and break flow
+    # instantiation at runtime.
     try:
-        return persist_decorator(flow_cls)
+        decorator = persist_decorator()
     except TypeError:
-        return persist_decorator()(flow_cls)
+        decorator = None
+    else:
+        if callable(decorator):
+            try:
+                decorated = decorator(flow_cls)
+            except TypeError:
+                decorated = None
+            else:
+                if isinstance(decorated, type):
+                    return decorated
+
+    try:
+        decorated = persist_decorator(flow_cls)
+    except TypeError:
+        return flow_cls
+    return decorated if isinstance(decorated, type) else flow_cls
 
 
 def run_season_flow(

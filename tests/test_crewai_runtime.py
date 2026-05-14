@@ -1144,6 +1144,65 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
     assert meta["owner_agent"] == "Season-Artifact-Writer"
 
 
+def test_decorate_persist_supports_factory_style(monkeypatch) -> None:
+    from rps.crewai_runtime import flows as flow_module
+
+    monkeypatch.setattr(flow_module, '_flow_should_persist', lambda _name: True)
+
+    class DummyFlow:
+        pass
+
+    def _persist_factory():
+        def _decorate(target):
+            class Persisted(target):
+                persisted_style = 'factory'
+
+            return Persisted
+
+        return _decorate
+
+    decorated = flow_module._decorate_persist(DummyFlow, 'season', _persist_factory)
+
+    assert decorated is not DummyFlow
+    assert getattr(decorated, 'persisted_style', None) == 'factory'
+
+
+def test_decorate_persist_supports_direct_style(monkeypatch) -> None:
+    from rps.crewai_runtime import flows as flow_module
+
+    monkeypatch.setattr(flow_module, '_flow_should_persist', lambda _name: True)
+
+    class DummyFlow:
+        pass
+
+    def _persist_direct(target):
+        class Persisted(target):
+            persisted_style = 'direct'
+
+        return Persisted
+
+    decorated = flow_module._decorate_persist(DummyFlow, 'season', _persist_direct)
+
+    assert decorated is not DummyFlow
+    assert getattr(decorated, 'persisted_style', None) == 'direct'
+
+
+def test_decorate_persist_fails_open_on_unexpected_shape(monkeypatch) -> None:
+    from rps.crewai_runtime import flows as flow_module
+
+    monkeypatch.setattr(flow_module, '_flow_should_persist', lambda _name: True)
+
+    class DummyFlow:
+        pass
+
+    def _persist_weird(target):
+        return lambda missing: missing
+
+    decorated = flow_module._decorate_persist(DummyFlow, 'season', _persist_weird)
+
+    assert decorated is DummyFlow
+
+
 def test_run_season_flow_routes_to_requested_task(monkeypatch) -> None:
     _install_fake_flow_module(monkeypatch)
 
