@@ -95,72 +95,200 @@ tasks:
     output: coach_apply
     description: Run the confirmed report and feed-forward chain for the selected ISO week.
     expected_output: A structured apply result for the advisory chain.
+
   season_scenarios:
     agent: season_scenario
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the season-scenarios artifact envelope for the selected planning horizon.
     expected_output: A full schema-compliant artifact envelope with meta and data.
+  season_context_read:
+    agent: season_context_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Summarize season planning context, selected scenario state, and upstream inputs.
+    expected_output: A structured planning draft for season context.
+  season_scenario_interpretation:
+    agent: scenario_interpreter
+    kind: internal_reasoning
+    output: season_event_anchor
+    description: Interpret the selected scenario as advisory season intent.
+    expected_output: A structured season scenario interpretation.
+  season_event_priority_review:
+    agent: event_priority_specialist
+    kind: internal_reasoning
+    output: season_event_anchor
+    description: Define A/B/C priority handling and event anchors for season planning.
+    expected_output: A structured event-priority draft.
+  season_peak_window_review:
+    agent: peak_window_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Define peak window and taper-window logic for the season plan.
+    expected_output: A structured planning draft for peak-window logic.
+  season_macrocycle_draft:
+    agent: macrocycle_architect
+    kind: internal_reasoning
+    output: season_macrocycle_draft
+    description: Reverse-plan macrocycle structure from priority event anchors.
+    expected_output: A structured macrocycle draft with reverse-planning notes.
+  season_constraint_review:
+    agent: season_constraint_specialist
+    kind: internal_reasoning
+    output: constraint_audit
+    description: Summarize binding athlete, availability, logistics, and event constraints for season planning.
+    expected_output: A structured constraint audit for season planning.
+  season_historical_context_review:
+    agent: season_historical_context_specialist
+    kind: internal_reasoning
+    output: constraint_audit
+    description: Summarize historical load, recovery, and re-entry implications for the current season run.
+    expected_output: A structured historical-context review.
+  season_kpi_guidance_review:
+    agent: season_kpi_guidance_specialist
+    kind: internal_reasoning
+    output: constraint_audit
+    description: Summarize KPI-profile and moving-time-rate guidance for binding season planning.
+    expected_output: A structured KPI-guidance review.
+  season_load_corridor_draft:
+    agent: season_load_corridor_specialist
+    kind: internal_reasoning
+    output: load_governance_audit
+    description: Draft season corridor logic and load realism checks.
+    expected_output: A structured season load-corridor draft.
+  season_progression_review:
+    agent: season_progression_specialist
+    kind: internal_reasoning
+    output: load_governance_audit
+    description: Draft season progression, cadence, and overload guidance.
+    expected_output: A structured season progression draft.
+  season_plan_finalize:
+    agent: season_plan_manager
+    kind: internal_reasoning
+    output: season_plan_bundle
+    description: Consolidate season drafts into one internal SeasonPlanBundle.
+    expected_output: A structured internal season plan bundle.
+  season_governance_review:
+    agent: season_governance_auditor
+    kind: internal_reasoning
+    output: load_governance_audit
+    description: Review the candidate season bundle for governance realism and progression compliance.
+    expected_output: A structured load-governance review.
+  season_constraints_review:
+    agent: season_constraints_reviewer
+    kind: internal_reasoning
+    output: constraint_audit
+    description: Review the candidate season bundle for athlete, event, and logistics constraint compliance.
+    expected_output: A structured season constraint review.
+  season_plan_audit:
+    agent: season_plan_auditor
+    kind: internal_reasoning
+    output: season_plan_audit
+    description: Audit the candidate season bundle for macrocycle and authority coherence.
+    expected_output: A structured season-plan audit with warnings and blocking issues.
+  season_review:
+    agent: season_review_manager
+    kind: internal_reasoning
+    output: season_review_decision
+    description: Integrate season review outputs and decide approve, reject, or bounded replan.
+    expected_output: A structured season review decision.
   season_plan:
     agent: season_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the season-plan artifact envelope for the selected planning horizon.
     expected_output: A full schema-compliant artifact envelope with meta and data.
-  season_scenario_interpretation:
-    agent: scenario_interpreter
-    kind: internal_reasoning
-    output: season_event_anchor
-    description: Interpret the selected scenario and extract advisory planning intent without turning it into binding authority.
-    expected_output: A structured advisory interpretation of the selected scenario.
-  season_event_anchor_review:
-    agent: event_priority_anchor_specialist
-    kind: internal_reasoning
-    output: season_event_anchor
-    description: Review planning events and define season anchor windows and event priority handling.
-    expected_output: A structured event-anchor draft for the season planning manager.
-  season_macrocycle_draft:
-    agent: macrocycle_architect
-    kind: internal_reasoning
-    output: season_macrocycle_draft
-    description: Reverse-plan the season macrocycle and cadence from priority event anchors.
-    expected_output: A structured macrocycle draft with cadence and reverse-planning notes.
-  season_constraint_review:
-    agent: constraint_specialist
-    kind: internal_reasoning
-    output: constraint_audit
-    description: Summarize binding athlete, availability, logistics, and event constraints for season planning.
-    expected_output: A structured constraint audit for the season planning manager.
-  season_historical_context_review:
-    agent: historical_context_specialist
-    kind: internal_reasoning
-    output: constraint_audit
-    description: Summarize historical load, recovery, and re-entry implications for the current season run.
-    expected_output: A structured historical-context review for the season planning manager.
-  season_kpi_guidance_review:
-    agent: kpi_guidance_specialist
-    kind: internal_reasoning
-    output: constraint_audit
-    description: Summarize KPI-profile and moving-time-rate guidance for binding season planning.
-    expected_output: A structured KPI-guidance review for the season planning manager.
-  season_load_governance_review:
-    agent: load_governance_specialist
-    kind: internal_reasoning
-    output: load_governance_audit
-    description: Review season load corridor plausibility and durability-first progression.
-    expected_output: A structured load-governance audit for the season planning manager.
-  season_plan_audit:
-    agent: season_plan_auditor
-    kind: internal_reasoning
-    output: season_plan_audit
-    description: Audit the proposed season-plan authority boundaries before persistence.
-    expected_output: A structured season-plan audit with warnings and blocking issues.
   season_phase_feed_forward:
     agent: season_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week season-to-phase feed-forward artifact envelope.
     expected_output: A full schema-compliant artifact envelope with meta and data.
+
+  phase_context_read:
+    agent: phase_context_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Summarize exact phase-range context and upstream authority.
+    expected_output: A structured phase context draft.
+  phase_guardrail_band_draft:
+    agent: phase_guardrail_band_specialist
+    kind: internal_reasoning
+    output: phase_guardrails_payload
+    description: Draft weekly band and corridor content for the exact phase range.
+    expected_output: A structured phase-guardrails payload draft.
+  phase_execution_rules_draft:
+    agent: phase_execution_rules_specialist
+    kind: internal_reasoning
+    output: phase_guardrails_payload
+    description: Draft allowed/forbidden semantics and execution non-negotiables for the exact phase range.
+    expected_output: A structured phase execution-rules draft.
+  phase_structure_draft:
+    agent: phase_structure_specialist
+    kind: internal_reasoning
+    output: phase_structure_payload
+    description: Draft phase structure and week-skeleton logic for the exact phase range.
+    expected_output: A structured phase-structure payload draft.
+  phase_cadence_recovery_draft:
+    agent: phase_cadence_recovery_specialist
+    kind: internal_reasoning
+    output: phase_structure_payload
+    description: Apply season cadence, deload, and re-entry logic to the exact phase range.
+    expected_output: A structured cadence/recovery draft for the phase structure.
+  phase_intensity_distribution_draft:
+    agent: phase_intensity_distribution_specialist
+    kind: internal_reasoning
+    output: phase_structure_payload
+    description: Draft phase-appropriate intensity handling and density within existing guardrails.
+    expected_output: A structured intensity-handling draft for the phase structure.
+  phase_event_integration_draft:
+    agent: phase_event_integration_specialist
+    kind: internal_reasoning
+    output: phase_structure_payload
+    description: Draft B/C event propagation rules inside the phase structure.
+    expected_output: A structured phase event-integration draft.
+  phase_preview_draft:
+    agent: phase_preview_synthesizer
+    kind: internal_reasoning
+    output: phase_preview_payload
+    description: Draft a derived phase preview that adds no new planning decisions.
+    expected_output: A structured phase-preview payload draft.
+  phase_bundle_finalize:
+    agent: phase_bundle_manager
+    kind: internal_reasoning
+    output: phase_bundle
+    description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before review.
+    expected_output: A structured internal PhaseBundle.
+  phase_constraint_audit:
+    agent: phase_constraint_auditor
+    kind: internal_reasoning
+    output: constraint_audit
+    description: Audit phase constraints, event propagation, and applicable season feed-forward consistency.
+    expected_output: A structured phase constraint audit.
+  phase_governance_review:
+    agent: phase_governance_auditor
+    kind: internal_reasoning
+    output: load_governance_audit
+    description: Audit phase corridor coherence, durability-first policy, and compression risk.
+    expected_output: A structured phase governance review.
+  phase_structure_review:
+    agent: phase_structure_reviewer
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review structural consistency across the candidate phase bundle.
+    expected_output: A structured phase structure review draft.
+  phase_preview_review:
+    agent: phase_preview_reviewer
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review whether the candidate phase preview remains derived and non-decisional.
+    expected_output: A structured phase preview review draft.
+  phase_review:
+    agent: phase_review_manager
+    kind: internal_reasoning
+    output: phase_review_decision
+    description: Integrate phase review outputs and decide approve, reject, or bounded replan.
+    expected_output: A structured phase review decision.
   phase_guardrails:
     agent: phase_artifact_writer
     kind: persisted_artifact
@@ -179,66 +307,98 @@ tasks:
     output: artifact_envelope
     description: Create the phase-preview artifact envelope for the exact phase range.
     expected_output: A full schema-compliant artifact envelope with meta and data.
-  phase_guardrails_draft:
-    agent: guardrails_specialist
-    kind: internal_reasoning
-    output: phase_guardrails_payload
-    description: Draft phase guardrails for the exact phase range.
-    expected_output: A structured phase-guardrails payload draft.
-  phase_structure_draft:
-    agent: structure_specialist
-    kind: internal_reasoning
-    output: phase_structure_payload
-    description: Draft phase structure and week-skeleton logic for the exact phase range.
-    expected_output: A structured phase-structure payload draft.
-  phase_cadence_recovery_integration:
-    agent: cadence_recovery_integrator
-    kind: internal_reasoning
-    output: phase_structure_payload
-    description: Apply season-selected cadence and recovery rhythm to the exact phase range without inventing a new cadence.
-    expected_output: A structured cadence-application draft for the phase structure.
-  phase_intensity_distribution_review:
-    agent: intensity_distribution_specialist
-    kind: internal_reasoning
-    output: phase_structure_payload
-    description: Draft phase-appropriate intensity handling and density within existing guardrails.
-    expected_output: A structured intensity-handling draft for the phase structure.
-  phase_preview_draft:
-    agent: preview_synthesizer
-    kind: internal_reasoning
-    output: phase_preview_payload
-    description: Draft a derived phase preview that adds no new planning decisions.
-    expected_output: A structured phase-preview payload draft.
-  phase_constraint_audit:
-    agent: constraint_auditor
-    kind: internal_reasoning
-    output: constraint_audit
-    description: Audit phase constraints, event propagation, and applicable season feed-forward consistency.
-    expected_output: A structured phase constraint audit.
-  phase_load_governance_audit:
-    agent: load_governance_auditor
-    kind: internal_reasoning
-    output: load_governance_audit
-    description: Audit phase corridor coherence, durability-first policy, and compression risk.
-    expected_output: A structured phase load-governance audit.
-  phase_bundle_finalize:
-    agent: phase_bundle_manager
-    kind: internal_reasoning
-    output: phase_bundle
-    description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before deterministic artifact splitting.
-    expected_output: A structured PhaseBundle that is not persisted directly and contains nested full phase artefact envelopes for guardrails, structure, and preview.
   phase_feed_forward:
     agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week phase feed-forward artifact envelope.
     expected_output: A full schema-compliant artifact envelope with meta and data.
+
+  week_context_read:
+    agent: week_context_specialist
+    kind: internal_reasoning
+    output: week_context_assessment
+    description: Inspect selected-week plan, actuals, and open constraints for planning.
+    expected_output: A structured week context assessment.
+  week_constraint_review:
+    agent: week_constraint_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Summarize binding week-level constraints from upstream artifacts and athlete context.
+    expected_output: A structured week constraint draft.
+  week_load_target_draft:
+    agent: week_load_target_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Convert the active corridor into day and workout target logic for the week.
+    expected_output: A structured week load-target draft.
+  week_revision_draft:
+    agent: week_revision_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Draft a candidate week structure or bounded revision consistent with active intent.
+    expected_output: A structured week revision draft.
+  week_workout_text_draft:
+    agent: week_workout_authoring_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Draft valid workout construction and syntax decisions for the candidate week.
+    expected_output: A structured workout-authoring draft.
+  week_plan_finalize:
+    agent: week_plan_manager
+    kind: internal_reasoning
+    output: week_plan_bundle
+    description: Consolidate week drafts into one internal WeekPlanBundle before review.
+    expected_output: A structured internal week plan bundle.
+  week_consistency_review:
+    agent: week_consistency_auditor
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review candidate week coherence across role, duration, and load intent.
+    expected_output: A structured week consistency review.
+  week_load_governance_review:
+    agent: week_load_governance_reviewer
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review candidate week corridor compliance and reconciliation behavior.
+    expected_output: A structured week load-governance review.
+  week_workout_syntax_review:
+    agent: week_workout_syntax_reviewer
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review candidate workout text for syntax subset and export safety.
+    expected_output: A structured week workout-syntax review.
+  week_review:
+    agent: week_review_manager
+    kind: internal_reasoning
+    output: week_review_decision
+    description: Integrate week review outputs and decide approve, reject, or bounded replan.
+    expected_output: A structured week review decision.
   week_plan:
     agent: week_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create or revise the week-plan artifact envelope for the selected ISO week.
     expected_output: A full schema-compliant artifact envelope with meta and data.
+
+  report_context_read:
+    agent: performance_context_specialist
+    kind: internal_reasoning
+    output: planning_draft
+    description: Summarize selected report-week context and diagnostic inputs.
+    expected_output: A structured advisory context draft.
+  des_diagnostic_draft:
+    agent: des_diagnostic_specialist
+    kind: internal_reasoning
+    output: des_analysis_bundle
+    description: Draft advisory DES diagnostic findings for the selected ISO week.
+    expected_output: A structured internal DES analysis bundle.
+  report_review:
+    agent: des_review_manager
+    kind: internal_reasoning
+    output: report_review_decision
+    description: Review advisory DES diagnostics and decide approve, reject, or bounded rework.
+    expected_output: A structured report review decision.
   des_analysis_report:
     agent: report_artifact_writer
     kind: persisted_artifact

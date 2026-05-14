@@ -14,6 +14,14 @@ class TurnModeModel(BaseModel):
     rationale: str | None = None
 
 
+class PlanningDraftModel(BaseModel):
+    """Generic structured planning draft for internal specialist outputs."""
+
+    summary: str = ""
+    details: dict[str, Any] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class WeekContextAssessmentModel(BaseModel):
     """Structured read-only summary of the selected week context."""
 
@@ -119,6 +127,42 @@ class SeasonPlanAuditModel(BaseModel):
     cadence_authority_ok: bool = True
 
 
+class ReplanInstructionModel(BaseModel):
+    """Structured replan instruction emitted by review crews."""
+
+    target_specialists: list[str] = Field(default_factory=list)
+    issues_to_fix: list[str] = Field(default_factory=list)
+    must_preserve: list[str] = Field(default_factory=list)
+    priority_order: list[str] = Field(default_factory=list)
+    max_scope_of_change: str | None = None
+
+
+class SeasonPlanBundleModel(BaseModel):
+    """Internal season planning bundle before review and writing."""
+
+    context_summary: dict[str, Any] = Field(default_factory=dict)
+    scenario_interpretation: dict[str, Any] = Field(default_factory=dict)
+    event_priority: SeasonEventAnchorModel
+    peak_window: dict[str, Any] = Field(default_factory=dict)
+    macrocycle: SeasonMacrocycleDraftModel
+    constraints: list[ConstraintAuditModel] = Field(default_factory=list)
+    load_governance: list[LoadGovernanceAuditModel] = Field(default_factory=list)
+    decision_summary: dict[str, Any] = Field(default_factory=dict)
+    candidate_document: dict[str, Any] | None = None
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
+class SeasonReviewDecisionModel(BaseModel):
+    """Holistic season review decision before writer handoff."""
+
+    status: Literal["approved", "replan_required", "rejected"]
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    replan_instructions: list[ReplanInstructionModel] = Field(default_factory=list)
+    writer_ready_summary: str = ""
+
+
 class ConstraintAuditModel(BaseModel):
     """Internal audit result for constraint propagation and consistency."""
 
@@ -195,6 +239,59 @@ class PhaseBundleModel(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     blocking_issues: list[str] = Field(default_factory=list)
     decision_summary: PhaseBundleDecisionModel
+
+
+class PhaseReviewDecisionModel(BaseModel):
+    """Holistic phase review decision before writer handoff."""
+
+    status: Literal["approved", "replan_required", "rejected"]
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    replan_instructions: list[ReplanInstructionModel] = Field(default_factory=list)
+    writer_ready_summary: str = ""
+
+
+class WeekPlanBundleModel(BaseModel):
+    """Internal week planning bundle before review and writing."""
+
+    context_summary: WeekContextAssessmentModel | dict[str, Any] = Field(default_factory=dict)
+    constraint_summary: dict[str, Any] = Field(default_factory=dict)
+    load_target_summary: dict[str, Any] = Field(default_factory=dict)
+    revision_summary: dict[str, Any] = Field(default_factory=dict)
+    workout_authoring_summary: dict[str, Any] = Field(default_factory=dict)
+    candidate_document: dict[str, Any] | None = None
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
+class WeekReviewDecisionModel(BaseModel):
+    """Holistic week review decision before writer handoff."""
+
+    status: Literal["approved", "replan_required", "rejected"]
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    replan_instructions: list[ReplanInstructionModel] = Field(default_factory=list)
+    writer_ready_summary: str = ""
+
+
+class DESAnalysisBundleModel(BaseModel):
+    """Internal advisory analysis bundle before review and writing."""
+
+    context_summary: dict[str, Any] = Field(default_factory=dict)
+    diagnostic_summary: dict[str, Any] = Field(default_factory=dict)
+    candidate_document: dict[str, Any] | None = None
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
+class ReportReviewDecisionModel(BaseModel):
+    """Holistic report review decision before writer handoff."""
+
+    status: Literal["approved", "replan_required", "rejected"]
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    replan_instructions: list[ReplanInstructionModel] = Field(default_factory=list)
+    writer_ready_summary: str = ""
 
 
 

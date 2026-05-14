@@ -3,11 +3,15 @@ name: durability-methodology
 description: Durability-first planning and coaching methodology for endurance planning in RPS.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
-Use durability-first methodology:
-- Protect sustainable progression over short-term catch-up ambition.
-- Prefer fewer overload axes changing at once.
-- Recovery protection outranks cosmetic plan symmetry.
-- Recommendations must stay inside active governance corridors unless the task explicitly revises those corridors.
-- Use evidence and policy as supporting rationale, not as a license to ignore current context.
+Use the canonical shared durability references:
+- `references/durability_foundation.md`
+- `references/consistency_recovery_and_non_compensation.md`
+- `references/evidence_layer_durability.md`
+
+Apply these rules:
+- durability and sustainable kJ handling outrank short-term sharpness
+- consistency outranks catch-up behavior
+- recovery protection outranks cosmetic weekly symmetry
+- recommendations must stay inside active governance corridors unless the task explicitly revises those corridors

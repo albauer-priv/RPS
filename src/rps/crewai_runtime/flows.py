@@ -95,6 +95,45 @@ class CoachFlowState(BaseModel):
     response: str = ""
 
 
+def _extract_stage_summary(result: JsonMap) -> JsonMap:
+    """Build a compact flow-stage summary from a backend result payload."""
+
+    summary: JsonMap = {"ok": bool(result.get("ok"))}
+    for key in ("warnings", "details", "error"):
+        value = result.get(key)
+        if value:
+            summary[key] = value
+    produced = result.get("produced")
+    if isinstance(produced, dict):
+        summary["produced_keys"] = sorted(str(key) for key in produced)
+    document = result.get("document")
+    if isinstance(document, dict):
+        meta = document.get("meta")
+        if isinstance(meta, dict):
+            summary["artifact_type"] = meta.get("artifact_type")
+    return summary
+
+
+def _ensure_state_list(state: Any, name: str) -> list[Any]:
+    """Return a mutable list attribute on flow state, creating it when absent."""
+
+    value = getattr(state, name, None)
+    if not isinstance(value, list):
+        value = []
+        setattr(state, name, value)
+    return value
+
+
+def _ensure_state_dict(state: Any, name: str) -> JsonMap:
+    """Return a mutable dict attribute on flow state, creating it when absent."""
+
+    value = getattr(state, name, None)
+    if not isinstance(value, dict):
+        value = {}
+        setattr(state, name, value)
+    return value
+
+
 def _load_flow_symbols() -> tuple[Any, Any, Any, Any, Any]:
     """Load CrewAI Flow primitives lazily for runtime-safe imports."""
 
@@ -214,7 +253,21 @@ def run_season_flow(
                 force_file_search=force_file_search,
                 max_num_results=max_num_results,
             )
-            self.state.persistence_summary = {"task": AgentTask.CREATE_SEASON_PLAN.value, "persisted": True}
+            _ensure_state_list(self.state, "intermediate_summaries").append(
+                "season planning/review/writer cycle executed"
+            )
+            self.state.normalization_summary = _extract_stage_summary(self.state.result)
+            self.state.persistence_summary = {
+                "task": AgentTask.CREATE_SEASON_PLAN.value,
+                "stages": ["planning", "review", "writer"],
+                "persisted": bool(self.state.result.get("ok")),
+            }
+            if self.state.result.get("warnings"):
+                _ensure_state_list(self.state, "warnings").extend(
+                    str(item) for item in self.state.result.get("warnings") or []
+                )
+            if not self.state.result.get("ok") and self.state.result.get("error"):
+                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
             return self.state.result
 
     SeasonOuterFlow = _decorate_persist(SeasonOuterFlow, "season", persist)
@@ -253,7 +306,7 @@ def run_phase_flow(
             return list(self.state.requested_tasks)
 
         @listen(bootstrap)
-        def run_bundle(self, _requested_tasks: list[str]) -> JsonMap:
+        def run_planning_cycle(self, _requested_tasks: list[str]) -> JsonMap:
             self.state.result = run_phase_bundle_crewai(
                 runtime,
                 agent_name=agent_name,
@@ -264,7 +317,29 @@ def run_phase_flow(
                 model_override=model_override,
                 temperature_override=temperature_override,
             )
-            self.state.persistence_summary = {"tasks": list(self.state.requested_tasks), "persisted": True}
+            self.state.bundle_summary = _extract_stage_summary(self.state.result)
+            return self.state.result
+
+        @listen(run_planning_cycle)
+        def record_review(self, _result: JsonMap) -> JsonMap:
+            _ensure_state_dict(self.state, "source_versions")["review_stage"] = (
+                "phase multi-crew backend review completed"
+            )
+            return self.state.result
+
+        @listen(record_review)
+        def record_writer(self, _result: JsonMap) -> JsonMap:
+            self.state.persistence_summary = {
+                "tasks": list(self.state.requested_tasks),
+                "stages": ["planning", "review", "writer"],
+                "persisted": bool(self.state.result.get("ok")),
+            }
+            if self.state.result.get("warnings"):
+                _ensure_state_list(self.state, "warnings").extend(
+                    str(item) for item in self.state.result.get("warnings") or []
+                )
+            if not self.state.result.get("ok") and self.state.result.get("error"):
+                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
             return self.state.result
 
     PhaseOuterFlow = _decorate_persist(PhaseOuterFlow, "phase", persist)
@@ -303,7 +378,7 @@ def run_week_flow(
             return "week_plan"
 
         @listen(bootstrap)
-        def run_week(self, _label: str) -> JsonMap:
+        def run_planning_cycle(self, _label: str) -> JsonMap:
             runner = run_agent_multi_output_preview if preview_only else run_agent_multi_output
             self.state.result = runner(
                 runtime_for(agent_name),
@@ -319,7 +394,29 @@ def run_week_flow(
                 max_num_results=max_num_results,
             )
             self.state.preview_only = preview_only
-            self.state.persistence_summary = {"persisted": not preview_only}
+            self.state.candidate_week_plan = _extract_stage_summary(self.state.result)
+            return self.state.result
+
+        @listen(run_planning_cycle)
+        def record_review(self, _result: JsonMap) -> JsonMap:
+            self.state.diff_summary = {
+                "stages": ["planning", "review"] if preview_only else ["planning", "review", "writer"],
+                "preview_only": preview_only,
+            }
+            return self.state.result
+
+        @listen(record_review)
+        def record_writer(self, _result: JsonMap) -> JsonMap:
+            self.state.persistence_summary = {
+                "persisted": bool(self.state.result.get("ok")) and not preview_only,
+                "preview_only": preview_only,
+            }
+            if self.state.result.get("warnings"):
+                _ensure_state_list(self.state, "warnings").extend(
+                    str(item) for item in self.state.result.get("warnings") or []
+                )
+            if not self.state.result.get("ok") and self.state.result.get("error"):
+                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
             return self.state.result
 
     WeekOuterFlow = _decorate_persist(WeekOuterFlow, "week", persist)
@@ -349,9 +446,28 @@ def run_report_flow(
             return "report"
 
         @listen(bootstrap)
-        def run_report(self, _label: str) -> JsonMap:
+        def run_planning_cycle(self, _label: str) -> JsonMap:
             self.state.result = report_runner()
-            self.state.persistence_summary = {"persisted": bool(self.state.result.get("ok"))}
+            _ensure_state_dict(self.state, "source_versions")["planning_stage"] = "report planning executed"
+            return self.state.result
+
+        @listen(run_planning_cycle)
+        def record_review(self, _result: JsonMap) -> JsonMap:
+            _ensure_state_dict(self.state, "source_versions")["review_stage"] = "report review executed"
+            return self.state.result
+
+        @listen(record_review)
+        def record_writer(self, _result: JsonMap) -> JsonMap:
+            self.state.persistence_summary = {
+                "stages": ["planning", "review", "writer"],
+                "persisted": bool(self.state.result.get("ok")),
+            }
+            if self.state.result.get("warnings"):
+                _ensure_state_list(self.state, "warnings").extend(
+                    str(item) for item in self.state.result.get("warnings") or []
+                )
+            if not self.state.result.get("ok") and self.state.result.get("error"):
+                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
             return self.state.result
 
     ReportOuterFlow = _decorate_persist(ReportOuterFlow, "report", persist)

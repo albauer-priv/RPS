@@ -79,26 +79,61 @@ _CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
     ArtifactType.DES_ANALYSIS_REPORT: "Report-Artifact-Writer",
 }
 
-_SEASON_INTERNAL_TASKS: tuple[str, ...] = (
+_SEASON_PLANNING_TASKS: tuple[str, ...] = (
+    "season_context_read",
     "season_scenario_interpretation",
-    "season_event_anchor_review",
+    "season_event_priority_review",
+    "season_peak_window_review",
     "season_macrocycle_draft",
     "season_constraint_review",
     "season_historical_context_review",
     "season_kpi_guidance_review",
-    "season_load_governance_review",
-    "season_plan_audit",
+    "season_load_corridor_draft",
+    "season_progression_review",
+    "season_plan_finalize",
 )
 
-_PHASE_INTERNAL_TASKS: tuple[str, ...] = (
-    "phase_guardrails_draft",
+_SEASON_REVIEW_TASKS: tuple[str, ...] = (
+    "season_governance_review",
+    "season_constraints_review",
+    "season_plan_audit",
+    "season_review",
+)
+
+_PHASE_PLANNING_TASKS: tuple[str, ...] = (
+    "phase_context_read",
+    "phase_guardrail_band_draft",
+    "phase_execution_rules_draft",
     "phase_structure_draft",
-    "phase_cadence_recovery_integration",
-    "phase_intensity_distribution_review",
+    "phase_cadence_recovery_draft",
+    "phase_intensity_distribution_draft",
+    "phase_event_integration_draft",
     "phase_preview_draft",
-    "phase_constraint_audit",
-    "phase_load_governance_audit",
     "phase_bundle_finalize",
+)
+
+_PHASE_REVIEW_TASKS: tuple[str, ...] = (
+    "phase_constraint_audit",
+    "phase_governance_review",
+    "phase_structure_review",
+    "phase_preview_review",
+    "phase_review",
+)
+
+_WEEK_PLANNING_TASKS: tuple[str, ...] = (
+    "week_context_read",
+    "week_constraint_review",
+    "week_load_target_draft",
+    "week_revision_draft",
+    "week_workout_text_draft",
+    "week_plan_finalize",
+)
+
+_WEEK_REVIEW_TASKS: tuple[str, ...] = (
+    "week_consistency_review",
+    "week_load_governance_review",
+    "week_workout_syntax_review",
+    "week_review",
 )
 
 def _fill_season_plan(document: JsonMap) -> JsonMap:
@@ -227,6 +262,15 @@ def _render_json_block(label: str, payload: object) -> str:
     except TypeError:
         rendered = json.dumps(str(payload), ensure_ascii=False)
     return f"{label}:\n```json\n{rendered}\n```"
+
+
+def _augment_user_input(user_input: str, *context_blocks: str) -> str:
+    """Append structured runtime context blocks to the base user request."""
+
+    blocks = [block.strip() for block in context_blocks if isinstance(block, str) and block.strip()]
+    if not blocks:
+        return user_input
+    return "\n\n".join([user_input, "Additional runtime context:", *blocks])
 
 
 def _resolve_prompt_agent_name(agent_name: str, blueprint: Any) -> str:
@@ -739,7 +783,7 @@ def _run_season_plan_document(
     athlete_id: str,
     run_id: str,
 ) -> JsonMap:
-    """Execute the hierarchical season crew and return the final manager document."""
+    """Execute the hierarchical season planning crew and return the internal bundle."""
     pydantic_output = _execute_crewai_hierarchical_crew(
         agent_cls=agent_cls,
         crew_cls=crew_cls,
@@ -749,14 +793,14 @@ def _run_season_plan_document(
         bundle=bundle,
         manager_agent_name="season_plan_manager",
         crew_name="season_planning",
-        crew_task_names=(*_SEASON_INTERNAL_TASKS, task_blueprint.name),
-        final_task_name=task_blueprint.name,
+        crew_task_names=_SEASON_PLANNING_TASKS,
+        final_task_name="season_plan_finalize",
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
         llm=llm,
         tools=tools,
         user_input=user_input,
-        final_public_task=AgentTask.CREATE_SEASON_PLAN,
+        final_public_task=None,
         athlete_id=athlete_id,
         run_id=run_id,
     )
@@ -782,8 +826,8 @@ def _run_phase_bundle_document(
     athlete_id: str,
     run_id: str,
 ) -> JsonMap:
-    """Execute the hierarchical phase crew once and return the final PhaseBundle document."""
-    final_task_name = _PHASE_INTERNAL_TASKS[-1]
+    """Execute the hierarchical phase planning crew and return the internal PhaseBundle."""
+    final_task_name = _PHASE_PLANNING_TASKS[-1]
     pydantic_output = _execute_crewai_hierarchical_crew(
         agent_cls=agent_cls,
         crew_cls=crew_cls,
@@ -793,7 +837,7 @@ def _run_phase_bundle_document(
         bundle=bundle,
         manager_agent_name=task_blueprints[final_task_name].agent,
         crew_name="phase_planning",
-        crew_task_names=_PHASE_INTERNAL_TASKS,
+        crew_task_names=_PHASE_PLANNING_TASKS,
         final_task_name=final_task_name,
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
@@ -810,6 +854,249 @@ def _run_phase_bundle_document(
     if not isinstance(bundle_document, dict):
         raise RuntimeError("Phase bundle output did not decode to an object.")
     return bundle_document
+
+
+def _run_review_decision_document(
+    *,
+    runtime: AgentRuntime,
+    bundle: Any,
+    review_task_names: tuple[str, ...],
+    final_task_name: str,
+    manager_agent_name: str,
+    crew_name: str,
+    user_input: str,
+    planning_bundle: JsonMap,
+    task_blueprints: dict[str, Any],
+    agent_blueprints: dict[str, Any],
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    llm: object,
+    tools: list[Any],
+    athlete_id: str,
+    run_id: str,
+) -> JsonMap:
+    """Execute a review crew against a planning bundle and return its decision."""
+
+    review_input = _augment_user_input(
+        user_input,
+        _render_json_block("Planning bundle", planning_bundle),
+    )
+    pydantic_output = _execute_crewai_hierarchical_crew(
+        agent_cls=agent_cls,
+        crew_cls=crew_cls,
+        task_cls=task_cls,
+        process_cls=process_cls,
+        runtime=runtime,
+        bundle=bundle,
+        manager_agent_name=manager_agent_name,
+        crew_name=crew_name,
+        crew_task_names=review_task_names,
+        final_task_name=final_task_name,
+        task_blueprints=task_blueprints,
+        agent_blueprints=agent_blueprints,
+        llm=llm,
+        tools=tools,
+        user_input=review_input,
+        final_public_task=None,
+        athlete_id=athlete_id,
+        run_id=run_id,
+    )
+    decision = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+    if not isinstance(decision, dict):
+        raise RuntimeError(f"Review crew '{crew_name}' did not return an object.")
+    return decision
+
+
+def _run_single_internal_document(
+    *,
+    runtime: AgentRuntime,
+    bundle: Any,
+    crew_name: str,
+    task_name: str,
+    user_input: str,
+    context_payloads: list[tuple[str, object]] | None,
+    task_blueprints: dict[str, Any],
+    agent_blueprints: dict[str, Any],
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    llm: object,
+    tools: list[Any],
+    athlete_id: str,
+    run_id: str,
+) -> JsonMap:
+    """Execute a single internal typed CrewAI task and return its document payload."""
+
+    task_blueprint = task_blueprints[task_name]
+    agent_blueprint = agent_blueprints[task_blueprint.agent]
+    context_blocks = [
+        _render_json_block(label, payload)
+        for label, payload in (context_payloads or [])
+        if payload is not None
+    ]
+    description = _build_internal_task_description(
+        runtime,
+        prompt_agent=_resolve_prompt_agent_name(task_blueprint.agent, agent_blueprint),
+        bundle=bundle,
+        crew_name=crew_name,
+        task_blueprint=task_blueprint,
+        user_input=_augment_user_input(user_input, *context_blocks),
+    )
+    pydantic_output = _execute_crewai_task(
+        agent_cls=agent_cls,
+        crew_cls=crew_cls,
+        task_cls=task_cls,
+        process_cls=process_cls,
+        runtime=runtime,
+        agent_name=task_blueprint.agent,
+        bundle=bundle,
+        agent_blueprint=agent_blueprint,
+        task_blueprint=task_blueprint,
+        llm=llm,
+        tools=tools,
+        description=description,
+        crew_name=crew_name,
+        athlete_id=athlete_id,
+        run_id=run_id,
+    )
+    document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+    if not isinstance(document, dict):
+        raise RuntimeError(f"Internal task '{task_name}' did not return an object.")
+    return document
+
+
+def _run_writer_document(
+    *,
+    runtime: AgentRuntime,
+    bundle: Any,
+    crew_name: str,
+    public_task: AgentTask,
+    user_input: str,
+    planning_bundle: JsonMap,
+    review_decision: JsonMap,
+    task_blueprints: dict[str, Any],
+    agent_blueprints: dict[str, Any],
+    agent_cls: Any,
+    crew_cls: Any,
+    task_cls: Any,
+    process_cls: Any,
+    llm: object,
+    tools: list[Any],
+    athlete_id: str,
+    run_id: str,
+) -> JsonMap:
+    """Execute a writer task from approved bundle + review context and return the final document."""
+
+    blueprint_name = _TASK_BLUEPRINT_BY_AGENT_TASK[public_task]
+    task_blueprint = task_blueprints[blueprint_name]
+    agent_blueprint = agent_blueprints[task_blueprint.agent]
+    description = _build_task_description(
+        runtime,
+        bundle=bundle,
+        crew_name=crew_name,
+        agent_name=task_blueprint.agent,
+        task=public_task,
+        user_input=_augment_user_input(
+            user_input,
+            _render_json_block("Approved planning bundle", planning_bundle),
+            _render_json_block("Review decision", review_decision),
+        ),
+    )
+    document = _execute_crewai_task(
+        agent_cls=agent_cls,
+        crew_cls=crew_cls,
+        task_cls=task_cls,
+        process_cls=process_cls,
+        runtime=runtime,
+        agent_name=task_blueprint.agent,
+        bundle=bundle,
+        agent_blueprint=agent_blueprint,
+        task_blueprint=task_blueprint,
+        llm=llm,
+        tools=tools,
+        description=description,
+        crew_name=crew_name,
+        athlete_id=athlete_id,
+        run_id=run_id,
+    )
+    if not isinstance(document, dict):
+        raise RuntimeError(f"Writer task '{blueprint_name}' did not return an artifact object.")
+    return document
+
+
+def _run_multicrew_cycle(
+    *,
+    runtime: AgentRuntime,
+    bundle: Any,
+    user_input: str,
+    planning_runner: Callable[[str], JsonMap],
+    review_runner: Callable[[str, JsonMap], JsonMap],
+    max_replan_rounds: int,
+) -> tuple[JsonMap, JsonMap]:
+    """Run planning -> review with bounded replans and return the approved pair."""
+
+    attempt = 0
+    planning_input = user_input
+    latest_decision: JsonMap | None = None
+    while True:
+        planning_bundle = planning_runner(planning_input)
+        latest_decision = review_runner(planning_input, planning_bundle)
+        status = str(latest_decision.get("status") or "").lower()
+        if status == "approved":
+            return planning_bundle, latest_decision
+        if status == "rejected":
+            raise RuntimeError(
+                "; ".join(latest_decision.get("blocking_issues") or [])
+                or "Review crew rejected the planning bundle."
+            )
+        if status != "replan_required":
+            raise RuntimeError(f"Unsupported review decision status: {status or '<empty>'}")
+        if attempt >= max_replan_rounds:
+            raise RuntimeError(
+                "Review requested another replan after exhausting the allowed replan rounds."
+            )
+        attempt += 1
+        planning_input = _augment_user_input(
+            user_input,
+            _render_json_block("Replan instructions", latest_decision),
+        )
+
+
+def _persist_artifact_document(
+    *,
+    runtime: AgentRuntime,
+    athlete_id: str,
+    run_id: str,
+    output_spec: Any,
+    document: JsonMap,
+    producer_agent: str,
+) -> JsonMap:
+    """Validate and persist one final artifact envelope."""
+
+    guarded = GuardedValidatedStore(
+        athlete_id=athlete_id,
+        schema_dir=runtime.schema_dir,
+        workspace_root=runtime.workspace_root,
+    )
+    saved = guarded.guard_put_validated(
+        output_spec=output_spec,
+        document=document,
+        run_id=run_id,
+        producer_agent=producer_agent,
+        update_latest=True,
+    )
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="ARTEFACT_WRITTEN",
+        artifact_type=output_spec.artifact_type.value,
+        outputs=[saved],
+    )
+    return saved
 
 
 def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, object]) -> JsonMap:
@@ -843,7 +1130,7 @@ def run_phase_bundle_crewai(
     model_override: str | None = None,
     temperature_override: float | None = None,
 ) -> JsonMap:
-    """Execute the hierarchical phase crew once and persist the requested phase artefacts."""
+    """Execute planning -> review -> writer for the requested phase artefacts."""
 
     allowed_tasks = {
         AgentTask.CREATE_PHASE_GUARDRAILS,
@@ -878,55 +1165,88 @@ def run_phase_bundle_crewai(
     tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
 
     try:
-        bundle_document = _run_phase_bundle_document(
+        def _planning_runner(loop_input: str) -> JsonMap:
+            return _run_phase_bundle_document(
+                runtime=runtime,
+                bundle=bundle,
+                user_input=loop_input,
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                llm=llm,
+                tools=tools,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
+
+        def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
+            return _run_review_decision_document(
+                runtime=runtime,
+                bundle=bundle,
+                review_task_names=_PHASE_REVIEW_TASKS,
+                final_task_name="phase_review",
+                manager_agent_name="phase_review_manager",
+                crew_name="phase_review",
+                user_input=loop_input,
+                planning_bundle=planning_bundle,
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                llm=llm,
+                tools=tools,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
+
+        planning_bundle, review_decision = _run_multicrew_cycle(
             runtime=runtime,
             bundle=bundle,
             user_input=user_input,
-            task_blueprints=task_blueprints,
-            agent_blueprints=agent_blueprints,
-            agent_cls=Agent,
-            crew_cls=Crew,
-            task_cls=Task,
-            process_cls=Process,
-            llm=llm,
-            tools=tools,
-            athlete_id=athlete_id,
-            run_id=run_id,
+            planning_runner=_planning_runner,
+            review_runner=_review_runner,
+            max_replan_rounds=2,
         )
     except Exception as exc:
-        return {
-            "ok": False,
-            "error": str(exc),
-            "produced": {},
-        }
+        return {"ok": False, "error": str(exc), "produced": {}}
 
-    if bundle_document.get("blocking_issues"):
-        return {
-            "ok": False,
-            "error": "Phase bundle blocked by internal audits.",
-            "details": list(bundle_document.get("blocking_issues") or []),
-            "warnings": list(bundle_document.get("warnings") or []),
-            "produced": {},
-        }
-
-    guarded = GuardedValidatedStore(
-        athlete_id=athlete_id,
-        schema_dir=runtime.schema_dir,
-        workspace_root=runtime.workspace_root,
-    )
     produced: dict[str, Any] = {}
-    warnings = list(bundle_document.get("warnings") or [])
+    warnings = list(planning_bundle.get("warnings") or []) + list(review_decision.get("warnings") or [])
     for task in requested_tasks:
         output_spec = OUTPUT_SPECS[task]
-        document = _phase_document_from_bundle(bundle_document, output_spec.artifact_type)
-        document = _normalize_document(output_spec, document, loaded_inputs)
         try:
-            saved = guarded.guard_put_validated(
+            document = _run_writer_document(
+                runtime=runtime,
+                bundle=bundle,
+                crew_name="phase_writer",
+                public_task=task,
+                user_input=user_input,
+                planning_bundle=planning_bundle,
+                review_decision=review_decision,
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                llm=llm,
+                tools=tools,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
+            document = _normalize_document(output_spec, document, loaded_inputs)
+            saved = _persist_artifact_document(
+                runtime=runtime,
+                athlete_id=athlete_id,
+                run_id=run_id,
                 output_spec=output_spec,
                 document=document,
-                run_id=run_id,
                 producer_agent="phase_artifact_writer",
-                update_latest=True,
             )
         except SchemaValidationError as exc:
             return {
@@ -937,17 +1257,9 @@ def run_phase_bundle_crewai(
                 "produced": produced,
             }
         except Exception as exc:
-            logger.warning("CrewAI phase bundle store failed for %s: %s", output_spec.artifact_type.value, exc)
+            logger.warning("CrewAI phase multi-crew store failed for %s: %s", output_spec.artifact_type.value, exc)
             return {"ok": False, "error": str(exc), "warnings": warnings, "produced": produced}
         produced[output_spec.tool_name] = saved
-        emit_runtime_event(
-            root=runtime.workspace_root,
-            athlete_id=athlete_id,
-            run_id=run_id,
-            event_type="ARTEFACT_WRITTEN",
-            artifact_type=output_spec.artifact_type.value,
-            outputs=[saved],
-        )
 
     return {"ok": True, "produced": produced, "warnings": warnings}
 
@@ -1099,10 +1411,62 @@ def _run_single_task_document_crewai(
     tools, loaded_inputs = _build_crewai_tooling(athlete_id, runtime.workspace_root)
 
     if task == AgentTask.CREATE_SEASON_PLAN:
-        document = _run_season_plan_document(
+        def _planning_runner(loop_input: str) -> JsonMap:
+            return _run_season_plan_document(
+                runtime=runtime,
+                bundle=bundle,
+                user_input=loop_input,
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                llm=llm,
+                tools=tools,
+                task_blueprint=task_blueprint,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
+
+        def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
+            return _run_review_decision_document(
+                runtime=runtime,
+                bundle=bundle,
+                review_task_names=_SEASON_REVIEW_TASKS,
+                final_task_name="season_review",
+                manager_agent_name="season_review_manager",
+                crew_name="season_review",
+                user_input=loop_input,
+                planning_bundle=planning_bundle,
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                llm=llm,
+                tools=tools,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
+
+        planning_bundle, review_decision = _run_multicrew_cycle(
             runtime=runtime,
             bundle=bundle,
             user_input=user_input,
+            planning_runner=_planning_runner,
+            review_runner=_review_runner,
+            max_replan_rounds=2,
+        )
+        document = _run_writer_document(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name="season_writer",
+            public_task=task,
+            user_input=user_input,
+            planning_bundle=planning_bundle,
+            review_decision=review_decision,
             task_blueprints=task_blueprints,
             agent_blueprints=agent_blueprints,
             agent_cls=Agent,
@@ -1111,7 +1475,140 @@ def _run_single_task_document_crewai(
             process_cls=Process,
             llm=llm,
             tools=tools,
-            task_blueprint=task_blueprint,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+    elif task == AgentTask.CREATE_WEEK_PLAN:
+        def _planning_runner(loop_input: str) -> JsonMap:
+            return _execute_crewai_hierarchical_crew(
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                runtime=runtime,
+                bundle=bundle,
+                manager_agent_name="week_plan_manager",
+                crew_name="week_planning",
+                crew_task_names=_WEEK_PLANNING_TASKS,
+                final_task_name="week_plan_finalize",
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                llm=llm,
+                tools=tools,
+                user_input=loop_input,
+                final_public_task=None,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            ).model_dump()
+
+        def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
+            return _run_review_decision_document(
+                runtime=runtime,
+                bundle=bundle,
+                review_task_names=_WEEK_REVIEW_TASKS,
+                final_task_name="week_review",
+                manager_agent_name="week_review_manager",
+                crew_name="week_review",
+                user_input=loop_input,
+                planning_bundle=planning_bundle,
+                task_blueprints=task_blueprints,
+                agent_blueprints=agent_blueprints,
+                agent_cls=Agent,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                llm=llm,
+                tools=tools,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
+
+        planning_bundle, review_decision = _run_multicrew_cycle(
+            runtime=runtime,
+            bundle=bundle,
+            user_input=user_input,
+            planning_runner=_planning_runner,
+            review_runner=_review_runner,
+            max_replan_rounds=1,
+        )
+        document = _run_writer_document(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name="week_writer",
+            public_task=task,
+            user_input=user_input,
+            planning_bundle=planning_bundle,
+            review_decision=review_decision,
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            llm=llm,
+            tools=tools,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+    elif task == AgentTask.CREATE_DES_ANALYSIS_REPORT:
+        planning_bundle = _run_single_internal_document(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name="report_planning",
+            task_name="des_diagnostic_draft",
+            user_input=user_input,
+            context_payloads=None,
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            llm=llm,
+            tools=tools,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+        review_decision = _run_single_internal_document(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name="report_review",
+            task_name="report_review",
+            user_input=user_input,
+            context_payloads=[("Planning bundle", planning_bundle)],
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            llm=llm,
+            tools=tools,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+        status = str(review_decision.get("status") or "").lower()
+        if status != "approved":
+            raise RuntimeError(
+                "; ".join(review_decision.get("blocking_issues") or [])
+                or f"Report review returned status '{status or 'unknown'}'."
+            )
+        document = _run_writer_document(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name="report_writer",
+            public_task=task,
+            user_input=user_input,
+            planning_bundle=planning_bundle,
+            review_decision=review_decision,
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=Agent,
+            crew_cls=Crew,
+            task_cls=Task,
+            process_cls=Process,
+            llm=llm,
+            tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
         )
@@ -1223,18 +1720,14 @@ def run_agent_multi_output_crewai(
             "produced": {},
         }
 
-    guarded = GuardedValidatedStore(
-        athlete_id=athlete_id,
-        schema_dir=runtime.schema_dir,
-        workspace_root=runtime.workspace_root,
-    )
     try:
-        saved = guarded.guard_put_validated(
+        saved = _persist_artifact_document(
+            runtime=runtime,
+            athlete_id=athlete_id,
+            run_id=run_id,
             output_spec=output_spec,
             document=document,
-            run_id=run_id,
             producer_agent=agent_name,
-            update_latest=True,
         )
     except SchemaValidationError as exc:
         return {
@@ -1247,14 +1740,6 @@ def run_agent_multi_output_crewai(
         logger.warning("CrewAI store failed for %s: %s", output_spec.artifact_type.value, exc)
         return {"ok": False, "error": str(exc), "produced": {}}
 
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="ARTEFACT_WRITTEN",
-        artifact_type=output_spec.artifact_type.value,
-        outputs=[saved],
-    )
     return {"ok": True, "produced": {output_spec.tool_name: saved}}
 
 

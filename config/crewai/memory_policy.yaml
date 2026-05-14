@@ -16,20 +16,52 @@ crews:
     storage_template: runtime/athletes/{athlete_id}/memory/workout_editor
   season_planning:
     enabled: true
-    shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding
+    shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding/planning
     storage_template: runtime/athletes/{athlete_id}/memory/planning_season
+  season_review:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding/review
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_season_review
+  season_writer:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding/writer
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_season_writer
   phase_planning:
     enabled: true
-    shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding
+    shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/planning
     storage_template: runtime/athletes/{athlete_id}/memory/planning_phase
+  phase_review:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/review
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_phase_review
+  phase_writer:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/writer
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_phase_writer
   week_planning:
     enabled: true
-    shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding
+    shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding/planning
     storage_template: runtime/athletes/{athlete_id}/memory/planning_week
-  report_advisory:
+  week_review:
     enabled: true
-    shared_scope_template: /athlete/{athlete_id}/advisory/report
-    storage_template: runtime/athletes/{athlete_id}/memory/report
+    shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding/review
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_week_review
+  week_writer:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding/writer
+    storage_template: runtime/athletes/{athlete_id}/memory/planning_week_writer
+  report_planning:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/advisory/report/planning
+    storage_template: runtime/athletes/{athlete_id}/memory/report_planning
+  report_review:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/advisory/report/review
+    storage_template: runtime/athletes/{athlete_id}/memory/report_review
+  report_writer:
+    enabled: true
+    shared_scope_template: /athlete/{athlete_id}/advisory/report/writer
+    storage_template: runtime/athletes/{athlete_id}/memory/report_writer
   feed_forward_advisory:
     enabled: true
     shared_scope_template: /athlete/{athlete_id}/advisory/feed_forward
@@ -37,37 +69,82 @@ crews:
 
 agents:
   conversation_manager:
-    scope_template: /athlete/{athlete_id}/coach/session/{surface}
+    scope_template: "/athlete/{athlete_id}/coach/session/{surface}"
     mode: scope
   week_context_specialist:
-    scope_template: /athlete/{athlete_id}/coach/session/{surface}/context
+    scope_template: "/athlete/{athlete_id}/coach/session/{surface}/context"
+    mode: scope
+  week_constraint_specialist:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/constraints"
     mode: scope
   week_recommendation_specialist:
-    scope_template: /athlete/{athlete_id}/coach/preferences
+    scope_template: "/athlete/{athlete_id}/coach/preferences"
     additional_read_scopes:
-      - /athlete/{athlete_id}/coach/accepted_patterns
+      - "/athlete/{athlete_id}/coach/accepted_patterns"
     mode: slice_read_only
+  week_load_target_specialist:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/load_targets"
+    mode: scope
   week_revision_specialist:
-    scope_template: /athlete/{athlete_id}/coach/accepted_patterns
+    scope_template: "/athlete/{athlete_id}/coach/accepted_patterns"
+    mode: scope
+  week_workout_authoring_specialist:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/workout_authoring"
+    mode: scope
+  week_consistency_auditor:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/review/consistency"
+    mode: scope
+  week_load_governance_reviewer:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/review/governance"
+    mode: scope
+  week_workout_syntax_reviewer:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/review/syntax"
+    mode: scope
+  week_plan_manager:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/manager"
+    mode: scope
+  week_review_manager:
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/review_manager"
     mode: scope
   pending_resolution_specialist:
-    scope_template: /athlete/{athlete_id}/coach/session/{surface}/pending
+    scope_template: "/athlete/{athlete_id}/coach/session/{surface}/pending"
     mode: scope
   season_plan_manager:
-    scope_template: /athlete/{athlete_id}/planning/season/nonbinding/manager
+    scope_template: "/athlete/{athlete_id}/planning/season/nonbinding/manager"
+    mode: scope
+  season_review_manager:
+    scope_template: "/athlete/{athlete_id}/planning/season/nonbinding/review_manager"
     mode: scope
   season_feed_forward_manager:
-    scope_template: /athlete/{athlete_id}/advisory/feed_forward/season_manager
+    scope_template: "/athlete/{athlete_id}/advisory/feed_forward/season_manager"
+    mode: scope
+  season_artifact_writer:
+    scope_template: "/athlete/{athlete_id}/planning/season/nonbinding/writer"
     mode: scope
   phase_bundle_manager:
-    scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/manager
+    scope_template: "/athlete/{athlete_id}/planning/phase/nonbinding/manager"
+    mode: scope
+  phase_review_manager:
+    scope_template: "/athlete/{athlete_id}/planning/phase/nonbinding/review_manager"
     mode: scope
   phase_feed_forward_manager:
-    scope_template: /athlete/{athlete_id}/advisory/feed_forward/phase_manager
+    scope_template: "/athlete/{athlete_id}/advisory/feed_forward/phase_manager"
+    mode: scope
+  phase_artifact_writer:
+    scope_template: "/athlete/{athlete_id}/planning/phase/nonbinding/writer"
+    mode: scope
+  performance_context_specialist:
+    scope_template: "/athlete/{athlete_id}/advisory/report/context"
+    mode: scope
+  des_diagnostic_specialist:
+    scope_template: "/athlete/{athlete_id}/advisory/report/analyst"
+    mode: scope
+  des_review_manager:
+    scope_template: "/athlete/{athlete_id}/advisory/report/review_manager"
     mode: scope
   week_artifact_writer:
-    scope_template: /athlete/{athlete_id}/planning/week/nonbinding/writer
+    scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/writer"
     mode: scope
-  performance_analysis_specialist:
-    scope_template: /athlete/{athlete_id}/advisory/report/analyst
+  report_artifact_writer:
+    scope_template: "/athlete/{athlete_id}/advisory/report/writer"
     mode: scope

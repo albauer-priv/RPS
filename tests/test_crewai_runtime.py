@@ -42,14 +42,22 @@ from rps.crewai_runtime.models import (
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
     ConstraintAuditModel,
+    DESAnalysisBundleModel,
     LoadGovernanceAuditModel,
     PendingResolutionResultModel,
     PhaseBundleModel,
+    PhaseReviewDecisionModel,
+    PlanningDraftModel,
+    ReportReviewDecisionModel,
     SeasonEventAnchorModel,
     SeasonMacrocycleDraftModel,
     SeasonPlanAuditModel,
+    SeasonPlanBundleModel,
+    SeasonReviewDecisionModel,
     TurnModeModel,
     WeekContextAssessmentModel,
+    WeekPlanBundleModel,
+    WeekReviewDecisionModel,
 )
 from rps.crewai_runtime.provider import build_crewai_llm_kwargs, resolve_crewai_provider_config
 from rps.crewai_runtime.skills import render_skill_prompt_block, resolve_agent_skill_profile
@@ -234,7 +242,7 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert "week_planner" in agent_defs
     assert "season_plan_manager" in agent_defs
     assert "phase_bundle_manager" in agent_defs
-    assert "week_planner" in knowledge_defs
+    assert "week_plan_manager" in knowledge_defs
     assert flow_defs["season"]["persist"] is True
     assert flow_defs["coach"]["persist"] is False
     assert task_defs["classify_turn"]["agent"] == "conversation_manager"
@@ -252,7 +260,7 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert agents["conversation_manager"].goal
     assert agents["season_plan_auditor"].goal
     assert agents["season_plan_auditor"].config["prompt_agent"] == "season_plan_auditor"
-    assert agents["guardrails_specialist"].config["prompt_agent"] == "guardrails_specialist"
+    assert agents["phase_guardrail_band_specialist"].config["prompt_agent"] == "guardrails_specialist"
     assert agents["week_recommendation_specialist"].knowledge_profile["sources"]
     assert agents["week_recommendation_specialist"].skill_profile["paths"]
     assert tasks["classify_turn"].output_kind == "turn_mode"
@@ -633,8 +641,13 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
             self.tasks = tasks
             self.kwargs = kwargs
             captured_crew["agents"] = kwargs.get("agents", [])
+            captured_crew["max_agents"] = max(
+                int(captured_crew.get("max_agents", 0)),
+                len(kwargs.get("agents", [])),
+            )
             captured_crew["tasks"] = tasks
-            captured_crew["manager_agent"] = kwargs.get("manager_agent")
+            if kwargs.get("manager_agent") is not None:
+                captured_crew["manager_agent"] = kwargs.get("manager_agent")
             captured_crew["process"] = kwargs.get("process")
 
         def kickoff(self):
@@ -660,6 +673,23 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                     },
                     data={},
                 )
+            elif model_cls is SeasonPlanBundleModel:
+                model = model_cls(
+                    event_priority=SeasonEventAnchorModel(),
+                    macrocycle=SeasonMacrocycleDraftModel(),
+                )
+            elif model_cls is SeasonReviewDecisionModel:
+                model = model_cls(status="approved", writer_ready_summary="ready")
+            elif model_cls is PlanningDraftModel:
+                model = model_cls()
+            elif model_cls is WeekPlanBundleModel:
+                model = model_cls()
+            elif model_cls is WeekReviewDecisionModel:
+                model = model_cls(status="approved", writer_ready_summary="ready")
+            elif model_cls is DESAnalysisBundleModel:
+                model = model_cls()
+            elif model_cls is ReportReviewDecisionModel:
+                model = model_cls(status="approved", writer_ready_summary="ready")
             else:
                 model = model_cls()
             task.output = SimpleNamespace(pydantic=model, raw=model.model_dump_json())
@@ -721,7 +751,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert result["ok"] is True
     assert result["produced"]["store_season_plan"] == saved
     assert isinstance(captured_crew["agents"], list)
-    assert len(captured_crew["agents"]) >= 7
+    assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["manager_agent"] is not None
 
 
@@ -742,7 +772,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     class FakeTask:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
-            self.output_pydantic = kwargs["output_pydantic"]
+            self.output_pydantic = kwargs.get("output_pydantic")
             self.description = kwargs["description"]
             self.output = None
 
@@ -753,8 +783,13 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
             self.tasks = tasks
             self.kwargs = kwargs
             captured_crew["agents"] = kwargs.get("agents", [])
+            captured_crew["max_agents"] = max(
+                int(captured_crew.get("max_agents", 0)),
+                len(kwargs.get("agents", [])),
+            )
             captured_crew["tasks"] = tasks
-            captured_crew["manager_agent"] = kwargs.get("manager_agent")
+            if kwargs.get("manager_agent") is not None:
+                captured_crew["manager_agent"] = kwargs.get("manager_agent")
             captured_crew["process"] = kwargs.get("process")
 
         def kickoff(self):
@@ -800,6 +835,22 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                     load_governance_audit={},
                     decision_summary={},
                 )
+            elif model_cls is PhaseReviewDecisionModel:
+                model = model_cls(status="approved", writer_ready_summary="ready")
+            elif model_cls is PlanningDraftModel:
+                model = model_cls()
+            elif model_cls is None:
+                payload = {
+                    "meta": {
+                        "artifact_type": "PHASE_GUARDRAILS",
+                        "schema_id": "PhaseGuardrailsInterface",
+                        "schema_version": "1.0",
+                        "owner_agent": "Phase-Artifact-Writer",
+                    },
+                    "data": {},
+                }
+                task.output = SimpleNamespace(pydantic=None, raw=json.dumps(payload))
+                return task.output
             else:
                 model = model_cls()
             task.output = SimpleNamespace(pydantic=model, raw=model.model_dump_json())
@@ -866,7 +917,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert meta["artifact_type"] == "PHASE_GUARDRAILS"
     assert meta["owner_agent"] == "Phase-Artifact-Writer"
     assert isinstance(captured_crew["agents"], list)
-    assert len(captured_crew["agents"]) >= 7
+    assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["manager_agent"] is not None
 
 

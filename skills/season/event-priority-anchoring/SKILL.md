@@ -3,6 +3,9 @@ name: event-priority-anchoring
 description: Define event anchor windows and priority handling for season planning.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
-Anchor season structure backward from priority events and windows.
+Use `references/season_backplanning_and_event_priority.md`.
+- classify A/B/C events explicitly
+- protect A-event integrity first
+- structure must be backplanned from priority events

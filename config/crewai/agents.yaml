@@ -23,6 +23,13 @@ agents:
     runtime_status: foundation_only
     output_mode: week_context_assessment
     prompt_agent: week_context_specialist
+  week_constraint_specialist:
+    display_name: Week Constraint Specialist
+    role: Week constraint interpreter
+    goal: Summarize binding week-level constraints from availability, logistics, phase rules, and completed load.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_context_specialist
   week_recommendation_specialist:
     display_name: Week Recommendation Specialist
     role: Athlete-specific week recommendation advisor
@@ -30,6 +37,13 @@ agents:
     runtime_status: foundation_only
     output_mode: coaching_recommendation
     prompt_agent: week_recommendation_specialist
+  week_load_target_specialist:
+    display_name: Week Load Target Specialist
+    role: Week corridor-to-target translator
+    goal: Convert the active week corridor into concrete day and workout target logic without changing phase intent.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_revision_specialist
   week_revision_specialist:
     display_name: Week Revision Specialist
     role: Selected-week preview synthesizer
@@ -37,6 +51,50 @@ agents:
     runtime_status: foundation_only
     output_mode: coach_preview
     prompt_agent: week_revision_specialist
+  week_workout_authoring_specialist:
+    display_name: Week Workout Authoring Specialist
+    role: Workout construction and syntax specialist
+    goal: Turn allowed week intent into valid workout structure and syntax without changing the governing role or load intent.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_revision_specialist
+  week_consistency_auditor:
+    display_name: Week Consistency Auditor
+    role: Week consistency reviewer
+    goal: Check role, duration, load, and workout construction coherence before writing.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_revision_specialist
+  week_load_governance_reviewer:
+    display_name: Week Load Governance Reviewer
+    role: Week corridor and reconciliation reviewer
+    goal: Check whether the candidate week stays inside the active corridor without hidden overload inflation.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_revision_specialist
+  week_workout_syntax_reviewer:
+    display_name: Week Workout Syntax Reviewer
+    role: Workout syntax and export safety reviewer
+    goal: Check whether candidate workout text remains inside the project subset and export-safe constraints.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_revision_specialist
+  week_plan_manager:
+    display_name: Week Plan Manager
+    role: Internal week bundle synthesizer
+    goal: Consolidate week drafts into one internal candidate week bundle for review.
+    runtime_status: foundation_only
+    output_mode: week_plan_bundle
+    prompt_agent: week_planner
+    allow_delegation: true
+  week_review_manager:
+    display_name: Week Review Manager
+    role: Holistic week review coordinator
+    goal: Integrate week review findings and either approve, reject, or request a bounded replan.
+    runtime_status: foundation_only
+    output_mode: week_review_decision
+    prompt_agent: week_planner
+    allow_delegation: true
   pending_resolution_specialist:
     display_name: Pending Resolution Specialist
     role: Pending preview lifecycle handler
@@ -54,16 +112,31 @@ agents:
   season_planner:
     display_name: Season Planner Surface
     role: Season planning task scope controller
-    goal: Frame season planning requests for the underlying specialist crew.
+    goal: Frame season planning requests for the underlying specialist crews.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: season_planner
+  season_context_specialist:
+    display_name: Season Context Specialist
+    role: Season context interpreter
+    goal: Summarize the season planning context, selected scenario state, and governing upstream inputs.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: season_planner
   season_plan_manager:
     display_name: Season Plan Manager
-    role: Binding season planning authority
-    goal: Resolve scenario guidance into a binding season plan without serializing the final envelope itself.
+    role: Internal season planning synthesizer
+    goal: Consolidate specialist season drafts into one internal season bundle without serializing the final envelope.
     runtime_status: foundation_only
-    output_mode: artifact_envelope
+    output_mode: season_plan_bundle
+    prompt_agent: season_plan_manager
+    allow_delegation: true
+  season_review_manager:
+    display_name: Season Review Manager
+    role: Holistic season review coordinator
+    goal: Integrate review outputs and decide approve, reject, or bounded replan for season planning.
+    runtime_status: foundation_only
+    output_mode: season_review_decision
     prompt_agent: season_plan_manager
     allow_delegation: true
   season_feed_forward_manager:
@@ -88,12 +161,19 @@ agents:
     runtime_status: foundation_only
     output_mode: season_event_anchor
     prompt_agent: scenario_interpreter
-  event_priority_anchor_specialist:
-    display_name: Event Priority and Anchor Specialist
-    role: Classify and prioritize season events
-    goal: Define event anchors and priority windows for reverse season planning.
+  event_priority_specialist:
+    display_name: Event Priority Specialist
+    role: Season event classification specialist
+    goal: Define event priorities and anchor windows for reverse season planning.
     runtime_status: foundation_only
     output_mode: season_event_anchor
+    prompt_agent: event_priority_anchor_specialist
+  peak_window_specialist:
+    display_name: Peak Window Specialist
+    role: Peak window and taper-window specialist
+    goal: Define peak window logic, event clustering, and taper placement constraints for the season plan.
+    runtime_status: foundation_only
+    output_mode: planning_draft
     prompt_agent: event_priority_anchor_specialist
   macrocycle_architect:
     display_name: Macrocycle Architect
@@ -102,29 +182,36 @@ agents:
     runtime_status: foundation_only
     output_mode: season_macrocycle_draft
     prompt_agent: macrocycle_architect
-  load_governance_specialist:
-    display_name: Load Governance Specialist
-    role: Season load governance
-    goal: Keep season load corridors and durability-first progression coherent.
+  season_load_corridor_specialist:
+    display_name: Season Load Corridor Specialist
+    role: Season corridor derivation specialist
+    goal: Derive season weekly corridor logic from planning context and durability-first load estimation rules.
     runtime_status: foundation_only
     output_mode: load_governance_audit
     prompt_agent: load_governance_specialist
-  constraint_specialist:
-    display_name: Constraint Specialist
+  season_progression_specialist:
+    display_name: Season Progression Specialist
+    role: Season progression and cadence governance specialist
+    goal: Translate overload, deload, and cadence rules into season-level progression guidance.
+    runtime_status: foundation_only
+    output_mode: load_governance_audit
+    prompt_agent: load_governance_specialist
+  season_constraint_specialist:
+    display_name: Season Constraint Specialist
     role: Season constraint synthesis
     goal: Preserve athlete, availability, logistics, and planning-event constraints in binding season governance.
     runtime_status: foundation_only
     output_mode: constraint_audit
     prompt_agent: constraint_specialist
-  historical_context_specialist:
-    display_name: Historical Context Specialist
+  season_historical_context_specialist:
+    display_name: Season Historical Context Specialist
     role: Historical load and recovery interpreter
     goal: Ground season planning in recent activity, load tolerance, and recovery context.
     runtime_status: foundation_only
     output_mode: constraint_audit
     prompt_agent: historical_context_specialist
-  kpi_guidance_specialist:
-    display_name: KPI Guidance Specialist
+  season_kpi_guidance_specialist:
+    display_name: Season KPI Guidance Specialist
     role: KPI guidance interpreter
     goal: Align season governance with selected KPI profile guidance without overstepping into diagnostics.
     runtime_status: foundation_only
@@ -137,19 +224,48 @@ agents:
     runtime_status: foundation_only
     output_mode: season_plan_audit
     prompt_agent: season_plan_auditor
+  season_governance_auditor:
+    display_name: Season Governance Auditor
+    role: Season corridor and progression reviewer
+    goal: Check whether the candidate season bundle respects corridor realism and progression rules.
+    runtime_status: foundation_only
+    output_mode: load_governance_audit
+    prompt_agent: season_plan_auditor
+  season_constraints_reviewer:
+    display_name: Season Constraints Reviewer
+    role: Season constraint reviewer
+    goal: Check whether the candidate season bundle respects binding athlete, event, and logistics constraints.
+    runtime_status: foundation_only
+    output_mode: constraint_audit
+    prompt_agent: season_plan_auditor
   phase_architect:
     display_name: Phase Architect Surface
     role: Phase planning task scope controller
-    goal: Frame phase planning requests for the underlying specialist crew.
+    goal: Frame phase planning requests for the underlying specialist crews.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: phase_architect
+  phase_context_specialist:
+    display_name: Phase Context Specialist
+    role: Phase context interpreter
+    goal: Summarize exact phase-range authority and upstream planning context before drafting.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: phase_architect
   phase_bundle_manager:
     display_name: Phase Bundle Manager
-    role: Binding phase planning authority
-    goal: Convert season governance into binding phase outputs and phase deltas without redefining season authority.
+    role: Internal phase planning synthesizer
+    goal: Convert season governance into one internal phase bundle without writing public envelopes.
     runtime_status: foundation_only
-    output_mode: artifact_envelope
+    output_mode: phase_bundle
+    prompt_agent: phase_bundle_manager
+    allow_delegation: true
+  phase_review_manager:
+    display_name: Phase Review Manager
+    role: Holistic phase review coordinator
+    goal: Integrate phase review findings and decide approve, reject, or bounded replan.
+    runtime_status: foundation_only
+    output_mode: phase_review_decision
     prompt_agent: phase_bundle_manager
     allow_delegation: true
   phase_feed_forward_manager:
@@ -167,59 +283,87 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: phase_artifact_writer
-  guardrails_specialist:
-    display_name: Guardrails Specialist
-    role: Phase guardrails author
-    goal: Define weekly load bands, semantics, and execution non-negotiables for the exact phase range.
+  phase_guardrail_band_specialist:
+    display_name: Phase Guardrail Band Specialist
+    role: Phase weekly corridor specialist
+    goal: Derive exact-range weekly load bands for the phase.
     runtime_status: foundation_only
     output_mode: phase_guardrails_payload
     prompt_agent: guardrails_specialist
-  structure_specialist:
-    display_name: Structure Specialist
+  phase_execution_rules_specialist:
+    display_name: Phase Execution Rules Specialist
+    role: Phase execution semantics specialist
+    goal: Define allowed/forbidden semantics and execution non-negotiables for the exact phase range.
+    runtime_status: foundation_only
+    output_mode: phase_guardrails_payload
+    prompt_agent: guardrails_specialist
+  phase_structure_specialist:
+    display_name: Phase Structure Specialist
     role: Phase structure author
     goal: Define week roles, skeleton logic, and execution principles inside established phase guardrails.
     runtime_status: foundation_only
     output_mode: phase_structure_payload
     prompt_agent: structure_specialist
-  cadence_recovery_integrator:
-    display_name: Cadence and Recovery Integrator
+  phase_cadence_recovery_specialist:
+    display_name: Phase Cadence and Recovery Specialist
     role: Season-cadence applicator
     goal: Apply season-selected cadence and recovery rhythm within the exact phase range without inventing a new cadence.
     runtime_status: foundation_only
     output_mode: phase_structure_payload
     prompt_agent: cadence_recovery_integrator
-  intensity_distribution_specialist:
-    display_name: Intensity Distribution Specialist
+  phase_intensity_distribution_specialist:
+    display_name: Phase Intensity Distribution Specialist
     role: Phase intensity handling specialist
     goal: Shape phase-appropriate intensity handling and density inside existing guardrails without prescribing workouts.
     runtime_status: foundation_only
     output_mode: phase_structure_payload
     prompt_agent: intensity_distribution_specialist
-  preview_synthesizer:
-    display_name: Preview Synthesizer
+  phase_event_integration_specialist:
+    display_name: Phase Event Integration Specialist
+    role: Event propagation specialist
+    goal: Integrate B/C event implications into the phase structure without breaking season authority.
+    runtime_status: foundation_only
+    output_mode: phase_structure_payload
+    prompt_agent: intensity_distribution_specialist
+  phase_preview_synthesizer:
+    display_name: Phase Preview Synthesizer
     role: Derived phase preview author
     goal: Produce a preview-only narrative that adds no new planning decisions.
     runtime_status: foundation_only
     output_mode: phase_preview_payload
     prompt_agent: preview_synthesizer
-  constraint_auditor:
-    display_name: Constraint Auditor
+  phase_constraint_auditor:
+    display_name: Phase Constraint Auditor
     role: Phase constraint auditor
     goal: Check availability, logistics, planning events, and applicable season feed-forward consistency.
     runtime_status: foundation_only
     output_mode: constraint_audit
     prompt_agent: constraint_auditor
-  load_governance_auditor:
-    display_name: Load Governance Auditor
+  phase_governance_auditor:
+    display_name: Phase Governance Auditor
     role: Phase load governance auditor
-    goal: Check corridor coherence, durability-first policy, and compression risk before phase persistence.
+    goal: Check corridor coherence, durability-first policy, and compression risk before persistence.
     runtime_status: foundation_only
     output_mode: load_governance_audit
     prompt_agent: load_governance_auditor
+  phase_structure_reviewer:
+    display_name: Phase Structure Reviewer
+    role: Phase structure coherence reviewer
+    goal: Check structural consistency between guardrails, structure, cadence, and event integration.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: phase_bundle_manager
+  phase_preview_reviewer:
+    display_name: Phase Preview Reviewer
+    role: Phase preview coherence reviewer
+    goal: Check whether the preview stays derived from the approved phase logic without adding new decisions.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: phase_bundle_manager
   week_planner:
     display_name: Week Planner Surface
     role: Week planning task scope controller
-    goal: Frame week planning requests for the week artifact writer.
+    goal: Frame week planning requests for the underlying specialist crews.
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: week_planner
@@ -237,13 +381,28 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: performance_analysis
-  performance_analysis_specialist:
-    display_name: Performance Analysis Specialist
-    role: Produce durability analysis findings
-    goal: Create advisory performance findings for selected ISO weeks.
+  performance_context_specialist:
+    display_name: Performance Context Specialist
+    role: Advisory context reader
+    goal: Summarize the selected report-week evidence and context before diagnostic interpretation.
     runtime_status: foundation_only
-    output_mode: artifact_envelope
+    output_mode: planning_draft
+    prompt_agent: performance_analysis
+  des_diagnostic_specialist:
+    display_name: DES Diagnostic Specialist
+    role: Durability diagnostics specialist
+    goal: Produce advisory diagnostic findings for the selected ISO week without prescribing planning actions.
+    runtime_status: foundation_only
+    output_mode: des_analysis_bundle
     prompt_agent: performance_analysis_specialist
+  des_review_manager:
+    display_name: DES Review Manager
+    role: Advisory review coordinator
+    goal: Approve, reject, or request bounded rework for advisory diagnostic output before writing.
+    runtime_status: foundation_only
+    output_mode: report_review_decision
+    prompt_agent: performance_analysis
+    allow_delegation: true
   report_artifact_writer:
     display_name: Report Artifact Writer
     role: Persisted advisory artefact serializer

@@ -1,156 +1,284 @@
 bundles:
-  shared_runtime:
+  shared_runtime_bundle:
     skills:
       - skills/shared/runtime-boundaries
       - skills/shared/resolved-context-consumption
-      - skills/shared/traceability-and-naming
-  durability_methodology:
+  shared_methodology_bundle:
     skills:
       - skills/shared/durability-methodology
+  shared_trace_bundle:
+    skills:
+      - skills/shared/traceability-and-naming
+  shared_load_math_bundle:
+    skills:
       - skills/shared/load-estimation-core
-  week_domain:
+  shared_replan_bundle:
+    skills:
+      - skills/shared/replan-instruction-authoring
+  week_context_bundle:
     skills:
       - skills/week/context-analysis
+  week_constraints_bundle:
+    skills:
+      - skills/week/context-analysis
+  week_load_target_bundle:
+    skills:
+      - skills/week/load-estimation-week
+  week_revision_bundle:
+    skills:
       - skills/week/recommendation-and-adjustment
       - skills/week/revision-methodology
-      - skills/week/load-estimation-week
+  week_workout_authoring_bundle:
+    skills:
       - skills/week/workout-text-authoring
-  week_writer:
+  week_review_bundle:
+    skills:
+      - skills/shared/replan-instruction-authoring
+      - skills/week/workout-text-authoring
+  week_writer_bundle:
     skills:
       - skills/week/artifact-writing
-  phase_domain:
+  phase_guardrails_bundle:
     skills:
       - skills/phase/context-analysis
       - skills/phase/guardrails-authoring
+      - skills/phase/load-estimation-phase
+  phase_structure_bundle:
+    skills:
       - skills/phase/structure-authoring
+  phase_cadence_bundle:
+    skills:
       - skills/phase/cadence-recovery
+  phase_intensity_bundle:
+    skills:
       - skills/phase/intensity-distribution
+  phase_event_integration_bundle:
+    skills:
+      - skills/phase/intensity-distribution
+  phase_review_bundle:
+    skills:
       - skills/phase/constraint-audit
       - skills/phase/load-governance-audit
-      - skills/phase/load-estimation-phase
-  phase_writer:
+      - skills/shared/replan-instruction-authoring
+  phase_writer_bundle:
     skills:
       - skills/phase/artifact-writing
       - skills/phase/feed-forward
-  season_domain:
+  season_event_bundle:
     skills:
       - skills/season/context-analysis
       - skills/season/scenario-interpretation
       - skills/season/event-priority-anchoring
+  season_macrocycle_bundle:
+    skills:
       - skills/season/macrocycle-architecture
-      - skills/season/constraint-synthesis
+  season_governance_bundle:
+    skills:
       - skills/season/load-governance
       - skills/season/load-estimation-season
+  season_review_bundle:
+    skills:
       - skills/season/audit
-  season_writer:
+      - skills/shared/replan-instruction-authoring
+  season_writer_bundle:
     skills:
       - skills/season/artifact-writing
       - skills/season/feed-forward
-  conversation_ops:
+  conversation_ops_bundle:
     skills:
       - skills/conversation/routing-and-finalization
       - skills/conversation/pending-resolution
-  report_writer:
+  report_diagnostics_bundle:
+    skills:
+      - skills/report/analysis-methodology
+  report_writer_bundle:
     skills:
       - skills/report/artifact-writing
 
 crews:
   coach_conversation:
     bundles:
-      - shared_runtime
-      - durability_methodology
-      - conversation_ops
+      - shared_runtime_bundle
+      - shared_methodology_bundle
+      - shared_trace_bundle
+      - shared_load_math_bundle
+      - conversation_ops_bundle
   workout_editor_conversation:
     bundles:
-      - shared_runtime
-      - durability_methodology
-      - conversation_ops
+      - shared_runtime_bundle
+      - shared_methodology_bundle
+      - shared_trace_bundle
+      - shared_load_math_bundle
+      - conversation_ops_bundle
   season_planning:
     bundles:
-      - shared_runtime
-      - durability_methodology
-      - season_domain
+      - shared_runtime_bundle
+      - shared_methodology_bundle
+      - shared_trace_bundle
+      - shared_load_math_bundle
+  season_review:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
+      - shared_replan_bundle
+  season_writer:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
   phase_planning:
     bundles:
-      - shared_runtime
-      - durability_methodology
-      - phase_domain
+      - shared_runtime_bundle
+      - shared_methodology_bundle
+      - shared_trace_bundle
+      - shared_load_math_bundle
+  phase_review:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
+      - shared_replan_bundle
+  phase_writer:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
   week_planning:
     bundles:
-      - shared_runtime
-      - durability_methodology
-      - week_domain
-  report_advisory:
+      - shared_runtime_bundle
+      - shared_methodology_bundle
+      - shared_trace_bundle
+      - shared_load_math_bundle
+  week_review:
     bundles:
-      - shared_runtime
-      - durability_methodology
-  feed_forward_advisory:
+      - shared_runtime_bundle
+      - shared_trace_bundle
+      - shared_replan_bundle
+  week_writer:
     bundles:
-      - shared_runtime
-      - durability_methodology
+      - shared_runtime_bundle
+      - shared_trace_bundle
+  report_planning:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
+      - shared_methodology_bundle
+  report_review:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
+      - shared_replan_bundle
+  report_writer:
+    bundles:
+      - shared_runtime_bundle
+      - shared_trace_bundle
 
 agents:
   conversation_manager:
-    bundles: [conversation_ops]
+    bundles: [conversation_ops_bundle]
   week_context_specialist:
-    bundles: [week_domain]
+    bundles: [week_context_bundle]
+  week_constraint_specialist:
+    bundles: [week_constraints_bundle]
   week_recommendation_specialist:
-    bundles: [week_domain, durability_methodology]
+    bundles: [week_revision_bundle, shared_methodology_bundle, shared_load_math_bundle]
+  week_load_target_specialist:
+    bundles: [week_load_target_bundle, shared_load_math_bundle]
   week_revision_specialist:
-    bundles: [week_domain]
+    bundles: [week_revision_bundle, week_load_target_bundle]
+  week_workout_authoring_specialist:
+    bundles: [week_workout_authoring_bundle]
+  week_consistency_auditor:
+    bundles: [week_review_bundle]
+  week_load_governance_reviewer:
+    bundles: [week_review_bundle, shared_load_math_bundle]
+  week_workout_syntax_reviewer:
+    bundles: [week_review_bundle, week_workout_authoring_bundle]
+  week_plan_manager:
+    bundles: [week_context_bundle, week_constraints_bundle, week_load_target_bundle, week_revision_bundle, week_workout_authoring_bundle]
+  week_review_manager:
+    bundles: [week_review_bundle]
   pending_resolution_specialist:
-    bundles: [conversation_ops]
+    bundles: [conversation_ops_bundle]
+
   season_scenario:
-    bundles: [season_domain]
+    bundles: [season_event_bundle]
   season_planner:
-    bundles: [season_domain]
-  season_plan_manager:
-    bundles: [season_domain, durability_methodology]
-  season_feed_forward_manager:
-    bundles: [season_domain, durability_methodology]
-  season_artifact_writer:
-    bundles: [season_writer]
+    bundles: [season_event_bundle]
+  season_context_specialist:
+    bundles: [season_event_bundle]
   scenario_interpreter:
-    bundles: [season_domain]
-  event_priority_anchor_specialist:
-    bundles: [season_domain]
+    bundles: [season_event_bundle]
+  event_priority_specialist:
+    bundles: [season_event_bundle]
+  peak_window_specialist:
+    bundles: [season_event_bundle]
   macrocycle_architect:
-    bundles: [season_domain, durability_methodology]
-  load_governance_specialist:
-    bundles: [season_domain, durability_methodology]
-  constraint_specialist:
-    bundles: [season_domain]
-  historical_context_specialist:
-    bundles: [season_domain, durability_methodology]
-  kpi_guidance_specialist:
-    bundles: [durability_methodology]
+    bundles: [season_macrocycle_bundle, shared_methodology_bundle]
+  season_constraint_specialist:
+    bundles: [season_event_bundle]
+  season_historical_context_specialist:
+    bundles: [season_governance_bundle, shared_methodology_bundle]
+  season_kpi_guidance_specialist:
+    bundles: [shared_methodology_bundle]
+  season_load_corridor_specialist:
+    bundles: [season_governance_bundle, shared_load_math_bundle]
+  season_progression_specialist:
+    bundles: [season_governance_bundle, shared_methodology_bundle]
+  season_plan_manager:
+    bundles: [season_event_bundle, season_macrocycle_bundle, season_governance_bundle]
   season_plan_auditor:
-    bundles: [season_domain]
+    bundles: [season_review_bundle]
+  season_governance_auditor:
+    bundles: [season_review_bundle, season_governance_bundle]
+  season_constraints_reviewer:
+    bundles: [season_review_bundle]
+  season_review_manager:
+    bundles: [season_review_bundle]
+  season_artifact_writer:
+    bundles: [season_writer_bundle]
+  season_feed_forward_manager:
+    bundles: [season_writer_bundle]
+
   phase_architect:
-    bundles: [phase_domain]
+    bundles: [phase_guardrails_bundle]
+  phase_context_specialist:
+    bundles: [phase_guardrails_bundle]
+  phase_guardrail_band_specialist:
+    bundles: [phase_guardrails_bundle, shared_load_math_bundle]
+  phase_execution_rules_specialist:
+    bundles: [phase_guardrails_bundle]
+  phase_structure_specialist:
+    bundles: [phase_structure_bundle]
+  phase_cadence_recovery_specialist:
+    bundles: [phase_cadence_bundle, shared_methodology_bundle]
+  phase_intensity_distribution_specialist:
+    bundles: [phase_intensity_bundle, shared_methodology_bundle]
+  phase_event_integration_specialist:
+    bundles: [phase_event_integration_bundle]
+  phase_preview_synthesizer:
+    bundles: [phase_structure_bundle]
   phase_bundle_manager:
-    bundles: [phase_domain, durability_methodology]
-  phase_feed_forward_manager:
-    bundles: [phase_domain, durability_methodology]
+    bundles: [phase_guardrails_bundle, phase_structure_bundle, phase_cadence_bundle, phase_intensity_bundle]
+  phase_constraint_auditor:
+    bundles: [phase_review_bundle]
+  phase_governance_auditor:
+    bundles: [phase_review_bundle, shared_load_math_bundle]
+  phase_structure_reviewer:
+    bundles: [phase_review_bundle]
+  phase_preview_reviewer:
+    bundles: [phase_review_bundle]
+  phase_review_manager:
+    bundles: [phase_review_bundle]
   phase_artifact_writer:
-    bundles: [phase_writer]
-  guardrails_specialist:
-    bundles: [phase_domain, durability_methodology]
-  structure_specialist:
-    bundles: [phase_domain, durability_methodology]
-  cadence_recovery_integrator:
-    bundles: [phase_domain]
-  intensity_distribution_specialist:
-    bundles: [phase_domain, durability_methodology]
-  preview_synthesizer:
-    bundles: [phase_domain]
-  constraint_auditor:
-    bundles: [phase_domain]
-  load_governance_auditor:
-    bundles: [phase_domain, durability_methodology]
-  week_artifact_writer:
-    bundles: [week_writer, week_domain]
-  performance_analysis_specialist:
-    bundles: [durability_methodology]
+    bundles: [phase_writer_bundle]
+  phase_feed_forward_manager:
+    bundles: [phase_writer_bundle]
+
+  performance_analysis:
+    bundles: [report_diagnostics_bundle]
+  performance_context_specialist:
+    bundles: [report_diagnostics_bundle]
+  des_diagnostic_specialist:
+    bundles: [report_diagnostics_bundle, shared_methodology_bundle]
+  des_review_manager:
+    bundles: [report_diagnostics_bundle, shared_replan_bundle]
   report_artifact_writer:
-    bundles: [report_writer]
+    bundles: [report_writer_bundle]

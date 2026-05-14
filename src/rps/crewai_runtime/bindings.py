@@ -21,17 +21,26 @@ from .models import (
     CoachOperationPreviewModel,
     CoachPreviewSummaryModel,
     ConstraintAuditModel,
+    DESAnalysisBundleModel,
     LoadGovernanceAuditModel,
     PendingResolutionResultModel,
     PhaseBundleModel,
     PhaseGuardrailsPayloadModel,
     PhasePreviewPayloadModel,
+    PhaseReviewDecisionModel,
     PhaseStructurePayloadModel,
+    PlanningDraftModel,
+    ReplanInstructionModel,
+    ReportReviewDecisionModel,
     SeasonEventAnchorModel,
     SeasonMacrocycleDraftModel,
     SeasonPlanAuditModel,
+    SeasonPlanBundleModel,
+    SeasonReviewDecisionModel,
     TurnModeModel,
     WeekContextAssessmentModel,
+    WeekPlanBundleModel,
+    WeekReviewDecisionModel,
 )
 from .skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
 
@@ -131,6 +140,7 @@ def output_model_for_kind(output_kind: str) -> type[Any]:
 
     registry: dict[str, type[Any]] = {
         "turn_mode": TurnModeModel,
+        "planning_draft": PlanningDraftModel,
         "week_context_assessment": WeekContextAssessmentModel,
         "coaching_recommendation": CoachingRecommendationModel,
         "adjustment_intent": AdjustmentIntentModel,
@@ -142,12 +152,20 @@ def output_model_for_kind(output_kind: str) -> type[Any]:
         "season_event_anchor": SeasonEventAnchorModel,
         "season_macrocycle_draft": SeasonMacrocycleDraftModel,
         "season_plan_audit": SeasonPlanAuditModel,
+        "season_plan_bundle": SeasonPlanBundleModel,
+        "season_review_decision": SeasonReviewDecisionModel,
         "phase_guardrails_payload": PhaseGuardrailsPayloadModel,
         "phase_structure_payload": PhaseStructurePayloadModel,
         "phase_preview_payload": PhasePreviewPayloadModel,
         "constraint_audit": ConstraintAuditModel,
         "load_governance_audit": LoadGovernanceAuditModel,
         "phase_bundle": PhaseBundleModel,
+        "phase_review_decision": PhaseReviewDecisionModel,
+        "week_plan_bundle": WeekPlanBundleModel,
+        "week_review_decision": WeekReviewDecisionModel,
+        "des_analysis_bundle": DESAnalysisBundleModel,
+        "report_review_decision": ReportReviewDecisionModel,
+        "replan_instruction": ReplanInstructionModel,
     }
     if output_kind not in registry:
         raise ValueError(f"Unsupported CrewAI output kind: {output_kind}")

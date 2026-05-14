@@ -33,15 +33,35 @@ tasks:
     guardrails:
       - typed_output_present
       - pending_resolution_summary_present
+  season_plan_finalize:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - season_bundle_integrity
+    guardrail_max_retries: 2
   season_plan_audit:
     guardrails:
       - typed_output_present
       - audit_lists_are_lists
+  season_governance_review:
+    guardrails:
+      - typed_output_present
+      - audit_lists_are_lists
+  season_constraints_review:
+    guardrails:
+      - typed_output_present
+      - audit_lists_are_lists
+  season_review:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - review_decision_integrity
+    guardrail_max_retries: 2
   phase_constraint_audit:
     guardrails:
       - typed_output_present
       - audit_lists_are_lists
-  phase_load_governance_audit:
+  phase_governance_review:
     guardrails:
       - typed_output_present
       - audit_lists_are_lists
@@ -50,4 +70,28 @@ tasks:
     guardrails:
       - typed_output_present
       - phase_bundle_integrity
+    guardrail_max_retries: 2
+  phase_review:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - review_decision_integrity
+    guardrail_max_retries: 2
+  week_plan_finalize:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - week_bundle_integrity
+    guardrail_max_retries: 2
+  week_review:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - review_decision_integrity
+    guardrail_max_retries: 2
+  report_review:
+    output_mode: pydantic
+    guardrails:
+      - typed_output_present
+      - review_decision_integrity
     guardrail_max_retries: 2

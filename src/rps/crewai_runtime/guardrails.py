@@ -126,6 +126,43 @@ def phase_bundle_integrity(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def season_bundle_integrity(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season bundle must decode to an object.")
+    required = ("event_priority", "macrocycle")
+    missing = [field for field in required if field not in mapping]
+    if missing:
+        return (False, f"Season bundle missing required keys: {', '.join(missing)}")
+    return (True, mapping)
+
+
+def week_bundle_integrity(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week bundle must decode to an object.")
+    required = ("context_summary", "constraint_summary", "load_target_summary", "revision_summary")
+    missing = [field for field in required if field not in mapping]
+    if missing:
+        return (False, f"Week bundle missing required keys: {', '.join(missing)}")
+    return (True, mapping)
+
+
+def review_decision_integrity(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Review decision must decode to an object.")
+    status = mapping.get("status")
+    if status not in {"approved", "replan_required", "rejected"}:
+        return (False, "Review decision status must be approved, replan_required, or rejected.")
+    for field in ("blocking_issues", "warnings", "replan_instructions"):
+        if field in mapping and not isinstance(mapping[field], list):
+            return (False, f"Review decision field '{field}' must be a list.")
+    if not isinstance(mapping.get("writer_ready_summary"), str):
+        return (False, "Review decision must include writer_ready_summary string.")
+    return (True, mapping)
+
+
 def artifact_envelope_basic(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
@@ -161,6 +198,9 @@ REGISTRY: dict[str, GuardrailFn] = {
     "pending_resolution_summary_present": pending_resolution_summary_present,
     "audit_lists_are_lists": audit_lists_are_lists,
     "phase_bundle_integrity": phase_bundle_integrity,
+    "season_bundle_integrity": season_bundle_integrity,
+    "week_bundle_integrity": week_bundle_integrity,
+    "review_decision_integrity": review_decision_integrity,
     "artifact_envelope_basic": artifact_envelope_basic,
     "artifact_meta_data_present": artifact_meta_data_present,
 }
