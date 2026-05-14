@@ -65,6 +65,58 @@ def _week_sensitive_latest_warning(artifact_type: ArtifactType) -> str | None:
     )
 
 
+def _compact_wellness_payload(payload: object) -> object:
+    """Return a smaller wellness payload for LLM-facing tool responses."""
+
+    if not isinstance(payload, dict):
+        return payload
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return payload
+    entries = data.get("entries")
+    if not isinstance(entries, list):
+        return payload
+
+    def _has_signal(entry: object) -> bool:
+        if not isinstance(entry, dict):
+            return False
+        for key, value in entry.items():
+            if key in {"date", "updated_at", "source"}:
+                continue
+            if value is not None:
+                return True
+        return False
+
+    signaled_entries = [entry for entry in entries if _has_signal(entry)]
+    kept_entries = signaled_entries[-14:] if signaled_entries else entries[-7:]
+
+    latest_entry_date = None
+    latest_weight_kg = None
+    for entry in reversed(entries):
+        if not isinstance(entry, dict):
+            continue
+        if latest_entry_date is None and isinstance(entry.get("date"), str):
+            latest_entry_date = entry["date"]
+        weight_kg = entry.get("weight_kg")
+        if latest_weight_kg is None and isinstance(weight_kg, (int, float)):
+            latest_weight_kg = float(weight_kg)
+        if latest_entry_date is not None and latest_weight_kg is not None:
+            break
+
+    compact_data = dict(data)
+    compact_data["entries"] = kept_entries
+    compact_data["entries_total"] = len(entries)
+    compact_data["entries_truncated"] = len(kept_entries) != len(entries)
+    if latest_entry_date is not None:
+        compact_data["latest_entry_date"] = latest_entry_date
+    if latest_weight_kg is not None:
+        compact_data["latest_weight_kg"] = latest_weight_kg
+
+    compact_payload = dict(payload)
+    compact_payload["data"] = compact_data
+    return compact_payload
+
+
 def _find_input_file(
     athlete_root: Path,
     input_type: str,
@@ -212,7 +264,11 @@ def read_tool_defs() -> list[JsonDict]:
         {
             "type": "function",
             "name": "workspace_get_input",
-            "description": "Load athlete-specific inputs (athlete_profile, planning_events, logistics, availability) from inputs/ or latest/.",
+            "description": (
+                "Load athlete-specific inputs (athlete_profile, planning_events, logistics, availability) "
+                "from inputs/ or latest/. Accepts `input_type`; `artifact_type` is also accepted as a "
+                "backward-compatible alias."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -225,9 +281,21 @@ def read_tool_defs() -> list[JsonDict]:
                             "planning_events",
                         ],
                     },
+                    "artifact_type": {
+                        "type": "string",
+                        "enum": [
+                            "athlete_profile",
+                            "availability",
+                            "logistics",
+                            "planning_events",
+                        ],
+                    },
                     "year": {"type": "integer"},
                 },
-                "required": ["input_type"],
+                "anyOf": [
+                    {"required": ["input_type"]},
+                    {"required": ["artifact_type"]},
+                ],
                 "additionalProperties": False,
             },
         },
@@ -299,6 +367,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         payload = workspace.get_latest(artifact_type)
+        if artifact_type == ArtifactType.WELLNESS:
+            payload = _compact_wellness_payload(payload)
         warning = _week_sensitive_latest_warning(artifact_type)
         if warning and isinstance(payload, dict):
             result = dict(payload)
@@ -426,7 +496,10 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         }
 
     def workspace_get_input(args: dict[str, Any]) -> object:
-        input_type = str(args["input_type"]).strip()
+        raw_input_type = args.get("input_type", args.get("artifact_type"))
+        if not isinstance(raw_input_type, str) or not raw_input_type.strip():
+            raise ValueError("input_type is required")
+        input_type = raw_input_type.strip()
         year = int(args["year"]) if args.get("year") is not None else None
         path = _find_input_file(workspace.store.athlete_root(workspace.athlete_id), input_type, year=year)
         raw_content = path.read_text(encoding="utf-8")

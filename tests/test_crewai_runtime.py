@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from rps.agents import runtime as agent_runtime
-from rps.agents.crewai_backend import run_agent_multi_output_crewai
+from rps.agents.crewai_backend import _coerce_artifact_envelope, run_agent_multi_output_crewai
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings
@@ -273,6 +273,26 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert task_defs["week_plan"]["agent"] == "week_artifact_writer"
     assert task_defs["season_plan"]["agent"] == "season_artifact_writer"
     assert task_defs["phase_guardrails"]["agent"] == "phase_artifact_writer"
+
+
+def test_coerce_artifact_envelope_extracts_wrapped_raw_payload() -> None:
+    envelope = {
+        "meta": {"artifact_type": "SEASON_SCENARIOS"},
+        "data": {"scenarios": []},
+    }
+    wrapped = {
+        "raw": json.dumps(envelope),
+        "pydantic": None,
+        "json_dict": None,
+        "tasks_output": [
+            {
+                "raw": json.dumps(envelope),
+            }
+        ],
+        "token_usage": {"prompt_tokens": 123},
+    }
+
+    assert _coerce_artifact_envelope(wrapped) == envelope
 
 
 def test_crewai_blueprints_build_from_yaml() -> None:

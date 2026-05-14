@@ -67,6 +67,41 @@ def _week_sensitive_latest_warning(artifact_type: ArtifactType) -> str | None:
     )
 
 
+def _compact_wellness_payload(payload: object) -> object:
+    """Return a smaller wellness payload for agent tool responses."""
+
+    if not isinstance(payload, dict):
+        return payload
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return payload
+    entries = data.get("entries")
+    if not isinstance(entries, list):
+        return payload
+
+    def _has_signal(entry: object) -> bool:
+        if not isinstance(entry, dict):
+            return False
+        for key, value in entry.items():
+            if key in {"date", "updated_at", "source"}:
+                continue
+            if value is not None:
+                return True
+        return False
+
+    signaled_entries = [entry for entry in entries if _has_signal(entry)]
+    kept_entries = signaled_entries[-14:] if signaled_entries else entries[-7:]
+
+    compact_data = dict(data)
+    compact_data["entries"] = kept_entries
+    compact_data["entries_total"] = len(entries)
+    compact_data["entries_truncated"] = len(kept_entries) != len(entries)
+
+    compact_payload = dict(payload)
+    compact_payload["data"] = compact_data
+    return compact_payload
+
+
 def get_tool_defs() -> list[JsonDict]:
     """Return function tool definitions for workspace access."""
     return [
@@ -218,6 +253,8 @@ def get_tool_handlers(ctx: ToolContext) -> dict[str, ToolHandler]:
         """Load the latest artifact for a type."""
         artifact_type = _parse_artifact_type(args["artifact_type"])
         payload = workspace.get_latest(artifact_type)
+        if artifact_type == ArtifactType.WELLNESS:
+            payload = _compact_wellness_payload(payload)
         warning = _week_sensitive_latest_warning(artifact_type)
         if warning and isinstance(payload, dict):
             result = dict(payload)

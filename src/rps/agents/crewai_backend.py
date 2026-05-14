@@ -483,6 +483,49 @@ def _parse_json_document(raw_text: str) -> JsonMap:
     return parsed
 
 
+def _coerce_artifact_envelope(candidate: object) -> JsonMap | None:
+    """Extract a `{meta, data}` envelope from direct or wrapped CrewAI results."""
+
+    if hasattr(candidate, "model_dump"):
+        try:
+            candidate = candidate.model_dump()
+        except Exception:
+            return None
+
+    if isinstance(candidate, dict):
+        if isinstance(candidate.get("meta"), dict) and "data" in candidate:
+            return candidate
+
+        nested_json = candidate.get("json_dict")
+        if nested_json is not None:
+            coerced = _coerce_artifact_envelope(nested_json)
+            if coerced is not None:
+                return coerced
+
+        nested_pydantic = candidate.get("pydantic")
+        if nested_pydantic is not None:
+            coerced = _coerce_artifact_envelope(nested_pydantic)
+            if coerced is not None:
+                return coerced
+
+        raw = candidate.get("raw")
+        if isinstance(raw, str) and raw.strip():
+            try:
+                parsed = _parse_json_document(raw)
+            except Exception:
+                parsed = None
+            if parsed is not None and isinstance(parsed.get("meta"), dict) and "data" in parsed:
+                return parsed
+
+        task_outputs = candidate.get("tasks_output")
+        if isinstance(task_outputs, list):
+            for item in task_outputs:
+                coerced = _coerce_artifact_envelope(item)
+                if coerced is not None:
+                    return coerced
+    return None
+
+
 def _extract_typed_output(result: object, task_obj: object) -> Any:
     """Extract the typed Pydantic output from a CrewAI task result."""
 
@@ -589,14 +632,15 @@ def _execute_crewai_task(
     else:
         result = crew.kickoff()
     if task_blueprint.output_kind == "artifact_envelope":
-        json_output = _extract_json_output(result, crew_task)
-        if isinstance(json_output, dict):
+        json_output = _coerce_artifact_envelope(_extract_json_output(result, crew_task))
+        if json_output is not None:
             return json_output
-        pydantic_output = _extract_typed_output(result, crew_task)
+        pydantic_output = _coerce_artifact_envelope(_extract_typed_output(result, crew_task))
         if pydantic_output is not None:
-            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
-            if isinstance(document, dict):
-                return document
+            return pydantic_output
+        wrapped_output = _coerce_artifact_envelope(result)
+        if wrapped_output is not None:
+            return wrapped_output
         raw = _extract_raw_output_text(result, crew_task)
         if not raw:
             raise RuntimeError(f"CrewAI task '{task_blueprint.name}' produced no raw artifact output.")
@@ -794,14 +838,15 @@ def _execute_crewai_hierarchical_crew(
         result = crew.kickoff()
     final_output_kind = str(task_blueprints[final_task_name].output_kind)
     if final_output_kind == "artifact_envelope":
-        json_output = _extract_json_output(result, final_task_obj)
-        if isinstance(json_output, dict):
+        json_output = _coerce_artifact_envelope(_extract_json_output(result, final_task_obj))
+        if json_output is not None:
             return json_output
-        pydantic_output = _extract_typed_output(result, final_task_obj)
+        pydantic_output = _coerce_artifact_envelope(_extract_typed_output(result, final_task_obj))
         if pydantic_output is not None:
-            document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
-            if isinstance(document, dict):
-                return document
+            return pydantic_output
+        wrapped_output = _coerce_artifact_envelope(result)
+        if wrapped_output is not None:
+            return wrapped_output
         raw = _extract_raw_output_text(result, final_task_obj)
         if not raw:
             raise RuntimeError(f"CrewAI crew final task '{final_task_name}' produced no raw artifact output.")
@@ -1412,7 +1457,7 @@ def _build_crewai_tooling(
             return
         if not isinstance(result, dict) or result.get("ok") is not True:
             return
-        key = args.get("input_type") or args.get("input_name")
+        key = args.get("input_type") or args.get("artifact_type") or args.get("input_name")
         if isinstance(key, str):
             loaded_inputs[key] = result
 

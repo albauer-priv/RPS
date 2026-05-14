@@ -548,6 +548,94 @@ class WorkspaceReadToolTests(unittest.TestCase):
             self.assertEqual(meta.get("data_confidence"), "UNKNOWN")
             self.assertIn('"data_confidence": "UNKNOWN"', result["content"])
 
+    def test_workspace_get_input_accepts_artifact_type_alias(self) -> None:
+        """Verify `artifact_type` remains accepted as an alias for `input_type`."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_012"
+            store.ensure_workspace(athlete_id)
+            inputs_dir = store.athlete_root(athlete_id) / "inputs"
+            inputs_dir.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "meta": {"artifact_type": "ATHLETE_PROFILE"},
+                "data": {"athlete_id": athlete_id},
+            }
+            (inputs_dir / "athlete_profile_20260504.json").write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="performance_analysis",
+                )
+            )
+            result = handlers["workspace_get_input"]({"artifact_type": "athlete_profile"})
+
+            self.assertIsInstance(result, dict)
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["input_type"], "athlete_profile")
+
+    def test_workspace_get_latest_compacts_wellness_entries(self) -> None:
+        """Verify wellness latest reads are compacted for LLM-facing tools."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_013"
+            store.ensure_workspace(athlete_id)
+            wellness = {
+                "meta": {"artifact_type": "WELLNESS"},
+                "data": {
+                    "body_mass_kg": 82.4,
+                    "entries": [
+                        {"date": "2026-05-01", "weight_kg": None, "resting_hr_bpm": None},
+                        {"date": "2026-05-02", "weight_kg": None, "resting_hr_bpm": None},
+                        {"date": "2026-05-03", "weight_kg": 82.4, "resting_hr_bpm": 50},
+                        {"date": "2026-05-04", "weight_kg": 82.3, "resting_hr_bpm": 49},
+                    ]
+                    + [
+                        {
+                            "date": f"2026-05-{day:02d}",
+                            "weight_kg": None,
+                            "resting_hr_bpm": None,
+                        }
+                        for day in range(5, 35)
+                    ],
+                },
+            }
+            store.save_document(
+                athlete_id,
+                ArtifactType.WELLNESS,
+                "2026-18",
+                wellness,
+                producer_agent="test",
+                run_id="wellness_test",
+                update_latest=True,
+            )
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="coach",
+                )
+            )
+
+            result = handlers["workspace_get_latest"]({"artifact_type": "WELLNESS"})
+
+            self.assertIsInstance(result, dict)
+            data = result["data"]
+            assert isinstance(data, dict)
+            entries = data["entries"]
+            assert isinstance(entries, list)
+            self.assertEqual(data["body_mass_kg"], 82.4)
+            self.assertEqual(data["entries_total"], 34)
+            self.assertTrue(data["entries_truncated"])
+            self.assertLess(len(entries), 34)
+            self.assertEqual(entries[0]["date"], "2026-05-03")
+
     def test_workspace_tools_get_latest_warns_for_week_sensitive_artifact(self) -> None:
         """Verify validated workspace tools expose the same latest-warning guidance."""
         with tempfile.TemporaryDirectory() as tmpdir:
