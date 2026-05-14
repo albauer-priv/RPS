@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import CrewAIConfigBundle
+from .memory import mirror_openai_env_from_rps
 
 JsonMap = dict[str, Any]
 
@@ -81,6 +82,7 @@ def build_crewai_knowledge_kwargs(
     kwargs: JsonMap = {}
     sources = profile.get("sources") or []
     if sources:
+        mirror_openai_env_from_rps()
         try:
             knowledge_source_module = __import__(
                 "crewai.knowledge.source.string_knowledge_source",

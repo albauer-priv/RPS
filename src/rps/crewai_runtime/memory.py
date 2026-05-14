@@ -10,7 +10,7 @@ from .config import CrewAIConfigBundle
 JsonMap = dict[str, Any]
 
 
-def _mirror_openai_env_from_rps() -> None:
+def mirror_openai_env_from_rps() -> None:
     """Expose RPS OpenAI env vars under the names CrewAI/OpenAI helpers expect."""
 
     mappings = {
@@ -109,7 +109,7 @@ def build_memory_instance(crewai_module: Any, *, storage: str | None, embedder: 
     Memory = getattr(crewai_module, "Memory", None)
     if Memory is None:
         return None
-    _mirror_openai_env_from_rps()
+    mirror_openai_env_from_rps()
     kwargs: JsonMap = {}
     if storage:
         kwargs["storage"] = storage
@@ -129,15 +129,16 @@ def build_crew_memory_kwargs(
 
     if not profile.get("enabled"):
         return {}
+    normalized_embedder = _normalize_embedder_config(profile.get("embedder") or {})
     memory = build_memory_instance(
         crewai_module,
         storage=profile.get("storage"),
-        embedder=profile.get("embedder") or {},
+        embedder=normalized_embedder,
         llm=profile.get("llm"),
     )
     if memory is None:
         return {}
-    return {"memory": memory, "embedder": profile.get("embedder") or {}}
+    return {"memory": memory, "embedder": normalized_embedder}
 
 
 def build_agent_memory_value(

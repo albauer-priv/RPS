@@ -33,10 +33,12 @@ from rps.crewai_runtime.guardrails import (
     resolve_task_policy,
 )
 from rps.crewai_runtime.knowledge import (
+    build_crewai_knowledge_kwargs,
     resolve_agent_knowledge_profile,
     resolve_crew_knowledge_profile,
 )
 from rps.crewai_runtime.memory import (
+    build_crew_memory_kwargs,
     build_memory_instance,
     resolve_agent_memory_profile,
     resolve_crew_memory_profile,
@@ -333,6 +335,60 @@ def test_build_memory_instance_injects_rps_openai_credentials(monkeypatch) -> No
     assert embedder["config"]["api_key"] == "test-rps-key"
     assert embedder["config"]["base_url"] == "https://example.invalid/v1"
     assert embedder["config"]["api_base"] == "https://example.invalid/v1"
+    assert os.environ["OPENAI_API_KEY"] == "test-rps-key"
+
+
+def test_build_crew_memory_kwargs_normalizes_top_level_embedder(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeMemory:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    crewai_module = SimpleNamespace(Memory=FakeMemory)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-rps-key")
+    monkeypatch.setenv("RPS_LLM_BASE_URL", "https://example.invalid/v1")
+
+    kwargs = build_crew_memory_kwargs(
+        crewai_module,
+        profile={
+            "enabled": True,
+            "storage": "runtime/athletes/i150546/memory/test",
+            "embedder": {"provider": "openai", "config": {"model_name": "text-embedding-3-small"}},
+            "llm": None,
+        },
+    )
+
+    embedder = kwargs["embedder"]
+    assert isinstance(embedder, dict)
+    assert embedder["config"]["api_key"] == "test-rps-key"
+    assert embedder["config"]["base_url"] == "https://example.invalid/v1"
+    assert embedder["config"]["api_base"] == "https://example.invalid/v1"
+
+
+def test_build_crewai_knowledge_kwargs_mirrors_rps_openai_env(monkeypatch, tmp_path: Path) -> None:
+    skill_root = tmp_path
+    source = skill_root / "sample.md"
+    source.write_text("knowledge", encoding="utf-8")
+
+    class FakeStringKnowledgeSource:
+        def __init__(self, *, content: str):
+            self.content = content
+
+    fake_module = types.ModuleType("crewai.knowledge.source.string_knowledge_source")
+    fake_module.StringKnowledgeSource = FakeStringKnowledgeSource
+    monkeypatch.setitem(sys.modules, "crewai.knowledge.source.string_knowledge_source", fake_module)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-rps-key")
+
+    kwargs = build_crewai_knowledge_kwargs(
+        root=skill_root,
+        profile={"sources": [{"path": "sample.md"}], "knowledge_config": {}},
+    )
+
+    assert "knowledge_sources" in kwargs
     assert os.environ["OPENAI_API_KEY"] == "test-rps-key"
 
 
