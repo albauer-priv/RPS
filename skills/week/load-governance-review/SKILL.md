@@ -27,5 +27,5 @@ Block approval when:
 - parsed workout-text load estimates materially contradict declared agenda/weekly load without a traceable reason
 
 Use these references:
-- `../load-estimation-week/references/load_estimation_week.md`
-- `../load-estimation-week/references/load_distribution_and_reconciliation.md`
+- `references/load_estimation_week.md`
+- `references/load_distribution_and_reconciliation.md`

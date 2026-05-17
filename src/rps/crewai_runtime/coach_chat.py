@@ -30,7 +30,6 @@ from .provider import (
 )
 from .skills import (
     build_crewai_skill_kwargs,
-    render_skill_prompt_block,
     resolve_agent_skill_profile,
 )
 from .telemetry import runtime_event_scope
@@ -182,9 +181,6 @@ def _build_agent(
     prompt_loader = PromptLoader(prompts_dir)
     prompt = prompt_loader.combined_system_prompt(agent_name)
     skill_profile = resolve_agent_skill_profile(bundle, agent_name=agent_name, crew_name=surface_name + "_conversation")
-    skill_block = render_skill_prompt_block(root=Path.cwd(), profile=skill_profile)
-    if skill_block:
-        prompt = f"{prompt}\n\n{skill_block}"
     kwargs: JsonMap = {
         "role": str(agent_cfg.get("role") or agent_name.replace("_", " ").title()),
         "goal": prompt,

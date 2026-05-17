@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-14
+Last-Updated: 2026-05-17
 Owner: Architecture
 ---
 # CrewAI Skill Attachment Model
@@ -22,8 +22,25 @@ RPS uses a stricter local rule than raw CrewAI:
 - crew-level attachments are allowed only for operational cross-cutting skills
 - planning methodology must live in the owning agent skill
 - `references/` are supplemental only; `SKILL.md` must be operational on its own
+- skills are activated through native CrewAI `skills=[...]`; RPS must not manually append `SKILL.md` bodies into agent `goal`, `backstory`, or task descriptions
 
 This is a local architecture constraint, not a CrewAI platform limitation.
+
+## Native CrewAI Activation
+
+CrewAI skills are self-contained directories. During skill activation, CrewAI
+loads the full `SKILL.md` body. The optional `references/`, `scripts/`, and
+`assets/` directories are resources on that skill path; they are not treated as
+automatic prompt context in RPS.
+
+RPS therefore follows these rules:
+
+- pass configured skill directories to CrewAI through `skills=[...]`
+- do not render `SKILL.md` bodies manually into prompts
+- keep mandatory behavior in `SKILL.md`
+- keep long supporting material in local `references/`
+- use Knowledge sources for broader retrieved facts and bibliography material
+- do not use cross-skill file paths such as `../...` or `skills/.../references/...`
 
 ## Attachment Layers
 
@@ -169,6 +186,7 @@ Runtime config validation fails when:
 - an agent resolves to no method skill
 - a crew attaches a non-operational skill
 - an unknown agent or skill is referenced
+- a skill body references another skill's files or a missing local reference
 
 The canonical source for this validation is `config/crewai/skills.yaml`, backed
-by runtime checks in `src/rps/crewai_runtime/config.py`.
+by runtime checks in `src/rps/crewai_runtime/config.py` and skill package tests.

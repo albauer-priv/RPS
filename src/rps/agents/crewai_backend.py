@@ -40,7 +40,6 @@ from rps.crewai_runtime.provider import (
 )
 from rps.crewai_runtime.skills import (
     build_crewai_skill_kwargs,
-    render_skill_prompt_block,
     resolve_agent_skill_profile,
 )
 from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
@@ -424,10 +423,6 @@ def _build_crewai_agent(
     kwargs.update(knowledge_kwargs)
     skill_profile = resolve_agent_skill_profile(bundle, agent_name=blueprint.name, crew_name=crew_name)
     kwargs.update(build_crewai_skill_kwargs(root=ROOT, profile=skill_profile))
-    skill_block = render_skill_prompt_block(root=ROOT, profile=skill_profile)
-    if skill_block:
-        kwargs["goal"] = f"{kwargs['goal']}\n\n{skill_block}"
-        kwargs["backstory"] = f"{kwargs['backstory']}\n\n{skill_block}"
     agent_memory = build_agent_memory_value(
         shared_memory=shared_memory,
         profile=resolve_agent_memory_profile(
@@ -875,16 +870,10 @@ def _build_internal_task_description(
     """Build a specialist-task description with top-level prompt context."""
 
     prompt = runtime.prompt_loader.combined_system_prompt(prompt_agent)
-    skill_block = render_skill_prompt_block(
-        root=ROOT,
-        profile=resolve_agent_skill_profile(bundle, agent_name=agent_name, crew_name=crew_name),
-    )
     parts = [
         "System and agent instructions:",
         prompt,
     ]
-    if skill_block and skill_block not in prompt:
-        parts.extend(["", "Activated skills:", skill_block])
     parts.extend(
         [
             "",
@@ -1517,16 +1506,10 @@ def _build_task_description(
     """Compose the final CrewAI task description from prompts, injections, and user input."""
 
     prompt = runtime.prompt_loader.combined_system_prompt(agent_name)
-    skill_block = render_skill_prompt_block(
-        root=ROOT,
-        profile=resolve_agent_skill_profile(bundle, agent_name=agent_name, crew_name=crew_name),
-    )
     parts = [
         "System and agent instructions:",
         prompt,
     ]
-    if skill_block and skill_block not in prompt:
-        parts.extend(["", "Activated skills:", skill_block])
     parts.extend(
         [
             "",

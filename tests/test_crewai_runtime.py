@@ -85,7 +85,7 @@ from rps.crewai_runtime.provider import (
     resolve_crewai_planning_enabled,
     resolve_crewai_provider_config,
 )
-from rps.crewai_runtime.skills import render_skill_prompt_block, resolve_agent_skill_profile
+from rps.crewai_runtime.skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
 from rps.orchestrator.coach_operations import (
     preview_feed_forward_operation,
     preview_report_operation,
@@ -463,38 +463,32 @@ def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
     assert "/athlete/i150546/coach/accepted_patterns" in specialist_memory["additional_read_scopes"]
 
 
-def test_skill_prompt_block_renders_configured_skills() -> None:
+def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
     profile = resolve_agent_skill_profile(bundle, agent_name="week_revision_specialist", crew_name="coach_conversation")
-    skill_block = render_skill_prompt_block(root=Path("."), profile=profile)
+    kwargs = build_crewai_skill_kwargs(root=Path("."), profile=profile)
     assert profile["agent_skill"] == "skills/week/revision-methodology"
     assert profile["crew_skills"] == [
         "skills/shared/runtime-boundaries",
         "skills/shared/resolved-context-consumption",
         "skills/shared/traceability-and-naming",
     ]
-    assert "skills/week/revision-methodology/SKILL.md" in skill_block
-    assert "skills/shared/runtime-boundaries/SKILL.md" in skill_block
+    skill_paths = [Path(path) for path in kwargs["skills"]]
+    assert Path("skills/week/revision-methodology").resolve() in skill_paths
+    assert Path("skills/shared/runtime-boundaries").resolve() in skill_paths
 
 
 def test_coach_evidence_source_guidance_is_in_active_skills() -> None:
-    bundle = load_crewai_config_bundle(root=Path("."))
-    coach_profile = resolve_agent_skill_profile(bundle, agent_name="coach", crew_name="coach_conversation")
-    recommendation_profile = resolve_agent_skill_profile(
-        bundle,
-        agent_name="week_recommendation_specialist",
-        crew_name="coach_conversation",
-    )
-
-    coach_block = render_skill_prompt_block(root=Path("."), profile=coach_profile)
-    recommendation_block = render_skill_prompt_block(root=Path("."), profile=recommendation_profile)
-    bibliography = Path("skills/shared/durability-methodology/references/durability_bibliography.md")
+    coach_skill = Path("skills/conversation/guarded-operations/SKILL.md").read_text(encoding="utf-8")
+    recommendation_skill = Path("skills/week/recommendation-and-adjustment/SKILL.md").read_text(encoding="utf-8")
+    bibliography = Path("skills/conversation/guarded-operations/references/durability_bibliography.md")
 
     assert bibliography.exists()
-    assert "doi.org" in coach_block
-    assert "Maunder/Seiler/Kilding/Plews" in coach_block
-    assert "available web-search result" in recommendation_block
-    assert "do not invent study conclusions" in recommendation_block
+    assert "references/durability_bibliography.md" in coach_skill
+    assert "doi.org" in coach_skill
+    assert "Maunder/Seiler/Kilding/Plews" in coach_skill
+    assert "available web-search result" in recommendation_skill
+    assert "do not invent study conclusions" in recommendation_skill
 
 
 def test_skill_config_validation_rejects_non_operational_crew_skill(tmp_path: Path) -> None:

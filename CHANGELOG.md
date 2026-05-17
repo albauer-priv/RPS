@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CrewAI runtime now relies on native `skills=[...]` activation only and no longer manually appends rendered `SKILL.md` bodies into goals, backstories, or task descriptions.
+
+### Fixed
+- Fixed non-self-contained skill reference paths by copying referenced material into local skill `references/` directories and adding validation for local references.
+
 ## [0.13.0] - 2026-05-17
 
 ### Added

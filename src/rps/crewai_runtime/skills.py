@@ -1,4 +1,4 @@
-"""CrewAI skill configuration and prompt rendering helpers."""
+"""CrewAI skill configuration helpers."""
 
 from __future__ import annotations
 
@@ -51,26 +51,3 @@ def build_crewai_skill_kwargs(*, root: Path, profile: JsonMap) -> JsonMap:
 
     paths = [str((root / path).resolve()) for path in (profile.get("paths") or [])]
     return {"skills": paths} if paths else {}
-
-
-def render_skill_prompt_block(*, root: Path, profile: JsonMap) -> str:
-    """Render SKILL.md bodies as a deterministic prompt block.
-
-    Keep the compatibility layer aligned with CrewAI's normal skill behavior:
-    the active skill body is injected, while `references/` remain optional support material.
-    """
-
-    skill_paths = [str(path) for path in (profile.get("paths") or [])]
-    if not skill_paths:
-        return ""
-
-    chunks: list[str] = ["Activated skills (methodology and guidance):"]
-    for skill_path in skill_paths:
-        skill_dir = (root / skill_path).resolve()
-        skill_md = skill_dir / "SKILL.md"
-        if not skill_md.exists():
-            raise FileNotFoundError(f"Configured skill missing SKILL.md: {skill_md}")
-        skill_text = skill_md.read_text(encoding="utf-8").strip()
-        chunks.append(f'{skill_path}/SKILL.md:\n"""\n{skill_text}\n"""')
-
-    return "\n\n".join(chunks)

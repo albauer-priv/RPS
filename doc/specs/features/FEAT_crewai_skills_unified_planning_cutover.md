@@ -79,7 +79,7 @@ Owner: CrewAI Runtime
 **Components / Modules**
 
 * `config/crewai/skills.yaml`: skill assignment by crew and agent.
-* `src/rps/crewai_runtime/skills.py`: skill resolution, CrewAI kwargs, and local prompt-block rendering.
+* `src/rps/crewai_runtime/skills.py`: skill resolution and native CrewAI skill kwargs.
 * `config/crewai/agents.yaml` / `tasks.yaml`: shared specialist renames, writer-agent ownership.
 * `src/rps/agents/crewai_backend.py`: writer-task output policies, skill-backed prompt composition, manager/writer orchestration.
 * `src/rps/crewai_runtime/coach_chat.py`: conversational crew reuses shared week specialists and skill prompt assembly.
@@ -87,7 +87,7 @@ Owner: CrewAI Runtime
 **Data flow**
 
 * Inputs: prompt markdown, skill packages, knowledge bundles, workspace tools, schemas/contracts.
-* Processing: resolve crew/agent skill bundles, optionally attach CrewAI `skills=[...]`, and inject the same SKILL.md bodies into compatibility prompt blocks.
+* Processing: resolve crew/agent skill bundles and attach them through native CrewAI `skills=[...]`.
 * Outputs: unchanged planning artefacts, but produced by renamed specialists and writer-agent task ownership.
 
 **Schema / Artefacts**
@@ -104,7 +104,7 @@ Owner: CrewAI Runtime
 
 * Backward compatible: Partially.
 * Breaking changes: Agent names, skill config, and prompt/runtime assembly changed. Tests and docs needed coordinated updates.
-* Fallback behavior: skill prompt blocks render locally even when CrewAI package support is unavailable.
+* Fallback behavior: none. Native CrewAI skill activation is the runtime contract.
 
 **Conflicts with ADRs / Principles**
 

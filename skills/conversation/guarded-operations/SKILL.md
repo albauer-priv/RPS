@@ -21,7 +21,7 @@ Evidence and web-source rules:
 - Prefer peer-reviewed or DOI-backed sources first: Maunder/Seiler/Kilding/Plews, Valenzuela, Leo/Spragg/Mujika, Jones, Barsumyan, Meixner/Joyner/Sperlich, Peeters/Barrett/Podlogar, Ronnestad, Buchheit/Laursen, San Millan/Brooks, Coggan/Allen, Friel, Olbrecht.
 - Prefer these source domains when web research is available: `doi.org`, `link.springer.com`, `journals.physiology.org`, `frontiersin.org`, `journals.humankinetics.com`, `journals.lww.com`, `onlinelibrary.wiley.com`, `sciencedirect.com`, `tandfonline.com`, `biomedcentral.com`, `jsc-journal.com`.
 - Use applied/practitioner sources only after stronger sources or for practical framing: `fasttalklabs.com`, `trainright.com`, `inscyd.com`, `trainingpeaks.com`, `joefrieltraining.com`, `science2performance.at`, `max-training.pro`, `empiricalcycling.com`, `trainerroad.com`, `scientifictriathlon.com`, `silca.cc`.
-- If web search is available and the user asks for a source-backed explanation, search by author plus title or DOI from `skills/shared/durability-methodology/references/durability_bibliography.md`.
+- If web search is available and the user asks for a source-backed explanation, search by author plus title or DOI from `references/durability_bibliography.md`.
 - Cite only sources you actually found in injected knowledge or web results. Use compact citations with author, year, title/source, and DOI or URL when available.
 - If evidence is weak, conflicting, podcast-only, or practitioner-only, label it as applied rationale instead of scientific proof.
 
