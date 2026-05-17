@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CrewAI runtime now relies on native `skills=[...]` activation only and no longer manually appends rendered `SKILL.md` bodies into goals, backstories, or task descriptions.
+- Coach recommendation answers now use compact answer discipline for simple why-questions and avoid unsupported load arithmetic, IF targets, thresholds, citations, or checklist expansion.
+- Coach finalization now detects task-runner reply markers such as `DONE`, `READY`, and `OUTPUT` and repairs the answer once into a conversational Coach response.
+- Coach recommendation and finalization prompts now define the desired positive cycling-coach voice directly instead of relying mainly on negative style constraints.
 
 ### Fixed
 - Fixed non-self-contained skill reference paths by copying referenced material into local skill `references/` directories and adding validation for local references.

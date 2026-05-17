@@ -491,6 +491,23 @@ def test_coach_evidence_source_guidance_is_in_active_skills() -> None:
     assert "do not invent study conclusions" in recommendation_skill
 
 
+def test_coach_recommendation_answer_discipline_is_configured() -> None:
+    recommendation_skill = Path("skills/week/recommendation-and-adjustment/SKILL.md").read_text(encoding="utf-8")
+    finalizer_skill = Path("skills/conversation/routing-and-finalization/SKILL.md").read_text(encoding="utf-8")
+    coach_chat_source = Path("src/rps/crewai_runtime/coach_chat.py").read_text(encoding="utf-8")
+
+    assert "Answer like an experienced cycling coach" in recommendation_skill
+    assert "Finalize replies as an experienced cycling coach" in finalizer_skill
+    assert "Answer like an experienced cycling coach" in coach_chat_source
+    assert "Write as an experienced cycling coach" in coach_chat_source
+    assert "Do not convert simple why-questions into DONE checklists" in recommendation_skill
+    assert "Do not turn a simple advisory answer into a DONE checklist" in finalizer_skill
+    assert "Do not convert simple why-questions into DONE checklists" in coach_chat_source
+    assert "Do not add domain calculations, IF targets, thresholds, citations, or source claims" in coach_chat_source
+    assert "finalize_reply_style_repair" in coach_chat_source
+    assert "Do not use DONE, READY, OUTPUT" in coach_chat_source
+
+
 def test_skill_config_validation_rejects_non_operational_crew_skill(tmp_path: Path) -> None:
     root = tmp_path
     crewai_dir = root / "config" / "crewai"

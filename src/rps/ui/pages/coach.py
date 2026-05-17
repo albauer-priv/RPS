@@ -325,13 +325,14 @@ def _coach_intro_message(
     if planned_load:
         lines.append(f"- Planned weekly load: {planned_load}")
     if planned_workout_rows:
-        lines.append("- Planned workouts:")
+        lines.extend(["", "Planned workouts:", ""])
         lines.extend(
             _markdown_table(
                 ["Day", "Date", "Day-Role", "Title", "Planned Duration", "Planned Load (kJ)"],
                 planned_workout_rows,
             )
         )
+        lines.append("")
 
     if current_actuals or completed_session_rows:
         lines.extend(["", "**Current Week Actuals**"])
@@ -345,13 +346,14 @@ def _coach_intro_message(
         if completed_work:
             lines.append(f"- Completed work: {completed_work} kJ")
         if completed_session_rows:
-            lines.append("- Completed sessions:")
+            lines.extend(["", "Completed sessions:", ""])
             lines.extend(
                 _markdown_table(
                     ["Day", "Date", "Type", "Title", "Actual Duration", "Actual Load (kJ)", "IF", "TSS"],
                     completed_session_rows,
                 )
             )
+            lines.append("")
 
     if plan_vs_actual:
         lines.extend(["", "**Plan vs Actual**"])
@@ -368,13 +370,14 @@ def _coach_intro_message(
         if completed_work_so_far:
             lines.append(f"- Completed work so far: {completed_work_so_far} kJ")
         if open_planned_day_rows:
-            lines.append("- Open planned day details:")
+            lines.extend(["", "Open planned day details:", ""])
             lines.extend(
                 _markdown_table(
                     ["Day", "Date", "Day-Role", "Title", "Planned Duration", "Planned Load (kJ)"],
                     open_planned_day_rows,
                 )
             )
+            lines.append("")
 
     if pending:
         lines.extend(["", "**Pending Status**"])

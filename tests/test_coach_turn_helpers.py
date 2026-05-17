@@ -1,4 +1,9 @@
-from rps.crewai_runtime.coach_chat import CoachTool, SpecialistToolsets, build_runtime_profile
+from rps.crewai_runtime.coach_chat import (
+    CoachTool,
+    SpecialistToolsets,
+    _coach_reply_style_issues,
+    build_runtime_profile,
+)
 
 
 def _tool(name: str) -> CoachTool:
@@ -31,3 +36,28 @@ def test_runtime_profile_assigns_tools_per_specialist() -> None:
         "show_pending_coach_operation",
         "apply_pending_coach_operation",
     ]
+
+
+def test_coach_reply_style_flags_task_runner_output() -> None:
+    reply = """
+Sofort: Temperatur messen
+Was: Miss jetzt deine Temperatur.
+Prüfen: Kalender öffnen.
+DONE: Temperaturwert notiert.
+READY
+"""
+
+    issues = _coach_reply_style_issues(reply)
+
+    assert "repeated_done_markers" in issues or "task_checklist_labels" in issues
+    assert any("DONE" in issue or "READY" in issue for issue in issues)
+
+
+def test_coach_reply_style_accepts_conversational_answer() -> None:
+    reply = (
+        "Nicht nachholen. Diese Woche zählt Erholung mehr als kosmetische kJ. "
+        "Bleib im aktiven Band, streiche zusätzliche Intensität und kürze bei Krankheit. "
+        "Der nächste sichere Schritt ist: heute nur Symptome prüfen und keine Extra-Session planen."
+    )
+
+    assert _coach_reply_style_issues(reply) == []

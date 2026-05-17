@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from importlib import import_module
@@ -37,6 +38,15 @@ from .telemetry import runtime_event_scope
 logger = logging.getLogger(__name__)
 
 JsonMap = dict[str, Any]
+
+_TASK_RUNNER_REPLY_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(?im)^\s*(DONE|READY|OUTPUT)\s*:?\s*$"),
+    re.compile(r"(?im)^\s*(DONE|READY|OUTPUT)\s*:"),
+    re.compile(r"(?im)\bDONE\s*="),
+    re.compile(r"(?im)\bDONE-Kriterium\b"),
+    re.compile(r"(?im)\bDONE-Kriterien\b"),
+    re.compile(r"(?im)^\s*(Was|Pruefen|Prüfen|Bedingung)\s*:"),
+)
 
 
 def _agent_runtime_profile(bundle: Any, agent_name: str) -> JsonMap:
@@ -116,6 +126,33 @@ def build_runtime_profile(*, surface_name: str, toolsets: SpecialistToolsets) ->
             "pending_resolution_specialist": _tool_name_map(toolsets.pending),
         },
     }
+
+
+def _coach_reply_style_issues(reply: str) -> list[str]:
+    """Return style issues that make a final Coach reply look like a task runner."""
+
+    text = reply.strip()
+    if not text:
+        return ["empty_reply"]
+
+    issues: list[str] = []
+    for pattern in _TASK_RUNNER_REPLY_PATTERNS:
+        if pattern.search(text):
+            issues.append(pattern.pattern)
+
+    done_count = len(re.findall(r"(?i)\bDONE\b", text))
+    if done_count >= 2:
+        issues.append("repeated_done_markers")
+
+    task_label_count = len(re.findall(r"(?im)^\s*(Was|Pruefen|Prüfen|Bedingung|DONE)\s*:", text))
+    if task_label_count >= 3:
+        issues.append("task_checklist_labels")
+
+    numbered_steps = len(re.findall(r"(?m)^\s*\d+[\.)]\s+", text))
+    if numbered_steps >= 8:
+        issues.append("long_numbered_task_plan")
+
+    return sorted(set(issues))
 
 
 def _build_crewai_tools(tools: list[CoachTool]) -> list[Any]:
@@ -505,6 +542,13 @@ def run_conversational_turn(
                     context_result.model_dump_json(indent=2),
                     "",
                     "Provide direct coaching advice only. Do not create a preview in this task.",
+                    "Answer like an experienced cycling coach: clear, calm, positive, practical, appreciative, and solution-oriented.",
+                    "Speak directly to the athlete, acknowledge consistency and good load-control choices, and guide them toward the next realistic step.",
+                    "Use sport-specific energy without pressure, guilt, empty motivational slogans, or unrealistic promises.",
+                    "For a simple why-question, produce one direct decision sentence, 2-4 context-tied reasons, and one practical next action.",
+                    "Do not convert simple why-questions into DONE checklists or broad action plans unless the user explicitly asked for one.",
+                    "Use load arithmetic only when the numbers are present in the injected context or specialist payload; state projections as assumptions from the existing plan.",
+                    "Do not mention IF targets, typical IF values, intensity thresholds, or source-backed numbers unless they are present in context or verified evidence.",
                     "If the answer needs a source-backed rationale, use retrieved durability evidence or available web-search results as justification only.",
                     "Prefer peer-reviewed/DOI-backed sources from the durability bibliography before practitioner media, and do not invent citations.",
                 ]
@@ -591,7 +635,7 @@ def run_conversational_turn(
         )
 
     def _finalize(mode: str, payload: BaseModel) -> str:
-        return _run_text_task(
+        final_reply = _run_text_task(
             task_name="finalize_reply",
             agent_name="conversation_manager",
             description="\n".join(
@@ -603,10 +647,16 @@ def run_conversational_turn(
                     payload.model_dump_json(indent=2),
                     "",
                     "Produce the final user-facing reply in the language of the current user message.",
+                    "Write as an experienced cycling coach: clear, calm, positive, practical, appreciative, and solution-oriented.",
+                    "Speak directly to the athlete and guide them toward the next realistic step with sport-specific energy but without pressure.",
                     "Mention preview/apply status only when relevant to the current result.",
+                    "For recommend mode and simple why-questions, keep the answer compact: direct answer, 2-4 concise reasons, and one practical next action.",
+                    "Do not turn a simple advisory answer into a DONE checklist unless the user explicitly asked for a checklist or step plan.",
+                    "Do not add domain calculations, IF targets, thresholds, citations, or source claims that are absent from the specialist result or injected context.",
+                    "Do not end with broad open-ended follow-up offers; state the next safe action or ask one required clarification only when blocked.",
                 ]
             ),
-            expected_output="One concise direct assistant reply.",
+            expected_output="One compact direct assistant reply.",
             tool_specs=[],
             model_override=model_override,
             temperature_override=temperature_override,
@@ -614,6 +664,47 @@ def run_conversational_turn(
             surface_name=surface.name,
             athlete_id=athlete_id or "unknown",
         )
+        style_issues = _coach_reply_style_issues(final_reply)
+        if not style_issues:
+            return final_reply
+        logger.info("Repairing coach final reply style issues: %s", ",".join(style_issues))
+        repaired_reply = _run_text_task(
+            task_name="finalize_reply_style_repair",
+            agent_name="conversation_manager",
+            description="\n".join(
+                [
+                    shared,
+                    "",
+                    f"Selected mode: {mode}",
+                    "Specialist result:",
+                    payload.model_dump_json(indent=2),
+                    "",
+                    "Previous final reply had forbidden task-runner style issues:",
+                    ", ".join(style_issues),
+                    "",
+                    "Rewrite the answer as a conversational Coach response.",
+                    "Use a calm, positive, practical, appreciative, and solution-oriented cycling-coach voice.",
+                    "Speak directly to the athlete and guide them toward the next realistic step.",
+                    "Keep the specialist decision unchanged.",
+                    "Use normal prose and at most 5 bullets.",
+                    "Do not use DONE, READY, OUTPUT, Was:, Prüfen:, or Bedingung: labels.",
+                    "Do not create a step-by-step action checklist unless the original user explicitly asked for one.",
+                    "Do not add domain calculations, IF targets, thresholds, citations, or source claims that are absent from the specialist result or injected context.",
+                    "End with one concrete next safe action, not a broad follow-up offer.",
+                    "",
+                    "Forbidden previous reply:",
+                    final_reply,
+                ]
+            ),
+            expected_output="One conversational coach reply without task-runner labels.",
+            tool_specs=[],
+            model_override=model_override,
+            temperature_override=temperature_override,
+            prompts_dir=surface.prompts_dir,
+            surface_name=surface.name,
+            athlete_id=athlete_id or "unknown",
+        )
+        return repaired_reply
 
     def _run() -> str:
         mode_result = _classify()

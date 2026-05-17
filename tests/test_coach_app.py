@@ -308,6 +308,9 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     assert "**Current Week Actuals**" in intro_text
     assert "Completed sessions so far: 1" in intro_text
     assert "**Plan vs Actual**" in intro_text
+    assert "Planned workouts:\n\n| Day | Date | Day-Role | Title | Planned Duration | Planned Load (kJ) |" in intro_text
+    assert "Completed sessions:\n\n| Day | Date | Type | Title | Actual Duration | Actual Load (kJ) | IF | TSS |" in intro_text
+    assert "Open planned day details:\n\n| Day | Date | Day-Role | Title | Planned Duration | Planned Load (kJ) |" in intro_text
     assert "| Day | Date | Day-Role | Title | Planned Duration | Planned Load (kJ) |" in intro_text
     assert "| Day | Date | Type | Title | Actual Duration | Actual Load (kJ) | IF | TSS |" in intro_text
     assert "| Tue | 2026-05-12 | QUALITY | Tempo Stabilization | 01:33 | 1017 kJ |" in intro_text
