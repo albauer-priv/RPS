@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from rps.agents.output_normalization import (
     extract_planning_events_document,
     injection_mode_for_tasks,
@@ -8,6 +10,7 @@ from rps.agents.output_normalization import (
     normalize_workout_percent_ranges,
 )
 from rps.agents.tasks import AgentTask
+from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 
 
 def test_normalize_phase_guardrails_recovery_rules_and_band_order() -> None:
@@ -53,6 +56,83 @@ def test_normalize_season_scenarios_derives_horizon_from_events() -> None:
     guidance = normalized["data"]["scenarios"][0]["scenario_guidance"]
     assert guidance["intensity_guidance"]["allowed_domains"] == ["ENDURANCE_LOW"]
     assert guidance["intensity_guidance"]["avoid_domains"] == ["THRESHOLD"]
+
+
+def test_normalize_season_scenarios_repairs_agent_payload_for_schema() -> None:
+    def _scenario(scenario_id: str, cadence: str) -> dict[str, object]:
+        return {
+            "scenario_id": scenario_id,
+            "name": f"Scenario {scenario_id}",
+            "core_idea": "Build durable readiness.",
+            "load_philosophy": "Progress conservatively.",
+            "risk_profile": "Moderate risk.",
+            "key_differences": ["Uses deterministic cadence math.", "Keeps recovery explicit."],
+            "best_suited_if": "The athlete wants reliable completion.",
+            "scenario_guidance": {
+                "deload_cadence": cadence,
+                "phase_length_weeks": 99,
+                "event_alignment_notes": "Aligns to the target event.",
+                "risk_flags": ["Watch cumulative fatigue."],
+                "fixed_rest_days": ["Mon", "Fri"],
+                "constraint_summary": ["Respect fixed rest days."],
+                "kpi_guardrail_notes": ["Stay in sustainable endurance bands."],
+                "decision_notes": ["Use as default if risk control matters."],
+                "intensity_guidance": {
+                    "allowed_domains": ["ENDURANCE_LOW", "ENDURANCE_HIGH", "TEMPO"],
+                    "avoid_domains": ["NONE", "THRESHOLD"],
+                },
+                "assumptions": ["Availability is stable."],
+                "unknowns": ["Late travel unknown."],
+            },
+        }
+
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIOS",
+            "schema_id": "Wrong",
+            "schema_version": "2026-20",
+            "version": "2026-20_A01",
+            "authority": "Binding",
+            "owner_agent": "Season-Planner",
+            "run_id": "season_scenarios_2026-20_A01",
+            "created_at": "2026-05-17T16:07:25Z",
+            "scope": "Athlete: i150546",
+            "iso_week": "2026-20",
+            "iso_week_range": "2026-20--2026-37",
+            "temporal_scope": {"from": "2026-05-11", "to": "2026-09-13"},
+            "trace_upstream": [
+                "athlete_profile.ui_athlete_profile_20260315T091949Z",
+                "planning_events.ui_planning_events_20260504T094650Z",
+                "athlete_state_snapshot_2026-20__20260517_160725.json",
+            ],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "UNKNOWN",
+            "notes": [],
+        },
+        "data": {
+            "kpi_profile_ref": "kpi_profile.latest",
+            "athlete_profile_ref": "athlete_profile.ui_athlete_profile_20260315T091949Z",
+            "planning_horizon_weeks": 18,
+            "notes": "Agent emitted a scalar note.",
+            "scenarios": [_scenario("A", "2:1"), _scenario("B", "3:1"), _scenario("C", "2:1:1")],
+        },
+    }
+
+    normalized = normalize_season_scenarios_document(document)
+
+    assert normalized["meta"]["version"] == "1.0"
+    assert normalized["meta"]["scope"] == "Season"
+    assert normalized["meta"]["schema_id"] == "SeasonScenariosInterface"
+    assert normalized["meta"]["schema_version"] == "1.0"
+    assert normalized["meta"]["authority"] == "Informational"
+    assert normalized["meta"]["owner_agent"] == "Season-Scenario-Agent"
+    assert all(isinstance(entry, dict) for entry in normalized["meta"]["trace_upstream"])
+    assert isinstance(normalized["data"]["notes"], list)
+    assert all(isinstance(scenario["key_differences"], str) for scenario in normalized["data"]["scenarios"])
+
+    registry = SchemaRegistry(Path("specs/schemas"))
+    validate_or_raise(registry.validator_for("season_scenarios.schema.json"), normalized)
 
 
 def test_injection_mode_for_tasks_is_single_mode_only() -> None:

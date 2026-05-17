@@ -9,14 +9,21 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import date, timedelta
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
+from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
+from rps.workspace.types import ArtifactType
 
 JsonMap = dict[str, Any]
 GuardrailResult = tuple[bool, Any]
 GuardrailFn = Callable[[Any], GuardrailResult]
 _GUARDRAIL_CONTEXT: ContextVar[JsonMap] = ContextVar("rps_guardrail_context", default={})
+ROOT = Path(__file__).resolve().parents[3]
+SCHEMA_DIR = ROOT / "specs" / "schemas"
 
 
 @dataclass(frozen=True)
@@ -207,6 +214,43 @@ def artifact_meta_data_present(result: Any) -> GuardrailResult:
         return (False, f"Artifact meta missing required fields: {', '.join(missing)}")
     if not isinstance(mapping.get("data"), dict):
         return (False, "Artifact output missing data object.")
+    return (True, mapping)
+
+
+@lru_cache(maxsize=1)
+def _schema_registry() -> SchemaRegistry:
+    return SchemaRegistry(SCHEMA_DIR)
+
+
+def artifact_schema_valid(result: Any) -> GuardrailResult:
+    """Validate a persisted artifact output against its canonical JSON Schema."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Artifact output must decode to a JSON object.")
+    meta = mapping.get("meta")
+    if not isinstance(meta, dict):
+        return (False, "Artifact output missing meta object.")
+    artifact_type_raw = str(meta.get("artifact_type") or "").strip().upper()
+    if not artifact_type_raw:
+        return (False, "Artifact meta missing artifact_type.")
+    try:
+        artifact_type = ArtifactType(artifact_type_raw)
+    except ValueError:
+        return (False, f"Unknown artifact_type for schema validation: {artifact_type_raw}.")
+    schema_file = ARTIFACT_SCHEMA_FILE.get(artifact_type)
+    if not schema_file:
+        return (False, f"No JSON schema mapping registered for artifact_type {artifact_type_raw}.")
+    try:
+        validator = _schema_registry().validator_for(schema_file)
+        validate_or_raise(validator, mapping)
+    except SchemaValidationError as exc:
+        details = "; ".join(exc.errors[:8])
+        if len(exc.errors) > 8:
+            details += f"; ... and {len(exc.errors) - 8} more"
+        return (False, f"Artifact schema validation failed for {schema_file}: {details}")
+    except Exception as exc:
+        return (False, f"Artifact schema validation failed for {schema_file}: {exc}")
     return (True, mapping)
 
 
@@ -530,6 +574,7 @@ REGISTRY: dict[str, GuardrailFn] = {
     "review_decision_integrity": review_decision_integrity,
     "artifact_envelope_basic": artifact_envelope_basic,
     "artifact_meta_data_present": artifact_meta_data_present,
+    "artifact_schema_valid": artifact_schema_valid,
     "season_scenario_selection_shape": season_scenario_selection_shape,
     "season_phase_coverage_and_cadence": season_phase_coverage_and_cadence,
     "season_cycle_ordering": season_cycle_ordering,

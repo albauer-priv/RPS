@@ -15,6 +15,7 @@ if str(ROOT / "src") not in sys.path:
 
 from rps.core.config import load_env_file  # noqa: E402
 from rps.schemas.bundler import SchemaBundler  # noqa: E402
+from scripts.generate_artifact_models import write_generated_models  # noqa: E402
 from scripts.script_logging import configure_logging  # noqa: E402
 
 
@@ -41,6 +42,9 @@ def main() -> int:
         print(f"Bundled: {schema_path.name} -> {out_path}")
 
     logger.info("Bundled %d schema files", len(schema_paths))
+    generated = write_generated_models()
+    print("Generated CrewAI artifact models")
+    logger.info("Generated CrewAI artifact models (%d bytes)", len(generated))
     return 0
 
 

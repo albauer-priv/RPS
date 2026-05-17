@@ -22,6 +22,10 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
 )
 from rps.crewai_runtime.config import CrewAIConfigBundle, load_crewai_config_bundle
+from rps.crewai_runtime.generated_artifact_models import (
+    artifact_model_for_schema_file,
+    artifact_model_for_task_name,
+)
 from rps.crewai_runtime.guardrails import build_task_guardrail_kwargs
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
@@ -546,6 +550,16 @@ def _extract_json_output(result: object, task_obj: object) -> JsonMap | None:
     return None
 
 
+def _output_model_for_task(task_blueprint: Any, *, schema_file: str | None = None) -> type[Any]:
+    """Resolve the strongest structured-output model for a CrewAI task."""
+
+    if task_blueprint.output_kind == "artifact_envelope":
+        if schema_file:
+            return artifact_model_for_schema_file(schema_file)
+        return artifact_model_for_task_name(task_blueprint.name)
+    return output_model_for_kind(task_blueprint.output_kind)
+
+
 def _execute_crewai_task(
     *,
     agent_cls: Any,
@@ -564,6 +578,7 @@ def _execute_crewai_task(
     run_id: str | None = None,
     model_override: str | None = None,
     temperature_override: float | None = None,
+    artifact_schema_file: str | None = None,
 ) -> Any:
     """Execute one CrewAI task and return its typed output."""
 
@@ -597,10 +612,11 @@ def _execute_crewai_task(
     }
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
-    if output_mode == "json" and task_blueprint.output_kind != "artifact_envelope":
-        crew_task_kwargs["output_json"] = output_model_for_kind(task_blueprint.output_kind)
-    elif output_mode == "pydantic" and task_blueprint.output_kind != "artifact_envelope":
-        crew_task_kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
+    output_model = _output_model_for_task(task_blueprint, schema_file=artifact_schema_file)
+    if output_mode == "json":
+        crew_task_kwargs["output_json"] = output_model
+    elif output_mode == "pydantic":
+        crew_task_kwargs["output_pydantic"] = output_model
     crew_task_kwargs.update(guardrail_kwargs)
     crew_task = task_cls(**crew_task_kwargs)
     process = getattr(process_cls, "sequential")
@@ -668,10 +684,11 @@ def _build_crewai_task(
     }
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
+    output_model = _output_model_for_task(task_blueprint)
     if output_mode == "json":
-        kwargs["output_json"] = output_model_for_kind(task_blueprint.output_kind)
+        kwargs["output_json"] = output_model
     elif output_mode == "pydantic":
-        kwargs["output_pydantic"] = output_model_for_kind(task_blueprint.output_kind)
+        kwargs["output_pydantic"] = output_model
     kwargs.update(guardrail_kwargs)
     if context_tasks:
         kwargs["context"] = context_tasks

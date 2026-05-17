@@ -33,6 +33,7 @@ from rps.crewai_runtime.flows import (
 )
 from rps.crewai_runtime.guardrails import (
     artifact_envelope_basic,
+    artifact_schema_valid,
     build_task_guardrail_kwargs,
     des_diagnostic_only,
     guardrail_runtime_context,
@@ -340,11 +341,15 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     assert preview_policy.output_mode == "pydantic"
     assert "coach_preview_summary_complete" in preview_policy.guardrails
     assert artifact_policy.output_mode == "json"
+    assert "artifact_schema_valid" in artifact_policy.guardrails
     assert "week_corridor_and_capacity_check" in artifact_policy.guardrails
     assert "week_recovery_day_load_check" in artifact_policy.guardrails
     assert "week_daily_availability_check" in artifact_policy.guardrails
     assert "week_exportability_check" in artifact_policy.guardrails
     assert "season_scenario_selection_shape" in resolve_task_policy(
+        tasks["season_scenario_selection"], bundle.task_policies
+    ).guardrails
+    assert "artifact_schema_valid" in resolve_task_policy(
         tasks["season_scenario_selection"], bundle.task_policies
     ).guardrails
     assert "phase_s5_band_match" in resolve_task_policy(tasks["phase_guardrails"], bundle.task_policies).guardrails
@@ -586,6 +591,49 @@ def test_artifact_envelope_guardrail_rejects_missing_meta_and_accepts_basic_shap
     failed, message = artifact_envelope_basic(SimpleNamespace(raw=json.dumps({"data": {}})))
     assert failed is False
     assert "top-level 'meta' and 'data'" in message
+
+
+def test_artifact_schema_valid_guardrail_uses_concrete_json_schema() -> None:
+    payload = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIO_SELECTION",
+            "schema_id": "SeasonScenarioSelectionInterface",
+            "schema_version": "1.1",
+            "version": "1.0",
+            "authority": "Informational",
+            "owner_agent": "Season-Scenario-Agent",
+            "run_id": "run-1",
+            "created_at": "2026-05-17T16:07:25Z",
+            "scope": "Season",
+            "iso_week": "2026-20",
+            "iso_week_range": "2026-20--2026-37",
+            "temporal_scope": {"from": "2026-05-11", "to": "2026-09-13"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "UNKNOWN",
+            "notes": "",
+        },
+        "data": {
+            "season_scenarios_ref": "season_scenarios/latest.json",
+            "selected_scenario_id": "B",
+            "selection_source": "system",
+            "selection_rationale": "Balanced choice.",
+            "notes": ["ok"],
+            "kpi_moving_time_rate_guidance_selection": None,
+        },
+    }
+
+    ok, validated = artifact_schema_valid(payload)
+    assert ok is True
+    assert validated["data"]["selected_scenario_id"] == "B"
+
+    invalid = json.loads(json.dumps(payload))
+    invalid["data"]["selected_scenario_id"] = "D"
+    failed, message = artifact_schema_valid(invalid)
+    assert failed is False
+    assert "season_scenario_selection.schema.json" in message
+    assert "selected_scenario_id" in message
 
 
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:

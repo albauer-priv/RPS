@@ -14,6 +14,7 @@ defaults:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
     guardrail_max_retries: 2
 
 tasks:
@@ -61,11 +62,13 @@ tasks:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
       - season_scenario_selection_shape
   season_plan:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
       - season_phase_coverage_and_cadence
       - season_cycle_ordering
   phase_constraint_audit:
@@ -92,11 +95,13 @@ tasks:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
       - phase_s5_band_match
   phase_structure:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
       - phase_weeks_match_range
   week_plan_finalize:
     output_mode: pydantic
@@ -114,6 +119,7 @@ tasks:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
       - week_corridor_and_capacity_check
       - week_recovery_day_load_check
       - week_daily_availability_check
@@ -128,4 +134,5 @@ tasks:
     guardrails:
       - artifact_envelope_basic
       - artifact_meta_data_present
+      - artifact_schema_valid
       - des_diagnostic_only

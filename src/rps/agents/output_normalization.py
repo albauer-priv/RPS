@@ -29,7 +29,14 @@ _SEASON_SCENARIO_TRACE_DATA_ARTIFACTS = {
     "AVAILABILITY",
     "WELLNESS",
 }
+_SEASON_SCENARIO_TRACE_UPSTREAM_ARTIFACTS = _SEASON_SCENARIO_TRACE_EVENT_ARTIFACTS | _SEASON_SCENARIO_TRACE_DATA_ARTIFACTS | {
+    "ATHLETE_STATE_SNAPSHOT",
+    "PLANNING_CONTEXT_SNAPSHOT",
+}
 _DISALLOWED_AVOID_DOMAINS = {"NONE", "RECOVERY"}
+_SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(?:\.[0-9]+)?$")
+_META_SCOPES = {"Shared", "Season", "Phase", "Week", "Context"}
+_SCENARIO_IDS = ("A", "B", "C")
 
 
 def normalize_workout_percent_ranges(text: str) -> str:
@@ -56,6 +63,44 @@ def _as_non_negative_int(value: object) -> int | None:
     if isinstance(value, int) and value >= 0:
         return value
     return None
+
+
+def _normalize_semver(value: object, *, default: str = "1.0") -> str:
+    rendered = str(value or "").strip()
+    if _SEMVER_PATTERN.fullmatch(rendered):
+        return rendered
+    return default
+
+
+def _normalize_meta_scope(value: object, *, default: str = "Season") -> str:
+    rendered = str(value or "").strip()
+    return rendered if rendered in _META_SCOPES else default
+
+
+def _text_value(value: object, *, fallback: str = "Not specified.") -> str:
+    if isinstance(value, str):
+        rendered = value.strip()
+    elif isinstance(value, list):
+        rendered = " | ".join(str(item).strip() for item in value if str(item).strip())
+    elif isinstance(value, dict):
+        rendered = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    elif value is None:
+        rendered = ""
+    else:
+        rendered = str(value).strip()
+    return rendered or fallback
+
+
+def _text_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str):
+        rendered = value.strip()
+        return [rendered] if rendered else []
+    if value is None:
+        return []
+    rendered = str(value).strip()
+    return [rendered] if rendered else []
 
 
 def _iso_week_range_weeks(range_str: object) -> int | None:
@@ -181,26 +226,52 @@ def _build_phase_plan_summary(
     return full_phases, shortening_budget, shortened_phases
 
 
+def _trace_entry_from_string(value: str, *, allowed: set[str]) -> dict[str, str] | None:
+    raw = value.strip()
+    if not raw:
+        return None
+    artifact_token = raw.split(".", 1)[0]
+    lowered = artifact_token.lower()
+    artifact = ""
+    for candidate in sorted(allowed, key=len, reverse=True):
+        if lowered.startswith(candidate.lower()):
+            artifact = candidate
+            break
+    if not artifact:
+        return None
+    run_id = raw.split(".", 1)[1].strip() if "." in raw else raw
+    run_id = run_id.removesuffix(".json").strip()
+    if not run_id:
+        return None
+    return {"artifact": artifact, "version": "1.0", "run_id": run_id}
+
+
 def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[str, str]]:
     if not isinstance(value, list):
         return []
     normalized: list[dict[str, str]] = []
     seen: set[tuple[str, str, str]] = set()
     for item in value:
-        if not isinstance(item, dict):
+        if isinstance(item, str):
+            entry = _trace_entry_from_string(item, allowed=allowed)
+            if entry is None:
+                continue
+        elif isinstance(item, dict):
+            artifact = str(item.get("artifact") or "").strip().upper()
+            if artifact not in allowed:
+                continue
+            version = _normalize_semver(item.get("version"))
+            run_id = str(item.get("run_id") or "").strip()
+            if not run_id:
+                continue
+            entry = {"artifact": artifact, "version": version, "run_id": run_id}
+        else:
             continue
-        artifact = str(item.get("artifact") or "").strip().upper()
-        if artifact not in allowed:
-            continue
-        version = str(item.get("version") or "").strip() or "1.0"
-        run_id = str(item.get("run_id") or "").strip()
-        if not run_id:
-            continue
-        token = (artifact, version, run_id)
+        token = (entry["artifact"], entry["version"], entry["run_id"])
         if token in seen:
             continue
         seen.add(token)
-        normalized.append({"artifact": artifact, "version": version, "run_id": run_id})
+        normalized.append(entry)
     return normalized
 
 
@@ -261,6 +332,8 @@ def normalize_season_scenarios_document(
     meta = document.get("meta") or {}
     artifact_type = str(meta.get("artifact_type", "")).upper()
     if artifact_type == "SEASON_SCENARIO_SELECTION":
+        meta["version"] = _normalize_semver(meta.get("version"))
+        meta["scope"] = _normalize_meta_scope(meta.get("scope"))
         if meta.get("authority") != "Informational":
             meta["authority"] = "Informational"
         if meta.get("owner_agent") != "Season-Scenario-Agent":
@@ -275,6 +348,18 @@ def normalize_season_scenarios_document(
             notes_value = meta.get("notes")
             if isinstance(notes_value, list):
                 meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
+        meta["trace_upstream"] = _normalize_trace_entries(
+            meta.get("trace_upstream"),
+            allowed=_SEASON_SCENARIO_TRACE_UPSTREAM_ARTIFACTS,
+        )
+        meta["trace_events"] = _normalize_trace_entries(
+            meta.get("trace_events"),
+            allowed=_SEASON_SCENARIO_TRACE_EVENT_ARTIFACTS,
+        )
+        meta["trace_data"] = _normalize_trace_entries(
+            meta.get("trace_data"),
+            allowed=_SEASON_SCENARIO_TRACE_DATA_ARTIFACTS,
+        )
         document["meta"] = meta
         data = document.get("data") or {}
         if not isinstance(data, dict):
@@ -286,6 +371,8 @@ def normalize_season_scenarios_document(
     if artifact_type != "SEASON_SCENARIOS":
         return document
 
+    meta["version"] = _normalize_semver(meta.get("version"))
+    meta["scope"] = _normalize_meta_scope(meta.get("scope"))
     if meta.get("authority") != "Informational":
         meta["authority"] = "Informational"
     if meta.get("owner_agent") != "Season-Scenario-Agent":
@@ -300,6 +387,10 @@ def normalize_season_scenarios_document(
         notes_value = meta.get("notes")
         if isinstance(notes_value, list):
             meta["notes"] = " ".join(str(item) for item in notes_value if item is not None)
+    meta["trace_upstream"] = _normalize_trace_entries(
+        meta.get("trace_upstream"),
+        allowed=_SEASON_SCENARIO_TRACE_UPSTREAM_ARTIFACTS,
+    )
     meta["trace_events"] = _normalize_trace_entries(meta.get("trace_events"), allowed=_SEASON_SCENARIO_TRACE_EVENT_ARTIFACTS)
     meta["trace_data"] = _normalize_trace_entries(meta.get("trace_data"), allowed=_SEASON_SCENARIO_TRACE_DATA_ARTIFACTS)
 
@@ -308,7 +399,9 @@ def normalize_season_scenarios_document(
         data = {}
     allowed_data_keys = {"kpi_profile_ref", "athlete_profile_ref", "planning_horizon_weeks", "scenarios", "notes"}
     data = {key: value for key, value in data.items() if key in allowed_data_keys}
-    data.setdefault("notes", [])
+    data["kpi_profile_ref"] = _text_value(data.get("kpi_profile_ref"), fallback="kpi_profile.latest")
+    data["athlete_profile_ref"] = _text_value(data.get("athlete_profile_ref"), fallback="athlete_profile.latest")
+    data["notes"] = _text_list(data.get("notes"))
 
     previous_range = meta.get("iso_week_range")
     previous_horizon = data.get("planning_horizon_weeks")
@@ -337,7 +430,7 @@ def normalize_season_scenarios_document(
     scenarios = data.get("scenarios") or []
     cleaned_scenarios: list[dict[str, Any]] = []
     if isinstance(scenarios, list):
-        for scenario in scenarios:
+        for idx, scenario in enumerate(scenarios[:3]):
             if not isinstance(scenario, dict):
                 continue
             allowed_scenario_keys = {
@@ -351,6 +444,19 @@ def normalize_season_scenarios_document(
                 "scenario_guidance",
             }
             scenario = {key: value for key, value in scenario.items() if key in allowed_scenario_keys}
+            scenario_id = str(scenario.get("scenario_id") or "").strip().upper()
+            if scenario_id not in _SCENARIO_IDS:
+                scenario_id = _SCENARIO_IDS[idx] if idx < len(_SCENARIO_IDS) else "C"
+            scenario["scenario_id"] = scenario_id
+            for key in (
+                "name",
+                "core_idea",
+                "load_philosophy",
+                "risk_profile",
+                "key_differences",
+                "best_suited_if",
+            ):
+                scenario[key] = _text_value(scenario.get(key))
             guidance = scenario.get("scenario_guidance") or {}
             if not isinstance(guidance, dict):
                 guidance = {}
@@ -372,6 +478,10 @@ def normalize_season_scenarios_document(
                 "unknowns",
             }
             guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
+            cadence = str(guidance.get("deload_cadence") or "").strip()
+            if cadence not in _CADENCE_PHASE_LENGTHS:
+                cadence = "3:1"
+            guidance["deload_cadence"] = cadence
             phase_length_weeks = _normalized_phase_length(guidance)
             guidance["phase_length_weeks"] = phase_length_weeks
 
@@ -404,14 +514,17 @@ def normalize_season_scenarios_document(
                     "shortened_phases": [],
                 }
 
-            guidance.setdefault("event_alignment_notes", [])
-            guidance.setdefault("risk_flags", [])
-            guidance.setdefault("fixed_rest_days", [])
-            guidance.setdefault("constraint_summary", [])
-            guidance.setdefault("kpi_guardrail_notes", [])
-            guidance.setdefault("decision_notes", [])
-            guidance.setdefault("assumptions", [])
-            guidance.setdefault("unknowns", [])
+            for key in (
+                "event_alignment_notes",
+                "risk_flags",
+                "fixed_rest_days",
+                "constraint_summary",
+                "kpi_guardrail_notes",
+                "decision_notes",
+                "assumptions",
+                "unknowns",
+            ):
+                guidance[key] = _text_list(guidance.get(key))
             intensity_guidance = guidance.get("intensity_guidance")
             if not isinstance(intensity_guidance, dict):
                 intensity_guidance = {}

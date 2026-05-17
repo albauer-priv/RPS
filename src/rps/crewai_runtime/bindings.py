@@ -10,6 +10,7 @@ from typing import Any
 
 from .compat import crewai_runtime_status
 from .config import CrewAIConfigBundle, load_crewai_config_bundle
+from .generated_artifact_models import artifact_model_for_task_name
 from .guardrails import build_task_guardrail_kwargs, resolve_task_policy
 from .knowledge import build_crewai_knowledge_kwargs, resolve_agent_knowledge_profile
 from .memory import build_agent_memory_value, build_crew_memory_kwargs, resolve_agent_memory_profile
@@ -172,6 +173,14 @@ def output_model_for_kind(output_kind: str) -> type[Any]:
     return registry[output_kind]
 
 
+def output_model_for_task(blueprint: TaskBlueprint) -> type[Any]:
+    """Resolve the strongest structured-output model for a task blueprint."""
+
+    if blueprint.output_kind == "artifact_envelope":
+        return artifact_model_for_task_name(blueprint.name)
+    return output_model_for_kind(blueprint.output_kind)
+
+
 def build_crewai_bindings(
     *,
     root: Path | None = None,
@@ -254,10 +263,11 @@ def build_crewai_bindings(
         }
         guardrail_kwargs = build_task_guardrail_kwargs(blueprint, bundle.task_policies)
         output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
+        output_model = output_model_for_task(blueprint)
         if output_mode == "json":
-            task_kwargs["output_json"] = output_model_for_kind(blueprint.output_kind)
+            task_kwargs["output_json"] = output_model
         elif output_mode == "pydantic":
-            task_kwargs["output_pydantic"] = output_model_for_kind(blueprint.output_kind)
+            task_kwargs["output_pydantic"] = output_model
         task_kwargs.update(guardrail_kwargs)
         tools = tools_factory(blueprint) if tools_factory else []
         if tools:
