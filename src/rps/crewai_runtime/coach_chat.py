@@ -509,6 +509,8 @@ def run_conversational_turn(
                     context_result.model_dump_json(indent=2),
                     "",
                     "Provide direct coaching advice only. Do not create a preview in this task.",
+                    "If the answer needs a source-backed rationale, use retrieved durability evidence or available web-search results as justification only.",
+                    "Prefer peer-reviewed/DOI-backed sources from the durability bibliography before practitioner media, and do not invent citations.",
                 ]
             ),
             expected_output="A structured coaching recommendation.",

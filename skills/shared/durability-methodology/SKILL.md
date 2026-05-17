@@ -3,9 +3,15 @@ name: durability-methodology
 description: Durability-first planning and coaching method for RPS endurance planning.
 metadata:
   author: rps
-  version: "4.0"
+  version: "6.0"
 ---
 Use durability as the primary planning objective.
+
+Durability model:
+- durability means maintaining submaximal performance over long durations with limited physiological, biomechanical, and mental decay
+- fresh peak metrics such as FTP or VO2max are not sufficient durability evidence
+- durability claims require defined energetic preload and interpretation relative to work performed
+- useful signals include delayed fatigue onset, reduced drift, stable pacing, stable heart rate, and stable RPE under prolonged work
 
 Decision hierarchy:
 1. Preserve sustainable weekly and seasonal repeatability.
@@ -17,9 +23,13 @@ Decision hierarchy:
 Operational rules:
 - treat missed sessions as lost load, not debt to be repaid later in the week
 - use kJ/work expansion first; increase intensity density only after stable tolerance exists
+- progress at most one overload axis per step: kJ/time, frequency, density/complexity, or intensity
+- use intensity as the last overload lever and only when quality and recovery are stable
 - keep recovery as an explicit performance variable, not a passive leftover
 - when a plan is compressed, shorten lower-priority stress before removing recovery protection
 - if fatigue, logistics, or execution quality deteriorate, stabilize first and only then rebuild
+- simulation of monotony, sleep deprivation, night riding, cold, or rain is dosed; it is not maximal by default
+- masters or reduced-recovery profiles require larger recovery windows, lower intensity density, and stronger quality/consistency protection
 
 Event and macrocycle implications:
 - an `A` event is a true peak target and deserves explicit peak-window and taper logic
@@ -39,3 +49,9 @@ Required checks before returning:
 - proposed change does not create hidden overload via intensity density
 - the plan can survive a small execution miss without collapsing
 - athlete guidance remains consistency-first and fatigue-aware
+
+Evidence-use boundary:
+- `references/evidence_layer_durability.md` and `references/durability_bibliography.md` are justification sources, not decision authority.
+- Prefer DOI-backed and peer-reviewed sources when explaining durability-first choices.
+- Practitioner sources may explain implementation, but must not create new thresholds or override active plan governance.
+- If a source-backed answer needs web research, search by exact author/title/DOI from the bibliography and cite only verified results.

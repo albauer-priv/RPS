@@ -16,6 +16,7 @@ from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
 from rps.crewai_runtime.compat import crewai_runtime_status
 from rps.crewai_runtime.flows import run_phase_flow, run_report_flow, run_week_flow
+from rps.crewai_runtime.guardrails import guardrail_runtime_context
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
@@ -29,6 +30,18 @@ from rps.orchestrator.resolved_context import (
     build_resolved_kpi_context_block,
 )
 from rps.orchestrator.workout_export import run_workout_export
+from rps.planning.deterministic_context import (
+    build_load_capacity_block,
+    build_phase_execution_context,
+    build_report_evidence_context,
+    build_week_calendar_context,
+    build_workout_load_method_block,
+    render_context_blocks,
+    render_phase_execution_context_block,
+    render_report_evidence_context_block,
+    render_week_calendar_context_block,
+)
+from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import (
@@ -187,6 +200,17 @@ def _build_kpi_selection_block(runtime_for: Callable[[str], AgentRuntime], athle
         return build_resolved_kpi_context_block(store, athlete_id)
     except Exception:
         return ""
+
+
+def _selected_kpi_rate_band(runtime_for: Callable[[str], AgentRuntime], athlete_id: str) -> JsonMap | None:
+    """Load selected KPI moving-time-rate guidance for deterministic load-band mapping."""
+
+    try:
+        store = LocalArtifactStore(root=runtime_for("season_planner").workspace_root)
+        selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        return selected_kpi_rate_band_from_selection(selection if isinstance(selection, dict) else None)
+    except Exception:
+        return None
 
 
 def _required_workspace_input_exists(root: Path, athlete_id: str, input_type: str) -> bool:
@@ -434,7 +458,14 @@ def create_performance_report(
         spec = AGENTS["performance_analysis"]
         message = f"Running Performance-Analyst for ISO week {report_label}."
         _log(message)
-        injected_block = ""
+        injected_block = render_report_evidence_context_block(
+            build_report_evidence_context(
+                report_week=report_week,
+                resolved_week_versions=resolved_week_versions,
+                missing_required=[],
+                missing_context_inputs=[],
+            )
+        )
         stream_chunks: list[str] = []
         def _on_reasoning_chunk(delta: str) -> None:
             stream_chunks.append(delta)
@@ -570,6 +601,7 @@ def plan_week(
 
     user_data_block = _build_user_data_block(runtime_for, athlete_id)
     kpi_block = _build_kpi_selection_block(runtime_for, athlete_id)
+    selected_kpi_rate_band = _selected_kpi_rate_band(runtime_for, athlete_id)
 
     if not workspace.latest_exists(ArtifactType.SEASON_PLAN):
         message = "Season Plan NOT FOUND. Run season planning first."
@@ -879,7 +911,31 @@ def plan_week(
             )
         spec = AGENTS["phase_architect"]
         phase_task_labels = ", ".join(task.value for task in phase_tasks)
-        injected_block = ""
+        load_capacity_context = build_load_capacity_block(
+            target_week=target,
+            phase_range=phase_range,
+            athlete_profile_payload=athlete_profile_payload or {},
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+            wellness_payload=wellness_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            kpi_rate_band=selected_kpi_rate_band,
+        )
+        phase_execution_block = render_phase_execution_context_block(
+            build_phase_execution_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        )
+        injected_block = render_context_blocks([load_capacity_context]) + phase_execution_block
         message = (
             f"Running Phase-Architect Flow for phase range {phase_range_label} "
             f"covering tasks: {phase_task_labels}."
@@ -1106,33 +1162,64 @@ def plan_week(
         spec = AGENTS["week_planner"]
         message = f"Running Week-Planner for ISO week {target_label}."
         _log(message)
-        injected_block = ""
-        out = run_agent_multi_output(
-            runtime_for(spec.name),
-            agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
-            athlete_id=athlete_id,
-            tasks=week_tasks,
-            user_input=(
-                f"Create week_plan for ISO week {target_label} only (Mon–Sun of that week). "
-                "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
-                "Read phase_guardrails and phase_structure from workspace. "
-                f"For exact-range predecessor reads, use workspace_get_version with version_key {phase_range_label} "
-                "for both PHASE_GUARDRAILS and PHASE_STRUCTURE; never use the single-week key for these range-scoped artefacts. "
-                f"{athlete_state_snapshot_block}"
-                f"{planning_context_snapshot_block}"
-                f"{historical_context_line}"
-                f"{user_data_block}"
-                f"{kpi_block}"
-                f"{override_line}"
-                f"{injected_block}"
-            ),
-            run_id=f"{run_id}_week",
-            model_override=model_resolver(spec.name) if model_resolver else None,
-            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            force_file_search=force_file_search,
-            max_num_results=max_num_results,
+        load_capacity_context = build_load_capacity_block(
+            target_week=target,
+            phase_range=phase_range,
+            athlete_profile_payload=athlete_profile_payload or {},
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+            phase_guardrails_payload=phase_guardrails_payload or {},
+            wellness_payload=wellness_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            kpi_rate_band=selected_kpi_rate_band,
         )
+        workout_load_method_block = build_workout_load_method_block(
+            athlete_profile_payload=athlete_profile_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            allowed_intensity_domains=load_capacity_context.payload.get("allowed_intensity_domains") or [],
+        )
+        week_calendar_block = render_week_calendar_context_block(
+            build_week_calendar_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                phase_guardrails_payload=phase_guardrails_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        )
+        injected_block = render_context_blocks([load_capacity_context, workout_load_method_block]) + week_calendar_block
+        with guardrail_runtime_context(availability_payload=availability_payload or {}, target_week=target):
+            out = run_agent_multi_output(
+                runtime_for(spec.name),
+                agent_name=spec.name,
+                agent_vs_name=spec.vector_store_name,
+                athlete_id=athlete_id,
+                tasks=week_tasks,
+                user_input=(
+                    f"Create week_plan for ISO week {target_label} only (Mon-Sun of that week). "
+                    "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
+                    "Read phase_guardrails and phase_structure from workspace. "
+                    f"For exact-range predecessor reads, use workspace_get_version with version_key {phase_range_label} "
+                    "for both PHASE_GUARDRAILS and PHASE_STRUCTURE; never use the single-week key for these range-scoped artefacts. "
+                    f"{athlete_state_snapshot_block}"
+                    f"{planning_context_snapshot_block}"
+                    f"{historical_context_line}"
+                    f"{user_data_block}"
+                    f"{kpi_block}"
+                    f"{override_line}"
+                    f"{injected_block}"
+                ),
+                run_id=f"{run_id}_week",
+                model_override=model_resolver(spec.name) if model_resolver else None,
+                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+                force_file_search=force_file_search,
+                max_num_results=max_num_results,
+            )
         steps.append({"agent": "week_planner", "tasks": [t.value for t in week_tasks], "result": out})
         week_run_ok = bool(out.get("ok") and out.get("produced"))
         if out.get("ok") and out.get("produced"):

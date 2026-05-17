@@ -5,6 +5,7 @@
 - percent targets become `pct/100`
 - ranges use their midpoint
 - domain-only targets use deterministic default IF values
+- clamp each segment `r_i` to `[0.0, 1.5]` before applying the fourth-power term
 
 ## Core formulas
 - `r_mean = sum(t_i * r_i) / sum(t_i)`
@@ -12,8 +13,14 @@
 - `planned_if_raw = clamp(r_eq, 0.0, 1.3)`
 - `planned_kj_raw = ftp_watts * r_mean * T_sec / 1000`
 - `planned_load_kj_raw = planned_kj_raw * (planned_if_raw / IF_ref_load)^1.3`
+- output only: `planned_if = round(planned_if_raw, 3)`
+- output only: `planned_kj = int(round(planned_kj_raw))`
+- week-summary output only: `planned_weekly_load_kj = int(round(planned_load_kj_raw))`
+- implementation owner: `src/rps/planning/workout_load.py`
+- parser supports the project workout-text subset, simple loop blocks such as `2x`, percent ranges, and ramp percent targets
 
 ## Edge cases
 - zero duration -> zero outputs
 - invalid negative durations -> hard invalid
-- use IF-direct fallback only when segment structure is unavailable
+- use IF-direct fallback only when segment structure is unavailable, unparseable, or intent-only
+- do not round IF before computing governance load

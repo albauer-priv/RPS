@@ -8,7 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from rps.agents import runtime as agent_runtime
-from rps.agents.crewai_backend import _coerce_artifact_envelope, run_agent_multi_output_crewai
+from rps.agents.crewai_backend import (
+    _TASK_BLUEPRINT_BY_AGENT_TASK,
+    _coerce_artifact_envelope,
+    run_agent_multi_output_crewai,
+)
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings
@@ -30,7 +34,15 @@ from rps.crewai_runtime.flows import (
 from rps.crewai_runtime.guardrails import (
     artifact_envelope_basic,
     build_task_guardrail_kwargs,
+    des_diagnostic_only,
+    guardrail_runtime_context,
+    phase_s5_band_match,
+    phase_weeks_match_range,
     resolve_task_policy,
+    season_scenario_selection_shape,
+    week_corridor_and_capacity_check,
+    week_daily_availability_check,
+    week_recovery_day_load_check,
 )
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
@@ -81,6 +93,7 @@ from rps.orchestrator.coach_operations import (
 )
 from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_events
+from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -270,9 +283,12 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     ]
     assert task_defs["classify_turn"]["agent"] == "conversation_manager"
     assert task_defs["create_week_preview"]["agent"] == "week_revision_specialist"
+    assert task_defs["season_scenario_selection"]["agent"] == "season_scenario"
+    assert task_defs["season_scenario_selection"]["kind"] == "persisted_artifact"
     assert task_defs["week_plan"]["agent"] == "week_artifact_writer"
     assert task_defs["season_plan"]["agent"] == "season_artifact_writer"
     assert task_defs["phase_guardrails"]["agent"] == "phase_artifact_writer"
+    assert _TASK_BLUEPRINT_BY_AGENT_TASK[AgentTask.CREATE_SEASON_SCENARIO_SELECTION] == "season_scenario_selection"
 
 
 def test_coerce_artifact_envelope_extracts_wrapped_raw_payload() -> None:
@@ -324,6 +340,15 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     assert preview_policy.output_mode == "pydantic"
     assert "coach_preview_summary_complete" in preview_policy.guardrails
     assert artifact_policy.output_mode == "json"
+    assert "week_corridor_and_capacity_check" in artifact_policy.guardrails
+    assert "week_recovery_day_load_check" in artifact_policy.guardrails
+    assert "week_daily_availability_check" in artifact_policy.guardrails
+    assert "week_exportability_check" in artifact_policy.guardrails
+    assert "season_scenario_selection_shape" in resolve_task_policy(
+        tasks["season_scenario_selection"], bundle.task_policies
+    ).guardrails
+    assert "phase_s5_band_match" in resolve_task_policy(tasks["phase_guardrails"], bundle.task_policies).guardrails
+    assert "phase_weeks_match_range" in resolve_task_policy(tasks["phase_structure"], bundle.task_policies).guardrails
     kwargs = build_task_guardrail_kwargs(tasks["week_plan"], bundle.task_policies)
     assert kwargs["guardrail_max_retries"] == 2
     assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
@@ -452,6 +477,26 @@ def test_skill_prompt_block_renders_configured_skills() -> None:
     assert "skills/shared/runtime-boundaries/SKILL.md" in skill_block
 
 
+def test_coach_evidence_source_guidance_is_in_active_skills() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    coach_profile = resolve_agent_skill_profile(bundle, agent_name="coach", crew_name="coach_conversation")
+    recommendation_profile = resolve_agent_skill_profile(
+        bundle,
+        agent_name="week_recommendation_specialist",
+        crew_name="coach_conversation",
+    )
+
+    coach_block = render_skill_prompt_block(root=Path("."), profile=coach_profile)
+    recommendation_block = render_skill_prompt_block(root=Path("."), profile=recommendation_profile)
+    bibliography = Path("skills/shared/durability-methodology/references/durability_bibliography.md")
+
+    assert bibliography.exists()
+    assert "doi.org" in coach_block
+    assert "Maunder/Seiler/Kilding/Plews" in coach_block
+    assert "available web-search result" in recommendation_block
+    assert "do not invent study conclusions" in recommendation_block
+
+
 def test_skill_config_validation_rejects_non_operational_crew_skill(tmp_path: Path) -> None:
     root = tmp_path
     crewai_dir = root / "config" / "crewai"
@@ -530,6 +575,160 @@ def test_artifact_envelope_guardrail_rejects_missing_meta_and_accepts_basic_shap
     failed, message = artifact_envelope_basic(SimpleNamespace(raw=json.dumps({"data": {}})))
     assert failed is False
     assert "top-level 'meta' and 'data'" in message
+
+
+def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:
+    ok, payload = season_scenario_selection_shape(
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "schema_id": "SeasonScenarioSelectionInterface"},
+            "data": {"selected_scenario_id": "B", "season_scenarios_ref": "season_scenarios/latest.json"},
+        }
+    )
+    failed, message = season_scenario_selection_shape(
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "schema_id": "SeasonScenarioSelectionInterface"},
+            "data": {
+                "selected_scenario_id": "B",
+                "season_scenarios_ref": "season_scenarios/latest.json",
+                "weekly_kj_bands": [],
+            },
+        }
+    )
+
+    assert ok is True
+    assert payload["data"]["selected_scenario_id"] == "B"
+    assert failed is False
+    assert "must not contain" in message
+
+
+def test_phase_s5_band_guardrail_rejects_explicit_s5_mismatch() -> None:
+    failed, message = phase_s5_band_match(
+        {
+            "meta": {"artifact_type": "PHASE_GUARDRAILS", "schema_id": "PhaseGuardrailsInterface"},
+            "data": {
+                "load_guardrails": {
+                    "weekly_kj_bands": [
+                        {"week": "2026-20", "band": {"min": 1000, "max": 1500, "notes": "S5 band: 1100-1500"}}
+                    ]
+                }
+            },
+        }
+    )
+
+    assert failed is False
+    assert "does not match deterministic S5 band" in message
+
+
+def test_phase_weeks_match_range_rejects_missing_phase_week() -> None:
+    failed, message = phase_weeks_match_range(
+        {
+            "meta": {
+                "artifact_type": "PHASE_STRUCTURE",
+                "schema_id": "PhaseStructureInterface",
+                "iso_week_range": "2026-20--2026-22",
+            },
+            "data": {
+                "load_ranges": {
+                    "weekly_kj_bands": [
+                        {"week": "2026-20", "band": {"min": 1000, "max": 1200}},
+                        {"week": "2026-22", "band": {"min": 1000, "max": 1200}},
+                    ]
+                }
+            },
+        }
+    )
+
+    assert failed is False
+    assert "missing=['2026-21']" in message
+
+
+def test_week_corridor_guardrail_rejects_load_outside_band() -> None:
+    failed, message = week_corridor_and_capacity_check(
+        {
+            "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface"},
+            "data": {
+                "week_summary": {
+                    "planned_weekly_load_kj": 2500,
+                    "weekly_load_corridor_kj": {"min": 1000, "max": 2000},
+                }
+            },
+        }
+    )
+
+    assert failed is False
+    assert "exceeds weekly load corridor" in message
+
+
+def test_week_recovery_day_guardrail_rejects_load_on_rest_day() -> None:
+    failed, message = week_recovery_day_load_check(
+        {
+            "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface"},
+            "data": {
+                "agenda": [
+                    {
+                        "day": "Mon",
+                        "date": "2026-05-11",
+                        "day_role": "REST",
+                        "planned_duration": "01:00",
+                        "planned_kj": 400,
+                        "workout_id": "W1",
+                    }
+                ]
+            },
+        }
+    )
+
+    assert failed is False
+    assert "REST day Mon" in message
+
+
+def test_week_daily_availability_guardrail_rejects_duration_above_day_max() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "week_summary": {"planned_weekly_load_kj": 1200},
+            "agenda": [
+                {
+                    "day": "Tue",
+                    "date": "2026-05-12",
+                    "day_role": "ENDURANCE",
+                    "planned_duration": "02:00",
+                    "planned_kj": 600,
+                    "workout_id": "W1",
+                }
+            ],
+        },
+    }
+    availability = {
+        "data": {
+            "availability_table": [
+                {
+                    "weekday": "Tue",
+                    "hours_min": 1.0,
+                    "hours_typical": 1.0,
+                    "hours_max": 1.5,
+                }
+            ]
+        }
+    }
+
+    with guardrail_runtime_context(availability_payload=availability, target_week=IsoWeek(2026, 20)):
+        failed, message = week_daily_availability_check(week_plan)
+
+    assert failed is False
+    assert "exceeds availability hours_max" in message
+
+
+def test_des_guardrail_rejects_non_diagnostic_recommendation() -> None:
+    failed, message = des_diagnostic_only(
+        {
+            "meta": {"artifact_type": "DES_ANALYSIS_REPORT", "schema_id": "DESAnalysisReportInterface"},
+            "data": {"recommendation": {"type": "intervention", "scope": "Week-Planner"}},
+        }
+    )
+
+    assert failed is False
+    assert "must remain advisory" in message
 
 
 def test_output_model_registry_resolves_known_output_kinds() -> None:

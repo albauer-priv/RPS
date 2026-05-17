@@ -8,10 +8,11 @@ metadata:
 Read the report week as diagnostic input only.
 
 Method:
-1. Summarize actual load, execution context, and recent trend context for the completed week.
-2. Read wellness as informational readiness context only. Wellness may flag risk or uncertainty, but it must never prescribe training or override governance.
-3. Read evidence quality and confidence explicitly. Low or unknown confidence limits interpretation.
-4. Separate factual observations from later diagnostic interpretation.
+1. Use `Deterministic Report Evidence Context` for the exact report ISO week, activity version keys, missing-data flags, and diagnostic-only boundary.
+2. Summarize actual load, execution context, and recent trend context for the completed week.
+3. Read wellness as informational readiness context only. Wellness may flag risk or uncertainty, but it must never prescribe training or override governance.
+4. Read evidence quality and confidence explicitly. Low or unknown confidence limits interpretation.
+5. Separate factual observations from later diagnostic interpretation.
 
 What to summarize:
 - completed-week actual load and key deviations

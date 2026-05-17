@@ -57,6 +57,17 @@ tasks:
       - typed_output_present
       - review_decision_integrity
     guardrail_max_retries: 2
+  season_scenario_selection:
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+      - season_scenario_selection_shape
+  season_plan:
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+      - season_phase_coverage_and_cadence
+      - season_cycle_ordering
   phase_constraint_audit:
     guardrails:
       - typed_output_present
@@ -77,6 +88,16 @@ tasks:
       - typed_output_present
       - review_decision_integrity
     guardrail_max_retries: 2
+  phase_guardrails:
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+      - phase_s5_band_match
+  phase_structure:
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+      - phase_weeks_match_range
   week_plan_finalize:
     output_mode: pydantic
     guardrails:
@@ -89,9 +110,22 @@ tasks:
       - typed_output_present
       - review_decision_integrity
     guardrail_max_retries: 2
+  week_plan:
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+      - week_corridor_and_capacity_check
+      - week_recovery_day_load_check
+      - week_daily_availability_check
+      - week_exportability_check
   report_review:
     output_mode: pydantic
     guardrails:
       - typed_output_present
       - review_decision_integrity
     guardrail_max_retries: 2
+  des_analysis_report:
+    guardrails:
+      - artifact_envelope_basic
+      - artifact_meta_data_present
+      - des_diagnostic_only

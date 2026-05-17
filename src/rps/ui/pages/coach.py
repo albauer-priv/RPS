@@ -37,6 +37,10 @@ from rps.orchestrator.context_snapshots import (
     ensure_current_week_status_snapshot,
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts, load_week_plan_for_edit
+from rps.planning.deterministic_context import (
+    build_coach_operation_context,
+    render_coach_operation_context_block,
+)
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers
 from rps.ui.run_store import append_run, update_run
 from rps.ui.shared import (
@@ -866,6 +870,15 @@ conversation_context_parts.append(
     )
 )
 pending_snapshot = _coach_pending()
+conversation_context_parts.append(
+    render_coach_operation_context_block(
+        build_coach_operation_context(
+            athlete_id=athlete_id,
+            target_week=IsoWeek(year=year, week=week),
+            pending_operation=pending_snapshot if isinstance(pending_snapshot, dict) else None,
+        )
+    )
+)
 if pending_snapshot:
     conversation_context_parts.append(
         "Current pending coach operation snapshot:\n"

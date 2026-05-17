@@ -7,14 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-05-17
+
 ### Added
+- Added Coach evidence-source guidance for durability explanations, including a copied durability bibliography under shared durability skill references plus preferred authors/domains for source-backed and web-verified rationale.
+- Added deterministic load-band helpers for availability capacity, IF reference resolution, progression overlays, and S5 phase-band derivation under `src/rps/planning/load_bands.py`.
+- Added deterministic workout-load estimation under `src/rps/planning/workout_load.py`, including workout-text segment parsing, loop handling, IF-direct fallback, week-plan load auditing, and injectable per-domain hourly calibration.
+- Added a context-aware Week daily availability validator and CrewAI guardrail so `week_plan` outputs cannot place workouts on fixed-rest days or exceed explicit `availability_table.hours_max`.
+- Added deterministic load-capacity context injection for Season, Phase, and Week planning prompts, plus a migration audit document for the CrewAI hardening pass.
+- Added a deterministic planning context registry under `src/rps/planning/deterministic_context.py`, including Season cadence options, Season phase-slot skeletons, Phase execution context, Week calendar/availability context, DES report evidence context, and Coach operation boundaries.
+- Added selected-scenario structure context injection for Season planning, carrying cadence-derived phase length, expected full phases, shortened phases, and planning-horizon consistency.
+- Added deterministic last-event horizon context injection for Season Scenario generation, carrying last event date/week, weeks until event, inclusive planning horizon, and season ISO-week range.
 - Added `config/crewai/runtime_profiles.yaml` plus runtime wiring for explicit CrewAI planning, agent reasoning, and per-role model routing defaults across planning, review, writer, and conversational crews.
 - Added a strict single-method skill attachment model for CrewAI agents, dedicated per-role skill packages for managers/reviewers/week syntax handling, and richer skill reference content derived from the planning specs and policies.
+- Expanded `doc/architecture/agents.md` into a third-party readable system map with crew-stage, agent-task-goal-skill, and shared knowledge tables across Season, Phase, Week, Report, and Coach paths.
 
 ### Changed
+- Scenario Selection now uses a dedicated CrewAI task blueprint and shape guardrail instead of reusing the scenario-generation task route.
+- Season, Phase, and Week skills now treat load capacity/S5 values as code-owned inputs and preserve the schema-valid `Base | Build | Peak | Transition` cycle set.
+- Progressive-overload migration was tightened: Season, Phase, and Week skills now include the concrete baseline, ramp, cadence-specific build/deload/re-entry, mini-reset, and baseline-update rules from `ProgressiveOverloadPolicy`.
+- Durability-first principles migration was tightened: active shared/season/phase/week skills now carry the binding boundary, kJ-first steering hierarchy, event-state labels, specificity/taper cycle translation, Kinzlbauer-like season archetype, intensity-distribution decision rules, preload semantics, masters/recovery handling, and non-compensation guardrails.
+- LoadEstimationSpec migration was tightened: active load skills and references now carry exact terminology for `planned_kj` versus `planned_weekly_load_kj`, IF-direct fallback limits, output rounding, required trace identifiers, KPI/body-mass gating, S5 fallback/STOP semantics, and Week corridor mirror rules.
+- Season Scenario, Season Plan, Phase, Week, Report, and Coach prompts now receive more precomputed runtime facts so agents apply deterministic context instead of recomputing dates, ranges, phase counts, week matrices, or operation boundaries.
 - Validated the prose-to-skill migration file-by-file, added `doc/architecture/skills_source_migration_audit.md`, and marked the migrated planning prose sources under `specs/knowledge/_shared/sources/` as `Superseded` so they no longer compete as canonical runtime planning sources.
 - CrewAI backend and conversational Coach/Workout Editor builders now apply repo-owned planning/reasoning/model policy directly to `Crew(...)` and `Agent(...)`, while still allowing environment overrides for crew planning and per-agent provider settings.
 - CrewAI skill resolution now enforces one method skill per agent plus operational crew-level skills only, while the runtime skill prompt block remains `SKILL.md`-only and the operative planning logic has been moved out of thin references into the skill bodies themselves.
+
+### Fixed
+- Fixed Scenario Selection task routing ambiguity and added guardrails for Phase S5 band matching, exact Phase week coverage, Week corridor/recovery/export checks, Season cadence/cycle checks, and diagnostic-only DES reports.
+- Fixed deterministic load-capacity context so negative availability and missing allowed domains remain visible STOP/warning states instead of being silently clamped or defaulted, selected KPI moving-time-rate guidance is forwarded into Phase/Week S5 mapping when present, complete `availability_table` rows can drive week-specific S5 hours, and KPI profile bands are available for deterministic S5 escalation.
 
 ## [0.12.0] - 2026-05-14
 

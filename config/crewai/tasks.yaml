@@ -102,6 +102,12 @@ tasks:
     output: artifact_envelope
     description: Create the season-scenarios artifact envelope for the selected planning horizon.
     expected_output: A full schema-compliant artifact envelope with meta and data.
+  season_scenario_selection:
+    agent: season_scenario
+    kind: persisted_artifact
+    output: artifact_envelope
+    description: Create the season-scenario-selection artifact envelope from the selected scenario and KPI guidance choice.
+    expected_output: A full schema-compliant SEASON_SCENARIO_SELECTION artifact envelope with meta and data.
   season_context_read:
     agent: season_context_specialist
     kind: internal_reasoning

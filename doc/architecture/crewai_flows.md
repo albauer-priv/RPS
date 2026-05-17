@@ -33,6 +33,7 @@ Boundary rules:
 - validated workspace artifacts remain authoritative truth
 - prompts contain runtime-local framing only
 - skills own planning methodology
+- deterministic helpers own availability-capacity and S5 load-band calculations
 - `knowledge_sources` provide factual retrieval corpora only
 - review stages decide `approved | replan_required | rejected`
 - writer stages serialize only approved outputs
@@ -67,6 +68,7 @@ Notes:
 - bounded replan loops are enforced in backend/runtime policy
 - writer stages never invent new planning decisions
 - preview-only week/chat operations stop before final persistence
+- Season, Phase, Week, Report, and Coach receive deterministic planning context before reasoning. `src/rps/planning/deterministic_context.py` is the shared registry/renderer layer. Load context is produced by `src/rps/planning/load_bands.py` and includes availability capacity, `IF_ref_load`, logistics constraints, and S5 bands where a season corridor is available. Season scenario generation receives deterministic last-event horizon and cadence-option math from `src/rps/planning/season_structure.py`. Season planning receives selected-scenario structure and a phase-slot skeleton with fixed ids, ISO-week ranges, lengths, and shortened-slot flags.
 
 ## Season Flow
 
@@ -101,6 +103,8 @@ flowchart TD
 Purpose:
 - produce one internal season planning bundle
 - keep planning methodology inside season skills, not in prompts
+- set realistic season corridors and cadence using injected availability-capacity constraints
+- use selected-scenario phase math as the reference for phase count and shortened-phase handling
 
 ### Season Review Crew
 
@@ -113,6 +117,7 @@ Purpose:
 - review macrocycle coherence, event priority logic, season corridor realism,
   and binding constraints
 - decide approve, reject, or bounded replan
+- reject schema-invalid cycles, cadence/deload contradictions, and unrealistic corridors above deterministic capacity unless the plan explicitly requests rework
 
 ### Season Writer Crew
 
@@ -149,6 +154,8 @@ flowchart TD
 Purpose:
 - build one internal `PhaseBundle`
 - translate season authority into exact-range phase outputs
+- copy injected deterministic S5 bands into phase load guardrails without widening or recalculation
+- use `Deterministic Phase Execution Context` for exact required ISO weeks, phase length, target-week position, cycle, deload intent, phase events, fixed rest days, and S5 trace
 
 ### Phase Review Crew
 
@@ -161,6 +168,8 @@ Purpose:
 Purpose:
 - check constraint consistency, corridor realism, structure coherence, and
   preview derivation
+- block phase guardrails whose weekly kJ bands contradict deterministic S5 bands
+- block phase structure outputs whose emitted weeks do not match the injected phase ISO-week range
 
 ### Phase Writer Crew
 
@@ -195,6 +204,8 @@ flowchart TD
 Purpose:
 - turn phase guardrails and week constraints into one internal `WeekPlanBundle`
 - support both normal planning and preview-only conversational reuse
+- reconcile week load against the active Phase/S5 band with duration-first, recovery-protecting adjustments
+- use `Deterministic Week Calendar and Availability Context` for exact Mon-Sun dates, day availability, fixed rest days, logistics/events per day, active S5 band, phase role, and event proximity
 
 ### Week Review Crew
 
@@ -205,6 +216,7 @@ Purpose:
 
 Purpose:
 - reject role/load mismatches, corridor violations, and syntax/export issues
+- block stored week plans whose `planned_weekly_load_kj` is outside the active corridor or whose workout payload is not exportable
 
 ### Week Writer Crew
 
@@ -241,6 +253,7 @@ Writer:
 Purpose:
 - keep DES analysis diagnostic-only
 - separate report review from final serialization
+- use `Deterministic Report Evidence Context` for completed-week activity versions, missing-data flags, and explicit no-direct-plan-change boundary
 
 ## Conversational Runtime
 
@@ -267,6 +280,7 @@ Specialist pool:
 
 Rules:
 - preview/apply semantics stay bounded to tools
+- `Deterministic Coach Operation Context` declares selected athlete/week, allowed operations, pending status, and confirmation requirements
 - conversational flows can reuse week methodology but do not bypass writer or
   store guardrails for normal plan generation
 

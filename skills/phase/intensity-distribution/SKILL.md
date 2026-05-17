@@ -3,7 +3,7 @@ name: intensity-distribution
 description: Shape phase-appropriate intensity and density inside established guardrails using KPI signal effects only as informational guidance.
 metadata:
   author: rps
-  version: "3.0"
+  version: "4.0"
 ---
 Shape phase intensity at the phase level, not at workout-detail level.
 
@@ -25,6 +25,11 @@ Phase-level usage rules:
 - quality support must not become intensity inflation to rescue low load
 - durability-oriented phases bias toward endurance/tempo stability over high-intensity density
 - event-specific weeks may allow tighter emphasis, but not outside agenda semantics and recovery protection
+- Base/general build is usually LIT-dominant and pyramidal-leaning: high low intensity, dosed tempo/sweet spot, little high intensity
+- Build/performance sharpening is usually more polarized: LIT remains high, moderate density is capped, and high-intensity quality appears only when recovered
+- moderate work is a budget, not a default; reduce it when it degrades high-intensity quality or low-intensity consistency
+- high-intensity work is useful only when fresh enough to hold clean repeat quality and must not sit on top of an already maximized kJ week
+- near the A event, specificity rises through event-like duration, pace stability, fueling stability, back-to-back or hard-late relevance, not random extra moderate work
 
 Hard rules:
 - do not turn KPI signal mapping into a decision gate

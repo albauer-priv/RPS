@@ -17,6 +17,15 @@ from rps.orchestrator.context_snapshots import (
     save_athlete_state_snapshot,
 )
 from rps.orchestrator.resolved_context import build_resolved_activity_context_block
+from rps.planning.deterministic_context import (
+    build_cadence_options_block,
+    build_load_capacity_block,
+    build_season_phase_slot_block,
+    build_season_scenario_horizon_block,
+    build_selected_scenario_structure_block,
+    render_context_blocks,
+)
+from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -162,6 +171,8 @@ def create_season_scenarios(
     injected_block = ""
     override_line = f"Override: {override_text.strip()}. " if override_text else ""
     athlete_state_snapshot_block = ""
+    planning_horizon_block = ""
+    cadence_options_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         target_week = IsoWeek(year=year, week=week)
@@ -190,8 +201,17 @@ def create_season_scenarios(
         athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
             athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
+        horizon_context = build_season_scenario_horizon_block(
+            planning_events_payload=planning_events_payload or {},
+            target_week=target_week,
+        )
+        cadence_context = build_cadence_options_block(horizon_context=horizon_context.payload)
+        planning_horizon_block = render_context_blocks([horizon_context])
+        cadence_options_block = render_context_blocks([cadence_context])
     except Exception:
         athlete_state_snapshot_block = ""
+        planning_horizon_block = ""
+        cadence_options_block = ""
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -199,6 +219,8 @@ def create_season_scenarios(
         "Use workspace_get_latest only for shared latest inputs Availability, KPI Profile, and Wellness. "
         "Focus on qualitative scenario differences; runtime will canonicalize horizon and phase math from planning events. "
         f"{athlete_state_snapshot_block}"
+        f"{planning_horizon_block}"
+        f"{cadence_options_block}"
         f"{override_line}"
         f"{injected_block}"
         "Return only the final schema-compliant SEASON_SCENARIOS artifact envelope."
@@ -318,6 +340,9 @@ def create_season_plan(
         user_data_block = _format_user_data_block({})
     athlete_state_snapshot_block = ""
     resolved_activity_block = ""
+    load_capacity_block = ""
+    selected_scenario_structure_block = ""
+    phase_slot_block = ""
     historical_context_line = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
@@ -327,6 +352,7 @@ def create_season_plan(
         availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
         planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
         logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
+        season_scenarios_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIOS)
         selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
         zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
         wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
@@ -371,9 +397,38 @@ def create_season_plan(
                 f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
                 "activity artefacts. "
             )
+        load_capacity_block = render_context_blocks(
+            [
+                build_load_capacity_block(
+                    target_week=target_week,
+                    athlete_profile_payload=athlete_profile_payload or {},
+                    availability_payload=availability_payload or {},
+                    logistics_payload=logistics_payload or {},
+                    zone_model_payload=zone_model_payload or {},
+                    season_plan_payload={},
+                    wellness_payload=wellness_payload or {},
+                    kpi_profile_payload=kpi_profile_payload or {},
+                    kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),
+                )
+            ]
+        )
+        selected_structure_context = build_selected_scenario_structure_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=selected,
+        )
+        phase_slot_context = build_season_phase_slot_block(
+            selected_structure_context=selected_structure_context.payload,
+            target_week=target_week,
+        )
+        selected_scenario_structure_block = render_context_blocks([selected_structure_context])
+        phase_slot_block = render_context_blocks([phase_slot_context])
     except Exception:
         athlete_state_snapshot_block = ""
         resolved_activity_block = ""
+        load_capacity_block = ""
+        selected_scenario_structure_block = ""
+        phase_slot_block = ""
         historical_context_line = ""
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
@@ -383,6 +438,9 @@ def create_season_plan(
         f"{athlete_state_snapshot_block}"
         f"{user_data_block}"
         f"{resolved_activity_block}"
+        f"{load_capacity_block}"
+        f"{selected_scenario_structure_block}"
+        f"{phase_slot_block}"
         f"{override_line}"
         f"{injected_block}"
         "Return only the final schema-compliant SEASON_PLAN artifact envelope."

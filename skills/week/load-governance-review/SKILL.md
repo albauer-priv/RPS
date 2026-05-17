@@ -3,15 +3,28 @@ name: load-governance-review
 description: Review week corridor compliance and reconciliation behavior for a candidate week.
 metadata:
   author: rps
-  version: "1.0"
+  version: "3.0"
 ---
 Review the candidate week against the active corridor and week-load method.
 
 Method:
-1. Check whether weekly targets remain inside the active governance band.
-2. Verify that residual handling and duration-first reconciliation stay conservative.
-3. Reject any hidden intensity inflation used only to hit load numbers.
-4. Prefer under-target warnings over unsafe overload approval.
+1. Check whether `week_summary.planned_weekly_load_kj` remains inside the active Phase/S5 governance band.
+2. Confirm agenda dates, fixed-rest-day handling, and day availability follow `Deterministic Week Calendar and Availability Context`.
+3. Verify that residual handling and duration-first reconciliation stay conservative.
+4. Reject any hidden intensity inflation used only to hit load numbers.
+5. Prefer under-target warnings over unsafe overload approval.
+6. Confirm recovery days and fixed-rest-day constraints are protected.
+7. Confirm `week_summary.weekly_load_corridor_kj` mirrors the active Phase/S5 band and is not a separate agent-created corridor.
+8. Confirm workout-level `planned_kj` is treated as mechanical work, while weekly compliance uses `planned_weekly_load_kj`.
+9. Use deterministic workout-load estimates or their trace when available; do not approve hand-waved load totals that contradict parsed workout text.
+
+Block approval when:
+- planned weekly load is above or below the active Phase/S5 band without a replan decision
+- `weekly_load_corridor_kj` differs from the active Phase/S5 band without a code-owned fallback trace
+- capacity context is contradicted without a deterministic fallback trace
+- load is compressed onto recovery days
+- exportable workout structure is broken while trying to satisfy load
+- parsed workout-text load estimates materially contradict declared agenda/weekly load without a traceable reason
 
 Use these references:
 - `../load-estimation-week/references/load_estimation_week.md`

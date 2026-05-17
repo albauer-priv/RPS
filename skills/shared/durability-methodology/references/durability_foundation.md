@@ -10,6 +10,10 @@ Key rules:
 - Missed sessions are not made up.
 - Fatigue management is a performance variable, not a passive consequence.
 - Durability conclusions only matter when preload and energetic context are defined.
+- Durability is an independent performance dimension alongside VO2max, threshold, and economy.
+- Look for fatigue onset timing, magnitude of performance/efficiency decay, and stability of pacing, HR, and RPE over many hours.
+- Mental/event stressors such as monotony, sleep deprivation, night riding, cold, and rain are simulation factors, but they must be dosed.
+- Masters or reduced-recovery athletes need larger recovery windows, lower intensity density, and stronger consistency protection.
 
 Implications:
 - Recommendations under fatigue should bias toward stabilization.

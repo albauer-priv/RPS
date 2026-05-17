@@ -657,7 +657,19 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
                             "elevation_m": 1800,
                             "expected_duration": "08:00",
                             "time_limit": "13:30",
-                        }
+                        },
+                        {
+                            "type": "A",
+                            "priority_rank": 1,
+                            "event_name": "Main 400",
+                            "date": "2026-05-10",
+                            "event_type": "Brevet",
+                            "goal": "finish strong",
+                            "distance_km": 400,
+                            "elevation_m": 3600,
+                            "expected_duration": "18:00",
+                            "time_limit": "27:00",
+                        },
                     ]
                 }
             }
@@ -748,7 +760,19 @@ def test_create_season_plan_includes_selected_kpi_guidance(
                             "elevation_m": 1800,
                             "expected_duration": "08:00",
                             "time_limit": "13:30",
-                        }
+                        },
+                        {
+                            "type": "A",
+                            "priority_rank": 1,
+                            "event_name": "Main 400",
+                            "date": "2026-05-10",
+                            "event_type": "Brevet",
+                            "goal": "finish strong",
+                            "distance_km": 400,
+                            "elevation_m": 3600,
+                            "expected_duration": "18:00",
+                            "time_limit": "27:00",
+                        },
                     ]
                 }
             }
@@ -827,6 +851,88 @@ def test_create_season_plan_includes_selected_kpi_guidance(
     assert "Spring 200" in captured_inputs[0]
     assert "workspace_get_version for ACTIVITIES_ACTUAL and ACTIVITIES_TREND with version_key 2026-12" not in captured_inputs[0]
     assert store.latest_exists("test_athlete", ArtifactType.ATHLETE_STATE_SNAPSHOT)
+
+
+def test_create_season_plan_injects_selected_scenario_phase_math(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured_inputs: list[str] = []
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*_args, **kwargs):
+        captured_inputs.append(kwargs["user_input"])
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.save_document(
+        "test_athlete",
+        ArtifactType.SEASON_SCENARIOS,
+        "2026-12",
+        {
+            "data": {
+                "planning_horizon_weeks": 17,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Compact resilient build",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1",
+                            "phase_length_weeks": 3,
+                            "phase_count_expected": 6,
+                            "max_shortened_phases": 2,
+                            "shortening_budget_weeks": 1,
+                            "phase_plan_summary": {
+                                "full_phases": 5,
+                                "shortened_phases": [{"len": 2, "count": 1}],
+                            },
+                            "event_alignment_notes": ["A-event backplanned."],
+                            "risk_flags": ["Compressed horizon."],
+                        },
+                    }
+                ],
+            }
+        },
+        producer_agent="test",
+        run_id="test_scenarios",
+        update_latest=True,
+    )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        "2026-12",
+        {"data": {"selected_scenario_id": "B", "season_scenarios_ref": "season_scenarios/latest.json"}},
+        producer_agent="test",
+        run_id="test_selection",
+        update_latest=True,
+    )
+
+    season_flow.create_season_plan(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_plan",
+        selected=None,
+    )
+
+    assert captured_inputs
+    assert "**Deterministic Selected Scenario Structure Context**" in captured_inputs[0]
+    assert "planning_horizon_weeks: 17" in captured_inputs[0]
+    assert "deload_cadence: 2:1" in captured_inputs[0]
+    assert "phase_length_weeks: 3" in captured_inputs[0]
+    assert "phase_count_expected: 6" in captured_inputs[0]
+    assert "full_phases: 5" in captured_inputs[0]
+    assert "- len 2, count 1" in captured_inputs[0]
+    assert "consistent_with_horizon: True" in captured_inputs[0]
+    assert "**Deterministic Season Phase Slot Context**" in captured_inputs[0]
+    assert "P01: 2026-12--2026-13" in captured_inputs[0]
+    assert "P06: 2026-26--2026-28" in captured_inputs[0]
 
 
 def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
@@ -1338,7 +1444,19 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
                             "elevation_m": 1800,
                             "expected_duration": "08:00",
                             "time_limit": "13:30",
-                        }
+                        },
+                        {
+                            "type": "A",
+                            "priority_rank": 1,
+                            "event_name": "Main 400",
+                            "date": "2026-05-10",
+                            "event_type": "Brevet",
+                            "goal": "finish strong",
+                            "distance_km": 400,
+                            "elevation_m": 3600,
+                            "expected_duration": "18:00",
+                            "time_limit": "27:00",
+                        },
                     ]
                 }
             }
@@ -1402,6 +1520,8 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     assert all("fixed_rest_days: Mon, Fri" in user_input for user_input in captured_inputs)
     assert all("**Resolved Planning Event Context**" in user_input for user_input in captured_inputs)
     assert all("Spring 200" in user_input for user_input in captured_inputs)
+    assert all("**Deterministic Phase Execution Context**" in user_input for user_input in captured_inputs)
+    assert all("required_phase_weeks: 2026-11, 2026-12, 2026-13" in user_input for user_input in captured_inputs)
 
 
 def test_plan_week_week_planner_uses_historical_activity_versions(
@@ -1694,6 +1814,7 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
     assert any("WELLNESS.data.body_mass_kg is present and authoritative for KPI gating: 82.4 kg." in user_input for user_input in captured_inputs)
     assert any("Use WELLNESS.data.body_mass_kg for any kJ/kg/h or W/kg gating" in user_input for user_input in captured_inputs)
     assert any("**Resolved KPI Context**" in user_input for user_input in captured_inputs)
+    assert any("**Deterministic Workout Load Estimation Context**" in user_input for user_input in captured_inputs)
     assert any("selected_kpi_rate_band_selector: fast_competitive" in user_input for user_input in captured_inputs)
     assert any("kpi_profile_moving_time_rate_guidance.available_bands:" in user_input for user_input in captured_inputs)
 
@@ -1750,7 +1871,19 @@ def test_create_season_plan_injects_resolved_logistics_and_zone_context(
                             "elevation_m": 1800,
                             "expected_duration": "08:00",
                             "time_limit": "13:30",
-                        }
+                        },
+                        {
+                            "type": "A",
+                            "priority_rank": 1,
+                            "event_name": "Main 400",
+                            "date": "2026-05-10",
+                            "event_type": "Brevet",
+                            "goal": "finish strong",
+                            "distance_km": 400,
+                            "elevation_m": 3600,
+                            "expected_duration": "18:00",
+                            "time_limit": "27:00",
+                        },
                     ]
                 }
             }
@@ -1963,7 +2096,19 @@ def test_create_season_scenarios_injects_resolved_context(
                             "elevation_m": 1800,
                             "expected_duration": "08:00",
                             "time_limit": "13:30",
-                        }
+                        },
+                        {
+                            "type": "A",
+                            "priority_rank": 1,
+                            "event_name": "Main 400",
+                            "date": "2026-05-10",
+                            "event_type": "Brevet",
+                            "goal": "finish strong",
+                            "distance_km": 400,
+                            "elevation_m": 3600,
+                            "expected_duration": "18:00",
+                            "time_limit": "27:00",
+                        },
                     ]
                 }
             }
@@ -2018,6 +2163,16 @@ def test_create_season_scenarios_injects_resolved_context(
     assert "**Resolved Availability Context**" in captured_inputs[0]
     assert "**Resolved Logistics Context**" in captured_inputs[0]
     assert "**Resolved Planning Event Context**" in captured_inputs[0]
+    assert "**Deterministic Season Scenario Horizon Context**" in captured_inputs[0]
+    assert "target_week_start_date: 2026-03-16" in captured_inputs[0]
+    assert "last_event_date: 2026-05-10" in captured_inputs[0]
+    assert "last_event_iso_week: 2026-19" in captured_inputs[0]
+    assert "weeks_until_last_event_from_target_week_start: 7" in captured_inputs[0]
+    assert "inclusive_planning_horizon_weeks: 8" in captured_inputs[0]
+    assert "season_iso_week_range: 2026-12--2026-19" in captured_inputs[0]
+    assert "**Deterministic Cadence Options Context**" in captured_inputs[0]
+    assert "cadence 2:1" in captured_inputs[0]
+    assert "phase_count_expected 3" in captured_inputs[0]
 
 
 def test_plan_week_injects_resolved_activity_context(
@@ -2505,6 +2660,8 @@ def test_plan_week_injects_resolved_logistics_and_zone_context(
     assert any("fixed_rest_days: Mon, Fri" in user_input for user_input in captured_inputs)
     assert any("**Resolved Planning Event Context**" in user_input for user_input in captured_inputs)
     assert any("Spring 200" in user_input for user_input in captured_inputs)
+    assert any("**Deterministic Week Calendar and Availability Context**" in user_input for user_input in captured_inputs)
+    assert any("day_matrix:" in user_input for user_input in captured_inputs)
 
 
 def test_plan_week_skips_export_when_week_plan_creation_fails(
@@ -2805,6 +2962,8 @@ def test_create_performance_report_does_not_require_phase_artefacts(monkeypatch,
     user_input = captured["kwargs"]["user_input"]
     assert "ACTIVITIES_ACTUAL version_key 2026-15" in user_input
     assert "ACTIVITIES_TREND version_key 2026-15" in user_input
+    assert "**Deterministic Report Evidence Context**" in user_input
+    assert "diagnostic_only: True" in user_input
 
 
 def test_create_performance_report_skips_when_context_inputs_missing(tmp_path):

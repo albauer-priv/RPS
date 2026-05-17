@@ -59,7 +59,7 @@ JsonMap = dict[str, Any]
 
 _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_SEASON_SCENARIOS: "season_scenarios",
-    AgentTask.CREATE_SEASON_SCENARIO_SELECTION: "season_scenarios",
+    AgentTask.CREATE_SEASON_SCENARIO_SELECTION: "season_scenario_selection",
     AgentTask.CREATE_SEASON_PLAN: "season_plan",
     AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD: "season_phase_feed_forward",
     AgentTask.CREATE_PHASE_GUARDRAILS: "phase_guardrails",
