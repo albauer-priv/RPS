@@ -115,6 +115,8 @@ def build_task_callback(
     athlete_id: str | None,
     run_id: str | None,
     crew_name: str,
+    task_name: str | None = None,
+    event_type: str = "CREW_TASK_COMPLETED",
 ) -> Any:
     """Build a safe CrewAI task callback that records compact runtime metadata."""
 
@@ -123,9 +125,9 @@ def build_task_callback(
             root=root,
             athlete_id=athlete_id,
             run_id=run_id,
-            event_type="CREW_TASK_COMPLETED",
+            event_type=event_type,
             crew=crew_name,
-            task=_callback_task_name(task_output),
+            task=task_name or _callback_task_name(task_output),
             agent=_callback_agent_name(task_output),
             output_format=_output_format_label(task_output),
         )

@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-14
+Last-Updated: 2026-05-18
 Owner: Product
 ---
 # Feature Backlog
@@ -99,3 +99,8 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_run_progress_ui — progress indicators for long-running planning jobs.
 - [ ] FEAT_planning_done_notification — optional banner/email/push when planning completes.
 - [ ] FEAT_auto_retry_transient — auto-retry transient failures with clear logs.
+- [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
+- [ ] FEAT_crewai_skill_package_validation — validate CrewAI skill packages for local-only references, complete frontmatter, and "Muss-Regeln in SKILL.md, references only for depth" discipline.
+- [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
+- [ ] FEAT_crewai_planning_profile_tuning — refine where CrewAI planning is enabled, keeping deterministic Load/S5/Cadence outside planning LLM authority.
+- [ ] FEAT_crewai_mcp_apps_policy — define conservative MCP/App usage for evidence search and external integrations with RPS preview/confirm/apply boundaries.

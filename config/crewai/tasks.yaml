@@ -15,6 +15,7 @@ tasks:
     agent: week_context_specialist
     kind: internal_reasoning
     output: week_context_assessment
+    tools: read_only_workspace
     description: Inspect the current selected week and summarize plan, actuals, constraints, and likely change direction.
     expected_output: A structured selected-week context assessment.
   form_coaching_recommendation:
@@ -45,6 +46,7 @@ tasks:
     agent: coach
     kind: operation
     output: coach_preview
+    tools: read_only_workspace
     description: Read the selected-week plan context and summarize the current actionable state.
     expected_output: A structured preview-style context summary for the active coach.
   coach_preview_artifact_edit:
@@ -100,18 +102,21 @@ tasks:
     agent: season_scenario
     kind: persisted_artifact
     output: artifact_envelope
+    tools: read_only_workspace
     description: Create the season-scenarios artifact envelope for the selected planning horizon.
     expected_output: A full schema-compliant artifact envelope with meta and data.
   season_scenario_selection:
     agent: season_scenario
     kind: persisted_artifact
     output: artifact_envelope
+    tools: read_only_workspace
     description: Create the season-scenario-selection artifact envelope from the selected scenario and KPI guidance choice.
     expected_output: A full schema-compliant SEASON_SCENARIO_SELECTION artifact envelope with meta and data.
   season_context_read:
     agent: season_context_specialist
     kind: internal_reasoning
     output: planning_draft
+    tools: read_only_workspace
     description: Summarize season planning context, selected scenario state, and upstream inputs.
     expected_output: A structured planning draft for season context.
   season_scenario_interpretation:
@@ -230,6 +235,7 @@ tasks:
     agent: phase_context_specialist
     kind: internal_reasoning
     output: planning_draft
+    tools: read_only_workspace
     description: Summarize exact phase-range context and upstream authority.
     expected_output: A structured phase context draft.
   phase_guardrail_band_draft:
@@ -353,6 +359,7 @@ tasks:
     agent: week_context_specialist
     kind: internal_reasoning
     output: week_context_assessment
+    tools: read_only_workspace
     description: Inspect selected-week plan, actuals, and open constraints for planning.
     expected_output: A structured week context assessment.
   week_constraint_review:
@@ -430,6 +437,7 @@ tasks:
     agent: performance_context_specialist
     kind: internal_reasoning
     output: planning_draft
+    tools: read_only_workspace
     description: Summarize selected report-week context and diagnostic inputs.
     expected_output: A structured advisory context draft.
   des_diagnostic_draft:

@@ -10,7 +10,9 @@ from types import SimpleNamespace
 from rps.agents import runtime as agent_runtime
 from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
+    _build_crewai_task,
     _coerce_artifact_envelope,
+    _task_tools_for_blueprint,
     run_agent_multi_output_crewai,
 )
 from rps.agents.runtime import AgentRuntime
@@ -555,6 +557,37 @@ def test_native_agent_kwargs_defaults_and_yaml_override() -> None:
 def test_configured_task_context_names_normalizes_yaml_values() -> None:
     assert configured_task_context_names({"context": "task_a"}) == ("task_a",)
     assert configured_task_context_names({"context": ["task_a", "task_b"]}) == ("task_a", "task_b")
+
+
+def test_task_scoped_tools_and_callback_are_attached() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    tasks = build_task_blueprints(bundle)
+    read_tool = SimpleNamespace(name="workspace_get_latest")
+    knowledge_tool = SimpleNamespace(name="knowledge_search")
+    tool_map = {"workspace_get_latest": read_tool, "knowledge_search": knowledge_tool}
+
+    assert _task_tools_for_blueprint(tasks["week_context_read"], tool_map) == [read_tool, knowledge_tool]
+    assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
+
+    class FakeTask:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    task = _build_crewai_task(
+        task_cls=FakeTask,
+        bundle=bundle,
+        task_blueprint=tasks["week_context_read"],
+        agent=object(),
+        description="test",
+        runtime=SimpleNamespace(workspace_root=Path(".")),
+        crew_name="week_planning",
+        athlete_id="i150546",
+        run_id="run-1",
+        tools=tool_map,
+    )
+
+    assert task.kwargs["tools"] == [read_tool, knowledge_tool]
+    assert callable(task.kwargs["callback"])
 
 
 def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
@@ -1830,6 +1863,17 @@ def test_run_report_flow_executes_runner(monkeypatch) -> None:
 
     assert result["ok"] is True
     assert marker["calls"] == 1
+
+
+def test_run_report_flow_converts_runner_exception_to_failure_state(monkeypatch) -> None:
+    _install_fake_flow_module(monkeypatch)
+
+    def _runner():
+        raise RuntimeError("schema store failed")
+
+    result = run_report_flow(_runner)
+
+    assert result == {"ok": False, "error": "schema store failed"}
 
 
 def test_run_feed_forward_flow_runs_chain(monkeypatch) -> None:

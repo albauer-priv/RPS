@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- CrewAI task execution now uses task-scoped tools from `tasks.yaml`, task-level callbacks, and richer Flow failure state handling for rejected, missing-upstream, or store-failed paths.
 - CrewAI runtime now supports native agent and crew config passthrough, explicit task `context:` dependencies, task callbacks, guardrail-failure telemetry, richer typed Flow state, and read-only writer memory.
 - Schema bundling now regenerates schema-backed CrewAI artifact output models so persisted artifact tasks can use concrete JSON-Schema-derived structured output contracts.
 - Persisted CrewAI artifact tasks now run an explicit `artifact_schema_valid` function guardrail before persistence, giving full JSON-Schema failures CrewAI's documented guardrail retry path.

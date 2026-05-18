@@ -66,6 +66,7 @@ logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[3]
 
 JsonMap = dict[str, Any]
+ToolMap = dict[str, Any]
 
 _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_SEASON_SCENARIOS: "season_scenarios",
@@ -206,6 +207,74 @@ def _build_crewai_crew_kwargs(
     if step_callback is not None:
         kwargs["step_callback"] = step_callback
     return kwargs
+
+
+def _build_task_callback_kwargs(
+    *,
+    runtime: AgentRuntime,
+    crew_name: str,
+    task_name: str,
+    athlete_id: str | None,
+    run_id: str | None,
+) -> JsonMap:
+    """Return CrewAI Task callback kwargs for compact task-level telemetry."""
+
+    root = runtime.workspace_root if athlete_id and run_id else None
+    return {
+        "callback": build_task_callback(
+            root=root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            crew_name=crew_name,
+            task_name=task_name,
+            event_type="CREW_TASK_CALLBACK_COMPLETED",
+        )
+    }
+
+
+def _tool_map_from_runtime_tools(tools: list[Any] | ToolMap) -> ToolMap:
+    """Normalize runtime tools to a lookup by CrewAI tool name."""
+
+    if isinstance(tools, dict):
+        return tools
+    result: ToolMap = {}
+    for tool_obj in tools:
+        for attr in ("name", "tool_name", "__name__"):
+            value = getattr(tool_obj, attr, None)
+            if isinstance(value, str) and value:
+                result[value] = tool_obj
+                break
+    return result
+
+
+def _tool_names_for_task(task_blueprint: Any, tools_by_name: ToolMap) -> tuple[str, ...]:
+    """Resolve the CrewAI task-level tool names from task config."""
+
+    configured = (getattr(task_blueprint, "config", {}) or {}).get("tools")
+    if configured is None:
+        return ()
+    if configured == "read_only_workspace":
+        return tuple(tools_by_name)
+    if configured in (False, "none"):
+        return ()
+    if isinstance(configured, str):
+        return (configured,)
+    if isinstance(configured, list | tuple):
+        return tuple(str(item) for item in configured if str(item).strip())
+    raise ValueError(f"Task '{task_blueprint.name}' tools must be a string or list of tool names.")
+
+
+def _task_tools_for_blueprint(task_blueprint: Any, tools: list[Any] | ToolMap) -> list[Any]:
+    """Return the task-scoped CrewAI tools configured for a task blueprint."""
+
+    tools_by_name = _tool_map_from_runtime_tools(tools)
+    names = _tool_names_for_task(task_blueprint, tools_by_name)
+    missing = [name for name in names if name not in tools_by_name]
+    if missing:
+        raise ValueError(
+            f"Task '{task_blueprint.name}' references unknown tools: {', '.join(missing)}"
+        )
+    return [tools_by_name[name] for name in names]
 
 
 def _build_crewai_planning_llm(
@@ -615,7 +684,7 @@ def _execute_crewai_task(
     bundle: Any,
     agent_blueprint: Any,
     task_blueprint: Any,
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     description: str,
     crew_name: str,
     athlete_id: str | None = None,
@@ -642,7 +711,7 @@ def _execute_crewai_task(
         runtime=runtime,
         bundle=bundle,
         blueprint=agent_blueprint,
-        tools=tools,
+        tools=[],
         athlete_id=athlete_id or "unknown",
         crew_name=crew_name,
         shared_memory=shared_memory,
@@ -654,6 +723,15 @@ def _execute_crewai_task(
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
     }
+    crew_task_kwargs.update(
+        _build_task_callback_kwargs(
+            runtime=runtime,
+            crew_name=crew_name,
+            task_name=task_blueprint.name,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+    )
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
     output_model = _output_model_for_task(task_blueprint, schema_file=artifact_schema_file)
@@ -662,6 +740,9 @@ def _execute_crewai_task(
     elif output_mode == "pydantic":
         crew_task_kwargs["output_pydantic"] = output_model
     crew_task_kwargs.update(guardrail_kwargs)
+    task_tools = _task_tools_for_blueprint(task_blueprint, tools)
+    if task_tools:
+        crew_task_kwargs["tools"] = task_tools
     crew_task = task_cls(**crew_task_kwargs)
     process = getattr(process_cls, "sequential")
     planning_llm = _build_crewai_planning_llm(crewai_llm_cls, bundle=bundle, crew_name=crew_name)
@@ -732,6 +813,11 @@ def _build_crewai_task(
     task_blueprint: Any,
     agent: object,
     description: str,
+    runtime: AgentRuntime,
+    crew_name: str,
+    athlete_id: str | None = None,
+    run_id: str | None = None,
+    tools: list[Any] | ToolMap | None = None,
     context_tasks: list[object] | None = None,
 ) -> object:
     """Instantiate one CrewAI task object with optional explicit context."""
@@ -741,6 +827,15 @@ def _build_crewai_task(
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
     }
+    kwargs.update(
+        _build_task_callback_kwargs(
+            runtime=runtime,
+            crew_name=crew_name,
+            task_name=task_blueprint.name,
+            athlete_id=athlete_id,
+            run_id=run_id,
+        )
+    )
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
     output_model = _output_model_for_task(task_blueprint)
@@ -749,6 +844,9 @@ def _build_crewai_task(
     elif output_mode == "pydantic":
         kwargs["output_pydantic"] = output_model
     kwargs.update(guardrail_kwargs)
+    task_tools = _task_tools_for_blueprint(task_blueprint, tools or {})
+    if task_tools:
+        kwargs["tools"] = task_tools
     if context_tasks:
         kwargs["context"] = context_tasks
     return task_cls(**kwargs)
@@ -769,7 +867,7 @@ def _execute_crewai_hierarchical_crew(
     final_task_name: str,
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     user_input: str,
     final_public_task: AgentTask | None = None,
     athlete_id: str | None = None,
@@ -802,7 +900,7 @@ def _execute_crewai_hierarchical_crew(
             runtime=runtime,
             bundle=bundle,
             blueprint=agent_blueprint,
-            tools=tools,
+            tools=[],
             athlete_id=athlete_id or "unknown",
             crew_name=crew_name,
             shared_memory=shared_memory,
@@ -818,7 +916,7 @@ def _execute_crewai_hierarchical_crew(
             runtime=runtime,
             bundle=bundle,
             blueprint=manager_blueprint,
-            tools=tools,
+            tools=[],
             athlete_id=athlete_id or "unknown",
             crew_name=crew_name,
             shared_memory=shared_memory,
@@ -879,6 +977,11 @@ def _execute_crewai_hierarchical_crew(
             task_blueprint=task_blueprint,
             agent=agents_by_name[agent_name],
             description=description,
+            runtime=runtime,
+            crew_name=crew_name,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            tools=tools,
             context_tasks=context_tasks,
         )
         crew_tasks.append(crew_task)
@@ -1026,7 +1129,7 @@ def _run_season_plan_document(
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     athlete_id: str,
     run_id: str,
     model_override: str | None = None,
@@ -1073,7 +1176,7 @@ def _run_phase_bundle_document(
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     athlete_id: str,
     run_id: str,
     model_override: str | None = None,
@@ -1128,7 +1231,7 @@ def _run_review_decision_document(
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     athlete_id: str,
     run_id: str,
     model_override: str | None = None,
@@ -1183,7 +1286,7 @@ def _run_single_internal_document(
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     athlete_id: str,
     run_id: str,
     model_override: str | None = None,
@@ -1247,7 +1350,7 @@ def _run_writer_document(
     crew_cls: Any,
     task_cls: Any,
     process_cls: Any,
-    tools: list[Any],
+    tools: list[Any] | ToolMap,
     athlete_id: str,
     run_id: str,
     model_override: str | None = None,
@@ -1532,7 +1635,7 @@ def run_phase_bundle_crewai(
 def _build_crewai_tooling(
     athlete_id: str,
     workspace_root: Any,
-) -> tuple[list[Any], dict[str, object]]:
+) -> tuple[ToolMap, dict[str, object]]:
     """Create CrewAI tools backed by the existing workspace read handlers."""
 
     crewai_tools = import_module("crewai.tools")
@@ -1542,7 +1645,7 @@ def _build_crewai_tooling(
     handlers = read_tool_handlers(ctx)
     tool_defs = read_tool_defs()
     loaded_inputs: dict[str, object] = {}
-    tools: list[Any] = []
+    tools: ToolMap = {}
 
     def _capture_loaded_input(tool_name: str, args: JsonMap, result: object) -> None:
         if tool_name != "workspace_get_input":
@@ -1592,7 +1695,7 @@ def _build_crewai_tooling(
             )
             return tool_decorator(tool_name)(_run)
 
-        tools.append(_factory())
+        tools[name] = _factory()
 
     return tools, loaded_inputs
 

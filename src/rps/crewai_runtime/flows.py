@@ -140,6 +140,9 @@ class CoachFlowState(BaseModel):
     pending_summary: JsonMap = Field(default_factory=dict)
     recalled_memory_summary: list[str] = Field(default_factory=list)
     stored_memory_summary: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    result: JsonMap = Field(default_factory=dict)
     response: str = ""
 
 
@@ -180,6 +183,31 @@ def _ensure_state_dict(state: Any, name: str) -> JsonMap:
         value = {}
         setattr(state, name, value)
     return value
+
+
+def _record_flow_result_state(state: Any, result: JsonMap) -> None:
+    """Record common success/failure refs on a typed Flow state."""
+
+    produced = result.get("produced")
+    if isinstance(produced, dict):
+        _ensure_state_dict(state, "produced_artifact_refs").update(produced)
+    details = result.get("details")
+    if isinstance(details, dict):
+        review = details.get("review_decision") or details.get("review")
+        if isinstance(review, dict):
+            _ensure_state_dict(state, "review_decisions").update(review)
+    if result.get("ok") is False and result.get("error"):
+        state.failure_reason = str(result.get("error"))
+        _ensure_state_list(state, "errors").append(state.failure_reason)
+
+
+def _record_flow_exception(state: Any, exc: Exception) -> JsonMap:
+    """Convert a Flow runner exception into typed failure state."""
+
+    message = str(exc) or type(exc).__name__
+    state.failure_reason = message
+    _ensure_state_list(state, "errors").append(message)
+    return {"ok": False, "error": message}
 
 
 def _load_flow_symbols() -> tuple[Any, Any, Any, Any, Any]:
@@ -272,55 +300,70 @@ def run_season_flow(
 
         @listen("season_scenarios")
         def run_scenarios(self) -> JsonMap:
-            self.state.result = run_agent_multi_output(
-                runtime_for(agent_name),
-                agent_name=agent_name,
-                agent_vs_name="vs_rps_all_agents",
-                athlete_id=athlete_id,
-                tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
-                user_input=user_input,
-                run_id=run_id,
-                model_override=model_override,
-                temperature_override=temperature_override,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
+            try:
+                self.state.result = run_agent_multi_output(
+                    runtime_for(agent_name),
+                    agent_name=agent_name,
+                    agent_vs_name="vs_rps_all_agents",
+                    athlete_id=athlete_id,
+                    tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
+                    user_input=user_input,
+                    run_id=run_id,
+                    model_override=model_override,
+                    temperature_override=temperature_override,
+                    force_file_search=force_file_search,
+                    max_num_results=max_num_results,
+                )
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                return self.state.result
+            _record_flow_result_state(self.state, self.state.result)
             self.state.persistence_summary = {"task": AgentTask.CREATE_SEASON_SCENARIOS.value, "persisted": True}
             return self.state.result
 
         @listen("season_scenario_selection")
         def run_selection(self) -> JsonMap:
-            self.state.result = run_agent_multi_output(
-                runtime_for(agent_name),
-                agent_name=agent_name,
-                agent_vs_name="vs_rps_all_agents",
-                athlete_id=athlete_id,
-                tasks=[AgentTask.CREATE_SEASON_SCENARIO_SELECTION],
-                user_input=user_input,
-                run_id=run_id,
-                model_override=model_override,
-                temperature_override=temperature_override,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
+            try:
+                self.state.result = run_agent_multi_output(
+                    runtime_for(agent_name),
+                    agent_name=agent_name,
+                    agent_vs_name="vs_rps_all_agents",
+                    athlete_id=athlete_id,
+                    tasks=[AgentTask.CREATE_SEASON_SCENARIO_SELECTION],
+                    user_input=user_input,
+                    run_id=run_id,
+                    model_override=model_override,
+                    temperature_override=temperature_override,
+                    force_file_search=force_file_search,
+                    max_num_results=max_num_results,
+                )
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                return self.state.result
+            _record_flow_result_state(self.state, self.state.result)
             self.state.persistence_summary = {"task": AgentTask.CREATE_SEASON_SCENARIO_SELECTION.value, "persisted": True}
             return self.state.result
 
         @listen("season_plan")
         def run_plan(self) -> JsonMap:
-            self.state.result = run_agent_multi_output(
-                runtime_for(agent_name),
-                agent_name=agent_name,
-                agent_vs_name="vs_rps_all_agents",
-                athlete_id=athlete_id,
-                tasks=[AgentTask.CREATE_SEASON_PLAN],
-                user_input=user_input,
-                run_id=run_id,
-                model_override=model_override,
-                temperature_override=temperature_override,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
+            try:
+                self.state.result = run_agent_multi_output(
+                    runtime_for(agent_name),
+                    agent_name=agent_name,
+                    agent_vs_name="vs_rps_all_agents",
+                    athlete_id=athlete_id,
+                    tasks=[AgentTask.CREATE_SEASON_PLAN],
+                    user_input=user_input,
+                    run_id=run_id,
+                    model_override=model_override,
+                    temperature_override=temperature_override,
+                    force_file_search=force_file_search,
+                    max_num_results=max_num_results,
+                )
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                return self.state.result
+            _record_flow_result_state(self.state, self.state.result)
             _ensure_state_list(self.state, "intermediate_summaries").append(
                 "season planning/review/writer cycle executed"
             )
@@ -334,9 +377,6 @@ def run_season_flow(
                 _ensure_state_list(self.state, "warnings").extend(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
-            if not self.state.result.get("ok") and self.state.result.get("error"):
-                self.state.failure_reason = str(self.state.result.get("error"))
-                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     SeasonOuterFlow = _decorate_persist(SeasonOuterFlow, "season", persist)
@@ -378,16 +418,21 @@ def run_phase_flow(
 
         @listen(bootstrap)
         def run_planning_cycle(self, _requested_tasks: list[str]) -> JsonMap:
-            self.state.result = run_phase_bundle_crewai(
-                runtime,
-                agent_name=agent_name,
-                athlete_id=athlete_id,
-                tasks=tasks,
-                user_input=user_input,
-                run_id=run_id,
-                model_override=model_override,
-                temperature_override=temperature_override,
-            )
+            try:
+                self.state.result = run_phase_bundle_crewai(
+                    runtime,
+                    agent_name=agent_name,
+                    athlete_id=athlete_id,
+                    tasks=tasks,
+                    user_input=user_input,
+                    run_id=run_id,
+                    model_override=model_override,
+                    temperature_override=temperature_override,
+                )
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                return self.state.result
+            _record_flow_result_state(self.state, self.state.result)
             self.state.bundle_summary = _extract_stage_summary(self.state.result)
             return self.state.result
 
@@ -409,9 +454,6 @@ def run_phase_flow(
                 _ensure_state_list(self.state, "warnings").extend(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
-            if not self.state.result.get("ok") and self.state.result.get("error"):
-                self.state.failure_reason = str(self.state.result.get("error"))
-                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     PhaseOuterFlow = _decorate_persist(PhaseOuterFlow, "phase", persist)
@@ -454,19 +496,24 @@ def run_week_flow(
         @listen(bootstrap)
         def run_planning_cycle(self, _label: str) -> JsonMap:
             runner = run_agent_multi_output_preview if preview_only else run_agent_multi_output
-            self.state.result = runner(
-                runtime_for(agent_name),
-                agent_name=agent_name,
-                agent_vs_name="vs_rps_all_agents",
-                athlete_id=athlete_id,
-                tasks=tasks,
-                user_input=user_input,
-                run_id=run_id,
-                model_override=model_override,
-                temperature_override=temperature_override,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
-            )
+            try:
+                self.state.result = runner(
+                    runtime_for(agent_name),
+                    agent_name=agent_name,
+                    agent_vs_name="vs_rps_all_agents",
+                    athlete_id=athlete_id,
+                    tasks=tasks,
+                    user_input=user_input,
+                    run_id=run_id,
+                    model_override=model_override,
+                    temperature_override=temperature_override,
+                    force_file_search=force_file_search,
+                    max_num_results=max_num_results,
+                )
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                return self.state.result
+            _record_flow_result_state(self.state, self.state.result)
             self.state.preview_only = preview_only
             self.state.candidate_week_plan = _extract_stage_summary(self.state.result)
             return self.state.result
@@ -489,9 +536,6 @@ def run_week_flow(
                 _ensure_state_list(self.state, "warnings").extend(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
-            if not self.state.result.get("ok") and self.state.result.get("error"):
-                self.state.failure_reason = str(self.state.result.get("error"))
-                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     WeekOuterFlow = _decorate_persist(WeekOuterFlow, "week", persist)
@@ -525,7 +569,12 @@ def run_report_flow(
 
         @listen(bootstrap)
         def run_planning_cycle(self, _label: str) -> JsonMap:
-            self.state.result = report_runner()
+            try:
+                self.state.result = report_runner()
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                return self.state.result
+            _record_flow_result_state(self.state, self.state.result)
             _ensure_state_dict(self.state, "source_versions")["planning_stage"] = "report planning executed"
             return self.state.result
 
@@ -544,9 +593,6 @@ def run_report_flow(
                 _ensure_state_list(self.state, "warnings").extend(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
-            if not self.state.result.get("ok") and self.state.result.get("error"):
-                self.state.failure_reason = str(self.state.result.get("error"))
-                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     ReportOuterFlow = _decorate_persist(ReportOuterFlow, "report", persist)
@@ -581,7 +627,11 @@ def run_feed_forward_flow(
 
         @listen(bootstrap)
         def run_report(self, _label: str) -> JsonMap:
-            self.state.report_result = report_runner()
+            try:
+                self.state.report_result = report_runner()
+            except Exception as exc:
+                self.state.report_result = _record_flow_exception(self.state, exc)
+            _record_flow_result_state(self.state, self.state.report_result)
             return self.state.report_result
 
         @listen(run_report)
@@ -589,7 +639,11 @@ def run_feed_forward_flow(
             if not self.state.report_result.get("ok"):
                 self.state.season_phase_result = {"ok": False, "skipped": True}
                 return self.state.season_phase_result
-            self.state.season_phase_result = season_phase_runner()
+            try:
+                self.state.season_phase_result = season_phase_runner()
+            except Exception as exc:
+                self.state.season_phase_result = _record_flow_exception(self.state, exc)
+            _record_flow_result_state(self.state, self.state.season_phase_result)
             return self.state.season_phase_result
 
         @listen(run_season_phase)
@@ -597,7 +651,11 @@ def run_feed_forward_flow(
             if not self.state.season_phase_result.get("ok"):
                 self.state.phase_result = {"ok": False, "skipped": True}
                 return self.state.phase_result
-            self.state.phase_result = phase_runner()
+            try:
+                self.state.phase_result = phase_runner()
+            except Exception as exc:
+                self.state.phase_result = _record_flow_exception(self.state, exc)
+            _record_flow_result_state(self.state, self.state.phase_result)
             return self.state.phase_result
 
     FeedForwardOuterFlow = _decorate_persist(FeedForwardOuterFlow, "feed_forward", persist)
@@ -650,7 +708,11 @@ def run_coach_flow(
 
         @listen("conversational_turn")
         def run_chat_turn(self) -> str:
-            self.state.response = chat_runner()
+            try:
+                self.state.response = chat_runner()
+            except Exception as exc:
+                self.state.result = _record_flow_exception(self.state, exc)
+                self.state.response = ""
             return self.state.response
 
     flow = CoachOuterFlow()
