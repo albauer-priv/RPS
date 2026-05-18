@@ -27,6 +27,7 @@ from rps.crewai_runtime.bindings import (
     collect_native_agent_kwargs,
     configured_task_context_names,
     output_model_for_kind,
+    output_model_for_task,
 )
 from rps.crewai_runtime.flows import (
     run_coach_flow,
@@ -375,6 +376,78 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
     guardrail = kwargs["guardrails"][0] if "guardrails" in kwargs else kwargs["guardrail"]
     assert "return" not in getattr(guardrail, "__annotations__", {})
+
+
+def test_planning_draft_model_schema_is_openai_strict_compatible() -> None:
+    schema = PlanningDraftModel.model_json_schema()
+
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["details"]["type"] == "array"
+    assert "additionalProperties" not in schema["properties"]["details"]
+
+
+def _open_object_schema_findings(schema: object, path: str = "$") -> list[str]:
+    findings: list[str] = []
+    if isinstance(schema, dict):
+        if schema.get("type") == "object":
+            additional = schema.get("additionalProperties", "<missing>")
+            if additional is not False:
+                findings.append(f"{path}: additionalProperties={additional!r}")
+        if "additionalProperties" in schema and schema.get("additionalProperties") is not False:
+            findings.append(f"{path}: explicit additionalProperties={schema.get('additionalProperties')!r}")
+        for key, value in schema.items():
+            if isinstance(value, (dict, list)) and key not in {"default", "examples"}:
+                findings.extend(_open_object_schema_findings(value, f"{path}.{key}"))
+    elif isinstance(schema, list):
+        for index, item in enumerate(schema):
+            findings.extend(_open_object_schema_findings(item, f"{path}[{index}]"))
+    return findings
+
+
+def test_crewai_output_models_are_openai_strict_compatible() -> None:
+    output_kinds = {
+        "turn_mode",
+        "planning_draft",
+        "week_context_assessment",
+        "coaching_recommendation",
+        "adjustment_intent",
+        "pending_resolution_result",
+        "coach_preview_summary",
+        "artifact_envelope",
+        "coach_preview",
+        "coach_apply",
+        "season_event_anchor",
+        "season_macrocycle_draft",
+        "season_plan_audit",
+        "season_plan_bundle",
+        "season_review_decision",
+        "phase_guardrails_payload",
+        "phase_structure_payload",
+        "phase_preview_payload",
+        "constraint_audit",
+        "load_governance_audit",
+        "phase_bundle",
+        "phase_review_decision",
+        "week_plan_bundle",
+        "week_review_decision",
+        "des_analysis_bundle",
+        "report_review_decision",
+        "replan_instruction",
+    }
+
+    findings: list[str] = []
+    for output_kind in sorted(output_kinds):
+        model = output_model_for_kind(output_kind)
+        for finding in _open_object_schema_findings(model.model_json_schema()):
+            findings.append(f"{output_kind}.{model.__name__}: {finding}")
+
+    bundle = load_crewai_config_bundle(root=Path("."))
+    for task in build_task_blueprints(bundle).values():
+        model = output_model_for_task(task)
+        for finding in _open_object_schema_findings(model.model_json_schema()):
+            findings.append(f"task:{task.name}.{model.__name__}: {finding}")
+
+    assert findings == []
 
 
 def test_guardrail_failure_emits_runtime_event(monkeypatch) -> None:
@@ -1412,33 +1485,6 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                     guardrails={},
                     structure={},
                     preview={},
-                    guardrails_document={
-                        "meta": {
-                            "artifact_type": "PHASE_GUARDRAILS",
-                            "schema_id": "PhaseGuardrailsInterface",
-                            "schema_version": "1.0",
-                            "owner_agent": "Phase-Architect",
-                        },
-                        "data": {},
-                    },
-                    structure_document={
-                        "meta": {
-                            "artifact_type": "PHASE_STRUCTURE",
-                            "schema_id": "PhaseStructureInterface",
-                            "schema_version": "1.0",
-                            "owner_agent": "Phase-Architect",
-                        },
-                        "data": {},
-                    },
-                    preview_document={
-                        "meta": {
-                            "artifact_type": "PHASE_PREVIEW",
-                            "schema_id": "PhasePreviewInterface",
-                            "schema_version": "1.0",
-                            "owner_agent": "Phase-Architect",
-                        },
-                        "data": {},
-                    },
                     constraint_audit={},
                     load_governance_audit={},
                     decision_summary={},
