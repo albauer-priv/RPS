@@ -260,9 +260,15 @@ class LocalStoreTests(unittest.TestCase):
 
             written = json.loads(Path(path).read_text(encoding="utf-8"))
             meta = written["meta"]
-            self.assertEqual(meta["version_key"], "2026-17--2026-18__20260421_143500")
+            self.assertNotIn("version_key", meta)
             self.assertEqual(meta["run_id"], "actual_store_run")
             self.assertNotEqual(meta["created_at"], "2026-04-21T14:32:28Z")
+            loaded = store.load_version(
+                athlete_id,
+                ArtifactType.PHASE_STRUCTURE,
+                "2026-17--2026-18__20260421_143500",
+            )
+            self.assertEqual(loaded["meta"]["version_key"], "2026-17--2026-18__20260421_143500")
 
     def test_save_document_week_scoped_envelope_uses_store_write_time_for_version_key(self) -> None:
         """Verify week-scoped envelope writes ignore stale payload timestamps for the stored key."""
@@ -297,9 +303,12 @@ class LocalStoreTests(unittest.TestCase):
             written = json.loads(Path(path).read_text(encoding="utf-8"))
             meta = written["meta"]
             self.assertEqual(path.name, "season_scenarios_2026-17__20260422_110852.json")
-            self.assertEqual(meta["version_key"], "2026-17__20260422_110852")
+            self.assertNotIn("version_key", meta)
             self.assertEqual(meta["created_at"], "2026-04-22T11:08:52Z")
             self.assertEqual(meta["run_id"], "actual_store_run")
+            self.assertEqual(store.get_latest_version_key(athlete_id, ArtifactType.SEASON_SCENARIOS), "2026-17__20260422_110852")
+            loaded = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+            self.assertEqual(loaded["meta"]["version_key"], "2026-17__20260422_110852")
 
     def test_load_latest_normalizes_legacy_user_data_confidence(self) -> None:
         """Verify legacy USER data_confidence is normalized on read."""

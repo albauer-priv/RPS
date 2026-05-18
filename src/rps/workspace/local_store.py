@@ -152,6 +152,21 @@ def normalize_loaded_document(document: object) -> object:
     """Return a canonicalized loaded document for legacy envelopes and inputs."""
     return _normalize_loaded_meta(document)
 
+
+def _with_runtime_version_key(document: object, version_key: str | None) -> object:
+    """Return a loaded document annotated with operational version_key metadata."""
+    if not version_key or not isinstance(document, dict):
+        return document
+    meta = document.get("meta")
+    if not isinstance(meta, dict):
+        return document
+    annotated = dict(document)
+    meta_doc = dict(meta)
+    meta_doc["version_key"] = version_key
+    annotated["meta"] = meta_doc
+    return annotated
+
+
 def utc_iso_now() -> str:
     """Return the current time in ISO-8601 UTC format."""
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -278,14 +293,24 @@ class LocalArtifactStore:
         path = self.latest_path(athlete_id, artifact_type)
         if not path.exists():
             raise FileNotFoundError(f"No latest artifact found: {path}")
-        return self._read_json(path)
+        return _with_runtime_version_key(
+            self._read_json(path),
+            self._latest_version_key_from_index(athlete_id, artifact_type),
+        )
 
     def load_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> object:
         """Load a specific artifact version."""
         path = self._path_for_version(athlete_id, artifact_type, version_key)
         if not path.exists():
             raise FileNotFoundError(f"No artifact version found: {path}")
-        return self._read_json(path)
+        resolved = path.name
+        cfg = ARTIFACT_PATHS[artifact_type]
+        prefix = f"{cfg.filename_prefix}_"
+        if resolved.startswith(prefix) and resolved.endswith(".json"):
+            resolved = resolved[len(prefix) : -5]
+        else:
+            resolved = version_key
+        return _with_runtime_version_key(self._read_json(path), resolved)
 
     def exists(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> bool:
         """Return True if the given version exists on disk."""
@@ -311,6 +336,10 @@ class LocalArtifactStore:
 
     def get_latest_version_key(self, athlete_id: str, artifact_type: ArtifactType) -> str:
         """Return the version_key for the latest artifact, if available."""
+        index_key = self._latest_version_key_from_index(athlete_id, artifact_type)
+        if index_key:
+            return index_key
+
         doc = self.load_latest(athlete_id, artifact_type)
         if isinstance(doc, dict):
             meta = doc.get("meta") or doc.get("_meta", {})
@@ -335,6 +364,24 @@ class LocalArtifactStore:
                     return str(version_key)
 
         raise ValueError(f"Latest artifact for {artifact_type.value} has no meta.version_key")
+
+    def _latest_version_key_from_index(self, athlete_id: str, artifact_type: ArtifactType) -> str | None:
+        """Return latest version_key from the workspace index when available."""
+        try:
+            index = self._index_manager(athlete_id).load()
+        except (FileNotFoundError, json.JSONDecodeError, TypeError):
+            return None
+        artefacts = index.get("artefacts")
+        if not isinstance(artefacts, dict):
+            return None
+        entry = artefacts.get(artifact_type.value)
+        if not isinstance(entry, dict):
+            return None
+        latest = entry.get("latest")
+        if not isinstance(latest, dict):
+            return None
+        version_key = latest.get("version_key")
+        return str(version_key) if version_key else None
 
     def list_versions(self, athlete_id: str, artifact_type: ArtifactType) -> list[str]:
         """List version keys stored for an artifact type."""
@@ -502,11 +549,8 @@ class LocalArtifactStore:
             "trace_upstream": payload_meta.get("trace_upstream", meta.trace_upstream),
         }
 
-        if "version_key" in payload_meta or not payload_meta:
-            meta_doc["version_key"] = meta.version_key
-
         for key, value in payload_meta.items():
-            if key in meta_doc or value is None:
+            if key == "version_key" or key in meta_doc or value is None:
                 continue
             meta_doc[key] = value
 
@@ -569,7 +613,7 @@ class LocalArtifactStore:
                 meta_doc = dict(candidate)
                 meta_doc["created_at"] = stored_created_at
                 meta_doc["run_id"] = run_id
-                meta_doc["version_key"] = normalized_key
+                meta_doc.pop("version_key", None)
                 document = dict(document)
                 document["meta"] = meta_doc
         version_path = self.versioned_path(athlete_id, artifact_type, normalized_key)
