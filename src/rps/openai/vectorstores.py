@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import uuid
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ from rps.openai.vectorstore_state import update_state_for_store
 from rps.vectorstores.qdrant_local import embed_texts, get_qdrant_client, resolve_embedding_config
 
 MANAGED_BY = "sync_vectorstores"
+logger = logging.getLogger(__name__)
 _MAX_ATTRIBUTE_KEYS = 16
 _ATTRIBUTE_ALLOWLIST = [
     "managed_by",
@@ -286,12 +288,28 @@ def _build_local_index(
 
     chunks: list[ChunkRecord] = []
     remote_index: dict[str, RemoteIndexEntry] = {}
-    stats = {"added": 0, "updated": 0, "removed": 0, "skipped": 0}
+    stats = {"added": 0, "updated": 0, "removed": 0, "skipped": 0, "chunks": 0}
+
+    logger.info(
+        "Knowledge store build started agent=%s store=%s collection=%s reset=%s sources=%d embedding_model=%s",
+        manifest.agent,
+        manifest.vector_store_name,
+        collection,
+        reset,
+        len(manifest.sources),
+        config.model,
+    )
 
     for source in manifest.sources:
         local_path = (manifest.root / source.path).resolve()
         if not local_path.exists():
             stats["skipped"] += 1
+            logger.warning(
+                "Knowledge source skipped missing agent=%s store=%s source=%s",
+                manifest.agent,
+                manifest.vector_store_name,
+                source.path,
+            )
             continue
         text = local_path.read_text(encoding="utf-8")
         sha256 = compute_sha256(local_path)
@@ -305,6 +323,15 @@ def _build_local_index(
         attrs = _trim_attributes(attrs)
 
         parts = _chunk_text(text)
+        logger.info(
+            "Knowledge source indexed agent=%s store=%s source=%s chunks=%d tags=%s sha256=%s",
+            manifest.agent,
+            manifest.vector_store_name,
+            source.path,
+            len(parts),
+            ",".join(source.tags) if source.tags else "-",
+            sha256[:12],
+        )
         for idx, chunk in enumerate(parts):
             chunks.append(
                 {
@@ -327,14 +354,24 @@ def _build_local_index(
             "managed": True,
         }
         stats["added"] += 1
+        stats["chunks"] += len(parts)
 
     if reset:
+        logger.info("Knowledge store reset collection=%s", collection)
         try:
             client.delete_collection(collection, timeout=30, wait=True)
         except (TypeError, AssertionError):
             client.delete_collection(collection, timeout=30)
 
     if not chunks:
+        logger.info(
+            "Knowledge store build completed agent=%s store=%s collection=%s added=%d skipped=%d chunks=0",
+            manifest.agent,
+            manifest.vector_store_name,
+            collection,
+            stats["added"],
+            stats["skipped"],
+        )
         return collection, remote_index, stats
 
     batch_size = int(os.getenv("RPS_LLM_EMBEDDING_BATCH_SIZE", "32"))
@@ -360,6 +397,12 @@ def _build_local_index(
         if existing:
             current_size = _resolve_qdrant_vector_size(existing)
             if current_size != vector_size:
+                logger.warning(
+                    "Knowledge store vector size changed collection=%s current_size=%s new_size=%s; recreating",
+                    collection,
+                    current_size,
+                    vector_size,
+                )
                 client.recreate_collection(
                     collection_name=collection,
                     vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
@@ -380,6 +423,11 @@ def _build_local_index(
             for item, vector in zip(batch, vectors, strict=True)
         ]
         client.upsert(collection_name=collection, points=points, wait=True)
+        logger.debug(
+            "Knowledge store upserted batch collection=%s points=%d",
+            collection,
+            len(points),
+        )
 
     _upsert(first_batch, first_vectors)
     for idx in range(batch_size, len(chunks), batch_size):
@@ -387,6 +435,15 @@ def _build_local_index(
         vectors = embed_texts([cast(str, item["text"]) for item in batch], config)
         _upsert(batch, vectors)
 
+    logger.info(
+        "Knowledge store build completed agent=%s store=%s collection=%s added=%d skipped=%d chunks=%d",
+        manifest.agent,
+        manifest.vector_store_name,
+        collection,
+        stats["added"],
+        stats["skipped"],
+        stats["chunks"],
+    )
     return collection, remote_index, stats
 
 
@@ -400,6 +457,14 @@ def sync_manifest(
 ) -> dict[str, int]:
     """Sync a manifest to a local Qdrant collection."""
     manifest = load_manifest(manifest_path)
+    logger.info(
+        "Knowledge store sync started manifest=%s agent=%s store=%s reset=%s delete_removed=%s",
+        manifest_path,
+        manifest.agent,
+        manifest.vector_store_name,
+        reset,
+        delete_removed,
+    )
     collection, remote_index, stats = _build_local_index(
         manifest,
         reset=reset,
@@ -409,4 +474,14 @@ def sync_manifest(
     if state is not None:
         update_state_for_store(state, manifest.vector_store_name, collection, remote_index)
 
+    logger.info(
+        "Knowledge store sync completed manifest=%s agent=%s store=%s collection=%s added=%d skipped=%d chunks=%d",
+        manifest_path,
+        manifest.agent,
+        manifest.vector_store_name,
+        collection,
+        stats["added"],
+        stats["skipped"],
+        stats["chunks"],
+    )
     return stats

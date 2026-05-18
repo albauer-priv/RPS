@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Application logs now suppress high-volume HTTP, OpenAI usage, OpenAI tool-validation, callback, and tool lifecycle noise by default while keeping flow, crew, task, and guardrail progress visible.
+- Knowledge store sync now logs manifest, source path, tags, chunk counts, collection, and completion summaries instead of relying on embedding HTTP transport lines for observability.
 - CrewAI runtime progress is now mirrored into the main application log with compact flow, crew, task, agent, tool, output-format, and run identifiers so long-running planning runs are easier to inspect live.
 - Reworded configured CrewAI skills toward positive operating guidance and added validation that flags explicit don't/never/no-style rules.
 - Added CrewAI skill package validation for configured skills, including local-reference hard checks plus strict-ready checks for positive action guidance and explicit output/answer format.
@@ -21,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach recommendation and finalization prompts now define the desired positive cycling-coach voice directly instead of relying mainly on negative style constraints.
 
 ### Fixed
+- Fixed CrewAI runtime labels so event logs prefer RPS task, crew, and agent names instead of generic CrewAI labels like `Task` or `crew`.
+- Fixed explicit `artifact_schema_valid` guardrail validation so schema-sensitive metadata constants and trace-reference versions are normalized before canonical JSON-Schema validation.
 - Fixed schema-backed CrewAI artifact validation so operational trace reference version keys are normalized before canonical JSON-Schema validation, preventing Season Plan failures on `meta.trace_*[].version`.
 - Fixed CrewAI structured-output hardening across internal output models by closing Pydantic schemas, replacing open internal draft maps with typed statement lists, and adding a registry-wide strict-schema regression test.
 - Fixed Season Plan CrewAI structured-output startup by making `PlanningDraftModel` OpenAI strict-schema compatible.

@@ -48,9 +48,14 @@ def test_generated_artifact_model_rejects_schema_invalid_payload() -> None:
 
 
 def test_schema_backed_metadata_normalizes_operational_trace_version_keys() -> None:
+    schema = SeasonScenariosModel.source_json_schema_contract()
     payload = {
         "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "schema_id": "WrongInterface",
             "schema_version": "20260518_145618",
+            "authority": "Binding",
+            "owner_agent": "Wrong-Agent",
             "version": "2026-21__20260518_145618",
             "trace_upstream": [
                 {"artifact": "SEASON_SCENARIOS", "version": "20260518_103858", "run_id": "run-a"},
@@ -66,9 +71,13 @@ def test_schema_backed_metadata_normalizes_operational_trace_version_keys() -> N
         "data": {},
     }
 
-    normalized = _normalize_schema_backed_metadata(payload)
+    normalized = _normalize_schema_backed_metadata(payload, schema)
 
+    assert normalized["meta"]["artifact_type"] == "SEASON_SCENARIOS"
+    assert normalized["meta"]["schema_id"] == "SeasonScenariosInterface"
     assert normalized["meta"]["schema_version"] == "1.0"
+    assert normalized["meta"]["authority"] == "Informational"
+    assert normalized["meta"]["owner_agent"] == "Season-Scenario-Agent"
     assert normalized["meta"]["version"] == "1.0"
     assert normalized["meta"]["trace_upstream"][0]["version"] == "1.0"
     assert normalized["meta"]["trace_data"][0]["version"] == "1.0"

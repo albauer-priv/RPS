@@ -13,6 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
+from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
@@ -243,6 +244,8 @@ def artifact_schema_valid(result: Any) -> GuardrailResult:
     if not schema_file:
         return (False, f"No JSON schema mapping registered for artifact_type {artifact_type_raw}.")
     try:
+        schema = _schema_registry().get_schema(schema_file)
+        mapping = _normalize_schema_backed_metadata(mapping, schema)
         validator = _schema_registry().validator_for(schema_file)
         validate_or_raise(validator, mapping)
     except SchemaValidationError as exc:

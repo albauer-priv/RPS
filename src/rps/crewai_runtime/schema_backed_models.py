@@ -24,7 +24,21 @@ def _schema_semver(value: object, *, default: str = "1.0") -> str:
     return default
 
 
-def _normalize_schema_backed_metadata(payload: Any) -> Any:
+def _schema_meta_const(schema: JsonMap | None, key: str) -> str | None:
+    if not isinstance(schema, dict):
+        return None
+    meta_schema = schema.get("properties", {}).get("meta", {})
+    if not isinstance(meta_schema, dict):
+        return None
+    value_schema = meta_schema.get("properties", {}).get(key, {})
+    if isinstance(value_schema, dict):
+        const = value_schema.get("const")
+        if isinstance(const, str) and const:
+            return const
+    return None
+
+
+def _normalize_schema_backed_metadata(payload: Any, schema: JsonMap | None = None) -> Any:
     """Normalize schema-sensitive metadata before canonical JSON Schema validation."""
 
     if not isinstance(payload, dict):
@@ -39,6 +53,10 @@ def _normalize_schema_backed_metadata(payload: Any) -> Any:
         meta["schema_version"] = _schema_semver(meta.get("schema_version"))
     if "version" in meta:
         meta["version"] = _schema_semver(meta.get("version"))
+    for key in ("artifact_type", "schema_id", "schema_version", "authority", "owner_agent"):
+        const = _schema_meta_const(schema, key)
+        if const:
+            meta[key] = const
 
     for key in ("trace_upstream", "trace_data", "trace_events"):
         entries = meta.get(key)
@@ -66,6 +84,7 @@ class JsonSchemaArtifactModel(BaseModel):
 
     __schema_file__: ClassVar[str]
     __schema_cache__: ClassVar[dict[str, JsonMap]] = {}
+    __source_schema_cache__: ClassVar[dict[str, JsonMap]] = {}
     __validator_cache__: ClassVar[dict[str, Draft202012Validator]] = {}
 
     meta: JsonMap = Field(default_factory=dict)
@@ -87,6 +106,19 @@ class JsonSchemaArtifactModel(BaseModel):
             path = cls._schema_path()
             cls.__schema_cache__[cache_key] = json.loads(path.read_text(encoding="utf-8"))
         return cls.__schema_cache__[cache_key]
+
+    @classmethod
+    def source_json_schema_contract(cls) -> JsonMap:
+        """Return the source schema contract when available for metadata const overlays."""
+
+        cache_key = f"{cls.__module__}.{cls.__qualname__}:{cls.__schema_file__}"
+        if cache_key not in cls.__source_schema_cache__:
+            path = SOURCE_SCHEMA_DIR / cls.__schema_file__
+            if path.exists():
+                cls.__source_schema_cache__[cache_key] = json.loads(path.read_text(encoding="utf-8"))
+            else:
+                cls.__source_schema_cache__[cache_key] = cls.json_schema_contract()
+        return cls.__source_schema_cache__[cache_key]
 
     @classmethod
     def schema_validator(cls) -> Draft202012Validator:
@@ -114,7 +146,7 @@ class JsonSchemaArtifactModel(BaseModel):
     def normalize_before_json_schema_validation(cls, value: Any) -> Any:
         """Repair metadata fields that are deterministic schema semantics, not agent choices."""
 
-        return _normalize_schema_backed_metadata(value)
+        return _normalize_schema_backed_metadata(value, cls.source_json_schema_contract())
 
     @model_validator(mode="after")
     def validate_against_json_schema(self) -> JsonSchemaArtifactModel:

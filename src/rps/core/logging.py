@@ -118,6 +118,28 @@ class DailySizeRotatingFileHandler(logging.FileHandler):
         self.stream = self._open()
 
 
+class _ThirdPartyNoiseFilter(logging.Filter):
+    """Suppress high-volume third-party INFO lines unless explicitly enabled."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        if message.startswith("OpenAI: Successfully validated tool"):
+            return os.getenv("RPS_LOG_OPENAI_TOOL_VALIDATION", "0").strip().lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        if message.startswith("OpenAI API usage:"):
+            return os.getenv("RPS_LOG_OPENAI_USAGE", "0").strip().lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        return True
+
+
 def timestamped_log_path(log_dir: Path, base_name: str) -> Path:
     """Return a timestamped log path for a script or CLI run."""
     timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
@@ -176,7 +198,12 @@ def setup_logging(
         handlers = [stream_handler]
 
     for handler in handlers:
+        handler.addFilter(_ThirdPartyNoiseFilter())
         root.addHandler(handler)
+
+    http_level = _normalize_level(os.getenv("RPS_LOG_HTTPX_LEVEL", "WARNING"))
+    logging.getLogger("httpx").setLevel(http_level)
+    logging.getLogger("httpcore").setLevel(http_level)
 
     if log_file:
         announce_level = max(file_level_value, console_level_value)

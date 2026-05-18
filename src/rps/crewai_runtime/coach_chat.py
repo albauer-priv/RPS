@@ -33,7 +33,7 @@ from .skills import (
     build_crewai_skill_kwargs,
     resolve_agent_skill_profile,
 )
-from .telemetry import runtime_event_scope
+from .telemetry import register_runtime_label, runtime_event_scope
 
 logger = logging.getLogger(__name__)
 
@@ -259,7 +259,9 @@ def _build_agent(
         value = agent_cfg.get(template_field)
         if isinstance(value, str) and value:
             kwargs[template_field] = value
-    return Agent(**kwargs)
+    agent = Agent(**kwargs)
+    register_runtime_label(agent, kind="agent", label=agent_name)
+    return agent
 
 
 def _extract_model(task: Any, result: Any, model_cls: type[BaseModel]) -> BaseModel:
@@ -340,6 +342,7 @@ def _run_structured_task(
         agent=agent,
         output_pydantic=output_model,
     )
+    register_runtime_label(task, kind="task", label=task_name)
     planning_profile = (_crew_runtime_profile(bundle, crew_name).get("planning") or {})
     planning_enabled = resolve_crewai_planning_enabled(
         crew_name,
@@ -361,6 +364,7 @@ def _run_structured_task(
             crew_kwargs["planning_llm"] = getattr(crewai, "LLM")(**planning_llm_kwargs)
     crew_kwargs.update(crew_memory_kwargs)
     crew = Crew(**crew_kwargs)
+    register_runtime_label(crew, kind="crew", label=crew_name)
     result = crew.kickoff()
     return _extract_model(task, result, output_model)
 
@@ -410,6 +414,7 @@ def _run_text_task(
         expected_output=expected_output,
         agent=agent,
     )
+    register_runtime_label(task, kind="task", label=task_name)
     planning_profile = (_crew_runtime_profile(bundle, crew_name).get("planning") or {})
     planning_enabled = resolve_crewai_planning_enabled(
         crew_name,
@@ -431,6 +436,7 @@ def _run_text_task(
             crew_kwargs["planning_llm"] = getattr(crewai, "LLM")(**planning_llm_kwargs)
     crew_kwargs.update(crew_memory_kwargs)
     crew = Crew(**crew_kwargs)
+    register_runtime_label(crew, kind="crew", label=crew_name)
     result = crew.kickoff()
     return _extract_text(task, result)
 
@@ -782,7 +788,9 @@ def run_coach_turn(
         expected_output="A concise direct assistant reply to the user.",
         agent=agent,
     )
+    register_runtime_label(task, kind="task", label="legacy_chat_turn")
     crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
+    register_runtime_label(crew, kind="crew", label="coach_conversation")
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(
             root=workspace_root,

@@ -52,6 +52,7 @@ from rps.crewai_runtime.telemetry import (
     build_step_callback,
     build_task_callback,
     emit_runtime_event,
+    register_runtime_label,
     runtime_event_scope,
 )
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
@@ -555,9 +556,9 @@ def _build_crewai_agent(
         value = config.get(field)
         if isinstance(value, str) and value:
             kwargs[field] = value
-    return agent_cls(
-        **kwargs,
-    )
+    agent = agent_cls(**kwargs)
+    register_runtime_label(agent, kind="agent", label=blueprint.name)
+    return agent
 
 
 
@@ -745,6 +746,7 @@ def _execute_crewai_task(
     if task_tools:
         crew_task_kwargs["tools"] = task_tools
     crew_task = task_cls(**crew_task_kwargs)
+    register_runtime_label(crew_task, kind="task", label=task_blueprint.name)
     process = getattr(process_cls, "sequential")
     planning_llm = _build_crewai_planning_llm(crewai_llm_cls, bundle=bundle, crew_name=crew_name)
     crew_kwargs: dict[str, Any] = {
@@ -768,6 +770,7 @@ def _execute_crewai_task(
         crew_kwargs["planning_llm"] = planning_llm
     crew_kwargs.update(crew_memory_kwargs)
     crew = crew_cls(**crew_kwargs)
+    register_runtime_label(crew, kind="crew", label=crew_name)
     if athlete_id and run_id:
         with runtime_event_scope(
             root=runtime.workspace_root,
@@ -851,7 +854,9 @@ def _build_crewai_task(
         kwargs["tools"] = task_tools
     if context_tasks:
         kwargs["context"] = context_tasks
-    return task_cls(**kwargs)
+    task = task_cls(**kwargs)
+    register_runtime_label(task, kind="task", label=task_blueprint.name)
+    return task
 
 
 def _execute_crewai_hierarchical_crew(
@@ -1024,6 +1029,7 @@ def _execute_crewai_hierarchical_crew(
         crew_kwargs["planning"] = True
         crew_kwargs["planning_llm"] = planning_llm
     crew = crew_cls(**crew_kwargs)
+    register_runtime_label(crew, kind="crew", label=crew_name)
     if athlete_id and run_id:
         with runtime_event_scope(
             root=runtime.workspace_root,

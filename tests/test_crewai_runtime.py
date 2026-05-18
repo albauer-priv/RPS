@@ -835,6 +835,57 @@ def test_artifact_schema_valid_guardrail_uses_concrete_json_schema() -> None:
     assert "selected_scenario_id" in message
 
 
+def test_artifact_schema_valid_normalizes_schema_sensitive_meta_before_validation() -> None:
+    payload = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIO_SELECTION",
+            "schema_id": "SeasonPlanInterface",
+            "schema_version": "20260518_175726",
+            "version": "2026-20",
+            "authority": "Binding",
+            "owner_agent": "Season-Planner",
+            "run_id": "run-1",
+            "created_at": "2026-05-17T16:07:25Z",
+            "scope": "Season",
+            "iso_week": "2026-20",
+            "iso_week_range": "2026-20--2026-37",
+            "temporal_scope": {"from": "2026-05-11", "to": "2026-09-13"},
+            "trace_upstream": [
+                {"artifact": "SEASON_SCENARIOS", "version": "20260518_103858", "run_id": "run-a"},
+            ],
+            "trace_data": [
+                {"artifact": "ATHLETE_PROFILE", "version": "20260315_091949", "run_id": "run-b"},
+            ],
+            "trace_events": [
+                {"artifact": "PLANNING_EVENTS", "version": "2026-20", "run_id": "run-c"},
+            ],
+            "data_confidence": "UNKNOWN",
+            "notes": "",
+        },
+        "data": {
+            "season_scenarios_ref": "season_scenarios/latest.json",
+            "selected_scenario_id": "B",
+            "selection_source": "system",
+            "selection_rationale": "Balanced choice.",
+            "notes": ["ok"],
+            "kpi_moving_time_rate_guidance_selection": None,
+        },
+    }
+
+    ok, validated = artifact_schema_valid(payload)
+
+    assert ok is True
+    meta = validated["meta"]
+    assert meta["schema_id"] == "SeasonScenarioSelectionInterface"
+    assert meta["schema_version"] == "1.1"
+    assert meta["authority"] == "Informational"
+    assert meta["owner_agent"] == "Season-Scenario-Agent"
+    assert meta["version"] == "1.0"
+    assert meta["trace_upstream"][0]["version"] == "1.0"
+    assert meta["trace_data"][0]["version"] == "1.0"
+    assert meta["trace_events"][0]["version"] == "1.0"
+
+
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:
     ok, payload = season_scenario_selection_shape(
         {
@@ -1231,6 +1282,38 @@ def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Pat
     assert "component=coach_turn" in log_text
     assert "task=SimpleNamespace#12345678" in log_text
     assert "System instructions:" not in log_text
+
+
+def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Path, caplog) -> None:
+    events_module = _install_fake_crewai_events(monkeypatch)
+    crewai_telemetry.ensure_crewai_event_listener()
+    bus = events_module.crewai_event_bus
+
+    task = SimpleNamespace(name="Task")
+    crew = SimpleNamespace(name="crew")
+    agent = SimpleNamespace(role="Task Execution Planner")
+    crewai_telemetry.register_runtime_label(task, kind="task", label="season_plan_finalize")
+    crewai_telemetry.register_runtime_label(crew, kind="crew", label="season_planning")
+    crewai_telemetry.register_runtime_label(agent, kind="agent", label="season_plan_manager")
+
+    caplog.set_level(logging.INFO, logger="rps.crewai_runtime.telemetry")
+    with crewai_telemetry.runtime_event_scope(
+        root=tmp_path,
+        athlete_id="athlete",
+        run_id="run-labelled",
+        component="crew:season_plan_finalize",
+    ):
+        bus.emit(events_module.CrewKickoffStartedEvent(crew=crew))
+        bus.emit(events_module.TaskStartedEvent(task=task, agent=agent))
+
+    events = load_events(tmp_path, "athlete", "run-labelled")
+    assert events[0]["crew"] == "season_planning"
+    assert events[1]["task"] == "season_plan_finalize"
+    assert events[1]["agent"] == "season_plan_manager"
+    log_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert "crew=season_planning" in log_text
+    assert "task=season_plan_finalize" in log_text
+    assert "agent=season_plan_manager" in log_text
 
 
 def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:

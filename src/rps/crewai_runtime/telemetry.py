@@ -28,6 +28,34 @@ class CrewAIRunContext:
 _RUN_CONTEXT: ContextVar[CrewAIRunContext | None] = ContextVar("rps_crewai_run_context", default=None)
 _LISTENER_READY = False
 _LISTENER_INIT_FAILED = False
+_RUNTIME_LABELS: dict[int, dict[str, str]] = {}
+
+
+def register_runtime_label(value: object | None, *, kind: str, label: str | None) -> None:
+    """Register a stable RPS label for a CrewAI runtime object."""
+
+    if value is None or not label:
+        return
+    rendered = _compact_text(str(label))
+    if not rendered:
+        return
+    labels = _RUNTIME_LABELS.setdefault(id(value), {})
+    labels[kind] = rendered
+
+
+def _registered_label(value: object | None, *kinds: str) -> str | None:
+    """Return a previously registered label for an object id."""
+
+    if value is None:
+        return None
+    labels = _RUNTIME_LABELS.get(id(value))
+    if not labels:
+        return None
+    for kind in kinds:
+        label = labels.get(kind)
+        if label:
+            return label
+    return None
 
 
 def _append_with_context(event_type: str, **payload: object) -> None:
@@ -102,7 +130,18 @@ def _log_runtime_event(ctx: CrewAIRunContext, event_type: str, payload: dict[str
         text = _safe_str(value, default="")
         if text:
             fields.append(f"{key}={_compact_text(text, max_len=140)}")
-    logger.info("CrewAI runtime %s", " ".join(fields))
+    level = logging.INFO
+    if event_type in {
+        "CREW_TASK_CALLBACK_COMPLETED",
+        "CREW_TASK_COMPLETED",
+        "TOOL_STARTED",
+        "TOOL_FINISHED",
+        "CREW_AGENT_STEP",
+    }:
+        level = logging.DEBUG
+    if "FAILED" in event_type or "ERROR" in event_type:
+        level = logging.WARNING
+    logger.log(level, "CrewAI runtime %s", " ".join(fields))
 
 
 def _output_format_label(value: object) -> str:
@@ -153,6 +192,9 @@ def _agent_label(event: object, source: object) -> str:
     ):
         if candidate is None:
             continue
+        registered = _registered_label(candidate, "agent")
+        if registered:
+            return registered
         text = _safe_str(_object_attr(candidate, "role", "name", "key"), default="")
         if not text:
             text = _safe_str(candidate, default="")
@@ -272,6 +314,9 @@ def _object_attr(value: object, *names: str) -> object | None:
 def _object_identifier(value: object, *, generic_names: set[str] | None = None) -> str | None:
     """Extract a compact, stable identifier from a runtime object."""
 
+    registered = _registered_label(value, "task", "crew", "agent", "tool")
+    if registered:
+        return registered
     generic = {name.lower() for name in (generic_names or set())}
     for candidate in (
         _object_attr(value, "name", "key", "role", "tool_name", "method_name", "flow_name"),
@@ -287,9 +332,12 @@ def _task_label(event: object, source: object) -> str:
     """Resolve a compact task label without leaking full prompt text."""
 
     direct = _safe_str(_event_attr(event, "task_name", "task_id"), default="")
-    if direct and not _looks_like_prompt_text(direct):
+    if direct and direct.lower() != "task" and not _looks_like_prompt_text(direct):
         return _compact_text(direct)
     task_obj = _event_attr(event, "task") or source
+    registered = _registered_label(task_obj, "task")
+    if registered:
+        return registered
     named = _safe_str(_object_attr(task_obj, "name", "key", "role"), default="")
     if named and not _looks_like_prompt_text(named):
         return _compact_text(named)
@@ -303,7 +351,7 @@ def _crew_label(event: object, source: object) -> str:
     """Resolve a meaningful crew label and avoid generic `crew` payloads."""
 
     direct = _safe_str(_event_attr(event, "crew_name", "crew_id"), default="")
-    if direct:
+    if direct and direct.lower() != "crew":
         return _compact_text(direct)
     for candidate in (_event_attr(event, "crew"), source):
         named = _object_identifier(candidate, generic_names={"crew"})

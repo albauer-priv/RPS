@@ -44,6 +44,7 @@ from .models import (
     WeekReviewDecisionModel,
 )
 from .skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
+from .telemetry import register_runtime_label
 
 JsonMap = dict[str, Any]
 
@@ -359,7 +360,9 @@ def build_crewai_bindings(
                 kwargs[field] = value
         if llm is not None:
             kwargs["llm"] = llm
-        agents[name] = Agent(**kwargs)
+        agent = Agent(**kwargs)
+        register_runtime_label(agent, kind="agent", label=name)
+        agents[name] = agent
 
     tasks: dict[str, object] = {}
     for name, blueprint in task_blueprints.items():
@@ -386,7 +389,9 @@ def build_crewai_bindings(
         tools = tools_factory(blueprint) if tools_factory else []
         if tools:
             task_kwargs["tools"] = tools
-        tasks[name] = Task(**task_kwargs)
+        task = Task(**task_kwargs)
+        register_runtime_label(task, kind="task", label=name)
+        tasks[name] = task
 
     return CrewAIBindings(
         agents=agents,
