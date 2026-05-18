@@ -8,6 +8,7 @@ from rps.crewai_runtime.generated_artifact_models import (
     artifact_model_for_schema_file,
     artifact_model_for_task_name,
 )
+from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 
 
 def test_generated_artifact_model_registry_resolves_concrete_task_model() -> None:
@@ -44,3 +45,33 @@ def test_generated_artifact_model_rejects_schema_invalid_payload() -> None:
     message = str(exc_info.value)
     assert "JSON schema validation failed" in message
     assert "version" in message or "scope" in message
+
+
+def test_schema_backed_metadata_normalizes_operational_trace_version_keys() -> None:
+    payload = {
+        "meta": {
+            "schema_version": "20260518_145618",
+            "version": "2026-21__20260518_145618",
+            "trace_upstream": [
+                {"artifact": "SEASON_SCENARIOS", "version": "20260518_103858", "run_id": "run-a"},
+            ],
+            "trace_data": [
+                {"artifact": "ATHLETE_PROFILE", "version": "20260315_091949", "run_id": "run-b"},
+                {"artifact": "AVAILABILITY", "version": "1.2.0", "run_id": "run-c"},
+            ],
+            "trace_events": [
+                {"artifact": "PLANNING_EVENTS", "version": "20260504_094650", "run_id": "run-d"},
+            ],
+        },
+        "data": {},
+    }
+
+    normalized = _normalize_schema_backed_metadata(payload)
+
+    assert normalized["meta"]["schema_version"] == "1.0"
+    assert normalized["meta"]["version"] == "1.0"
+    assert normalized["meta"]["trace_upstream"][0]["version"] == "1.0"
+    assert normalized["meta"]["trace_data"][0]["version"] == "1.0"
+    assert normalized["meta"]["trace_data"][1]["version"] == "1.2.0"
+    assert normalized["meta"]["trace_events"][0]["version"] == "1.0"
+    assert payload["meta"]["trace_data"][0]["version"] == "20260315_091949"

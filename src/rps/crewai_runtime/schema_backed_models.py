@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -13,6 +14,49 @@ JsonMap = dict[str, Any]
 ROOT = Path(__file__).resolve().parents[3]
 BUNDLED_SCHEMA_DIR = ROOT / "specs" / "knowledge" / "_shared" / "sources" / "schemas" / "bundled"
 SOURCE_SCHEMA_DIR = ROOT / "specs" / "schemas"
+_SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(?:\.[0-9]+)?$")
+
+
+def _schema_semver(value: object, *, default: str = "1.0") -> str:
+    rendered = str(value or "").strip()
+    if _SEMVER_PATTERN.fullmatch(rendered):
+        return rendered
+    return default
+
+
+def _normalize_schema_backed_metadata(payload: Any) -> Any:
+    """Normalize schema-sensitive metadata before canonical JSON Schema validation."""
+
+    if not isinstance(payload, dict):
+        return payload
+    normalized = dict(payload)
+    meta = normalized.get("meta")
+    if not isinstance(meta, dict):
+        return normalized
+
+    meta = dict(meta)
+    if "schema_version" in meta:
+        meta["schema_version"] = _schema_semver(meta.get("schema_version"))
+    if "version" in meta:
+        meta["version"] = _schema_semver(meta.get("version"))
+
+    for key in ("trace_upstream", "trace_data", "trace_events"):
+        entries = meta.get(key)
+        if not isinstance(entries, list):
+            continue
+        normalized_entries: list[Any] = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                normalized_entries.append(entry)
+                continue
+            normalized_entry = dict(entry)
+            if "version" in normalized_entry:
+                normalized_entry["version"] = _schema_semver(normalized_entry.get("version"))
+            normalized_entries.append(normalized_entry)
+        meta[key] = normalized_entries
+
+    normalized["meta"] = meta
+    return normalized
 
 
 class JsonSchemaArtifactModel(BaseModel):
@@ -64,6 +108,13 @@ class JsonSchemaArtifactModel(BaseModel):
         """Return the concrete artifact schema instead of the generic envelope schema."""
 
         return cls.json_schema_contract()
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_before_json_schema_validation(cls, value: Any) -> Any:
+        """Repair metadata fields that are deterministic schema semantics, not agent choices."""
+
+        return _normalize_schema_backed_metadata(value)
 
     @model_validator(mode="after")
     def validate_against_json_schema(self) -> JsonSchemaArtifactModel:
