@@ -373,6 +373,8 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     kwargs = build_task_guardrail_kwargs(tasks["week_plan"], bundle.task_policies)
     assert kwargs["guardrail_max_retries"] == 2
     assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
+    guardrail = kwargs["guardrails"][0] if "guardrails" in kwargs else kwargs["guardrail"]
+    assert "return" not in getattr(guardrail, "__annotations__", {})
 
 
 def test_guardrail_failure_emits_runtime_event(monkeypatch) -> None:

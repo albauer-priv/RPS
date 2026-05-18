@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach recommendation and finalization prompts now define the desired positive cycling-coach voice directly instead of relying mainly on negative style constraints.
 
 ### Fixed
+- Fixed CrewAI task guardrail wrapper compatibility by removing alias-based return annotations that CrewAI's Task validation rejects.
 - Fixed workspace persistence so operational `version_key` stays in the index/log and loaded runtime metadata, without being written into schema-strict artifact envelopes.
 - Fixed Season Scenario persistence after CrewAI runs by normalizing schema-sensitive agent output fields such as meta version/scope, trace references, scalar/list notes, and `key_differences` before guarded-store validation.
 - Fixed non-self-contained skill reference paths by copying referenced material into local skill `references/` directories and adding validation for local references.

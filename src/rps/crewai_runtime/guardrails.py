@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
@@ -643,7 +643,7 @@ def build_task_guardrail_kwargs(task_blueprint: Any, task_policies: JsonMap) -> 
 def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
     """Wrap one guardrail so failures become compact retry-relevant runtime events."""
 
-    def _wrapped(result: Any) -> GuardrailResult:
+    def _wrapped(result: Any):
         ok, payload = guardrail_fn(result)
         if not ok:
             context = _GUARDRAIL_CONTEXT.get({})
@@ -659,4 +659,4 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
             )
         return (ok, payload)
 
-    return _wrapped
+    return cast(GuardrailFn, _wrapped)
