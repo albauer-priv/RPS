@@ -7,8 +7,7 @@ from typing import Final
 CANONICAL_INTENSITY_DOMAINS: Final[tuple[str, ...]] = (
     "NONE",
     "RECOVERY",
-    "ENDURANCE_LOW",
-    "ENDURANCE_HIGH",
+    "ENDURANCE",
     "TEMPO",
     "SWEET_SPOT",
     "THRESHOLD",
@@ -16,7 +15,8 @@ CANONICAL_INTENSITY_DOMAINS: Final[tuple[str, ...]] = (
 )
 
 INTENSITY_DOMAIN_ALIASES: Final[dict[str, str]] = {
-    "ENDURANCE": "ENDURANCE_LOW",
+    "ENDURANCE_LOW": "ENDURANCE",
+    "ENDURANCE_HIGH": "ENDURANCE",
 }
 
 _CANONICAL_SET: Final[set[str]] = set(CANONICAL_INTENSITY_DOMAINS)

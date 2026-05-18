@@ -46,7 +46,7 @@ def test_availability_feasible_band_uses_time_ftp_and_domains() -> None:
     band = calculate_availability_feasible_band(
         availability_hours=10,
         ftp_watts=300,
-        allowed_intensity_domains=["ENDURANCE_LOW", "TEMPO"],
+        allowed_intensity_domains=["ENDURANCE", "TEMPO"],
         if_ref_load=0.68,
         utilization_min=0.5,
         utilization_max=1.0,
@@ -146,14 +146,14 @@ def test_load_band_stops_for_invalid_required_inputs() -> None:
         calculate_availability_feasible_band(
             availability_hours=10,
             ftp_watts=0,
-            allowed_intensity_domains=["ENDURANCE_LOW"],
+            allowed_intensity_domains=["ENDURANCE"],
             if_ref_load=0.68,
         )
     with pytest.raises(LoadBandError, match="negative_availability"):
         calculate_availability_feasible_band(
             availability_hours=-1,
             ftp_watts=300,
-            allowed_intensity_domains=["ENDURANCE_LOW"],
+            allowed_intensity_domains=["ENDURANCE"],
             if_ref_load=0.68,
         )
     with pytest.raises(LoadBandError, match="missing_allowed_intensity_domains"):
@@ -190,7 +190,7 @@ def test_build_load_capacity_context_injects_s5_and_logistics_constraints() -> N
                     {
                         "iso_week_range": "2026-20--2026-21",
                         "weekly_load_corridor": {"weekly_kj": {"min": 2000, "max": 6000}},
-                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE_LOW"]},
+                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                     }
                 ]
             }
@@ -235,7 +235,7 @@ def test_build_load_capacity_context_preserves_spec_stop_warnings() -> None:
                     {
                         "iso_week_range": "2026-20--2026-20",
                         "weekly_load_corridor": {"weekly_kj": {"min": 2000, "max": 6000}},
-                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE_LOW"]},
+                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                     }
                 ]
             }
@@ -290,7 +290,7 @@ def test_build_load_capacity_context_uses_complete_availability_table_for_s5() -
                     {
                         "iso_week_range": "2026-20--2026-20",
                         "weekly_load_corridor": {"weekly_kj": {"min": 1000, "max": 9000}},
-                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE_LOW"]},
+                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                     }
                 ]
             }
@@ -327,7 +327,7 @@ def test_build_load_capacity_context_uses_kpi_profile_escalation_bands() -> None
                     {
                         "iso_week_range": "2026-20--2026-20",
                         "weekly_load_corridor": {"weekly_kj": {"min": 5000, "max": 7000}},
-                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE_LOW"]},
+                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                     }
                 ]
             }
@@ -351,7 +351,7 @@ def test_build_load_capacity_context_stops_when_kpi_active_without_body_mass() -
                     {
                         "iso_week_range": "2026-20--2026-20",
                         "weekly_load_corridor": {"weekly_kj": {"min": 1000, "max": 7000}},
-                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE_LOW"]},
+                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                     }
                 ]
             }

@@ -168,10 +168,14 @@
             "Data-Pipeline",
             "Season-Scenario-Agent",
             "Season-Planner",
+            "Season-Artifact-Writer",
             "Phase-Architect",
+            "Phase-Artifact-Writer",
             "Week-Planner",
+            "Week-Artifact-Writer",
             "Workout-Builder",
             "Performance-Analyst",
+            "Report-Artifact-Writer",
             "Policy-Owner"
           ]
         },

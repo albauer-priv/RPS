@@ -24,9 +24,7 @@ DEFAULT_DOMAIN_IF: dict[str, float] = {
     "OFF": 0.0,
     "NONE": 0.0,
     "RECOVERY": 0.55,
-    "ENDURANCE": 0.67,
-    "ENDURANCE_LOW": 0.65,
-    "ENDURANCE_HIGH": 0.70,
+    "ENDURANCE": 0.70,
     "TEMPO": 0.80,
     "SWEET_SPOT": 0.90,
     "THRESHOLD": 1.00,
@@ -100,7 +98,7 @@ def default_if_for_domain(domain: str, zone_model_payload: JsonMap | None = None
     zone_if = _zone_model_if_for_domain(normalized, zone_model_payload or {})
     if zone_if is not None:
         return zone_if
-    return DEFAULT_DOMAIN_IF.get(normalized, DEFAULT_DOMAIN_IF["ENDURANCE_LOW"])
+    return DEFAULT_DOMAIN_IF.get(normalized, DEFAULT_DOMAIN_IF["ENDURANCE"])
 
 
 def _zone_model_if_for_domain(domain: str, zone_model_payload: JsonMap) -> float | None:
@@ -108,9 +106,7 @@ def _zone_model_if_for_domain(domain: str, zone_model_payload: JsonMap) -> float
     zones = _as_list(data.get("zones"))
     preferred_zone_ids = {
         "RECOVERY": ("Z1",),
-        "ENDURANCE": ("Z2",),
-        "ENDURANCE_LOW": ("Z2",),
-        "ENDURANCE_HIGH": ("Z2", "Z3"),
+        "ENDURANCE": ("Z2", "Z3"),
         "TEMPO": ("Z3",),
         "SWEET_SPOT": ("SS",),
         "THRESHOLD": ("Z4",),
@@ -147,7 +143,7 @@ def resolve_if_ref_load(
     if anchor is not None and ftp is not None and ftp > 0:
         return IfRefLoad(_clamp(anchor / ftp, 0.55, 0.80), "ATHLETE_PROFILE_ANCHOR")
 
-    zone_if = _zone_model_if_for_domain("ENDURANCE_LOW", zone_payload)
+    zone_if = _zone_model_if_for_domain("ENDURANCE", zone_payload)
     if zone_if is not None:
         return IfRefLoad(_clamp(zone_if, 0.55, 0.80), "ZONEMODEL_ENDURANCE_TYPICAL")
 
@@ -741,7 +737,7 @@ def _allowed_domains(
         return domains
     season_phases = _as_list(_as_map(season_plan_payload.get("data")).get("phases"))
     if phase_range is None and not season_phases:
-        return ["ENDURANCE_LOW"]
+        return ["ENDURANCE"]
     return []
 
 

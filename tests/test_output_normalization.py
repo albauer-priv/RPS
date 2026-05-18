@@ -42,7 +42,7 @@ def test_normalize_season_scenarios_derives_horizon_from_events() -> None:
             "scenarios": [
                 {
                     "scenario_id": "S1",
-                    "scenario_guidance": {"deload_cadence": "3:1", "intensity_guidance": {"allowed_domains": ["ENDURANCE_LOW"], "avoid_domains": ["NONE", "THRESHOLD"]}},
+                    "scenario_guidance": {"deload_cadence": "3:1", "intensity_guidance": {"allowed_domains": ["ENDURANCE"], "avoid_domains": ["NONE", "THRESHOLD"]}},
                 }
             ],
         },
@@ -54,7 +54,7 @@ def test_normalize_season_scenarios_derives_horizon_from_events() -> None:
     assert normalized["meta"]["iso_week_range"] == "2026-19--2026-24"
     assert normalized["data"]["planning_horizon_weeks"] == 6
     guidance = normalized["data"]["scenarios"][0]["scenario_guidance"]
-    assert guidance["intensity_guidance"]["allowed_domains"] == ["ENDURANCE_LOW"]
+    assert guidance["intensity_guidance"]["allowed_domains"] == ["ENDURANCE"]
     assert guidance["intensity_guidance"]["avoid_domains"] == ["THRESHOLD"]
 
 
@@ -78,7 +78,7 @@ def test_normalize_season_scenarios_repairs_agent_payload_for_schema() -> None:
                 "kpi_guardrail_notes": ["Stay in sustainable endurance bands."],
                 "decision_notes": ["Use as default if risk control matters."],
                 "intensity_guidance": {
-                    "allowed_domains": ["ENDURANCE_LOW", "ENDURANCE_HIGH", "TEMPO"],
+                    "allowed_domains": ["ENDURANCE", "TEMPO"],
                     "avoid_domains": ["NONE", "THRESHOLD"],
                 },
                 "assumptions": ["Availability is stable."],

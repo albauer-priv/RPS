@@ -32,6 +32,28 @@ JsonMap = dict[str, object]
 StringListMap = dict[str, list[str]]
 StoreResult = dict[str, object]
 INTEGER_ROUNDING_EPSILON = 1e-9
+CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
+    ArtifactType.SEASON_PLAN: "Season-Artifact-Writer",
+    ArtifactType.SEASON_PHASE_FEED_FORWARD: "Season-Artifact-Writer",
+    ArtifactType.PHASE_GUARDRAILS: "Phase-Artifact-Writer",
+    ArtifactType.PHASE_STRUCTURE: "Phase-Artifact-Writer",
+    ArtifactType.PHASE_PREVIEW: "Phase-Artifact-Writer",
+    ArtifactType.PHASE_FEED_FORWARD: "Phase-Artifact-Writer",
+    ArtifactType.WEEK_PLAN: "Week-Artifact-Writer",
+    ArtifactType.DES_ANALYSIS_REPORT: "Report-Artifact-Writer",
+}
+
+
+def normalize_artifact_owner(document: object, artifact_type: ArtifactType) -> object:
+    """Set the canonical writer owner for persisted planning/report artefacts."""
+
+    owner = CANONICAL_OWNER_BY_ARTIFACT.get(artifact_type)
+    if not owner or not isinstance(document, dict):
+        return document
+    meta = document.get("meta")
+    if isinstance(meta, dict):
+        meta["owner_agent"] = owner
+    return document
 
 
 class MissingDependenciesError(RuntimeError):
@@ -677,6 +699,7 @@ class GuardedValidatedStore:
     ) -> StoreResult:
         """Validate, derive version key, and persist a document with guards."""
         target = output_spec.artifact_type
+        document = normalize_artifact_owner(document, target)
         raw_document = document
         try:
             self._log_store_attempt(
@@ -733,12 +756,13 @@ class GuardedValidatedStore:
                 "run_id": run_id,
                 "producer_agent": producer_agent,
             }
-        except Exception:
+        except Exception as exc:
             self._log_failed_payload(
                 raw_document,
                 output_spec=output_spec,
                 run_id=run_id,
                 producer_agent=producer_agent,
+                error=exc,
             )
             raise
 
@@ -866,13 +890,20 @@ class GuardedValidatedStore:
         output_spec: OutputSpec,
         run_id: str,
         producer_agent: str,
+        error: Exception | None = None,
     ) -> None:
         """Log the raw payload for failed store attempts."""
         payload_text = self._format_payload(document)
+        reason = str(error) if error is not None else "unknown"
+        if isinstance(error, SchemaValidationError) and error.errors:
+            reason = "; ".join(error.errors[:12])
+            if len(error.errors) > 12:
+                reason = f"{reason}; ... and {len(error.errors) - 12} more"
         self.logger.error(
-            "Store failed for artifact=%s run_id=%s producer=%s. Payload:\n%s",
+            "Store failed for artifact=%s run_id=%s producer=%s reason=%s. Payload:\n%s",
             output_spec.artifact_type.value,
             run_id,
             producer_agent,
+            reason,
             payload_text,
         )

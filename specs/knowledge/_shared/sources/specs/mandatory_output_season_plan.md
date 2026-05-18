@@ -265,7 +265,7 @@ All required booleans must be present. Set to `true` only if valid:
           "expected_adaptations": ["Improved steady-state endurance."],
           "evaluation_focus": ["Completion of long steady rides."],
           "phase_exit_assumptions": ["Stable recovery and adherence."],
-          "typical_duration_intensity_pattern": "Mostly ENDURANCE_LOW with brief TEMPO.",
+          "typical_duration_intensity_pattern": "Mostly ENDURANCE with brief TEMPO.",
           "non_negotiables": ["Fixed rest days preserved."]
         },
         "weekly_load_corridor": {
@@ -278,7 +278,7 @@ All required booleans must be present. Set to `true` only if valid:
           }
         },
         "allowed_forbidden_semantics": {
-          "allowed_intensity_domains": ["ENDURANCE_LOW", "TEMPO"],
+          "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
           "allowed_load_modalities": ["NONE"],
           "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"]
         },
@@ -317,7 +317,7 @@ All required booleans must be present. Set to `true` only if valid:
           }
         },
         "allowed_forbidden_semantics": {
-          "allowed_intensity_domains": ["ENDURANCE_LOW", "TEMPO"],
+          "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
           "allowed_load_modalities": ["NONE"],
           "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"]
         },

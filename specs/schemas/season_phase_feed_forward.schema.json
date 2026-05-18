@@ -174,7 +174,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Season-Planner",
+          "const": "Season-Artifact-Writer",
           "type": "string"
         }
       },

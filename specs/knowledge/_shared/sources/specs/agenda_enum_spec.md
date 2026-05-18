@@ -82,15 +82,11 @@ Describes the physiological intensity domain (label only).
 | --------- | ---------------------------- |
 | NONE      | No explicit intensity domain |
 | RECOVERY  | Regenerative intensity       |
-| ENDURANCE_LOW | Aerobic base (lower Z2)  |
-| ENDURANCE_HIGH | Aerobic base (upper Z2) |
+| ENDURANCE | Aerobic endurance (Z2 / upper endurance) |
 | TEMPO     | Upper endurance / tempo      |
 | SWEET_SPOT       | Sweet Spot                   |
 | THRESHOLD | Threshold-oriented           |
 | VO2MAX    | VO₂max-oriented              |
-
-Legacy alias:
-- `ENDURANCE` (if present) MUST be normalized to `ENDURANCE_LOW`.
 
 ⚠️ These are labels, not zones, not targets.
 
@@ -110,7 +106,7 @@ Describes how load is generated, not how intense it is.
 Binding note:
 K3 denotes a **focused torque stimulus**. Therefore, when `LOAD_MODALITY = K3`,
 `DAY_ROLE` MUST be `QUALITY` or `EVENT` per allowed combinations, even if
-`INTENSITY_DOMAIN = ENDURANCE_HIGH`.
+`INTENSITY_DOMAIN = ENDURANCE`.
 
 ## 4) Combination Rules (BINDING)
 
@@ -132,21 +128,21 @@ Only one value per enum is allowed.
 | TRAVEL    | NONE                          | NONE           |
 | FLEX      | NONE                          | NONE           |
 | RECOVERY  | NONE, RECOVERY                | NONE           |
-| ENDURANCE | NONE, ENDURANCE_LOW, ENDURANCE_HIGH | NONE     |
-| OPTIONAL  | NONE, ENDURANCE_LOW, ENDURANCE_HIGH | NONE     |
+| ENDURANCE | NONE, ENDURANCE | NONE     |
+| OPTIONAL  | NONE, ENDURANCE | NONE     |
 | QUALITY   | TEMPO, SWEET_SPOT, THRESHOLD, VO2MAX | NONE           |
 | QUALITY   | SWEET_SPOT                           | K3             |
-| QUALITY   | ENDURANCE_HIGH                | K3             |
-| EVENT     | ENDURANCE_LOW, ENDURANCE_HIGH, TEMPO, SWEET_SPOT, THRESHOLD, VO2MAX | NONE |
-| EVENT     | ENDURANCE_HIGH, SWEET_SPOT            | K3             |
+| QUALITY   | ENDURANCE                | K3             |
+| EVENT     | ENDURANCE, TEMPO, SWEET_SPOT, THRESHOLD, VO2MAX | NONE |
+| EVENT     | ENDURANCE, SWEET_SPOT            | K3             |
 
 ### 4.3 Forbidden Combinations (Examples)
 
 - DAY_ROLE = ENDURANCE AND INTENSITY_DOMAIN ∈ {SWEET_SPOT, TEMPO, THRESHOLD, VO2MAX}
 - DAY_ROLE = OPTIONAL AND INTENSITY_DOMAIN ∈ {SWEET_SPOT, TEMPO, THRESHOLD, VO2MAX}
-- DAY_ROLE = QUALITY AND INTENSITY_DOMAIN ∈ {NONE, ENDURANCE_LOW}
-- DAY_ROLE = QUALITY AND INTENSITY_DOMAIN = ENDURANCE_HIGH AND LOAD_MODALITY = NONE
-- LOAD_MODALITY = K3 AND INTENSITY_DOMAIN ∉ {ENDURANCE_HIGH, SWEET_SPOT}
+- DAY_ROLE = QUALITY AND INTENSITY_DOMAIN ∈ {NONE, ENDURANCE}
+- DAY_ROLE = QUALITY AND INTENSITY_DOMAIN = ENDURANCE AND LOAD_MODALITY = NONE
+- LOAD_MODALITY = K3 AND INTENSITY_DOMAIN ∉ {ENDURANCE, SWEET_SPOT}
 - Any day with multiple intensity domains
 - Any day with multiple load modalities
 

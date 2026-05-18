@@ -233,6 +233,33 @@ def _build_task_callback_kwargs(
     }
 
 
+def _emit_crew_task_prepared_events(
+    *,
+    runtime: AgentRuntime,
+    crew_name: str,
+    tasks: list[tuple[str, str]],
+    athlete_id: str | None,
+    run_id: str | None,
+    component: str,
+) -> None:
+    """Emit one compact log/event row per task before CrewAI kickoff begins."""
+
+    if not athlete_id or not run_id:
+        return
+    for index, (task_name, agent_name) in enumerate(tasks, start=1):
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="CREW_TASK_PREPARED",
+            crew=crew_name,
+            task=task_name,
+            agent=agent_name,
+            status=f"{index}/{len(tasks)}",
+            component=component,
+        )
+
+
 def _tool_map_from_runtime_tools(tools: list[Any] | ToolMap) -> ToolMap:
     """Normalize runtime tools to a lookup by CrewAI tool name."""
 
@@ -771,6 +798,14 @@ def _execute_crewai_task(
     crew_kwargs.update(crew_memory_kwargs)
     crew = crew_cls(**crew_kwargs)
     register_runtime_label(crew, kind="crew", label=crew_name)
+    _emit_crew_task_prepared_events(
+        runtime=runtime,
+        crew_name=crew_name,
+        tasks=[(task_blueprint.name, agent_blueprint.role)],
+        athlete_id=athlete_id,
+        run_id=run_id,
+        component=f"crew:{task_blueprint.name}",
+    )
     if athlete_id and run_id:
         with runtime_event_scope(
             root=runtime.workspace_root,
@@ -1030,6 +1065,20 @@ def _execute_crewai_hierarchical_crew(
         crew_kwargs["planning_llm"] = planning_llm
     crew = crew_cls(**crew_kwargs)
     register_runtime_label(crew, kind="crew", label=crew_name)
+    _emit_crew_task_prepared_events(
+        runtime=runtime,
+        crew_name=crew_name,
+        tasks=[
+            (
+                task_name,
+                agent_blueprints[task_blueprints[task_name].agent].role,
+            )
+            for task_name in crew_task_names
+        ],
+        athlete_id=athlete_id,
+        run_id=run_id,
+        component=f"crew:{final_task_name}",
+    )
     if athlete_id and run_id:
         with runtime_event_scope(
             root=runtime.workspace_root,

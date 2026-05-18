@@ -24,8 +24,6 @@
         "NONE",
         "RECOVERY",
         "ENDURANCE",
-        "ENDURANCE_LOW",
-        "ENDURANCE_HIGH",
         "TEMPO",
         "SWEET_SPOT",
         "THRESHOLD",

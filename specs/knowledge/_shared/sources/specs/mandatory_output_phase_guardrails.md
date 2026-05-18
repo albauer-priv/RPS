@@ -254,7 +254,7 @@ Additional hard stops (binding):
     },
     "allowed_forbidden_semantics": {
       "allowed_day_roles": ["ENDURANCE"],
-      "allowed_intensity_domains": ["ENDURANCE_LOW"],
+      "allowed_intensity_domains": ["ENDURANCE"],
       "allowed_load_modalities": ["NONE"],
       "quality_density": {
         "max_quality_days_per_week": 1,

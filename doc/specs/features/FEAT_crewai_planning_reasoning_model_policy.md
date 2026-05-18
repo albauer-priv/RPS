@@ -55,11 +55,11 @@ Owner: Runtime
 
 **User/System behavior**
 
-* `season_planning` and `phase_planning` explicitly enable CrewAI planning with dedicated planning models.
+* `season_planning` and `phase_planning` keep CrewAI-native planning disabled by default because RPS already uses explicit YAML task chains for planning, review, and writer steps.
 * Review, writer, report, and conversational crews stay planning-free.
 * Reasoning is enabled only on the selected planning/review specialists and managers.
 * Writers, context readers, and bounded routing/status roles stay non-reasoning.
-* Model defaults are role-specific and can still be overridden by environment variables.
+* Model defaults are role-specific and can still be overridden by environment variables; CrewAI-native planning remains available through env/config overrides for experiments.
 
 **UI impact**
 
@@ -174,7 +174,7 @@ Owner: Runtime
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [x] `runtime_profiles.yaml` exists and validates all referenced crews/agents/models.
-* [x] `season_planning` and `phase_planning` build with `planning=True` and the configured planning LLM.
+* [x] `season_planning` and `phase_planning` build without CrewAI-native `planning=True` by default; configured planning LLMs remain available for explicit override tests.
 * [x] Reasoning flags are attached only to the intended agents.
 * [x] Writers remain non-reasoning and planning-free.
 * [x] Validation passes: syntax, lint, typecheck, pytest.

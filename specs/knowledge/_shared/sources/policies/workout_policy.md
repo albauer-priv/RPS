@@ -75,20 +75,16 @@ Every workout MUST map to exactly one agenda configuration.
 
 | Workout Intent | Day Role | Intensity Domain | Load Modality |
 |---------------|---------|------------------|---------------|
-| Endurance (Low) | ENDURANCE | ENDURANCE_LOW | NONE |
-| Endurance (High) | ENDURANCE | ENDURANCE_HIGH | NONE |
+| Endurance | ENDURANCE | ENDURANCE | NONE |
 | Recovery | RECOVERY | RECOVERY | NONE |
 | Tempo | QUALITY | TEMPO | NONE |
 | Sweet Spot | QUALITY | SWEET_SPOT | NONE |
 | Threshold | QUALITY | THRESHOLD | NONE |
 | VO2max | QUALITY | VO2MAX | NONE |
-| K3 (strength endurance) | QUALITY | ENDURANCE_HIGH | K3 |
+| K3 (strength endurance) | QUALITY | ENDURANCE | K3 |
 | K3 (strength endurance) | QUALITY | SWEET_SPOT | K3 |
 
 Violations are invalid.
-
-Note: Legacy `ENDURANCE` domain maps to `ENDURANCE_LOW` unless explicitly
-requested as `ENDURANCE_HIGH`.
 
 ---
 
@@ -204,20 +200,20 @@ Structural rules:
 
 Allowed step types (WarmupBlock):
 1) Steady steps
-   - Intensity <= ENDURANCE_LOW/ENDURANCE_HIGH domain
+   - Intensity <= ENDURANCE domain
 2) Ramp steps
-   - Intensity <= ENDURANCE_LOW/ENDURANCE_HIGH domain
+   - Intensity <= ENDURANCE domain
 3) Short activation spikes
    - Duration <= 30 seconds per spike
    - Intensity <= TEMPO domain
-   - Recovery between spikes >= equal duration at <= ENDURANCE_LOW/ENDURANCE_HIGH
+   - Recovery between spikes >= equal duration at <= ENDURANCE
 
 Forbidden content (WarmupBlock):
 - Sustained work (> 60s) in SWEET_SPOT, Threshold, or VO2max
 - Loops or repeats that include sustained work
 - Load modalities (e.g., K3)
 - Freeride / unstructured steps
-- Hidden progression beyond ENDURANCE_LOW/ENDURANCE_HIGH + short spikes
+- Hidden progression beyond ENDURANCE + short spikes
 - Total WarmupBlock duration > 10 minutes
 
 Violation of any rule invalidates the workout.
@@ -239,7 +235,7 @@ Allowed step types (CooldownBlock):
 - Steady steps or ramp steps
 - For ramp steps, the range MUST be descending (e.g., 60%-45%)
 - Intensity MUST be monotonically descending
-- Maximum intensity <= ENDURANCE_LOW/ENDURANCE_HIGH domain
+- Maximum intensity <= ENDURANCE domain
 
 Forbidden content (CooldownBlock):
 - Intensity spikes
@@ -247,7 +243,7 @@ Forbidden content (CooldownBlock):
 - Loops or repeats
 - Load modalities
 - Freeride / unstructured steps
-- Any step > ENDURANCE_LOW/ENDURANCE_HIGH
+- Any step > ENDURANCE
 
 Violation of any rule invalidates the workout.
 
@@ -834,7 +830,7 @@ Durability development: maintain power under prior fatigue.
 **Agenda Mapping (Binding)**
 - Workout Intent: Endurance
 - Day Role: ENDURANCE
-- Intensity Domain: ENDURANCE_LOW
+- Intensity Domain: ENDURANCE
 - Load Modality: NONE
 
 **Design Rules (Binding)**
@@ -867,7 +863,7 @@ Multi-day tolerance and energetic robustness (brevet-specific).
 **Agenda Mapping (Binding)**
 - Workout Intent: Endurance
 - Day Role: ENDURANCE
-- Intensity Domain: ENDURANCE_LOW
+- Intensity Domain: ENDURANCE
 - Load Modality: NONE
 
 **Design Rules (Binding)**

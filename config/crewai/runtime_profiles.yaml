@@ -15,7 +15,7 @@ crews:
       enabled: false
   season_planning:
     planning:
-      enabled: true
+      enabled: false
       model: gpt-5.4
   season_review:
     planning:
@@ -25,7 +25,7 @@ crews:
       enabled: false
   phase_planning:
     planning:
-      enabled: true
+      enabled: false
       model: gpt-5.4-mini
   phase_review:
     planning:

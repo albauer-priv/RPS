@@ -89,9 +89,8 @@ Notes:
   targets or cadence overrides outside that policy.
 - `intensity_guidance.allowed_domains` / `avoid_domains` MUST use canonical
   agenda intensity domains only:
-  `NONE`, `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`,
-  `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`.
-- Legacy alias `ENDURANCE` is normalized to `ENDURANCE_LOW`.
+  `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`,
+  `VO2MAX`.
 - Proxy labels like `HIGH_INTENSITY_DENSITY`, `LIMITED_VO2MAX`, or
   `EXTRA_BUILD_OVERLAY` are invalid in intensity guidance and belong in
   `risk_flags` or `decision_notes` instead.
@@ -171,7 +170,7 @@ Notes:
           "kpi_guardrail_notes": ["Weekly kJ increase <= 10%."],
           "decision_notes": ["Prioritise durability over speed."],
           "intensity_guidance": {
-            "allowed_domains": ["ENDURANCE_LOW", "TEMPO"],
+            "allowed_domains": ["ENDURANCE", "TEMPO"],
             "avoid_domains": ["VO2MAX"]
           },
           "assumptions": ["Stable availability."],
@@ -203,7 +202,7 @@ Notes:
           "kpi_guardrail_notes": ["Progression capped at 10%."],
           "decision_notes": ["Maintain recovery anchors."],
           "intensity_guidance": {
-            "allowed_domains": ["ENDURANCE_LOW", "TEMPO", "SWEET_SPOT"],
+            "allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
             "avoid_domains": ["VO2MAX"]
           },
           "assumptions": ["Reliable weekday sessions."],
@@ -235,7 +234,7 @@ Notes:
           "kpi_guardrail_notes": ["Hold or deload on red KPI."],
           "decision_notes": ["Prioritise specificity near events."],
           "intensity_guidance": {
-            "allowed_domains": ["ENDURANCE_LOW", "TEMPO", "VO2MAX"],
+            "allowed_domains": ["ENDURANCE", "TEMPO", "VO2MAX"],
             "avoid_domains": []
           },
           "assumptions": ["Short-term intensity tolerance."],

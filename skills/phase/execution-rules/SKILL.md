@@ -15,7 +15,7 @@ Method:
 Agenda rules:
 - `DAY_ROLE` is mandatory.
 - `QUALITY` and `EVENT` require a non-`NONE` intensity domain.
-- `K3` is only valid with `QUALITY` or `EVENT`, and only with `ENDURANCE_HIGH` or `SWEET_SPOT`.
+- `K3` is only valid with `QUALITY` or `EVENT`, and only with `ENDURANCE` or `SWEET_SPOT`.
 - Pair `ENDURANCE` and `OPTIONAL` with endurance-compatible domains.
 - Pair `QUALITY` with trainable quality domains above recovery/endurance-low semantics.
 - Keep power zones, `%FTP`, durations, interval structures, kJ values, and progression language in downstream week/workout artifacts.

@@ -140,11 +140,11 @@ Required strings:
         "week": "2026-04",
         "days": [
           { "day_of_week": "Mon", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest" },
-          { "day_of_week": "Tue", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE_LOW", "load_modality": "NONE", "notes": "Steady endurance" },
-          { "day_of_week": "Wed", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE_LOW", "load_modality": "NONE", "notes": "Steady endurance" },
+          { "day_of_week": "Tue", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady endurance" },
+          { "day_of_week": "Wed", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady endurance" },
           { "day_of_week": "Thu", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE", "notes": "One focused session" },
           { "day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest" },
-          { "day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE_HIGH", "load_modality": "NONE", "notes": "Long ride" },
+          { "day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Long ride" },
           { "day_of_week": "Sun", "day_role": "RECOVERY", "intensity_domain": "RECOVERY", "load_modality": "NONE", "notes": "Recovery spin" }
         ]
       }

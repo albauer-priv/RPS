@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Collapsed the split endurance intensity domains into a single `ENDURANCE` enum across schemas, skills, specs, prompts, and tests; deterministic load estimation now uses the former high-endurance default (`0.70`) for `ENDURANCE`.
+- Persisted CrewAI artifact schemas now use the dedicated writer-owner identities (`Season-Artifact-Writer`, `Phase-Artifact-Writer`, `Week-Artifact-Writer`, `Report-Artifact-Writer`) and bundled schemas were regenerated.
+- Season and Phase planning crews no longer enable CrewAI-native pre-planning by default, avoiding the extra `Task Execution Planner` pass when RPS already supplies an explicit YAML task chain.
 - Application logs now suppress high-volume HTTP, OpenAI usage, OpenAI tool-validation, callback, and tool lifecycle noise by default while keeping flow, crew, task, and guardrail progress visible.
 - Knowledge store sync now logs manifest, source path, tags, chunk counts, collection, and completion summaries instead of relying on embedding HTTP transport lines for observability.
 - CrewAI runtime progress is now mirrored into the main application log with compact flow, crew, task, agent, tool, output-format, and run identifiers so long-running planning runs are easier to inspect live.
@@ -23,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach recommendation and finalization prompts now define the desired positive cycling-coach voice directly instead of relying mainly on negative style constraints.
 
 ### Fixed
+- Fixed Season Plan persistence after writer-crew execution by aligning schema owner constants with the new writer-agent ownership model.
+- Fixed CrewAI progress visibility by emitting planned task/agent rows before each Crew kickoff, so long runs show the upcoming task chain immediately.
 - Fixed CrewAI runtime labels so event logs prefer RPS task, crew, and agent names instead of generic CrewAI labels like `Task` or `crew`.
 - Fixed explicit `artifact_schema_valid` guardrail validation so schema-sensitive metadata constants and trace-reference versions are normalized before canonical JSON-Schema validation.
 - Fixed schema-backed CrewAI artifact validation so operational trace reference version keys are normalized before canonical JSON-Schema validation, preventing Season Plan failures on `meta.trace_*[].version`.
@@ -154,7 +159,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feed Forward runs now inject resolved selected-week DES evaluation context and selected-week Season→Phase feed-forward context directly from workspace artefacts, and the `season_planner` / `phase_architect` prompts now bind explicit Mode C `workspace_get_version(...)` reads for `DES_ANALYSIS_REPORT` and feed-forward context where required.
 - `SEASON_SCENARIOS` now normalizes its planning horizon deterministically from the last A/B/C `PLANNING_EVENTS` date before store, rewriting `meta.iso_week_range`, `meta.temporal_scope`, and `data.planning_horizon_weeks` so season replanning no longer truncates at a stale pre-September horizon when newer events exist.
 - Season-scenario planning math is now code-normalized from the authoritative horizon and each scenario's `phase_length_weeks`: `phase_count_expected`, `shortening_budget_weeks`, and `phase_plan_summary` no longer rely on model arithmetic, and the `season_scenario` prompt/injection set was simplified accordingly.
-- Season-scenario `intensity_guidance` is now normalized to the canonical agenda intensity domains; invalid proxy labels are dropped, legacy `ENDURANCE` is normalized to `ENDURANCE_LOW`, and the season-scenarios schema now uses the same intensity-domain enum contract as season/phase artefacts.
+- Season-scenario `intensity_guidance` is now normalized to the canonical agenda intensity domains; invalid proxy labels are dropped, legacy split endurance labels are normalized to `ENDURANCE`, and the season-scenarios schema now uses the same intensity-domain enum contract as season/phase artefacts.
 - Season-scenario phase-summary normalization now avoids degenerate 1-week shortened phases by distributing shortening across up to two shortened phases with a minimum shortened-phase length of 2 weeks.
 - Season-scenario normalization now also rejects `NONE`/`RECOVERY` in `avoid_domains`, sets `max_shortened_phases = 0` when no shortening budget exists, and normalizes `trace_data` / `trace_events` into consistent data-vs-event buckets before store.
 - Week-scoped artefacts such as `SEASON_SCENARIOS` now ignore stale timestamp suffixes in `meta.version_key` and derive fresh store keys from `meta.iso_week` plus canonicalized `created_at`, preventing new runs from overwriting older timestamped season-scenario files.
@@ -596,7 +601,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.11] - 2026-01-26
 
 ### Changed
-- LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE_LOW (IF_ref_load = 0.65) and updates feasibility + KPI mapping accordingly.
+- LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE (IF_ref_load = 0.70) and updates feasibility + KPI mapping accordingly.
 - Season plausibility check now uses mechanical `planned_kJ_week`, and Phase STOPs defer to the S5 ladder; patch section removed.
 - All agent prompts now explicitly label Fueling/Energy as `planned_kJ` and Governance as `planned_Load_kJ` in logs/notes.
 - Store tool schemas no longer require `data_confidence` in the global meta; activities schemas still require it.
@@ -608,7 +613,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.10] - 2026-01-26
 
 ### Changed
-- LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE_LOW (IF_ref_load = 0.65) and updates feasibility + KPI mapping accordingly.
+- LoadEstimationSpec now normalizes `planned_Load_kJ` to ENDURANCE (IF_ref_load = 0.70) and updates feasibility + KPI mapping accordingly.
 
 ## [0.6.4] - 2026-01-26
 
@@ -643,7 +648,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidated all agent knowledge into a single vector store (`vs_rps_all_agents`) with a unified `specs/knowledge/all_agents/manifest.yaml`.
 - Consolidated season/phase load policies into `load_estimation_spec.md` (General/Season/Phase sections) and removed the standalone policy docs.
 - LoadEstimationSpec tightened: deterministic Season utilization/body-mass fallback, KPI band selector, domain aliasing, and clarified Season/Phase responsibilities.
-- Added ENDURANCE_LOW/ENDURANCE_HIGH intensity domains (with legacy aliasing), renamed `SST` → `SWEET_SPOT`, and reintroduced THRESHOLD in intensity-domain enums across schemas, specs, prompts, and workout policy.
+- Added split endurance intensity domains (with legacy aliasing), renamed `SST` → `SWEET_SPOT`, and reintroduced THRESHOLD in intensity-domain enums across schemas, specs, prompts, and workout policy.
 - Split KPI workout-to-signal mapping into `kpi_signal_effects_policy.md` (informational) and referenced it from WorkoutPolicy.
 - Principles 3.3 now explicitly scope cadence selection to Scenario/Season (Phase must not apply a default cadence).
 - Scenario/Season prompts now reiterate cadence ownership (Phase must not apply defaults).

@@ -34,7 +34,7 @@ def _write_season_plan(root, athlete_id: str) -> None:
                     },
                     "weekly_load_corridor": {"weekly_kj": {"min": 1000, "max": 2000}},
                     "allowed_forbidden_semantics": {
-                        "allowed_intensity_domains": ["ENDURANCE_LOW"],
+                        "allowed_intensity_domains": ["ENDURANCE"],
                         "allowed_load_modalities": ["NONE"],
                         "forbidden_intensity_domains": [],
                     },

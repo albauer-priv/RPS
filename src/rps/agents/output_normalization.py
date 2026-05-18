@@ -531,7 +531,7 @@ def normalize_season_scenarios_document(
             allowed_domains = normalize_intensity_domain_list(intensity_guidance.get("allowed_domains"))
             avoid_domains = normalize_intensity_domain_list(intensity_guidance.get("avoid_domains"))
             if not allowed_domains:
-                allowed_domains = ["ENDURANCE_LOW"]
+                allowed_domains = ["ENDURANCE"]
             avoid_domains = [
                 domain
                 for domain in avoid_domains

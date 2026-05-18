@@ -161,7 +161,7 @@ Clamps:
 
 2. **Zone Model endurance typical** (fallback):
 
-* Prefer Z2 typical IF (or ENDURANCE_LOW typical IF if exposed)
+* Prefer Z2 typical IF (or ENDURANCE typical IF if exposed)
 
   * `IF_ref_load = clamp(IF_z2_typical, 0.55, 0.80)`
   * `IF_ref_load_source = ZONEMODEL_ENDURANCE_TYPICAL`
@@ -213,8 +213,7 @@ Use Zone Model typical IFs when available. If absent:
 | --------------- | ---------: |
 | REST / OFF      |      0.000 |
 | RECOVERY        |       0.55 |
-| ENDURANCE_LOW   |       0.65 |
-| ENDURANCE_HIGH  |       0.70 |
+| ENDURANCE       |       0.70 |
 | TEMPO           |       0.80 |
 | SWEET_SPOT      |       0.90 |
 | THRESHOLD       |       1.00 |
@@ -223,7 +222,7 @@ Use Zone Model typical IFs when available. If absent:
 
 Canonical identifiers (binding):
 
-* `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`, `ANAEROBIC`, `REST`.
+* `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`, `ANAEROBIC`, `REST`.
 
 ### 3.10 Trace flags (Binding)
 

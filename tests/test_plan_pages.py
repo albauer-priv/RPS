@@ -2262,7 +2262,7 @@ def test_plan_week_injects_resolved_activity_context(
                             ]
                         },
                         "allowed_forbidden_semantics": {
-                            "allowed_intensity_domains": ["ENDURANCE_LOW", "TEMPO"],
+                            "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
                             "allowed_load_modalities": ["NONE", "K3"],
                             "quality_density": {
                                 "max_quality_days_per_week": 2,

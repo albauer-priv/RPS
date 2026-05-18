@@ -206,7 +206,7 @@ Additional hard stops (binding):
       "load_intensity_handling": {
         "max_quality_days_per_week": 1,
         "quality_intent": "Stabilization",
-        "allowed_intensity_domains": ["ENDURANCE_LOW"],
+        "allowed_intensity_domains": ["ENDURANCE"],
         "forbidden_intensity_domains": ["VO2MAX"],
         "load_modality_constraints": ["NONE"]
       },
@@ -222,7 +222,7 @@ Additional hard stops (binding):
     },
     "structural_phase_elements": {
       "allowed_day_roles": ["ENDURANCE"],
-      "allowed_intensity_domains": ["ENDURANCE_LOW"],
+      "allowed_intensity_domains": ["ENDURANCE"],
       "allowed_load_modalities": ["NONE"]
     },
     "week_skeleton_logic": {

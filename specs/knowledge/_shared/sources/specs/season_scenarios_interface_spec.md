@@ -78,9 +78,8 @@ Each scenario MUST include `scenario_guidance` with:
 - `decision_notes` (array)
 - `intensity_guidance` with `allowed_domains` and `avoid_domains` (arrays)
   using canonical agenda intensity domains only
-  (`NONE`, `RECOVERY`, `ENDURANCE_LOW`, `ENDURANCE_HIGH`, `TEMPO`,
-  `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`; legacy `ENDURANCE` normalizes to
-  `ENDURANCE_LOW`)
+  (`NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`,
+  `VO2MAX`)
   - `avoid_domains` is for canonical training domains to suppress in planning;
     it must not include `NONE` or `RECOVERY`
 - `assumptions` (array)

@@ -8,6 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from rps.workouts.exporter import build_workout_export_payload
+from rps.workspace.guarded_store import normalize_artifact_owner
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 from rps.workspace.types import ArtifactType
@@ -95,6 +96,7 @@ def run_workout_export(
         schemas = SchemaRegistry(schema_dir=schema_dir)
         week_plan_validator = schemas.validator_for("week_plan.schema.json")
         week_plan_for_validation = deepcopy(week_plan)
+        normalize_artifact_owner(week_plan_for_validation, ArtifactType.WEEK_PLAN)
         meta = week_plan_for_validation.get("meta")
         if isinstance(meta, dict):
             meta.pop("version_key", None)

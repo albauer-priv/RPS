@@ -216,7 +216,7 @@ def build_workout_load_method_context(
     )
     domains = [str(item).strip().upper() for item in allowed_intensity_domains or [] if str(item).strip()]
     if not domains:
-        domains = ["RECOVERY", "ENDURANCE_LOW", "ENDURANCE_HIGH", "TEMPO"]
+        domains = ["RECOVERY", "ENDURANCE", "TEMPO"]
     rows: list[JsonMap] = []
     warnings: list[str] = []
     if ftp is None:
@@ -368,8 +368,8 @@ def _domain_from_inputs(*, domain_hint: str | None, workout: JsonMap, agenda_ent
     if "QUALITY" in text:
         return "TEMPO"
     if "ENDURANCE" in text:
-        return "ENDURANCE_LOW"
-    return "ENDURANCE_LOW"
+        return "ENDURANCE"
+    return "ENDURANCE"
 
 
 def _zero_estimate(if_ref_load: float, if_ref_load_source: str) -> WorkoutLoadEstimate:

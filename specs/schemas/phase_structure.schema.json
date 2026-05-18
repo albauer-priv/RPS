@@ -477,7 +477,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Phase-Architect",
+          "const": "Phase-Artifact-Writer",
           "type": "string"
         }
       },

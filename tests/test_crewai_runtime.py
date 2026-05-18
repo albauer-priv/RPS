@@ -13,6 +13,7 @@ from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
     _coerce_artifact_envelope,
+    _emit_crew_task_prepared_events,
     _task_tools_for_blueprint,
     run_agent_multi_output_crewai,
 )
@@ -280,7 +281,8 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert "week_plan_manager" in knowledge_defs
     assert flow_defs["season"]["persist"] is True
     assert flow_defs["coach"]["persist"] is False
-    assert bundle.runtime_profiles["crews"]["season_planning"]["planning"]["enabled"] is True
+    assert bundle.runtime_profiles["crews"]["season_planning"]["planning"]["enabled"] is False
+    assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.4-mini"
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.4"
     assert bundle.runtime_profiles["agents"]["week_artifact_writer"]["reasoning"]["enabled"] is False
@@ -1316,6 +1318,46 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     assert "agent=season_plan_manager" in log_text
 
 
+def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path, caplog) -> None:
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=tmp_path,
+    )
+
+    caplog.set_level(logging.INFO, logger="rps.crewai_runtime.telemetry")
+    _emit_crew_task_prepared_events(
+        runtime=runtime,
+        crew_name="season_planning",
+        tasks=[
+            ("season_context_read", "season_context_specialist"),
+            ("season_plan_finalize", "season_plan_manager"),
+        ],
+        athlete_id="athlete",
+        run_id="run-prepared",
+        component="crew:season_plan_finalize",
+    )
+
+    events = load_events(tmp_path, "athlete", "run-prepared")
+    assert [event["type"] for event in events] == ["CREW_TASK_PREPARED", "CREW_TASK_PREPARED"]
+    assert events[0]["task"] == "season_context_read"
+    assert events[0]["agent"] == "season_context_specialist"
+    assert events[0]["status"] == "1/2"
+    assert events[1]["task"] == "season_plan_finalize"
+    assert events[1]["agent"] == "season_plan_manager"
+    assert events[1]["status"] == "2/2"
+    log_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert "type=CREW_TASK_PREPARED" in log_text
+    assert "crew=season_planning" in log_text
+    assert "task=season_context_read" in log_text
+
+
 def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:
     monkeypatch.delenv("RPS_AGENT_RUNTIME", raising=False)
     selection = agent_runtime.resolve_agent_runtime_selection()
@@ -1505,8 +1547,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["manager_agent"] is not None
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
-    assert planning_crews
-    assert getattr(planning_crews[0].get("planning_llm"), "kwargs", {}).get("model") == "gpt-5.4"
+    assert planning_crews == []
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
     assert macrocycle_agent["reasoning"] is True
     assert macrocycle_agent["max_reasoning_attempts"] == 2
@@ -1666,8 +1707,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["manager_agent"] is not None
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
-    assert planning_crews
-    assert getattr(planning_crews[0].get("planning_llm"), "kwargs", {}).get("model") == "gpt-5.4-mini"
+    assert planning_crews == []
     band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")
     assert band_agent["reasoning"] is True
     assert band_agent["max_reasoning_attempts"] == 2

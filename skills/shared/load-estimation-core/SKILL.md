@@ -60,8 +60,7 @@ IF-direct fallback:
 Default IF fallback table:
 - `REST=0.00`
 - `RECOVERY=0.55`
-- `ENDURANCE_LOW=0.65`
-- `ENDURANCE_HIGH=0.70`
+- `ENDURANCE=0.70`
 - `TEMPO=0.80`
 - `SWEET_SPOT=0.90`
 - `THRESHOLD=1.00`

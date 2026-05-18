@@ -347,7 +347,7 @@
           "type": "string"
         },
         "owner_agent": {
-          "const": "Performance-Analyst",
+          "const": "Report-Artifact-Writer",
           "type": "string"
         }
       },

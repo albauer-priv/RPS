@@ -71,10 +71,10 @@ def test_estimate_week_plan_load_sums_workouts_against_declared_week_load() -> N
 def test_build_workout_load_method_context_provides_hourly_domain_calibration() -> None:
     context = build_workout_load_method_context(
         zone_model_payload=_zone_model(),
-        allowed_intensity_domains=["RECOVERY", "ENDURANCE_LOW", "TEMPO"],
+        allowed_intensity_domains=["RECOVERY", "ENDURANCE", "TEMPO"],
     )
 
     assert context["ftp_watts"] == 300
     assert context["IF_ref_load"] == pytest.approx(0.66)
-    assert [row["domain"] for row in context["domain_hourly_estimates"]] == ["RECOVERY", "ENDURANCE_LOW", "TEMPO"]
+    assert [row["domain"] for row in context["domain_hourly_estimates"]] == ["RECOVERY", "ENDURANCE", "TEMPO"]
     assert all(row["governance_load_kj_per_hour"] > 0 for row in context["domain_hourly_estimates"])
