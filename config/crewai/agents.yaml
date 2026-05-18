@@ -16,6 +16,8 @@ agents:
     output_mode: turn_mode
     prompt_agent: conversation_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   week_context_specialist:
     display_name: Week Context Specialist
     role: Read-only selected-week context analyst
@@ -87,6 +89,8 @@ agents:
     output_mode: week_plan_bundle
     prompt_agent: week_planner
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   week_review_manager:
     display_name: Week Review Manager
     role: Holistic week review coordinator
@@ -95,6 +99,8 @@ agents:
     output_mode: week_review_decision
     prompt_agent: week_planner
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   pending_resolution_specialist:
     display_name: Pending Resolution Specialist
     role: Pending preview lifecycle handler
@@ -131,6 +137,8 @@ agents:
     output_mode: season_plan_bundle
     prompt_agent: season_plan_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   season_review_manager:
     display_name: Season Review Manager
     role: Holistic season review coordinator
@@ -139,6 +147,8 @@ agents:
     output_mode: season_review_decision
     prompt_agent: season_plan_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   season_feed_forward_manager:
     display_name: Season Feed Forward Manager
     role: Binding season feed-forward authority
@@ -147,6 +157,8 @@ agents:
     output_mode: artifact_envelope
     prompt_agent: season_feed_forward_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   season_artifact_writer:
     display_name: Season Artifact Writer
     role: Persisted season artefact serializer
@@ -154,6 +166,10 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: season_artifact_writer
+    allow_delegation: false
+    max_iter: 2
+    respect_context_window: true
+    cache: false
   scenario_interpreter:
     display_name: Scenario Interpreter
     role: Interpret advisory season scenarios
@@ -260,6 +276,8 @@ agents:
     output_mode: phase_bundle
     prompt_agent: phase_bundle_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   phase_review_manager:
     display_name: Phase Review Manager
     role: Holistic phase review coordinator
@@ -268,6 +286,8 @@ agents:
     output_mode: phase_review_decision
     prompt_agent: phase_bundle_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   phase_feed_forward_manager:
     display_name: Phase Feed Forward Manager
     role: Binding phase feed-forward authority
@@ -276,6 +296,8 @@ agents:
     output_mode: artifact_envelope
     prompt_agent: phase_feed_forward_manager
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   phase_artifact_writer:
     display_name: Phase Artifact Writer
     role: Persisted phase artefact serializer
@@ -283,6 +305,10 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: phase_artifact_writer
+    allow_delegation: false
+    max_iter: 2
+    respect_context_window: true
+    cache: false
   phase_guardrail_band_specialist:
     display_name: Phase Guardrail Band Specialist
     role: Phase weekly corridor specialist
@@ -374,6 +400,10 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: week_artifact_writer
+    allow_delegation: false
+    max_iter: 2
+    respect_context_window: true
+    cache: false
   performance_analysis:
     display_name: Performance Analysis Surface
     role: Report-generation task scope controller
@@ -403,6 +433,8 @@ agents:
     output_mode: report_review_decision
     prompt_agent: performance_analysis
     allow_delegation: true
+    max_iter: 5
+    respect_context_window: true
   report_artifact_writer:
     display_name: Report Artifact Writer
     role: Persisted advisory artefact serializer
@@ -410,3 +442,7 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: report_artifact_writer
+    allow_delegation: false
+    max_iter: 2
+    respect_context_window: true
+    cache: false

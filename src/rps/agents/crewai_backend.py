@@ -19,6 +19,8 @@ from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
     build_task_blueprints,
+    collect_native_agent_kwargs,
+    collect_native_crew_kwargs,
     output_model_for_kind,
 )
 from rps.crewai_runtime.config import CrewAIConfigBundle, load_crewai_config_bundle
@@ -26,7 +28,7 @@ from rps.crewai_runtime.generated_artifact_models import (
     artifact_model_for_schema_file,
     artifact_model_for_task_name,
 )
-from rps.crewai_runtime.guardrails import build_task_guardrail_kwargs
+from rps.crewai_runtime.guardrails import build_task_guardrail_kwargs, guardrail_runtime_context
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
     resolve_agent_knowledge_profile,
@@ -46,7 +48,12 @@ from rps.crewai_runtime.skills import (
     build_crewai_skill_kwargs,
     resolve_agent_skill_profile,
 )
-from rps.crewai_runtime.telemetry import emit_runtime_event, runtime_event_scope
+from rps.crewai_runtime.telemetry import (
+    build_step_callback,
+    build_task_callback,
+    emit_runtime_event,
+    runtime_event_scope,
+)
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.guarded_store import GuardedValidatedStore
@@ -162,6 +169,43 @@ def _resolve_crew_runtime_profile(bundle: CrewAIConfigBundle, crew_name: str) ->
     if not isinstance(profile, dict):
         return {}
     return profile
+
+
+def _build_crewai_crew_kwargs(
+    *,
+    runtime: AgentRuntime,
+    bundle: CrewAIConfigBundle,
+    crew_name: str,
+    athlete_id: str | None,
+    run_id: str | None,
+    persisted_artifact_flow: bool = True,
+) -> JsonMap:
+    """Return CrewAI-native kwargs and callbacks for one crew execution."""
+
+    crew_profile = _resolve_crew_runtime_profile(bundle, crew_name)
+    kwargs = collect_native_crew_kwargs(
+        crew_profile,
+        persisted_artifact_flow=persisted_artifact_flow,
+    )
+    root = runtime.workspace_root if athlete_id and run_id else None
+    kwargs["task_callback"] = build_task_callback(
+        root=root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        crew_name=crew_name,
+    )
+    step_cfg = crew_profile.get("step_callback")
+    step_enabled = bool(step_cfg.get("enabled", False)) if isinstance(step_cfg, dict) else False
+    step_callback = build_step_callback(
+        root=root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        crew_name=crew_name,
+        enabled=step_enabled,
+    )
+    if step_callback is not None:
+        kwargs["step_callback"] = step_callback
+    return kwargs
 
 
 def _build_crewai_planning_llm(
@@ -412,9 +456,9 @@ def _build_crewai_agent(
         "backstory": blueprint.backstory,
         "llm": llm,
         "tools": tools,
-        "allow_delegation": bool(config.get("allow_delegation", False)),
         "verbose": bool(config.get("verbose", False)),
     }
+    kwargs.update(collect_native_agent_kwargs(blueprint.name, config))
     if bool(reasoning_profile.get("enabled", False)):
         kwargs["reasoning"] = True
         max_attempts = reasoning_profile.get("max_attempts")
@@ -627,6 +671,16 @@ def _execute_crewai_task(
         "process": process,
         "verbose": bool(task_blueprint.config.get("verbose", False)),
     }
+    crew_kwargs.update(
+        _build_crewai_crew_kwargs(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name=crew_name,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            persisted_artifact_flow=task_blueprint.output_kind == "artifact_envelope",
+        )
+    )
     if planning_llm is not None:
         crew_kwargs["planning"] = True
         crew_kwargs["planning_llm"] = planning_llm
@@ -634,6 +688,11 @@ def _execute_crewai_task(
     crew = crew_cls(**crew_kwargs)
     if athlete_id and run_id:
         with runtime_event_scope(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            component=f"crew:{task_blueprint.name}",
+        ), guardrail_runtime_context(
             root=runtime.workspace_root,
             athlete_id=athlete_id,
             run_id=run_id,
@@ -771,6 +830,7 @@ def _execute_crewai_hierarchical_crew(
     manager_llm = getattr(manager_agent, "llm", None)
     crew_tasks: list[object] = []
     prior_tasks: list[object] = []
+    tasks_by_name: dict[str, object] = {}
     final_task_obj: object | None = None
     for task_name in crew_task_names:
         task_blueprint = task_blueprints[task_name]
@@ -803,16 +863,27 @@ def _execute_crewai_hierarchical_crew(
                 task_blueprint=task_blueprint,
                 user_input=user_input,
             )
+        context_tasks: list[object] | None
+        if getattr(task_blueprint, "context_names", ()):
+            missing = [item for item in task_blueprint.context_names if item not in tasks_by_name]
+            if missing:
+                raise ValueError(
+                    f"Task '{task_name}' references unknown or later context tasks: {', '.join(missing)}"
+                )
+            context_tasks = [tasks_by_name[item] for item in task_blueprint.context_names]
+        else:
+            context_tasks = prior_tasks[:] if prior_tasks else None
         crew_task = _build_crewai_task(
             task_cls=task_cls,
             bundle=bundle,
             task_blueprint=task_blueprint,
             agent=agents_by_name[agent_name],
             description=description,
-            context_tasks=prior_tasks[:] if prior_tasks else None,
+            context_tasks=context_tasks,
         )
         crew_tasks.append(crew_task)
         prior_tasks.append(crew_task)
+        tasks_by_name[task_name] = crew_task
         if task_name == final_task_name:
             final_task_obj = crew_task
 
@@ -827,6 +898,16 @@ def _execute_crewai_hierarchical_crew(
         "process": process,
         "verbose": False,
     }
+    crew_kwargs.update(
+        _build_crewai_crew_kwargs(
+            runtime=runtime,
+            bundle=bundle,
+            crew_name=crew_name,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            persisted_artifact_flow=True,
+        )
+    )
     if crew_memory_kwargs:
         crew_kwargs.update(crew_memory_kwargs)
     if hierarchical is not None:
@@ -840,6 +921,11 @@ def _execute_crewai_hierarchical_crew(
     crew = crew_cls(**crew_kwargs)
     if athlete_id and run_id:
         with runtime_event_scope(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            component=f"crew:{final_task_name}",
+        ), guardrail_runtime_context(
             root=runtime.workspace_root,
             athlete_id=athlete_id,
             run_id=run_id,

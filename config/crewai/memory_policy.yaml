@@ -120,7 +120,7 @@ agents:
     mode: scope
   season_artifact_writer:
     scope_template: "/athlete/{athlete_id}/planning/season/nonbinding/writer"
-    mode: scope
+    mode: read_only
   phase_bundle_manager:
     scope_template: "/athlete/{athlete_id}/planning/phase/nonbinding/manager"
     mode: scope
@@ -132,7 +132,7 @@ agents:
     mode: scope
   phase_artifact_writer:
     scope_template: "/athlete/{athlete_id}/planning/phase/nonbinding/writer"
-    mode: scope
+    mode: read_only
   performance_context_specialist:
     scope_template: "/athlete/{athlete_id}/advisory/report/context"
     mode: scope
@@ -144,7 +144,7 @@ agents:
     mode: scope
   week_artifact_writer:
     scope_template: "/athlete/{athlete_id}/planning/week/nonbinding/writer"
-    mode: scope
+    mode: read_only
   report_artifact_writer:
     scope_template: "/athlete/{athlete_id}/advisory/report/writer"
-    mode: scope
+    mode: read_only

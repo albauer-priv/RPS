@@ -47,6 +47,110 @@ from .skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
 
 JsonMap = dict[str, Any]
 
+AGENT_NATIVE_CONFIG_FIELDS: tuple[str, ...] = (
+    "allow_delegation",
+    "max_iter",
+    "max_retry_limit",
+    "max_execution_time",
+    "max_rpm",
+    "respect_context_window",
+    "cache",
+    "inject_date",
+    "date_format",
+    "function_calling_llm",
+)
+
+CREW_NATIVE_CONFIG_FIELDS: tuple[str, ...] = (
+    "max_rpm",
+    "cache",
+    "output_log_file",
+    "function_calling_llm",
+    "stream",
+)
+
+WRITER_AGENT_NAMES: frozenset[str] = frozenset(
+    {
+        "season_artifact_writer",
+        "phase_artifact_writer",
+        "week_artifact_writer",
+        "report_artifact_writer",
+    }
+)
+
+MANAGER_AGENT_NAMES: frozenset[str] = frozenset(
+    {
+        "conversation_manager",
+        "week_plan_manager",
+        "week_review_manager",
+        "season_plan_manager",
+        "season_review_manager",
+        "season_feed_forward_manager",
+        "phase_bundle_manager",
+        "phase_review_manager",
+        "phase_feed_forward_manager",
+        "des_review_manager",
+    }
+)
+
+
+def native_agent_defaults(agent_name: str) -> JsonMap:
+    """Return conservative CrewAI-native defaults by agent responsibility."""
+
+    if agent_name in WRITER_AGENT_NAMES:
+        return {
+            "allow_delegation": False,
+            "max_iter": 2,
+            "respect_context_window": True,
+            "cache": False,
+        }
+    if agent_name in MANAGER_AGENT_NAMES:
+        return {
+            "allow_delegation": True,
+            "max_iter": 5,
+            "respect_context_window": True,
+        }
+    return {
+        "allow_delegation": False,
+        "respect_context_window": True,
+    }
+
+
+def collect_native_agent_kwargs(agent_name: str, config: JsonMap) -> JsonMap:
+    """Collect CrewAI-native Agent kwargs from defaults overridden by YAML."""
+
+    merged = native_agent_defaults(agent_name)
+    for field in AGENT_NATIVE_CONFIG_FIELDS:
+        if field in config and config.get(field) is not None:
+            merged[field] = config[field]
+    return {field: merged[field] for field in AGENT_NATIVE_CONFIG_FIELDS if field in merged}
+
+
+def collect_native_crew_kwargs(config: JsonMap, *, persisted_artifact_flow: bool = False) -> JsonMap:
+    """Collect CrewAI-native Crew kwargs from runtime-profile config."""
+
+    native_cfg = config.get("native") if isinstance(config.get("native"), dict) else {}
+    merged = {**{field: config[field] for field in CREW_NATIVE_CONFIG_FIELDS if field in config}, **native_cfg}
+    if persisted_artifact_flow:
+        merged.pop("stream", None)
+    return {
+        field: merged[field]
+        for field in CREW_NATIVE_CONFIG_FIELDS
+        if field in merged and merged[field] is not None
+    }
+
+
+def configured_task_context_names(config: JsonMap) -> tuple[str, ...]:
+    """Normalize optional CrewAI task context names from task config."""
+
+    context = config.get("context")
+    if context is None:
+        return ()
+    if isinstance(context, str):
+        return (context,)
+    if isinstance(context, list | tuple):
+        return tuple(str(item) for item in context if str(item).strip())
+    raise ValueError("Task context must be a string or list of task names.")
+
 
 @dataclass(frozen=True)
 class AgentBlueprint:
@@ -72,6 +176,7 @@ class TaskBlueprint:
     expected_output: str
     output_kind: str
     execution_policy: JsonMap
+    context_names: tuple[str, ...]
     config: JsonMap
 
 
@@ -131,6 +236,7 @@ def build_task_blueprints(bundle: CrewAIConfigBundle) -> dict[str, TaskBlueprint
                 type("TaskProxy", (), {"name": name, "config": raw})(),
                 bundle.task_policies,
             ).__dict__,
+            context_names=configured_task_context_names(raw),
             config=raw,
         )
     return blueprints
@@ -224,6 +330,7 @@ def build_crewai_bindings(
             "backstory": blueprint.backstory,
             "verbose": bool(blueprint.config.get("verbose", False)),
         }
+        kwargs.update(collect_native_agent_kwargs(name, blueprint.config))
         knowledge_kwargs = build_crewai_knowledge_kwargs(
             root=(root or Path.cwd()),
             profile=blueprint.knowledge_profile,
@@ -261,6 +368,13 @@ def build_crewai_bindings(
             "expected_output": blueprint.expected_output,
             "agent": agents[blueprint.agent],
         }
+        if blueprint.context_names:
+            missing = [item for item in blueprint.context_names if item not in tasks]
+            if missing:
+                raise ValueError(
+                    f"Task '{name}' references unknown or later context tasks: {', '.join(missing)}"
+                )
+            task_kwargs["context"] = [tasks[item] for item in blueprint.context_names]
         guardrail_kwargs = build_task_guardrail_kwargs(blueprint, bundle.task_policies)
         output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
         output_model = output_model_for_task(blueprint)

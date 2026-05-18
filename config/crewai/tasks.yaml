@@ -172,6 +172,17 @@ tasks:
     agent: season_plan_manager
     kind: internal_reasoning
     output: season_plan_bundle
+    context:
+      - season_context_read
+      - season_scenario_interpretation
+      - season_event_priority_review
+      - season_peak_window_review
+      - season_macrocycle_draft
+      - season_constraint_review
+      - season_historical_context_review
+      - season_kpi_guidance_review
+      - season_load_corridor_draft
+      - season_progression_review
     description: Consolidate season drafts into one internal SeasonPlanBundle.
     expected_output: A structured internal season plan bundle.
   season_governance_review:
@@ -196,6 +207,10 @@ tasks:
     agent: season_review_manager
     kind: internal_reasoning
     output: season_review_decision
+    context:
+      - season_governance_review
+      - season_constraints_review
+      - season_plan_audit
     description: Integrate season review outputs and decide approve, reject, or bounded replan.
     expected_output: A structured season review decision.
   season_plan:
@@ -263,6 +278,15 @@ tasks:
     agent: phase_bundle_manager
     kind: internal_reasoning
     output: phase_bundle
+    context:
+      - phase_context_read
+      - phase_guardrail_band_draft
+      - phase_execution_rules_draft
+      - phase_structure_draft
+      - phase_cadence_recovery_draft
+      - phase_intensity_distribution_draft
+      - phase_event_integration_draft
+      - phase_preview_draft
     description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before review.
     expected_output: A structured internal PhaseBundle.
   phase_constraint_audit:
@@ -293,6 +317,11 @@ tasks:
     agent: phase_review_manager
     kind: internal_reasoning
     output: phase_review_decision
+    context:
+      - phase_constraint_audit
+      - phase_governance_review
+      - phase_structure_review
+      - phase_preview_review
     description: Integrate phase review outputs and decide approve, reject, or bounded replan.
     expected_output: A structured phase review decision.
   phase_guardrails:
@@ -354,6 +383,12 @@ tasks:
     agent: week_plan_manager
     kind: internal_reasoning
     output: week_plan_bundle
+    context:
+      - week_context_read
+      - week_constraint_review
+      - week_load_target_draft
+      - week_revision_draft
+      - week_workout_text_draft
     description: Consolidate week drafts into one internal WeekPlanBundle before review.
     expected_output: A structured internal week plan bundle.
   week_consistency_review:
@@ -378,6 +413,10 @@ tasks:
     agent: week_review_manager
     kind: internal_reasoning
     output: week_review_decision
+    context:
+      - week_consistency_review
+      - week_load_governance_review
+      - week_workout_syntax_review
     description: Integrate week review outputs and decide approve, reject, or bounded replan.
     expected_output: A structured week review decision.
   week_plan:
@@ -403,6 +442,9 @@ tasks:
     agent: des_review_manager
     kind: internal_reasoning
     output: report_review_decision
+    context:
+      - report_context_read
+      - des_diagnostic_draft
     description: Review advisory DES diagnostics and decide approve, reject, or bounded rework.
     expected_output: A structured report review decision.
   des_analysis_report:

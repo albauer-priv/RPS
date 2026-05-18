@@ -71,6 +71,96 @@ def emit_runtime_event(
         logger.warning("Failed to append runtime event %s for run %s: %s", event_type, run_id, exc)
 
 
+def _output_format_label(value: object) -> str:
+    """Return a compact structured-output label for a CrewAI task output."""
+
+    if value is None:
+        return "none"
+    if getattr(value, "pydantic", None) is not None:
+        return "pydantic"
+    if getattr(value, "json_dict", None) is not None:
+        return "json"
+    if getattr(value, "raw", None) is not None:
+        return "raw"
+    return type(value).__name__
+
+
+def _callback_task_name(task_output: object) -> str:
+    """Resolve a compact task label from a CrewAI task callback payload."""
+
+    for candidate in (
+        _object_attr(task_output, "name", "task_name", "task_id"),
+        _object_attr(_object_attr(task_output, "task"), "name", "key"),
+    ):
+        text = _safe_str(candidate, default="")
+        if text:
+            return _compact_text(text)
+    return type(task_output).__name__ if task_output is not None else "TaskOutput"
+
+
+def _callback_agent_name(task_output: object) -> str:
+    """Resolve a compact agent label from a CrewAI task callback payload."""
+
+    agent = _object_attr(task_output, "agent")
+    text = _safe_str(_object_attr(agent, "role", "name", "key"), default="")
+    if text:
+        return _compact_text(text)
+    text = _safe_str(agent, default="")
+    return _compact_text(text) if text else "unknown"
+
+
+def build_task_callback(
+    *,
+    root: Path | None,
+    athlete_id: str | None,
+    run_id: str | None,
+    crew_name: str,
+) -> Any:
+    """Build a safe CrewAI task callback that records compact runtime metadata."""
+
+    def _callback(task_output: object) -> None:
+        emit_runtime_event(
+            root=root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="CREW_TASK_COMPLETED",
+            crew=crew_name,
+            task=_callback_task_name(task_output),
+            agent=_callback_agent_name(task_output),
+            output_format=_output_format_label(task_output),
+        )
+
+    return _callback
+
+
+def build_step_callback(
+    *,
+    root: Path | None,
+    athlete_id: str | None,
+    run_id: str | None,
+    crew_name: str,
+    enabled: bool = False,
+) -> Any | None:
+    """Build an optional debug step callback without logging prompt/output bodies."""
+
+    if not enabled:
+        return None
+
+    def _callback(step: object) -> None:
+        emit_runtime_event(
+            root=root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="CREW_AGENT_STEP",
+            crew=crew_name,
+            step=_compact_text(type(step).__name__),
+            tool=_safe_str(_object_attr(step, "tool_name", "tool"), default=""),
+            status=_safe_str(_object_attr(step, "status"), default=""),
+        )
+
+    return _callback
+
+
 def _event_attr(event: object, *names: str) -> object | None:
     """Return the first matching attribute on an event object."""
 

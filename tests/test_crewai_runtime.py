@@ -17,10 +17,13 @@ from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
 from rps.core.config import load_app_settings
 from rps.crewai_runtime import crewai_runtime_status, load_crewai_config_bundle
+from rps.crewai_runtime import guardrails as crewai_guardrails
 from rps.crewai_runtime import telemetry as crewai_telemetry
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
     build_task_blueprints,
+    collect_native_agent_kwargs,
+    configured_task_context_names,
     output_model_for_kind,
 )
 from rps.crewai_runtime.flows import (
@@ -51,6 +54,7 @@ from rps.crewai_runtime.knowledge import (
     resolve_crew_knowledge_profile,
 )
 from rps.crewai_runtime.memory import (
+    build_agent_memory_value,
     build_crew_memory_kwargs,
     build_memory_instance,
     resolve_agent_memory_profile,
@@ -328,6 +332,16 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert tasks["form_adjustment_intent"].output_kind == "adjustment_intent"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
     assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle"
+    assert tasks["phase_bundle_finalize"].context_names == (
+        "phase_context_read",
+        "phase_guardrail_band_draft",
+        "phase_execution_rules_draft",
+        "phase_structure_draft",
+        "phase_cadence_recovery_draft",
+        "phase_intensity_distribution_draft",
+        "phase_event_integration_draft",
+        "phase_preview_draft",
+    )
     assert tasks["phase_bundle_finalize"].execution_policy["guardrails"] == ("typed_output_present", "phase_bundle_integrity")
 
 
@@ -357,6 +371,29 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     kwargs = build_task_guardrail_kwargs(tasks["week_plan"], bundle.task_policies)
     assert kwargs["guardrail_max_retries"] == 2
     assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
+
+
+def test_guardrail_failure_emits_runtime_event(monkeypatch) -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    tasks = build_task_blueprints(bundle)
+    emitted: list[dict[str, object]] = []
+
+    def _emit(**kwargs):
+        emitted.append(kwargs)
+
+    monkeypatch.setattr(crewai_guardrails, "emit_runtime_event", _emit)
+    kwargs = build_task_guardrail_kwargs(tasks["season_scenario_selection"], bundle.task_policies)
+    invalid = {
+        "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "schema_id": "SeasonScenarioSelectionInterface"},
+        "data": {"selected_scenario_id": "D", "season_scenarios_ref": "season_scenarios/latest.json"},
+    }
+
+    with guardrail_runtime_context(root=Path("."), athlete_id="i150546", run_id="run-1", component="test"):
+        failed = [guardrail(invalid) for guardrail in kwargs["guardrails"]]
+
+    assert any(ok is False for ok, _payload in failed)
+    assert any(event["event_type"] == "CREW_TASK_GUARDRAIL_FAILED" for event in emitted)
+    assert any(event["guardrail"] == "season_scenario_selection_shape" for event in emitted)
 
 
 def test_build_memory_instance_injects_rps_openai_credentials(monkeypatch) -> None:
@@ -466,6 +503,58 @@ def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
     assert coach_memory["scope"] == "/athlete/i150546/coach/shared"
     assert specialist_memory["mode"] == "slice_read_only"
     assert "/athlete/i150546/coach/accepted_patterns" in specialist_memory["additional_read_scopes"]
+    writer_memory = resolve_agent_memory_profile(
+        bundle,
+        agent_name="week_artifact_writer",
+        athlete_id="i150546",
+        surface="default",
+    )
+    assert writer_memory["mode"] == "read_only"
+
+
+def test_agent_memory_read_only_mode_uses_slice() -> None:
+    class FakeMemory:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def slice(self, **kwargs):
+            self.calls.append(kwargs)
+            return {"slice": kwargs}
+
+        def scope(self, scope: str):
+            raise AssertionError(f"read_only mode must not request writable scope {scope}")
+
+    shared = FakeMemory()
+    value = build_agent_memory_value(
+        shared_memory=shared,
+        profile={"mode": "read_only", "scope": "/athlete/i150546/planning/week/writer"},
+    )
+
+    assert value == {
+        "slice": {
+            "scopes": ["/athlete/i150546/planning/week/writer"],
+            "read_only": True,
+        }
+    }
+    assert shared.calls
+
+
+def test_native_agent_kwargs_defaults_and_yaml_override() -> None:
+    writer_kwargs = collect_native_agent_kwargs("week_artifact_writer", {})
+    assert writer_kwargs["allow_delegation"] is False
+    assert writer_kwargs["max_iter"] == 2
+    assert writer_kwargs["respect_context_window"] is True
+    assert writer_kwargs["cache"] is False
+
+    manager_kwargs = collect_native_agent_kwargs("week_plan_manager", {"max_iter": 7})
+    assert manager_kwargs["allow_delegation"] is True
+    assert manager_kwargs["max_iter"] == 7
+    assert manager_kwargs["respect_context_window"] is True
+
+
+def test_configured_task_context_names_normalizes_yaml_values() -> None:
+    assert configured_task_context_names({"context": "task_a"}) == ("task_a",)
+    assert configured_task_context_names({"context": ["task_a", "task_b"]}) == ("task_a", "task_b")
 
 
 def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
@@ -1224,7 +1313,14 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert getattr(macrocycle_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4"
     writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted season artefact serializer")
     assert "reasoning" not in writer_agent
+    assert writer_agent["allow_delegation"] is False
+    assert writer_agent["max_iter"] == 2
+    assert writer_agent["respect_context_window"] is True
+    assert writer_agent["cache"] is False
     assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-4.1-mini"
+    manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal season planning synthesizer")
+    assert manager_agent["allow_delegation"] is True
+    assert manager_agent["max_iter"] == 5
 
 
 def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
@@ -1405,6 +1501,9 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert getattr(band_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
     writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted phase artefact serializer")
     assert "reasoning" not in writer_agent
+    assert writer_agent["allow_delegation"] is False
+    assert writer_agent["max_iter"] == 2
+    assert writer_agent["respect_context_window"] is True
     assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-4.1-mini"
 
 

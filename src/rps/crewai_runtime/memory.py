@@ -152,6 +152,10 @@ def build_agent_memory_value(
         return None
     mode = str(profile.get("mode") or "scope")
     scope = str(profile["scope"])
+    if mode == "disabled":
+        return None
+    if mode == "read_only":
+        return shared_memory.slice(scopes=[scope], read_only=True)
     if mode == "slice_read_only":
         scopes = [scope, *[str(item) for item in profile.get("additional_read_scopes") or []]]
         return shared_memory.slice(scopes=scopes, read_only=True)

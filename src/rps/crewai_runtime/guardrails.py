@@ -13,6 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -627,10 +628,35 @@ def build_task_guardrail_kwargs(task_blueprint: Any, task_policies: JsonMap) -> 
     policy = resolve_task_policy(task_blueprint, task_policies)
     kwargs: JsonMap = {"guardrail_max_retries": policy.guardrail_max_retries}
     if policy.guardrails:
-        guardrail_fns = [resolve_guardrail(name) for name in policy.guardrails]
+        guardrail_fns = [
+            _with_guardrail_telemetry(task_blueprint.name, name, resolve_guardrail(name))
+            for name in policy.guardrails
+        ]
         if len(guardrail_fns) == 1:
             kwargs["guardrail"] = guardrail_fns[0]
         else:
             kwargs["guardrails"] = guardrail_fns
     kwargs["_resolved_output_mode"] = policy.output_mode
     return kwargs
+
+
+def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
+    """Wrap one guardrail so failures become compact retry-relevant runtime events."""
+
+    def _wrapped(result: Any) -> GuardrailResult:
+        ok, payload = guardrail_fn(result)
+        if not ok:
+            context = _GUARDRAIL_CONTEXT.get({})
+            emit_runtime_event(
+                root=context.get("root"),
+                athlete_id=context.get("athlete_id"),
+                run_id=context.get("run_id"),
+                event_type="CREW_TASK_GUARDRAIL_FAILED",
+                component=context.get("component") or f"task:{task_name}",
+                task=task_name,
+                guardrail=guardrail_name,
+                reason=str(payload)[:500],
+            )
+        return (ok, payload)
+
+    return _wrapped

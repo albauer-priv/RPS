@@ -296,6 +296,7 @@ def test_coach_shows_one_startup_context_summary(monkeypatch, tmp_path):
     )
 
     at = AppTest.from_file("src/rps/ui/pages/coach.py")
+    at.session_state["rps_state"] = {"athlete_id": athlete_id, "iso_year": 2026, "iso_week": 20}
     at.run(timeout=10)
     at.run(timeout=10)
 

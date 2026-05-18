@@ -22,7 +22,15 @@ JsonMap = dict[str, Any]
 class SeasonFlowState(BaseModel):
     """Structured state for season outer orchestration."""
 
+    athlete_id: str = ""
+    run_id: str = ""
+    target_iso_week: str = ""
     action: str = ""
+    loaded_input_refs: JsonMap = Field(default_factory=dict)
+    deterministic_context_refs: JsonMap = Field(default_factory=dict)
+    produced_artifact_refs: JsonMap = Field(default_factory=dict)
+    review_decisions: JsonMap = Field(default_factory=dict)
+    failure_reason: str = ""
     source_versions: JsonMap = Field(default_factory=dict)
     intermediate_summaries: list[str] = Field(default_factory=list)
     normalization_summary: JsonMap = Field(default_factory=dict)
@@ -35,8 +43,16 @@ class SeasonFlowState(BaseModel):
 class PhaseFlowState(BaseModel):
     """Structured state for phase outer orchestration."""
 
+    athlete_id: str = ""
+    run_id: str = ""
+    target_iso_week: str = ""
     requested_tasks: list[str] = Field(default_factory=list)
     phase_range: str = ""
+    loaded_input_refs: JsonMap = Field(default_factory=dict)
+    deterministic_context_refs: JsonMap = Field(default_factory=dict)
+    produced_artifact_refs: JsonMap = Field(default_factory=dict)
+    review_decisions: JsonMap = Field(default_factory=dict)
+    failure_reason: str = ""
     source_versions: JsonMap = Field(default_factory=dict)
     bundle_summary: JsonMap = Field(default_factory=dict)
     persistence_summary: JsonMap = Field(default_factory=dict)
@@ -48,8 +64,16 @@ class PhaseFlowState(BaseModel):
 class WeekFlowState(BaseModel):
     """Structured state for week outer orchestration."""
 
+    athlete_id: str = ""
+    run_id: str = ""
+    target_iso_week: str = ""
     target_week: str = ""
     preview_only: bool = False
+    loaded_input_refs: JsonMap = Field(default_factory=dict)
+    deterministic_context_refs: JsonMap = Field(default_factory=dict)
+    produced_artifact_refs: JsonMap = Field(default_factory=dict)
+    review_decisions: JsonMap = Field(default_factory=dict)
+    failure_reason: str = ""
     source_versions: JsonMap = Field(default_factory=dict)
     loaded_inputs_summary: JsonMap = Field(default_factory=dict)
     candidate_week_plan: JsonMap = Field(default_factory=dict)
@@ -64,7 +88,15 @@ class WeekFlowState(BaseModel):
 class ReportFlowState(BaseModel):
     """Structured state for report outer orchestration."""
 
+    athlete_id: str = ""
+    run_id: str = ""
+    target_iso_week: str = ""
     target_week: str = ""
+    loaded_input_refs: JsonMap = Field(default_factory=dict)
+    deterministic_context_refs: JsonMap = Field(default_factory=dict)
+    produced_artifact_refs: JsonMap = Field(default_factory=dict)
+    review_decisions: JsonMap = Field(default_factory=dict)
+    failure_reason: str = ""
     source_versions: JsonMap = Field(default_factory=dict)
     persistence_summary: JsonMap = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
@@ -75,7 +107,15 @@ class ReportFlowState(BaseModel):
 class FeedForwardFlowState(BaseModel):
     """Structured state for advisory chain orchestration."""
 
+    athlete_id: str = ""
+    run_id: str = ""
+    target_iso_week: str = ""
     target_week: str = ""
+    loaded_input_refs: JsonMap = Field(default_factory=dict)
+    deterministic_context_refs: JsonMap = Field(default_factory=dict)
+    produced_artifact_refs: JsonMap = Field(default_factory=dict)
+    review_decisions: JsonMap = Field(default_factory=dict)
+    failure_reason: str = ""
     source_versions: JsonMap = Field(default_factory=dict)
     report_result: JsonMap = Field(default_factory=dict)
     season_phase_result: JsonMap = Field(default_factory=dict)
@@ -87,8 +127,16 @@ class FeedForwardFlowState(BaseModel):
 class CoachFlowState(BaseModel):
     """Structured state for one coach turn."""
 
+    athlete_id: str = ""
+    run_id: str = ""
+    target_iso_week: str = ""
     user_message: str = ""
     route: str = ""
+    loaded_input_refs: JsonMap = Field(default_factory=dict)
+    deterministic_context_refs: JsonMap = Field(default_factory=dict)
+    produced_artifact_refs: JsonMap = Field(default_factory=dict)
+    review_decisions: JsonMap = Field(default_factory=dict)
+    failure_reason: str = ""
     pending_summary: JsonMap = Field(default_factory=dict)
     recalled_memory_summary: list[str] = Field(default_factory=list)
     stored_memory_summary: list[str] = Field(default_factory=list)
@@ -287,11 +335,14 @@ def run_season_flow(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
             if not self.state.result.get("ok") and self.state.result.get("error"):
-                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
+                self.state.failure_reason = str(self.state.result.get("error"))
+                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     SeasonOuterFlow = _decorate_persist(SeasonOuterFlow, "season", persist)
     flow = SeasonOuterFlow()
+    flow.state.athlete_id = athlete_id
+    flow.state.run_id = run_id
     flow.state.action = action
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="season_flow"):
@@ -359,11 +410,14 @@ def run_phase_flow(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
             if not self.state.result.get("ok") and self.state.result.get("error"):
-                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
+                self.state.failure_reason = str(self.state.result.get("error"))
+                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     PhaseOuterFlow = _decorate_persist(PhaseOuterFlow, "phase", persist)
     flow = PhaseOuterFlow()
+    flow.state.athlete_id = athlete_id
+    flow.state.run_id = run_id
     flow.state.requested_tasks = [task.value for task in tasks]
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="phase_flow"):
@@ -436,11 +490,15 @@ def run_week_flow(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
             if not self.state.result.get("ok") and self.state.result.get("error"):
-                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
+                self.state.failure_reason = str(self.state.result.get("error"))
+                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     WeekOuterFlow = _decorate_persist(WeekOuterFlow, "week", persist)
     flow = WeekOuterFlow()
+    flow.state.athlete_id = athlete_id
+    flow.state.run_id = run_id
+    flow.state.preview_only = preview_only
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="week_flow"):
             flow.kickoff()
@@ -487,11 +545,14 @@ def run_report_flow(
                     str(item) for item in self.state.result.get("warnings") or []
                 )
             if not self.state.result.get("ok") and self.state.result.get("error"):
-                _ensure_state_list(self.state, "errors").append(str(self.state.result.get("error")))
+                self.state.failure_reason = str(self.state.result.get("error"))
+                _ensure_state_list(self.state, "errors").append(self.state.failure_reason)
             return self.state.result
 
     ReportOuterFlow = _decorate_persist(ReportOuterFlow, "report", persist)
     flow = ReportOuterFlow()
+    flow.state.athlete_id = athlete_id or ""
+    flow.state.run_id = run_id or ""
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="report_flow"):
             flow.kickoff()
@@ -541,6 +602,8 @@ def run_feed_forward_flow(
 
     FeedForwardOuterFlow = _decorate_persist(FeedForwardOuterFlow, "feed_forward", persist)
     flow = FeedForwardOuterFlow()
+    flow.state.athlete_id = athlete_id or ""
+    flow.state.run_id = run_id or ""
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="feed_forward_flow"):
             flow.kickoff()
@@ -591,6 +654,8 @@ def run_coach_flow(
             return self.state.response
 
     flow = CoachOuterFlow()
+    flow.state.athlete_id = athlete_id
+    flow.state.run_id = run_id
     with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="coach_flow"):
         flow.kickoff()
     return {"route": flow.state.route, "response": flow.state.response}
