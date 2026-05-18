@@ -9,8 +9,8 @@ Anchor the season on explicit event hierarchy.
 
 Event classes:
 - `A`: primary performance objective; receives a dedicated taper; defines macrocycle structure
-- `B`: secondary event supporting the `A` event; may receive small local adjustment but no full taper
-- `C`: training event; no taper; must not distort season structure
+- `B`: secondary event supporting the `A` event; use small local adjustment while preserving full taper allocation for `A` events
+- `C`: training event; keep it inside normal season structure without taper allocation
 
 Event state labels:
 - use unambiguous labels such as `A1`, `A2`, `A_block`, `Peak_Window_1`, `B_support_event`, and `C_training_event`
@@ -32,6 +32,10 @@ Conflict hierarchy:
 Hard rules:
 - only one `A` event per macrocycle
 - separated `A` events require explicit multi-macrocycle or A-cluster handling
-- `B` events must not break progression or peak logic
-- `C` events must not consume taper or recovery budget
+- integrate `B` events while preserving progression and peak logic
+- integrate `C` events as training events within the existing taper and recovery budget
 - ambiguous labels like "important race" are invalid; every event must have a priority class
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

@@ -12,3 +12,8 @@ Focus on:
 - recovery reliability
 - re-entry needs after disruption
 - signs that aggressive progression or long build strings are unsafe
+
+Output format:
+- Return the task expected_output as a compact context summary.
+- Include authoritative inputs, selected ranges, constraints, missing data, and assumptions.
+- Highlight only the facts that the downstream planning or review task needs to act correctly.

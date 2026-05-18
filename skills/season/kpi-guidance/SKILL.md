@@ -9,5 +9,10 @@ Use KPI profile guidance to shape season planning conservatively.
 
 Rules:
 - KPI guidance informs feasibility and emphasis
-- KPI guidance never overrides binding event, availability, or safety constraints
+- Apply KPI guidance inside binding event, availability, and safety constraints
 - selected KPI rate bands should narrow corridor realism, not force unsafe ramps
+
+Output format:
+- Return the task expected_output as a compact context summary.
+- Include authoritative inputs, selected ranges, constraints, missing data, and assumptions.
+- Highlight only the facts that the downstream planning or review task needs to act correctly.

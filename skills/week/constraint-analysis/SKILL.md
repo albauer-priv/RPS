@@ -21,7 +21,19 @@ What to capture:
 - any valid temporary overrides from feed-forward
 
 Hard rules:
-- do not redesign the week here
-- do not treat wellness as automatic authority
-- do not reinterpret soft preference as hard constraint
-- do not lose exact-week scope
+- keep week redesign in the plan-synthesis or revision task
+- use wellness as context that requires governance-aware interpretation
+- distinguish soft preferences from hard constraints explicitly
+- preserve exact-week scope
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the task expected_output as a structured review contribution.
+- Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
+- Tie each issue to the relevant context, policy, phase/week range, load band, or artifact field.

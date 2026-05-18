@@ -21,15 +21,27 @@ Required content:
 - `decision_summary.conclusion`
 - `decision_summary.rationale`
 - `explicit_non_actions` with exactly:
-  - `No weekly workout changes`
-  - `No week-level intervention`
-  - `No KPI threshold enforcement`
+  - `Season-level signal only`
+  - `Week-level plan remains governed by active week artefacts`
+  - `KPI evidence remains diagnostic at season-feed-forward scope`
 - `phase_adjustment.applies_to_weeks`
 - `phase_adjustment.adjustments.kj_corridor`
 - `phase_adjustment.adjustments.quality_density`
 
 Hard rules:
-- do not emit weekly workout changes
-- do not emit week-level intervention
-- do not emit KPI-threshold enforcement instructions
-- do not store if schema-invalid or if the adjustment fields are incomplete
+- keep output at season feed-forward scope
+- route week-level intervention to week planning tasks
+- keep KPI-threshold interpretation diagnostic at this scope
+- store only schema-valid outputs with complete adjustment fields
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the task expected_output as advisory feed-forward guidance.
+- Include evidence summary, affected scope, recommended adjustment theme, warnings, and trace references.
+- Keep feed-forward diagnostic or advisory unless the active artifact schema makes it binding.

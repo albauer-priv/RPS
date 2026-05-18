@@ -27,13 +27,13 @@ Baseline selection:
   - stability: `DI >= 0.95`, or valid Z2 drift flag and `Decoupling <= 5%`
   - execution: `# Activities >= 4`, `Work >= 0.85 * MED_kJ`, and `Weekly Moving Time Total >= 0.85 * MED_time`
 - choose the most recent structurally valid week that passes exclusions and at least `2/3` gates
-- if no week qualifies, use `BL_kJ = MED_kJ` with low baseline confidence
+- when zero weeks qualify, use `BL_kJ = MED_kJ` with low baseline confidence
 
 Feasible-band logic:
 - S5 is code-owned truth for weekly governance-load bands
 - interpret S5 in governance-load space, not raw mechanical work
 - if the season corridor is infeasible for this exact phase, surface the fallback/STOP trace rather than silently pushing overload downstream
-- do not recompute, broaden, or override injected S5 values in agent reasoning
+- copy injected S5 values exactly and explain their application
 - `weekly_kj_bands[w]` always refers to `planned_weekly_load_kj` for ISO week `w`
 - feasible bands require valid FTP, non-negative availability, and at least one allowed intensity domain
 - KPI capacity bands are active only when selected KPI moving-time-rate guidance is present; if active, `body_mass_kg` is mandatory
@@ -46,7 +46,7 @@ S5 fallback semantics:
 - Level 3: KPI utilization override only if explicitly allowed
 - Level 4: degenerate band at hard max
 - Level 5: season-corridor infeasible override to closest feasible point
-- STOP instead of emitting a band for missing/invalid FTP, negative availability, no allowed domains, empty feasible band, KPI-active missing body mass, or empty Level 5 override
+- emit STOP status for missing/invalid FTP, negative availability, empty domain sets, empty feasible bands, KPI-active missing body mass, or empty Level 5 override
 
 Execution boundaries:
 - specify what intensity domains are allowed, suppressed, or only touched sparingly
@@ -55,9 +55,20 @@ Execution boundaries:
 
 Hard rules:
 - guardrails are binding for downstream structure and week planning
-- exact range must stay traceable and must not drift
+- keep the exact range traceable and stable
 - emitted weeks must match `Deterministic Phase Execution Context.required_phase_weeks`
-- do not hide unrealistic load pressure behind wide bands
-- do not let execution rules contradict season-owned cadence or taper logic
+- surface unrealistic load pressure explicitly in review/replan guidance
+- align execution rules with season-owned cadence and taper logic
 - `weekly_kj_bands` must match injected deterministic S5 bands
-- no load compression onto recovery days or fixed-rest days
+- keep recovery days and fixed-rest days protected from load compression
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

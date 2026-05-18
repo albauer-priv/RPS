@@ -53,6 +53,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_crewai_event_listener_runtime_telemetry — CrewAI-native event listener adapter for Flow/Crew/Task/Tool telemetry into the existing run-store.
 - [x] FEAT_crewai_runtime_event_payload_cleanup — compact normalized crew/task/tool labels in CrewAI runtime telemetry to keep `events.jsonl` and UI history readable.
 - [x] FEAT_coach_week_plan_memory_and_intro — enrich Coach memory with current week plan detail and show a one-time startup summary for each athlete/week context.
+- [x] FEAT_crewai_skill_package_validation — validate configured CrewAI skill packages for local references, positive action guidance, and explicit output-format guidance.
 
 ## Unlock Graph (dependencies)
 
@@ -100,7 +101,6 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_planning_done_notification — optional banner/email/push when planning completes.
 - [ ] FEAT_auto_retry_transient — auto-retry transient failures with clear logs.
 - [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
-- [ ] FEAT_crewai_skill_package_validation — validate CrewAI skill packages for local-only references, complete frontmatter, and "Muss-Regeln in SKILL.md, references only for depth" discipline.
 - [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
 - [ ] FEAT_crewai_planning_profile_tuning — refine where CrewAI planning is enabled, keeping deterministic Load/S5/Cadence outside planning LLM authority.
 - [ ] FEAT_crewai_mcp_apps_policy — define conservative MCP/App usage for evidence search and external integrations with RPS preview/confirm/apply boundaries.

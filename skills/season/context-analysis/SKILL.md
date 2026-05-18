@@ -10,9 +10,9 @@ Read season context before any scenario or season design.
 Method:
 1. Identify the planning horizon from the authoritative planning-event window and selected season range.
 2. Read planning events as the binding A/B/C event inventory. Preserve `type`, `priority_rank`, `event_name`, `date`, `event_type`, `goal`, `distance_km`, `elevation_m`, `expected_duration`, and `time_limit`.
-3. Read athlete profile as stable athlete context only: objectives, body-mass/training-age/discipline context, strengths, limitations, risk flags, and success criteria. Athlete profile must not contain planning decisions.
+3. Read athlete profile as stable athlete context only: objectives, body-mass/training-age/discipline context, strengths, limitations, risk flags, and success criteria. Keep planning decisions in planning artifacts.
 4. Read availability as a persistent user-managed constraint surface. The latest valid availability artefact remains authoritative even if its stored week key predates the target planning week.
-5. Read logistics as context only: travel, work, weather, health, family, equipment, and other non-training constraints. Logistics can constrain feasibility and sequencing but do not directly change governance corridors on their own.
+5. Read logistics as context only: travel, work, weather, health, family, equipment, and other non-training constraints. Use logistics to constrain feasibility and sequencing, while keeping governance-corridor changes tied to explicit planning authority.
 6. Read selected scenario state as advisory context only. Scenario intent may guide emphasis, but binding truth remains with planning events, athlete profile, and explicit constraints.
 7. Separate hard authority from advisory information:
    - Binding: planning events, athlete profile constraints, availability, explicit logistics blockers.
@@ -28,7 +28,19 @@ What to summarize:
 - unresolved unknowns that limit certainty
 
 Hard rules:
-- do not start backplanning here
-- do not convert advisory scenario guidance into binding truth
-- do not invent missing event facts or availability
-- do not include workout or week-level prescriptions
+- leave backplanning to the macrocycle architecture task
+- treat advisory scenario guidance as advisory until selection and season planning make it binding
+- use explicit event facts and availability from upstream context
+- keep workout and week-level prescriptions for downstream tasks
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the task expected_output as a compact context summary.
+- Include authoritative inputs, selected ranges, constraints, missing data, and assumptions.
+- Highlight only the facts that the downstream planning or review task needs to act correctly.

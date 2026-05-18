@@ -8,6 +8,11 @@ metadata:
 Summarize the phase candidate as a derived preview only.
 
 Rules:
-- no new planning decisions
-- no new guardrail content
+- summarize existing planning decisions only
+- summarize existing guardrail content only
 - preview must remain traceable to the existing bundle
+
+Output format:
+- Return the task expected_output as a structured review contribution.
+- Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
+- Tie each issue to the relevant context, policy, phase/week range, load band, or artifact field.

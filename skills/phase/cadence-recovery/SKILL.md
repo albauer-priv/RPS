@@ -35,8 +35,12 @@ Cadence target math:
 - after a clean `2:1:1`, update next baseline conservatively as `BL_kJ_next = mean(W2_kJ, W4_kJ)` or use rolling `CH_kJ`
 
 Hard rules:
-- do not invent a more aggressive cadence than season logic allows
-- re-entry must not snap directly back to peak build
+- use the cadence allowed by season logic
+- re-entry ramps gradually back toward normal build load
 - deloads and mini-resets must remain visible in the phase structure
 - a phase structure must show which weeks are build, deload, mini-reset, reload, or re-entry
-- cadence logic may constrain structure, but it must not silently rewrite season authority
+- use cadence logic to constrain structure while preserving explicit season authority
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

@@ -21,6 +21,18 @@ Constraint categories:
 - unresolved uncertainty: incomplete availability, ambiguous logistics, unconfirmed event detail
 
 Hard rules:
-- do not invent missing athlete or logistics facts
-- do not relax hard blockers because a scenario prefers otherwise
-- do not emit workout or week-level solutions here
+- use explicit athlete and logistics facts from upstream context
+- keep hard blockers authoritative over scenario preference
+- emit season-level constraint synthesis only
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the task expected_output as a structured review contribution.
+- Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
+- Tie each issue to the relevant context, policy, phase/week range, load band, or artifact field.

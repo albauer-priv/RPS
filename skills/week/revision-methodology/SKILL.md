@@ -14,6 +14,10 @@ Method:
 4. Return one bounded candidate, not multiple variants.
 
 Hard rules:
-- no hidden scope expansion
-- no downstream load compression to compensate for missed work
-- do not rewrite unrelated days
+- keep scope expansion explicit and user-approved
+- use downstream recovery-preserving adjustments after missed work
+- revise only the days in the approved scope
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

@@ -16,7 +16,7 @@ Method:
 6. Confirm recovery days and fixed-rest-day constraints are protected.
 7. Confirm `week_summary.weekly_load_corridor_kj` mirrors the active Phase/S5 band and is not a separate agent-created corridor.
 8. Confirm workout-level `planned_kj` is treated as mechanical work, while weekly compliance uses `planned_weekly_load_kj`.
-9. Use deterministic workout-load estimates or their trace when available; do not approve hand-waved load totals that contradict parsed workout text.
+9. Use deterministic workout-load estimates or their trace when available, and approve totals only when they align with parsed workout text.
 
 Block approval when:
 - planned weekly load is above or below the active Phase/S5 band without a replan decision
@@ -29,3 +29,8 @@ Block approval when:
 Use these references:
 - `references/load_estimation_week.md`
 - `references/load_distribution_and_reconciliation.md`
+
+Output format:
+- Return the task expected_output as a structured review contribution.
+- Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
+- Tie each issue to the relevant context, policy, phase/week range, load band, or artifact field.

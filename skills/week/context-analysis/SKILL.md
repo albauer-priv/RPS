@@ -13,4 +13,9 @@ Return:
 - active corridor and role constraints
 - likely change pressure
 
-Do not recommend or revise here.
+Summarize context only; route recommendations and revisions to the responsible downstream skill.
+
+Output format:
+- Return the task expected_output as a compact context summary.
+- Include authoritative inputs, selected ranges, constraints, missing data, and assumptions.
+- Highlight only the facts that the downstream planning or review task needs to act correctly.

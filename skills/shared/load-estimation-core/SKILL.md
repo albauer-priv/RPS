@@ -13,14 +13,14 @@ Core semantics:
 - `planned_weekly_load_kj`: week-summary governance load metric used for constraints and corridor compliance
 - `planned_load_kj_raw`: internal calculation term for governance load before weekly aggregation/output rounding
 - all `weekly_kj_bands`, `weekly_load_corridor_kj`, and upstream `weekly_kJ` corridor names refer to `planned_weekly_load_kj`, not raw `planned_kj`
-- this skill is only about planning/governance corridors and workout load estimates; do not infer nutrition, fueling, or recovery prescriptions from it
+- use this skill for planning/governance corridors and workout load estimates; route nutrition, fueling, and recovery prescriptions to their responsible skills or evidence paths
 
 kJ-first steering hierarchy:
 - primary steering/comparison metric: kJ/load-kJ at session, week, phase, and season level
 - secondary context metrics: CTL, ATL, TSB as tolerance/trend context only
 - tertiary characterization metrics: IF and intensity distribution
-- CTL/ATL/TSB must not become leading durability metrics
-- IF/intensity distribution characterizes work; it must not replace kJ-first load governance
+- Keep kJ-first governance as the leading durability metric; use CTL/ATL/TSB only as supporting context.
+- Use IF/intensity distribution to characterize work while preserving kJ-first load governance.
 - fueling is not planned as an independent training prescription here; it is derived from energetic load outside this skill's authority
 
 Required inputs:
@@ -81,5 +81,5 @@ Hard rules:
 - never merge mechanical work and governance load semantics
 - use segment math when available; IF-direct fallback only when structure is missing, unparseable, or intent-only
 - zero duration produces zero outputs
-- negative durations, negative availability, missing/invalid FTP, no allowed domains, or invalid totals are hard invalid states for deterministic load derivation
+- require non-negative durations and availability, valid FTP, at least one allowed domain, and valid totals for deterministic load derivation
 - if KPI gating is enabled and `body_mass_kg` is missing, STOP with `missing_body_mass_for_kpi_rate`

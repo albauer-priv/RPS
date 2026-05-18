@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Reworded configured CrewAI skills toward positive operating guidance and added validation that flags explicit don't/never/no-style rules.
+- Added CrewAI skill package validation for configured skills, including local-reference hard checks plus strict-ready checks for positive action guidance and explicit output/answer format.
 - CrewAI task execution now uses task-scoped tools from `tasks.yaml`, task-level callbacks, and richer Flow failure state handling for rejected, missing-upstream, or store-failed paths.
 - CrewAI runtime now supports native agent and crew config passthrough, explicit task `context:` dependencies, task callbacks, guardrail-failure telemetry, richer typed Flow state, and read-only writer memory.
 - Schema bundling now regenerates schema-backed CrewAI artifact output models so persisted artifact tasks can use concrete JSON-Schema-derived structured output contracts.

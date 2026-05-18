@@ -26,5 +26,10 @@ Block approval when:
 - a phase cycle is outside `Base | Build | Peak | Transition`
 - deload rationale is missing where deload intent is present
 - phase coverage has gaps, overlaps, or ambiguous week ownership
-- an `A` event has no coherent `Peak`/`Transition` handling
+- an `A` event lacks coherent `Peak`/`Transition` handling
 - `self_check.every_phase_maps_to_cycle_and_deload_intent` is true while cycle/cadence/deload evidence is missing
+
+Output format:
+- Return the task expected_output as a structured review contribution.
+- Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
+- Tie each issue to the relevant context, policy, phase/week range, load band, or artifact field.

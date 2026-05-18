@@ -17,19 +17,19 @@ Method:
 Deterministic load context:
 - use the injected `availability_load_capacity_kj` min/typical/max directly
 - use the injected `IF_ref_load` and source for explanation only
-- logistics constraints are risk and planning constraints; do not numerically reduce hours unless explicit hour fields exist
+- treat logistics as risk and planning constraints; reduce hours numerically only when explicit hour fields exist
 - if a season corridor sits above capacity, flag review/replan pressure instead of normalizing it silently
-- agents may explain code-owned values, but must not recompute, widen, or overwrite deterministic S5/availability bands
+- agents explain and apply code-owned deterministic S5/availability bands exactly as injected
 - season corridors are expressed in `planned_weekly_load_kj/week`, even when upstream wording says `weekly_kJ`
-- Season may set strategic corridors, but must not perform exact feasibility/S5 narrowing; Phase owns deterministic feasibility and S5 intersection once a concrete phase range and allowed domains exist
-- `ambition_if_range` may shape QUALITY intent, but it must not override segment-derived IF or code-owned load math
+- Season sets strategic corridors; Phase applies deterministic feasibility and S5 intersection once a concrete phase range and allowed domains exist
+- use `ambition_if_range` to shape QUALITY intent while preserving segment-derived IF and code-owned load math
 
 Progression guardrails:
 - standard week-over-week ramp: `+8%` to `+12%`
 - conservative ramp: `+5%` to `+8%`
 - aggressive ramp: `+12%` to `+18%` only in rare robust cases
-- avoid sustained ramps above `15%` outside explicit special cases
-- do not simultaneously use the top of the kJ ramp range and increase intensity density
+- keep sustained ramps at or below `15%` except in explicit special cases
+- choose either top-of-range kJ progression or increased intensity density, with recovery margin preserved
 - if time metrics exist, repeated `LR_share > 0.50` means long-ride dominance and should push cadence/ramp more conservative
 
 Cadence framing:
@@ -47,7 +47,7 @@ Deload and re-entry framing:
 - default re-entry: `RE_kJ = BL_kJ * 0.90 to 1.00`
 - high-fatigue re-entry: `RE_kJ = BL_kJ * 0.85 to 0.95`
 - robust/fresh re-entry, only without spike or dominance warnings: `RE_kJ = BL_kJ * 0.95 to 1.05`
-- re-entry must not snap back to peak build week
+- re-entry progresses gradually from reduced load toward normal build load
 - every deload phase or week-level deload intent needs a cadence-based rationale
 
 Cadence-specific load targets:
@@ -57,9 +57,14 @@ Cadence-specific load targets:
 - if `2:1:1` mini-reset becomes a true deload, treat the reload week as re-entry and baseline-anchor it
 
 Hard rules:
-- no unsafe ramp just to satisfy event ambition
-- no season corridor that requires repeated catch-up weeks
-- no implicit double-peak logic for multiple `A` events
+- keep event ambition inside safe ramp limits
+- set season corridors that remain achievable without repeated catch-up weeks
+- model multiple `A` events with explicit macrocycle or peak-window logic
 - if robustness is doubtful, narrow progression rather than widen intensity
 - season load governance must remain explicit enough that phase planning can inherit it deterministically
 - `self_check.every_phase_maps_to_cycle_and_deload_intent` may be true only after coverage, cycle, cadence, and deload intent are checked
+
+Output format:
+- Return the task expected_output with load bands, progression notes, assumptions, and STOP or warning states separated clearly.
+- Use injected code-owned capacity/S5 values where present and explain how the task applies them.
+- Include trace cues for availability, phase/week corridor, deload, re-entry, and progression logic.

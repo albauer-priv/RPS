@@ -10,9 +10,9 @@ Build macrocycle structure backward from priority events.
 Core planning rule:
 - all season architecture is backplanned from the highest-priority `A` event; forward-only planning is invalid
 - schema-valid cycle values are only `Base`, `Build`, `Peak`, and `Transition`
-- do not emit `Specificity` or `Taper` as phase/cycle values
+- emit only schema-valid phase/cycle values: `Base`, `Build`, `Peak`, and `Transition`
 - old `Specificity` intent is represented as event-specific emphasis inside schema-valid `Peak` or late `Build`, not as a new cycle value
-- old `Taper` intent is represented narratively and structurally inside `Peak`, never as a standalone cycle value
+- old `Taper` intent is represented narratively and structurally inside `Peak` rather than as a standalone cycle value
 
 Backplanning algorithm:
 1. start from the selected `A` event or explicit `A` cluster
@@ -31,16 +31,16 @@ Cycle semantics:
 Permitted ultra/brevet archetype:
 - a Kinzlbauer-like season template is allowed at season architecture level only
 - it sequences aerobic ceiling/VO2 tolerance before major volume expansion, then shifts toward economy, VLamax-lowering emphasis, and durability
-- it may shape phase intent and allowed/forbidden intensity domains, but it must not prescribe workouts or override governance corridors
+- use it to shape phase intent and domain eligibility while keeping workout prescription and governance corridors in their responsible components
 
 Allowed multi-`A` models:
 - `multiple macrocycles`: only when `A` events are separated enough for full recovery and rebuild
-- `A-event cluster / peak window`: one build, one peak window, no repeated tapers
+- `A-event cluster / peak window`: one build and one peak window with a single taper strategy
 
-Explicitly forbidden:
-- multiple independent tapers inside a short interval
-- rebuilding fitness between tightly clustered `A` events
-- overlapping macrocycles
+Excluded architecture patterns:
+- use one coherent peak window for tightly grouped priority events
+- preserve fitness and freshness across tightly clustered `A` events
+- keep macrocycles sequential and non-overlapping
 
 Taper rules:
 - taper exists only for `A` events
@@ -50,7 +50,11 @@ Taper rules:
 - taper depth and duration scale with event duration, accumulated fatigue, and athlete resilience
 
 Hard rules:
-- do not introduce additional peaks at phase level
-- do not sacrifice taper clarity just to keep all events equally satisfied
+- keep peak decisions at season architecture level
+- preserve taper clarity by prioritizing events according to their declared priority
 - if the calendar is compressed, shorten lower-priority build content before collapsing the peak model
-- do not create implicit double peaks for clustered `A` events
+- model clustered `A` events as one peak window unless the calendar supports separate macrocycles
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

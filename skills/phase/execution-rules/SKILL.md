@@ -1,6 +1,6 @@
 ---
 name: execution-rules
-description: Define allowed and forbidden execution semantics for the exact phase range using canonical agenda vocabulary.
+description: Define included and excluded execution semantics for the exact phase range using canonical agenda vocabulary.
 metadata:
   author: rps
   version: "2.0"
@@ -9,16 +9,16 @@ Author execution rules for the exact phase range.
 
 Method:
 1. Use canonical agenda vocabulary only: `DAY_ROLE`, `INTENSITY_DOMAIN`, and `LOAD_MODALITY` semantics from the agenda enum.
-2. Set what is allowed, suppressed, and forbidden at phase level without drifting into workout prescription.
+2. Set included, suppressed, and excluded phase-level semantics while leaving workout prescription to week/workout tasks.
 3. Express recovery protection, event-week handling, and quality-density limits in semantic terms.
 
 Agenda rules:
 - `DAY_ROLE` is mandatory.
 - `QUALITY` and `EVENT` require a non-`NONE` intensity domain.
 - `K3` is only valid with `QUALITY` or `EVENT`, and only with `ENDURANCE_HIGH` or `SWEET_SPOT`.
-- `ENDURANCE` and `OPTIONAL` must not carry `TEMPO`, `SWEET_SPOT`, `THRESHOLD`, or `VO2MAX`.
-- `QUALITY` must not use `NONE` or `ENDURANCE_LOW`.
-- No power zones, `%FTP`, durations, interval structures, kJ values, or progression language belong here.
+- Pair `ENDURANCE` and `OPTIONAL` with endurance-compatible domains.
+- Pair `QUALITY` with trainable quality domains above recovery/endurance-low semantics.
+- Keep power zones, `%FTP`, durations, interval structures, kJ values, and progression language in downstream week/workout artifacts.
 
 Phase execution framing:
 - recovery weeks reduce density and protect spacing
@@ -27,7 +27,18 @@ Phase execution framing:
 - optional/flex semantics must remain removable without compensation unless explicitly protected upstream
 
 Hard rules:
-- no day-by-day planning
-- no workouts or interval prescriptions
-- no forbidden agenda combinations
-- no numeric daily targets or zone language
+- keep day-by-day planning in week tasks
+- keep workouts and interval prescriptions in workout tasks
+- agenda combinations stay inside the allowed role/domain matrix
+- keep numeric daily targets in downstream week artifacts or zone language
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

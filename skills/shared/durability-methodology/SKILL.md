@@ -33,14 +33,14 @@ Operational rules:
 
 Event and macrocycle implications:
 - an `A` event is a true peak target and deserves explicit peak-window and taper logic
-- a `B` event may shape local structure but must not steal the primary peak
-- a `C` event must not distort season-wide durability logic
+- keep a `B` event as local structure support while preserving the primary peak for the `A` event
+- keep a `C` event inside season-wide durability logic as a training event
 - if two `A` events exist, use an explicit multi-peak strategy; never blend them implicitly into one unresolved fatigue wave
 
 Hard rules:
-- no makeup sessions
-- no compression of missed load into later days just to hit totals
-- no hidden overload via stacked intensity and long-session dominance at the same time
+- use the planned recovery-preserving structure after missed sessions
+- distribute remaining load only when the plan remains recovery-coherent
+- keep overload visible by separating intensity density from long-session dominance
 - recovery protection outranks perfect corridor centering
 - if a choice conflicts with durability, choose the more repeatable option
 
@@ -53,5 +53,5 @@ Required checks before returning:
 Evidence-use boundary:
 - `references/evidence_layer_durability.md` and `references/durability_bibliography.md` are justification sources, not decision authority.
 - Prefer DOI-backed and peer-reviewed sources when explaining durability-first choices.
-- Practitioner sources may explain implementation, but must not create new thresholds or override active plan governance.
+- Use practitioner sources to explain implementation while keeping thresholds and active plan governance from authoritative RPS context.
 - If a source-backed answer needs web research, search by exact author/title/DOI from the bibliography and cite only verified results.

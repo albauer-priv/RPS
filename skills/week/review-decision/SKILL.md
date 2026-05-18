@@ -12,3 +12,8 @@ Decision order:
 2. Preserve must-keep constraints and identify smallest acceptable replan scope.
 3. Return either `approved`, `replan_required`, or `rejected`.
 4. Replan instructions must name target specialists, issues to fix, and what must stay unchanged.
+
+Output format:
+- Return the task expected_output with a clear decision status: `approved`, `replan_required`, or `rejected`.
+- Include blocking issues, warnings, replan instructions, and writer-ready summary when applicable.
+- State the concrete change needed before approval when the decision is not approved.

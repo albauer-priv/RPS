@@ -26,7 +26,12 @@ Required content:
 
 Hard rules:
 - only deltas vs baseline
-- no workouts or intervals
-- no day-by-day schedules
-- no numeric progression rules or instructions like `+10min Z2`
+- keep workouts and intervals in downstream week/workout tasks
+- keep day-by-day schedules in downstream week planning
+- keep numeric progression instructions in downstream week planning when authorized
 - stop if any required field or expiry semantics are missing
+
+Output format:
+- Return the task expected_output as advisory feed-forward guidance.
+- Include evidence summary, affected scope, recommended adjustment theme, warnings, and trace references.
+- Keep feed-forward diagnostic or advisory unless the active artifact schema makes it binding.

@@ -32,6 +32,12 @@ Writer rules:
 - all required narrative strings must be non-empty
 
 Hard rules:
-- do not add new interpretation during writing
-- do not convert the report into a planning instruction
+- write the approved interpretation only
+- keep the report diagnostic and route planning instructions to planning tasks
 - stop on schema errors or missing required fields
+
+Output format:
+- Return only the schema-compliant artifact envelope required by the active task expected_output.
+- Include top-level `meta` and `data` content exactly as required by the artifact schema.
+- Preserve approved bundle content, review decisions, deterministic context, and trace references.
+- Emit only the artifact object.

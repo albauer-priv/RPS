@@ -12,13 +12,18 @@ Checklist:
 2. Section order stays inside the project convention.
 3. Every step line contains duration, power target, and cadence.
 4. Only allowed target forms are used.
-5. Forbidden shorthand, zones, HR, pace, absolute watts, unsupported time formats, and distance durations are absent.
+5. The text uses the supported workout syntax subset for shorthand, targets, time formats, and durations.
 6. Loop usage stays within the single-level project subset.
-7. Comments, if present, remain on their own line and do not break loop/section structure.
+7. Comments, if present, remain on their own line and preserve loop/section structure.
 
-Hard rejection cases:
-- any nested loop
-- any `@` shorthand
-- any HR/pace/zone/absolute-watt target
+Blocking syntax cases:
+- nested loop
+- `@` shorthand
+- HR/pace/zone/absolute-watt target
 - missing cadence on any step line
-- `MM:SS` or `HH:MM:SS` used inside step lines
+- `MM:SS` or `HH:MM:SS` inside step lines
+
+Output format:
+- Return the task expected_output as a structured review contribution.
+- Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
+- Tie each issue to the relevant context, policy, phase/week range, load band, or artifact field.

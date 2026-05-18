@@ -21,7 +21,7 @@ Method:
 Diagnostic rules:
 - Durability is diagnostically dominant.
 - Any valid `RED` durability signal yields overall red status.
-- If durability is inconclusive because readiness/context conditions were not met, mark it `inconclusive` and do not let it drive phase health.
+- If durability is inconclusive because readiness/context conditions were not met, mark it `inconclusive` and keep it outside phase-health scoring.
 - Recovery red yields red if durability is not red.
 - Energetic red without durability/recovery red does not automatically imply structural failure.
 - Intensity density and execution are subordinate/contextual domains.
@@ -29,15 +29,32 @@ Diagnostic rules:
 Inconclusive logic:
 - A durability red is structural only if residual high-intensity fatigue is absent, environment is comparable, and energetic pre-load criteria are met.
 - Otherwise label it `inconclusive (context-limited)`.
-- Inconclusive results are null diagnostic results. They are not yellow or red and must not influence overall status.
+- Treat inconclusive results as null diagnostic results: keep them outside yellow/red classification and overall-status scoring.
 
 Authority separation:
 - this policy may justify status labels and narrative interpretation
-- this policy must not mandate deloads, progression, phase termination, or week changes
+- keep deloads, progression, phase termination, and week changes governed by the active planning artifacts and review tasks
 - workout types and KPI signal mappings provide evidence context, not governance decisions
 
 Hard rules:
-- do not prescribe direct planning rewrites
-- do not overstate certainty beyond the evidence
+- keep outputs diagnostic and route planning rewrites to planning tasks
+- calibrate certainty to the available evidence
 - distinguish observation, interpretation, and recommendation clearly
 - recommendations must stay `advisory`, scoped to `Season-Planner`, and explicitly not a `direct_phase_change` or `weekly_intervention`
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Positive execution pattern:
+- Read the completed-week evidence, identify the strongest diagnostic signals, and summarize what they indicate.
+- Explain durability, load, recovery, and KPI observations as diagnostic findings rather than plan changes.
+- Include uncertainty and missing-data flags so the review manager can judge confidence.
+- Produce a compact evidence-led analysis that supports the report expected_output and stays diagnostic-only.
+
+Output format:
+- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
+- Include only information needed by the active task and downstream consumer.

@@ -25,13 +25,13 @@ Distribution rules:
 Reconciliation rules:
 - first adjust duration within the day-role intent
 - then use aerobic add-ons where appropriate
-- avoid intensity inflation that exists only to satisfy a weekly number
+- keep intensity changes tied to phase intent rather than weekly-number chasing
 - if a week remains slightly low after safe reconciliation, preserve safety and explain the miss
 - if under target, explain the safety decision before increasing intensity
-- never compress load onto recovery days or fixed-rest days
+- keep recovery days and fixed-rest days protected from load compression
 
 Progressive-overload execution:
-- execute the active phase/week role; do not select a new cadence in Week planning
+- execute the active phase/week role and preserve cadence selected upstream
 - load weeks progress primarily through time/kJ, not intensity density
 - deload, mini-reset, reload, and re-entry weeks preserve their role even if the corridor midpoint is higher
 - default re-entry target is `BL_kJ * 0.90 to 1.00`; high fatigue uses `0.85 to 0.95`; robust/fresh uses `0.95 to 1.05` only without spike/dominance warnings
@@ -45,22 +45,34 @@ Load semantics:
 - `week_summary.weekly_load_corridor_kj` mirrors the active Phase/S5 `weekly_kj_bands[w]`
 - preserve the distinction between corridor compliance and raw mechanical work
 - when a workout estimate is weak, expose fallback assumptions instead of pretending precision
-- use injected deterministic S5/capacity values directly; do not recompute or widen them
-- workout `planned_kj` remains mechanical work; do not compare raw `planned_kj` totals against governance corridors without applying the approved load-estimation method
+- use injected deterministic S5/capacity values directly and preserve their exact bounds
+- treat workout `planned_kj` as mechanical work and compare week totals to governance corridors through the approved load-estimation method
 - use injected domain-hourly estimates for rough planning; exact workout text is checked by code-owned segment parsing after output
 - segment parsing applies `%FTP`/range/ramp targets, loop repeats, `r_i` clamping, final-only rounding, and IF-direct fallback only for unparseable/intent-only workouts
 
 Week STOP/replan triggers:
 - active `weekly_kj_bands` missing
 - target week infeasible under availability/capacity context
-- forbidden intensity domain requested
+- requested intensity domain sits outside the allowed domain set
 - fixed rest day or recovery day is used as a load catch-up bucket
 - KPI gating is active but required body-mass context is missing
 
 Hard rules:
-- no intensity inflation purely to hit corridor numbers
-- no stealth load compression onto recovery days
+- use duration and aerobic add-ons before considering intensity changes, and keep intensity tied to phase intent
+- keep recovery days protected from load compression
 - preserve recovery protection and key role logic
 - preserve phase intent even when the corridor is tight
 - a week outside the Phase/S5 band must be rejected or sent to replan, not stored silently
 - day dates and fixed-rest-day handling must match the deterministic day matrix
+
+Positive operating guidance:
+- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
+- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
+- Produce actionable content that helps the next task continue without recomputing or guessing.
+- Include required facts, assumptions, warnings, and trace cues when they are available.
+- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
+
+Output format:
+- Return the task expected_output with load bands, progression notes, assumptions, and STOP or warning states separated clearly.
+- Use injected code-owned capacity/S5 values where present and explain how the task applies them.
+- Include trace cues for availability, phase/week corridor, deload, re-entry, and progression logic.
