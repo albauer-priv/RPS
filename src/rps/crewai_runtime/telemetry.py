@@ -39,6 +39,7 @@ def _append_with_context(event_type: str, **payload: object) -> None:
     event_payload = {"type": event_type, **payload}
     if ctx.component and "component" not in event_payload:
         event_payload["component"] = ctx.component
+    _log_runtime_event(ctx, event_type, event_payload)
     try:
         append_event(ctx.root, ctx.athlete_id, ctx.run_id, event_payload)
     except Exception as exc:  # pragma: no cover - telemetry must remain best-effort
@@ -57,6 +58,11 @@ def emit_runtime_event(
 
     if root is None or not athlete_id or not run_id:
         return
+    _log_runtime_event(
+        CrewAIRunContext(root=root, athlete_id=athlete_id, run_id=run_id, component=None),
+        event_type,
+        payload,
+    )
     try:
         append_event(
             root,
@@ -69,6 +75,34 @@ def emit_runtime_event(
         )
     except Exception as exc:  # pragma: no cover - telemetry must stay best-effort
         logger.warning("Failed to append runtime event %s for run %s: %s", event_type, run_id, exc)
+
+
+def _log_runtime_event(ctx: CrewAIRunContext, event_type: str, payload: dict[str, object]) -> None:
+    """Write compact CrewAI runtime progress into the normal application log."""
+
+    keys = (
+        "flow",
+        "crew",
+        "task",
+        "agent",
+        "tool",
+        "step",
+        "status",
+        "output_format",
+        "component",
+        "reason",
+    )
+    fields: list[str] = [
+        f"type={event_type}",
+        f"run_id={ctx.run_id}",
+        f"athlete={ctx.athlete_id}",
+    ]
+    for key in keys:
+        value = payload.get(key)
+        text = _safe_str(value, default="")
+        if text:
+            fields.append(f"{key}={_compact_text(text, max_len=140)}")
+    logger.info("CrewAI runtime %s", " ".join(fields))
 
 
 def _output_format_label(value: object) -> str:
@@ -107,6 +141,24 @@ def _callback_agent_name(task_output: object) -> str:
         return _compact_text(text)
     text = _safe_str(agent, default="")
     return _compact_text(text) if text else "unknown"
+
+
+def _agent_label(event: object, source: object) -> str:
+    """Resolve a compact agent label from task events."""
+
+    for candidate in (
+        _event_attr(event, "agent_name", "agent_role", "agent"),
+        _object_attr(_event_attr(event, "task"), "agent"),
+        _object_attr(source, "agent"),
+    ):
+        if candidate is None:
+            continue
+        text = _safe_str(_object_attr(candidate, "role", "name", "key"), default="")
+        if not text:
+            text = _safe_str(candidate, default="")
+        if text:
+            return _compact_text(text)
+    return "unknown"
 
 
 def build_task_callback(
@@ -192,6 +244,20 @@ def _compact_text(text: str, *, max_len: int = 96) -> str:
     return f"{compact[: max_len - 3].rstrip()}..."
 
 
+def _looks_like_prompt_text(text: str) -> bool:
+    """Return true when a CrewAI label is actually injected prompt text."""
+
+    compact = " ".join(text.split()).lower()
+    prompt_markers = (
+        "system and agent instructions:",
+        "system instructions:",
+        "based on these tasks summary:",
+        "# system prompt",
+        "shared system instructions",
+    )
+    return any(marker in compact for marker in prompt_markers)
+
+
 def _object_attr(value: object, *names: str) -> object | None:
     """Return the first matching attribute on an object without stringifying it."""
 
@@ -221,11 +287,11 @@ def _task_label(event: object, source: object) -> str:
     """Resolve a compact task label without leaking full prompt text."""
 
     direct = _safe_str(_event_attr(event, "task_name", "task_id"), default="")
-    if direct:
+    if direct and not _looks_like_prompt_text(direct):
         return _compact_text(direct)
     task_obj = _event_attr(event, "task") or source
     named = _safe_str(_object_attr(task_obj, "name", "key", "role"), default="")
-    if named:
+    if named and not _looks_like_prompt_text(named):
         return _compact_text(named)
     task_id = _safe_str(_object_attr(task_obj, "id", "task_id"), default="")
     if task_id:
@@ -325,6 +391,7 @@ def ensure_crewai_event_listener() -> None:
                 _append_with_context(
                     "CREW_TASK_STARTED",
                     task=_task_label(event, source),
+                    agent=_agent_label(event, source),
                 )
 
             @crewai_event_bus.on(TaskCompletedEvent)
@@ -332,6 +399,7 @@ def ensure_crewai_event_listener() -> None:
                 _append_with_context(
                     "CREW_TASK_FINISHED",
                     task=_task_label(event, source),
+                    agent=_agent_label(event, source),
                 )
 
             @crewai_event_bus.on(TaskFailedEvent)
@@ -339,6 +407,7 @@ def ensure_crewai_event_listener() -> None:
                 _append_with_context(
                     "CREW_TASK_FAILED",
                     task=_task_label(event, source),
+                    agent=_agent_label(event, source),
                     reason=_safe_str(_event_attr(event, "error", "error_message", "message")),
                 )
 

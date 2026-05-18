@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 import types
@@ -662,6 +663,7 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
     )
 
     assert task.kwargs["tools"] == [read_tool, knowledge_tool]
+    assert task.kwargs["name"] == "week_context_read"
     assert callable(task.kwargs["callback"])
 
 
@@ -1193,7 +1195,7 @@ def test_coach_flow_routes_confirmation_and_records_events(monkeypatch, tmp_path
     assert "FLOW_FINISHED" in event_types
 
 
-def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Path) -> None:
+def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Path, caplog) -> None:
     events_module = _install_fake_crewai_events(monkeypatch)
     crewai_telemetry.ensure_crewai_event_listener()
     bus = events_module.crewai_event_bus
@@ -1204,6 +1206,7 @@ def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Pat
     )
     crew = SimpleNamespace(name="crew")
 
+    caplog.set_level(logging.INFO, logger="rps.crewai_runtime.telemetry")
     with crewai_telemetry.runtime_event_scope(
         root=tmp_path,
         athlete_id="athlete",
@@ -1222,6 +1225,12 @@ def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Pat
     assert "System instructions:" not in events[1]["task"]
     assert events[2]["type"] == "TOOL_STARTED"
     assert events[2]["tool"] == "read_current_plan_context"
+    log_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert "CrewAI runtime type=CREW_TASK_STARTED" in log_text
+    assert "run_id=run-compact" in log_text
+    assert "component=coach_turn" in log_text
+    assert "task=SimpleNamespace#12345678" in log_text
+    assert "System instructions:" not in log_text
 
 
 def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:

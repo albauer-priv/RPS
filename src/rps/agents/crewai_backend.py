@@ -719,6 +719,7 @@ def _execute_crewai_task(
         temperature_override=temperature_override,
     )
     crew_task_kwargs: dict[str, Any] = {
+        "name": task_blueprint.name,
         "description": description,
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
@@ -823,6 +824,7 @@ def _build_crewai_task(
     """Instantiate one CrewAI task object with optional explicit context."""
 
     kwargs: dict[str, Any] = {
+        "name": task_blueprint.name,
         "description": description,
         "expected_output": task_blueprint.expected_output,
         "agent": agent,
