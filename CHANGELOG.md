@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed CrewAI model routing so role-specific runtime profiles win over generic app-level model defaults; the non-Groq app fallback now uses `gpt-5.4-mini`, and CrewAI runtime profiles now allow only the GPT-5.4 family.
+- Fixed planning run failure reporting so `events.jsonl` captures structured LLM/provider root causes and Plan Hub step/run failures prefer those root causes over secondary shutdown errors.
 - Fixed Intervals historical baseline validation by making artifact metadata canonicalization respect closed `meta` schemas instead of adding planning-only ISO/trace fields to schema-strict data-pipeline artifacts.
 - Fixed planning CrewAI runs repeatedly calling failing native memory tools by disabling native CrewAI memory for planning/review/writer crews; code-owned snapshot artefacts remain the authoritative planning memory path.
 

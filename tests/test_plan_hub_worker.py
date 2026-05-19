@@ -4,9 +4,10 @@ from pathlib import Path
 from rps.orchestrator.plan_hub_worker import (
     PlanHubWorkerConfig,
     _bundled_phase_force_steps,
+    _latest_failure_reason,
     run_plan_hub_worker,
 )
-from rps.ui.run_store import append_run
+from rps.ui.run_store import append_event, append_run
 
 
 def test_bundled_phase_force_steps_groups_remaining_phase_outputs() -> None:
@@ -59,3 +60,31 @@ def test_plan_hub_worker_skips_terminal_run(tmp_path: Path, caplog) -> None:
         run_plan_hub_worker(config, threading.Event())
 
     assert "Plan hub worker skipped terminal run_id=run_done" in caplog.text
+
+
+def test_latest_failure_reason_prefers_llm_failure_event(tmp_path: Path) -> None:
+    append_event(
+        tmp_path,
+        "athlete",
+        "run-1",
+        {
+            "type": "TOOL_FAILED",
+            "reason": "fallback tool failure",
+        },
+    )
+    append_event(
+        tmp_path,
+        "athlete",
+        "run-1",
+        {
+            "type": "LLM_REQUEST_FAILED",
+            "reason": "You exceeded your current quota.",
+            "error_code": "insufficient_quota",
+            "error_type": "insufficient_quota",
+            "status_code": "429",
+        },
+    )
+
+    reason = _latest_failure_reason(tmp_path, "athlete", "run-1")
+
+    assert reason == "You exceeded your current quota. | code=insufficient_quota | status=429"

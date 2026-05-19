@@ -24,6 +24,7 @@ from rps.ui.run_store import (
     RunRecord,
     acquire_athlete_lock,
     append_event,
+    load_events,
     load_runs,
     release_athlete_lock,
     update_run,
@@ -108,6 +109,42 @@ def _run_summary(steps: list[StepRecord]) -> dict[str, int]:
         "steps_failed": failed,
         "artefacts_written": outputs,
     }
+
+
+def _latest_failure_reason(root: Path, athlete_id: str, run_id: str) -> str | None:
+    """Return the most actionable recent runtime failure reason for a run."""
+
+    preferred = (
+        "LLM_REQUEST_FAILED",
+        "CREW_EXECUTION_FAILED",
+        "CREW_TASK_FAILED",
+        "CREW_FAILED",
+        "FLOW_STEP_FAILED",
+        "TOOL_FAILED",
+    )
+    events = load_events(root, athlete_id, run_id, limit=200)
+    for event_type in preferred:
+        for event in reversed(events):
+            if event.get("type") != event_type:
+                continue
+            reason = str(event.get("reason") or "").strip()
+            if not reason:
+                continue
+            details: list[str] = [reason]
+            error_code = str(event.get("error_code") or "").strip()
+            if error_code:
+                details.append(f"code={error_code}")
+            error_type = str(event.get("error_type") or "").strip()
+            if error_type and error_type != error_code:
+                details.append(f"type={error_type}")
+            status_code = str(event.get("status_code") or "").strip()
+            if status_code:
+                details.append(f"status={status_code}")
+            model = str(event.get("model") or "").strip()
+            if model:
+                details.append(f"model={model}")
+            return " | ".join(details)
+    return None
 
 
 def _load_index(root: Path, athlete_id: str) -> IndexRecord:
@@ -559,8 +596,13 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
                                     break
                             if step.get("Status") != "DONE":
+                                root_cause = _latest_failure_reason(
+                                    config.root,
+                                    config.athlete_id,
+                                    config.run_id,
+                                )
                                 step["Status"] = "FAILED"
-                                step["Details"] = (exec_result or {}).get("error") or "Execution failed."
+                                step["Details"] = root_cause or (exec_result or {}).get("error") or "Execution failed."
                                 step["Ended"] = datetime.now(UTC).isoformat()
                                 _set_duration(step)
                                 _mark_blocked(steps, step)
@@ -602,10 +644,12 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
         records = load_runs(config.root, config.athlete_id, limit=50)
         active = next((r for r in records if r.get("run_id") == config.run_id), None)
         steps = _active_steps(active)
+        root_cause = _latest_failure_reason(config.root, config.athlete_id, config.run_id)
+        detail = root_cause or str(exc)
         for step in steps:
             if step.get("Status") == "RUNNING":
                 step["Status"] = "FAILED"
-                step["Details"] = str(exc)
+                step["Details"] = detail
                 step["Ended"] = datetime.now(UTC).isoformat()
                 _set_duration(step)
                 _mark_blocked(steps, step)
@@ -627,7 +671,12 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                 "steps": steps,
             },
         )
-        append_event(config.root, config.athlete_id, config.run_id, {"type": "RUN_FAILED", "reason": str(exc)})
+        append_event(
+            config.root,
+            config.athlete_id,
+            config.run_id,
+            {"type": "RUN_FAILED", "reason": detail, "secondary_reason": str(exc)},
+        )
     finally:
         release_athlete_lock(config.root, config.athlete_id)
         if handler:

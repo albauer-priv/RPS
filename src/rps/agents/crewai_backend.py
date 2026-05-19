@@ -52,6 +52,7 @@ from rps.crewai_runtime.telemetry import (
     build_step_callback,
     build_task_callback,
     emit_runtime_event,
+    emit_runtime_exception_event,
     register_runtime_label,
     runtime_event_scope,
 )
@@ -1627,6 +1628,16 @@ def run_phase_bundle_crewai(
             max_replan_rounds=2,
         )
     except Exception as exc:
+        emit_runtime_exception_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            exc=exc,
+            crew="phase_planning",
+            task="phase_bundle_cycle",
+            agent=agent_name,
+            component="crew:phase_bundle_cycle",
+        )
         return {"ok": False, "error": str(exc), "produced": {}}
 
     produced: dict[str, Any] = {}
@@ -2131,6 +2142,15 @@ def run_agent_multi_output_crewai(
             temperature_override=temperature_override,
         )
     except Exception as exc:
+        emit_runtime_exception_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            exc=exc,
+            crew="single_task",
+            task=task.value,
+            agent=agent_name,
+        )
         return {
             "ok": False,
             "error": str(exc),
@@ -2207,6 +2227,15 @@ def run_agent_multi_output_preview_crewai(
             temperature_override=temperature_override,
         )
     except Exception as exc:
+        emit_runtime_exception_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            exc=exc,
+            crew="single_task_preview",
+            task=task.value,
+            agent=agent_name,
+        )
         return {"ok": False, "error": str(exc), "document": {}}
 
     return {

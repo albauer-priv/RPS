@@ -504,6 +504,29 @@ def test_guardrail_failure_emits_runtime_event(monkeypatch) -> None:
     assert any(event["guardrail"] == "season_scenario_selection_shape" for event in emitted)
 
 
+def test_emit_runtime_exception_event_records_structured_llm_failure(tmp_path: Path) -> None:
+    try:
+        raise RuntimeError(
+            "Error code: 429 - {'error': {'message': 'You exceeded your current quota.', 'type': 'insufficient_quota', 'code': 'insufficient_quota'}}"
+        )
+    except RuntimeError as exc:
+        crewai_telemetry.emit_runtime_exception_event(
+            root=tmp_path,
+            athlete_id="athlete",
+            run_id="run-llm-failure",
+            exc=exc,
+            crew="season_planning",
+            task="season_plan",
+        )
+
+    events = load_events(tmp_path, "athlete", "run-llm-failure")
+    assert events[-1]["type"] == "LLM_REQUEST_FAILED"
+    assert events[-1]["error_code"] == "insufficient_quota"
+    assert events[-1]["error_type"] == "insufficient_quota"
+    assert events[-1]["status_code"] == "429"
+    assert "current quota" in str(events[-1]["reason"])
+
+
 def test_build_memory_instance_injects_rps_openai_credentials(monkeypatch) -> None:
     captured: dict[str, object] = {}
 

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import logging
+import re
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
@@ -119,6 +121,11 @@ def _log_runtime_event(ctx: CrewAIRunContext, event_type: str, payload: dict[str
         "output_format",
         "component",
         "reason",
+        "error_type",
+        "error_code",
+        "status_code",
+        "model",
+        "provider",
     )
     fields: list[str] = [
         f"type={event_type}",
@@ -286,6 +293,152 @@ def _compact_text(text: str, *, max_len: int = 96) -> str:
     return f"{compact[: max_len - 3].rstrip()}..."
 
 
+def _extract_error_mapping(text: str) -> dict[str, object]:
+    """Best-effort parse a provider error mapping embedded in an exception string."""
+
+    if "{" not in text or "}" not in text:
+        return {}
+    start = text.find("{")
+    end = text.rfind("}")
+    if start < 0 or end <= start:
+        return {}
+    raw = text[start : end + 1]
+    try:
+        parsed = ast.literal_eval(raw)
+    except Exception:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _exception_chain(exc: BaseException) -> list[BaseException]:
+    """Return the exception chain from outermost to deepest cause/context."""
+
+    chain: list[BaseException] = []
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        chain.append(current)
+        next_exc = current.__cause__ or current.__context__
+        current = next_exc if isinstance(next_exc, BaseException) else None
+    return chain
+
+
+def summarize_exception(exc: BaseException) -> dict[str, object]:
+    """Return a compact structured failure summary for telemetry and run-store details."""
+
+    chain = _exception_chain(exc)
+    root = chain[-1] if chain else exc
+    root_message = str(root).strip() or type(root).__name__
+    top_message = str(exc).strip() or type(exc).__name__
+
+    payload: dict[str, object] = {
+        "reason": _compact_text(root_message, max_len=220),
+        "exception_class": type(root).__name__,
+    }
+    if top_message != root_message:
+        payload["top_level_reason"] = _compact_text(top_message, max_len=220)
+
+    for source in (root, exc):
+        for attr_name, key in (
+            ("status_code", "status_code"),
+            ("code", "error_code"),
+            ("type", "error_type"),
+            ("model", "model"),
+            ("provider", "provider"),
+        ):
+            value = getattr(source, attr_name, None)
+            text = _safe_str(value, default="")
+            if text and key not in payload:
+                payload[key] = text
+
+        body = getattr(source, "body", None)
+        body_map = body if isinstance(body, dict) else {}
+        error_map = body_map.get("error") if isinstance(body_map.get("error"), dict) else {}
+        for mapping in (body_map, error_map):
+            for source_key, key in (
+                ("message", "reason"),
+                ("type", "error_type"),
+                ("code", "error_code"),
+                ("param", "error_param"),
+            ):
+                value = mapping.get(source_key)
+                text = _safe_str(value, default="")
+                if text:
+                    payload[key] = _compact_text(text, max_len=220) if key == "reason" else text
+
+    parsed = _extract_error_mapping(root_message)
+    error_map = parsed.get("error") if isinstance(parsed.get("error"), dict) else {}
+    if error_map:
+        for source_key, key in (
+            ("message", "reason"),
+            ("type", "error_type"),
+            ("code", "error_code"),
+        ):
+            value = error_map.get(source_key)
+            text = _safe_str(value, default="")
+            if text:
+                payload[key] = _compact_text(text, max_len=220) if key == "reason" else text
+
+    status_match = re.search(r"Error code:\s*(\d+)", top_message)
+    if status_match and "status_code" not in payload:
+        payload["status_code"] = status_match.group(1)
+
+    provider_hint = "openai" if "openai" in top_message.lower() or "chat/completions" in top_message.lower() else ""
+    if provider_hint and "provider" not in payload:
+        payload["provider"] = provider_hint
+
+    if (
+        payload.get("error_code") in {"insufficient_quota", "rate_limit_exceeded"}
+        or payload.get("error_type") in {"insufficient_quota", "tokens"}
+        or payload.get("provider") == "openai"
+    ):
+        payload["event_type"] = "LLM_REQUEST_FAILED"
+    else:
+        payload["event_type"] = "CREW_EXECUTION_FAILED"
+
+    return payload
+
+
+def emit_runtime_exception_event(
+    *,
+    root: Path | None,
+    athlete_id: str | None,
+    run_id: str | None,
+    exc: BaseException,
+    event_type: str | None = None,
+    **payload: object,
+) -> None:
+    """Emit one structured runtime failure event derived from an exception."""
+
+    summary = summarize_exception(exc)
+    resolved_event_type = event_type or str(summary.pop("event_type", "CREW_EXECUTION_FAILED"))
+    emit_runtime_event(
+        root=root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type=resolved_event_type,
+        **summary,
+        **payload,
+    )
+
+
+def _append_exception_with_context(
+    event_type: str,
+    *,
+    exc: object,
+    **payload: object,
+) -> None:
+    """Append one telemetry event enriched from an exception-like object."""
+
+    if isinstance(exc, BaseException):
+        summary = summarize_exception(exc)
+        resolved_type = str(summary.pop("event_type", event_type))
+        _append_with_context(resolved_type if event_type == "LLM_REQUEST_FAILED" else event_type, **summary, **payload)
+        return
+    _append_with_context(event_type, reason=_safe_str(exc), **payload)
+
+
 def _looks_like_prompt_text(text: str) -> bool:
     """Return true when a CrewAI label is actually injected prompt text."""
 
@@ -428,10 +581,10 @@ def ensure_crewai_event_listener() -> None:
 
             @crewai_event_bus.on(CrewKickoffFailedEvent)
             def _on_crew_failed(source: object, event: object) -> None:
-                _append_with_context(
+                _append_exception_with_context(
                     "CREW_FAILED",
+                    exc=_event_attr(event, "error", "error_message", "message"),
                     crew=_crew_label(event, source),
-                    reason=_safe_str(_event_attr(event, "error", "error_message", "message")),
                 )
 
             @crewai_event_bus.on(TaskStartedEvent)
@@ -452,11 +605,11 @@ def ensure_crewai_event_listener() -> None:
 
             @crewai_event_bus.on(TaskFailedEvent)
             def _on_task_failed(source: object, event: object) -> None:
-                _append_with_context(
+                _append_exception_with_context(
                     "CREW_TASK_FAILED",
+                    exc=_event_attr(event, "error", "error_message", "message"),
                     task=_task_label(event, source),
                     agent=_agent_label(event, source),
-                    reason=_safe_str(_event_attr(event, "error", "error_message", "message")),
                 )
 
             @crewai_event_bus.on(ToolUsageStartedEvent)
@@ -469,10 +622,10 @@ def ensure_crewai_event_listener() -> None:
 
             @crewai_event_bus.on(ToolUsageErrorEvent)
             def _on_tool_failed(source: object, event: object) -> None:
-                _append_with_context(
+                _append_exception_with_context(
                     "TOOL_FAILED",
+                    exc=_event_attr(event, "error", "error_message", "message"),
                     tool=_tool_name(event, source),
-                    reason=_safe_str(_event_attr(event, "error", "error_message", "message")),
                 )
 
             @crewai_event_bus.on(FlowStartedEvent)
@@ -507,11 +660,11 @@ def ensure_crewai_event_listener() -> None:
 
             @crewai_event_bus.on(MethodExecutionFailedEvent)
             def _on_method_failed(_source: object, event: object) -> None:
-                _append_with_context(
+                _append_exception_with_context(
                     "FLOW_STEP_FAILED",
+                    exc=_event_attr(event, "error", "error_message", "message"),
                     flow=_safe_str(_event_attr(event, "flow_name", "flow")),
                     step=_safe_str(_event_attr(event, "method_name", "method")),
-                    reason=_safe_str(_event_attr(event, "error", "error_message", "message")),
                 )
 
     try:
