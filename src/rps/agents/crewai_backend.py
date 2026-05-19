@@ -701,6 +701,17 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 "Phase review rule: decide against these deterministic contracts directly. "
                 "Do not delegate or rediscover phase-range, week-role, or S5 authority from prose."
             )
+        if task_name in {
+            "phase_governance_review",
+            "phase_structure_review",
+            "phase_preview_review",
+            "phase_contract_review",
+            "phase_review",
+        }:
+            blocks.append(
+                "Phase review subject rule: the injected Candidate Phase Bundle is the authoritative review subject. "
+                "Do not retrieve or expect a synthetic `candidate_phase_bundle` workspace artefact."
+            )
     elif crew_name == "week_review":
         week_calendar_context = context.get("week_calendar_context")
         if week_calendar_context:
@@ -723,6 +734,17 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 "Week review rule: decide against these deterministic contracts directly. "
                 "Do not delegate or rediscover active band, availability caps, or recovery-day authority from prose."
             )
+        if task_name in {
+            "week_consistency_review",
+            "week_load_governance_review",
+            "week_workout_syntax_review",
+            "week_contract_review",
+            "week_review",
+        }:
+            blocks.append(
+                "Week review subject rule: the injected Candidate Week Bundle is the authoritative review subject. "
+                "Do not retrieve or expect a synthetic `candidate_week_bundle` workspace artefact."
+            )
     return blocks
 
 
@@ -734,6 +756,30 @@ def _resolve_prompt_agent_name(agent_name: str, blueprint: Any) -> str:
     if isinstance(prompt_agent, str) and prompt_agent:
         return prompt_agent
     return agent_name
+
+
+def _review_subject_metadata(crew_name: str) -> tuple[str, str, str]:
+    """Return review-subject labels for season/phase/week review crews."""
+
+    if crew_name == "season_review":
+        return (
+            "Candidate Season Bundle",
+            "candidate season bundle",
+            "candidate_season_bundle",
+        )
+    if crew_name == "phase_review":
+        return (
+            "Candidate Phase Bundle",
+            "candidate phase bundle",
+            "candidate_phase_bundle",
+        )
+    if crew_name == "week_review":
+        return (
+            "Candidate Week Bundle",
+            "candidate week bundle",
+            "candidate_week_bundle",
+        )
+    return ("Candidate Planning Bundle", "candidate planning bundle", "candidate_planning_bundle")
 
 
 def _build_crewai_llm(
@@ -1614,12 +1660,13 @@ def _run_review_decision_document(
 ) -> JsonMap:
     """Execute a review crew against a planning bundle and return its decision."""
 
+    candidate_block_title, candidate_bundle_label, candidate_artifact_name = _review_subject_metadata(crew_name)
     review_input = _augment_user_input(
         user_input,
-        _render_json_block("Candidate Season Bundle", planning_bundle),
+        _render_json_block(candidate_block_title, planning_bundle),
         (
-            "Review subject rule: treat the injected Candidate Season Bundle as the authoritative candidate under review. "
-            "Do not call workspace tools to reload a synthetic `candidate_season_bundle` artefact."
+            f"Review subject rule: treat the injected {candidate_block_title} as the authoritative {candidate_bundle_label} under review. "
+            f"Do not call workspace tools to reload a synthetic `{candidate_artifact_name}` artefact."
         ),
     )
     pydantic_output = _execute_crewai_multiagent_crew(

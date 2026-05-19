@@ -69,18 +69,15 @@ agents:
   week_recommendation_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 1
+      enabled: false
   week_load_target_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 1
+      enabled: false
   week_revision_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 1
+      enabled: false
   week_workout_authoring_specialist:
     model: gpt-5.4-mini
     reasoning:
@@ -88,13 +85,11 @@ agents:
   week_consistency_auditor:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 1
+      enabled: false
   week_load_governance_reviewer:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 1
+      enabled: false
   week_workout_syntax_reviewer:
     model: gpt-5.4-mini
     reasoning:
@@ -219,8 +214,7 @@ agents:
   phase_guardrail_band_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_execution_rules_specialist:
     model: gpt-5.4-mini
     reasoning:
@@ -228,23 +222,19 @@ agents:
   phase_structure_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_cadence_recovery_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_intensity_distribution_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_event_integration_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_preview_synthesizer:
     model: gpt-5.4-mini
     reasoning:
@@ -252,18 +242,15 @@ agents:
   phase_constraint_auditor:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_governance_auditor:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_structure_reviewer:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   phase_preview_reviewer:
     model: gpt-5.4-mini
     reasoning:

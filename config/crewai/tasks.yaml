@@ -430,7 +430,7 @@ tasks:
     agent: phase_structure_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review structural consistency across the candidate phase bundle. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` for authoritative phase context when needed."
+    description: "Review structural consistency across the injected candidate phase bundle. Tool usage: prefer prior specialist context, the injected candidate bundle, and phase contract tools; use `workspace_get_latest` only for authoritative phase context when needed, not for any synthetic `candidate_phase_bundle` lookup."
     expected_output: A structured phase structure review draft.
     tools:
       - workspace_get_latest
@@ -441,7 +441,7 @@ tasks:
     agent: phase_preview_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review whether the candidate phase preview remains derived and non-decisional. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` for authoritative phase context when needed."
+    description: "Review whether the injected candidate phase preview remains derived and non-decisional. Tool usage: prefer prior specialist context, the injected candidate bundle, and phase contract tools; use `workspace_get_latest` only for authoritative phase context when needed, not for any synthetic `candidate_phase_bundle` lookup."
     expected_output: A structured phase preview review draft.
     tools:
       - workspace_get_latest
@@ -455,7 +455,7 @@ tasks:
     tools:
       - workspace_get_phase_execution_context
       - workspace_get_phase_slot_contract
-    description: Review the candidate phase bundle and writer handoff against deterministic phase slot, phase execution, week-role, and S5-band contracts.
+    description: Review the injected candidate phase bundle and writer handoff against deterministic phase slot, phase execution, week-role, and S5-band contracts. Do not retrieve or expect a synthetic `candidate_phase_bundle` workspace artefact.
     expected_output: A structured contract-review draft that treats deterministic phase-contract mismatches as blocking replan reasons.
   phase_review:
     agent: phase_review_manager
@@ -470,7 +470,7 @@ tasks:
       - phase_structure_review
       - phase_preview_review
       - phase_contract_review
-    description: Integrate phase review outputs and decide approve, reject, or bounded replan.
+    description: Integrate phase review outputs and decide approve, reject, or bounded replan against the injected candidate phase bundle. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_phase_bundle` workspace artefact.
     expected_output: A structured phase review decision.
   phase_guardrails:
     agent: phase_artifact_writer
@@ -613,7 +613,7 @@ tasks:
     tools:
       - workspace_get_week_calendar_context
       - workspace_get_phase_execution_context
-    description: Review the candidate week bundle and writer handoff against deterministic week execution, active S5-band, availability, day-blueprint, and workout-blueprint contracts.
+    description: Review the injected candidate week bundle and writer handoff against deterministic week execution, active S5-band, availability, day-blueprint, and workout-blueprint contracts. Do not retrieve or expect a synthetic `candidate_week_bundle` workspace artefact.
     expected_output: A structured contract-review draft that treats deterministic week-contract mismatches as blocking replan reasons.
   week_review:
     agent: week_review_manager
@@ -627,7 +627,7 @@ tasks:
       - week_load_governance_review
       - week_workout_syntax_review
       - week_contract_review
-    description: Integrate week review outputs and decide approve, reject, or bounded replan.
+    description: Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_week_bundle` workspace artefact.
     expected_output: A structured week review decision.
   week_plan:
     agent: week_artifact_writer

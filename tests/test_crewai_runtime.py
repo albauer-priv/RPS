@@ -1295,8 +1295,10 @@ def test_contract_context_blocks_for_review_finalizers_include_bound_contracts()
     assert any("Candidate Season Bundle is the authoritative review subject" in block for block in season_blocks)
     assert any("Deterministic Phase Execution Contract" in block for block in phase_blocks)
     assert any("Phase review rule" in block for block in phase_blocks)
+    assert any("Candidate Phase Bundle is the authoritative review subject" in block for block in phase_blocks)
     assert any("Deterministic Week Calendar Contract" in block for block in week_blocks)
     assert any("Week review rule" in block for block in week_blocks)
+    assert any("Candidate Week Bundle is the authoritative review subject" in block for block in week_blocks)
 
 
 def test_season_review_tasks_reference_injected_candidate_bundle() -> None:
@@ -1307,6 +1309,17 @@ def test_season_review_tasks_reference_injected_candidate_bundle() -> None:
     assert "injected candidate season bundle" in blueprints["season_constraints_review"].config["description"]
     assert "injected candidate season bundle" in blueprints["season_plan_audit"].config["description"]
     assert "synthetic `candidate_season_bundle`" in blueprints["season_review"].config["description"]
+
+
+def test_phase_and_week_review_tasks_reference_injected_candidate_bundle() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert "injected candidate phase bundle" in blueprints["phase_structure_review"].config["description"]
+    assert "synthetic `candidate_phase_bundle`" in blueprints["phase_contract_review"].config["description"]
+    assert "synthetic `candidate_phase_bundle`" in blueprints["phase_review"].config["description"]
+    assert "injected candidate week bundle" in blueprints["week_contract_review"].config["description"]
+    assert "synthetic `candidate_week_bundle`" in blueprints["week_review"].config["description"]
 
 
 def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
@@ -1336,6 +1349,28 @@ def test_phase_and_week_review_managers_disable_reasoning_agent_path() -> None:
     assert phase_review_manager["reasoning"]["enabled"] is False
     assert week_review_manager["model"] == "gpt-5.4-mini"
     assert week_review_manager["reasoning"]["enabled"] is False
+
+
+def test_bounded_phase_and_week_specialists_disable_reasoning_agent_path() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    profiles = bundle.runtime_profiles["agents"]
+
+    for agent_name in (
+        "phase_guardrail_band_specialist",
+        "phase_structure_specialist",
+        "phase_cadence_recovery_specialist",
+        "phase_intensity_distribution_specialist",
+        "phase_event_integration_specialist",
+        "phase_constraint_auditor",
+        "phase_governance_auditor",
+        "phase_structure_reviewer",
+        "week_recommendation_specialist",
+        "week_load_target_specialist",
+        "week_revision_specialist",
+        "week_consistency_auditor",
+        "week_load_governance_reviewer",
+    ):
+        assert profiles[agent_name]["reasoning"]["enabled"] is False, agent_name
 
 
 def test_context_read_and_contract_review_tasks_use_narrow_tool_scopes() -> None:
@@ -2586,8 +2621,8 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
     assert planning_crews == []
     band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")
-    assert band_agent["reasoning"] is True
-    assert band_agent["max_reasoning_attempts"] == 2
+    assert "reasoning" not in band_agent
+    assert "max_reasoning_attempts" not in band_agent
     assert getattr(band_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
     writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted phase artefact serializer")
     assert "reasoning" not in writer_agent
