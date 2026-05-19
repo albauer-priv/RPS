@@ -598,6 +598,12 @@ def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
         athlete_id="i150546",
         surface="coach",
     )
+    season_memory = resolve_crew_memory_profile(
+        bundle,
+        crew_name="season_planning",
+        athlete_id="i150546",
+        surface="default",
+    )
     specialist_memory = resolve_agent_memory_profile(
         bundle,
         agent_name="week_recommendation_specialist",
@@ -609,6 +615,7 @@ def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
     assert season_knowledge["sources"]
     assert coach_memory["enabled"] is True
     assert coach_memory["scope"] == "/athlete/i150546/coach/shared"
+    assert season_memory["enabled"] is False
     assert specialist_memory["mode"] == "slice_read_only"
     assert "/athlete/i150546/coach/accepted_patterns" in specialist_memory["additional_read_scopes"]
     writer_memory = resolve_agent_memory_profile(

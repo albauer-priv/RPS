@@ -15,55 +15,55 @@ crews:
     shared_scope_template: /athlete/{athlete_id}/workout_editor/shared
     storage_template: runtime/athletes/{athlete_id}/memory/workout_editor
   season_planning:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding/planning
     storage_template: runtime/athletes/{athlete_id}/memory/planning_season
   season_review:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding/review
     storage_template: runtime/athletes/{athlete_id}/memory/planning_season_review
   season_writer:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/season/nonbinding/writer
     storage_template: runtime/athletes/{athlete_id}/memory/planning_season_writer
   phase_planning:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/planning
     storage_template: runtime/athletes/{athlete_id}/memory/planning_phase
   phase_review:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/review
     storage_template: runtime/athletes/{athlete_id}/memory/planning_phase_review
   phase_writer:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/phase/nonbinding/writer
     storage_template: runtime/athletes/{athlete_id}/memory/planning_phase_writer
   week_planning:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding/planning
     storage_template: runtime/athletes/{athlete_id}/memory/planning_week
   week_review:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding/review
     storage_template: runtime/athletes/{athlete_id}/memory/planning_week_review
   week_writer:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/planning/week/nonbinding/writer
     storage_template: runtime/athletes/{athlete_id}/memory/planning_week_writer
   report_planning:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/advisory/report/planning
     storage_template: runtime/athletes/{athlete_id}/memory/report_planning
   report_review:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/advisory/report/review
     storage_template: runtime/athletes/{athlete_id}/memory/report_review
   report_writer:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/advisory/report/writer
     storage_template: runtime/athletes/{athlete_id}/memory/report_writer
   feed_forward_advisory:
-    enabled: true
+    enabled: false
     shared_scope_template: /athlete/{athlete_id}/advisory/feed_forward
     storage_template: runtime/athletes/{athlete_id}/memory/feed_forward
 

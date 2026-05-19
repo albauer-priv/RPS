@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed Intervals historical baseline validation by making artifact metadata canonicalization respect closed `meta` schemas instead of adding planning-only ISO/trace fields to schema-strict data-pipeline artifacts.
+- Fixed planning CrewAI runs repeatedly calling failing native memory tools by disabling native CrewAI memory for planning/review/writer crews; code-owned snapshot artefacts remain the authoritative planning memory path.
 
 ## [0.14.0] - 2026-05-19
 
