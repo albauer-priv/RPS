@@ -304,6 +304,7 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.4-mini"
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.4"
+    assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["reasoning"]["enabled"] is False
     assert bundle.runtime_profiles["agents"]["week_artifact_writer"]["reasoning"]["enabled"] is False
     assert bundle.skills["agents"]["week_revision_specialist"]["skill"] == "skills/week/revision-methodology"
     assert bundle.skills["crews"]["coach_conversation"]["skills"] == [
@@ -788,6 +789,7 @@ def test_internal_task_description_is_tool_first_and_compact() -> None:
     assert "payload_json" in description
     assert "call the tool instead of asking the user for it" in description
     assert "If prior specialist context already contains the needed facts" in description
+    assert "Do not create, write, or verify workspace files unless the active task explicitly exposes a write-capable tool" in description
     assert "If you are blocked after relevant tool attempts" in description
     assert "Current Task: Define peak-window and taper-window logic for the season plan." in description
     assert "Authoritative runtime context:" in description
@@ -801,9 +803,15 @@ def test_season_event_and_peak_tasks_expose_workspace_read_tools() -> None:
 
     event_tools = task_blueprints["season_event_priority_review"].config.get("tools")
     peak_tools = task_blueprints["season_peak_window_review"].config.get("tools")
+    macrocycle_tools = task_blueprints["season_macrocycle_draft"].config.get("tools")
 
     assert event_tools == ["workspace_get_input", "workspace_get_latest", "workspace_get_version"]
     assert peak_tools == ["workspace_get_input", "workspace_get_latest", "workspace_get_version"]
+    assert macrocycle_tools == [
+        "workspace_get_input",
+        "workspace_get_latest",
+        "workspace_get_phase_slot_contract",
+    ]
 
 
 def test_agent_memory_read_only_mode_uses_slice() -> None:
@@ -860,6 +868,7 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
             "workspace_get_input",
             "workspace_get_latest",
             "workspace_get_version",
+            "workspace_get_phase_slot_contract",
             "workspace_get_phase_context",
             "workspace_get_week_calendar_context",
             "workspace_get_phase_execution_context",
@@ -877,6 +886,11 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         tool_map["workspace_get_phase_execution_context"],
     ]
     assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
+    assert _task_tools_for_blueprint(tasks["season_macrocycle_draft"], tool_map) == [
+        tool_map["workspace_get_input"],
+        tool_map["workspace_get_latest"],
+        tool_map["workspace_get_phase_slot_contract"],
+    ]
 
     class FakeTask:
         def __init__(self, **kwargs):
@@ -1278,10 +1292,21 @@ def test_contract_context_blocks_for_review_finalizers_include_bound_contracts()
     assert any("Deterministic Season Phase Slot Contract" in block for block in season_blocks)
     assert any("Deterministic Season Phase Load Contract" in block for block in season_blocks)
     assert any("Season review rule" in block for block in season_blocks)
+    assert any("Candidate Season Bundle is the authoritative review subject" in block for block in season_blocks)
     assert any("Deterministic Phase Execution Contract" in block for block in phase_blocks)
     assert any("Phase review rule" in block for block in phase_blocks)
     assert any("Deterministic Week Calendar Contract" in block for block in week_blocks)
     assert any("Week review rule" in block for block in week_blocks)
+
+
+def test_season_review_tasks_reference_injected_candidate_bundle() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert "injected candidate season bundle" in blueprints["season_governance_review"].config["description"]
+    assert "injected candidate season bundle" in blueprints["season_constraints_review"].config["description"]
+    assert "injected candidate season bundle" in blueprints["season_plan_audit"].config["description"]
+    assert "synthetic `candidate_season_bundle`" in blueprints["season_review"].config["description"]
 
 
 def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
@@ -1291,6 +1316,26 @@ def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
     assert agent_blueprints["season_review_manager"].config["allow_delegation"] is False
     assert agent_blueprints["phase_review_manager"].config["allow_delegation"] is False
     assert agent_blueprints["week_review_manager"].config["allow_delegation"] is False
+
+
+def test_season_review_manager_disables_reasoning_agent_path() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    review_manager = bundle.runtime_profiles["agents"]["season_review_manager"]
+    assert review_manager["model"] == "gpt-5.4"
+    assert review_manager["reasoning"]["enabled"] is False
+
+
+def test_phase_and_week_review_managers_disable_reasoning_agent_path() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    profiles = bundle.runtime_profiles["agents"]
+
+    phase_review_manager = profiles["phase_review_manager"]
+    week_review_manager = profiles["week_review_manager"]
+
+    assert phase_review_manager["model"] == "gpt-5.4-mini"
+    assert phase_review_manager["reasoning"]["enabled"] is False
+    assert week_review_manager["model"] == "gpt-5.4-mini"
+    assert week_review_manager["reasoning"]["enabled"] is False
 
 
 def test_context_read_and_contract_review_tasks_use_narrow_tool_scopes() -> None:
@@ -2366,12 +2411,13 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["crews"][0].get("manager_agent") is None
     assert captured_crew["crews"][0].get("process") == "sequential"
-    assert captured_crew["crews"][1].get("manager_agent") is not None
+    assert captured_crew["crews"][1].get("manager_agent") is None
+    assert captured_crew["crews"][1].get("process") == "sequential"
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
     assert planning_crews == []
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
-    assert macrocycle_agent["reasoning"] is True
-    assert macrocycle_agent["max_reasoning_attempts"] == 2
+    assert "reasoning" not in macrocycle_agent
+    assert "max_reasoning_attempts" not in macrocycle_agent
     assert getattr(macrocycle_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4"
     writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted season artefact serializer")
     assert "reasoning" not in writer_agent
@@ -2535,7 +2581,8 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert int(captured_crew["max_agents"]) >= 7
     assert captured_crew["crews"][0].get("manager_agent") is None
     assert captured_crew["crews"][0].get("process") == "sequential"
-    assert captured_crew["crews"][1].get("manager_agent") is not None
+    assert captured_crew["crews"][1].get("manager_agent") is None
+    assert captured_crew["crews"][1].get("process") == "sequential"
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
     assert planning_crews == []
     band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")

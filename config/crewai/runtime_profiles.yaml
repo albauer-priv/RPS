@@ -107,8 +107,7 @@ agents:
   week_review_manager:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 3
+      enabled: false
   pending_resolution_specialist:
     model: gpt-5.4-nano
     reasoning:
@@ -134,8 +133,7 @@ agents:
   season_review_manager:
     model: gpt-5.4
     reasoning:
-      enabled: true
-      max_attempts: 3
+      enabled: false
   season_feed_forward_manager:
     model: gpt-5.4-mini
     reasoning:
@@ -159,8 +157,7 @@ agents:
   macrocycle_architect:
     model: gpt-5.4
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   season_load_corridor_specialist:
     model: gpt-5.4-mini
     reasoning:
@@ -210,8 +207,7 @@ agents:
   phase_review_manager:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 3
+      enabled: false
   phase_feed_forward_manager:
     model: gpt-5.4-mini
     reasoning:

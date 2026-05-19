@@ -668,6 +668,17 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 "Season review rule: decide against these deterministic contracts directly. "
                 "Do not delegate or rediscover cadence, phase-slot, or phase-load authority from prose."
             )
+        if task_name in {
+            "season_governance_review",
+            "season_constraints_review",
+            "season_plan_audit",
+            "season_contract_review",
+            "season_review",
+        }:
+            blocks.append(
+                "Season review subject rule: the injected Candidate Season Bundle is the authoritative review subject. "
+                "Do not retrieve or expect a synthetic `candidate_season_bundle` workspace artefact."
+            )
     elif crew_name == "phase_review":
         phase_execution_context = context.get("phase_execution_context")
         if phase_execution_context:
@@ -1453,6 +1464,7 @@ def _build_internal_task_description(
     parts.extend(
         [
             "",
+            "This is an internal reasoning task. Do not create, write, or verify workspace files unless the active task explicitly exposes a write-capable tool and requires persisted artefact creation.",
             "If prior specialist context already contains the needed facts, use it directly and do not ask for original workspace artefacts again.",
             "If you are blocked after relevant tool attempts, return one compact blocked result only once.",
             "",
@@ -1604,7 +1616,11 @@ def _run_review_decision_document(
 
     review_input = _augment_user_input(
         user_input,
-        _render_json_block("Planning bundle", planning_bundle),
+        _render_json_block("Candidate Season Bundle", planning_bundle),
+        (
+            "Review subject rule: treat the injected Candidate Season Bundle as the authoritative candidate under review. "
+            "Do not call workspace tools to reload a synthetic `candidate_season_bundle` artefact."
+        ),
     )
     pydantic_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
@@ -1627,7 +1643,7 @@ def _run_review_decision_document(
         run_id=run_id,
         model_override=model_override,
         temperature_override=temperature_override,
-        execution_mode="hierarchical",
+        execution_mode="sequential",
     )
     decision = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(decision, dict):

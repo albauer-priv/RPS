@@ -17,6 +17,7 @@ Method:
    - `workspace_get_phase_slot_contract`
    - `workspace_get_season_phase_load_context`
 7. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive cadence, phase-slot, or phase-load contract authority during this step.
+8. Treat the injected Candidate Season Bundle as the authoritative review subject. Do not reload or expect a synthetic `candidate_season_bundle` workspace artefact.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

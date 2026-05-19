@@ -154,8 +154,12 @@ tasks:
     agent: macrocycle_architect
     kind: internal_reasoning
     output: season_macrocycle_draft
-    description: Reverse-plan macrocycle structure from priority event anchors.
+    description: "Reverse-plan macrocycle structure from priority event anchors. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for selected-scenario and snapshot context; use `workspace_get_phase_slot_contract` for deterministic phase-slot structure. Return the structured macrocycle draft directly; do not assume a workspace file-write step."
     expected_output: A structured macrocycle draft with reverse-planning notes.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_phase_slot_contract
   season_constraint_review:
     agent: season_constraint_specialist
     kind: internal_reasoning
@@ -229,7 +233,7 @@ tasks:
     agent: season_governance_auditor
     kind: internal_reasoning
     output: load_governance_audit
-    description: "Review the candidate season bundle for governance realism and progression compliance. Tool usage: prefer prior specialist context and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed."
+    description: "Review the injected candidate season bundle for governance realism and progression compliance. Tool usage: prefer prior specialist context, the injected candidate bundle, and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
     expected_output: A structured load-governance review.
     tools:
       - workspace_get_latest
@@ -239,7 +243,7 @@ tasks:
     agent: season_constraints_reviewer
     kind: internal_reasoning
     output: constraint_audit
-    description: "Review the candidate season bundle for athlete, event, and logistics constraint compliance. Tool usage: prefer prior specialist context; use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots when needed."
+    description: "Review the injected candidate season bundle for athlete, event, and logistics constraint compliance. Tool usage: prefer prior specialist context and the injected candidate bundle; use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
     expected_output: A structured season constraint review.
     tools:
       - workspace_get_input
@@ -248,7 +252,7 @@ tasks:
     agent: season_plan_auditor
     kind: internal_reasoning
     output: season_plan_audit
-    description: "Audit the candidate season bundle for macrocycle and authority coherence. Tool usage: prefer prior specialist context and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed."
+    description: "Audit the injected candidate season bundle for macrocycle and authority coherence. Tool usage: prefer prior specialist context, the injected candidate bundle, and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
     expected_output: A structured season-plan audit with warnings and blocking issues.
     tools:
       - workspace_get_latest
@@ -261,7 +265,7 @@ tasks:
     tools:
       - workspace_get_phase_slot_contract
       - workspace_get_season_phase_load_context
-    description: Review the candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, and snapshot contracts.
+    description: Review the injected candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, and snapshot contracts. Do not retrieve or expect a synthetic `candidate_season_bundle` workspace artefact.
     expected_output: A structured contract-review draft that treats code-owned contract mismatches as blocking replan reasons.
   season_review:
     agent: season_review_manager
@@ -275,7 +279,7 @@ tasks:
       - season_constraints_review
       - season_plan_audit
       - season_contract_review
-    description: Integrate season review outputs and decide approve, reject, or bounded replan.
+    description: Integrate season review outputs and decide approve, reject, or bounded replan against the injected candidate season bundle. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_season_bundle` workspace artefact.
     expected_output: A structured season review decision.
   season_plan:
     agent: season_artifact_writer
