@@ -20,6 +20,7 @@ JsonMap = dict[str, Any]
 
 ALPHA = 1.3
 DEFAULT_IF_REF_LOAD = 0.68
+INFERRED_SEASON_BASELINE_FACTOR = 0.80
 DEFAULT_DOMAIN_IF: dict[str, float] = {
     "REST": 0.0,
     "OFF": 0.0,
@@ -111,6 +112,69 @@ def default_if_for_domain(domain: str, zone_model_payload: JsonMap | None = None
     if zone_if is not None:
         return zone_if
     return DEFAULT_DOMAIN_IF.get(normalized, DEFAULT_DOMAIN_IF["ENDURANCE"])
+
+
+def _positive_domain_ifs(domains: list[str], zone_model_payload: JsonMap | None = None) -> list[float]:
+    """Return positive IF values for the supplied domain list."""
+
+    values = [
+        default_if_for_domain(domain, zone_model_payload)
+        for domain in domains
+    ]
+    return sorted(value for value in values if value > 0)
+
+
+def _representative_capacity_if(
+    *,
+    allowed_domains: list[str],
+    zone_model_payload: JsonMap | None,
+    if_ref_load: float,
+) -> float:
+    """Return a representative weekly IF for deterministic capacity inference.
+
+    Capacity ceilings may still use the hardest allowed domain, but `typical`
+    season planning should reflect a representative endurance-led training
+    mixture rather than the hard domain ceiling.
+    """
+
+    positives = _positive_domain_ifs(allowed_domains, zone_model_payload)
+    if not positives:
+        return if_ref_load
+    midpoint = (len(positives) - 1) / 2
+    lower_idx = int(midpoint)
+    upper_idx = int(midpoint + 0.5)
+    median = (positives[lower_idx] + positives[upper_idx]) / 2.0
+    if "TEMPO" in {str(item).strip().upper() for item in allowed_domains}:
+        tempo_if = default_if_for_domain("TEMPO", zone_model_payload)
+        median = min(median, tempo_if)
+    return max(0.0, median)
+
+
+def _ceiling_capacity_if(
+    *,
+    allowed_domains: list[str],
+    zone_model_payload: JsonMap | None,
+    if_ref_load: float,
+) -> float:
+    """Return the hard upper-bound IF for availability ceiling calculations."""
+
+    positives = _positive_domain_ifs(allowed_domains, zone_model_payload)
+    return positives[-1] if positives else if_ref_load
+
+
+def _governance_load_kj_for_hours(
+    *,
+    availability_hours: float,
+    ftp_watts: float,
+    domain_if: float,
+    if_ref_load: float,
+) -> float:
+    """Return governance load-kJ for one availability bucket and reference IF."""
+
+    t_cap_sec = availability_hours * 3600.0
+    norm = if_ref_load**ALPHA
+    exponent = ALPHA + 1.0
+    return (ftp_watts * t_cap_sec / 1000.0) * (domain_if**exponent) / norm
 
 
 def _zone_model_if_for_domain(domain: str, zone_model_payload: JsonMap) -> float | None:
@@ -690,8 +754,10 @@ def build_season_phase_load_context(
     season_allowed_domains = normalize_intensity_domain_list(selected_context.get("allowed_intensity_domains"))
     season_forbidden_domains = normalize_intensity_domain_list(selected_context.get("forbidden_intensity_domains"))
     if baseline is None or baseline <= 0:
-        baseline = typical_cap * 0.65 if typical_cap > 0 else None
-        warnings.append("season_phase_load_context baseline_load_kj inferred from availability typical cap.")
+        baseline = typical_cap * INFERRED_SEASON_BASELINE_FACTOR if typical_cap > 0 else None
+        warnings.append(
+            "season_phase_load_context baseline_load_kj inferred from representative availability typical capacity."
+        )
     if typical_cap <= 0:
         blocking_issues.append("availability typical capacity missing or zero; season phase corridors cannot be bounded.")
     if not season_allowed_domains:
@@ -837,6 +903,10 @@ def render_load_capacity_context_block(context: JsonMap) -> str:
             "availability_load_capacity_kj: "
             f"min {capacity.get('min')}, typical {capacity.get('typical')}, max {capacity.get('max')}"
         )
+        lines.append(
+            "availability_load_capacity_basis: "
+            f"representative_if {capacity.get('representative_if')}, ceiling_if {capacity.get('ceiling_if')}"
+        )
     s5_bands = _as_list(context.get("s5_bands"))
     if s5_bands:
         lines.append("deterministic_s5_bands:")
@@ -883,6 +953,10 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
         lines.append(
             "availability_load_capacity_kj: "
             f"min {capacity.get('min')}, typical {capacity.get('typical')}, max {capacity.get('max')}"
+        )
+        lines.append(
+            "availability_load_capacity_basis: "
+            f"representative_if {capacity.get('representative_if')}, ceiling_if {capacity.get('ceiling_if')}"
         )
     for phase in [_as_map(item) for item in _as_list(context.get("phases"))]:
         corridor = _as_map(phase.get("recommended_phase_corridor"))
@@ -1032,23 +1106,65 @@ def _capacity_for_hour_buckets(
     if_ref_load: float,
     zone_model_payload: JsonMap,
 ) -> JsonMap:
+    if ftp_watts <= 0:
+        raise LoadBandError("missing_or_invalid_ftp")
+    if if_ref_load <= 0:
+        raise LoadBandError("missing_or_invalid_if_ref_load")
+    normalized_domains = [str(item).strip().upper() for item in allowed_domains if str(item).strip()]
+    if not normalized_domains:
+        raise LoadBandError("missing_allowed_intensity_domains")
     capacity: JsonMap = {
         "unit_semantics": "planned_weekly_load_kj",
         "source": "AVAILABILITY.weekly_hours + ZONE_MODEL.ftp_watts",
     }
+    representative_if = _representative_capacity_if(
+        allowed_domains=normalized_domains,
+        zone_model_payload=zone_model_payload,
+        if_ref_load=if_ref_load,
+    )
+    ceiling_if = _ceiling_capacity_if(
+        allowed_domains=normalized_domains,
+        zone_model_payload=zone_model_payload,
+        if_ref_load=if_ref_load,
+    )
     selected_hours = {
         key: _as_float(effective_availability_hours.get(key)) or availability_hours.get(key, 0.0)
         for key in ("min", "typical", "max")
     }
-    for key in ("min", "typical", "max"):
-        band = calculate_availability_feasible_band(
-            availability_hours=selected_hours.get(key, 0.0),
-            ftp_watts=ftp_watts,
-            allowed_intensity_domains=allowed_domains,
-            if_ref_load=if_ref_load,
-            zone_model_payload=zone_model_payload,
+    if any(value < 0 for value in selected_hours.values()):
+        raise LoadBandError("negative_availability")
+    capacity["representative_if"] = round(representative_if, 3)
+    capacity["ceiling_if"] = round(ceiling_if, 3)
+    capacity["min"] = int(
+        round(
+            _governance_load_kj_for_hours(
+                availability_hours=selected_hours.get("min", 0.0),
+                ftp_watts=ftp_watts,
+                domain_if=representative_if,
+                if_ref_load=if_ref_load,
+            )
         )
-        capacity[key] = int(round(band.max))
+    )
+    capacity["typical"] = int(
+        round(
+            _governance_load_kj_for_hours(
+                availability_hours=selected_hours.get("typical", 0.0),
+                ftp_watts=ftp_watts,
+                domain_if=representative_if,
+                if_ref_load=if_ref_load,
+            )
+        )
+    )
+    capacity["max"] = int(
+        round(
+            _governance_load_kj_for_hours(
+                availability_hours=selected_hours.get("max", 0.0),
+                ftp_watts=ftp_watts,
+                domain_if=ceiling_if,
+                if_ref_load=if_ref_load,
+            )
+        )
+    )
     return capacity
 
 

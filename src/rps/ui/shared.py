@@ -54,11 +54,11 @@ PHASE_CARD_TEMPLATE = """#### Phase narrative
 | Typical duration and intensity pattern (conceptual) | {{ phase.overview.typical_duration_intensity_pattern or "N/A" }} |
 | Non-negotiables | {{ phase.overview.non_negotiables | join_lines }} |
 
-#### Weekly Load Corridor (kJ-first)
+#### Weekly Load Corridor (kJ-first governance load)
 
 | Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
 |---|---:|---:|---:|---:|---|
-| Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes }} |
+| Weekly load kJ (governance) | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes }} |
 
 #### Allowed / Forbidden Semantics
 

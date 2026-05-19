@@ -95,6 +95,7 @@ Each phase MUST include:
     - `kj_per_kg_min` (number)
     - `kj_per_kg_max` (number)
     - `notes` (string)
+  - `weekly_kj` values refer to the deterministic **planned_weekly_load_kj governance metric**, not direct mechanical ride work.
 - `allowed_forbidden_semantics`:
   - `allowed_intensity_domains` (array, min 1)
   - `allowed_load_modalities` (array; use `NONE` and optional `K3`)
@@ -126,6 +127,7 @@ Required:
 #### 7) `data.season_load_envelope`
 Required:
 - `expected_average_weekly_kj_range` `{ "min": number, "max": number }`
+  - This range is also a governance-load range, not a mechanical weekly-work estimate.
 - `expected_high_load_weeks_count` (int)
 - `expected_deload_or_low_load_weeks_count` (int)
 

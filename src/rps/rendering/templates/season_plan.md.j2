@@ -80,11 +80,11 @@ Trace-Upstream:
 | Typical duration and intensity pattern (conceptual) | {{ phase.overview.typical_duration_intensity_pattern }} |
 | Non-negotiables | {% if phase.overview.non_negotiables %}{{ phase.overview.non_negotiables | join('<br>') }}{% else %}N/A{% endif %} |
 
-#### Weekly Load Corridor (kJ-first)
+#### Weekly Load Corridor (kJ-first governance load)
 
 | Metric | Min | Max | kJ/kg Min | kJ/kg Max | Notes |
 |---|---:|---:|---:|---:|---|
-| Weekly kJ | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes or '' }} |
+| Weekly load kJ (governance) | {{ phase.weekly_kj.min }} | {{ phase.weekly_kj.max }} | {{ phase.weekly_kj.kj_per_kg_min }} | {{ phase.weekly_kj.kj_per_kg_max }} | {{ phase.weekly_kj.notes or '' }} |
 
 #### Allowed / Forbidden Semantics
 
@@ -119,7 +119,7 @@ Trace-Upstream:
 
 ## 4) Season Load Envelope (REQUIRED)
 
-- Expected average weekly kJ range: {{ season_load_envelope.expected_average_weekly_kj_range }}
+- Expected average weekly load kJ range (governance): {{ season_load_envelope.expected_average_weekly_kj_range }}
 - Expected high-load weeks (count): {{ season_load_envelope.expected_high_load_weeks_count }}
 - Expected deload / low-load weeks (count): {{ season_load_envelope.expected_deload_or_low_load_weeks_count }}
 

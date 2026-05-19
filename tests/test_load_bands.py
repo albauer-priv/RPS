@@ -25,6 +25,20 @@ def _zone_model(ftp: float | None = 300.0, typical_if: float | None = 0.66) -> d
     return {"data": {"model_metadata": metadata, "zones": zones}}
 
 
+def _rich_zone_model(ftp: float = 300.0) -> dict:
+    return {
+        "data": {
+            "model_metadata": {"ftp_watts": ftp},
+            "zones": [
+                {"zone_id": "Z2", "typical_if": 0.68},
+                {"zone_id": "Z3", "typical_if": 0.83},
+                {"zone_id": "SS", "typical_if": 0.92},
+                {"zone_id": "Z4", "typical_if": 0.98},
+            ],
+        }
+    }
+
+
 def test_resolve_if_ref_load_prefers_athlete_anchor() -> None:
     profile = {"data": {"profile": {"endurance_anchor_w": 210}}}
 
@@ -269,6 +283,21 @@ def test_build_load_capacity_context_uses_selected_scenario_domains_for_season_p
     assert context["availability_load_capacity_kj"]["max"] > context["availability_load_capacity_kj"]["min"]
 
 
+def test_build_load_capacity_context_uses_representative_typical_capacity_not_domain_ceiling() -> None:
+    context = build_load_capacity_context(
+        target_week=IsoWeek(2026, 20),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5}}},
+        zone_model_payload=_rich_zone_model(300),
+        season_allowed_intensity_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+    )
+
+    capacity = context["availability_load_capacity_kj"]
+    assert capacity["typical"] < capacity["max"]
+    assert capacity["representative_if"] == pytest.approx(0.83)
+    assert capacity["ceiling_if"] == pytest.approx(0.98)
+
+
 def test_build_load_capacity_context_no_longer_silently_defaults_to_endurance() -> None:
     context = build_load_capacity_context(
         target_week=IsoWeek(2026, 20),
@@ -363,6 +392,38 @@ def test_season_phase_load_context_caps_phase_corridors_by_availability_and_role
     assert p02["recommended_phase_corridor"]["max"] > p01["recommended_phase_corridor"]["max"]
     assert p03["recommended_phase_corridor"]["max"] < p02["recommended_phase_corridor"]["max"]
     assert p02["recommended_phase_corridor"]["max"] <= p02["availability_cap_kj"]["typical"]
+
+
+def test_season_phase_load_context_infers_baseline_from_representative_typical_capacity() -> None:
+    context = build_season_phase_load_context(
+        phase_slot_context={
+            "selected_scenario_id": "B",
+            "phase_slots": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-20--2026-21",
+                    "is_shortened": True,
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION"],
+                    "week_keys": ["2026-20", "2026-21"],
+                }
+            ],
+        },
+        target_week=IsoWeek(2026, 20),
+        selected_structure_context={
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"]
+        },
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 210, "body_mass_kg": 92}}},
+        availability_payload={"data": {"weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5}}},
+        zone_model_payload=_rich_zone_model(300),
+    )
+
+    assert context["availability_load_capacity_kj"]["typical"] == 15660
+    assert context["baseline_load_kj"] == 12528
+    assert (
+        "season_phase_load_context baseline_load_kj inferred from representative availability typical capacity."
+        in context["warnings"]
+    )
 
 
 def test_selected_kpi_rate_band_from_selection_requires_kj_range() -> None:
