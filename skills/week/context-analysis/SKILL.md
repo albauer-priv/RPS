@@ -15,6 +15,9 @@ Return:
 
 Summarize context only; route recommendations and revisions to the responsible downstream skill.
 
+Hard rules:
+- prefer the narrow configured workspace tools and injected deterministic context over broad rediscovery
+
 Output format:
 - Return the task expected_output as a compact context summary.
 - Include authoritative inputs, selected ranges, constraints, missing data, and assumptions.

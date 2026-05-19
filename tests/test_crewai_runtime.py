@@ -699,10 +699,28 @@ def test_configured_task_context_names_normalizes_yaml_values() -> None:
 def test_task_scoped_tools_and_callback_are_attached() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
     tasks = build_task_blueprints(bundle)
-    read_tool = SimpleNamespace(name="workspace_get_latest")
-    tool_map = {"workspace_get_latest": read_tool}
+    tool_map = {
+        name: SimpleNamespace(name=name)
+        for name in [
+            "workspace_get_input",
+            "workspace_get_latest",
+            "workspace_get_version",
+            "workspace_get_phase_context",
+            "workspace_get_week_calendar_context",
+            "workspace_get_phase_execution_context",
+        ]
+    }
 
-    assert _task_tools_for_blueprint(tasks["week_context_read"], tool_map) == [read_tool]
+    assert _task_tools_for_blueprint(
+        tasks["week_context_read"], tool_map
+    ) == [
+        tool_map["workspace_get_input"],
+        tool_map["workspace_get_latest"],
+        tool_map["workspace_get_version"],
+        tool_map["workspace_get_phase_context"],
+        tool_map["workspace_get_week_calendar_context"],
+        tool_map["workspace_get_phase_execution_context"],
+    ]
     assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
 
     class FakeTask:
@@ -722,7 +740,14 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         tools=tool_map,
     )
 
-    assert task.kwargs["tools"] == [read_tool]
+    assert task.kwargs["tools"] == [
+        tool_map["workspace_get_input"],
+        tool_map["workspace_get_latest"],
+        tool_map["workspace_get_version"],
+        tool_map["workspace_get_phase_context"],
+        tool_map["workspace_get_week_calendar_context"],
+        tool_map["workspace_get_phase_execution_context"],
+    ]
     assert task.kwargs["name"] == "week_context_read"
     assert callable(task.kwargs["callback"])
 
@@ -1111,6 +1136,61 @@ def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
     assert agent_blueprints["season_review_manager"].config["allow_delegation"] is False
     assert agent_blueprints["phase_review_manager"].config["allow_delegation"] is False
     assert agent_blueprints["week_review_manager"].config["allow_delegation"] is False
+
+
+def test_context_read_and_contract_review_tasks_use_narrow_tool_scopes() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert blueprints["season_context_read"].config["tools"] == [
+        "workspace_get_input",
+        "workspace_get_latest",
+        "workspace_get_version",
+        "workspace_get_phase_slot_contract",
+        "workspace_get_season_phase_load_context",
+    ]
+    assert blueprints["phase_context_read"].config["tools"] == [
+        "workspace_get_input",
+        "workspace_get_latest",
+        "workspace_get_version",
+        "workspace_get_phase_context",
+        "workspace_get_phase_execution_context",
+        "workspace_get_phase_slot_contract",
+    ]
+    assert blueprints["week_context_read"].config["tools"] == [
+        "workspace_get_input",
+        "workspace_get_latest",
+        "workspace_get_version",
+        "workspace_get_phase_context",
+        "workspace_get_week_calendar_context",
+        "workspace_get_phase_execution_context",
+    ]
+    assert blueprints["report_context_read"].config["tools"] == [
+        "workspace_get_input",
+        "workspace_get_latest",
+        "workspace_get_version",
+    ]
+    assert blueprints["season_contract_review"].config["tools"] == [
+        "workspace_get_phase_slot_contract",
+        "workspace_get_season_phase_load_context",
+    ]
+    assert blueprints["phase_contract_review"].config["tools"] == [
+        "workspace_get_phase_execution_context",
+        "workspace_get_phase_slot_contract",
+    ]
+    assert blueprints["week_contract_review"].config["tools"] == [
+        "workspace_get_week_calendar_context",
+        "workspace_get_phase_execution_context",
+    ]
+
+
+def test_feed_forward_and_report_review_managers_disable_free_delegation() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    agent_blueprints = build_agent_blueprints(bundle)
+
+    assert agent_blueprints["season_feed_forward_manager"].config["allow_delegation"] is False
+    assert agent_blueprints["phase_feed_forward_manager"].config["allow_delegation"] is False
+    assert agent_blueprints["des_review_manager"].config["allow_delegation"] is False
 
 
 def test_phase_week_blueprint_model_accepts_role_aware_s5_band() -> None:

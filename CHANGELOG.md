@@ -12,12 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added read-only deterministic season contract tools for CrewAI (`workspace_get_phase_slot_contract`, `workspace_get_season_phase_load_context`) so season tasks can consume code-owned phase-slot and phase-load authority without searching for synthetic artifacts.
 - Added read-only deterministic phase/week contract tools for CrewAI (`workspace_get_phase_execution_context`, `workspace_get_week_calendar_context`) so phase and week finalizers can consume active execution authority directly.
 - Added review-layer deterministic contract wiring so season, phase, and week review tasks can consume bound contract authority directly.
+- Added explicit narrow tool scopes for planning/report context-read tasks and deterministic contract-review tasks, reducing broad workspace rediscovery.
 
 ### Fixed
 - Fixed season manager contract consumption so season planning tasks receive structured deterministic season phase-slot/load JSON context and the finalizer is scoped to contract tools instead of broad workspace rediscovery.
 - Fixed season finalization re-dispatching deterministic contract lookup through coworker delegation by disabling free delegation for `season_plan_manager` and tightening the final-synthesis guidance.
 - Fixed phase/week finalization rediscovery risk by binding deterministic execution contracts into finalizer task context, scoping finalizers to contract tools, and disabling free delegation for `phase_bundle_manager` and `week_plan_manager`.
 - Fixed review-manager rediscovery risk by binding deterministic contract JSON into season/phase/week review task context, scoping review final tasks to contract tools, and disabling free delegation for `season_review_manager`, `phase_review_manager`, and `week_review_manager`.
+- Fixed remaining broad-rediscovery risk in planning support paths by narrowing `*_context_read` / `*_contract_review` tool surfaces and disabling free delegation for feed-forward and report-review managers.
 - Fixed CrewAI model routing so role-specific runtime profiles win over generic app-level model defaults; the non-Groq app fallback now uses `gpt-5.4-mini`, and CrewAI runtime profiles now allow only the GPT-5.4 family.
 - Fixed planning run failure reporting so `events.jsonl` captures structured LLM/provider root causes and Plan Hub step/run failures prefer those root causes over secondary shutdown errors.
 - Fixed Intervals historical baseline validation by making artifact metadata canonicalization respect closed `meta` schemas instead of adding planning-only ISO/trace fields to schema-strict data-pipeline artifacts.

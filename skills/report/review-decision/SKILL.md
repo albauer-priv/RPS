@@ -11,6 +11,7 @@ Rules:
 - reject action leakage beyond diagnostic authority
 - require evidence-based warnings where confidence is limited
 - bound any rework request to diagnostic interpretation, not planning redesign
+- do not ask coworkers to rediscover report-week evidence, readiness context, or diagnostic-only boundaries during review
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

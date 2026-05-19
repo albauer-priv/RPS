@@ -33,6 +33,7 @@ Hard rules:
 - route week-level intervention to week planning tasks
 - keep KPI-threshold interpretation diagnostic at this scope
 - store only schema-valid outputs with complete adjustment fields
+- do not ask coworkers to rediscover season-plan authority or upstream report facts during feed-forward authoring
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

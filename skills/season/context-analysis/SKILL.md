@@ -32,6 +32,7 @@ Hard rules:
 - treat advisory scenario guidance as advisory until selection and season planning make it binding
 - use explicit event facts and availability from upstream context
 - keep workout and week-level prescriptions for downstream tasks
+- prefer the narrow configured workspace tools and injected deterministic context over broad rediscovery
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

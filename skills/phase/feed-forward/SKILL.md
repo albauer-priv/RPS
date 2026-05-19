@@ -30,6 +30,7 @@ Hard rules:
 - keep day-by-day schedules in downstream week planning
 - keep numeric progression instructions in downstream week planning when authorized
 - stop if any required field or expiry semantics are missing
+- do not ask coworkers to rediscover baseline phase authority or upstream report/feed-forward facts during feed-forward authoring
 
 Output format:
 - Return the task expected_output as advisory feed-forward guidance.

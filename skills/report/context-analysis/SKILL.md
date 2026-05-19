@@ -25,6 +25,7 @@ Hard rules:
 - keep outputs diagnostic and route planning changes to planning tasks
 - interpret wellness as diagnostic context for governed action
 - calibrate diagnosis strength to evidence confidence
+- prefer the narrow configured workspace tools and injected deterministic context over broad rediscovery
 
 Output format:
 - Return the task expected_output as a compact context summary.

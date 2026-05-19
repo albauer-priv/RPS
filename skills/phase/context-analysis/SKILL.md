@@ -30,6 +30,7 @@ Hard rules:
 - use injected date ranges and deterministic context
 - interpret wellness through active governance
 - keep week and workout content for downstream tasks
+- prefer the narrow configured workspace tools and injected deterministic context over broad rediscovery
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
