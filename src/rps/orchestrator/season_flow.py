@@ -29,6 +29,10 @@ from rps.planning.deterministic_context import (
     render_context_blocks,
 )
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
+from rps.planning.scenario_recommendation import (
+    build_scenario_recommendation_context,
+    render_scenario_recommendation_block,
+)
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -188,6 +192,7 @@ def create_season_scenarios(
     athlete_state_snapshot_block = ""
     planning_horizon_block = ""
     cadence_options_block = ""
+    scenario_recommendation_block = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         target_week = IsoWeek(year=year, week=week)
@@ -199,6 +204,8 @@ def create_season_scenarios(
         selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
         zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
         wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
+        historical_baseline_payload = _load_latest_payload(store, athlete_id, ArtifactType.HISTORICAL_BASELINE)
+        activities_trend_payload = _load_latest_payload(store, athlete_id, ArtifactType.ACTIVITIES_TREND)
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
@@ -223,10 +230,35 @@ def create_season_scenarios(
         cadence_context = build_cadence_options_block(horizon_context=horizon_context.payload)
         planning_horizon_block = render_context_blocks([horizon_context])
         cadence_options_block = render_context_blocks([cadence_context])
+        pseudo_scenarios_payload = {
+            "data": {
+                "scenarios": [
+                    {
+                        "scenario_id": str(option.get("deload_cadence")),
+                        "name": f"Cadence option {option.get('deload_cadence')}",
+                        "scenario_guidance": {"deload_cadence": option.get("deload_cadence")},
+                    }
+                    for option in _as_list(cadence_context.payload.get("options"))
+                    if isinstance(option, dict)
+                ]
+            }
+        }
+        recommendation_context = build_scenario_recommendation_context(
+            season_scenarios_payload=pseudo_scenarios_payload,
+            athlete_profile_payload=athlete_profile_payload,
+            kpi_profile_payload=kpi_profile_payload,
+            availability_payload=availability_payload,
+            planning_events_payload=planning_events_payload,
+            historical_baseline_payload=historical_baseline_payload,
+            activities_trend_payload=activities_trend_payload,
+            wellness_payload=wellness_payload,
+        )
+        scenario_recommendation_block = render_scenario_recommendation_block(recommendation_context)
     except Exception:
         athlete_state_snapshot_block = ""
         planning_horizon_block = ""
         cadence_options_block = ""
+        scenario_recommendation_block = ""
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -236,6 +268,7 @@ def create_season_scenarios(
         f"{athlete_state_snapshot_block}"
         f"{planning_horizon_block}"
         f"{cadence_options_block}"
+        f"{scenario_recommendation_block}"
         f"{override_line}"
         f"{injected_block}"
         "Return only the final schema-compliant SEASON_SCENARIOS artifact envelope."

@@ -7,6 +7,7 @@ import streamlit as st
 from jinja2 import BaseLoader, Environment
 
 from rps.orchestrator.season_flow import create_season_plan, create_season_scenarios
+from rps.planning.scenario_recommendation import build_scenario_recommendation_context
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -298,6 +299,72 @@ def _load_latest_payload(store: LocalArtifactStore, artifact_type: ArtifactType)
     return payload if isinstance(payload, dict) else None
 
 
+def _selection_references_scenarios(selection: dict | None, scenarios: dict | None) -> bool:
+    if not isinstance(selection, dict) or not isinstance(scenarios, dict):
+        return False
+    selection_meta = selection.get("meta")
+    scenarios_meta = scenarios.get("meta")
+    if not isinstance(selection_meta, dict) or not isinstance(scenarios_meta, dict):
+        return False
+    scenario_run_id = scenarios_meta.get("run_id")
+    scenario_version = scenarios_meta.get("version_key")
+    for entry in selection_meta.get("trace_upstream") or []:
+        if not isinstance(entry, dict) or entry.get("artifact") != "SEASON_SCENARIOS":
+            continue
+        if scenario_run_id and entry.get("run_id") == scenario_run_id:
+            return True
+        if scenario_version and entry.get("version") == scenario_version:
+            return True
+        if scenario_version and entry.get("version_key") == scenario_version:
+            return True
+    selection_data = selection.get("data")
+    if isinstance(selection_data, dict):
+        ref = selection_data.get("season_scenarios_ref")
+        if scenario_run_id and ref == scenario_run_id:
+            return True
+        if scenario_version and ref == scenario_version:
+            return True
+    return False
+
+
+def _render_scenario_recommendation(context: dict | None) -> None:
+    if not isinstance(context, dict) or not context.get("recommended_scenario_id"):
+        return
+    recommended = context.get("recommended_scenario_id")
+    cadence = context.get("recommended_cadence")
+    confidence = context.get("confidence")
+    st.info(f"Recommendation: Scenario {recommended} ({cadence}) · confidence {confidence}")
+    summary = context.get("summary")
+    if summary:
+        st.markdown(str(summary))
+    evidence = context.get("evidence")
+    if isinstance(evidence, dict):
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Recent 8w avg", f"{evidence.get('recent_8w_avg_kj') or 'n/a'} kJ")
+        col2.metric("Latest week", f"{evidence.get('latest_week_kj') or 'n/a'} kJ")
+        col3.metric("Availability", f"{evidence.get('availability_typical_hours') or 'n/a'} h typical")
+        st.caption(
+            "Uses historical baseline, recent trend volatility, durability markers, availability, events, "
+            "KPI objective, and athlete profile. Advisory only; selection stays user-confirmed."
+        )
+    ranking = context.get("ranking")
+    if isinstance(ranking, list) and ranking:
+        with st.expander("Recommendation evidence", expanded=False):
+            for item in ranking:
+                if not isinstance(item, dict):
+                    continue
+                reasons = item.get("reasons") if isinstance(item.get("reasons"), list) else []
+                warnings = item.get("warnings") if isinstance(item.get("warnings"), list) else []
+                st.markdown(
+                    f"**{item.get('scenario_id')} · {item.get('name') or item.get('deload_cadence')}** "
+                    f"score `{item.get('score')}`"
+                )
+                if reasons:
+                    st.markdown("Reasons: " + "; ".join(str(reason) for reason in reasons))
+                if warnings:
+                    st.markdown("Cautions: " + "; ".join(str(warning) for warning in warnings))
+
+
 def _render_selected_scenario_markdown(store: LocalArtifactStore, athlete_id: str) -> str | None:
     selection = _load_latest_payload(store, ArtifactType.SEASON_SCENARIO_SELECTION)
     if not selection:
@@ -357,6 +424,24 @@ selected_default = None
 if selection_payload:
     selected_default = selection_payload.get("data", {}).get("selected_scenario_id")
 
+selection_matches_latest_scenarios = _selection_references_scenarios(selection_payload, scenarios_payload)
+
+recommendation_context = None
+if scenarios_payload:
+    recommendation_context = build_scenario_recommendation_context(
+        season_scenarios_payload=scenarios_payload,
+        athlete_profile_payload=_load_latest_payload(store, ArtifactType.ATHLETE_PROFILE),
+        kpi_profile_payload=_load_latest_payload(store, ArtifactType.KPI_PROFILE),
+        availability_payload=_load_latest_payload(store, ArtifactType.AVAILABILITY),
+        planning_events_payload=_load_latest_payload(store, ArtifactType.PLANNING_EVENTS),
+        historical_baseline_payload=_load_latest_payload(store, ArtifactType.HISTORICAL_BASELINE),
+        activities_trend_payload=_load_latest_payload(store, ArtifactType.ACTIVITIES_TREND),
+        wellness_payload=_load_latest_payload(store, ArtifactType.WELLNESS),
+    )
+recommended_scenario_id = (
+    recommendation_context.get("recommended_scenario_id") if isinstance(recommendation_context, dict) else None
+)
+
 kpi_selection_default = None
 if selection_payload:
     kpi_selection_default = (selection_payload.get("data") or {}).get("kpi_moving_time_rate_guidance_selection")
@@ -366,7 +451,12 @@ if scenarios_payload:
     scenario_options = [s.get("scenario_id") for s in scenarios_payload.get("data", {}).get("scenarios", [])]
     scenario_options = [opt for opt in scenario_options if opt]
 
-selected = selected_default or (scenario_options[0] if scenario_options else None)
+effective_selected_default = selected_default if selection_matches_latest_scenarios else None
+selected = (
+    effective_selected_default
+    or (recommended_scenario_id if recommended_scenario_id in scenario_options else None)
+    or (scenario_options[0] if scenario_options else None)
+)
 
 kpi_profile = None
 if store.latest_exists(athlete_id, ArtifactType.KPI_PROFILE):
@@ -394,11 +484,16 @@ with st.expander("Actions", expanded=False):
         set_status(status_state="done", title="Season", message="Season plan exists.")
     else:
         if scenario_options:
+            if selection_payload and not selection_matches_latest_scenarios:
+                st.warning(
+                    "The saved scenario selection references an older Season Scenarios artifact. "
+                    "Scenario letters may have changed; confirm a fresh selection before creating a Season Plan."
+                )
             with st.form("season_scenario_selection"):
                 selected = st.radio(
                     "Choose scenario",
                     options=scenario_options,
-                    index=scenario_options.index(selected_default) if selected_default in scenario_options else 0,
+                    index=scenario_options.index(selected) if selected in scenario_options else 0,
                     horizontal=True,
                 )
                 kpi_selection = None
@@ -465,6 +560,14 @@ if isinstance(season_scenarios_output, str) and season_scenarios_output:
 if not scenarios_payload:
     st.info("No SEASON_SCENARIOS found yet.")
     st.stop()
+
+st.subheader("Scenario Recommendation")
+_render_scenario_recommendation(recommendation_context)
+if selection_payload and not selection_matches_latest_scenarios:
+    st.warning(
+        "The saved scenario selection references an older Season Scenarios artifact. "
+        "Confirm a fresh scenario selection before creating a Season Plan."
+    )
 
 st.subheader("Season Scenarios")
 rendered = load_rendered_markdown(athlete_id, ArtifactType.SEASON_SCENARIOS)

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added deterministic Season Scenario recommendations from historical baseline, activity trends, availability, events, athlete profile, and KPI context; the Season page now surfaces the recommendation and warns when a saved selection references an older scenario set.
+
 ### Fixed
 - Fixed Intervals historical baseline validation by making artifact metadata canonicalization respect closed `meta` schemas instead of adding planning-only ISO/trace fields to schema-strict data-pipeline artifacts.
 

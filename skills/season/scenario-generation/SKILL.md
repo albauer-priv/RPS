@@ -24,6 +24,12 @@ Deterministic cadence options context:
 - copy only supported cadence-derived values into `scenario_guidance`
 - use injected cadence options for phase lengths, phase counts, and shortening budgets
 
+Deterministic recommendation context:
+- when `Deterministic Season Scenario Recommendation Context` is present, treat it as code-owned advisory evidence
+- preserve the recommended cadence and core evidence in `data.notes`
+- reflect recommendation-specific rationale in the matching scenario's `scenario_guidance.decision_notes`
+- keep the recommendation advisory; selection still belongs to the user/selection task
+
 Required content per scenario:
 - `scenario_id`, `name`, `core_idea`, `load_philosophy`, `risk_profile`, `key_differences`, `best_suited_if`
 - `scenario_guidance` with:
@@ -73,6 +79,7 @@ Positive execution pattern:
 - Produce scenario guidance that helps Season Planning choose a coherent direction while preserving informational authority.
 - Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.
 - Explain the tradeoff between conservative, balanced, and assertive choices in terms the selection task can compare.
+- Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored.
 - Return scenarios that are complete, differentiated, traceable, and ready for direct selection.
 
 Output format:
