@@ -51,8 +51,6 @@ class PlanHubWorkerConfig:
     temperature_resolver: Callable[[str], float | None] | None
     reasoning_effort_resolver: Callable[[str], str | None] | None
     reasoning_summary_resolver: Callable[[str], str | None] | None
-    force_file_search: bool
-    max_num_results: int
     allow_delete_intervals: bool
 
 
@@ -436,8 +434,6 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     override_text=_active_str(active, "override_text"),
                                     model_resolver=config.model_resolver,
                                     temperature_resolver=config.temperature_resolver,
-                                    force_file_search=config.force_file_search,
-                                    max_num_results=config.max_num_results,
                                 )
                         elif step_id == "SCENARIO_SELECTION":
                             if store.latest_exists(config.athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION):
@@ -457,8 +453,6 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     override_text=_active_str(active, "override_text"),
                                     model_resolver=config.model_resolver,
                                     temperature_resolver=config.temperature_resolver,
-                                    force_file_search=config.force_file_search,
-                                    max_num_results=config.max_num_results,
                                 )
                         elif step_id in {"PHASE_GUARDRAILS", "PHASE_STRUCTURE", "PHASE_PREVIEW", "WEEK_PLAN", "WORKOUT_EXPORT"}:
                             if active_year is None or active_week is None:
@@ -481,8 +475,6 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     temperature_resolver=config.temperature_resolver,
                                     reasoning_effort_resolver=config.reasoning_effort_resolver,
                                     reasoning_summary_resolver=config.reasoning_summary_resolver,
-                                    force_file_search=config.force_file_search,
-                                    max_num_results=config.max_num_results,
                                 )
                         elif step_id == "POST_INTERVALS":
                             if active_year is None or active_week is None:

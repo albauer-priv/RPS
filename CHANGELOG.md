@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Removed the local vectorstore/Qdrant runtime path entirely: startup sync, Plan Hub knowledge-store readiness, `knowledge_search`, vectorstore scripts/tests/modules, vectorstore manifest/config, and Qdrant dependency are gone; static knowledge now routes through CrewAI knowledge sources only.
 - Collapsed the split endurance intensity domains into a single `ENDURANCE` enum across schemas, skills, specs, prompts, and tests; deterministic load estimation now uses the former high-endurance default (`0.70`) for `ENDURANCE`.
 - Persisted CrewAI artifact schemas now use the dedicated writer-owner identities (`Season-Artifact-Writer`, `Phase-Artifact-Writer`, `Week-Artifact-Writer`, `Report-Artifact-Writer`) and bundled schemas were regenerated.
 - Season and Phase planning crews no longer enable CrewAI-native pre-planning by default, avoiding the extra `Task Execution Planner` pass when RPS already supplies an explicit YAML task chain.

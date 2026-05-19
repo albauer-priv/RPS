@@ -6,37 +6,31 @@ AGENTS: dict[str, AgentSpec] = {
     "season_scenario": AgentSpec(
         name="season_scenario",
         display_name="Season-Scenario-Agent",
-        vector_store_name="vs_rps_all_agents",
         prompt_file_stem="season_scenario",
     ),
     "season_planner": AgentSpec(
         name="season_planner",
         display_name="Season-Planner",
-        vector_store_name="vs_rps_all_agents",
         prompt_file_stem="season_planner",
     ),
     "phase_architect": AgentSpec(
         name="phase_architect",
         display_name="Phase-Architect",
-        vector_store_name="vs_rps_all_agents",
         prompt_file_stem="phase_architect",
     ),
     "week_planner": AgentSpec(
         name="week_planner",
         display_name="Week-Planner",
-        vector_store_name="vs_rps_all_agents",
         prompt_file_stem="week_planner",
     ),
     "performance_analysis": AgentSpec(
         name="performance_analysis",
         display_name="Performance-Analyst",
-        vector_store_name="vs_rps_all_agents",
         prompt_file_stem="performance_analysis",
     ),
     "coach": AgentSpec(
         name="coach",
         display_name="Coach",
-        vector_store_name="vs_rps_all_agents",
         prompt_file_stem="coach",
     ),
 }

@@ -81,8 +81,8 @@ flowchart TD
    - Outer Season, Phase, Week, Report, Feed-Forward, and Coach turn routing now runs through CrewAI Flow wrappers.
    - Season, Phase, Week, and Report use planning/review/writer staging internally.
    - Specialist agents are single-method skill carriers; writer agents serialize only final envelopes.
-2. **Local Vector Stores**
-   - Local knowledge base (sources in repo; embeddings built locally).
+2. **CrewAI Knowledge Sources**
+   - Static knowledge base declared in `config/crewai/knowledge_sources.yaml`.
 3. **Prompt Loader**
    - Shared system prompt + per-agent prompt from `prompts/`.
 4. **Workspace Storage**
@@ -116,8 +116,8 @@ This section provides system-level C4 views. UI flows are documented separately 
 flowchart TB
   UI["Streamlit UI"] --> ORCH["Orchestrators / Workers"]
   ORCH --> STORE["Run Store + Workspace"]
-  ORCH --> OPENAI["OpenAI Responses API"]
-  ORCH --> VS["Vector Stores"]
+  ORCH --> OPENAI["OpenAI / LiteLLM Runtime"]
+  ORCH --> KNOW["CrewAI Knowledge Sources"]
   PIPE["Data Pipeline"] --> STORE
   UI --> STORE
 ```
@@ -181,98 +181,35 @@ See [doc/architecture/agents.md](agents.md) for the canonical registry of agents
 ## 4. Knowledge Delivery
 
 - **Prompts** live in `prompts/` and are loaded at runtime.
-- **Knowledge sources** live in `specs/knowledge/` and are synced to a local Qdrant vector store.
-- At runtime, agents prefer CrewAI `knowledge_sources` for static domain references, while `knowledge_search` remains available for runtime or precise filtered retrieval.
+- **Knowledge sources** live in `specs/knowledge/` and are attached through CrewAI runtime configuration.
+- Athlete-specific runtime data is loaded through workspace tools, never through static knowledge retrieval.
 
-### 4.1 Vector Stores
+### 4.1 Runtime Knowledge Sources
 
-#### 4.1.1 Stores, Purpose, and Contents
-
-The system uses a single shared store for all agents:
-
-- `vs_rps_all_agents`: unified knowledge store containing all specs, contracts,
-  policies, schemas, and prompts used across agents.
-
-Knowledge sources live under `specs/knowledge/_shared/` and are listed in
-`specs/knowledge/all_agents/manifest.yaml`. The vector store itself is local state.
+The runtime separates static reference knowledge from athlete workspace state. Static sources are declared in `config/crewai/knowledge_sources.yaml` and loaded by the CrewAI backend. Agent methods and operational guidance live in `skills/` and are attached through `config/crewai/skills.yaml`.
 
 ```mermaid
 flowchart LR
-  SRC["specs/knowledge/all_agents/manifest.yaml"] --> SYNC["background sync (Streamlit)"]
-  SYNC --> VS["(Qdrant Local)"]
-  VS --> FS["knowledge_search tool"]
-  FS --> AG["Agent Runtime"]
+  SRC["config/crewai/knowledge_sources.yaml"] --> KR["CrewAI Knowledge Sources"]
+  SK["config/crewai/skills.yaml"] --> RT["CrewAI Runtime"]
+  KR --> RT
+  RT --> AG["Agent / Crew"]
+  WS["Workspace Tools"] --> AG
 ```
 
-#### 4.1.2 Handling (Init / Update / Delete)
+#### 4.1.1 Agent Access Hints
 
-Vector stores are rebuilt locally during background sync when the manifest hash changes.
-Manual verification uses `python scripts/smoke_vectorstores.py`.
-
-#### 4.1.3 Background Sync (Streamlit)
-
-Streamlit startup performs a background sync check using a deterministic
-manifest hash (manifest + source file hashes). If the hash differs from the
-last synced hash stored in `runtime/vectorstores_state.json`, the store is reset
-and fully re-synced. This is tracked as a background run with
-`process_type=system_housekeeping` and `process_subtype=vectorstore_sync`.
-
-Environment controls:
-
-```
-RPS_VECTORSTORE_SYNC_INTERVAL_MINUTES=60
-RPS_DISABLE_VECTORSTORE_SYNC=1
-```
-
-Example:
-
-Local Qdrant collections are rebuilt during sync from the manifest and source files.
-
-Notes:
-- The sync writes `runtime/vectorstores_state.json` to map store names to local collection IDs.
-- Collections are rebuilt locally when the manifest hash changes.
-
-#### 4.1.3 Vector Store Attributes and Filters
-
-During sync, each source file is annotated with attributes derived from its
-YAML header (Markdown) or schema/meta fields (JSON). These attributes are used
-to filter `knowledge_search` results.
-
-Common attributes:
-- `type`, `specification_for`, `specification_id`
-- `interface_for`, `interface_id`
-- `template_for`, `template_id`
-- `contract_name`, `status`
-- `scope`, `authority`, `version`
-- `applies_to`, `explicitly_not_for`
-- `normative_role`, `decision_authority`
-- `doc_type`, `schema_id`, `schema_title`, `schema_for`
-
-Example filters:
-- Specs/policies/principles: `type=Specification` + `specification_for=WORKOUT_POLICY`
-- Interfaces: `type=InterfaceSpecification` + `interface_for=ATHLETE_PROFILE`
-- Templates: `type=Template` + `template_for=ATHLETE_PROFILE`
-- Schemas: `doc_type=JsonSchema` + `schema_id=week_plan.schema.json`
-
-`knowledge_search` is no longer the primary static-reference path when a CrewAI
-knowledge-source profile exists. Runtime athlete artifacts are always fetched via
-workspace tools.
-
-#### 4.1.4 Agent Access Hints (Summary)
-
-These are runtime access expectations per agent/mode. Static references should
-come from configured CrewAI knowledge sources first; athlete artefacts come from
-workspace tools.
+Static references come from configured CrewAI knowledge sources. Athlete artefacts come from workspace tools.
 
 Season Planning Runtime
 - Mode A: Athlete profile + planning events + logistics via `workspace_get_input`, KPI via `workspace_get_latest(KPI_PROFILE)`.
 - Mode B: Athlete profile + planning events + logistics, KPI, existing season plan via `workspace_get_latest(SEASON_PLAN)`.
-- Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)` plus planning events/logistics (optional context).
+- Mode C: DES report via `workspace_get_latest(DES_ANALYSIS_REPORT)` plus planning events/logistics.
 
 Phase Planning Runtime
-- Mode A (new phase): `workspace_get_phase_context(year, week)` and optional `offset_phases=1`; optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_TREND`, planning events/logistics.
-- Mode B (update): `workspace_get_phase_context`, optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, planning events/logistics.
-- Mode C (no-change): `workspace_get_phase_context`, optional planning events/logistics.
+- Mode A: `workspace_get_phase_context(year, week)` and optional `offset_phases=1`; optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_TREND`, planning events/logistics.
+- Mode B: `workspace_get_phase_context`, optional `SEASON_PHASE_FEED_FORWARD`, `ACTIVITIES_ACTUAL`, planning events/logistics.
+- Mode C: `workspace_get_phase_context`, optional planning events/logistics.
 
 Week Planning Runtime
 - Mode A/B: `workspace_get_phase_context`, optional planning events/logistics.
@@ -283,31 +220,23 @@ Performance Report Runtime
 - Optional: `SEASON_PLAN`, `workspace_get_phase_context`, planning events/logistics.
 
 Workout Export
-- Required: `WEEK_PLAN` via `workspace_get_latest` (or `workspace_get_version` for a specific week).
+- Required: `WEEK_PLAN` via `workspace_get_latest` or `workspace_get_version` for a specific week.
 
-#### 4.1.5 Per-Agent Mapping and Available Tools
-
-Each agent attaches a single store at runtime:
-
-- Single shared store for all agents (`vs_rps_all_agents`)
+#### 4.1.2 Available Tools
 
 Tools available to agents:
 
-- `knowledge_search` (with `vector_store_ids=[agent]`)
 - Workspace read tools:
   - `workspace_get_latest`
   - `workspace_get_version`
   - `workspace_list_versions`
   - `workspace_get_phase_context`
-  - `workspace_get_input` (athlete_profile, planning_events, logistics)
-- Strict store tools (one per output artefact, schema-bound)
-
-These tool sets are wired by the runtime and are consistent across agents.
-File search is forced by default; use `--no-file-search` if you need to disable it.
+  - `workspace_get_input`
+- Strict store tools, one per output artefact and schema-bound
 
 ### 4.2 Runtime Skills, Knowledge, and Contracts
 
-The runtime now separates methodology, factual knowledge, memory, and output enforcement.
+The runtime separates methodology, factual knowledge, memory, and output enforcement.
 
 Configuration:
 - Skills and skill attachment policy: `config/crewai/skills.yaml`
@@ -316,47 +245,17 @@ Configuration:
 - Task output and guardrails: `config/crewai/task_policies.yaml`
 - Crew planning / agent reasoning / model routing: `config/crewai/runtime_profiles.yaml`
 
-Model:
-- Repo-local Skills carry procedures, guidance, and reusable planning methodology.
-- CrewAI `knowledge_sources` carry factual/reference corpora that benefit from retrieval.
-- Prompt files are reduced to role/scope/runtime-local framing.
-- Contracts and schemas remain explicit authoritative files outside the skill system.
-
-Current attachment model:
-- one method skill per agent
-- crew-level skills only for operational cross-cutting guidance
-- `SKILL.md` is the primary operational method
-- `references/` are supplementary and not required for automatic prompt injection
-
 Current planning runtime:
 - Season, Phase, Week, and Report use planning/review/writer stages
 - review stages decide approve, reject, or bounded replan
 - writer stages serialize only approved outputs
 - validated workspace persistence remains code-owned after writer output normalization
 
-#### 4.1.4 Operational Limits
-
-- Keep single files reasonably small (split large PDFs into chapters).
-- Prefer fewer, higher-signal sources over many redundant files.
-- Avoid frequent full resyncs; use delta upload in `sync_vectorstores.py` when running manual recovery.
-- Remember that chunking and embeddings are managed by OpenAI (remote state).
-
-#### 4.1.5 Data Sensitivity
+### 4.3 Data Sensitivity
 
 - Never upload private or licensed material without explicit permission.
-- Keep athlete-specific data out of vector stores; use `runtime/athletes/`.
+- Keep athlete-specific data out of static knowledge sources; use `runtime/athletes/`.
 - Avoid placing any API keys or secrets in `specs/knowledge/`.
-
-#### 4.1.6 Incident Playbook
-
-If a store gets out of sync or corrupted:
-
-1. Re-run `python scripts/sync_vectorstores.py` (deprecated; use only for manual recovery).
-2. If needed, use `--prune` to remove remote files missing locally.
-3. If a store must be rebuilt:
-   - Create a new store name.
-   - Update `manifest.yaml` and re-sync.
-   - Update `.env` or `runtime/vectorstores_state.json`.
 
 ---
 
@@ -473,7 +372,7 @@ Routing uses:
 
 - Automatic scheduling without explicit artifacts.
 - Silent edits of existing artifacts.
-- Embeddings or vector store state inside the repo.
+- Static knowledge indexing state inside the repo.
 
 ---
 
@@ -485,12 +384,10 @@ Use this checklist to initialize a fresh environment:
    `API_KEY`, and `BASE_URL`.
 2. Install dependencies: `pip install -r requirements.txt` or `pip install -e .`
    (depending on how you set up the repo).
-3. Add knowledge sources under `specs/knowledge/_shared/sources/` and update `specs/knowledge/all_agents/manifest.yaml`.
+3. Add knowledge sources under `specs/knowledge/_shared/sources/` and update `config/crewai/knowledge_sources.yaml` when runtime attachment changes.
 4. Build bundled schemas: `python scripts/bundle_schemas.py`.
-5. Vector store sync runs in the UI background (auto-rebuild on manifest changes).
-6. (Optional) Run smoke test: `python scripts/smoke_vectorstores.py --store vs_rps_all_agents`.
-7. Run data pipeline: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`.
-8. Validate outputs: `python scripts/validate_outputs.py`.
+5. Run data pipeline: `PYTHONPATH=src python3 src/rps/data_pipeline/intervals_data.py --help`.
+6. Validate outputs: `python scripts/validate_outputs.py`.
 
 ---
 

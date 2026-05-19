@@ -12,7 +12,7 @@ Goal: allow an athlete to export all of their data from a running system and res
 
 ## Scope
 
-This design covers **per‑athlete data** stored under `runtime/athletes/<athlete_id>/` plus the minimal metadata needed to make those artifacts usable after restore. It does **not** include global system configuration, models, or vector stores. Those are managed separately by the system.
+This design covers **per‑athlete data** stored under `runtime/athletes/<athlete_id>/` plus the minimal metadata needed to make those artifacts usable after restore. It does **not** include global system configuration or model/provider settings. Those are managed separately by the system.
 
 ---
 
@@ -32,7 +32,6 @@ This design covers **per‑athlete data** stored under `runtime/athletes/<athlet
 
 ### Excluded
 - Global caches, locks, temp files (these must **not** be restored)
-- Vector store contents (rebuild via sync)
 - System config and secrets (`.env`, `.streamlit/secrets.toml`)
 - `runtime/athletes/<athlete_id>/runs/` (run history)
 - `runtime/athletes/<athlete_id>/logs/` (UI logs)

@@ -425,33 +425,6 @@ def test_plan_hub_direct_action_buttons_render(tmp_path):
     assert all("Phase Preview" not in label for label in expander_labels)
 
 
-def test_plan_hub_shows_knowledge_store_status(tmp_path):
-    store = LocalArtifactStore(root=tmp_path)
-    athlete_id = "test_athlete"
-    store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps({"meta": {"version_key": "test"}, "data": {"phases": []}}),
-        encoding="utf-8",
-    )
-
-    at = AppTest.from_file("src/rps/ui/pages/plan/hub.py")
-    at.run(timeout=10)
-
-    assert len(at.error) == 0
-    success_text = "\n".join(success.value for success in at.success)
-    assert "Ready: `vs_rps_all_agents`" in success_text
-
-
-def test_plan_hub_build_workouts_scope_does_not_require_knowledge():
-    from rps.ui.pages.plan import hub as plan_hub
-
-    assert plan_hub._scope_requires_knowledge("Week Plan") is False
-    assert plan_hub._scope_requires_knowledge("Phase") is False
-    assert plan_hub._scope_requires_knowledge("Build Workouts") is False
-    assert plan_hub._step_requires_knowledge("week_plan") is False
-    assert plan_hub._step_requires_knowledge("workout_export") is False
-
-
 def test_workout_export_force_export_runs_even_when_current(tmp_path):
     store = LocalArtifactStore(root=tmp_path)
     athlete_id = "test_athlete"

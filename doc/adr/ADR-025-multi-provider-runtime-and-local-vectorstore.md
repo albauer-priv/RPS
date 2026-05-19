@@ -1,13 +1,16 @@
 ---
 Version: 1.0
-Status: Proposed
-Last-Updated: 2026-02-06
+Status: Superseded
+Last-Updated: 2026-05-18
 Owner: ADR
 ---
 # ADR-025: Multi-provider LLM runtime + local vectorstore
 
-**Status:** Proposed  
+**Status:** Superseded by ADR-050 for the local vectorstore portion
 **Date:** 2026-02-06  
+
+The local vectorstore portion of this proposal is no longer active. The
+vectorstore runtime was removed by [ADR-050](ADR-050-remove-vectorstore-runtime.md).
 
 ## Context
 

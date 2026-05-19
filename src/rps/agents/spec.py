@@ -10,5 +10,4 @@ class AgentSpec:
     """Static specification for a single agent."""
     name: str
     display_name: str
-    vector_store_name: str
     prompt_file_stem: str

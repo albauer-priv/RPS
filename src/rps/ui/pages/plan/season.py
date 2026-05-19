@@ -117,8 +117,6 @@ def _action_scenarios() -> str:
             run_id=run_id,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
         ),
         loggers=CAPTURE_LOGGERS,
     )
@@ -280,8 +278,6 @@ def _action_season_plan(selected: str) -> str:
             selected=selected,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
         ),
         loggers=CAPTURE_LOGGERS,
     )

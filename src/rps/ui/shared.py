@@ -18,7 +18,6 @@ from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from rps.core.config import load_app_settings, load_env_file
 from rps.core.logging import _normalize_level, setup_logging
-from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
 
@@ -386,14 +385,13 @@ def system_log_panel(expanded: bool = True) -> None:
 
 
 def base_runtime() -> dict:
-    """Return a cached runtime bundle (prompt loader/vectorstore only)."""
+    """Return a cached runtime bundle for agent execution."""
     cache_key = "_rps_runtime_cache"
     cached = st.session_state.get(cache_key)
     if cached:
         return cached
     runtime = {
         "prompt_loader": PromptLoader(SETTINGS.prompts_dir),
-        "vs_resolver": VectorStoreResolver(SETTINGS.vs_state_path),
     }
     st.session_state[cache_key] = runtime
     return runtime
@@ -411,7 +409,6 @@ def multi_runtime_for(agent_name: str):
         reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
         max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),
         prompt_loader=base["prompt_loader"],
-        vs_resolver=base["vs_resolver"],
         schema_dir=SETTINGS.schema_dir,
         workspace_root=SETTINGS.workspace_root,
     )

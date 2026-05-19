@@ -322,7 +322,6 @@ def preview_scoped_week_replan_operation(
     run_id: str,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    max_num_results: int = 20,
 ) -> CoachOperationPreviewModel:
     """Preview a scoped week replan with a real candidate WEEK_PLAN document."""
 
@@ -363,8 +362,6 @@ def preview_scoped_week_replan_operation(
         run_id=run_id,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
-        force_file_search=True,
-        max_num_results=max_num_results,
     )
     if not (isinstance(preview_result, dict) and preview_result.get("ok")):
         return CoachOperationPreviewModel(
@@ -524,7 +521,6 @@ def apply_scoped_week_replan_operation(
     run_id: str,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    max_num_results: int = 20,
 ) -> CoachOperationApplyResultModel:
     """Run Week Planner revision and rebuild workouts export."""
 
@@ -537,8 +533,6 @@ def apply_scoped_week_replan_operation(
         run_id=run_id,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
-        force_file_search=True,
-        max_num_results=max_num_results,
     )
     if not (isinstance(revise_result, dict) and revise_result.get("ok")):
         return CoachOperationApplyResultModel(
@@ -609,7 +603,6 @@ def apply_report_operation(
     run_id: str,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    max_num_results: int = 20,
 ) -> CoachOperationApplyResultModel:
     """Run DES analysis report generation for the selected week."""
 
@@ -618,8 +611,6 @@ def apply_report_operation(
         athlete_id=athlete_id,
         report_week=IsoWeek(year=year, week=week),
         run_id_prefix=run_id,
-        force_file_search=True,
-        max_num_results=max_num_results,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
     )
@@ -656,7 +647,6 @@ def apply_feed_forward_operation(
     run_id: str,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    max_num_results: int = 20,
 ) -> CoachOperationApplyResultModel:
     """Run the report + feed-forward chain for the selected week."""
 
@@ -668,7 +658,6 @@ def apply_feed_forward_operation(
         run_id_prefix=run_id,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
-        max_num_results=max_num_results,
     )
     writes: list[ArtifactWriteModel] = []
     if result.report_version_key:

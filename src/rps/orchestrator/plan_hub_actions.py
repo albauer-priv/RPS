@@ -30,8 +30,6 @@ def execute_season_scenarios(
     override_text: str | None = None,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
 ) -> ActionResult:
     """Run Season Scenarios agent."""
     return create_season_scenarios(
@@ -43,8 +41,6 @@ def execute_season_scenarios(
         override_text=override_text,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
     )
 
 
@@ -63,8 +59,6 @@ def execute_season_plan(
     override_text: str | None = None,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
 ) -> ActionResult:
     """Run Season Plan agent."""
     return create_season_plan(
@@ -77,8 +71,6 @@ def execute_season_plan(
         override_text=override_text,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
     )
 
 
@@ -95,8 +87,6 @@ def execute_plan_week(
     temperature_resolver: Callable[[str], float | None] | None = None,
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
     reasoning_summary_resolver: Callable[[str], str | None] | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
 ) -> ActionResult:
     """Run the plan-week orchestrator (phase + week + export)."""
     result = plan_week(
@@ -111,8 +101,6 @@ def execute_plan_week(
         temperature_resolver=temperature_resolver,
         reasoning_effort_resolver=reasoning_effort_resolver,
         reasoning_summary_resolver=reasoning_summary_resolver,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
     )
     return {"ok": result.ok}
 

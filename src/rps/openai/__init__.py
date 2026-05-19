@@ -1,1 +1,1 @@
-"""OpenAI client and vector store helpers."""
+"""OpenAI runtime helpers."""

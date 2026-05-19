@@ -641,10 +641,9 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
     tasks = build_task_blueprints(bundle)
     read_tool = SimpleNamespace(name="workspace_get_latest")
-    knowledge_tool = SimpleNamespace(name="knowledge_search")
-    tool_map = {"workspace_get_latest": read_tool, "knowledge_search": knowledge_tool}
+    tool_map = {"workspace_get_latest": read_tool}
 
-    assert _task_tools_for_blueprint(tasks["week_context_read"], tool_map) == [read_tool, knowledge_tool]
+    assert _task_tools_for_blueprint(tasks["week_context_read"], tool_map) == [read_tool]
     assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
 
     class FakeTask:
@@ -664,7 +663,7 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         tools=tool_map,
     )
 
-    assert task.kwargs["tools"] == [read_tool, knowledge_tool]
+    assert task.kwargs["tools"] == [read_tool]
     assert task.kwargs["name"] == "week_context_read"
     assert callable(task.kwargs["callback"])
 
@@ -1078,7 +1077,6 @@ def test_preview_scoped_week_replan_requires_message() -> None:
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -1106,7 +1104,6 @@ def test_preview_scoped_week_replan_returns_true_preview_metadata(monkeypatch, t
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=tmp_path,
     )
@@ -1326,7 +1323,6 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=tmp_path,
     )
@@ -1526,7 +1522,6 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -1534,7 +1529,6 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     result = run_agent_multi_output_crewai(
         runtime,
         agent_name="season_planner",
-        agent_vs_name="vs_rps_all_agents",
         athlete_id="i150546",
         tasks=[AgentTask.CREATE_SEASON_PLAN],
         user_input="Create the season plan.",
@@ -1682,7 +1676,6 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -1690,7 +1683,6 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     result = run_agent_multi_output_crewai(
         runtime,
         agent_name="phase_architect",
-        agent_vs_name="vs_rps_all_agents",
         athlete_id="i150546",
         tasks=[AgentTask.CREATE_PHASE_GUARDRAILS],
         user_input="Create phase guardrails.",
@@ -1802,7 +1794,6 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -1810,7 +1801,6 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
     result = run_agent_multi_output_crewai(
         runtime,
         agent_name="season_planner",
-        agent_vs_name="vs_rps_all_agents",
         athlete_id="i150546",
         tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
         user_input="Create season-phase feed-forward.",
@@ -1901,7 +1891,6 @@ def test_run_season_flow_routes_to_requested_task(monkeypatch) -> None:
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -1936,7 +1925,6 @@ def test_run_phase_flow_executes_bundle_once(monkeypatch) -> None:
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -1975,7 +1963,6 @@ def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )
@@ -2011,7 +1998,6 @@ def test_run_week_flow_preview_only_dispatches_preview_runner(monkeypatch) -> No
         reasoning_summary="auto",
         max_completion_tokens=8000,
         prompt_loader=PromptLoader(Path("prompts")),
-        vs_resolver=SimpleNamespace(id_for_store_name=lambda name: name),
         schema_dir=Path("specs/schemas"),
         workspace_root=Path("runtime/athletes"),
     )

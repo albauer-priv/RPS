@@ -134,7 +134,7 @@ INFO:
 
 WARNING:
 ```
-2026-01-24T15:30:20Z WARNING scripts.sync_vectorstores Missing optional manifest; skipping.
+2026-01-24T15:30:20Z WARNING rps.workspace.guarded_store Store failed artifact=SEASON_PLAN run_id=...
 ```
 
 ERROR:

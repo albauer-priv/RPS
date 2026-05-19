@@ -28,9 +28,9 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 
 - [x] FEAT_parquet_cache — Parquet cache writes in data pipeline.
 - [x] FEAT_parquet_readers — Parquet-first reads in Data & Metrics.
-- [x] FEAT_vectorstore_monitor — background monitor + reset behavior.
+- [x] FEAT_vectorstore_monitor — superseded by vectorstore runtime removal.
 - [~] FEAT_posting_receipts_inspection — receipt inspection + status (implemented; UX polish ongoing).
-- [x] FEAT_multi_provider_llm — CrewAI-first runtime with direct provider config and embedded Qdrant.
+- [x] FEAT_multi_provider_llm — CrewAI-first runtime with direct provider config; local vectorstore portion superseded.
 - [x] FEAT_user_inputs_modular — hard cut-over to modular inputs and new pages.
 - [x] FEAT_user_data_editors — editors for profile/goals, availability, events, logistics.
 - [x] FEAT_historical_baseline_refresh — refresh baseline from Intervals via UI.

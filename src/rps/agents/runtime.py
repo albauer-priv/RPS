@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from rps.crewai_runtime.compat import CrewAIRuntimeStatus, crewai_runtime_status
-from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.prompts.loader import PromptLoader
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,6 @@ class AgentRuntime:
     reasoning_summary: str | None
     max_completion_tokens: int | None
     prompt_loader: PromptLoader
-    vs_resolver: VectorStoreResolver
     schema_dir: Path
     workspace_root: Path
 

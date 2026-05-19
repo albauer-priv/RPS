@@ -47,8 +47,6 @@ def run_agent_multi_output(
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     workspace_root=None,
 ) -> OrchestratorResult:
     """Compatibility dispatcher for season orchestration tests and wrappers."""
@@ -63,8 +61,6 @@ def run_agent_multi_output(
             run_id=run_id,
             model_override=model_override,
             temperature_override=temperature_override,
-            force_file_search=force_file_search,
-            max_num_results=max_num_results,
             workspace_root=workspace_root,
         )
 
@@ -77,8 +73,6 @@ def run_agent_multi_output(
         run_id=run_id,
         model_override=model_override,
         temperature_override=temperature_override,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         workspace_root=workspace_root,
     )
 
@@ -161,8 +155,6 @@ def create_season_scenarios(
     week: int,
     run_id: str,
     override_text: str | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
 ) -> OrchestratorResult:
@@ -235,8 +227,6 @@ def create_season_scenarios(
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
         temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         workspace_root=runtime_for(spec.name).workspace_root,
     )
 
@@ -251,8 +241,6 @@ def select_season_scenario(
     selected: str,
     rationale: str | None,
     kpi_selection: JsonMap | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
 ) -> OrchestratorResult:
@@ -305,8 +293,6 @@ def select_season_scenario(
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
         temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         workspace_root=runtime_for(spec.name).workspace_root,
     )
 
@@ -320,8 +306,6 @@ def create_season_plan(
     run_id: str,
     selected: str | None,
     override_text: str | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
 ) -> OrchestratorResult:
@@ -461,8 +445,6 @@ def create_season_plan(
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
         temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         workspace_root=runtime_for(spec.name).workspace_root,
     )
     try:

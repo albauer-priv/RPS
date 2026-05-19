@@ -30,10 +30,10 @@ This folder contains the ADR log for RPS.
 - ADR-019: Single Log File with Rotation
 - ADR-020: Run Housekeeping Retention
 - ADR-021: Use st.plotly_chart for Charts
-- ADR-022: Vector Store Sync Policy
+- ADR-022: Vector Store Sync Policy (superseded by ADR-050)
 - ADR-023: Athlete Data Operations Page
 - ADR-024: Parquet Cache for Intervals Pipeline Outputs
-- ADR-025: Multi-provider LLM Runtime + Local Vectorstore
+- ADR-025: Multi-provider LLM Runtime + Local Vectorstore (local vectorstore portion superseded by ADR-050)
 - ADR-026: Split Tools vs Structured Output for Groq (LiteLLM)
 - ADR-027: Consolidate Repo Layout into Runtime + Specs Roots
 - ADR-028: Snapshot-based Planner Memory
@@ -58,6 +58,7 @@ This folder contains the ADR log for RPS.
 - ADR-047: CrewAI Skills as the Unified Methodology Layer
 - ADR-048: Skills-First Multi-Crew Planning Runtime
 - ADR-049: Single-Method Skill Attachment Model
+- ADR-050: Remove Vectorstore Runtime
 
 ## Process (Short)
 

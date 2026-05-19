@@ -543,7 +543,6 @@ def _active_coach_functions(
             run_id=preview_run_id,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
-            max_num_results=SETTINGS.file_search_max_results,
         )
         st.session_state[COACH_PENDING_KEY] = preview.model_dump()
         return preview.model_dump_json(indent=2)
@@ -639,7 +638,6 @@ def _active_coach_functions(
                     run_id=run_id,
                     model_resolver=SETTINGS.model_for_agent,
                     temperature_resolver=SETTINGS.temperature_for_agent,
-                    max_num_results=SETTINGS.file_search_max_results,
                 )
         elif operation == "preview_report":
             result = apply_report_operation(
@@ -650,7 +648,6 @@ def _active_coach_functions(
                 run_id=run_id,
                 model_resolver=SETTINGS.model_for_agent,
                 temperature_resolver=SETTINGS.temperature_for_agent,
-                max_num_results=SETTINGS.file_search_max_results,
             )
         elif operation == "preview_feed_forward":
             result = apply_feed_forward_operation(
@@ -662,7 +659,6 @@ def _active_coach_functions(
                 run_id=run_id,
                 model_resolver=SETTINGS.model_for_agent,
                 temperature_resolver=SETTINGS.temperature_for_agent,
-                max_num_results=SETTINGS.file_search_max_results,
             )
         else:
             return _json_result({"ok": False, "message": f"Unsupported pending operation: {operation}"})

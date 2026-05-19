@@ -1,13 +1,16 @@
 ---
 Version: 1.0
-Status: Updated
-Last-Updated: 2026-02-03
+Status: Superseded
+Last-Updated: 2026-05-18
 Owner: ADR
 ---
 # ADR-022: Vector Store Sync Policy
 
-Status: Accepted  
+Status: Superseded by ADR-050
 Date: 2026-02-03
+
+This decision is no longer active. The vectorstore runtime was removed by
+[ADR-050](ADR-050-remove-vectorstore-runtime.md).
 
 ## Context
 
@@ -38,4 +41,3 @@ The background job:
 - The vector store is kept current without manual intervention.
 - Syncs are observable in System → Status and in run history.
 - A reset on mismatch is slightly more expensive but guarantees clean state.
-

@@ -35,7 +35,7 @@ No legacy path shims are provided; all references are updated at once.
 
 ## Implementation Notes
 - Update code defaults for workspace root and schema dir.
-- Update vectorstore manifest path.
+- Remove or update stale knowledge-source path references.
 - Update scripts that bundle/check schemas.
 - Update docs/runbooks.
 

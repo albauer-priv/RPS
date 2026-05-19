@@ -2092,21 +2092,17 @@ def run_agent_multi_output_crewai(
     runtime: AgentRuntime,
     *,
     agent_name: str,
-    agent_vs_name: str,
     athlete_id: str,
     tasks: list[AgentTask],
     user_input: str,
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
-    include_debug_file_search: bool = False,
-    force_file_search: bool = True,
-    max_num_results: int | None = None,
     stream_handlers: dict[str, object] | None = None,
 ) -> JsonMap:
     """Execute a single persisted task through CrewAI and persist the typed result."""
 
-    del agent_vs_name, include_debug_file_search, force_file_search, max_num_results, stream_handlers
+    del stream_handlers
 
     if len(tasks) != 1:
         return {
@@ -2177,21 +2173,17 @@ def run_agent_multi_output_preview_crewai(
     runtime: AgentRuntime,
     *,
     agent_name: str,
-    agent_vs_name: str,
     athlete_id: str,
     tasks: list[AgentTask],
     user_input: str,
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
-    include_debug_file_search: bool = False,
-    force_file_search: bool = True,
-    max_num_results: int | None = None,
     stream_handlers: dict[str, object] | None = None,
 ) -> JsonMap:
     """Execute a single CrewAI task and return the normalized document without storing it."""
 
-    del agent_vs_name, include_debug_file_search, force_file_search, max_num_results, stream_handlers
+    del stream_handlers
 
     if len(tasks) != 1:
         return {

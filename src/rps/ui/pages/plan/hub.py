@@ -13,13 +13,8 @@ import pandas as pd
 import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
-from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.queue_scheduler import enqueue_run, ensure_queue_dirs, start_queue_scheduler
 from rps.prompts.loader import PromptLoader
-from rps.tools.knowledge_search import (
-    ensure_knowledge_store_ready,
-    knowledge_store_status_for_agent,
-)
 from rps.ui.run_store import (
     RunRecord,
     append_run,
@@ -364,7 +359,6 @@ def _runtime_for_agent(agent_name: str) -> AgentRuntime:
         reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
         max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),
         prompt_loader=PromptLoader(SETTINGS.prompts_dir),
-        vs_resolver=VectorStoreResolver(SETTINGS.vs_state_path),
         schema_dir=SETTINGS.schema_dir,
         workspace_root=SETTINGS.workspace_root,
     )
@@ -1150,8 +1144,6 @@ def _ensure_worker(
             temperature_resolver=SETTINGS.temperature_for_agent,
             reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
             reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
         )
 
     ensure_queue_dirs(root)
@@ -1362,23 +1354,6 @@ def _render_direct_step_actions(
     return True
 
 
-def _scope_requires_knowledge(scope: str | None) -> bool:
-    """Return whether the given planning scope is hard-blocked by knowledge-store readiness."""
-
-    # Planning runtime is now skills-first. Vectorstore readiness may still be
-    # useful for retrieval-backed enrichment, but it must not globally disable
-    # season/phase/week planning actions in Plan Hub.
-    del scope
-    return False
-
-
-def _step_requires_knowledge(step_key: str) -> bool:
-    """Return whether the direct action is hard-blocked by knowledge-store readiness."""
-
-    del step_key
-    return False
-
-
 state = init_ui_state()
 athlete_id = get_athlete_id()
 year, week = get_iso_year_week()
@@ -1393,34 +1368,6 @@ hub_scope = st.session_state.get("hub_scope") or {
 
 st.title("Plan Hub")
 st.caption(f"Athlete: {hub_scope['athlete_id']}")
-
-knowledge_status = knowledge_store_status_for_agent("phase_architect")
-knowledge_ready = bool(knowledge_status.get("ready"))
-
-with st.container():
-    st.subheader("Knowledge Store")
-    if knowledge_ready:
-        st.success(
-            f"Ready: `{knowledge_status.get('store_name')}` "
-            f"(`{knowledge_status.get('collection_name')}`)"
-        )
-    else:
-        st.warning(
-            f"Not ready: `{knowledge_status.get('store_name')}` "
-            f"(`{knowledge_status.get('collection_name')}`)."
-        )
-        if knowledge_status.get("error"):
-            st.caption(f"Error: {knowledge_status['error']}")
-        st.caption(f"Manifest: {knowledge_status.get('manifest_path')}")
-        if st.button("Rebuild Knowledge Store", key="plan_hub_rebuild_knowledge_store"):
-            with st.spinner("Rebuilding knowledge store from manifest..."):
-                rebuilt_status = ensure_knowledge_store_ready("phase_architect")
-            if rebuilt_status.get("ready"):
-                st.success(
-                    f"Knowledge store rebuilt: `{rebuilt_status.get('collection_name')}`"
-                )
-                st.rerun()
-            st.error(rebuilt_status.get("error") or "Knowledge store rebuild failed.")
 
 active_run_id = st.session_state.get("plan_hub_active_run_id")
 run_records = load_runs(SETTINGS.workspace_root, hub_scope["athlete_id"], limit=5)
@@ -1496,11 +1443,6 @@ st.subheader("Readiness")
 st.markdown("`Auto-creates phase artifacts`")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
 st.caption(overall_message)
-if not knowledge_ready:
-    st.info(
-        "Knowledge store is not ready. Planning can still run with the skills-first runtime, "
-        "but retrieval-backed context may be reduced until the store is rebuilt."
-    )
 phase_step = readiness_map.get("phase")
 week_plan_step = readiness_map.get("week_plan")
 if (

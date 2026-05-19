@@ -30,7 +30,6 @@ This directory contains the canonical documentation for the platform. It is a na
 - [Workspace](architecture/workspace.md)
 - [Schema Versioning](architecture/schema_versioning.md)
 - [Deployment](architecture/deployment.md)
-- [Vectorstores](architecture/vectorstores.md)
 - [Renderer](architecture/renderer.md)
 - [Data Pipeline Subsystem](architecture/subsystems/data_pipeline.md)
 - [Intervals Posting Subsystem](architecture/subsystems/intervals_posting.md)

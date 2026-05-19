@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from rps.tools.knowledge_search import search_knowledge
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import IsoWeekRange
@@ -299,21 +298,6 @@ def read_tool_defs() -> list[JsonDict]:
                 "additionalProperties": False,
             },
         },
-        {
-            "type": "function",
-            "name": "knowledge_search",
-            "description": "Search the local knowledge vectorstore for relevant context.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string"},
-                    "max_results": {"type": "integer", "default": 5},
-                    "tags": {"type": "array", "items": {"type": "string"}},
-                },
-                "required": ["query"],
-                "additionalProperties": False,
-            },
-        },
     ]
 
 
@@ -520,13 +504,6 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
             "document": parsed_content,
         }
 
-    def knowledge_search(args: dict[str, Any]) -> object:
-        query = str(args.get("query", "")).strip()
-        max_results = args.get("max_results", 5)
-        tags = args.get("tags")
-        results = search_knowledge(ctx.agent_name, query, max_results=max_results, tags=tags)
-        return {"ok": True, "results": results}
-
     return {
         "workspace_get_latest": workspace_get_latest,
         "workspace_get_version": workspace_get_version,
@@ -536,5 +513,4 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         "workspace_find_best_phase_artefact": workspace_find_best_phase_artefact,
         "workspace_get_phase_context": workspace_get_phase_context,
         "workspace_get_input": workspace_get_input,
-        "knowledge_search": knowledge_search,
     }

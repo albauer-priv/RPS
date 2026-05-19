@@ -119,8 +119,6 @@ def start_queue_scheduler(
     temperature_resolver: Callable[[str], float | None] | None,
     reasoning_effort_resolver: Callable[[str], str | None] | None,
     reasoning_summary_resolver: Callable[[str], str | None] | None,
-    force_file_search: bool,
-    max_num_results: int,
     poll_seconds: int = 2,
     stop_event: threading.Event | None = None,
 ) -> dict[str, object]:
@@ -163,8 +161,6 @@ def start_queue_scheduler(
                     temperature_resolver=temperature_resolver,
                     reasoning_effort_resolver=reasoning_effort_resolver,
                     reasoning_summary_resolver=reasoning_summary_resolver,
-                    force_file_search=force_file_search,
-                    max_num_results=max_num_results,
                     allow_delete_intervals=bool(item.get("allow_delete_intervals")),
                 )
                 worker = start_plan_hub_worker_with_stop(config, stop_event)

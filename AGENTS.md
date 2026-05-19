@@ -77,7 +77,7 @@ This file is the **README for coding agents** working in this repository. It con
 * `/src/rps/agents`: Agent runner / multi-output / tasks.
 * `/src/rps/orchestrator`: Plan-week orchestration.
 * `/src/rps/tools`: Workspace tools (read/write).
-* `/src/rps/openai`: Responses API streaming, vectorstore, client.
+* `/src/rps/openai`: OpenAI/LiteLLM runtime helpers and client integration.
 * `/src/rps/workspace`: Artifact store, schemas, ISO helpers.
 * `/config`: Knowledge injection, runtime config.
 * `/specs/knowledge`: Specs, policies, principles, schemas.
@@ -481,11 +481,10 @@ ADR log is maintained as external files under `doc/adr/` (see `doc/adr/README.md
 
 * `RPS_LLM_API_KEY`
 * `RPS_LLM_MODEL*`, `RPS_LLM_TEMPERATURE*`, `RPS_LLM_REASONING_EFFORT*`
-* `RPS_LLM_EMBEDDING_MODEL`, `RPS_LLM_EMBEDDING_BATCH_SIZE`, `RPS_LLM_VECTORSTORE_PATH`
+* `RPS_LLM_EMBEDDING_MODEL`, `RPS_LLM_EMBEDDING_BATCH_SIZE`
 * `RPS_LLM_ENABLE_WEB_SEARCH`, `RPS_LLM_WEB_SEARCH_AGENTS`
 * `RPS_LLM_STREAM*`
 * `RPS_LOG_LEVEL_FILE`, `RPS_LOG_LEVEL_CONSOLE`, `RPS_LOG_LEVEL_UI`
-* `RPS_LLM_FILE_SEARCH_MAX_RESULTS`
 
 Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored.
 
@@ -500,9 +499,9 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 * Re-run bundler: `python3 scripts/bundle_schemas.py`.
 * Validate affected artifacts.
 
-### Specs/Policies/Principles in vector store
+### Specs/Policies/Principles in CrewAI knowledge
 
-* Re-sync vector store after spec/contract/header changes.
+* Update `config/crewai/knowledge_sources.yaml` when adding/removing static knowledge sources.
 * Ensure metadata headers (ID/Type/Authority) remain correct.
 
 ### File renames / path moves
@@ -535,7 +534,6 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 ## 14) Backlog (active)
 
 * Run schema validation + bundler after rename sweep (fix broken refs).
-* Re-sync vector store after spec/contract/header changes.
 * Verify multi-page flow end-to-end (scenario creation → selection → season plan → plan-week enabled).
 * Confirm plan-week gating and ISO-week range checks in UI.
 * Coach UX: bubble + reasoning summary + tool access + rate-limit handling.

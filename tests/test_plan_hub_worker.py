@@ -52,8 +52,6 @@ def test_plan_hub_worker_skips_terminal_run(tmp_path: Path, caplog) -> None:
         temperature_resolver=None,
         reasoning_effort_resolver=None,
         reasoning_summary_resolver=None,
-        force_file_search=True,
-        max_num_results=20,
         allow_delete_intervals=False,
     )
 

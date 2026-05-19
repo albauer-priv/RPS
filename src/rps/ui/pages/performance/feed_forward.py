@@ -229,8 +229,6 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
             athlete_id=athlete_id,
             report_week=selected_week,
             run_id_prefix=report_run_id,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
         ),
@@ -331,7 +329,6 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
             lambda: run_agent_multi_output(
                 runtime,
                 agent_name=spec.name,
-                agent_vs_name=spec.vector_store_name,
                 athlete_id=athlete_id,
                 tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
                 user_input=(
@@ -347,8 +344,6 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 run_id=run_id,
                 model_override=SETTINGS.model_for_agent(spec.name),
                 temperature_override=SETTINGS.temperature_for_agent(spec.name),
-                force_file_search=True,
-                max_num_results=SETTINGS.file_search_max_results,
             ),
             loggers=CAPTURE_LOGGERS,
         )
@@ -422,7 +417,6 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                 lambda: run_agent_multi_output(
                     runtime,
                     agent_name=spec.name,
-                    agent_vs_name=spec.vector_store_name,
                     athlete_id=athlete_id,
                     tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
                     user_input=(
@@ -442,8 +436,6 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
                     run_id=run_id,
                     model_override=SETTINGS.model_for_agent(spec.name),
                     temperature_override=SETTINGS.temperature_for_agent(spec.name),
-                    force_file_search=True,
-                    max_num_results=SETTINGS.file_search_max_results,
                 ),
                 loggers=CAPTURE_LOGGERS,
             )

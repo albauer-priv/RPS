@@ -69,15 +69,12 @@ def run_agent_multi_output(
     runtime: AgentRuntime,
     *,
     agent_name: str,
-    agent_vs_name: str,
     athlete_id: str,
     tasks: list[AgentTask],
     user_input: str,
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     stream_handlers=None,
 ) -> dict[str, object]:
     """Compatibility dispatcher used by plan-week orchestration and tests."""
@@ -113,22 +110,17 @@ def run_agent_multi_output(
             run_id=run_id,
             model_override=model_override,
             temperature_override=temperature_override,
-            force_file_search=force_file_search,
-            max_num_results=max_num_results,
             workspace_root=runtime.workspace_root,
         )
     return run_agent_multi_output_direct(
         runtime,
         agent_name=agent_name,
-        agent_vs_name=agent_vs_name,
         athlete_id=athlete_id,
         tasks=tasks,
         user_input=user_input,
         run_id=run_id,
         model_override=model_override,
         temperature_override=temperature_override,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         stream_handlers=stream_handlers,
     )
 
@@ -309,8 +301,6 @@ def create_performance_report(
     athlete_id: str,
     report_week: IsoWeek,
     run_id_prefix: str = "performance_report",
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
@@ -327,8 +317,6 @@ def create_performance_report(
                 athlete_id=athlete_id,
                 report_week=report_week,
                 run_id_prefix=run_id_prefix,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
                 model_resolver=model_resolver,
                 temperature_resolver=temperature_resolver,
                 reasoning_effort_resolver=reasoning_effort_resolver,
@@ -475,7 +463,6 @@ def create_performance_report(
         out = run_agent_multi_output(
             runtime_for_agent(spec.name),
             agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=analysis_tasks,
             user_input=(
@@ -491,8 +478,6 @@ def create_performance_report(
             run_id=f"{run_id_prefix}_{report_label}",
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            force_file_search=force_file_search,
-            max_num_results=max_num_results,
             stream_handlers={"on_reasoning": _on_reasoning_chunk},
         )
         step = {
@@ -562,8 +547,6 @@ def plan_week(
     temperature_resolver: Callable[[str], float | None] | None = None,
     reasoning_effort_resolver: Callable[[str], str | None] | None = None,
     reasoning_summary_resolver: Callable[[str], str | None] | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
 ) -> PlanWeekResult:
     """Run the Season -> Phase -> Week -> Builder flow if needed.
 
@@ -944,7 +927,6 @@ def plan_week(
         out = run_agent_multi_output(
             runtime_for(spec.name),
             agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=phase_tasks,
             user_input=(
@@ -1197,7 +1179,6 @@ def plan_week(
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,
-                agent_vs_name=spec.vector_store_name,
                 athlete_id=athlete_id,
                 tasks=week_tasks,
                 user_input=(
@@ -1217,8 +1198,6 @@ def plan_week(
                 run_id=f"{run_id}_week",
                 model_override=model_resolver(spec.name) if model_resolver else None,
                 temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-                force_file_search=force_file_search,
-                max_num_results=max_num_results,
             )
         steps.append({"agent": "week_planner", "tasks": [t.value for t in week_tasks], "result": out})
         week_run_ok = bool(out.get("ok") and out.get("produced"))

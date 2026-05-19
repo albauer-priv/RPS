@@ -36,8 +36,6 @@ def revise_week_plan(
     week: int,
     message: str,
     run_id: str,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
 ) -> OrchestratorResult:
@@ -68,8 +66,6 @@ def revise_week_plan(
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
         temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         workspace_root=runtime_for(spec.name).workspace_root,
     )
 
@@ -82,8 +78,6 @@ def preview_week_plan_revision(
     week: int,
     message: str,
     run_id: str,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
 ) -> OrchestratorResult:
@@ -101,8 +95,6 @@ def preview_week_plan_revision(
         run_id=run_id,
         model_override=model_resolver(spec.name) if model_resolver else None,
         temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        force_file_search=force_file_search,
-        max_num_results=max_num_results,
         workspace_root=runtime_for(spec.name).workspace_root,
         preview_only=True,
     )

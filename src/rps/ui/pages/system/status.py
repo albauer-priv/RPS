@@ -8,7 +8,6 @@ import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
 from rps.core.config import load_env_file
-from rps.openai.vectorstore_state import VectorStoreResolver
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
 from rps.prompts.loader import PromptLoader
@@ -128,7 +127,6 @@ if queue_counts["Pending"] and not queue_counts["Active"]:
             reasoning_summary=SETTINGS.reasoning_summary_for_agent(agent_name),
             max_completion_tokens=SETTINGS.max_completion_tokens_for_agent(agent_name),
             prompt_loader=PromptLoader(SETTINGS.prompts_dir),
-            vs_resolver=VectorStoreResolver(SETTINGS.vs_state_path),
             schema_dir=SETTINGS.schema_dir,
             workspace_root=SETTINGS.workspace_root,
         )
@@ -142,8 +140,6 @@ if queue_counts["Pending"] and not queue_counts["Active"]:
             temperature_resolver=SETTINGS.temperature_for_agent,
             reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
             reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
-            force_file_search=True,
-            max_num_results=SETTINGS.file_search_max_results,
         )
 
     scheduler = _get_scheduler()

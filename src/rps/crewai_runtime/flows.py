@@ -272,8 +272,6 @@ def run_season_flow(
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     workspace_root: Path | None = None,
 ) -> JsonMap:
     """Execute one season outer step through a CrewAI Flow wrapper."""
@@ -304,15 +302,12 @@ def run_season_flow(
                 self.state.result = run_agent_multi_output(
                     runtime_for(agent_name),
                     agent_name=agent_name,
-                    agent_vs_name="vs_rps_all_agents",
                     athlete_id=athlete_id,
                     tasks=[AgentTask.CREATE_SEASON_SCENARIOS],
                     user_input=user_input,
                     run_id=run_id,
                     model_override=model_override,
                     temperature_override=temperature_override,
-                    force_file_search=force_file_search,
-                    max_num_results=max_num_results,
                 )
             except Exception as exc:
                 self.state.result = _record_flow_exception(self.state, exc)
@@ -327,15 +322,12 @@ def run_season_flow(
                 self.state.result = run_agent_multi_output(
                     runtime_for(agent_name),
                     agent_name=agent_name,
-                    agent_vs_name="vs_rps_all_agents",
                     athlete_id=athlete_id,
                     tasks=[AgentTask.CREATE_SEASON_SCENARIO_SELECTION],
                     user_input=user_input,
                     run_id=run_id,
                     model_override=model_override,
                     temperature_override=temperature_override,
-                    force_file_search=force_file_search,
-                    max_num_results=max_num_results,
                 )
             except Exception as exc:
                 self.state.result = _record_flow_exception(self.state, exc)
@@ -350,15 +342,12 @@ def run_season_flow(
                 self.state.result = run_agent_multi_output(
                     runtime_for(agent_name),
                     agent_name=agent_name,
-                    agent_vs_name="vs_rps_all_agents",
                     athlete_id=athlete_id,
                     tasks=[AgentTask.CREATE_SEASON_PLAN],
                     user_input=user_input,
                     run_id=run_id,
                     model_override=model_override,
                     temperature_override=temperature_override,
-                    force_file_search=force_file_search,
-                    max_num_results=max_num_results,
                 )
             except Exception as exc:
                 self.state.result = _record_flow_exception(self.state, exc)
@@ -479,8 +468,6 @@ def run_week_flow(
     run_id: str,
     model_override: str | None = None,
     temperature_override: float | None = None,
-    force_file_search: bool = True,
-    max_num_results: int = 20,
     workspace_root: Path | None = None,
     preview_only: bool = False,
 ) -> JsonMap:
@@ -500,15 +487,12 @@ def run_week_flow(
                 self.state.result = runner(
                     runtime_for(agent_name),
                     agent_name=agent_name,
-                    agent_vs_name="vs_rps_all_agents",
                     athlete_id=athlete_id,
                     tasks=tasks,
                     user_input=user_input,
                     run_id=run_id,
                     model_override=model_override,
                     temperature_override=temperature_override,
-                    force_file_search=force_file_search,
-                    max_num_results=max_num_results,
                 )
             except Exception as exc:
                 self.state.result = _record_flow_exception(self.state, exc)

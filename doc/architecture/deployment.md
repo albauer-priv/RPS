@@ -36,12 +36,10 @@ Optional:
 - `RPS_LLM_MODEL_WEEK_PLANNER`
 - `RPS_LLM_MODEL_WORKOUT_BUILDER`
 - `RPS_LLM_MODEL_PERFORMANCE_ANALYSIS`
-- `RPS_LLM_VECTORSTORE_PATH`
 - `RPS_LLM_EMBEDDING_BATCH_SIZE`
 - `ATHLETE_WORKSPACE_ROOT`
 - `SCHEMA_DIR`
 - `PROMPTS_DIR`
-- `VECTORSTORE_STATE_PATH`
 
 ---
 
@@ -50,7 +48,7 @@ Optional:
 Recommended environments:
 
 - **dev**: local workspace under `runtime/athletes/`
-- **staging**: separate `ATHLETE_WORKSPACE_ROOT` and vector stores
+- **staging**: separate `ATHLETE_WORKSPACE_ROOT`
 - **prod**: locked schemas, versioned prompts, audited syncs
 
 ---
@@ -76,13 +74,6 @@ To enable automatic publishing on each `main` commit:
 Images are pushed to `ghcr.io/<owner>/<repo>` with tags:
 - `latest`
 - `sha-<short>`
-
----
-
-## Vector Stores
-
-Vector store IDs are environment-specific. Use `runtime/vectorstores_state.json`
-for local development or provide overrides via env vars.
 
 ---
 

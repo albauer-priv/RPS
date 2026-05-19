@@ -90,7 +90,6 @@ def run_feed_forward_chain(
     run_id_prefix: str,
     model_resolver: Callable[[str], str] | None = None,
     temperature_resolver: Callable[[str], float | None] | None = None,
-    max_num_results: int = 20,
 ) -> FeedForwardChainResult:
     """Run DES report and both feed-forward artefacts for the selected week."""
 
@@ -101,8 +100,6 @@ def run_feed_forward_chain(
         athlete_id=athlete_id,
         report_week=target_week,
         run_id_prefix=f"{run_id_prefix}_report",
-        force_file_search=True,
-        max_num_results=max_num_results,
         model_resolver=model_resolver,
         temperature_resolver=temperature_resolver,
     )
@@ -206,7 +203,6 @@ def run_feed_forward_chain(
         return run_agent_multi_output(
             runtime,
             agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
             user_input=(
@@ -222,8 +218,6 @@ def run_feed_forward_chain(
             run_id=season_ff_run_id,
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            force_file_search=True,
-            max_num_results=max_num_results,
         )
 
     phase_ff_run_id = f"{run_id_prefix}_phase"
@@ -281,7 +275,6 @@ def run_feed_forward_chain(
         return run_agent_multi_output(
             runtime,
             agent_name=spec.name,
-            agent_vs_name=spec.vector_store_name,
             athlete_id=athlete_id,
             tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
             user_input=(
@@ -301,8 +294,6 @@ def run_feed_forward_chain(
             run_id=phase_ff_run_id,
             model_override=model_resolver(spec.name) if model_resolver else None,
             temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            force_file_search=True,
-            max_num_results=max_num_results,
         )
 
     flow_results = run_feed_forward_flow(
