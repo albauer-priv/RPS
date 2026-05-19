@@ -28,7 +28,7 @@ class SeasonFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
-    workspace_root: Path | None = None
+    workspace_root: str | None = None
     target_iso_week: str = ""
     action: str = ""
     loaded_input_refs: JsonMap = Field(default_factory=dict)
@@ -50,7 +50,7 @@ class PhaseFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
-    workspace_root: Path | None = None
+    workspace_root: str | None = None
     target_iso_week: str = ""
     requested_tasks: list[str] = Field(default_factory=list)
     phase_range: str = ""
@@ -72,7 +72,7 @@ class WeekFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
-    workspace_root: Path | None = None
+    workspace_root: str | None = None
     target_iso_week: str = ""
     target_week: str = ""
     preview_only: bool = False
@@ -97,7 +97,7 @@ class ReportFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
-    workspace_root: Path | None = None
+    workspace_root: str | None = None
     target_iso_week: str = ""
     target_week: str = ""
     loaded_input_refs: JsonMap = Field(default_factory=dict)
@@ -117,7 +117,7 @@ class FeedForwardFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
-    workspace_root: Path | None = None
+    workspace_root: str | None = None
     target_iso_week: str = ""
     target_week: str = ""
     loaded_input_refs: JsonMap = Field(default_factory=dict)
@@ -138,7 +138,7 @@ class CoachFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
-    workspace_root: Path | None = None
+    workspace_root: str | None = None
     target_iso_week: str = ""
     user_message: str = ""
     route: str = ""
@@ -220,9 +220,9 @@ def _record_flow_exception(state: Any, exc: Exception) -> JsonMap:
     root = getattr(state, "workspace_root", None)
     athlete_id = getattr(state, "athlete_id", None)
     run_id = getattr(state, "run_id", None)
-    if isinstance(root, Path) and isinstance(athlete_id, str) and isinstance(run_id, str):
+    if isinstance(root, str) and root and isinstance(athlete_id, str) and isinstance(run_id, str):
         emit_runtime_exception_event(
-            root=root,
+            root=Path(root),
             athlete_id=athlete_id,
             run_id=run_id,
             exc=exc,
@@ -393,7 +393,7 @@ def run_season_flow(
     flow = SeasonOuterFlow()
     flow.state.athlete_id = athlete_id
     flow.state.run_id = run_id
-    flow.state.workspace_root = workspace_root
+    flow.state.workspace_root = str(workspace_root) if workspace_root is not None else None
     flow.state.action = action
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="season_flow"):
@@ -471,7 +471,7 @@ def run_phase_flow(
     flow = PhaseOuterFlow()
     flow.state.athlete_id = athlete_id
     flow.state.run_id = run_id
-    flow.state.workspace_root = workspace_root
+    flow.state.workspace_root = str(workspace_root) if workspace_root is not None else None
     flow.state.requested_tasks = [task.value for task in tasks]
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="phase_flow"):
@@ -549,7 +549,7 @@ def run_week_flow(
     flow = WeekOuterFlow()
     flow.state.athlete_id = athlete_id
     flow.state.run_id = run_id
-    flow.state.workspace_root = workspace_root
+    flow.state.workspace_root = str(workspace_root) if workspace_root is not None else None
     flow.state.preview_only = preview_only
     if workspace_root is not None:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="week_flow"):
@@ -607,7 +607,7 @@ def run_report_flow(
     flow = ReportOuterFlow()
     flow.state.athlete_id = athlete_id or ""
     flow.state.run_id = run_id or ""
-    flow.state.workspace_root = workspace_root
+    flow.state.workspace_root = str(workspace_root) if workspace_root is not None else None
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="report_flow"):
             flow.kickoff()
@@ -671,7 +671,7 @@ def run_feed_forward_flow(
     flow = FeedForwardOuterFlow()
     flow.state.athlete_id = athlete_id or ""
     flow.state.run_id = run_id or ""
-    flow.state.workspace_root = workspace_root
+    flow.state.workspace_root = str(workspace_root) if workspace_root is not None else None
     if workspace_root is not None and athlete_id and run_id:
         with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="feed_forward_flow"):
             flow.kickoff()
@@ -728,7 +728,7 @@ def run_coach_flow(
     flow = CoachOuterFlow()
     flow.state.athlete_id = athlete_id
     flow.state.run_id = run_id
-    flow.state.workspace_root = workspace_root
+    flow.state.workspace_root = str(workspace_root)
     with runtime_event_scope(root=workspace_root, athlete_id=athlete_id, run_id=run_id, component="coach_flow"):
         flow.kickoff()
     return {"route": flow.state.route, "response": flow.state.response}

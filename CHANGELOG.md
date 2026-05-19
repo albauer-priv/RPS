@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed CrewAI outer-flow state handling by declaring `workspace_root` on typed Season/Phase/Week/Report/Feed-Forward/Coach flow states, so run-store telemetry and exception reporting no longer fail on Pydantic state assignment.
+- Fixed CrewAI flow-state persistence by storing `workspace_root` as a JSON-serializable string in typed flow state and converting back to `Path` only at runtime-event/exception boundaries.
 - Fixed season manager contract consumption so season planning tasks receive structured deterministic season phase-slot/load JSON context and the finalizer is scoped to contract tools instead of broad workspace rediscovery.
 - Fixed season finalization re-dispatching deterministic contract lookup through coworker delegation by disabling free delegation for `season_plan_manager` and tightening the final-synthesis guidance.
 - Fixed phase/week finalization rediscovery risk by binding deterministic execution contracts into finalizer task context, scoping finalizers to contract tools, and disabling free delegation for `phase_bundle_manager` and `week_plan_manager`.
