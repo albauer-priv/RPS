@@ -1,8 +1,10 @@
+import logging
 import threading
 from pathlib import Path
 
 from rps.orchestrator.plan_hub_worker import (
     PlanHubWorkerConfig,
+    _attach_run_logger,
     _bundled_phase_force_steps,
     _latest_failure_reason,
     run_plan_hub_worker,
@@ -88,3 +90,27 @@ def test_latest_failure_reason_prefers_llm_failure_event(tmp_path: Path) -> None
     reason = _latest_failure_reason(tmp_path, "athlete", "run-1")
 
     assert reason == "You exceeded your current quota. | code=insufficient_quota | status=429"
+
+
+def test_attach_run_logger_filters_debug_noise(tmp_path: Path) -> None:
+    log_path = tmp_path / "plan_run.log"
+    root = logging.getLogger()
+    previous_level = root.level
+    root.setLevel(logging.DEBUG)
+
+    handler = _attach_run_logger(str(log_path))
+    assert handler is not None
+
+    try:
+        logger = logging.getLogger("rps.tests.plan_hub_worker")
+        logger.debug("debug line should stay out of run log")
+        logger.info("info line should be visible in run log")
+        handler.flush()
+    finally:
+        root.removeHandler(handler)
+        handler.close()
+        root.setLevel(previous_level)
+
+    content = log_path.read_text(encoding="utf-8")
+    assert "info line should be visible in run log" in content
+    assert "debug line should stay out of run log" not in content

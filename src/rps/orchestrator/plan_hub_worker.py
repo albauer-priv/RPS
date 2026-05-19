@@ -182,7 +182,7 @@ def _artifact_records_for_run(
 
 
 def _attach_run_logger(log_ref: str | None) -> logging.Handler | None:
-    """Attach a file handler for this run's log_ref if provided."""
+    """Attach an INFO-level file handler for this run's log_ref if provided."""
     if not log_ref:
         return None
     try:
@@ -204,6 +204,7 @@ def _attach_run_logger(log_ref: str | None) -> logging.Handler | None:
         handler = DailySizeRotatingFileHandler(path, max_bytes)
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
         root.addHandler(handler)
         root.setLevel(min(root.level or logging.INFO, logging.INFO))
         return handler

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed Plan Hub per-run log files to record `INFO` and above only, so readiness polling debug lines and harmless CrewAI/LanceDB debug traces no longer flood user-facing planning logs.
 - Fixed the Season page `Season Scenarios` list view so the new scenario UX differentiation fields render in the main scenario overview, not only in the selected-scenario detail block.
 - Fixed the season-plan guarded-store selected-scenario contract path to use the correct `season_scenarios_payload` call shape and to keep phase-level domain narrowing from back-propagating into season-level authority.
 - Fixed CrewAI outer-flow state handling by declaring `workspace_root` on typed Season/Phase/Week/Report/Feed-Forward/Coach flow states, so run-store telemetry and exception reporting no longer fail on Pydantic state assignment.
