@@ -2783,6 +2783,7 @@ def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
 
 
 def test_app_settings_ignore_agent_and_crew_scoped_env_overrides(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
     monkeypatch.setenv("RPS_LLM_MODEL", "gpt-5.4-mini")
     monkeypatch.setenv("RPS_LLM_MODEL_COACH", "gpt-5.4")
     monkeypatch.setenv("RPS_LLM_TEMPERATURE", "0.2")

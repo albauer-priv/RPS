@@ -28,6 +28,7 @@ class SeasonFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
+    workspace_root: Path | None = None
     target_iso_week: str = ""
     action: str = ""
     loaded_input_refs: JsonMap = Field(default_factory=dict)
@@ -49,6 +50,7 @@ class PhaseFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
+    workspace_root: Path | None = None
     target_iso_week: str = ""
     requested_tasks: list[str] = Field(default_factory=list)
     phase_range: str = ""
@@ -70,6 +72,7 @@ class WeekFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
+    workspace_root: Path | None = None
     target_iso_week: str = ""
     target_week: str = ""
     preview_only: bool = False
@@ -94,6 +97,7 @@ class ReportFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
+    workspace_root: Path | None = None
     target_iso_week: str = ""
     target_week: str = ""
     loaded_input_refs: JsonMap = Field(default_factory=dict)
@@ -113,6 +117,7 @@ class FeedForwardFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
+    workspace_root: Path | None = None
     target_iso_week: str = ""
     target_week: str = ""
     loaded_input_refs: JsonMap = Field(default_factory=dict)
@@ -133,6 +138,7 @@ class CoachFlowState(BaseModel):
 
     athlete_id: str = ""
     run_id: str = ""
+    workspace_root: Path | None = None
     target_iso_week: str = ""
     user_message: str = ""
     route: str = ""
