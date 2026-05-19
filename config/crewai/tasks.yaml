@@ -246,7 +246,7 @@ tasks:
     description: Create the season-plan artifact envelope for the selected planning horizon.
     expected_output: Schema-compliant artifact data derived from the approved season bundle and phase blueprints; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_phase_feed_forward:
-    agent: season_artifact_writer
+    agent: season_feed_forward_manager
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week season-to-phase feed-forward artifact envelope.
@@ -392,7 +392,7 @@ tasks:
     description: Create the phase-preview artifact envelope for the exact phase range.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   phase_feed_forward:
-    agent: phase_artifact_writer
+    agent: phase_feed_forward_manager
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week phase feed-forward artifact envelope.

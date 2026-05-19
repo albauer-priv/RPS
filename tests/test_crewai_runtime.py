@@ -1188,9 +1188,28 @@ def test_feed_forward_and_report_review_managers_disable_free_delegation() -> No
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     agent_blueprints = build_agent_blueprints(bundle)
 
+    assert agent_blueprints["conversation_manager"].config["allow_delegation"] is False
     assert agent_blueprints["season_feed_forward_manager"].config["allow_delegation"] is False
     assert agent_blueprints["phase_feed_forward_manager"].config["allow_delegation"] is False
     assert agent_blueprints["des_review_manager"].config["allow_delegation"] is False
+
+
+def test_feed_forward_tasks_use_dedicated_manager_agents() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert blueprints["season_phase_feed_forward"].config["agent"] == "season_feed_forward_manager"
+    assert blueprints["phase_feed_forward"].config["agent"] == "phase_feed_forward_manager"
+
+
+def test_review_managers_use_dedicated_review_prompts() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    agent_blueprints = build_agent_blueprints(bundle)
+
+    assert agent_blueprints["season_review_manager"].config["prompt_agent"] == "season_review_manager"
+    assert agent_blueprints["phase_review_manager"].config["prompt_agent"] == "phase_review_manager"
+    assert agent_blueprints["week_review_manager"].config["prompt_agent"] == "week_review_manager"
+    assert agent_blueprints["des_review_manager"].config["prompt_agent"] == "des_review_manager"
 
 
 def test_phase_week_blueprint_model_accepts_role_aware_s5_band() -> None:

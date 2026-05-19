@@ -15,7 +15,7 @@ agents:
     runtime_status: foundation_only
     output_mode: turn_mode
     prompt_agent: conversation_manager
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   week_context_specialist:
@@ -97,7 +97,7 @@ agents:
     goal: Integrate week review findings and either approve, reject, or request a bounded replan.
     runtime_status: foundation_only
     output_mode: week_review_decision
-    prompt_agent: week_planner
+    prompt_agent: week_review_manager
     allow_delegation: false
     max_iter: 5
     respect_context_window: true
@@ -145,7 +145,7 @@ agents:
     goal: Integrate review outputs and decide approve, reject, or bounded replan for season planning.
     runtime_status: foundation_only
     output_mode: season_review_decision
-    prompt_agent: season_plan_manager
+    prompt_agent: season_review_manager
     allow_delegation: false
     max_iter: 5
     respect_context_window: true
@@ -284,7 +284,7 @@ agents:
     goal: Integrate phase review findings and decide approve, reject, or bounded replan.
     runtime_status: foundation_only
     output_mode: phase_review_decision
-    prompt_agent: phase_bundle_manager
+    prompt_agent: phase_review_manager
     allow_delegation: false
     max_iter: 5
     respect_context_window: true
@@ -431,7 +431,7 @@ agents:
     goal: Approve, reject, or request bounded rework for advisory diagnostic output before writing.
     runtime_status: foundation_only
     output_mode: report_review_decision
-    prompt_agent: performance_analysis
+    prompt_agent: des_review_manager
     allow_delegation: false
     max_iter: 5
     respect_context_window: true

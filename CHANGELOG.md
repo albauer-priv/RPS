@@ -1003,6 +1003,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workspace state/index call sites now consistently narrow `object` payloads from the local store before reading artefact/index metadata, fixing the follow-on typing breakage from stricter store APIs.
 - Performance Feed Forward, Plan Workouts, System History, System Status, startup vectorstore sync, and workspace read/write helpers now use explicit JSON-map access patterns instead of unchecked `.get()` chains on dynamic objects.
 - Intervals posting receipt helpers now use explicit receipt/payload row types instead of broad dynamic dict typing, including safer text normalization for generated external IDs.
+## 2026-05-19
+
+- fix: active `SEASON_PHASE_FEED_FORWARD` and `PHASE_FEED_FORWARD` CrewAI tasks now use their dedicated feed-forward manager agents instead of artifact-writer prompts
+- fix: review managers now use dedicated review prompts instead of reusing planning-manager prompts, reducing synthesis/review role leakage
+- fix: `conversation_manager` is now a non-delegating bounded router/finalizer and its prompt/skill rules explicitly preserve preview/apply and pending-scope boundaries
+
 - A repo-managed `ruff` lint gate is now mandatory in `.githooks/pre-commit` via `scripts/run_lint.sh`, with a conservative initial rule set (`F`, `I`) and dev dependency/config stored in `pyproject.toml`.
 - The initial `ruff --fix` sweep normalized imports and removed low-risk unused-code issues across scripts, app modules, workspace helpers, and tests so the new hook starts green instead of landing as a broken gate.
 - Developer-facing docs now include the lint command and local hook activation step in `README.md`.
