@@ -15,6 +15,7 @@ from rps.agents.crewai_backend import (
     _coerce_artifact_envelope,
     _contract_context_blocks_for_task,
     _emit_crew_task_prepared_events,
+    _execute_crewai_multiagent_crew,
     _task_tools_for_blueprint,
     run_agent_multi_output_crewai,
 )
@@ -1921,6 +1922,8 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     crewai_telemetry.register_runtime_label(task, kind="task", label="season_plan_finalize")
     crewai_telemetry.register_runtime_label(crew, kind="crew", label="season_planning")
     crewai_telemetry.register_runtime_label(agent, kind="agent", label="season_plan_manager")
+    crewai_telemetry.register_runtime_metadata(task, assigned_agent="season_plan_manager", assigned_model="gpt-5.4")
+    crewai_telemetry.register_runtime_metadata(agent, model="gpt-5.4")
 
     caplog.set_level(logging.INFO, logger="rps.crewai_runtime.telemetry")
     with crewai_telemetry.runtime_event_scope(
@@ -1936,10 +1939,13 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     assert events[0]["crew"] == "season_planning"
     assert events[1]["task"] == "season_plan_finalize"
     assert events[1]["agent"] == "season_plan_manager"
+    assert events[1]["assigned_agent"] == "season_plan_manager"
+    assert events[1]["model"] == "gpt-5.4"
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "crew=season_planning" in log_text
     assert "task=season_plan_finalize" in log_text
     assert "agent=season_plan_manager" in log_text
+    assert "model=gpt-5.4" in log_text
 
 
 def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path, caplog) -> None:
@@ -1959,8 +1965,8 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
         runtime=runtime,
         crew_name="season_planning",
         tasks=[
-            ("season_context_read", "season_context_specialist"),
-            ("season_plan_finalize", "season_plan_manager"),
+            ("season_context_read", "season_context_specialist", "gpt-5.4-nano"),
+            ("season_plan_finalize", "season_plan_manager", "gpt-5.4"),
         ],
         athlete_id="athlete",
         run_id="run-prepared",
@@ -1971,9 +1977,11 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
     assert [event["type"] for event in events] == ["CREW_TASK_PREPARED", "CREW_TASK_PREPARED"]
     assert events[0]["task"] == "season_context_read"
     assert events[0]["agent"] == "season_context_specialist"
+    assert events[0]["model"] == "gpt-5.4-nano"
     assert events[0]["status"] == "1/2"
     assert events[1]["task"] == "season_plan_finalize"
     assert events[1]["agent"] == "season_plan_manager"
+    assert events[1]["model"] == "gpt-5.4"
     assert events[1]["status"] == "2/2"
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "type=CREW_TASK_PREPARED" in log_text
@@ -2047,6 +2055,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         def __init__(self, **kwargs):
             self.kwargs = kwargs
             self.output_pydantic = kwargs.get("output_pydantic")
+            self.output_json = kwargs.get("output_json")
             self.output = None
 
     captured_crew: dict[str, object] = {"crews": []}
@@ -2201,7 +2210,9 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert result["produced"]["store_season_plan"] == saved
     assert isinstance(captured_crew["agents"], list)
     assert int(captured_crew["max_agents"]) >= 7
-    assert captured_crew["manager_agent"] is not None
+    assert captured_crew["crews"][0].get("manager_agent") is None
+    assert captured_crew["crews"][0].get("process") == "sequential"
+    assert captured_crew["crews"][1].get("manager_agent") is not None
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
     assert planning_crews == []
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
@@ -2368,7 +2379,9 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert meta["owner_agent"] == "Phase-Artifact-Writer"
     assert isinstance(captured_crew["agents"], list)
     assert int(captured_crew["max_agents"]) >= 7
-    assert captured_crew["manager_agent"] is not None
+    assert captured_crew["crews"][0].get("manager_agent") is None
+    assert captured_crew["crews"][0].get("process") == "sequential"
+    assert captured_crew["crews"][1].get("manager_agent") is not None
     planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
     assert planning_crews == []
     band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")
@@ -2381,6 +2394,165 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert writer_agent["max_iter"] == 2
     assert writer_agent["respect_context_window"] is True
     assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+
+
+def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_execution(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    fake_crewai = types.ModuleType("crewai")
+    fake_tools = types.ModuleType("crewai.tools")
+
+    class FakeLLM:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    created_agents: list[dict[str, object]] = []
+
+    class FakeAgent:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.llm = kwargs.get("llm")
+            created_agents.append(kwargs)
+
+    class FakeTask:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.output_pydantic = kwargs.get("output_pydantic")
+            self.output_json = kwargs.get("output_json")
+            self.output = None
+
+    captured_crew: dict[str, object] = {"crews": []}
+
+    class FakeCrew:
+        def __init__(self, *, tasks, **kwargs):
+            self.tasks = tasks
+            self.kwargs = kwargs
+            captured_crew["crews"].append(kwargs)
+
+        def kickoff(self):
+            task = self.tasks[-1]
+            model_cls = task.output_pydantic or task.output_json
+            if model_cls is WeekPlanBundleModel:
+                model = model_cls(
+                    day_blueprints=[
+                        WeekDayBlueprintModel(day="Mon", date="2026-05-11", day_role="REST"),
+                        WeekDayBlueprintModel(day="Tue", date="2026-05-12", day_role="QUALITY"),
+                        WeekDayBlueprintModel(day="Wed", date="2026-05-13", day_role="ENDURANCE"),
+                        WeekDayBlueprintModel(day="Thu", date="2026-05-14", day_role="ENDURANCE"),
+                        WeekDayBlueprintModel(day="Fri", date="2026-05-15", day_role="REST"),
+                        WeekDayBlueprintModel(day="Sat", date="2026-05-16", day_role="LONG"),
+                        WeekDayBlueprintModel(day="Sun", date="2026-05-17", day_role="ENDURANCE"),
+                    ],
+                    workout_blueprints=[
+                        WeekWorkoutBlueprintModel(
+                            workout_id="W1",
+                            date="2026-05-12",
+                            day_role="QUALITY",
+                            planned_duration_minutes=75,
+                            planned_kj=650,
+                        )
+                    ],
+                )
+            elif model_cls is WeekReviewDecisionModel:
+                model = model_cls(status="approved", writer_ready_summary="ready")
+            elif model_cls is ArtifactEnvelopeModel:
+                model = model_cls(
+                    meta={
+                        "artifact_type": "WEEK_PLAN",
+                        "schema_id": "WeekPlanInterface",
+                        "schema_version": "1.2",
+                    },
+                    data={"workouts": []},
+                )
+            else:
+                model = model_cls()
+            task.output = SimpleNamespace(
+                pydantic=model if task.output_pydantic is not None else None,
+                json_dict=model.model_dump() if hasattr(model, "model_dump") else None,
+                raw=model.model_dump_json(),
+            )
+            return task.output
+
+    class FakeProcess:
+        sequential = "sequential"
+        hierarchical = "hierarchical"
+
+    def _tool(name: str):
+        def _decorate(func):
+            func.tool_name = name
+            return func
+
+        return _decorate
+
+    fake_crewai.LLM = FakeLLM
+    fake_crewai.Agent = FakeAgent
+    fake_crewai.Task = FakeTask
+    fake_crewai.Crew = FakeCrew
+    fake_crewai.Process = FakeProcess
+    fake_tools.tool = _tool
+
+    monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
+    monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    bundle = load_crewai_config_bundle(root=Path.cwd())
+    agent_blueprints = build_agent_blueprints(bundle)
+    task_blueprints = build_task_blueprints(bundle)
+    tools = {
+        name: SimpleNamespace(name=name)
+        for name in (
+            "workspace_get_input",
+            "workspace_get_latest",
+            "workspace_get_version",
+            "workspace_get_phase_context",
+            "workspace_get_week_calendar_context",
+            "workspace_get_phase_execution_context",
+        )
+    }
+
+    result = _execute_crewai_multiagent_crew(
+        agent_cls=FakeAgent,
+        crewai_llm_cls=FakeLLM,
+        crew_cls=FakeCrew,
+        task_cls=FakeTask,
+        process_cls=FakeProcess,
+        runtime=runtime,
+        bundle=bundle,
+        manager_agent_name="week_plan_manager",
+        crew_name="week_planning",
+        crew_task_names=(
+            "week_context_read",
+            "week_constraint_review",
+            "week_load_target_draft",
+            "week_revision_draft",
+            "week_workout_text_draft",
+            "week_plan_finalize",
+        ),
+        final_task_name="week_plan_finalize",
+        task_blueprints=task_blueprints,
+        agent_blueprints=agent_blueprints,
+        tools=tools,
+        user_input="Create week plan.",
+        athlete_id="i150546",
+        run_id="run-week",
+        execution_mode="sequential",
+    )
+
+    assert result.model_dump()["day_blueprints"]
+    assert captured_crew["crews"][0].get("manager_agent") is None
+    assert captured_crew["crews"][0].get("process") == "sequential"
+    manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal week bundle synthesizer")
+    assert getattr(manager_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:

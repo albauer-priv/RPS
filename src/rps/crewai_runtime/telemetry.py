@@ -31,6 +31,7 @@ _RUN_CONTEXT: ContextVar[CrewAIRunContext | None] = ContextVar("rps_crewai_run_c
 _LISTENER_READY = False
 _LISTENER_INIT_FAILED = False
 _RUNTIME_LABELS: dict[int, dict[str, str]] = {}
+_RUNTIME_METADATA: dict[int, dict[str, str]] = {}
 
 
 def register_runtime_label(value: object | None, *, kind: str, label: str | None) -> None:
@@ -43,6 +44,22 @@ def register_runtime_label(value: object | None, *, kind: str, label: str | None
         return
     labels = _RUNTIME_LABELS.setdefault(id(value), {})
     labels[kind] = rendered
+
+
+def register_runtime_metadata(value: object | None, **metadata: str | None) -> None:
+    """Register compact runtime metadata for an object id."""
+
+    if value is None:
+        return
+    compacted = {
+        key: _compact_text(str(val), max_len=140)
+        for key, val in metadata.items()
+        if isinstance(val, str) and val.strip()
+    }
+    if not compacted:
+        return
+    current = _RUNTIME_METADATA.setdefault(id(value), {})
+    current.update(compacted)
 
 
 def _registered_label(value: object | None, *kinds: str) -> str | None:
@@ -58,6 +75,17 @@ def _registered_label(value: object | None, *kinds: str) -> str | None:
         if label:
             return label
     return None
+
+
+def _registered_metadata(value: object | None, key: str) -> str | None:
+    """Return previously registered runtime metadata for an object id."""
+
+    if value is None:
+        return None
+    metadata = _RUNTIME_METADATA.get(id(value))
+    if not metadata:
+        return None
+    return metadata.get(key)
 
 
 def _append_with_context(event_type: str, **payload: object) -> None:
@@ -115,6 +143,7 @@ def _log_runtime_event(ctx: CrewAIRunContext, event_type: str, payload: dict[str
         "crew",
         "task",
         "agent",
+        "assigned_agent",
         "tool",
         "step",
         "status",
@@ -208,6 +237,55 @@ def _agent_label(event: object, source: object) -> str:
         if text:
             return _compact_text(text)
     return "unknown"
+
+
+def _assigned_agent_label(event: object, source: object) -> str | None:
+    """Resolve the task blueprint's assigned agent, if known."""
+
+    task_obj = _event_attr(event, "task") or source
+    if task_obj is None:
+        return None
+    assigned = _registered_metadata(task_obj, "assigned_agent")
+    if assigned:
+        return assigned
+    return None
+
+
+def _agent_model_label(event: object, source: object) -> str | None:
+    """Resolve the compact model label for the actual executing agent."""
+
+    candidates = (
+        _event_attr(event, "agent", "agent_name"),
+        _object_attr(_event_attr(event, "task"), "agent"),
+        _object_attr(source, "agent"),
+    )
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        registered = _registered_metadata(candidate, "model")
+        if registered:
+            return registered
+        llm = _object_attr(candidate, "llm")
+        registered = _registered_metadata(llm, "model")
+        if registered:
+            return registered
+        for value in (
+            _object_attr(candidate, "model", "model_name"),
+            _object_attr(llm, "model", "model_name"),
+            _object_attr(_object_attr(llm, "kwargs"), "model"),
+        ):
+            text = _safe_str(value, default="")
+            if text:
+                return _compact_text(text, max_len=140)
+        llm_kwargs = _object_attr(llm, "kwargs")
+        if isinstance(llm_kwargs, dict):
+            text = _safe_str(llm_kwargs.get("model"), default="")
+            if text:
+                return _compact_text(text, max_len=140)
+    task_obj = _event_attr(event, "task") or source
+    if task_obj is not None:
+        return _registered_metadata(task_obj, "assigned_model")
+    return None
 
 
 def build_task_callback(
@@ -593,6 +671,8 @@ def ensure_crewai_event_listener() -> None:
                     "CREW_TASK_STARTED",
                     task=_task_label(event, source),
                     agent=_agent_label(event, source),
+                    assigned_agent=_assigned_agent_label(event, source),
+                    model=_agent_model_label(event, source),
                 )
 
             @crewai_event_bus.on(TaskCompletedEvent)
@@ -601,6 +681,8 @@ def ensure_crewai_event_listener() -> None:
                     "CREW_TASK_FINISHED",
                     task=_task_label(event, source),
                     agent=_agent_label(event, source),
+                    assigned_agent=_assigned_agent_label(event, source),
+                    model=_agent_model_label(event, source),
                 )
 
             @crewai_event_bus.on(TaskFailedEvent)
@@ -610,6 +692,8 @@ def ensure_crewai_event_listener() -> None:
                     exc=_event_attr(event, "error", "error_message", "message"),
                     task=_task_label(event, source),
                     agent=_agent_label(event, source),
+                    assigned_agent=_assigned_agent_label(event, source),
+                    model=_agent_model_label(event, source),
                 )
 
             @crewai_event_bus.on(ToolUsageStartedEvent)

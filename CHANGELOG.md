@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added read-only deterministic phase/week contract tools for CrewAI (`workspace_get_phase_execution_context`, `workspace_get_week_calendar_context`) so phase and week finalizers can consume active execution authority directly.
 - Added review-layer deterministic contract wiring so season, phase, and week review tasks can consume bound contract authority directly.
 - Added explicit narrow tool scopes for planning/report context-read tasks and deterministic contract-review tasks, reducing broad workspace rediscovery.
+- Added compact task-execution telemetry fields for assigned agent and actual model, so `events.jsonl` and `rps.log` can explain provider usage without dumping prompt bodies.
 
 ### Fixed
 - Fixed CrewAI outer-flow state handling by declaring `workspace_root` on typed Season/Phase/Week/Report/Feed-Forward/Coach flow states, so run-store telemetry and exception reporting no longer fail on Pydantic state assignment.
 - Fixed CrewAI flow-state persistence by storing `workspace_root` as a JSON-serializable string in typed flow state and converting back to `Path` only at runtime-event/exception boundaries.
+- Fixed planning-crew cost concentration by switching Season, Phase, and Week planning crews from manager-driven hierarchical execution to explicit sequential specialist execution, leaving manager agents only on final synthesis tasks.
 - Fixed season manager contract consumption so season planning tasks receive structured deterministic season phase-slot/load JSON context and the finalizer is scoped to contract tools instead of broad workspace rediscovery.
 - Fixed season finalization re-dispatching deterministic contract lookup through coworker delegation by disabling free delegation for `season_plan_manager` and tightening the final-synthesis guidance.
 - Fixed phase/week finalization rediscovery risk by binding deterministic execution contracts into finalizer task context, scoping finalizers to contract tools, and disabling free delegation for `phase_bundle_manager` and `week_plan_manager`.

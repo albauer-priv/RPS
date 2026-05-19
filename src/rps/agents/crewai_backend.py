@@ -58,6 +58,7 @@ from rps.crewai_runtime.telemetry import (
     emit_runtime_event,
     emit_runtime_exception_event,
     register_runtime_label,
+    register_runtime_metadata,
     runtime_event_scope,
 )
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
@@ -233,7 +234,7 @@ def _emit_crew_task_prepared_events(
     *,
     runtime: AgentRuntime,
     crew_name: str,
-    tasks: list[tuple[str, str]],
+    tasks: list[tuple[str, str, str | None]],
     athlete_id: str | None,
     run_id: str | None,
     component: str,
@@ -242,7 +243,7 @@ def _emit_crew_task_prepared_events(
 
     if not athlete_id or not run_id:
         return
-    for index, (task_name, agent_name) in enumerate(tasks, start=1):
+    for index, (task_name, agent_name, model_name) in enumerate(tasks, start=1):
         emit_runtime_event(
             root=runtime.workspace_root,
             athlete_id=athlete_id,
@@ -251,6 +252,7 @@ def _emit_crew_task_prepared_events(
             crew=crew_name,
             task=task_name,
             agent=agent_name,
+            model=model_name,
             status=f"{index}/{len(tasks)}",
             component=component,
         )
@@ -653,6 +655,25 @@ def _build_crewai_llm(
     )
 
 
+def _llm_model_label(llm: object | None) -> str | None:
+    """Return the configured model name from a CrewAI LLM wrapper when available."""
+
+    if llm is None:
+        return None
+    for value in (
+        getattr(llm, "model", None),
+        getattr(llm, "model_name", None),
+    ):
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    llm_kwargs = getattr(llm, "kwargs", None)
+    if isinstance(llm_kwargs, dict):
+        model = llm_kwargs.get("model")
+        if isinstance(model, str) and model.strip():
+            return model.strip()
+    return None
+
+
 def _build_crewai_agent(
     agent_cls: Any,
     *,
@@ -721,6 +742,8 @@ def _build_crewai_agent(
             kwargs[field] = value
     agent = agent_cls(**kwargs)
     register_runtime_label(agent, kind="agent", label=blueprint.name)
+    register_runtime_metadata(agent, model=_llm_model_label(llm))
+    register_runtime_metadata(llm, model=_llm_model_label(llm))
     return agent
 
 
@@ -937,7 +960,7 @@ def _execute_crewai_task(
     _emit_crew_task_prepared_events(
         runtime=runtime,
         crew_name=crew_name,
-        tasks=[(task_blueprint.name, agent_blueprint.role)],
+        tasks=[(task_blueprint.name, task_blueprint.agent, _llm_model_label(getattr(agent, "llm", None)))],
         athlete_id=athlete_id,
         run_id=run_id,
         component=f"crew:{task_blueprint.name}",
@@ -1027,10 +1050,15 @@ def _build_crewai_task(
         kwargs["context"] = context_tasks
     task = task_cls(**kwargs)
     register_runtime_label(task, kind="task", label=task_blueprint.name)
+    register_runtime_metadata(
+        task,
+        assigned_agent=str(task_blueprint.agent),
+        assigned_model=_llm_model_label(getattr(agent, "llm", None)),
+    )
     return task
 
 
-def _execute_crewai_hierarchical_crew(
+def _execute_crewai_multiagent_crew(
     *,
     agent_cls: Any,
     crewai_llm_cls: Any,
@@ -1052,8 +1080,9 @@ def _execute_crewai_hierarchical_crew(
     run_id: str | None = None,
     model_override: str | None = None,
     temperature_override: float | None = None,
+    execution_mode: str = "hierarchical",
 ) -> Any:
-    """Execute one real multi-agent hierarchical crew and return the final typed output."""
+    """Execute one multi-agent crew and return the final typed output."""
 
     crew_memory_kwargs = build_crew_memory_kwargs(
         import_module("crewai"),
@@ -1180,9 +1209,15 @@ def _execute_crewai_hierarchical_crew(
         raise RuntimeError(f"Final crew task '{final_task_name}' was not created.")
 
     hierarchical = getattr(process_cls, "hierarchical", None)
-    process = hierarchical or getattr(process_cls, "sequential")
+    sequential = getattr(process_cls, "sequential")
+    use_hierarchical = execution_mode == "hierarchical" and hierarchical is not None
+    process = hierarchical if use_hierarchical else sequential
     crew_kwargs: dict[str, Any] = {
-        "agents": [agent for name, agent in agents_by_name.items() if name != manager_agent_name],
+        "agents": (
+            [agent for name, agent in agents_by_name.items() if name != manager_agent_name]
+            if use_hierarchical
+            else list(agents_by_name.values())
+        ),
         "tasks": crew_tasks,
         "process": process,
         "verbose": False,
@@ -1199,7 +1234,7 @@ def _execute_crewai_hierarchical_crew(
     )
     if crew_memory_kwargs:
         crew_kwargs.update(crew_memory_kwargs)
-    if hierarchical is not None:
+    if use_hierarchical:
         crew_kwargs["manager_agent"] = manager_agent
         if manager_llm is not None:
             crew_kwargs["manager_llm"] = manager_llm
@@ -1215,7 +1250,8 @@ def _execute_crewai_hierarchical_crew(
         tasks=[
             (
                 task_name,
-                agent_blueprints[task_blueprints[task_name].agent].role,
+                task_blueprints[task_name].agent,
+                _llm_model_label(getattr(agents_by_name[task_blueprints[task_name].agent], "llm", None)),
             )
             for task_name in crew_task_names
         ],
@@ -1337,7 +1373,7 @@ def _run_season_plan_document(
     temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute the hierarchical season planning crew and return the internal bundle."""
-    pydantic_output = _execute_crewai_hierarchical_crew(
+    pydantic_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
         crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
@@ -1358,6 +1394,7 @@ def _run_season_plan_document(
         run_id=run_id,
         model_override=model_override,
         temperature_override=temperature_override,
+        execution_mode="sequential",
     )
     document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(document, dict):
@@ -1385,7 +1422,7 @@ def _run_phase_bundle_document(
 ) -> JsonMap:
     """Execute the hierarchical phase planning crew and return the internal PhaseBundle."""
     final_task_name = _PHASE_PLANNING_TASKS[-1]
-    pydantic_output = _execute_crewai_hierarchical_crew(
+    pydantic_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
         crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
@@ -1406,6 +1443,7 @@ def _run_phase_bundle_document(
         run_id=run_id,
         model_override=model_override,
         temperature_override=temperature_override,
+        execution_mode="sequential",
     )
     bundle_document = (
         pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
@@ -1444,7 +1482,7 @@ def _run_review_decision_document(
         user_input,
         _render_json_block("Planning bundle", planning_bundle),
     )
-    pydantic_output = _execute_crewai_hierarchical_crew(
+    pydantic_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
         crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
@@ -1465,6 +1503,7 @@ def _run_review_decision_document(
         run_id=run_id,
         model_override=model_override,
         temperature_override=temperature_override,
+        execution_mode="hierarchical",
     )
     decision = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
     if not isinstance(decision, dict):
@@ -2051,14 +2090,14 @@ def _run_single_task_document_crewai(
         )
     elif task == AgentTask.CREATE_WEEK_PLAN:
         def _planning_runner(loop_input: str) -> JsonMap:
-            return _execute_crewai_hierarchical_crew(
-            agent_cls=Agent,
-            crewai_llm_cls=LLM,
-            crew_cls=Crew,
-            task_cls=Task,
-            process_cls=Process,
-            runtime=runtime,
-            bundle=bundle,
+            return _execute_crewai_multiagent_crew(
+                agent_cls=Agent,
+                crewai_llm_cls=LLM,
+                crew_cls=Crew,
+                task_cls=Task,
+                process_cls=Process,
+                runtime=runtime,
+                bundle=bundle,
                 manager_agent_name="week_plan_manager",
                 crew_name="week_planning",
                 crew_task_names=_WEEK_PLANNING_TASKS,
@@ -2072,6 +2111,7 @@ def _run_single_task_document_crewai(
                 run_id=run_id,
                 model_override=model_override,
                 temperature_override=temperature_override,
+                execution_mode="sequential",
             ).model_dump()
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
