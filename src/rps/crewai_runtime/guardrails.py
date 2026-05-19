@@ -15,6 +15,14 @@ from typing import Any, cast
 
 from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 from rps.crewai_runtime.telemetry import emit_runtime_event
+from rps.planning.contracts import (
+    blocking_messages,
+    validate_phase_against_execution_context,
+    validate_phase_s5_bands_against_context,
+    validate_season_plan_against_phase_load_context,
+    validate_season_plan_against_phase_slots,
+    validate_week_plan_against_week_context,
+)
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -80,6 +88,22 @@ def _coerce_mapping(result: Any) -> JsonMap | None:
             return None
         return decoded if isinstance(decoded, dict) else None
     return None
+
+
+def _as_float(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
+def _as_map(value: Any) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
 
 
 def typed_output_present(result: Any) -> GuardrailResult:
@@ -148,10 +172,56 @@ def phase_bundle_integrity(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Phase bundle must decode to an object.")
-    required = ("phase_range", "guardrails", "structure", "preview", "constraint_audit", "load_governance_audit")
+    required = ("phase_range", "week_blueprints", "guardrails", "structure", "preview", "constraint_audit", "load_governance_audit")
     missing = [field for field in required if field not in mapping]
     if missing:
         return (False, f"Phase bundle missing required keys: {', '.join(missing)}")
+    week_blueprints = mapping.get("week_blueprints")
+    if not isinstance(week_blueprints, list) or not week_blueprints:
+        return (False, "Phase bundle must include at least one week blueprint.")
+    return (True, mapping)
+
+
+def phase_bundle_matches_context(result: Any) -> GuardrailResult:
+    """Validate internal Phase bundle week blueprints against execution context."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Phase bundle must decode to an object.")
+    context = _phase_execution_context()
+    if not context:
+        return (True, mapping)
+    blueprints = [_as_map(item) for item in _as_list(mapping.get("week_blueprints"))]
+    if not blueprints:
+        return (False, "Phase bundle must include week_blueprints for contract validation.")
+    phase_payload = {
+        "data": {
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {
+                        "week": item.get("week"),
+                        "band": {"min": item.get("s5_band_min"), "max": item.get("s5_band_max")},
+                    }
+                    for item in blueprints
+                ]
+            },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": item.get("week"), "role": item.get("week_role")}
+                        for item in blueprints
+                    ]
+                }
+            },
+        }
+    }
+    issues = validate_phase_against_execution_context(
+        phase_payload=phase_payload,
+        phase_execution_context=context,
+    )
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
     return (True, mapping)
 
 
@@ -159,10 +229,109 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Season bundle must decode to an object.")
-    required = ("event_priority", "macrocycle")
+    required = ("event_priority", "macrocycle", "phase_blueprints")
     missing = [field for field in required if field not in mapping]
     if missing:
         return (False, f"Season bundle missing required keys: {', '.join(missing)}")
+    blueprints = mapping.get("phase_blueprints")
+    if not isinstance(blueprints, list) or not blueprints:
+        return (False, "Season bundle must include at least one phase blueprint.")
+    return (True, mapping)
+
+
+def season_bundle_matches_contract(result: Any) -> GuardrailResult:
+    """Validate internal Season bundle phase blueprints against deterministic context."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season bundle must decode to an object.")
+    phase_slot_context = _season_phase_slot_context()
+    if not phase_slot_context:
+        return (True, mapping)
+    blueprints = [_as_map(item) for item in _as_list(mapping.get("phase_blueprints"))]
+    candidate = {
+        "data": {
+            "phases": [
+                {
+                    "phase_id": item.get("phase_id"),
+                    "iso_week_range": item.get("iso_week_range"),
+                    "cycle": item.get("cycle"),
+                    "weekly_load_corridor": {
+                        "weekly_kj": {
+                            "min": item.get("load_corridor_min"),
+                            "max": item.get("load_corridor_max"),
+                        }
+                    },
+                }
+                for item in blueprints
+            ]
+        }
+    }
+    issues = validate_season_plan_against_phase_slots(
+        season_plan_payload=candidate,
+        phase_slot_context=phase_slot_context,
+    )
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
+    season_phase_load_context = _season_phase_load_context()
+    if season_phase_load_context:
+        issues = validate_season_plan_against_phase_load_context(
+            season_plan_payload=candidate,
+            season_phase_load_context=season_phase_load_context,
+        )
+        messages = blocking_messages(issues)
+        if messages:
+            return (False, "; ".join(messages[:5]))
+    return (True, mapping)
+
+
+def season_phase_load_feasibility(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season bundle must decode to an object.")
+    blueprints = mapping.get("phase_blueprints")
+    if not isinstance(blueprints, list) or not blueprints:
+        return (True, mapping)
+    corridor_max_values: list[float] = []
+    role_signatures: set[tuple[str, ...]] = set()
+    cycles: set[str] = set()
+    for blueprint in blueprints:
+        if not isinstance(blueprint, dict):
+            continue
+        phase_id = str(blueprint.get("phase_id") or "unknown")
+        max_value = _as_float(blueprint.get("load_corridor_max"))
+        availability_cap = _as_float(blueprint.get("availability_cap_kj"))
+        status = str(blueprint.get("load_feasibility_status") or "").lower()
+        if max_value is not None:
+            corridor_max_values.append(max_value)
+        cycle = str(blueprint.get("cycle") or "")
+        if cycle:
+            cycles.add(cycle)
+        roles = tuple(str(item) for item in blueprint.get("cadence_week_roles") or [] if str(item).strip())
+        if roles:
+            role_signatures.add(roles)
+        if max_value is not None and availability_cap is not None and max_value > availability_cap and "exception" not in status:
+            return (
+                False,
+                f"Season phase {phase_id} load_corridor_max {max_value:g} exceeds availability_cap_kj {availability_cap:g}.",
+            )
+        if blueprint.get("cycle") == "Peak" and max_value is not None:
+            build_max = [
+                _as_float(item.get("load_corridor_max"))
+                for item in blueprints
+                if isinstance(item, dict) and item.get("cycle") == "Build"
+            ]
+            build_max = [item for item in build_max if item is not None]
+            if build_max and max_value >= max(build_max):
+                return (False, f"Season Peak phase {phase_id} must show load reduction versus Build phases.")
+    if (
+        len(set(corridor_max_values)) == 1
+        and len(corridor_max_values) > 2
+        and role_signatures
+        and len(cycles) > 1
+    ):
+        return (False, "Season phase corridors are flat across phases despite cadence/phase-role load semantics.")
     return (True, mapping)
 
 
@@ -174,6 +343,50 @@ def week_bundle_integrity(result: Any) -> GuardrailResult:
     missing = [field for field in required if field not in mapping]
     if missing:
         return (False, f"Week bundle missing required keys: {', '.join(missing)}")
+    day_blueprints = mapping.get("day_blueprints")
+    workout_blueprints = mapping.get("workout_blueprints")
+    if not isinstance(day_blueprints, list) or len(day_blueprints) != 7:
+        return (False, "Week bundle day_blueprints must contain exactly seven Mon-Sun day blueprints.")
+    observed_days = [str(_as_map(item).get("day") or "") for item in day_blueprints]
+    if observed_days != ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]:
+        return (False, "Week bundle day_blueprints must be ordered Mon, Tue, Wed, Thu, Fri, Sat, Sun.")
+    if not isinstance(workout_blueprints, list):
+        return (False, "Week bundle workout_blueprints must be a list.")
+    return (True, mapping)
+
+
+def week_bundle_matches_context(result: Any) -> GuardrailResult:
+    """Validate internal Week bundle day blueprints against active calendar context."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week bundle must decode to an object.")
+    context = _week_calendar_context()
+    if not context:
+        return (True, mapping)
+    blueprints = [_as_map(item) for item in _as_list(mapping.get("day_blueprints"))]
+    if not blueprints:
+        return (False, "Week bundle must include day_blueprints for contract validation.")
+    expected_days = [_as_map(item) for item in _as_list(context.get("day_matrix"))]
+    for idx, expected in enumerate(expected_days):
+        if idx >= len(blueprints):
+            return (False, f"Week bundle missing day blueprint for {expected.get('day')} {expected.get('date')}.")
+        observed = blueprints[idx]
+        if observed.get("day") != expected.get("day") or observed.get("date") != expected.get("date"):
+            return (
+                False,
+                "Week bundle day_blueprints must match active week calendar; "
+                f"row {idx + 1} got {observed.get('day')} {observed.get('date')}, "
+                f"expected {expected.get('day')} {expected.get('date')}.",
+            )
+        if expected.get("fixed_rest_day") is True:
+            planned_duration = _as_float(observed.get("planned_duration_minutes")) or 0.0
+            planned_kj = _as_float(observed.get("planned_kj")) or 0.0
+            if planned_duration > 0 or planned_kj > 0 or observed.get("workout_id"):
+                return (
+                    False,
+                    f"Week bundle fixed rest day {expected.get('day')} must carry no duration, load, or workout.",
+                )
     return (True, mapping)
 
 
@@ -282,6 +495,15 @@ def season_phase_coverage_and_cadence(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Season output must decode to an object.")
+    phase_slot_context = _season_phase_slot_context()
+    if phase_slot_context:
+        issues = validate_season_plan_against_phase_slots(
+            season_plan_payload=mapping,
+            phase_slot_context=phase_slot_context,
+        )
+        messages = blocking_messages(issues)
+        if messages:
+            return (False, "; ".join(messages[:5]))
     candidate_document = mapping.get("candidate_document")
     candidate_map = candidate_document if isinstance(candidate_document, dict) else {}
     data = mapping.get("data") if "data" in mapping else candidate_map.get("data")
@@ -323,6 +545,25 @@ def season_phase_coverage_and_cadence(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def season_phase_load_context_match(result: Any) -> GuardrailResult:
+    """Validate Season Plan corridors against deterministic season phase load context."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season output must decode to an object.")
+    context = _season_phase_load_context()
+    if not context:
+        return (True, mapping)
+    issues = validate_season_plan_against_phase_load_context(
+        season_plan_payload=mapping,
+        season_phase_load_context=context,
+    )
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
+    return (True, mapping)
+
+
 def season_cycle_ordering(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
@@ -349,6 +590,16 @@ def phase_s5_band_match(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Phase guardrails output must decode to an object.")
+    context = _phase_execution_context()
+    if context:
+        issues = validate_phase_s5_bands_against_context(
+            phase_payload=mapping,
+            phase_execution_context=context,
+        )
+        messages = blocking_messages(issues)
+        if messages:
+            return (False, "; ".join(messages[:5]))
+        return (True, mapping)
     data = mapping.get("data")
     if not isinstance(data, dict):
         return (True, mapping)
@@ -376,6 +627,25 @@ def phase_s5_band_match(result: Any) -> GuardrailResult:
                 False,
                 f"weekly_kj_bands[{entry.get('week')}] does not match deterministic S5 band {expected[0]}-{expected[1]}.",
             )
+    return (True, mapping)
+
+
+def phase_execution_context_match(result: Any) -> GuardrailResult:
+    """Validate Phase artifact structure and bands against phase execution context."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Phase output must decode to an object.")
+    context = _phase_execution_context()
+    if not context:
+        return (True, mapping)
+    issues = validate_phase_against_execution_context(
+        phase_payload=mapping,
+        phase_execution_context=context,
+    )
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
     return (True, mapping)
 
 
@@ -422,11 +692,98 @@ def phase_weeks_match_range(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def phase_week_role_load_coherence(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Phase output must decode to an object.")
+    if "week_blueprints" in mapping:
+        blueprints = mapping.get("week_blueprints")
+        if not isinstance(blueprints, list) or not blueprints:
+            return (False, "Phase week_blueprints must be non-empty.")
+        ok, message = _check_role_band_sequence(
+            [
+                {
+                    "week": item.get("week"),
+                    "role": item.get("week_role"),
+                    "min": item.get("s5_band_min"),
+                    "max": item.get("s5_band_max"),
+                    "notes": " ".join(str(warn) for warn in item.get("warnings") or []),
+                }
+                for item in blueprints
+                if isinstance(item, dict)
+            ]
+        )
+        return (ok, mapping if ok else message)
+    data = mapping.get("data")
+    if not isinstance(data, dict):
+        return (True, mapping)
+    bands_by_week: dict[str, JsonMap] = {}
+    load_ranges = data.get("load_ranges")
+    if isinstance(load_ranges, dict):
+        for entry in load_ranges.get("weekly_kj_bands") or []:
+            if not isinstance(entry, dict):
+                continue
+            week = _coerce_week_key(entry.get("week"))
+            band = entry.get("band")
+            if week and isinstance(band, dict):
+                bands_by_week[week] = band
+    skeleton = data.get("week_skeleton_logic")
+    roles_map = skeleton.get("week_roles") if isinstance(skeleton, dict) else {}
+    role_entries = roles_map.get("week_roles") if isinstance(roles_map, dict) else []
+    sequence = []
+    for entry in role_entries or []:
+        if not isinstance(entry, dict):
+            continue
+        week = _coerce_week_key(entry.get("week"))
+        band = bands_by_week.get(week or "")
+        if not week or not band:
+            continue
+        sequence.append(
+            {
+                "week": week,
+                "role": entry.get("role"),
+                "min": band.get("min"),
+                "max": band.get("max"),
+                "notes": band.get("notes"),
+            }
+        )
+    if not sequence:
+        return (True, mapping)
+    ok, message = _check_role_band_sequence(sequence)
+    return (ok, mapping if ok else message)
+
+
 def _extract_expected_s5_band(notes: str) -> tuple[int, int] | None:
     match = re.search(r"S5(?: deterministic)? band(?: is|=|:)?\s*(\d+)\s*(?:-|/|to)\s*(\d+)", notes, re.I)
     if not match:
         return None
     return (int(match.group(1)), int(match.group(2)))
+
+
+def _check_role_band_sequence(sequence: list[JsonMap]) -> GuardrailResult:
+    previous_load_max: float | None = None
+    previous_load_role = ""
+    for entry in sequence:
+        role = str(entry.get("role") or "").upper()
+        max_value = _as_float(entry.get("max"))
+        notes = str(entry.get("notes") or "").lower()
+        if max_value is None:
+            continue
+        fallback_allows_flat = "fallback_level 4" in notes or "fallback_level 5" in notes or "s5 fallback" in notes
+        if role in {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"} and previous_load_max is not None:
+            required_factor = 0.92 if role in {"MINI_RESET", "SHORTENED_MINI_RESET"} else 0.82
+            if max_value >= previous_load_max * required_factor and not fallback_allows_flat:
+                return (
+                    False,
+                    f"{entry.get('week')} {role} band must reduce materially versus prior load role {previous_load_role}.",
+                )
+        if role in {"RELOAD", "SHORTENED_RELOAD"} and previous_load_max is not None:
+            if max_value > previous_load_max * 1.13 and not fallback_allows_flat:
+                return (False, f"{entry.get('week')} {role} band reload exceeds progressive-overload bounds.")
+        if role.startswith("LOAD") or role in {"RELOAD", "SHORTENED_CONSOLIDATION", "SHORTENED_RELOAD"}:
+            previous_load_max = max_value
+            previous_load_role = role
+    return (True, sequence)
 
 
 def _iso_week_key(week: IsoWeek) -> str:
@@ -481,6 +838,42 @@ def week_corridor_and_capacity_check(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def week_active_corridor_match(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week plan output must decode to an object.")
+    active_band = _active_weekly_band_from_context()
+    if not active_band:
+        return (True, mapping)
+    data = mapping.get("data")
+    if not isinstance(data, dict):
+        return (True, mapping)
+    summary = data.get("week_summary")
+    if not isinstance(summary, dict):
+        return (True, mapping)
+    corridor = summary.get("weekly_load_corridor_kj") or summary.get("weekly_load_corridor")
+    if not isinstance(corridor, dict):
+        return (False, "Week summary must include weekly_load_corridor_kj matching active Phase/S5 band.")
+    observed_min = _as_float(corridor.get("min"))
+    observed_max = _as_float(corridor.get("max"))
+    expected_min = _as_float(active_band.get("min"))
+    expected_max = _as_float(active_band.get("max"))
+    if None in {observed_min, observed_max, expected_min, expected_max}:
+        return (True, mapping)
+    if abs(cast(float, observed_min) - cast(float, expected_min)) > 0.001 or abs(cast(float, observed_max) - cast(float, expected_max)) > 0.001:
+        return (
+            False,
+            "Week weekly_load_corridor_kj must exactly mirror active Phase/S5 band "
+            f"{expected_min:g}-{expected_max:g}; got {observed_min:g}-{observed_max:g}.",
+        )
+    planned = _as_float(summary.get("planned_weekly_load_kj"))
+    if planned is not None and planned < cast(float, expected_min):
+        return (False, "Week planned_weekly_load_kj is below active Phase/S5 weekly band.")
+    if planned is not None and planned > cast(float, expected_max):
+        return (False, "Week planned_weekly_load_kj exceeds active Phase/S5 weekly band.")
+    return (True, mapping)
+
+
 def week_recovery_day_load_check(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
@@ -497,6 +890,34 @@ def week_recovery_day_load_check(result: Any) -> GuardrailResult:
         planned_value = float(planned) if isinstance(planned, (int, float)) else 0.0
         if role in {"REST", "OFF_BIKE"} and (planned_value > 0 or workout_id):
             return (False, f"{role} day {entry.get('day')} must not carry planned load or a workout_id.")
+    return (True, mapping)
+
+
+def week_agenda_shape_and_calendar_check(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week plan output must decode to an object.")
+    data = mapping.get("data")
+    if not isinstance(data, dict):
+        return (True, mapping)
+    agenda = data.get("agenda")
+    if not isinstance(agenda, list):
+        return (False, "Week plan agenda must be a list.")
+    target_week = _target_week_from_context_or_meta(mapping)
+    if target_week is None:
+        return (True, mapping)
+    try:
+        from rps.planning.week_availability import validate_week_plan_daily_availability
+
+        issues = validate_week_plan_daily_availability(
+            week_plan_payload=mapping,
+            availability_payload={},
+            target_week=target_week,
+        )
+    except Exception as exc:
+        return (False, f"Week agenda calendar check failed: {exc}")
+    if issues:
+        return (False, "; ".join(issue.format() for issue in issues[:5]))
     return (True, mapping)
 
 
@@ -528,6 +949,67 @@ def week_daily_availability_check(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def week_phase_role_alignment_check(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week plan output must decode to an object.")
+    context = _week_calendar_context()
+    if not context:
+        return (True, mapping)
+    data = mapping.get("data")
+    if not isinstance(data, dict):
+        return (True, mapping)
+    agenda = [entry for entry in _as_list(data.get("agenda")) if isinstance(entry, dict)]
+    allowed_roles = {str(item).upper() for item in _as_list(context.get("allowed_day_roles")) if str(item).strip()}
+    forbidden_roles = {str(item).upper() for item in _as_list(context.get("forbidden_day_roles")) if str(item).strip()}
+    quality_count = 0
+    for entry in agenda:
+        role = str(entry.get("day_role") or "").upper()
+        if role == "QUALITY":
+            quality_count += 1
+        if allowed_roles and role not in allowed_roles:
+            return (False, f"Week agenda day {entry.get('day')} uses day_role {role}, outside allowed phase roles {sorted(allowed_roles)}.")
+        if role in forbidden_roles:
+            return (False, f"Week agenda day {entry.get('day')} uses forbidden phase day_role {role}.")
+    cap = _as_float(context.get("quality_day_cap"))
+    if cap is not None and quality_count > int(cap):
+        return (False, f"Week agenda has {quality_count} QUALITY days, exceeding phase quality_day_cap {int(cap)}.")
+    week_role = str(context.get("phase_week_role") or context.get("phase_role_for_week") or "").upper()
+    if week_role in {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"} and quality_count > 0:
+        return (False, f"{week_role} week must not schedule QUALITY days.")
+    forbidden_domains = {str(item).upper().replace(" ", "_") for item in _as_list(context.get("forbidden_intensity_domains"))}
+    allowed_domains = {str(item).upper().replace(" ", "_") for item in _as_list(context.get("allowed_intensity_domains"))}
+    domain_hits = _workout_domain_hits(data)
+    if forbidden_domains:
+        forbidden_used = sorted(domain_hits & forbidden_domains)
+        if forbidden_used:
+            return (False, f"Week workouts use forbidden phase intensity domains: {', '.join(forbidden_used)}.")
+    if allowed_domains:
+        domain_outside = sorted(domain_hits - allowed_domains - {"NONE", "RECOVERY", "ENDURANCE"})
+        if domain_outside:
+            return (False, f"Week workouts use intensity domains outside phase allowance: {', '.join(domain_outside)}.")
+    return (True, mapping)
+
+
+def week_contract_context_match(result: Any) -> GuardrailResult:
+    """Validate Week Plan against active deterministic week context."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week plan output must decode to an object.")
+    context = _week_calendar_context()
+    if not context:
+        return (True, mapping)
+    issues = validate_week_plan_against_week_context(
+        week_plan_payload=mapping,
+        week_calendar_context=context,
+    )
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
+    return (True, mapping)
+
+
 def week_exportability_check(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
@@ -541,6 +1023,80 @@ def week_exportability_check(result: Any) -> GuardrailResult:
     if issues:
         return (False, "; ".join(issue.format() for issue in issues[:5]))
     return (True, mapping)
+
+
+def week_workout_structure_policy_check(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week plan output must decode to an object.")
+    try:
+        from rps.workouts.validator import collect_week_plan_export_issues
+
+        issues = collect_week_plan_export_issues(mapping)
+    except Exception as exc:
+        return (False, f"Week workout structure check failed: {exc}")
+    if issues:
+        return (False, "; ".join(issue.format() for issue in issues[:5]))
+    return (True, mapping)
+
+
+def _active_weekly_band_from_context() -> JsonMap:
+    context = _week_calendar_context()
+    active_band = _as_map(context.get("active_weekly_kj_band"))
+    if active_band:
+        return active_band
+    phase_band = _as_map(context.get("phase_weekly_kj_band"))
+    if phase_band:
+        return phase_band
+    return _as_map(context.get("active_s5_band"))
+
+
+def _week_calendar_context() -> JsonMap:
+    context = _GUARDRAIL_CONTEXT.get({})
+    return _as_map(context.get("week_calendar_context"))
+
+
+def _phase_execution_context() -> JsonMap:
+    context = _GUARDRAIL_CONTEXT.get({})
+    return _as_map(context.get("phase_execution_context"))
+
+
+def _season_phase_slot_context() -> JsonMap:
+    context = _GUARDRAIL_CONTEXT.get({})
+    return _as_map(context.get("phase_slot_context"))
+
+
+def _season_phase_load_context() -> JsonMap:
+    context = _GUARDRAIL_CONTEXT.get({})
+    return _as_map(context.get("season_phase_load_context"))
+
+
+def _target_week_from_context_or_meta(mapping: JsonMap) -> IsoWeek | None:
+    context = _GUARDRAIL_CONTEXT.get({})
+    target_week = context.get("target_week")
+    if isinstance(target_week, IsoWeek):
+        return target_week
+    if isinstance(target_week, dict):
+        year = target_week.get("year")
+        week = target_week.get("week")
+        if isinstance(year, int) and isinstance(week, int):
+            return IsoWeek(year, week)
+    return parse_iso_week(_as_map(mapping.get("meta")).get("iso_week"))
+
+
+def _workout_domain_hits(data: JsonMap) -> set[str]:
+    hits: set[str] = set()
+    domains = {"RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD", "VO2MAX"}
+    for workout in _as_list(data.get("workouts")):
+        workout_map = _as_map(workout)
+        haystack = " ".join(
+            str(workout_map.get(field) or "")
+            for field in ("title", "notes", "workout_text")
+        ).upper().replace(" ", "_").replace("-", "_")
+        for domain in domains:
+            if domain in haystack:
+                hits.add(domain)
+    return hits
 
 
 def des_diagnostic_only(result: Any) -> GuardrailResult:
@@ -573,20 +1129,32 @@ REGISTRY: dict[str, GuardrailFn] = {
     "pending_resolution_summary_present": pending_resolution_summary_present,
     "audit_lists_are_lists": audit_lists_are_lists,
     "phase_bundle_integrity": phase_bundle_integrity,
+    "phase_bundle_matches_context": phase_bundle_matches_context,
+    "phase_week_role_load_coherence": phase_week_role_load_coherence,
     "season_bundle_integrity": season_bundle_integrity,
+    "season_bundle_matches_contract": season_bundle_matches_contract,
+    "season_phase_load_feasibility": season_phase_load_feasibility,
     "week_bundle_integrity": week_bundle_integrity,
+    "week_bundle_matches_context": week_bundle_matches_context,
     "review_decision_integrity": review_decision_integrity,
     "artifact_envelope_basic": artifact_envelope_basic,
     "artifact_meta_data_present": artifact_meta_data_present,
     "artifact_schema_valid": artifact_schema_valid,
     "season_scenario_selection_shape": season_scenario_selection_shape,
     "season_phase_coverage_and_cadence": season_phase_coverage_and_cadence,
+    "season_phase_load_context_match": season_phase_load_context_match,
     "season_cycle_ordering": season_cycle_ordering,
     "phase_s5_band_match": phase_s5_band_match,
+    "phase_execution_context_match": phase_execution_context_match,
     "phase_weeks_match_range": phase_weeks_match_range,
     "week_corridor_and_capacity_check": week_corridor_and_capacity_check,
+    "week_active_corridor_match": week_active_corridor_match,
     "week_recovery_day_load_check": week_recovery_day_load_check,
+    "week_agenda_shape_and_calendar_check": week_agenda_shape_and_calendar_check,
     "week_daily_availability_check": week_daily_availability_check,
+    "week_phase_role_alignment_check": week_phase_role_alignment_check,
+    "week_contract_context_match": week_contract_context_match,
+    "week_workout_structure_policy_check": week_workout_structure_policy_check,
     "week_exportability_check": week_exportability_check,
     "des_diagnostic_only": des_diagnostic_only,
 }

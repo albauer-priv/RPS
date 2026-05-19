@@ -133,6 +133,28 @@ class SeasonPlanAuditModel(StrictOutputModel):
     cadence_authority_ok: bool = True
 
 
+class SeasonPhaseBlueprintModel(StrictOutputModel):
+    """Internal phase blueprint preserving selected-scenario cadence semantics."""
+
+    phase_id: str
+    iso_week_range: str
+    scenario_cadence: str
+    season_phase_role: str | None = None
+    cadence_week_roles: list[str] = Field(default_factory=list)
+    cycle: Literal["Base", "Build", "Peak", "Transition"] | None = None
+    event_constraints: list[str] = Field(default_factory=list)
+    load_corridor_min: int | None = None
+    load_corridor_max: int | None = None
+    availability_cap_kj: int | None = None
+    baseline_load_kj: int | None = None
+    role_week_load_bands: list[str] = Field(default_factory=list)
+    progression_trace: list[str] = Field(default_factory=list)
+    load_feasibility_status: str | None = None
+    taper_intent: str | None = None
+    allowed_domains: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class ReplanInstructionModel(StrictOutputModel):
     """Structured replan instruction emitted by review crews."""
 
@@ -153,6 +175,7 @@ class SeasonPlanBundleModel(StrictOutputModel):
     macrocycle: SeasonMacrocycleDraftModel
     constraints: list[ConstraintAuditModel] = Field(default_factory=list)
     load_governance: list[LoadGovernanceAuditModel] = Field(default_factory=list)
+    phase_blueprints: list[SeasonPhaseBlueprintModel] = Field(default_factory=list)
     decision_summary: list[str] = Field(default_factory=list)
     candidate_document_summary: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
@@ -227,6 +250,20 @@ class PhaseBundleDecisionModel(StrictOutputModel):
     override_rationale: list[str] = Field(default_factory=list)
 
 
+class PhaseWeekBlueprintModel(StrictOutputModel):
+    """Internal phase week blueprint tying phase role, week role, and S5 band."""
+
+    week: str
+    phase_role: str | None = None
+    week_role: str
+    s5_band_min: int | None = None
+    s5_band_max: int | None = None
+    role_progression_band: str | None = None
+    allowed_domains: list[str] = Field(default_factory=list)
+    event_implication: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
 class PhaseBundleModel(StrictOutputModel):
     """Internal season-authorized phase bundle before deterministic split."""
 
@@ -234,6 +271,7 @@ class PhaseBundleModel(StrictOutputModel):
     phase_id: str | None = None
     phase_type: str | None = None
     cadence_source: str | None = None
+    week_blueprints: list[PhaseWeekBlueprintModel] = Field(default_factory=list)
     guardrails: PhaseGuardrailsPayloadModel
     structure: PhaseStructurePayloadModel
     preview: PhasePreviewPayloadModel
@@ -257,10 +295,45 @@ class PhaseReviewDecisionModel(StrictOutputModel):
     writer_ready_summary: str = ""
 
 
+class WeekDayBlueprintModel(StrictOutputModel):
+    """Internal day-level week execution blueprint before WEEK_PLAN writing."""
+
+    day: Literal["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    date: str
+    fixed_rest_day: bool = False
+    availability_cap_minutes: int | None = None
+    phase_role: str | None = None
+    phase_week_role: str | None = None
+    day_role: str
+    intended_domain: str | None = None
+    planned_duration_minutes: int = 0
+    planned_kj: int = 0
+    workout_id: str | None = None
+    event_implication: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
+class WeekWorkoutBlueprintModel(StrictOutputModel):
+    """Internal workout blueprint for role-aware authoring and syntax review."""
+
+    workout_id: str
+    date: str
+    day_role: str
+    intensity_domain: str | None = None
+    planned_duration_minutes: int
+    planned_kj: int
+    required_sections: list[str] = Field(default_factory=list)
+    syntax_profile: str = "RPS_INTERVALS_CYCLING_SUBSET"
+    exportability_status: Literal["pending", "valid", "invalid"] = "pending"
+    warnings: list[str] = Field(default_factory=list)
+
+
 class WeekPlanBundleModel(StrictOutputModel):
     """Internal week planning bundle before review and writing."""
 
     context_summary: WeekContextAssessmentModel | None = None
+    day_blueprints: list[WeekDayBlueprintModel] = Field(default_factory=list)
+    workout_blueprints: list[WeekWorkoutBlueprintModel] = Field(default_factory=list)
     constraint_summary: list[str] = Field(default_factory=list)
     load_target_summary: list[str] = Field(default_factory=list)
     revision_summary: list[str] = Field(default_factory=list)

@@ -9,7 +9,7 @@ Translate a weekly corridor into executable week targets.
 
 Method:
 1. Start from the active phase/S5 corridor, capacity context, and phase intent.
-2. Use `Deterministic Week Calendar and Availability Context` for the exact Mon-Sun dates, fixed rest days, day availability, logistics, events, and active S5 band.
+2. Use `Deterministic Week Calendar and Availability Context` for exact Mon-Sun dates, phase role, active phase week role, fixed rest days, day availability, logistics, events, and active S5 band.
 3. Use `Deterministic Workout Load Estimation Context` for code-owned per-hour mechanical/governance load calibration.
 4. Allocate load to structurally important days first: key sessions, durable endurance, and protected recovery.
 5. Reconcile residual load with duration-first adjustments before any intensity escalation.
@@ -19,6 +19,8 @@ Method:
 Distribution rules:
 - key load belongs on role-consistent key days first
 - recovery days are protected before residual load is distributed elsewhere
+- fixed rest days always stay `00:00`, `0 kJ`, and `workout_id null`
+- no day may exceed its deterministic availability cap
 - long endurance load should stay durable rather than becoming disguised quality work
 - slightly under target with explanation is safer than structurally incoherent precision
 
@@ -33,6 +35,10 @@ Reconciliation rules:
 Progressive-overload execution:
 - execute the active phase/week role and preserve cadence selected upstream
 - load weeks progress primarily through time/kJ, not intensity density
+- `LOAD_*` weeks may carry role-consistent key work only within the active phase quality cap
+- `DELOAD`, `MINI_RESET`, and `SHORTENED_MINI_RESET` weeks must show real load and quality reduction
+- `RELOAD` weeks rebuild conservatively without exceeding progressive-overload intent
+- event weeks use event-specific execution and must not become generic quality weeks
 - deload, mini-reset, reload, and re-entry weeks preserve their role even if the corridor midpoint is higher
 - default re-entry target is `BL_kJ * 0.90 to 1.00`; high fatigue uses `0.85 to 0.95`; robust/fresh uses `0.95 to 1.05` only without spike/dominance warnings
 - for `3:1`, apply W1/W2/W3 intent as `BL * 1.00-1.05`, `W1 * 1.08-1.12`, `W2 * 1.06-1.10`
@@ -43,6 +49,7 @@ Load semantics:
 - work from governance load (`planned_weekly_load_kj`) when matching the corridor
 - `week_summary.planned_weekly_load_kj` must remain inside the active Phase/S5 band unless a guarded replan is requested
 - `week_summary.weekly_load_corridor_kj` mirrors the active Phase/S5 `weekly_kj_bands[w]`
+- when availability cannot support the active band, stop or mark replan; do not add intensity to force the number
 - preserve the distinction between corridor compliance and raw mechanical work
 - when a workout estimate is weak, expose fallback assumptions instead of pretending precision
 - use injected deterministic S5/capacity values directly and preserve their exact bounds

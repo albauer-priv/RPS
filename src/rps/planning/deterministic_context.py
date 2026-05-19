@@ -13,7 +13,9 @@ from typing import Any
 
 from rps.planning.load_bands import (
     build_load_capacity_context,
+    build_season_phase_load_context,
     render_load_capacity_context_block,
+    render_season_phase_load_context_block,
 )
 from rps.planning.season_structure import (
     build_cadence_options_context,
@@ -33,6 +35,17 @@ from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, range_contains, wee
 from rps.workspace.phase_resolution import date_to_iso_week
 
 JsonMap = dict[str, Any]
+CADENCE_WEEK_ROLE_PATTERNS = {
+    "2:1": ["LOAD_1", "LOAD_2", "DELOAD"],
+    "3:1": ["LOAD_1", "LOAD_2", "LOAD_3", "DELOAD"],
+    "2:1:1": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+}
+SHORTENED_WEEK_ROLE_PATTERN = [
+    "SHORTENED_RE_ENTRY",
+    "SHORTENED_CONSOLIDATION",
+    "SHORTENED_MINI_RESET",
+    "SHORTENED_RELOAD",
+]
 
 
 @dataclass(frozen=True)
@@ -134,6 +147,18 @@ def build_load_capacity_block(**kwargs: Any) -> DeterministicContextBlock:
     )
 
 
+def build_season_phase_load_block(**kwargs: Any) -> DeterministicContextBlock:
+    """Build deterministic season phase load context."""
+
+    payload = build_season_phase_load_context(**kwargs)
+    return DeterministicContextBlock(
+        name="season_phase_load",
+        title="Deterministic Season Phase Load Context",
+        payload=payload,
+        markdown=render_season_phase_load_context_block(payload),
+    )
+
+
 def build_workout_load_method_block(**kwargs: Any) -> DeterministicContextBlock:
     """Build deterministic workout-load estimation context."""
 
@@ -152,6 +177,7 @@ def build_phase_execution_context(
     phase_info: Any,
     phase_range: IsoWeekRange,
     season_plan_payload: JsonMap | None = None,
+    phase_slot_context: JsonMap | None = None,
     availability_payload: JsonMap | None = None,
     logistics_payload: JsonMap | None = None,
     planning_events_payload: JsonMap | None = None,
@@ -164,6 +190,22 @@ def build_phase_execution_context(
     phase_raw = _as_map(getattr(phase_info, "raw", {}))
     phase_index = _phase_index(season_plan_payload or {}, str(getattr(phase_info, "phase_id", "")))
     active_s5 = _active_s5_band(load_capacity_context or {}, target_key)
+    active_slot = _phase_slot_for_context(
+        phase_slot_context=phase_slot_context or {},
+        phase_id=str(getattr(phase_info, "phase_id", "")),
+        phase_range=phase_range,
+    )
+    scenario_cadence = str(active_slot.get("scenario_cadence") or "").strip() or None
+    cadence_week_roles = [
+        str(item)
+        for item in _as_list(active_slot.get("cadence_week_roles"))
+        if str(item).strip()
+    ]
+    week_role_by_iso_week = {
+        _week_key(week): cadence_week_roles[idx]
+        for idx, week in enumerate(weeks)
+        if idx < len(cadence_week_roles)
+    }
     return {
         "target_iso_week": target_key,
         "phase_id": getattr(phase_info, "phase_id", ""),
@@ -173,6 +215,13 @@ def build_phase_execution_context(
         "week_keys": [_week_key(week) for week in weeks],
         "week_index_within_phase": max(1, week_index(target_week) - week_index(phase_range.start) + 1),
         "cycle": phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
+        "phase_role": phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
+        "scenario_cadence": scenario_cadence,
+        "phase_cadence_week_roles": cadence_week_roles,
+        "week_role_by_iso_week": week_role_by_iso_week,
+        "season_phase_slot_source": "Deterministic Season Phase Slot Context",
+        "season_phase_slot": active_slot,
+        "is_shortened_phase": any(str(role).startswith("SHORTENED_") for role in cadence_week_roles),
         "deload_intent": phase_raw.get("deload"),
         "deload_rationale": phase_raw.get("deload_rationale"),
         "target_week_s5_band": active_s5.get("band"),
@@ -181,6 +230,11 @@ def build_phase_execution_context(
         "fixed_rest_days": _fixed_rest_days(availability_payload or {}),
         "logistics_in_phase": _dated_items_in_range(logistics_payload or {}, phase_range, field="events"),
         "events_in_phase": _dated_items_in_range(planning_events_payload or {}, phase_range, field="events"),
+        "blocking_issues": _phase_execution_blocking_issues(
+            weeks=weeks,
+            cadence_week_roles=cadence_week_roles,
+            scenario_cadence=scenario_cadence,
+        ),
     }
 
 
@@ -199,10 +253,19 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
         f"phase_length_weeks: {context.get('phase_length_weeks')}",
         f"week_index_within_phase: {context.get('week_index_within_phase')}",
         f"cycle: {context.get('cycle')}",
+        f"phase_role: {context.get('phase_role')}",
+        f"scenario_cadence: {context.get('scenario_cadence')}",
+        "phase_cadence_week_roles: "
+        + ", ".join(str(item) for item in _as_list(context.get("phase_cadence_week_roles"))),
         f"deload_intent: {context.get('deload_intent')}",
         f"deload_rationale: {context.get('deload_rationale')}",
         "required_phase_weeks: " + ", ".join(str(item) for item in _as_list(context.get("week_keys"))),
     ]
+    role_map = _as_map(context.get("week_role_by_iso_week"))
+    if role_map:
+        lines.append("week_role_by_iso_week:")
+        for week in _as_list(context.get("week_keys")):
+            lines.append(f"- {week}: {role_map.get(str(week))}")
     target_band = _as_map(context.get("target_week_s5_band"))
     if target_band:
         lines.append(f"target_week_s5_band: min {target_band.get('min')}, max {target_band.get('max')}")
@@ -219,6 +282,7 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
     _append_list(lines, "fixed_rest_days", context.get("fixed_rest_days"))
     _append_event_list(lines, "logistics_in_phase", context.get("logistics_in_phase"))
     _append_event_list(lines, "events_in_phase", context.get("events_in_phase"))
+    _append_list(lines, "blocking_issues", context.get("blocking_issues"))
     return "\n".join(lines) + "\n"
 
 
@@ -231,6 +295,7 @@ def build_week_calendar_context(
     logistics_payload: JsonMap | None = None,
     planning_events_payload: JsonMap | None = None,
     phase_guardrails_payload: JsonMap | None = None,
+    phase_structure_payload: JsonMap | None = None,
     load_capacity_context: JsonMap | None = None,
 ) -> JsonMap:
     """Return target-week calendar, availability, and active-band context."""
@@ -240,13 +305,23 @@ def build_week_calendar_context(
     fixed_rest = _fixed_rest_days(availability_payload or {})
     table = _availability_table(availability_payload or {})
     active_s5 = _active_s5_band(load_capacity_context or {}, target_key)
+    phase_band = _phase_guardrail_band(phase_guardrails_payload or {}, target_key)
+    phase_role = _phase_role_from_structure(phase_structure_payload or {}, phase_info)
+    phase_week_role = _phase_week_role_from_structure(phase_structure_payload or {}, target_key)
+    week_role_source = "PHASE_STRUCTURE.week_skeleton_logic.week_roles" if phase_week_role else "phase_position_fallback"
+    if not phase_week_role:
+        phase_week_role = _phase_role_for_week(phase_info, target_week, phase_range)
     return {
         "target_iso_week": target_key,
         "week_start_date": week_start.isoformat(),
         "week_end_date": (week_start + timedelta(days=6)).isoformat(),
         "phase_id": getattr(phase_info, "phase_id", ""),
         "phase_iso_week_range": phase_range.range_key,
-        "phase_role_for_week": _phase_role_for_week(phase_info, target_week, phase_range),
+        "phase_cycle": phase_role,
+        "phase_role": phase_role,
+        "phase_week_role": phase_week_role,
+        "phase_role_for_week": phase_week_role,
+        "phase_week_role_source": week_role_source,
         "day_matrix": [
             _day_context_row(week_start + timedelta(days=offset), table, fixed_rest, logistics_payload or {}, planning_events_payload or {})
             for offset in range(7)
@@ -254,9 +329,15 @@ def build_week_calendar_context(
         "fixed_rest_days": fixed_rest,
         "active_s5_band": active_s5.get("band"),
         "active_s5_trace": active_s5.get("trace"),
-        "phase_weekly_kj_band": _phase_guardrail_band(phase_guardrails_payload or {}, target_key),
+        "phase_weekly_kj_band": phase_band,
+        "active_weekly_kj_band": phase_band or active_s5.get("band"),
+        "allowed_day_roles": _allowed_day_roles(phase_guardrails_payload or {}),
+        "forbidden_day_roles": _forbidden_day_roles(phase_guardrails_payload or {}),
         "allowed_intensity_domains": _allowed_intensity_domains(phase_guardrails_payload or {}),
+        "forbidden_intensity_domains": _forbidden_intensity_domains(phase_guardrails_payload or {}),
+        "allowed_load_modalities": _allowed_load_modalities(phase_guardrails_payload or {}),
         "quality_day_cap": _quality_day_cap(phase_guardrails_payload or {}),
+        "week_skeleton_mandatory_elements": _week_skeleton_mandatory_elements(phase_structure_payload or {}),
         "event_proximity": build_event_proximity_context(
             target_week=target_week,
             planning_events_payload=planning_events_payload or {},
@@ -277,8 +358,16 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
         f"week_end_date: {context.get('week_end_date')}",
         f"phase_id: {context.get('phase_id')}",
         f"phase_iso_week_range: {context.get('phase_iso_week_range')}",
+        f"phase_cycle: {context.get('phase_cycle')}",
+        f"phase_role: {context.get('phase_role')}",
+        f"phase_week_role: {context.get('phase_week_role')}",
+        f"phase_week_role_source: {context.get('phase_week_role_source')}",
         f"phase_role_for_week: {context.get('phase_role_for_week')}",
+        "allowed_day_roles: " + ", ".join(str(item) for item in _as_list(context.get("allowed_day_roles"))),
+        "forbidden_day_roles: " + ", ".join(str(item) for item in _as_list(context.get("forbidden_day_roles"))),
         "allowed_intensity_domains: " + ", ".join(str(item) for item in _as_list(context.get("allowed_intensity_domains"))),
+        "forbidden_intensity_domains: " + ", ".join(str(item) for item in _as_list(context.get("forbidden_intensity_domains"))),
+        "allowed_load_modalities: " + ", ".join(str(item) for item in _as_list(context.get("allowed_load_modalities"))),
         f"quality_day_cap: {context.get('quality_day_cap')}",
     ]
     s5 = _as_map(context.get("active_s5_band"))
@@ -287,6 +376,16 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
     phase_band = _as_map(context.get("phase_weekly_kj_band"))
     if phase_band:
         lines.append(f"phase_weekly_kj_band: min {phase_band.get('min')}, max {phase_band.get('max')}")
+    active_band = _as_map(context.get("active_weekly_kj_band"))
+    if active_band:
+        lines.append(f"active_weekly_kj_band: min {active_band.get('min')}, max {active_band.get('max')}")
+    mandatory = _as_map(context.get("week_skeleton_mandatory_elements"))
+    if mandatory:
+        lines.append(
+            "week_skeleton_mandatory_elements: "
+            f"recovery_opportunities_min {mandatory.get('recovery_opportunities_min')}, "
+            f"endurance_anchor_required {mandatory.get('endurance_anchor_required')}"
+        )
     _append_list(lines, "fixed_rest_days", context.get("fixed_rest_days"))
     lines.append("day_matrix:")
     for row in _as_list(context.get("day_matrix")):
@@ -481,6 +580,43 @@ def _s5_bands_for_weeks(load_context: JsonMap, weeks: list[IsoWeek]) -> list[Jso
     return [_as_map(entry) for entry in _as_list(load_context.get("s5_bands")) if _as_map(entry).get("week") in wanted]
 
 
+def _scenario_cadence_from_phase(phase_raw: JsonMap) -> str | None:
+    return None
+
+
+def _cadence_week_roles_for_phase(*, phase_raw: JsonMap, cadence: str | None, length_weeks: int) -> list[str]:
+    return []
+
+
+def _phase_slot_for_context(*, phase_slot_context: JsonMap, phase_id: str, phase_range: IsoWeekRange) -> JsonMap:
+    """Return the deterministic season phase slot matching the active phase."""
+
+    range_key = phase_range.range_key
+    for slot in _as_list(phase_slot_context.get("phase_slots")):
+        slot_map = _as_map(slot)
+        if phase_id and str(slot_map.get("phase_id") or "") == phase_id:
+            return slot_map
+        if str(slot_map.get("iso_week_range") or "") == range_key:
+            return slot_map
+    return {}
+
+
+def _phase_execution_blocking_issues(
+    *,
+    weeks: list[IsoWeek],
+    cadence_week_roles: list[str],
+    scenario_cadence: str | None,
+) -> list[str]:
+    issues: list[str] = []
+    if len(cadence_week_roles) != len(weeks):
+        issues.append("phase cadence week roles do not cover every phase week.")
+    if not scenario_cadence:
+        issues.append("phase scenario cadence missing from deterministic phase slot context.")
+    if scenario_cadence and scenario_cadence not in CADENCE_WEEK_ROLE_PATTERNS:
+        issues.append("scenario cadence is unsupported for deterministic phase roles.")
+    return issues
+
+
 def _fixed_rest_days(availability_payload: JsonMap) -> list[str]:
     return [str(item) for item in _as_list(_as_map(availability_payload.get("data")).get("fixed_rest_days"))]
 
@@ -564,6 +700,28 @@ def _phase_role_for_week(phase_info: Any, target_week: IsoWeek, phase_range: Iso
     return "phase_middle_week"
 
 
+def _phase_role_from_structure(phase_structure_payload: JsonMap, phase_info: Any) -> str:
+    data = _as_map(phase_structure_payload.get("data"))
+    execution = _as_map(data.get("execution_principles"))
+    role = execution.get("phase_role") or data.get("phase_role")
+    if isinstance(role, str) and role.strip():
+        return role.strip()
+    raw = _as_map(getattr(phase_info, "raw", {}))
+    fallback = raw.get("cycle") or getattr(phase_info, "phase_type", "")
+    return str(fallback or "").strip()
+
+
+def _phase_week_role_from_structure(phase_structure_payload: JsonMap, week_key: str) -> str | None:
+    data = _as_map(phase_structure_payload.get("data"))
+    skeleton = _as_map(data.get("week_skeleton_logic"))
+    roles_wrapper = _as_map(skeleton.get("week_roles"))
+    for entry in _as_list(roles_wrapper.get("week_roles")):
+        entry_map = _as_map(entry)
+        if entry_map.get("week") == week_key and isinstance(entry_map.get("role"), str):
+            return str(entry_map.get("role")).strip()
+    return None
+
+
 def _phase_guardrail_band(phase_guardrails_payload: JsonMap, week_key: str) -> JsonMap:
     data = _as_map(phase_guardrails_payload.get("data"))
     guardrails = _as_map(data.get("load_guardrails"))
@@ -574,16 +732,52 @@ def _phase_guardrail_band(phase_guardrails_payload: JsonMap, week_key: str) -> J
     return {}
 
 
+def _allowed_day_roles(phase_guardrails_payload: JsonMap) -> list[str]:
+    data = _as_map(phase_guardrails_payload.get("data"))
+    semantics = _as_map(data.get("allowed_forbidden_semantics"))
+    return [str(item) for item in _as_list(semantics.get("allowed_day_roles"))]
+
+
+def _forbidden_day_roles(phase_guardrails_payload: JsonMap) -> list[str]:
+    data = _as_map(phase_guardrails_payload.get("data"))
+    semantics = _as_map(data.get("allowed_forbidden_semantics"))
+    return [str(item) for item in _as_list(semantics.get("forbidden_day_roles"))]
+
+
 def _allowed_intensity_domains(phase_guardrails_payload: JsonMap) -> list[str]:
     data = _as_map(phase_guardrails_payload.get("data"))
     semantics = _as_map(data.get("allowed_forbidden_semantics"))
     return [str(item) for item in _as_list(semantics.get("allowed_intensity_domains"))]
 
 
+def _forbidden_intensity_domains(phase_guardrails_payload: JsonMap) -> list[str]:
+    data = _as_map(phase_guardrails_payload.get("data"))
+    semantics = _as_map(data.get("allowed_forbidden_semantics"))
+    return [str(item) for item in _as_list(semantics.get("forbidden_intensity_domains"))]
+
+
+def _allowed_load_modalities(phase_guardrails_payload: JsonMap) -> list[str]:
+    data = _as_map(phase_guardrails_payload.get("data"))
+    semantics = _as_map(data.get("allowed_forbidden_semantics"))
+    return [str(item) for item in _as_list(semantics.get("allowed_load_modalities"))]
+
+
 def _quality_day_cap(phase_guardrails_payload: JsonMap) -> Any:
     data = _as_map(phase_guardrails_payload.get("data"))
+    semantics = _as_map(data.get("allowed_forbidden_semantics"))
+    quality_density = _as_map(semantics.get("quality_density"))
     caps = _as_map(data.get("density_caps") or data.get("load_guardrails"))
-    return caps.get("quality_day_cap") or caps.get("max_quality_days_per_week")
+    return (
+        quality_density.get("max_quality_days_per_week")
+        or caps.get("quality_day_cap")
+        or caps.get("max_quality_days_per_week")
+    )
+
+
+def _week_skeleton_mandatory_elements(phase_structure_payload: JsonMap) -> JsonMap:
+    data = _as_map(phase_structure_payload.get("data"))
+    skeleton = _as_map(data.get("week_skeleton_logic"))
+    return _as_map(skeleton.get("mandatory_elements"))
 
 
 def _append_list(lines: list[str], label: str, values: object) -> None:

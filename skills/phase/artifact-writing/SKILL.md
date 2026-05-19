@@ -3,14 +3,14 @@ name: artifact-writing
 description: Serialize approved phase artifacts without adding planning content.
 metadata:
   author: rps
-  version: "3.0"
+  version: "3.1"
 ---
-Write approved phase artefacts only: `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`.
+Write approved phase artefact data only: `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`.
 
 Method:
-1. Emit exactly one `{meta,data}` envelope per artefact.
+1. Prefer emitting the approved `data` payload per artefact. If the active task still requires an envelope, emit exactly one `{meta,data}` envelope per artefact.
 2. Preserve approved phase content faithfully and write only the approved planning decisions.
-3. Use exact constants and range semantics expected by each schema.
+3. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
 4. Validate each artefact against its own schema before any store call.
 
 `PHASE_GUARDRAILS` rules:
@@ -47,7 +47,7 @@ Positive operating guidance:
 - Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
-- Return only the schema-compliant artifact envelope required by the active task expected_output.
-- Include top-level `meta` and `data` content exactly as required by the artifact schema.
+- Return only the schema-compliant object required by the active task expected_output.
+- Focus on `data`; if an envelope is requested, `meta` is a runtime-overwritten placeholder/hint.
 - Preserve approved bundle content, review decisions, deterministic context, and trace references.
 - Emit only the artifact object.

@@ -193,8 +193,127 @@ def test_phase_slot_context_builds_shortened_first_then_full_slots() -> None:
     assert [slot["phase_id"] for slot in context["phase_slots"]] == ["P01", "P02", "P03"]
     assert context["phase_slots"][0]["iso_week_range"] == "2026-12--2026-13"
     assert context["phase_slots"][0]["is_shortened"] is True
+    assert context["phase_slots"][0]["scenario_cadence"] == "2:1"
+    assert context["phase_slots"][0]["cadence_week_roles"] == [
+        "SHORTENED_RE_ENTRY",
+        "SHORTENED_CONSOLIDATION",
+    ]
     assert context["phase_slots"][1]["iso_week_range"] == "2026-14--2026-16"
+    assert context["phase_slots"][1]["cadence_week_roles"] == ["LOAD_1", "LOAD_2", "DELOAD"]
     assert context["phase_slots"][2]["iso_week_range"] == "2026-17--2026-19"
+
+
+def test_phase_slot_context_derives_roles_from_selected_scenario_cadence() -> None:
+    selected = build_selected_scenario_structure_context(
+        season_scenarios_payload={
+            "data": {
+                "planning_horizon_weeks": 17,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced inherited cadence",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 5,
+                            "phase_plan_summary": {
+                                "full_phases": 3,
+                                "shortened_phases": [
+                                    {"len": 3, "count": 1},
+                                    {"len": 2, "count": 1},
+                                ],
+                            },
+                        },
+                    }
+                ],
+            }
+        },
+        selection_payload={"data": {"selected_scenario_id": "B"}},
+    )
+
+    context = build_phase_slot_context(
+        selected_structure_context=selected,
+        target_week=IsoWeek(2026, 21),
+    )
+
+    assert context["deload_cadence"] == "2:1:1"
+    assert context["coverage_matches_horizon"] is True
+    assert [slot["length_weeks"] for slot in context["phase_slots"]] == [3, 2, 4, 4, 4]
+    assert context["phase_slots"][0]["cadence_week_roles"] == [
+        "SHORTENED_RE_ENTRY",
+        "SHORTENED_CONSOLIDATION",
+        "SHORTENED_MINI_RESET",
+    ]
+    assert context["phase_slots"][1]["cadence_week_roles"] == [
+        "SHORTENED_RE_ENTRY",
+        "SHORTENED_CONSOLIDATION",
+    ]
+    assert context["phase_slots"][2]["cadence_week_roles"] == ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"]
+
+
+def test_i150546_kw21_scenario_b_slots_keep_selected_scenario_authority() -> None:
+    selected = build_selected_scenario_structure_context(
+        season_scenarios_payload={
+            "data": {
+                "planning_horizon_weeks": 17,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced Brevet-Specific Progression",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 5,
+                            "shortening_budget_weeks": 3,
+                            "phase_plan_summary": {
+                                "full_phases": 3,
+                                "shortened_phases": [
+                                    {"len": 3, "count": 1},
+                                    {"len": 2, "count": 1},
+                                ],
+                            },
+                        },
+                    }
+                ],
+            }
+        },
+        selection_payload={"data": {"selected_scenario_id": "B"}},
+    )
+
+    context = build_phase_slot_context(
+        selected_structure_context=selected,
+        target_week=IsoWeek(2026, 21),
+    )
+
+    assert context["deload_cadence"] == "2:1:1"
+    assert context["phase_count_expected"] == 5
+    assert [slot["iso_week_range"] for slot in context["phase_slots"]] == [
+        "2026-21--2026-23",
+        "2026-24--2026-25",
+        "2026-26--2026-29",
+        "2026-30--2026-33",
+        "2026-34--2026-37",
+    ]
+    assert context["phase_slots"][-1]["cadence_week_roles"] == ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"]
+
+
+def test_phase_slot_context_flags_inconsistent_selected_scenario_cadence() -> None:
+    context = build_phase_slot_context(
+        selected_structure_context={
+            "selected_scenario_id": "B",
+            "planning_horizon_weeks": 3,
+            "deload_cadence": "2:1:1",
+            "phase_length_weeks": 3,
+            "phase_count_expected": 1,
+            "full_phases": 1,
+            "shortened_phases": [],
+        },
+        target_week=IsoWeek(2026, 21),
+    )
+
+    assert context["blocking_issues"] == [
+        "Selected scenario phase_length_weeks does not match its inherited deload_cadence."
+    ]
 
 
 def test_phase_slot_context_block_renders_required_slots() -> None:
@@ -213,6 +332,8 @@ def test_phase_slot_context_block_renders_required_slots() -> None:
                     "iso_week_range": "2026-12--2026-13",
                     "length_weeks": 2,
                     "is_shortened": True,
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION"],
                     "week_keys": ["2026-12", "2026-13"],
                 }
             ],
@@ -221,3 +342,5 @@ def test_phase_slot_context_block_renders_required_slots() -> None:
 
     assert "**Deterministic Season Phase Slot Context**" in block
     assert "P01: 2026-12--2026-13" in block
+    assert "scenario_cadence 2:1" in block
+    assert "cadence_week_roles SHORTENED_RE_ENTRY, SHORTENED_CONSOLIDATION" in block

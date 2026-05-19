@@ -13,43 +13,67 @@ crews:
     skills:
       - skills/shared/runtime-boundaries
       - skills/shared/resolved-context-consumption
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
   season_review:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
+      - skills/shared/blueprint-contract-validation
       - skills/shared/traceability-and-naming
       - skills/shared/replan-instruction-authoring
   season_writer:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
+      - skills/shared/blueprint-bound-writing
       - skills/shared/traceability-and-naming
   phase_planning:
     skills:
       - skills/shared/runtime-boundaries
       - skills/shared/resolved-context-consumption
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
   phase_review:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
+      - skills/shared/blueprint-contract-validation
       - skills/shared/traceability-and-naming
       - skills/shared/replan-instruction-authoring
   phase_writer:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
+      - skills/shared/blueprint-bound-writing
       - skills/shared/traceability-and-naming
   week_planning:
     skills:
       - skills/shared/runtime-boundaries
       - skills/shared/resolved-context-consumption
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
   week_review:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
+      - skills/shared/blueprint-contract-validation
       - skills/shared/traceability-and-naming
       - skills/shared/replan-instruction-authoring
   week_writer:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/snapshot-memory-consumption
+      - skills/shared/contract-context-consumption
+      - skills/shared/blueprint-bound-writing
       - skills/shared/traceability-and-naming
   report_planning:
     skills:

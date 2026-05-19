@@ -11,6 +11,8 @@ Method:
 1. Treat macrocycle, governance, and constraint blockers as approval gates.
 2. Prefer bounded replan over broad restarts.
 3. Replan instructions must preserve valid event anchors and unaffected macrocycle decisions.
+4. If cadence, phase count, phase length, or ISO-week coverage conflicts with the selected Scenario, choose `replan_required` and target the Season synthesis/review specialists.
+5. If the final writer-ready summary lacks phase blueprint semantics, including inherited cadence roles and A/B event treatment, choose `replan_required` rather than approving a vague artifact handoff.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

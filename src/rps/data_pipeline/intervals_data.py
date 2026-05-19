@@ -36,7 +36,9 @@ from rps.data_pipeline.common import (
     resolve_athlete_id,
     resolve_schema_dir,
 )
+from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
+from rps.workspace.types import ArtifactType
 
 # === Export configuration ===
 SEPARATOR = ";"  # Intervals.icu export
@@ -149,6 +151,26 @@ REQUIRED_COLUMNS = [
     "Any Flag DES Long Build Candidate (bool)",
     "Any Flag Brevet Long Candidate (bool)",
 ]
+
+
+def _canonicalize_pipeline_payload(
+    *,
+    schema_dir: Path,
+    schema_file: str,
+    artifact_type: ArtifactType,
+    payload: dict[str, Any],
+) -> tuple[object, dict[str, Any]]:
+    """Return a validator and runtime-canonical envelope for data-pipeline outputs."""
+
+    registry = SchemaRegistry(schema_dir)
+    schema = registry.get_schema(schema_file)
+    validator = registry.validator_for(schema_file)
+    normalized = canonicalize_artifact_envelope_meta(
+        payload,
+        artifact_type=artifact_type,
+        schema=schema,
+    )
+    return validator, cast(dict[str, Any], normalized)
 
 
 def _value_present(val) -> bool:
@@ -954,7 +976,12 @@ def write_zone_model(
         return
 
     schema_dir = resolve_schema_dir()
-    validator = SchemaRegistry(schema_dir).validator_for("zone_model.schema.json")
+    validator, payload = _canonicalize_pipeline_payload(
+        schema_dir=schema_dir,
+        schema_file="zone_model.schema.json",
+        artifact_type=ArtifactType.ZONE_MODEL,
+        payload=payload,
+    )
     if not skip_validate:
         validate_or_raise(validator, payload)
 
@@ -1093,7 +1120,12 @@ def write_wellness(
     }
 
     schema_dir = resolve_schema_dir()
-    validator = SchemaRegistry(schema_dir).validator_for("wellness.schema.json")
+    validator, payload = _canonicalize_pipeline_payload(
+        schema_dir=schema_dir,
+        schema_file="wellness.schema.json",
+        artifact_type=ArtifactType.WELLNESS,
+        payload=payload,
+    )
     if not skip_validate:
         validate_or_raise(validator, payload)
 
@@ -1866,6 +1898,12 @@ def build_activities_actual_payloads_from_export_frame(
                 "notes": "Derived from Intervals.icu activity export.",
             },
         }
+        payload = _canonicalize_pipeline_payload(
+            schema_dir=schema_dir,
+            schema_file="activities_actual.schema.json",
+            artifact_type=ArtifactType.ACTIVITIES_ACTUAL,
+            payload=payload,
+        )[1]
         if not skip_validate:
             try:
                 validate_or_raise(validator, payload)
@@ -2541,6 +2579,12 @@ def compile_activities_trend(
             "notes": "Derived from Intervals.icu activity export.",
         },
     }
+    payload = _canonicalize_pipeline_payload(
+        schema_dir=schema_dir,
+        schema_file="activities_trend.schema.json",
+        artifact_type=ArtifactType.ACTIVITIES_TREND,
+        payload=payload,
+    )[1]
 
     if not skip_validate:
         try:
@@ -2704,7 +2748,12 @@ def compile_historical_baseline(
     }
 
     schema_dir = resolve_schema_dir()
-    validator = SchemaRegistry(schema_dir).validator_for("historical_baseline.schema.json")
+    validator, payload = _canonicalize_pipeline_payload(
+        schema_dir=schema_dir,
+        schema_file="historical_baseline.schema.json",
+        artifact_type=ArtifactType.HISTORICAL_BASELINE,
+        payload=payload,
+    )
     if not skip_validate:
         validate_or_raise(validator, payload)
 

@@ -57,6 +57,7 @@ from rps.crewai_runtime.telemetry import (
 )
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
+from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.types import ArtifactType
@@ -82,19 +83,6 @@ _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_DES_ANALYSIS_REPORT: "des_analysis_report",
 }
 
-_CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
-    ArtifactType.SEASON_SCENARIOS: "Season-Scenario-Agent",
-    ArtifactType.SEASON_SCENARIO_SELECTION: "Season-Scenario-Agent",
-    ArtifactType.SEASON_PLAN: "Season-Artifact-Writer",
-    ArtifactType.SEASON_PHASE_FEED_FORWARD: "Season-Artifact-Writer",
-    ArtifactType.PHASE_GUARDRAILS: "Phase-Artifact-Writer",
-    ArtifactType.PHASE_STRUCTURE: "Phase-Artifact-Writer",
-    ArtifactType.PHASE_PREVIEW: "Phase-Artifact-Writer",
-    ArtifactType.PHASE_FEED_FORWARD: "Phase-Artifact-Writer",
-    ArtifactType.WEEK_PLAN: "Week-Artifact-Writer",
-    ArtifactType.DES_ANALYSIS_REPORT: "Report-Artifact-Writer",
-}
-
 _SEASON_PLANNING_TASKS: tuple[str, ...] = (
     "season_context_read",
     "season_scenario_interpretation",
@@ -113,6 +101,7 @@ _SEASON_REVIEW_TASKS: tuple[str, ...] = (
     "season_governance_review",
     "season_constraints_review",
     "season_plan_audit",
+    "season_contract_review",
     "season_review",
 )
 
@@ -133,6 +122,7 @@ _PHASE_REVIEW_TASKS: tuple[str, ...] = (
     "phase_governance_review",
     "phase_structure_review",
     "phase_preview_review",
+    "phase_contract_review",
     "phase_review",
 )
 
@@ -149,6 +139,7 @@ _WEEK_REVIEW_TASKS: tuple[str, ...] = (
     "week_consistency_review",
     "week_load_governance_review",
     "week_workout_syntax_review",
+    "week_contract_review",
     "week_review",
 )
 
@@ -383,7 +374,7 @@ def _normalize_artifact_meta(document: JsonMap, artifact_type: ArtifactType) -> 
     if not isinstance(meta, dict):
         return document
     meta.setdefault("authority", "Binding")
-    owner = _CANONICAL_OWNER_BY_ARTIFACT.get(artifact_type)
+    owner = CANONICAL_OWNER_BY_ARTIFACT.get(artifact_type)
     if owner:
         meta["owner_agent"] = owner
     document["meta"] = meta
@@ -432,7 +423,7 @@ def _normalize_des_analysis_report(document: JsonMap) -> JsonMap:
         meta["schema_id"] = "DESAnalysisInterface"
         meta["schema_version"] = "1.1"
         meta["authority"] = "Binding"
-        meta["owner_agent"] = _CANONICAL_OWNER_BY_ARTIFACT[ArtifactType.DES_ANALYSIS_REPORT]
+        meta["owner_agent"] = CANONICAL_OWNER_BY_ARTIFACT[ArtifactType.DES_ANALYSIS_REPORT]
         if "notes" not in meta or meta.get("notes") is None:
             meta["notes"] = ""
         document["meta"] = meta

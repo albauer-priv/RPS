@@ -3,18 +3,14 @@ name: artifact-writing
 description: Serialize the approved DES analysis report without adding diagnostic reasoning.
 metadata:
   author: rps
-  version: "3.0"
+  version: "3.1"
 ---
-Write the approved `DES_ANALYSIS_REPORT` envelope only.
+Write the approved `DES_ANALYSIS_REPORT` data only.
 
 Method:
-1. Emit exactly one top-level `{meta,data}` object.
+1. Prefer emitting the approved `data` payload. If the active task still requires an envelope, emit exactly one top-level `{meta,data}` object.
 2. Preserve the approved diagnostic content exactly.
-3. Fill report constants exactly:
-   - `artifact_type = DES_ANALYSIS_REPORT`
-   - `schema_id = DESAnalysisInterface`
-   - `authority = Binding`
-   - `owner_agent = Performance-Analyst`
+3. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
 4. Validate against `des_analysis_report.schema.json` before storing.
 
 Required sections:
@@ -37,7 +33,7 @@ Hard rules:
 - stop on schema errors or missing required fields
 
 Output format:
-- Return only the schema-compliant artifact envelope required by the active task expected_output.
-- Include top-level `meta` and `data` content exactly as required by the artifact schema.
+- Return only the schema-compliant object required by the active task expected_output.
+- Focus on `data`; if an envelope is requested, `meta` is a runtime-overwritten placeholder/hint.
 - Preserve approved bundle content, review decisions, deterministic context, and trace references.
 - Emit only the artifact object.

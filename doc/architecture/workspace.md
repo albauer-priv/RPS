@@ -1,14 +1,14 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-04
+Last-Updated: 2026-05-19
 Owner: Architecture
 ---
 # Workspace
 
-Version: 2.0  
-Status: Updated  
-Last-Updated: 2026-05-04
+Version: 2.1
+Status: Updated
+Last-Updated: 2026-05-19
 
 ---
 
@@ -52,6 +52,11 @@ runtime/athletes/<athlete_id>/
   - deterministic normalization of linked workout duration / agenda duration / agenda mechanical `planned_kj` where derivable
   - cross-field validation for agenda/workout/summary coherence
   - export is blocked if the normalized `WEEK_PLAN` is still inconsistent
+- Persisted artefact metadata is owned by the Runtime/Workspace layer:
+  - writer agents provide domain `data` and optional trace hints
+  - `GuardedValidatedStore` overwrites schema-critical `meta` fields before validation
+  - final JSON Schema validation runs against the runtime-built envelope
+  - stored `trace_*` entries preserve operational workspace keys in `version_key`
 
 Templates are available under:
 
@@ -70,6 +75,9 @@ Templates are available under:
 - run IDs
 - producer agent
 - ISO week or ISO week range
+
+The index and `latest/` pointers are based on the stored canonical metadata and
+derived workspace `version_key`, not on agent-invented metadata.
 
 ---
 

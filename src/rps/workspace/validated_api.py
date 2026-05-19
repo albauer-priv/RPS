@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .artifact_metadata import canonicalize_artifact_envelope_meta
 from .local_store import LocalArtifactStore, utc_iso_now
 from .schema_map import ARTIFACT_SCHEMA_FILE
 from .schema_registry import SchemaRegistry, validate_or_raise
@@ -63,6 +64,14 @@ class ValidatedWorkspace:
             meta.setdefault("data_confidence", "UNKNOWN")
 
             instance = {"meta": meta, "data": payload}
+            instance = canonicalize_artifact_envelope_meta(
+                instance,
+                artifact_type=artifact_type,
+                schema=schema,
+                run_id=run_id,
+            )
+            if not isinstance(instance, dict):
+                raise ValueError("Envelope artefact must be an object")
             validate_or_raise(validator, instance)
             document = instance
         else:

@@ -10,6 +10,7 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
+from .artifact_metadata import normalize_trace_references
 from .index_manager import WorkspaceIndexManager
 from .iso_helpers import parse_iso_week
 from .paths import ARTIFACT_PATHS, ensure_dir
@@ -82,23 +83,7 @@ def _week_bounds_from_key(week_key: str) -> tuple[str, str] | None:
 
 def _normalize_trace_references(value: object) -> JsonList:
     """Return canonical trace references with fallback run ids for legacy docs."""
-    if not isinstance(value, list):
-        return []
-    normalized: JsonList = []
-    for index, item in enumerate(value, start=1):
-        if not isinstance(item, dict):
-            continue
-        artifact = _as_str(item.get("artifact")) or f"legacy_trace_{index}"
-        version = _as_str(item.get("version")) or "1.0"
-        run_id = _as_str(item.get("run_id")) or f"legacy_trace_{index}"
-        normalized.append(
-            {
-                "artifact": artifact,
-                "version": version,
-                "run_id": run_id,
-            }
-        )
-    return normalized
+    return normalize_trace_references(value)
 
 
 def _normalize_loaded_meta(document: object) -> object:

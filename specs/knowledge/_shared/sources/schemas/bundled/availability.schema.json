@@ -349,6 +349,8 @@
             "required": [
               "artifact",
               "version",
+              "schema_version",
+              "version_key",
               "run_id"
             ],
             "properties": {
@@ -359,6 +361,14 @@
               "version": {
                 "type": "string",
                 "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
               },
               "run_id": {
                 "type": "string",
@@ -377,6 +387,8 @@
             "required": [
               "artifact",
               "version",
+              "schema_version",
+              "version_key",
               "run_id"
             ],
             "properties": {
@@ -387,6 +399,14 @@
               "version": {
                 "type": "string",
                 "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
               },
               "run_id": {
                 "type": "string",
@@ -405,6 +425,8 @@
             "required": [
               "artifact",
               "version",
+              "schema_version",
+              "version_key",
               "run_id"
             ],
             "properties": {
@@ -415,6 +437,14 @@
               "version": {
                 "type": "string",
                 "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
               },
               "run_id": {
                 "type": "string",

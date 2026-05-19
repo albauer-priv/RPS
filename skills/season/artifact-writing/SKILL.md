@@ -3,26 +3,28 @@ name: artifact-writing
 description: Serialize the final approved season artifact envelope without adding planning content.
 metadata:
   author: rps
-  version: "3.0"
+  version: "3.1"
 ---
-Write the approved `SEASON_PLAN` envelope only.
+Write the approved `SEASON_PLAN` data only.
 
 Method:
-1. Emit one top-level object with exactly `meta` and `data`.
+1. Prefer emitting the approved `data` payload. If the active task still requires an envelope, emit one top-level object with exactly `meta` and `data`.
 2. Preserve the approved season bundle exactly and write only the approved planning content.
-3. Fill envelope constants exactly:
-   - `artifact_type = SEASON_PLAN`
-   - `schema_id = SeasonPlanInterface`
-   - `authority = Binding`
-   - `owner_agent = Season-Planner`
-4. Preserve exact `iso_week`, `iso_week_range`, `temporal_scope`, `trace_upstream`, `trace_data`, and `trace_events`.
-5. Keep season-wide constraints, event windows, phase definitions, and citations complete and schema-valid.
-6. Validate locally against `season_plan.schema.json` before any store call.
+3. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
+4. Preserve exact `iso_week`, `iso_week_range`, `temporal_scope`, `trace_upstream`, `trace_data`, and `trace_events` only as non-authoritative context/trace hints when available.
+5. Preserve approved phase blueprint semantics, including inherited `scenario_cadence`, `cadence_week_roles`, A/B event treatment, taper intent, and allowed domains, by reflecting them in existing Season Plan fields.
+   Also preserve `season_phase_role`, availability cap, baseline load, role-week load bands, progression trace, and load feasibility status in existing narrative/notes fields.
+6. Keep season-wide constraints, event windows, phase definitions, and citations complete and schema-valid.
+7. Validate locally against `season_plan.schema.json` before any store call.
 
 Writer rules:
 - season output is binding; scenario artifacts remain informational
 - required strings must be non-empty
 - use the real approved phase ranges and dates exactly as provided during writing
+- do not choose, rewrite, or normalize cadence during writing; cadence has already been selected upstream by Scenario Selection
+- when cadence roles exist in the approved bundle, reflect them in `deload_rationale`, `typical_duration_intensity_pattern`, and `weekly_load_corridor.weekly_kj.notes`
+- `weekly_load_corridor.weekly_kj.min/max` must come from the approved phase blueprint's availability-bounded recommended phase corridor
+- `weekly_load_corridor.weekly_kj.notes` must mention phase role, availability cap, baseline, and role-week load semantics when available
 - if a required field is missing, unknown, or schema-invalid: stop rather than guess
 
 Hard rules:
@@ -39,7 +41,7 @@ Positive operating guidance:
 - Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
-- Return only the schema-compliant artifact envelope required by the active task expected_output.
-- Include top-level `meta` and `data` content exactly as required by the artifact schema.
+- Return only the schema-compliant object required by the active task expected_output.
+- Focus on `data`; if an envelope is requested, `meta` is a runtime-overwritten placeholder/hint.
 - Preserve approved bundle content, review decisions, deterministic context, and trace references.
 - Emit only the artifact object.

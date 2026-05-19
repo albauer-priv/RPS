@@ -39,6 +39,8 @@ Warmup / activation / cooldown rules:
 Intent mapping rules:
 - every workout maps to exactly one agenda/intensity configuration
 - keep workout text aligned with the governing day role and intensity domain
+- keep workout text aligned with the active phase week role; do not write build-style quality into deload, mini-reset, or shortened reset weeks
+- add-ons may extend aerobic load only when they preserve the workout classification and phase domain allowance
 - `Endurance`, `Recovery`, `Tempo`, `Sweet Spot`, `Threshold`, `VO2max`, and `K3` intents must remain structurally recognizable
 
 Required text discipline:

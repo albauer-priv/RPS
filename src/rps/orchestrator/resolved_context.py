@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from datetime import date
 
-from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week, week_index
+from rps.workspace.iso_helpers import (
+    IsoWeek,
+    IsoWeekRange,
+    parse_iso_week,
+    parse_iso_week_range,
+    range_contains,
+    week_index,
+)
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.phase_resolution import date_to_iso_week
 from rps.workspace.season_plan_service import SeasonPlanPhaseInfo
@@ -496,9 +503,14 @@ def build_resolved_load_governance_context_block(
     target_key = f"{target_week.year:04d}-{target_week.week:02d}"
     for phase in season_phases:
         phase_map = _as_map(phase)
-        if phase_map.get("iso_week_range") and isinstance(phase_map.get("weekly_load_corridor"), dict):
+        phase_range = parse_iso_week_range(phase_map.get("iso_week_range"))
+        if (
+            phase_range is not None
+            and range_contains(phase_range, target_week)
+            and isinstance(phase_map.get("weekly_load_corridor"), dict)
+        ):
             weekly_kj = _as_map(phase_map.get("weekly_load_corridor")).get("weekly_kj")
-            if isinstance(weekly_kj, dict) and target_key in str(phase_map.get("iso_week_range")):
+            if isinstance(weekly_kj, dict):
                 season_band = weekly_kj
                 break
 
@@ -510,6 +522,7 @@ def build_resolved_load_governance_context_block(
     structure_data = _as_map((phase_structure_payload or {}).get("data"))
     execution_principles = _as_map(structure_data.get("execution_principles"))
     load_intensity = _as_map(execution_principles.get("load_intensity_handling"))
+    week_role = _active_phase_week_role(phase_structure_payload or {}, target_key)
 
     lines: list[str] = []
     if season_band or active_band or semantics or load_intensity:
@@ -525,6 +538,8 @@ def build_resolved_load_governance_context_block(
         lines.append(
             f"phase_guardrails.active_weekly_kj_band ({target_key}): min {active_band.get('min')}, max {active_band.get('max')}, notes {active_band.get('notes')}"
         )
+    if week_role:
+        lines.append(f"phase_structure.active_week_role ({target_key}): {week_role}")
     allowed_domains = [str(x) for x in _as_list(semantics.get("allowed_intensity_domains")) if str(x).strip()]
     allowed_modalities = [str(x) for x in _as_list(semantics.get("allowed_load_modalities")) if str(x).strip()]
     quality_density = _as_map(semantics.get("quality_density"))
@@ -545,6 +560,17 @@ def build_resolved_load_governance_context_block(
             f"phase_structure.load_intensity_handling: max_quality_days_per_week {load_intensity.get('max_quality_days_per_week')}, quality_intent {load_intensity.get('quality_intent')}"
         )
     return "\n".join(lines) + ("\n" if lines else "")
+
+
+def _active_phase_week_role(phase_structure_payload: dict[str, object], target_key: str) -> str | None:
+    data = _as_map(phase_structure_payload.get("data"))
+    skeleton = _as_map(data.get("week_skeleton_logic"))
+    roles_wrapper = _as_map(skeleton.get("week_roles"))
+    for entry in _as_list(roles_wrapper.get("week_roles")):
+        entry_map = _as_map(entry)
+        if entry_map.get("week") == target_key and isinstance(entry_map.get("role"), str):
+            return str(entry_map.get("role")).strip()
+    return None
 
 
 def build_resolved_event_priority_context_block(

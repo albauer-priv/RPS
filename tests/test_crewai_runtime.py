@@ -46,12 +46,19 @@ from rps.crewai_runtime.guardrails import (
     des_diagnostic_only,
     guardrail_runtime_context,
     phase_s5_band_match,
+    phase_week_role_load_coherence,
     phase_weeks_match_range,
     resolve_task_policy,
+    season_bundle_integrity,
+    season_phase_load_feasibility,
     season_scenario_selection_shape,
+    week_active_corridor_match,
+    week_agenda_shape_and_calendar_check,
     week_corridor_and_capacity_check,
     week_daily_availability_check,
+    week_phase_role_alignment_check,
     week_recovery_day_load_check,
+    week_workout_structure_policy_check,
 )
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
@@ -77,17 +84,21 @@ from rps.crewai_runtime.models import (
     PendingResolutionResultModel,
     PhaseBundleModel,
     PhaseReviewDecisionModel,
+    PhaseWeekBlueprintModel,
     PlanningDraftModel,
     ReportReviewDecisionModel,
     SeasonEventAnchorModel,
     SeasonMacrocycleDraftModel,
+    SeasonPhaseBlueprintModel,
     SeasonPlanAuditModel,
     SeasonPlanBundleModel,
     SeasonReviewDecisionModel,
     TurnModeModel,
     WeekContextAssessmentModel,
+    WeekDayBlueprintModel,
     WeekPlanBundleModel,
     WeekReviewDecisionModel,
+    WeekWorkoutBlueprintModel,
 )
 from rps.crewai_runtime.provider import (
     build_crewai_llm_kwargs,
@@ -101,6 +112,8 @@ from rps.orchestrator.coach_operations import (
     preview_report_operation,
     preview_scoped_week_replan_operation,
 )
+from rps.orchestrator.resolved_context import build_resolved_load_governance_context_block
+from rps.planning.deterministic_context import build_week_calendar_context
 from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_events
 from rps.workspace.iso_helpers import IsoWeek
@@ -348,7 +361,12 @@ def test_crewai_blueprints_build_from_yaml() -> None:
         "phase_event_integration_draft",
         "phase_preview_draft",
     )
-    assert tasks["phase_bundle_finalize"].execution_policy["guardrails"] == ("typed_output_present", "phase_bundle_integrity")
+    assert tasks["phase_bundle_finalize"].execution_policy["guardrails"] == (
+        "typed_output_present",
+        "phase_bundle_integrity",
+        "phase_bundle_matches_context",
+        "phase_week_role_load_coherence",
+    )
 
 
 def test_task_policy_resolution_and_guardrail_kwargs() -> None:
@@ -363,8 +381,12 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     assert artifact_policy.output_mode == "json"
     assert "artifact_schema_valid" in artifact_policy.guardrails
     assert "week_corridor_and_capacity_check" in artifact_policy.guardrails
+    assert "week_active_corridor_match" in artifact_policy.guardrails
     assert "week_recovery_day_load_check" in artifact_policy.guardrails
+    assert "week_agenda_shape_and_calendar_check" in artifact_policy.guardrails
     assert "week_daily_availability_check" in artifact_policy.guardrails
+    assert "week_phase_role_alignment_check" in artifact_policy.guardrails
+    assert "week_workout_structure_policy_check" in artifact_policy.guardrails
     assert "week_exportability_check" in artifact_policy.guardrails
     assert "season_scenario_selection_shape" in resolve_task_policy(
         tasks["season_scenario_selection"], bundle.task_policies
@@ -374,6 +396,12 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     ).guardrails
     assert "phase_s5_band_match" in resolve_task_policy(tasks["phase_guardrails"], bundle.task_policies).guardrails
     assert "phase_weeks_match_range" in resolve_task_policy(tasks["phase_structure"], bundle.task_policies).guardrails
+    assert "season_phase_load_feasibility" in resolve_task_policy(
+        tasks["season_plan_finalize"], bundle.task_policies
+    ).guardrails
+    assert "phase_week_role_load_coherence" in resolve_task_policy(
+        tasks["phase_structure"], bundle.task_policies
+    ).guardrails
     kwargs = build_task_guardrail_kwargs(tasks["week_plan"], bundle.task_policies)
     assert kwargs["guardrail_max_retries"] == 2
     assert callable(kwargs["guardrails"][0]) or callable(kwargs["guardrail"])
@@ -883,8 +911,122 @@ def test_artifact_schema_valid_normalizes_schema_sensitive_meta_before_validatio
     assert meta["owner_agent"] == "Season-Scenario-Agent"
     assert meta["version"] == "1.0"
     assert meta["trace_upstream"][0]["version"] == "1.0"
+    assert meta["trace_upstream"][0]["version_key"] == "20260518_103858"
     assert meta["trace_data"][0]["version"] == "1.0"
+    assert meta["trace_data"][0]["version_key"] == "20260315_091949"
     assert meta["trace_events"][0]["version"] == "1.0"
+    assert meta["trace_events"][0]["version_key"] == "2026-20"
+
+
+def test_season_plan_bundle_accepts_phase_blueprints_with_inherited_cadence_roles() -> None:
+    model = SeasonPlanBundleModel(
+        event_priority=SeasonEventAnchorModel(),
+        macrocycle=SeasonMacrocycleDraftModel(deload_cadence="2:1:1", phase_length_weeks=4),
+        phase_blueprints=[
+            SeasonPhaseBlueprintModel(
+                phase_id="P03",
+                iso_week_range="2026-26--2026-29",
+                scenario_cadence="2:1:1",
+                cadence_week_roles=["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                cycle="Build",
+                event_constraints=[],
+                load_corridor_min=7600,
+                load_corridor_max=9300,
+                availability_cap_kj=10000,
+                baseline_load_kj=8000,
+                season_phase_role="build_progression",
+                role_week_load_bands=["2026-26 LOAD_1 min 7600 max 8400"],
+                progression_trace=["source deterministic season phase load context"],
+                load_feasibility_status="feasible",
+                taper_intent="none",
+                allowed_domains=["RECOVERY", "ENDURANCE", "TEMPO"],
+            )
+        ],
+    )
+
+    assert model.phase_blueprints[0].scenario_cadence == "2:1:1"
+    assert model.phase_blueprints[0].cadence_week_roles == ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"]
+    assert model.phase_blueprints[0].availability_cap_kj == 10000
+
+
+def test_phase_week_blueprint_model_accepts_role_aware_s5_band() -> None:
+    model = PhaseWeekBlueprintModel(
+        week="2026-26",
+        phase_role="Build",
+        week_role="LOAD_1",
+        s5_band_min=7600,
+        s5_band_max=8400,
+        role_progression_band="min 7500 max 8500",
+        allowed_domains=["RECOVERY", "ENDURANCE", "TEMPO"],
+        event_implication="none",
+    )
+
+    assert model.week_role == "LOAD_1"
+    assert model.s5_band_max == 8400
+
+
+def test_season_bundle_integrity_requires_phase_blueprints() -> None:
+    failed, message = season_bundle_integrity(
+        {
+            "event_priority": {},
+            "macrocycle": {},
+            "phase_blueprints": [],
+        }
+    )
+    ok, payload = season_bundle_integrity(
+        {
+            "event_priority": {},
+            "macrocycle": {},
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                }
+            ],
+        }
+    )
+
+    assert failed is False
+    assert "at least one phase blueprint" in message
+    assert ok is True
+    assert payload["phase_blueprints"][0]["scenario_cadence"] == "2:1"
+
+
+def test_season_phase_load_feasibility_rejects_unavailable_corridor_and_flat_roles() -> None:
+    failed, message = season_phase_load_feasibility(
+        {
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "cycle": "Build",
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                    "load_corridor_max": 12000,
+                    "availability_cap_kj": 9000,
+                    "load_feasibility_status": "feasible",
+                }
+            ]
+        }
+    )
+
+    assert failed is False
+    assert "exceeds availability_cap_kj" in message
+
+
+def test_phase_week_role_load_coherence_rejects_flat_deload() -> None:
+    failed, message = phase_week_role_load_coherence(
+        {
+            "week_blueprints": [
+                {"week": "2026-20", "week_role": "LOAD_1", "s5_band_min": 7000, "s5_band_max": 8000},
+                {"week": "2026-21", "week_role": "DELOAD", "s5_band_min": 7000, "s5_band_max": 7900},
+            ]
+        }
+    )
+
+    assert failed is False
+    assert "must reduce materially" in message
 
 
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:
@@ -969,6 +1111,104 @@ def test_week_corridor_guardrail_rejects_load_outside_band() -> None:
     assert "exceeds weekly load corridor" in message
 
 
+def test_week_calendar_context_uses_phase_structure_week_role() -> None:
+    phase_info = SimpleNamespace(phase_id="P01", phase_type="Build", raw={"cycle": "Build"})
+    context = build_week_calendar_context(
+        target_week=IsoWeek(2026, 21),
+        phase_info=phase_info,
+        phase_range=SimpleNamespace(
+            range_key="2026-20--2026-22",
+            start=IsoWeek(2026, 20),
+            end=IsoWeek(2026, 22),
+        ),
+        phase_structure_payload={
+            "data": {
+                "execution_principles": {"phase_role": "Build"},
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [
+                            {"week": "2026-20", "role": "LOAD_1"},
+                            {"week": "2026-21", "role": "LOAD_2"},
+                            {"week": "2026-22", "role": "DELOAD"},
+                        ],
+                        "allowed_role_set": ["LOAD_1", "LOAD_2", "DELOAD"],
+                    }
+                },
+            }
+        },
+        phase_guardrails_payload={
+            "data": {
+                "load_guardrails": {
+                    "weekly_kj_bands": [{"week": "2026-21", "band": {"min": 1000, "max": 2000}}]
+                },
+                "allowed_forbidden_semantics": {
+                    "allowed_day_roles": ["REST", "ENDURANCE", "QUALITY"],
+                    "forbidden_day_roles": [],
+                    "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                    "forbidden_intensity_domains": ["THRESHOLD"],
+                    "allowed_load_modalities": ["NONE"],
+                    "quality_density": {"max_quality_days_per_week": 1},
+                },
+            }
+        },
+    )
+
+    assert context["phase_week_role"] == "LOAD_2"
+    assert context["phase_week_role_source"] == "PHASE_STRUCTURE.week_skeleton_logic.week_roles"
+    assert context["active_weekly_kj_band"] == {"min": 1000, "max": 2000}
+    assert context["quality_day_cap"] == 1
+
+
+def test_resolved_load_context_finds_mid_phase_season_band() -> None:
+    block = build_resolved_load_governance_context_block(
+        target_week=IsoWeek(2026, 21),
+        season_plan_payload={
+            "data": {
+                "phases": [
+                    {
+                        "iso_week_range": "2026-20--2026-22",
+                        "weekly_load_corridor": {"weekly_kj": {"min": 1000, "max": 2000, "notes": "build"}},
+                    }
+                ]
+            }
+        },
+        phase_structure_payload={
+            "data": {
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [{"week": "2026-21", "role": "LOAD_2"}],
+                        "allowed_role_set": ["LOAD_2"],
+                    }
+                }
+            }
+        },
+    )
+
+    assert "season_phase.weekly_load_corridor.weekly_kj: min 1000, max 2000" in block
+    assert "phase_structure.active_week_role (2026-21): LOAD_2" in block
+
+
+def test_week_active_corridor_guardrail_rejects_context_mismatch() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "week_summary": {
+                "planned_weekly_load_kj": 1500,
+                "weekly_load_corridor_kj": {"min": 1000, "max": 2000},
+            }
+        },
+    }
+
+    with guardrail_runtime_context(
+        week_calendar_context={"active_weekly_kj_band": {"min": 1200, "max": 2200}},
+        target_week=IsoWeek(2026, 20),
+    ):
+        failed, message = week_active_corridor_match(week_plan)
+
+    assert failed is False
+    assert "must exactly mirror active Phase/S5 band" in message
+
+
 def test_week_recovery_day_guardrail_rejects_load_on_rest_day() -> None:
     failed, message = week_recovery_day_load_check(
         {
@@ -999,13 +1239,61 @@ def test_week_daily_availability_guardrail_rejects_duration_above_day_max() -> N
             "week_summary": {"planned_weekly_load_kj": 1200},
             "agenda": [
                 {
+                    "day": "Mon",
+                    "date": "2026-05-11",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
                     "day": "Tue",
                     "date": "2026-05-12",
                     "day_role": "ENDURANCE",
                     "planned_duration": "02:00",
                     "planned_kj": 600,
                     "workout_id": "W1",
-                }
+                },
+                {
+                    "day": "Wed",
+                    "date": "2026-05-13",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Thu",
+                    "date": "2026-05-14",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Fri",
+                    "date": "2026-05-15",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Sat",
+                    "date": "2026-05-16",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
+                {
+                    "day": "Sun",
+                    "date": "2026-05-17",
+                    "day_role": "REST",
+                    "planned_duration": "00:00",
+                    "planned_kj": 0,
+                    "workout_id": None,
+                },
             ],
         },
     }
@@ -1027,6 +1315,82 @@ def test_week_daily_availability_guardrail_rejects_duration_above_day_max() -> N
 
     assert failed is False
     assert "exceeds availability hours_max" in message
+
+
+def test_week_agenda_shape_guardrail_rejects_non_monday_start() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "agenda": [
+                {"day": "Tue", "date": "2026-05-12", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None}
+            ]
+        },
+    }
+
+    failed, message = week_agenda_shape_and_calendar_check(week_plan)
+
+    assert failed is False
+    assert "agenda must contain exactly seven Mon-Sun entries" in message
+
+
+def test_week_phase_role_alignment_blocks_quality_in_mini_reset() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "agenda": [
+                {"day": "Mon", "date": "2026-05-11", "day_role": "QUALITY", "planned_duration": "01:00", "planned_kj": 500, "workout_id": "W1"}
+            ],
+            "workouts": [{"workout_id": "W1", "title": "Endurance", "notes": "", "workout_text": ""}],
+        },
+    }
+
+    with guardrail_runtime_context(
+        week_calendar_context={
+            "phase_week_role": "MINI_RESET",
+            "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+            "quality_day_cap": 1,
+            "allowed_intensity_domains": ["RECOVERY", "ENDURANCE"],
+            "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+        }
+    ):
+        failed, message = week_phase_role_alignment_check(week_plan)
+
+    assert failed is False
+    assert "MINI_RESET week must not schedule QUALITY days" in message
+
+
+def test_week_workout_structure_guardrail_rejects_missing_cooldown() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "week_summary": {"planned_weekly_load_kj": 500, "weekly_load_corridor_kj": {"min": 1, "max": 1000}},
+            "agenda": [
+                {"day": "Mon", "date": "2026-05-11", "day_role": "ENDURANCE", "planned_duration": "00:20", "planned_kj": 100, "workout_id": "W1"},
+                {"day": "Tue", "date": "2026-05-12", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Wed", "date": "2026-05-13", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Thu", "date": "2026-05-14", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Fri", "date": "2026-05-15", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Sat", "date": "2026-05-16", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Sun", "date": "2026-05-17", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+            ],
+            "workouts": [
+                {
+                    "workout_id": "W1",
+                    "title": "Endurance",
+                    "date": "2026-05-11",
+                    "start": "07:00",
+                    "duration": "00:20:00",
+                    "workout_text": "Warmup\n- 5m ramp 50%-60% 85rpm\n\nMain Set\n- 15m 65% 85rpm",
+                    "notes": "planned_kJ 100",
+                }
+            ],
+        },
+    }
+
+    failed, message = week_workout_structure_policy_check(week_plan)
+
+    assert failed is False
+    assert "missing required section: Cooldown" in message
 
 
 def test_des_guardrail_rejects_non_diagnostic_recommendation() -> None:
@@ -1466,13 +1830,47 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 model = model_cls(
                     event_priority=SeasonEventAnchorModel(),
                     macrocycle=SeasonMacrocycleDraftModel(),
+                    phase_blueprints=[
+                        SeasonPhaseBlueprintModel(
+                            phase_id="P01",
+                            iso_week_range="2026-20--2026-22",
+                            scenario_cadence="2:1",
+                            cadence_week_roles=["LOAD_1", "LOAD_2", "DELOAD"],
+                        )
+                    ],
                 )
             elif model_cls is SeasonReviewDecisionModel:
                 model = model_cls(status="approved", writer_ready_summary="ready")
             elif model_cls is PlanningDraftModel:
                 model = model_cls()
             elif model_cls is WeekPlanBundleModel:
-                model = model_cls()
+                model = model_cls(
+                    day_blueprints=[
+                        WeekDayBlueprintModel(
+                            day=day,
+                            date=date_value,
+                            day_role="REST",
+                        )
+                        for day, date_value in [
+                            ("Mon", "2026-05-11"),
+                            ("Tue", "2026-05-12"),
+                            ("Wed", "2026-05-13"),
+                            ("Thu", "2026-05-14"),
+                            ("Fri", "2026-05-15"),
+                            ("Sat", "2026-05-16"),
+                            ("Sun", "2026-05-17"),
+                        ]
+                    ],
+                    workout_blueprints=[
+                        WeekWorkoutBlueprintModel(
+                            workout_id="W1",
+                            date="2026-05-12",
+                            day_role="ENDURANCE",
+                            planned_duration_minutes=60,
+                            planned_kj=500,
+                        )
+                    ],
+                )
             elif model_cls is WeekReviewDecisionModel:
                 model = model_cls(status="approved", writer_ready_summary="ready")
             elif model_cls is DESAnalysisBundleModel:
@@ -1609,6 +2007,15 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                     phase_id="P01",
                     phase_type="Base",
                     cadence_source="season_plan",
+                    week_blueprints=[
+                        {
+                            "week": "2026-17",
+                            "phase_role": "Base",
+                            "week_role": "LOAD_1",
+                            "s5_band_min": 5000,
+                            "s5_band_max": 6000,
+                        }
+                    ],
                     guardrails={},
                     structure={},
                     preview={},

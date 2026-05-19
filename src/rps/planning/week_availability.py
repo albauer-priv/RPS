@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from rps.workspace.iso_helpers import IsoWeek
@@ -42,7 +42,10 @@ def validate_week_plan_daily_availability(
     fixed_rest = _fixed_rest_days(availability_payload)
     issues: list[WeekAvailabilityIssue] = []
     data = _as_map(week_plan_payload.get("data"))
-    for entry in _as_list(data.get("agenda")):
+    agenda = _as_list(data.get("agenda"))
+    if target_week is not None:
+        issues.extend(_validate_agenda_shape(agenda, target_week))
+    for entry in agenda:
         row = _as_map(entry)
         row_day = str(row.get("day") or "").strip()[:3].title()
         row_date = str(row.get("date") or "").strip()
@@ -83,6 +86,37 @@ def validate_week_plan_daily_availability(
                     issue_day,
                     issue_date,
                     "locked zero-availability day must not carry planned load or a workout.",
+                )
+            )
+    return issues
+
+
+def _validate_agenda_shape(agenda: list[object], target_week: IsoWeek) -> list[WeekAvailabilityIssue]:
+    expected_start = date.fromisocalendar(target_week.year, target_week.week, 1)
+    expected = [
+        (day_date.strftime("%a"), day_date.isoformat())
+        for day_date in (expected_start + timedelta(days=offset) for offset in range(7))
+    ]
+    issues: list[WeekAvailabilityIssue] = []
+    if len(agenda) != 7:
+        return [
+            WeekAvailabilityIssue(
+                "WEEK",
+                f"{target_week.year:04d}-{target_week.week:02d}",
+                "agenda must contain exactly seven Mon-Sun entries for the target ISO week.",
+            )
+        ]
+    for index, (entry, expected_row) in enumerate(zip(agenda, expected, strict=True)):
+        row = _as_map(entry)
+        expected_day, expected_date = expected_row
+        observed_day = str(row.get("day") or "").strip()
+        observed_date = str(row.get("date") or "").strip()
+        if observed_day != expected_day or observed_date != expected_date:
+            issues.append(
+                WeekAvailabilityIssue(
+                    observed_day or expected_day,
+                    observed_date or expected_date,
+                    f"agenda row {index + 1} must be {expected_day} {expected_date}; got {observed_day or '-'} {observed_date or '-'}.",
                 )
             )
     return issues

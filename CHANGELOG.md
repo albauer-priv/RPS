@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-05-19
+
+### Added
+- Added code-owned deterministic planning-contract validators for Season, Phase, Week, writer-blueprint, and snapshot-freshness checks, with guardrail/runtime/store integration for Scenario-inherited structure, phase load context, active weekly bands, and non-binding memory boundaries.
+- Added shared CrewAI skills for contract-context consumption, blueprint validation, blueprint-bound writing, and snapshot-memory consumption.
+
 ### Changed
+- Season Plan generation now carries selected-scenario cadence semantics through deterministic phase slots, internal phase blueprints, and stricter Season skill/review guidance so plans inherit Scenario structure instead of reselecting cadence.
+- Persisted artifact metadata is now code-owned: the runtime/workspace layer canonicalizes schema-critical `meta` fields before validation and save, while writer tasks focus on artifact data and non-authoritative trace intent.
+- Trace references now distinguish semantic `schema_version` from operational workspace `version_key`; bundled schemas and schema-backed CrewAI artifact models were regenerated.
 - Removed the local vectorstore/Qdrant runtime path entirely: startup sync, Plan Hub knowledge-store readiness, `knowledge_search`, vectorstore scripts/tests/modules, vectorstore manifest/config, and Qdrant dependency are gone; static knowledge now routes through CrewAI knowledge sources only.
 - Collapsed the split endurance intensity domains into a single `ENDURANCE` enum across schemas, skills, specs, prompts, and tests; deterministic load estimation now uses the former high-endurance default (`0.70`) for `ENDURANCE`.
 - Persisted CrewAI artifact schemas now use the dedicated writer-owner identities (`Season-Artifact-Writer`, `Phase-Artifact-Writer`, `Week-Artifact-Writer`, `Report-Artifact-Writer`) and bundled schemas were regenerated.
@@ -27,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach recommendation and finalization prompts now define the desired positive cycling-coach voice directly instead of relying mainly on negative style constraints.
 
 ### Fixed
+- Fixed repeated artifact persistence failures caused by agent-invented `schema_id`, `owner_agent`, or operational trace version strings by canonicalizing envelopes in `GuardedValidatedStore` and legacy read normalization.
 - Fixed Season Plan persistence after writer-crew execution by aligning schema owner constants with the new writer-agent ownership model.
 - Fixed CrewAI progress visibility by emitting planned task/agent rows before each Crew kickoff, so long runs show the upcoming task chain immediately.
 - Fixed CrewAI runtime labels so event logs prefer RPS task, crew, and agent names instead of generic CrewAI labels like `Task` or `crew`.

@@ -10,18 +10,23 @@ Author season load governance as sustainable corridor and progression authority.
 Method:
 1. Start from athlete robustness, availability pressure, selected KPI guidance, event ambition, and the injected deterministic load-capacity context.
 2. Treat `availability_load_capacity_kj` as a hard plausibility boundary for repeated weekly governance load.
-3. Set a sustainable season weekly corridor that can realistically be repeated and progressed without repeated catch-up weeks.
-4. Choose progression framing and cadence ownership at season level; lower layers may apply but not reinvent it.
-5. Prefer feasible corridors over aspirational overload and protect `A` event clarity inside schema-valid cycle values.
+3. Use `Deterministic Season Phase Load Context` to set each phase corridor from phase role, inherited week roles, availability cap, baseline, and progression trace.
+4. Set sustainable phase corridors that can realistically be repeated and progressed without repeated catch-up weeks; do not copy availability capacity min/typical/max as every phase's target corridor.
+5. Choose progression framing and cadence ownership at season level; lower layers may apply but not reinvent it.
+6. Prefer feasible corridors over aspirational overload and protect `A` event clarity inside schema-valid cycle values.
 
 Deterministic load context:
 - use the injected `availability_load_capacity_kj` min/typical/max directly
+- explain when a corridor is below capacity because of re-entry, mini-reset, reload, event rehearsal, or taper semantics
 - use the injected `IF_ref_load` and source for explanation only
 - treat logistics as risk and planning constraints; reduce hours numerically only when explicit hour fields exist
 - if a season corridor sits above capacity, flag review/replan pressure instead of normalizing it silently
+- if a season corridor equals availability capacity across unrelated phases, flag review pressure because sustainable progression/taper semantics may have been lost
+- a phase corridor must fit the injected phase-role feasibility band; 12,000 kJ is invalid when the available time cannot support it
 - agents explain and apply code-owned deterministic S5/availability bands exactly as injected
 - season corridors are expressed in `planned_weekly_load_kj/week`, even when upstream wording says `weekly_kJ`
 - Season sets strategic corridors; Phase applies deterministic feasibility and S5 intersection once a concrete phase range and allowed domains exist
+- Season phase role modulates corridor meaning before Phase runs: Base stabilizes, Build progresses, Peak tapers/sharpens, Transition re-enters/consolidates
 - use `ambition_if_range` to shape QUALITY intent while preserving segment-derived IF and code-owned load math
 
 Progression guardrails:
@@ -55,6 +60,7 @@ Cadence-specific load targets:
 - `2:1`: `W1 = BL * 1.00-1.05`, `W2 = W1 * 1.08-1.15`, then deload
 - `2:1:1`: `W1 = BL * 1.00-1.05`, `W2 = W1 * 1.08-1.12`, `MR = W2 * 0.80-0.90`, `W4 = W2 * 0.95-1.05`
 - if `2:1:1` mini-reset becomes a true deload, treat the reload week as re-entry and baseline-anchor it
+- inherited cadence comes from the selected Scenario; Season Plan may interpret and explain the cadence but must not replace it
 
 Hard rules:
 - keep event ambition inside safe ramp limits
@@ -62,6 +68,7 @@ Hard rules:
 - model multiple `A` events with explicit macrocycle or peak-window logic
 - if robustness is doubtful, narrow progression rather than widen intensity
 - season load governance must remain explicit enough that phase planning can inherit it deterministically
+- final `A` event taper corridors must show meaningful load reduction versus Build unless a documented review rationale proves otherwise
 - `self_check.every_phase_maps_to_cycle_and_deload_intent` may be true only after coverage, cycle, cadence, and deload intent are checked
 
 Output format:

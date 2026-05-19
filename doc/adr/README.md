@@ -59,6 +59,7 @@ This folder contains the ADR log for RPS.
 - ADR-048: Skills-First Multi-Crew Planning Runtime
 - ADR-049: Single-Method Skill Attachment Model
 - ADR-050: Remove Vectorstore Runtime
+- ADR-051: Code-Owned Artifact Metadata and Trace References
 
 ## Process (Short)
 

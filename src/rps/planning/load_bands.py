@@ -32,6 +32,17 @@ DEFAULT_DOMAIN_IF: dict[str, float] = {
     "ANAEROBIC": 1.15,
 }
 LOGISTICS_LOAD_IMPACTS = {"AVAILABILITY", "MISSED_SESSION", "MODALITY", "RECOVERY", "DATA_QUALITY"}
+SUPPORTED_CADENCE_ROLES = {
+    "3:1": ("LOAD_1", "LOAD_2", "LOAD_3", "DELOAD"),
+    "2:1": ("LOAD_1", "LOAD_2", "DELOAD"),
+    "2:1:1": ("LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"),
+}
+SHORTENED_ROLES = {
+    "SHORTENED_RE_ENTRY",
+    "SHORTENED_CONSOLIDATION",
+    "SHORTENED_MINI_RESET",
+    "SHORTENED_RELOAD",
+}
 
 
 class LoadBandError(ValueError):
@@ -238,6 +249,85 @@ def calculate_progression_band(
     )
 
 
+def calculate_role_progression_band(
+    *,
+    baseline_load_kj: float | None,
+    week_role: str,
+    phase_role: str,
+    scenario_cadence: str | None = None,
+) -> NumberBand | None:
+    """Return a role-aware progression overlay band for weekly S5.
+
+    The band expresses ProgressiveOverloadPolicy semantics in governance-load
+    space. S5 still applies the final intersection with season corridor,
+    availability feasibility, KPI capacity, and fallback behavior.
+    """
+
+    baseline = _as_float(baseline_load_kj)
+    if baseline is None or baseline <= 0:
+        return None
+    low, high = _role_multiplier_range(
+        week_role=week_role,
+        phase_role=phase_role,
+        scenario_cadence=scenario_cadence,
+    )
+    return NumberBand(baseline * low, baseline * high)
+
+
+def _role_multiplier_range(*, week_role: str, phase_role: str, scenario_cadence: str | None) -> tuple[float, float]:
+    role = str(week_role or "").strip().upper()
+    phase = str(phase_role or "").strip().upper()
+    cadence = str(scenario_cadence or "").strip()
+
+    if role in SHORTENED_ROLES:
+        return {
+            "SHORTENED_RE_ENTRY": (0.70, 0.90),
+            "SHORTENED_CONSOLIDATION": (0.80, 1.00),
+            "SHORTENED_MINI_RESET": (0.65, 0.85),
+            "SHORTENED_RELOAD": (0.85, 1.00),
+        }.get(role, (0.75, 0.95))
+
+    if phase == "PEAK":
+        return {
+            "LOAD_1": (0.65, 0.88),
+            "LOAD_2": (0.65, 0.90),
+            "LOAD_3": (0.65, 0.90),
+            "MINI_RESET": (0.55, 0.75),
+            "RELOAD": (0.60, 0.85),
+            "DELOAD": (0.50, 0.75),
+        }.get(role, (0.60, 0.85))
+
+    if phase == "TRANSITION":
+        return {
+            "LOAD_1": (0.75, 0.95),
+            "LOAD_2": (0.80, 1.00),
+            "LOAD_3": (0.85, 1.02),
+            "MINI_RESET": (0.65, 0.85),
+            "RELOAD": (0.85, 1.00),
+            "DELOAD": (0.55, 0.75),
+        }.get(role, (0.75, 0.95))
+
+    if phase == "BASE":
+        return {
+            "LOAD_1": (0.90, 1.00),
+            "LOAD_2": (0.95, 1.05),
+            "LOAD_3": (1.00, 1.08),
+            "MINI_RESET": (0.78, 0.90),
+            "RELOAD": (0.92, 1.03),
+            "DELOAD": (0.60, 0.80),
+        }.get(role, (0.85, 1.00))
+
+    build_roles = {
+        "LOAD_1": (1.00, 1.05),
+        "LOAD_2": (1.08, 1.15 if cadence == "2:1" else 1.12),
+        "LOAD_3": (1.14, 1.23),
+        "MINI_RESET": (0.86, 0.97),
+        "RELOAD": (1.03, 1.13),
+        "DELOAD": (0.60, 0.78),
+    }
+    return build_roles.get(role, (0.95, 1.05))
+
+
 def selected_kpi_rate_band_from_selection(selection_payload: JsonMap | None) -> JsonMap | None:
     """Return selected KPI moving-time-rate guidance from scenario selection.
 
@@ -393,6 +483,10 @@ def build_load_capacity_context(
     kpi_profile_payload: JsonMap | None = None,
     kpi_rate_band: JsonMap | None = None,
     previous_load_kj: float | None = None,
+    baseline_load_kj: float | None = None,
+    week_role_by_week: dict[str, str] | None = None,
+    phase_role_by_week: dict[str, str] | None = None,
+    scenario_cadence: str | None = None,
 ) -> JsonMap:
     """Build deterministic load-capacity and S5 context for planner prompts."""
 
@@ -451,6 +545,10 @@ def build_load_capacity_context(
     )
     weeks = _weeks_for_context(target_week=target_week, phase_range=phase_range)
     if season_band is not None:
+        role_baseline_load_kj = baseline_load_kj or previous_load_kj
+        if role_baseline_load_kj is None and (week_role_by_week or phase_role_by_week):
+            role_baseline_load_kj = (season_band.min + season_band.max) / 2.0
+            result["warnings"].append("role_progression_baseline_inferred_from_season_corridor_midpoint")
         body_mass = _body_mass_kg(athlete_profile_payload or {}, wellness_payload or {})
         kpi_band = None
         kpi_escalation_bands: dict[str, NumberBand] = {}
@@ -483,10 +581,21 @@ def build_load_capacity_context(
         except LoadBandError as exc:
             result["warnings"].append(str(exc))
             kpi_error = str(exc)
-        progression_band = calculate_progression_band(previous_load_kj=previous_load_kj)
         for week in weeks:
+            week_key = _week_key(week)
+            week_role = str((week_role_by_week or {}).get(week_key) or "").strip()
+            phase_role = str((phase_role_by_week or {}).get(week_key) or "").strip()
+            role_progression_band = calculate_role_progression_band(
+                baseline_load_kj=role_baseline_load_kj,
+                week_role=week_role,
+                phase_role=phase_role,
+                scenario_cadence=scenario_cadence,
+            ) if week_role else None
+            if week_role and role_progression_band is None:
+                result["warnings"].append(f"missing_baseline_for_role_progression:{week_key}:{week_role}")
+            progression_band = role_progression_band or calculate_progression_band(previous_load_kj=previous_load_kj)
             if kpi_error is not None:
-                result["s5_bands"].append({"week": _week_key(week), "error": kpi_error})
+                result["s5_bands"].append({"week": week_key, "error": kpi_error})
                 continue
             try:
                 feasible = calculate_availability_feasible_band(
@@ -507,16 +616,175 @@ def build_load_capacity_context(
                     kpi_utilization_override_band=kpi_utilization_override_band,
                 )
             except LoadBandError as exc:
-                result["s5_bands"].append({"week": _week_key(week), "error": str(exc)})
+                result["s5_bands"].append({"week": week_key, "error": str(exc)})
                 continue
+            trace = dict(s5.trace)
+            if week_role:
+                trace.update(
+                    {
+                        "week_role": week_role,
+                        "phase_role": phase_role or None,
+                        "scenario_cadence": scenario_cadence,
+                        "baseline_load_kj": role_baseline_load_kj,
+                        "role_progression_band": (
+                            None if role_progression_band is None else role_progression_band.as_dict()
+                        ),
+                        "role_progression_source": "progressive_overload_policy",
+                    }
+                )
             result["s5_bands"].append(
                 {
-                    "week": _week_key(week),
+                    "week": week_key,
                     "band": {"min": int(s5.band.min), "max": int(s5.band.max)},
-                    "trace": s5.trace,
+                    "trace": trace,
                 }
             )
     return result
+
+
+def build_season_phase_load_context(
+    *,
+    phase_slot_context: JsonMap,
+    target_week: IsoWeek,
+    athlete_profile_payload: JsonMap | None = None,
+    availability_payload: JsonMap | None = None,
+    logistics_payload: JsonMap | None = None,
+    planning_events_payload: JsonMap | None = None,
+    zone_model_payload: JsonMap | None = None,
+    wellness_payload: JsonMap | None = None,
+    kpi_profile_payload: JsonMap | None = None,
+    kpi_rate_band: JsonMap | None = None,
+    previous_load_kj: float | None = None,
+) -> JsonMap:
+    """Return deterministic season-level phase corridor guidance.
+
+    This context makes season corridors availability-bounded and phase-role
+    aware before Phase Guardrails apply per-week S5.
+    """
+
+    capacity_context = build_load_capacity_context(
+        target_week=target_week,
+        athlete_profile_payload=athlete_profile_payload or {},
+        availability_payload=availability_payload or {},
+        logistics_payload=logistics_payload or {},
+        zone_model_payload=zone_model_payload or {},
+        season_plan_payload={},
+        wellness_payload=wellness_payload or {},
+        kpi_profile_payload=kpi_profile_payload or {},
+        kpi_rate_band=kpi_rate_band,
+    )
+    capacity = _as_map(capacity_context.get("availability_load_capacity_kj"))
+    typical_cap = _as_float(capacity.get("typical")) or _as_float(capacity.get("max")) or 0.0
+    max_cap = _as_float(capacity.get("max")) or typical_cap
+    baseline = _as_float(previous_load_kj)
+    warnings: list[str] = []
+    blocking_issues: list[str] = []
+    if baseline is None or baseline <= 0:
+        baseline = typical_cap * 0.65 if typical_cap > 0 else None
+        warnings.append("season_phase_load_context baseline_load_kj inferred from availability typical cap.")
+    if typical_cap <= 0:
+        blocking_issues.append("availability typical capacity missing or zero; season phase corridors cannot be bounded.")
+
+    slots = [_as_map(item) for item in _as_list(phase_slot_context.get("phase_slots"))]
+    phase_entries: list[JsonMap] = []
+    phase_reference = baseline or 0.0
+    total = len(slots)
+    for idx, slot in enumerate(slots, start=1):
+        cycle = _recommended_cycle_for_slot(idx=idx, total=total, is_shortened=bool(slot.get("is_shortened")))
+        season_phase_role = _season_phase_role_for_slot(
+            cycle=cycle,
+            idx=idx,
+            total=total,
+            is_shortened=bool(slot.get("is_shortened")),
+        )
+        event_trace = _event_taper_trace_for_slot(
+            slot=slot,
+            planning_events_payload=planning_events_payload or {},
+        )
+        if event_trace.get("has_a_event"):
+            cycle = "Peak"
+            season_phase_role = "a_event_peak_taper"
+        elif event_trace.get("has_b_event") and cycle != "Peak":
+            season_phase_role = "b_event_rehearsal"
+
+        phase_baseline = _phase_baseline_for_role(
+            prior_reference=phase_reference,
+            cycle=cycle,
+            season_phase_role=season_phase_role,
+            availability_cap=typical_cap,
+        )
+        role_bands: list[JsonMap] = []
+        for week, role in zip(_as_list(slot.get("week_keys")), _as_list(slot.get("cadence_week_roles")), strict=False):
+            band = calculate_role_progression_band(
+                baseline_load_kj=phase_baseline,
+                week_role=str(role),
+                phase_role=cycle,
+                scenario_cadence=str(slot.get("scenario_cadence") or ""),
+            )
+            if band is None:
+                blocking_issues.append(f"{slot.get('phase_id')} {week}: missing role progression band.")
+                continue
+            capped = _cap_band_to_availability(
+                band=band,
+                typical_cap=typical_cap,
+                max_cap=max_cap,
+                phase_id=str(slot.get("phase_id") or ""),
+                week=str(week),
+                blocking_issues=blocking_issues,
+                warnings=warnings,
+            )
+            role_bands.append(
+                {
+                    "week": week,
+                    "role": role,
+                    "band": {"min": int(round(capped.min)), "max": int(round(capped.max))},
+                    "trace": {
+                        "baseline_load_kj": int(round(phase_baseline)),
+                        "uncapped_role_band": band.as_dict(),
+                        "availability_typical_cap_kj": typical_cap,
+                        "availability_max_cap_kj": max_cap,
+                        "source": "progressive_overload_policy + availability_load_capacity_kj",
+                    },
+                }
+            )
+        phase_min = min((_as_float(_as_map(item.get("band")).get("min")) or 0.0 for item in role_bands), default=0.0)
+        phase_max = max((_as_float(_as_map(item.get("band")).get("max")) or 0.0 for item in role_bands), default=0.0)
+        phase_entries.append(
+            {
+                "phase_id": slot.get("phase_id"),
+                "iso_week_range": slot.get("iso_week_range"),
+                "phase_cycle": cycle,
+                "season_phase_role": season_phase_role,
+                "scenario_cadence": slot.get("scenario_cadence"),
+                "cadence_week_roles": slot.get("cadence_week_roles") or [],
+                "availability_cap_kj": {"typical": int(round(typical_cap)), "max": int(round(max_cap))},
+                "baseline_load_kj": int(round(phase_baseline)),
+                "recommended_phase_corridor": {
+                    "min": int(round(phase_min)),
+                    "max": int(round(phase_max)),
+                },
+                "role_week_load_bands": role_bands,
+                "progression_trace": {
+                    "prior_phase_reference_kj": int(round(phase_reference)),
+                    "phase_baseline_source": "prior_phase_reference + season_phase_role",
+                    "availability_bounded": True,
+                },
+                "event_taper_trace": event_trace,
+                "warnings": [],
+                "blocking_issues": [],
+            }
+        )
+        if phase_max > 0 and cycle != "Peak":
+            phase_reference = phase_max
+    return {
+        "unit_semantics": "planned_weekly_load_kj",
+        "selected_scenario_id": phase_slot_context.get("selected_scenario_id"),
+        "availability_load_capacity_kj": capacity,
+        "baseline_load_kj": None if baseline is None else int(round(baseline)),
+        "phases": phase_entries,
+        "warnings": warnings,
+        "blocking_issues": blocking_issues,
+    }
 
 
 def render_load_capacity_context_block(context: JsonMap) -> str:
@@ -576,6 +844,163 @@ def render_load_capacity_context_block(context: JsonMap) -> str:
         lines.append("load_context_warnings:")
         lines.extend(f"- {item}" for item in warnings)
     return "\n".join(lines) + "\n"
+
+
+def render_season_phase_load_context_block(context: JsonMap) -> str:
+    """Render deterministic season phase load context for Season prompts."""
+
+    if not context:
+        return ""
+    lines = [
+        "**Deterministic Season Phase Load Context**",
+        "These values bound strategic Season phase corridors by phase role, inherited week roles, progressive-overload policy, and current availability. Season Plan corridors must stay within these bounds unless a review-visible exception is listed.",
+        f"unit_semantics: {context.get('unit_semantics')}",
+        f"selected_scenario_id: {context.get('selected_scenario_id')}",
+        f"baseline_load_kj: {context.get('baseline_load_kj')}",
+    ]
+    capacity = _as_map(context.get("availability_load_capacity_kj"))
+    if capacity:
+        lines.append(
+            "availability_load_capacity_kj: "
+            f"min {capacity.get('min')}, typical {capacity.get('typical')}, max {capacity.get('max')}"
+        )
+    for phase in [_as_map(item) for item in _as_list(context.get("phases"))]:
+        corridor = _as_map(phase.get("recommended_phase_corridor"))
+        cap = _as_map(phase.get("availability_cap_kj"))
+        lines.append(
+            "- "
+            f"{phase.get('phase_id')}: {phase.get('iso_week_range')}, "
+            f"phase_cycle {phase.get('phase_cycle')}, "
+            f"season_phase_role {phase.get('season_phase_role')}, "
+            f"scenario_cadence {phase.get('scenario_cadence')}, "
+            f"cadence_week_roles {', '.join(str(item) for item in _as_list(phase.get('cadence_week_roles')))}, "
+            f"availability_cap typical {cap.get('typical')} max {cap.get('max')}, "
+            f"recommended_phase_corridor min {corridor.get('min')} max {corridor.get('max')}"
+        )
+        role_bands = [_as_map(item) for item in _as_list(phase.get("role_week_load_bands"))]
+        if role_bands:
+            lines.append(f"  role_week_load_bands {phase.get('phase_id')}:")
+            for item in role_bands:
+                band = _as_map(item.get("band"))
+                lines.append(f"  - {item.get('week')} {item.get('role')}: min {band.get('min')}, max {band.get('max')}")
+        else:
+            lines.append(f"  role_week_load_bands {phase.get('phase_id')}: none")
+    for label in ("warnings", "blocking_issues"):
+        values = [str(item) for item in _as_list(context.get(label)) if str(item).strip()]
+        if values:
+            lines.append(f"{label}:")
+            lines.extend(f"- {value}" for value in values)
+    return "\n".join(lines) + "\n"
+
+
+def _recommended_cycle_for_slot(*, idx: int, total: int, is_shortened: bool) -> str:
+    if total > 0 and idx == total:
+        return "Peak"
+    if idx == 1:
+        return "Base"
+    if is_shortened and idx <= 2:
+        return "Transition"
+    return "Build"
+
+
+def _season_phase_role_for_slot(*, cycle: str, idx: int, total: int, is_shortened: bool) -> str:
+    if is_shortened:
+        return "shortened_re_entry" if idx == 1 else "shortened_consolidation"
+    if cycle == "Peak":
+        return "a_event_peak_taper" if idx == total else "peak_preparation"
+    if cycle == "Base":
+        return "base_stabilization"
+    if cycle == "Transition":
+        return "transition_consolidation"
+    return "build_progression"
+
+
+def _phase_baseline_for_role(
+    *,
+    prior_reference: float,
+    cycle: str,
+    season_phase_role: str,
+    availability_cap: float,
+) -> float:
+    reference = max(0.0, prior_reference)
+    cap = availability_cap if availability_cap > 0 else inf
+    role = season_phase_role.upper()
+    if "PEAK" in role or cycle == "Peak":
+        return min(reference * 0.78, cap * 0.75)
+    if "SHORTENED" in role or cycle == "Transition":
+        return min(reference * 0.92, cap * 0.72)
+    if cycle == "Base":
+        return min(reference, cap * 0.72)
+    return min(reference * 1.08, cap * 0.86)
+
+
+def _cap_band_to_availability(
+    *,
+    band: NumberBand,
+    typical_cap: float,
+    max_cap: float,
+    phase_id: str,
+    week: str,
+    warnings: list[str],
+    blocking_issues: list[str],
+) -> NumberBand:
+    if typical_cap <= 0:
+        return band
+    if band.min > max_cap > 0:
+        blocking_issues.append(
+            f"{phase_id} {week}: role progression band exceeds availability max capacity."
+        )
+        return NumberBand(max_cap, max_cap)
+    if band.max > typical_cap:
+        warnings.append(
+            f"{phase_id} {week}: role progression band capped at availability typical capacity."
+        )
+    capped_min = min(band.min, typical_cap)
+    capped_max = min(band.max, typical_cap)
+    if capped_min > capped_max:
+        capped_min = capped_max
+    return NumberBand(capped_min, capped_max)
+
+
+def _event_taper_trace_for_slot(*, slot: JsonMap, planning_events_payload: JsonMap) -> JsonMap:
+    weeks = {str(item) for item in _as_list(slot.get("week_keys"))}
+    events: list[JsonMap] = []
+    has_a = False
+    has_b = False
+    has_c = False
+    data = _as_map(planning_events_payload.get("data"))
+    for event in _as_list(data.get("events")):
+        event_map = _as_map(event)
+        raw_date = event_map.get("date")
+        if not isinstance(raw_date, str):
+            continue
+        try:
+            event_week = _week_key(date_to_iso_week(date.fromisoformat(raw_date)))
+        except ValueError:
+            continue
+        if event_week not in weeks:
+            continue
+        event_type = str(event_map.get("type") or "").strip().upper()
+        has_a = has_a or event_type == "A"
+        has_b = has_b or event_type == "B"
+        has_c = has_c or event_type == "C"
+        events.append(
+            {
+                "date": raw_date,
+                "week": event_week,
+                "type": event_type,
+                "name": event_map.get("event_name") or event_map.get("name"),
+            }
+        )
+    if has_a:
+        handling = "A event receives dedicated peak/taper load reduction."
+    elif has_b:
+        handling = "B event receives rehearsal/minor-load-adjustment only."
+    elif has_c:
+        handling = "C event remains inside normal structure without taper."
+    else:
+        handling = "No event-driven load exception."
+    return {"events": events, "has_a_event": has_a, "has_b_event": has_b, "has_c_event": has_c, "handling": handling}
 
 
 def _capacity_for_hour_buckets(

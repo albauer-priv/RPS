@@ -26,13 +26,16 @@ This chapter defines how to produce **schema‑valid PHASE_STRUCTURE JSON**.
   - `data`
 
 #### 2) `meta` (required fields)
+Runtime owns persisted metadata. Treat this section as envelope shape/context only:
+do not invent canonical `schema_id`, `owner_agent`, `run_id`, `created_at`, or
+trace versions. The Workspace layer overwrites schema-critical fields before save.
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
   - `artifact_type`: `"PHASE_STRUCTURE"`
   - `schema_id`: `"PhaseStructureInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Phase-Architect"`
+  - `owner_agent`: runtime-owned canonical writer, `"Phase-Artifact-Writer"`
 - `iso_week_range` required.
 - `iso_week` MUST be the **first** ISO week in `iso_week_range`.
 - `temporal_scope` MUST be copied from an upstream artefact (prefer stored PHASE_GUARDRAILS for
@@ -173,7 +176,7 @@ Additional hard stops (binding):
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Phase-Architect",
+    "owner_agent": "Phase-Artifact-Writer",
     "run_id": "example_phase_structure_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Phase",

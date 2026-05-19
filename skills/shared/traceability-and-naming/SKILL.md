@@ -3,14 +3,14 @@ name: traceability-and-naming
 description: Apply traceability, naming, versioning, and data-confidence conventions to planning outputs.
 metadata:
   author: rps
-  version: "2.0"
+  version: "2.1"
 ---
 Apply naming, traceability, and confidence rules exactly.
 
 Method:
-1. Treat the artefact envelope as binding. Preserve canonical `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `scope`, `iso_week`, `iso_week_range`, and `temporal_scope`.
-2. Keep `run_id` unique per generation run and bind it to exactly one artefact.
-3. Preserve explicit upstream lineage in `trace_upstream`. For artefacts without upstream lineage, emit `trace_upstream: []` rather than omitting it.
+1. Treat persisted `meta` as runtime-owned. Do not invent persisted `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, or `created_at`; the Workspace layer canonicalizes them before save.
+2. Use `meta` only as non-authoritative context/trace intent when a task still requests an envelope.
+3. Preserve explicit upstream lineage intent in `trace_upstream`. For artefacts without upstream lineage, emit `trace_upstream: []` rather than omitting it.
 4. Use canonical filename/version-key patterns and exact type labels expected by the workspace and schemas.
 5. Keep confidence claims proportional to the evidence actually available.
 
@@ -21,6 +21,7 @@ Naming rules:
 - Human-readable sidecars are informational only; use canonical JSON artefacts as planning inputs.
 
 Trace rules:
+- `schema_version` is semantic contract version; `version_key` is the workspace/file version key; `version` is a backwards-compatible semver alias.
 - Season outputs must reference athlete profile, planning events, and logistics when used.
 - Phase outputs must reference exactly one season plan.
 - Week outputs must reference exactly one phase guardrails artefact and any applied phase feed-forward.
@@ -35,7 +36,7 @@ Confidence rules:
 
 Hard rules:
 - preserve lineage from available upstream references and mark missing lineage explicitly
-- preserve canonical artefact types and schema identifiers
+- do not fabricate canonical artefact types, schema identifiers, or owner agents; runtime owns persisted metadata
 - use current and sufficiently confident data as strategic authority
 - emit persisted artefacts only when required trace and naming fields are present
 

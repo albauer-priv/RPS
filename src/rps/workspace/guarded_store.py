@@ -11,11 +11,28 @@ from pathlib import Path
 from typing import cast
 
 from rps.agents.tasks import OutputSpec
+from rps.planning.contracts import (
+    blocking_messages,
+    validate_phase_against_execution_context,
+    validate_season_plan_against_phase_load_context,
+    validate_season_plan_against_phase_slots,
+    validate_week_plan_against_week_context,
+)
+from rps.planning.deterministic_context import (
+    build_load_capacity_block,
+    build_phase_execution_context,
+    build_season_phase_load_block,
+    build_season_phase_slot_block,
+    build_selected_scenario_structure_block,
+    build_week_calendar_context,
+)
+from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.rendering.auto_render import render_sidecar
 from rps.workouts.validator import collect_week_plan_export_issues
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
+from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.iso_helpers import envelope_week_range
+from rps.workspace.iso_helpers import envelope_week, envelope_week_range, parse_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -32,28 +49,12 @@ JsonMap = dict[str, object]
 StringListMap = dict[str, list[str]]
 StoreResult = dict[str, object]
 INTEGER_ROUNDING_EPSILON = 1e-9
-CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
-    ArtifactType.SEASON_PLAN: "Season-Artifact-Writer",
-    ArtifactType.SEASON_PHASE_FEED_FORWARD: "Season-Artifact-Writer",
-    ArtifactType.PHASE_GUARDRAILS: "Phase-Artifact-Writer",
-    ArtifactType.PHASE_STRUCTURE: "Phase-Artifact-Writer",
-    ArtifactType.PHASE_PREVIEW: "Phase-Artifact-Writer",
-    ArtifactType.PHASE_FEED_FORWARD: "Phase-Artifact-Writer",
-    ArtifactType.WEEK_PLAN: "Week-Artifact-Writer",
-    ArtifactType.DES_ANALYSIS_REPORT: "Report-Artifact-Writer",
-}
 
 
 def normalize_artifact_owner(document: object, artifact_type: ArtifactType) -> object:
     """Set the canonical writer owner for persisted planning/report artefacts."""
 
-    owner = CANONICAL_OWNER_BY_ARTIFACT.get(artifact_type)
-    if not owner or not isinstance(document, dict):
-        return document
-    meta = document.get("meta")
-    if isinstance(meta, dict):
-        meta["owner_agent"] = owner
-    return document
+    return canonicalize_artifact_envelope_meta(document, artifact_type=artifact_type)
 
 
 class MissingDependenciesError(RuntimeError):
@@ -512,6 +513,185 @@ class GuardedValidatedStore:
                 [f"data.traceability.derived_from must include '{expected_arch}'."],
             )
 
+    def _load_latest_optional(self, artifact_type: ArtifactType) -> JsonMap:
+        """Return a latest workspace document when it is available and object-shaped."""
+
+        try:
+            if not self.store.latest_exists(self.athlete_id, artifact_type):
+                return {}
+            loaded = self.store.load_latest(self.athlete_id, artifact_type)
+        except Exception:
+            return {}
+        return loaded if isinstance(loaded, dict) else {}
+
+    def _season_contract_contexts(self, document: JsonMap) -> tuple[JsonMap, JsonMap]:
+        """Build selected-scenario phase slot and load contexts for a Season Plan write."""
+
+        scenarios = self._load_latest_optional(ArtifactType.SEASON_SCENARIOS)
+        selection = self._load_latest_optional(ArtifactType.SEASON_SCENARIO_SELECTION)
+        if not scenarios or not selection:
+            return {}, {}
+        target_week = parse_iso_week(self._as_map(document.get("meta")).get("iso_week"))
+        if target_week is None:
+            range_spec = envelope_week_range(document)
+            target_week = range_spec.start if range_spec else None
+        if target_week is None:
+            return {}, {}
+        selected = build_selected_scenario_structure_block(
+            scenarios_payload=scenarios,
+            selection_payload=selection,
+        ).payload
+        if not selected:
+            return {}, {}
+        phase_slots = build_season_phase_slot_block(
+            selected_structure_context=selected,
+            target_week=target_week,
+        ).payload
+        if not phase_slots:
+            return phase_slots, {}
+        phase_load = build_season_phase_load_block(
+            phase_slot_context=phase_slots,
+            target_week=target_week,
+            athlete_profile_payload=self._load_latest_optional(ArtifactType.ATHLETE_PROFILE),
+            availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+            logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+            planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+            zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
+            wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
+            kpi_profile_payload=self._load_latest_optional(ArtifactType.KPI_PROFILE),
+            kpi_rate_band=selected_kpi_rate_band_from_selection(selection),
+        ).payload
+        return phase_slots, phase_load
+
+    def _phase_slot_context_for_store(self, document: JsonMap) -> JsonMap:
+        """Build deterministic phase slot context when scenario authority is available."""
+
+        scenarios = self._load_latest_optional(ArtifactType.SEASON_SCENARIOS)
+        selection = self._load_latest_optional(ArtifactType.SEASON_SCENARIO_SELECTION)
+        if not scenarios or not selection:
+            return {}
+        target_week = None
+        range_spec = envelope_week_range(document)
+        if range_spec:
+            target_week = range_spec.start
+        if target_week is None:
+            target_week = parse_iso_week(self._as_map(document.get("meta")).get("iso_week"))
+        if target_week is None:
+            return {}
+        selected = build_selected_scenario_structure_block(
+            scenarios_payload=scenarios,
+            selection_payload=selection,
+        ).payload
+        if not selected:
+            return {}
+        return build_season_phase_slot_block(
+            selected_structure_context=selected,
+            target_week=target_week,
+        ).payload
+
+    def _load_capacity_context_for_store(self) -> JsonMap:
+        """Build deterministic load-capacity context from available workspace inputs."""
+
+        try:
+            return build_load_capacity_block(
+                athlete_profile_payload=self._load_latest_optional(ArtifactType.ATHLETE_PROFILE),
+                availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+                logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+                planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+                zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
+                wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
+                kpi_profile_payload=self._load_latest_optional(ArtifactType.KPI_PROFILE),
+                kpi_rate_band=selected_kpi_rate_band_from_selection(
+                    self._load_latest_optional(ArtifactType.SEASON_SCENARIO_SELECTION)
+                ),
+            ).payload
+        except Exception:
+            return {}
+
+    def _enforce_store_contract_constraints(
+        self,
+        target: ArtifactType,
+        document: JsonMap,
+    ) -> None:
+        """Apply final deterministic planning-contract guards when context is loadable."""
+
+        errors: list[str] = []
+        if target == ArtifactType.SEASON_PLAN:
+            phase_slots, phase_load = self._season_contract_contexts(document)
+            if phase_slots:
+                errors.extend(
+                    blocking_messages(
+                        validate_season_plan_against_phase_slots(
+                            season_plan_payload=document,
+                            phase_slot_context=phase_slots,
+                        )
+                    )
+                )
+            if phase_load:
+                errors.extend(
+                    blocking_messages(
+                        validate_season_plan_against_phase_load_context(
+                            season_plan_payload=document,
+                            season_phase_load_context=phase_load,
+                        )
+                    )
+                )
+        elif target == ArtifactType.PHASE_STRUCTURE:
+            range_spec = envelope_week_range(document)
+            season_plan = self._load_latest_optional(ArtifactType.SEASON_PLAN)
+            phase_slots = self._phase_slot_context_for_store(document)
+            if range_spec and season_plan and phase_slots:
+                phase_info = resolve_season_plan_phase_info(season_plan, range_spec.start)
+                if phase_info:
+                    context = build_phase_execution_context(
+                        target_week=range_spec.start,
+                        phase_info=phase_info,
+                        phase_range=range_spec,
+                        season_plan_payload=season_plan,
+                        phase_slot_context=phase_slots,
+                        availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+                        logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+                        planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+                        load_capacity_context=self._load_capacity_context_for_store(),
+                    )
+                    errors.extend(
+                        blocking_messages(
+                            validate_phase_against_execution_context(
+                                phase_payload=document,
+                                phase_execution_context=context,
+                            )
+                        )
+                    )
+        elif target == ArtifactType.WEEK_PLAN:
+            week = envelope_week(document)
+            season_plan = self._load_latest_optional(ArtifactType.SEASON_PLAN)
+            phase_structure = self._load_latest_optional(ArtifactType.PHASE_STRUCTURE)
+            phase_guardrails = self._load_latest_optional(ArtifactType.PHASE_GUARDRAILS)
+            if week and season_plan and phase_structure and phase_guardrails:
+                phase_info = resolve_season_plan_phase_info(season_plan, week)
+                if phase_info:
+                    context = build_week_calendar_context(
+                        target_week=week,
+                        phase_info=phase_info,
+                        phase_range=phase_info.phase_range,
+                        availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+                        logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+                        planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+                        phase_guardrails_payload=phase_guardrails,
+                        phase_structure_payload=phase_structure,
+                        load_capacity_context=self._load_capacity_context_for_store(),
+                    )
+                    errors.extend(
+                        blocking_messages(
+                            validate_week_plan_against_week_context(
+                                week_plan_payload=document,
+                                week_calendar_context=context,
+                            )
+                        )
+                    )
+        if errors:
+            raise SchemaValidationError("Planning contract guard failed", errors)
+
     def _ensure_phase_range_matches_plan(
         self,
         document: JsonMap,
@@ -699,19 +879,25 @@ class GuardedValidatedStore:
     ) -> StoreResult:
         """Validate, derive version key, and persist a document with guards."""
         target = output_spec.artifact_type
-        document = normalize_artifact_owner(document, target)
         raw_document = document
         try:
+            self._check_dependencies(target)
+
+            schema = self.schemas.get_schema(output_spec.schema_file)
+            validator = self.schemas.validator_for(output_spec.schema_file)
+            document = canonicalize_artifact_envelope_meta(
+                document,
+                artifact_type=target,
+                schema=schema,
+                run_id=run_id,
+            )
+            raw_document = document
             self._log_store_attempt(
                 raw_document,
                 output_spec=output_spec,
                 run_id=run_id,
                 producer_agent=producer_agent,
             )
-            self._check_dependencies(target)
-
-            schema = self.schemas.get_schema(output_spec.schema_file)
-            validator = self.schemas.validator_for(output_spec.schema_file)
             document, version_key = self._validate_and_version_document(
                 document=document,
                 schema=schema,
@@ -723,6 +909,7 @@ class GuardedValidatedStore:
             version_key = normalize_version_key(version_key, artifact_type=target)
 
             self._apply_phase_store_constraints(target, cast(JsonMap, document))
+            self._enforce_store_contract_constraints(target, cast(JsonMap, document))
             if target == ArtifactType.WEEK_PLAN:
                 document = self._enforce_week_plan_exportability(cast(JsonMap, document))
 

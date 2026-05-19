@@ -39,6 +39,8 @@ tasks:
     guardrails:
       - typed_output_present
       - season_bundle_integrity
+      - season_bundle_matches_contract
+      - season_phase_load_feasibility
     guardrail_max_retries: 2
   season_plan_audit:
     guardrails:
@@ -70,6 +72,7 @@ tasks:
       - artifact_meta_data_present
       - artifact_schema_valid
       - season_phase_coverage_and_cadence
+      - season_phase_load_context_match
       - season_cycle_ordering
   phase_constraint_audit:
     guardrails:
@@ -84,6 +87,8 @@ tasks:
     guardrails:
       - typed_output_present
       - phase_bundle_integrity
+      - phase_bundle_matches_context
+      - phase_week_role_load_coherence
     guardrail_max_retries: 2
   phase_review:
     output_mode: pydantic
@@ -103,11 +108,14 @@ tasks:
       - artifact_meta_data_present
       - artifact_schema_valid
       - phase_weeks_match_range
+      - phase_execution_context_match
+      - phase_week_role_load_coherence
   week_plan_finalize:
     output_mode: pydantic
     guardrails:
       - typed_output_present
       - week_bundle_integrity
+      - week_bundle_matches_context
     guardrail_max_retries: 2
   week_review:
     output_mode: pydantic
@@ -121,8 +129,13 @@ tasks:
       - artifact_meta_data_present
       - artifact_schema_valid
       - week_corridor_and_capacity_check
+      - week_active_corridor_match
       - week_recovery_day_load_check
+      - week_agenda_shape_and_calendar_check
       - week_daily_availability_check
+      - week_phase_role_alignment_check
+      - week_contract_context_match
+      - week_workout_structure_policy_check
       - week_exportability_check
   report_review:
     output_mode: pydantic

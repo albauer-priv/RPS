@@ -32,6 +32,8 @@ Permitted ultra/brevet archetype:
 - a Kinzlbauer-like season template is allowed at season architecture level only
 - it sequences aerobic ceiling/VO2 tolerance before major volume expansion, then shifts toward economy, VLamax-lowering emphasis, and durability
 - use it to shape phase intent and domain eligibility while keeping workout prescription and governance corridors in their responsible components
+- durability-first is not intensity-free: `RECOVERY` and `ENDURANCE` protect repeatability, while `TEMPO` or other scenario-permitted quality may be used as tightly bounded phase intent when recovery and event specificity justify it
+- do not introduce free `THRESHOLD` or `VO2MAX` blocks in the Season Plan artifact; if aerobic-ceiling work is relevant, express it as high-level phase intent only when the selected scenario permits the domain
 
 Allowed multi-`A` models:
 - `multiple macrocycles`: only when `A` events are separated enough for full recovery and rebuild
@@ -48,6 +50,7 @@ Taper rules:
 - `B` events may get minor load adjustment only
 - `C` events get none
 - taper depth and duration scale with event duration, accumulated fatigue, and athlete resilience
+- a `B` event constraint must read as rehearsal, pacing/fueling validation, or minor load adjustment; it must not imply a full taper or independent peak
 
 Hard rules:
 - keep peak decisions at season architecture level

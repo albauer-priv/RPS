@@ -396,6 +396,8 @@ class LocalStoreTests(unittest.TestCase):
                     {
                         "artifact": "kpi_profile_des_brevet_600_km_masters.md",
                         "version": "1.0",
+                        "schema_version": "1.0",
+                        "version_key": "1.0",
                         "run_id": "legacy_trace_1",
                     }
                 ],

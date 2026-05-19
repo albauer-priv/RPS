@@ -26,13 +26,16 @@ This chapter defines how to produce **schema‑valid DES_ANALYSIS_REPORT JSON**.
   - `data`
 
 #### 2) `meta` (required fields)
+Runtime owns persisted metadata. Treat this section as envelope shape/context only:
+do not invent canonical `schema_id`, `owner_agent`, `run_id`, `created_at`, or
+trace versions. The Workspace layer overwrites schema-critical fields before save.
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
   - `artifact_type`: `"DES_ANALYSIS_REPORT"`
   - `schema_id`: `"DESAnalysisInterface"`
   - `schema_version`: `"1.1"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Performance-Analyst"`
+  - `owner_agent`: runtime-owned canonical writer, `"Report-Artifact-Writer"`
 - `iso_week` required.
 
 #### 3) `data.summary_meta`
@@ -105,7 +108,7 @@ Required strings:
     "schema_version": "1.1",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Performance-Analyst",
+    "owner_agent": "Report-Artifact-Writer",
     "run_id": "example_des_report_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Season",

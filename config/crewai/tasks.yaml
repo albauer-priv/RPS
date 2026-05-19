@@ -104,14 +104,14 @@ tasks:
     output: artifact_envelope
     tools: read_only_workspace
     description: Create the season-scenarios artifact envelope for the selected planning horizon.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario
     kind: persisted_artifact
     output: artifact_envelope
     tools: read_only_workspace
     description: Create the season-scenario-selection artifact envelope from the selected scenario and KPI guidance choice.
-    expected_output: A full schema-compliant SEASON_SCENARIO_SELECTION artifact envelope with meta and data.
+    expected_output: Schema-compliant SEASON_SCENARIO_SELECTION artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_context_read:
     agent: season_context_specialist
     kind: internal_reasoning
@@ -188,8 +188,8 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: Consolidate season drafts into one internal SeasonPlanBundle.
-    expected_output: A structured internal season plan bundle.
+    description: Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints.
+    expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, and role-week load bands.
   season_governance_review:
     agent: season_governance_auditor
     kind: internal_reasoning
@@ -208,6 +208,12 @@ tasks:
     output: season_plan_audit
     description: Audit the candidate season bundle for macrocycle and authority coherence.
     expected_output: A structured season-plan audit with warnings and blocking issues.
+  season_contract_review:
+    agent: season_plan_auditor
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review the candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, and snapshot contracts.
+    expected_output: A structured contract-review draft that treats code-owned contract mismatches as blocking replan reasons.
   season_review:
     agent: season_review_manager
     kind: internal_reasoning
@@ -216,6 +222,7 @@ tasks:
       - season_governance_review
       - season_constraints_review
       - season_plan_audit
+      - season_contract_review
     description: Integrate season review outputs and decide approve, reject, or bounded replan.
     expected_output: A structured season review decision.
   season_plan:
@@ -223,13 +230,13 @@ tasks:
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the season-plan artifact envelope for the selected planning horizon.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data derived from the approved season bundle and phase blueprints; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_phase_feed_forward:
     agent: season_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week season-to-phase feed-forward artifact envelope.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
 
   phase_context_read:
     agent: phase_context_specialist
@@ -293,8 +300,8 @@ tasks:
       - phase_intensity_distribution_draft
       - phase_event_integration_draft
       - phase_preview_draft
-    description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before review.
-    expected_output: A structured internal PhaseBundle.
+    description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before review, including role-aware week blueprints for every phase week.
+    expected_output: A structured internal PhaseBundle with week_blueprints.
   phase_constraint_audit:
     agent: phase_constraint_auditor
     kind: internal_reasoning
@@ -319,6 +326,12 @@ tasks:
     output: planning_draft
     description: Review whether the candidate phase preview remains derived and non-decisional.
     expected_output: A structured phase preview review draft.
+  phase_contract_review:
+    agent: phase_structure_reviewer
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review the candidate phase bundle and writer handoff against deterministic phase slot, phase execution, week-role, and S5-band contracts.
+    expected_output: A structured contract-review draft that treats deterministic phase-contract mismatches as blocking replan reasons.
   phase_review:
     agent: phase_review_manager
     kind: internal_reasoning
@@ -328,6 +341,7 @@ tasks:
       - phase_governance_review
       - phase_structure_review
       - phase_preview_review
+      - phase_contract_review
     description: Integrate phase review outputs and decide approve, reject, or bounded replan.
     expected_output: A structured phase review decision.
   phase_guardrails:
@@ -335,25 +349,25 @@ tasks:
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the phase-guardrails artifact envelope for the exact phase range.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   phase_structure:
     agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the phase-structure artifact envelope for the exact phase range.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   phase_preview:
     agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the phase-preview artifact envelope for the exact phase range.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   phase_feed_forward:
     agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the selected-week phase feed-forward artifact envelope.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
 
   week_context_read:
     agent: week_context_specialist
@@ -416,6 +430,12 @@ tasks:
     output: planning_draft
     description: Review candidate workout text for syntax subset and export safety.
     expected_output: A structured week workout-syntax review.
+  week_contract_review:
+    agent: week_consistency_auditor
+    kind: internal_reasoning
+    output: planning_draft
+    description: Review the candidate week bundle and writer handoff against deterministic week execution, active S5-band, availability, day-blueprint, and workout-blueprint contracts.
+    expected_output: A structured contract-review draft that treats deterministic week-contract mismatches as blocking replan reasons.
   week_review:
     agent: week_review_manager
     kind: internal_reasoning
@@ -424,6 +444,7 @@ tasks:
       - week_consistency_review
       - week_load_governance_review
       - week_workout_syntax_review
+      - week_contract_review
     description: Integrate week review outputs and decide approve, reject, or bounded replan.
     expected_output: A structured week review decision.
   week_plan:
@@ -431,7 +452,7 @@ tasks:
     kind: persisted_artifact
     output: artifact_envelope
     description: Create or revise the week-plan artifact envelope for the selected ISO week.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
 
   report_context_read:
     agent: performance_context_specialist
@@ -460,4 +481,4 @@ tasks:
     kind: persisted_artifact
     output: artifact_envelope
     description: Create the DES analysis report artifact envelope for the selected ISO week.
-    expected_output: A full schema-compliant artifact envelope with meta and data.
+    expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.

@@ -28,6 +28,9 @@ required schema, field sources, and a minimal valid example.
 - Call `store_season_scenarios` with this envelope only. No wrappers, no extra keys.
 
 #### 2) `meta` (required fields)
+Runtime owns persisted metadata. Treat this section as envelope shape/context only:
+do not invent canonical `schema_id`, `owner_agent`, `run_id`, `created_at`, or
+trace versions. The Workspace layer overwrites schema-critical fields before save.
 - `artifact_type`: `"SEASON_SCENARIOS"`
 - `schema_id`: `"SeasonScenariosInterface"`
 - `schema_version`: `"1.0"`

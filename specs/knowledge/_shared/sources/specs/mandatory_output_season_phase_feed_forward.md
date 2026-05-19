@@ -25,13 +25,16 @@ This chapter defines how to produce **schema‑valid SEASON_PHASE_FEED_FORWARD J
   - `data`
 
 #### 2) `meta` (required fields)
+Runtime owns persisted metadata. Treat this section as envelope shape/context only:
+do not invent canonical `schema_id`, `owner_agent`, `run_id`, `created_at`, or
+trace versions. The Workspace layer overwrites schema-critical fields before save.
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
   - `artifact_type`: `"SEASON_PHASE_FEED_FORWARD"`
   - `schema_id`: `"SeasonPhaseFeedForwardInterface"`
   - `schema_version`: `"1.0"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Season-Planner"`
+  - `owner_agent`: runtime-owned canonical writer, `"Season-Artifact-Writer"`
 - `iso_week` required.
 
 #### 3) `data.source_context`
@@ -84,7 +87,7 @@ Required:
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Season-Planner",
+    "owner_agent": "Season-Artifact-Writer",
     "run_id": "example_season_phase_ff_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Season",

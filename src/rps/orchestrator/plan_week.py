@@ -30,10 +30,13 @@ from rps.orchestrator.resolved_context import (
     build_resolved_kpi_context_block,
 )
 from rps.orchestrator.workout_export import run_workout_export
+from rps.planning.contracts import blocking_messages, validate_snapshot_freshness
 from rps.planning.deterministic_context import (
     build_load_capacity_block,
     build_phase_execution_context,
     build_report_evidence_context,
+    build_season_phase_slot_block,
+    build_selected_scenario_structure_block,
     build_week_calendar_context,
     build_workout_load_method_block,
     render_context_blocks,
@@ -154,6 +157,22 @@ def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
     anchor = profile.get("endurance_anchor_w")
     ambition = profile.get("ambition_if_range")
     return {"endurance_anchor_w": anchor, "ambition_if_range": ambition}
+
+
+def _payload_version(payload: JsonMap | None) -> str | None:
+    meta = payload.get("meta") if isinstance(payload, dict) else None
+    if not isinstance(meta, dict):
+        return None
+    version = meta.get("version_key")
+    return version if isinstance(version, str) else None
+
+
+def _expected_source_versions(entries: list[tuple[str, JsonMap | None]]) -> JsonMap:
+    return {
+        label: version
+        for label, payload in entries
+        if (version := _payload_version(payload)) is not None
+    }
 
 
 def _format_user_data_block(user_data: dict[str, object]) -> str:
@@ -840,6 +859,24 @@ def plan_week(
             wellness_payload = loaded_wellness if isinstance(loaded_wellness, dict) else None
         except Exception:
             wellness_payload = None
+        selection_payload = None
+        try:
+            loaded_selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+            selection_payload = loaded_selection if isinstance(loaded_selection, dict) else None
+        except Exception:
+            selection_payload = None
+        season_scenarios_payload = None
+        try:
+            loaded_scenarios = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+            season_scenarios_payload = loaded_scenarios if isinstance(loaded_scenarios, dict) else None
+        except Exception:
+            season_scenarios_payload = None
+        selection_payload = None
+        try:
+            loaded_selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+            selection_payload = loaded_selection if isinstance(loaded_selection, dict) else None
+        except Exception:
+            selection_payload = None
         season_phase_feed_forward_payload = None
         try:
             ff_version = store.resolve_week_version_key(athlete_id, ArtifactType.SEASON_PHASE_FEED_FORWARD, target_label)
@@ -858,6 +895,7 @@ def plan_week(
             run_id=run_id,
             athlete_profile_payload=athlete_profile_payload or {},
             kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
             availability_payload=availability_payload or {},
             planning_events_payload=planning_events_payload or {},
             logistics_payload=logistics_payload or {},
@@ -878,6 +916,58 @@ def plan_week(
             activities_actual_version=actual_version,
             activities_trend_version=trend_version,
         )
+        athlete_snapshot_blockers = blocking_messages(
+            validate_snapshot_freshness(
+                snapshot_payload=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {},
+                expected_source_versions=_expected_source_versions(
+                    [
+                        ("athlete_profile", athlete_profile_payload),
+                        ("kpi_profile", kpi_profile_payload),
+                        ("season_scenario_selection", selection_payload),
+                        ("availability", availability_payload),
+                        ("planning_events", planning_events_payload),
+                        ("logistics", logistics_payload),
+                        ("zone_model", zone_model_payload),
+                        ("wellness", wellness_payload),
+                    ]
+                ),
+                authoritative=True,
+                snapshot_label="ATHLETE_STATE_SNAPSHOT",
+            )
+        )
+        if athlete_snapshot_blockers:
+            message = "Phase athlete snapshot freshness failed: " + "; ".join(athlete_snapshot_blockers[:5])
+            _log(message, logging.ERROR)
+            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
+        planning_snapshot_blockers = blocking_messages(
+            validate_snapshot_freshness(
+                snapshot_payload=planning_context_snapshot if isinstance(planning_context_snapshot, dict) else {},
+                expected_source_versions=_expected_source_versions(
+                    [
+                        ("season_plan", season_plan if isinstance(season_plan, dict) else None),
+                        ("availability", availability_payload),
+                        ("planning_events", planning_events_payload),
+                        ("season_phase_feed_forward", season_phase_feed_forward_payload),
+                    ]
+                )
+                | {
+                    key: value
+                    for key, value in {
+                        "activities_actual": actual_version,
+                        "activities_trend": trend_version,
+                    }.items()
+                    if value
+                },
+                authoritative=True,
+                snapshot_label="PLANNING_CONTEXT_SNAPSHOT",
+            )
+        )
+        if planning_snapshot_blockers:
+            message = "Phase planning snapshot freshness failed: " + "; ".join(planning_snapshot_blockers[:5])
+            _log(message, logging.ERROR)
+            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
         athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
             athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
@@ -894,6 +984,45 @@ def plan_week(
             )
         spec = AGENTS["phase_architect"]
         phase_task_labels = ", ".join(task.value for task in phase_tasks)
+        selected_structure_context = build_selected_scenario_structure_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=None,
+        )
+        phase_slot_context = build_season_phase_slot_block(
+            selected_structure_context=selected_structure_context.payload,
+            target_week=target,
+        )
+        phase_execution_seed = build_phase_execution_context(
+            target_week=target,
+            phase_info=phase_info,
+            phase_range=phase_range,
+            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+            phase_slot_context=phase_slot_context.payload,
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            load_capacity_context={},
+        )
+        phase_execution_issues = [
+            str(item)
+            for item in phase_execution_seed.get("blocking_issues") or []
+            if str(item).strip()
+        ]
+        if phase_execution_issues:
+            message = "Phase execution context is incomplete: " + "; ".join(phase_execution_issues)
+            _log(message, logging.ERROR)
+            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
+        week_role_raw = phase_execution_seed.get("week_role_by_iso_week")
+        week_role_by_week = {
+            str(key): str(value)
+            for key, value in week_role_raw.items()
+        } if isinstance(week_role_raw, dict) else {}
+        phase_role_by_week = {
+            str(week_key): str(phase_execution_seed.get("phase_role") or "")
+            for week_key in week_role_by_week
+        }
         load_capacity_context = build_load_capacity_block(
             target_week=target,
             phase_range=phase_range,
@@ -905,6 +1034,9 @@ def plan_week(
             wellness_payload=wellness_payload or {},
             kpi_profile_payload=kpi_profile_payload or {},
             kpi_rate_band=selected_kpi_rate_band,
+            week_role_by_week=week_role_by_week,
+            phase_role_by_week=phase_role_by_week,
+            scenario_cadence=phase_execution_seed.get("scenario_cadence"),
         )
         phase_execution_block = render_phase_execution_context_block(
             build_phase_execution_context(
@@ -912,40 +1044,54 @@ def plan_week(
                 phase_info=phase_info,
                 phase_range=phase_range,
                 season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                phase_slot_context=phase_slot_context.payload,
                 availability_payload=availability_payload or {},
                 logistics_payload=logistics_payload or {},
                 planning_events_payload=planning_events_payload or {},
                 load_capacity_context=load_capacity_context.payload,
             )
         )
-        injected_block = render_context_blocks([load_capacity_context]) + phase_execution_block
+        injected_block = render_context_blocks([selected_structure_context, phase_slot_context, load_capacity_context]) + phase_execution_block
         message = (
             f"Running Phase-Architect Flow for phase range {phase_range_label} "
             f"covering tasks: {phase_task_labels}."
         )
         _log(message)
-        out = run_agent_multi_output(
-            runtime_for(spec.name),
-            agent_name=spec.name,
-            athlete_id=athlete_id,
-            tasks=phase_tasks,
-            user_input=(
-                f"Create phase artefacts {phase_task_labels} for phase range {phase_range_label} "
-                f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
-                "Use this phase range as the iso_week_range for the artefacts. "
-                "Read season_plan first and use explicit week/range-scoped workspace tools for any "
-                "week-sensitive or exact-range dependencies. "
-                f"{athlete_state_snapshot_block}"
-                f"{planning_context_snapshot_block}"
-                f"{historical_context_line}"
-                f"{user_data_block}"
-                f"{override_line}"
-                f"{injected_block}"
-            ),
-            run_id=f"{run_id}_phase_bundle",
-            model_override=model_resolver(spec.name) if model_resolver else None,
-            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        )
+        with guardrail_runtime_context(
+            phase_execution_context=build_phase_execution_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                phase_slot_context=phase_slot_context.payload,
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        ):
+            out = run_agent_multi_output(
+                runtime_for(spec.name),
+                agent_name=spec.name,
+                athlete_id=athlete_id,
+                tasks=phase_tasks,
+                user_input=(
+                    f"Create phase artefacts {phase_task_labels} for phase range {phase_range_label} "
+                    f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
+                    "Use this phase range as the iso_week_range for the artefacts. "
+                    "Read season_plan first and use explicit week/range-scoped workspace tools for any "
+                    "week-sensitive or exact-range dependencies. "
+                    f"{athlete_state_snapshot_block}"
+                    f"{planning_context_snapshot_block}"
+                    f"{historical_context_line}"
+                    f"{user_data_block}"
+                    f"{override_line}"
+                    f"{injected_block}"
+                ),
+                run_id=f"{run_id}_phase_bundle",
+                model_override=model_resolver(spec.name) if model_resolver else None,
+                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            )
         steps.append({"agent": "phase_architect", "tasks": [task.value for task in phase_tasks], "result": out})
         if out.get("ok") and out.get("produced"):
             _log("Done.")
@@ -1081,6 +1227,12 @@ def plan_week(
             wellness_payload = loaded_wellness if isinstance(loaded_wellness, dict) else None
         except Exception:
             wellness_payload = None
+        selection_payload = None
+        try:
+            loaded_selection = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+            selection_payload = loaded_selection if isinstance(loaded_selection, dict) else None
+        except Exception:
+            selection_payload = None
         phase_guardrails_payload = _load_exact_range_payload(ArtifactType.PHASE_GUARDRAILS)
         phase_structure_payload = _load_exact_range_payload(ArtifactType.PHASE_STRUCTURE)
         phase_feed_forward_payload = None
@@ -1113,6 +1265,7 @@ def plan_week(
             run_id=run_id,
             athlete_profile_payload=athlete_profile_payload or {},
             kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
             availability_payload=availability_payload or {},
             planning_events_payload=planning_events_payload or {},
             logistics_payload=logistics_payload or {},
@@ -1135,6 +1288,60 @@ def plan_week(
             activities_actual_version=actual_version,
             activities_trend_version=trend_version,
         )
+        athlete_snapshot_blockers = blocking_messages(
+            validate_snapshot_freshness(
+                snapshot_payload=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {},
+                expected_source_versions=_expected_source_versions(
+                    [
+                        ("athlete_profile", athlete_profile_payload),
+                        ("kpi_profile", kpi_profile_payload),
+                        ("season_scenario_selection", selection_payload),
+                        ("availability", availability_payload),
+                        ("planning_events", planning_events_payload),
+                        ("logistics", logistics_payload),
+                        ("zone_model", zone_model_payload),
+                        ("wellness", wellness_payload),
+                    ]
+                ),
+                authoritative=True,
+                snapshot_label="ATHLETE_STATE_SNAPSHOT",
+            )
+        )
+        if athlete_snapshot_blockers:
+            message = "Week athlete snapshot freshness failed: " + "; ".join(athlete_snapshot_blockers[:5])
+            _log(message, logging.ERROR)
+            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
+        planning_snapshot_blockers = blocking_messages(
+            validate_snapshot_freshness(
+                snapshot_payload=planning_context_snapshot if isinstance(planning_context_snapshot, dict) else {},
+                expected_source_versions=_expected_source_versions(
+                    [
+                        ("season_plan", season_plan if isinstance(season_plan, dict) else None),
+                        ("phase_guardrails", phase_guardrails_payload),
+                        ("phase_structure", phase_structure_payload),
+                        ("availability", availability_payload),
+                        ("planning_events", planning_events_payload),
+                        ("phase_feed_forward", phase_feed_forward_payload),
+                    ]
+                )
+                | {
+                    key: value
+                    for key, value in {
+                        "activities_actual": actual_version,
+                        "activities_trend": trend_version,
+                    }.items()
+                    if value
+                },
+                authoritative=True,
+                snapshot_label="PLANNING_CONTEXT_SNAPSHOT",
+            )
+        )
+        if planning_snapshot_blockers:
+            message = "Week planning snapshot freshness failed: " + "; ".join(planning_snapshot_blockers[:5])
+            _log(message, logging.ERROR)
+            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
         athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
             athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
@@ -1162,20 +1369,30 @@ def plan_week(
             zone_model_payload=zone_model_payload or {},
             allowed_intensity_domains=load_capacity_context.payload.get("allowed_intensity_domains") or [],
         )
-        week_calendar_block = render_week_calendar_context_block(
-            build_week_calendar_context(
-                target_week=target,
-                phase_info=phase_info,
-                phase_range=phase_range,
-                availability_payload=availability_payload or {},
-                logistics_payload=logistics_payload or {},
-                planning_events_payload=planning_events_payload or {},
-                phase_guardrails_payload=phase_guardrails_payload or {},
-                load_capacity_context=load_capacity_context.payload,
-            )
+        week_calendar_context = build_week_calendar_context(
+            target_week=target,
+            phase_info=phase_info,
+            phase_range=phase_range,
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            phase_guardrails_payload=phase_guardrails_payload or {},
+            phase_structure_payload=phase_structure_payload or {},
+            load_capacity_context=load_capacity_context.payload,
         )
+        active_weekly_band = week_calendar_context.get("active_weekly_kj_band")
+        if not isinstance(active_weekly_band, dict) or not active_weekly_band:
+            message = "Week calendar context is incomplete: active weekly load band is missing."
+            _log(message, logging.ERROR)
+            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
+        week_calendar_block = render_week_calendar_context_block(week_calendar_context)
         injected_block = render_context_blocks([load_capacity_context, workout_load_method_block]) + week_calendar_block
-        with guardrail_runtime_context(availability_payload=availability_payload or {}, target_week=target):
+        with guardrail_runtime_context(
+            availability_payload=availability_payload or {},
+            target_week=target,
+            week_calendar_context=week_calendar_context,
+        ):
             out = run_agent_multi_output(
                 runtime_for(spec.name),
                 agent_name=spec.name,

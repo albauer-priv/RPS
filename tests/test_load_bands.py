@@ -7,9 +7,11 @@ from rps.planning.load_bands import (
     LoadBandError,
     NumberBand,
     build_load_capacity_context,
+    build_season_phase_load_context,
     calculate_availability_feasible_band,
     calculate_kpi_capacity_band,
     calculate_progression_band,
+    calculate_role_progression_band,
     derive_phase_s5_band,
     resolve_if_ref_load,
     selected_kpi_rate_band_from_selection,
@@ -83,6 +85,57 @@ def test_progression_band_applies_increase_and_decrease_caps() -> None:
     assert band is not None
     assert band.min == pytest.approx(800)
     assert band.max == pytest.approx(1100)
+
+
+def test_role_progression_modulates_by_phase_role() -> None:
+    base_load_2 = calculate_role_progression_band(
+        baseline_load_kj=1000,
+        week_role="LOAD_2",
+        phase_role="Base",
+        scenario_cadence="2:1",
+    )
+    build_load_2 = calculate_role_progression_band(
+        baseline_load_kj=1000,
+        week_role="LOAD_2",
+        phase_role="Build",
+        scenario_cadence="2:1",
+    )
+    peak_load_2 = calculate_role_progression_band(
+        baseline_load_kj=1000,
+        week_role="LOAD_2",
+        phase_role="Peak",
+        scenario_cadence="2:1",
+    )
+    deload = calculate_role_progression_band(
+        baseline_load_kj=1000,
+        week_role="DELOAD",
+        phase_role="Build",
+        scenario_cadence="2:1",
+    )
+    mini_reset = calculate_role_progression_band(
+        baseline_load_kj=1000,
+        week_role="MINI_RESET",
+        phase_role="Build",
+        scenario_cadence="2:1:1",
+    )
+    reload = calculate_role_progression_band(
+        baseline_load_kj=1000,
+        week_role="RELOAD",
+        phase_role="Build",
+        scenario_cadence="2:1:1",
+    )
+
+    assert base_load_2 is not None
+    assert build_load_2 is not None
+    assert peak_load_2 is not None
+    assert deload is not None
+    assert mini_reset is not None
+    assert reload is not None
+    assert base_load_2.max < build_load_2.max
+    assert peak_load_2.max < build_load_2.min
+    assert deload.max < build_load_2.min
+    assert mini_reset.max < build_load_2.min
+    assert reload.max <= build_load_2.max + 10
 
 
 def test_s5_normal_intersection_and_level_1_drop_progression() -> None:
@@ -201,6 +254,87 @@ def test_build_load_capacity_context_injects_s5_and_logistics_constraints() -> N
     assert len(context["s5_bands"]) == 2
     assert context["s5_bands"][0]["band"]["min"] >= 0
     assert context["logistics_constraints"]
+
+
+def test_build_load_capacity_context_uses_role_aware_s5_overlay() -> None:
+    context = build_load_capacity_context(
+        target_week=IsoWeek(2026, 20),
+        phase_range=IsoWeekRange(start=IsoWeek(2026, 20), end=IsoWeek(2026, 22)),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 10, "max": 12}}},
+        zone_model_payload=_zone_model(300, 0.66),
+        season_plan_payload={
+            "data": {
+                "phases": [
+                    {
+                        "iso_week_range": "2026-20--2026-22",
+                        "weekly_load_corridor": {"weekly_kj": {"min": 500, "max": 9000}},
+                        "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                    }
+                ]
+            }
+        },
+        baseline_load_kj=5000,
+        week_role_by_week={"2026-20": "LOAD_1", "2026-21": "LOAD_2", "2026-22": "DELOAD"},
+        phase_role_by_week={"2026-20": "Build", "2026-21": "Build", "2026-22": "Build"},
+        scenario_cadence="2:1",
+    )
+
+    bands = {entry["week"]: entry["band"] for entry in context["s5_bands"]}
+    traces = {entry["week"]: entry["trace"] for entry in context["s5_bands"]}
+
+    assert bands["2026-21"]["max"] > bands["2026-20"]["max"]
+    assert bands["2026-22"]["max"] < bands["2026-21"]["max"]
+    assert traces["2026-22"]["week_role"] == "DELOAD"
+    assert traces["2026-22"]["role_progression_band"]["max"] < traces["2026-21"]["role_progression_band"]["max"]
+
+
+def test_season_phase_load_context_caps_phase_corridors_by_availability_and_roles() -> None:
+    context = build_season_phase_load_context(
+        phase_slot_context={
+            "selected_scenario_id": "B",
+            "phase_slots": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-20--2026-21",
+                    "is_shortened": True,
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION"],
+                    "week_keys": ["2026-20", "2026-21"],
+                },
+                {
+                    "phase_id": "P02",
+                    "iso_week_range": "2026-22--2026-24",
+                    "is_shortened": False,
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                    "week_keys": ["2026-22", "2026-23", "2026-24"],
+                },
+                {
+                    "phase_id": "P03",
+                    "iso_week_range": "2026-25--2026-27",
+                    "is_shortened": False,
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                    "week_keys": ["2026-25", "2026-26", "2026-27"],
+                },
+            ],
+        },
+        target_week=IsoWeek(2026, 20),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 8, "max": 10}}},
+        zone_model_payload=_zone_model(300, 0.66),
+        previous_load_kj=3000,
+    )
+
+    p01, p02, p03 = context["phases"]
+
+    assert p01["season_phase_role"] == "shortened_re_entry"
+    assert p02["phase_cycle"] == "Build"
+    assert p03["phase_cycle"] == "Peak"
+    assert p02["recommended_phase_corridor"]["max"] > p01["recommended_phase_corridor"]["max"]
+    assert p03["recommended_phase_corridor"]["max"] < p02["recommended_phase_corridor"]["max"]
+    assert p02["recommended_phase_corridor"]["max"] <= p02["availability_cap_kj"]["typical"]
 
 
 def test_selected_kpi_rate_band_from_selection_requires_kj_range() -> None:

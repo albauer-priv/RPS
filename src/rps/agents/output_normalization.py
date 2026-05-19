@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from rps.agents.tasks import AgentTask
+from rps.workspace.artifact_metadata import normalize_trace_reference
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 
 logger = logging.getLogger(__name__)
@@ -243,7 +244,13 @@ def _trace_entry_from_string(value: str, *, allowed: set[str]) -> dict[str, str]
     run_id = run_id.removesuffix(".json").strip()
     if not run_id:
         return None
-    return {"artifact": artifact, "version": "1.0", "run_id": run_id}
+    return {
+        "artifact": artifact,
+        "version": "1.0",
+        "schema_version": "1.0",
+        "version_key": run_id,
+        "run_id": run_id,
+    }
 
 
 def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[str, str]]:
@@ -264,10 +271,21 @@ def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[s
             run_id = str(item.get("run_id") or "").strip()
             if not run_id:
                 continue
-            entry = {"artifact": artifact, "version": version, "run_id": run_id}
+            reference = normalize_trace_reference(
+                {
+                    "artifact": artifact,
+                    "version": version,
+                    "schema_version": item.get("schema_version"),
+                    "version_key": item.get("version_key"),
+                    "run_id": run_id,
+                }
+            )
+            if reference is None:
+                continue
+            entry = {key: str(value) for key, value in reference.items()}
         else:
             continue
-        token = (entry["artifact"], entry["version"], entry["run_id"])
+        token = (entry["artifact"], entry["version_key"], entry["run_id"])
         if token in seen:
             continue
         seen.add(token)

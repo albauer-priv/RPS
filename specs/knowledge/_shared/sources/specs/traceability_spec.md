@@ -2,7 +2,7 @@
 Type: Specification
 Specification-For: TRACEABILITY
 Specification-ID: TraceabilitySpec
-Version: 1.0
+Version: 1.1
 
 Scope: Shared
 Authority: Binding
@@ -41,8 +41,22 @@ Define mandatory traceability rules across all artefacts:
 The `meta` object structure is defined in `artefact_meta.schema.json`. This spec
 adds semantic requirements for traceability and run identity.
 
+Persisted `meta` is code-owned. Agent tasks may provide trace intent, but the
+Runtime/Workspace layer is authoritative for schema-critical fields including
+`artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`,
+`run_id`, and normalized `trace_*` references.
+
 If an artefact has no upstream (e.g., Data-Pipeline raw outputs), it MUST include:
 - `trace_upstream: []`
+
+Trace reference fields:
+
+- `artifact`: referenced artefact identity or filename.
+- `schema_version`: semantic contract version of the referenced artefact.
+- `version`: backwards-compatible semantic-version alias.
+- `version_key`: exact workspace/file version key, e.g. `20260315_091949` or
+  `2026-21__20260518_190443`.
+- `run_id`: generation run that produced the referenced artefact.
 
 ## 3. Run-ID
 - `run_id` MUST be a non-empty string.

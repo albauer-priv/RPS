@@ -25,13 +25,16 @@ This chapter defines how to produce **schema‑valid WEEK_PLAN JSON**.
   - `data`
 
 #### 2) `meta` (required fields)
+Runtime owns persisted metadata. Treat this section as envelope shape/context only:
+do not invent canonical `schema_id`, `owner_agent`, `run_id`, `created_at`, or
+trace versions. The Workspace layer overwrites schema-critical fields before save.
 - Must satisfy `artefact_meta.schema.json`.
 - Required constants:
   - `artifact_type`: `"WEEK_PLAN"`
   - `schema_id`: `"WeekPlanInterface"`
   - `schema_version`: `"1.2"`
   - `authority`: `"Binding"`
-  - `owner_agent`: `"Week-Planner"`
+  - `owner_agent`: runtime-owned canonical writer, `"Week-Artifact-Writer"`
 - `iso_week` required (string `YYYY-WW`).
 
 #### 3) `data.week_summary`
@@ -85,7 +88,7 @@ Required:
     "schema_version": "1.2",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Week-Planner",
+    "owner_agent": "Week-Artifact-Writer",
     "run_id": "example_week_plan_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Week",

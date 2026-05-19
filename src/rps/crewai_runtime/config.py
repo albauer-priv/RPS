@@ -13,6 +13,10 @@ JsonMap = dict[str, Any]
 OPERATIONAL_CREW_SKILLS: tuple[str, ...] = (
     "skills/shared/runtime-boundaries",
     "skills/shared/resolved-context-consumption",
+    "skills/shared/snapshot-memory-consumption",
+    "skills/shared/contract-context-consumption",
+    "skills/shared/blueprint-contract-validation",
+    "skills/shared/blueprint-bound-writing",
     "skills/shared/traceability-and-naming",
     "skills/shared/replan-instruction-authoring",
 )

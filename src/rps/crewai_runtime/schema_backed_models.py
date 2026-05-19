@@ -3,78 +3,24 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any, ClassVar
 
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
+
 JsonMap = dict[str, Any]
 ROOT = Path(__file__).resolve().parents[3]
 BUNDLED_SCHEMA_DIR = ROOT / "specs" / "knowledge" / "_shared" / "sources" / "schemas" / "bundled"
 SOURCE_SCHEMA_DIR = ROOT / "specs" / "schemas"
-_SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(?:\.[0-9]+)?$")
-
-
-def _schema_semver(value: object, *, default: str = "1.0") -> str:
-    rendered = str(value or "").strip()
-    if _SEMVER_PATTERN.fullmatch(rendered):
-        return rendered
-    return default
-
-
-def _schema_meta_const(schema: JsonMap | None, key: str) -> str | None:
-    if not isinstance(schema, dict):
-        return None
-    meta_schema = schema.get("properties", {}).get("meta", {})
-    if not isinstance(meta_schema, dict):
-        return None
-    value_schema = meta_schema.get("properties", {}).get(key, {})
-    if isinstance(value_schema, dict):
-        const = value_schema.get("const")
-        if isinstance(const, str) and const:
-            return const
-    return None
 
 
 def _normalize_schema_backed_metadata(payload: Any, schema: JsonMap | None = None) -> Any:
     """Normalize schema-sensitive metadata before canonical JSON Schema validation."""
 
-    if not isinstance(payload, dict):
-        return payload
-    normalized = dict(payload)
-    meta = normalized.get("meta")
-    if not isinstance(meta, dict):
-        return normalized
-
-    meta = dict(meta)
-    if "schema_version" in meta:
-        meta["schema_version"] = _schema_semver(meta.get("schema_version"))
-    if "version" in meta:
-        meta["version"] = _schema_semver(meta.get("version"))
-    for key in ("artifact_type", "schema_id", "schema_version", "authority", "owner_agent"):
-        const = _schema_meta_const(schema, key)
-        if const:
-            meta[key] = const
-
-    for key in ("trace_upstream", "trace_data", "trace_events"):
-        entries = meta.get(key)
-        if not isinstance(entries, list):
-            continue
-        normalized_entries: list[Any] = []
-        for entry in entries:
-            if not isinstance(entry, dict):
-                normalized_entries.append(entry)
-                continue
-            normalized_entry = dict(entry)
-            if "version" in normalized_entry:
-                normalized_entry["version"] = _schema_semver(normalized_entry.get("version"))
-            normalized_entries.append(normalized_entry)
-        meta[key] = normalized_entries
-
-    normalized["meta"] = meta
-    return normalized
+    return canonicalize_artifact_envelope_meta(payload, schema=schema)
 
 
 class JsonSchemaArtifactModel(BaseModel):

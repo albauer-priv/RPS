@@ -15,12 +15,18 @@ Checklist:
 5. The text uses the supported workout syntax subset for shorthand, targets, time formats, and durations.
 6. Loop usage stays within the single-level project subset.
 7. Comments, if present, remain on their own line and preserve loop/section structure.
+8. Every workout includes `Warmup`, `Main Set`, and `Cooldown`.
+9. `Activation` is present for VO2max, Threshold, and Sweet Spot workouts.
 
 Blocking syntax cases:
 - nested loop
 - `@` shorthand
 - HR/pace/zone/absolute-watt target
+- missing duration on any step line
 - missing cadence on any step line
+- missing Warmup or Cooldown
+- missing required Activation for VO2max, Threshold, or Sweet Spot
+- section order violation
 - `MM:SS` or `HH:MM:SS` inside step lines
 
 Output format:

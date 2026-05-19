@@ -28,12 +28,15 @@ required schema, field sources, and a minimal valid example.
 - Call `store_season_plan` with this envelope only. No wrappers, no extra keys.
 
 #### 2) `meta` (required fields)
+Runtime owns persisted metadata. Treat this section as envelope shape/context only:
+do not invent canonical `schema_id`, `owner_agent`, `run_id`, `created_at`, or
+trace versions. The Workspace layer overwrites schema-critical fields before save.
 - `artifact_type`: `"SEASON_PLAN"`
 - `schema_id`: `"SeasonPlanInterface"`
 - `schema_version`: `"1.0"`
 - `version`: `"1.0"`
 - `authority`: `"Binding"`
-- `owner_agent`: `"Season-Planner"`
+- `owner_agent`: runtime-owned canonical writer, `"Season-Artifact-Writer"`
 - `run_id`: provided by runner
 - `created_at`: ISO‑8601 timestamp (UTC)
 - `scope`: `"Season"`
@@ -211,7 +214,7 @@ All required booleans must be present. Set to `true` only if valid:
     "schema_version": "1.0",
     "version": "1.0",
     "authority": "Binding",
-    "owner_agent": "Season-Planner",
+    "owner_agent": "Season-Artifact-Writer",
     "run_id": "example_season_plan_2026_w04",
     "created_at": "2026-01-26T00:00:00Z",
     "scope": "Season",

@@ -10,6 +10,16 @@ from rps.workspace.phase_resolution import date_to_iso_week
 
 JsonMap = dict[str, Any]
 CADENCE_PHASE_LENGTHS = {"2:1": 3, "3:1": 4, "2:1:1": 4}
+CADENCE_WEEK_ROLE_PATTERNS = {
+    "2:1": ["LOAD_1", "LOAD_2", "DELOAD"],
+    "3:1": ["LOAD_1", "LOAD_2", "LOAD_3", "DELOAD"],
+    "2:1:1": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+}
+SHORTENED_WEEK_ROLE_PATTERN = [
+    "SHORTENED_RE_ENTRY",
+    "SHORTENED_CONSOLIDATION",
+    "SHORTENED_MINI_RESET",
+]
 MIN_SHORTENED_PHASE_LENGTH = 2
 
 
@@ -69,6 +79,25 @@ def _phase_plan_math(planning_horizon_weeks: int, phase_length_weeks: int) -> Js
         "max_shortened_phases": 1,
         "shortened_phases": [{"len": shortened_length, "count": 1}],
     }
+
+
+def _cadence_week_roles(*, cadence: str | None, length_weeks: int, is_shortened: bool) -> list[str]:
+    """Return week-role labels derived only from the selected scenario cadence."""
+
+    if length_weeks <= 0:
+        return []
+    if is_shortened:
+        roles = SHORTENED_WEEK_ROLE_PATTERN[:length_weeks]
+        while len(roles) < length_weeks:
+            roles.append("SHORTENED_RELOAD")
+        return roles
+    pattern = CADENCE_WEEK_ROLE_PATTERNS.get(str(cadence or "").strip())
+    if not pattern:
+        return []
+    roles = pattern[:length_weeks]
+    while len(roles) < length_weeks:
+        roles.append(pattern[-1])
+    return roles
 
 
 def build_cadence_options_context(*, planning_horizon_context: JsonMap) -> JsonMap:
@@ -218,11 +247,22 @@ def build_phase_slot_context(
 ) -> JsonMap:
     """Build deterministic phase slots from selected scenario math."""
 
+    cadence = str(selected_structure_context.get("deload_cadence") or "").strip()
     phase_length = _as_int(selected_structure_context.get("phase_length_weeks"))
     full_phases = _as_int(selected_structure_context.get("full_phases")) or 0
     horizon = _as_int(selected_structure_context.get("planning_horizon_weeks"))
     if phase_length is None or phase_length <= 0 or horizon is None or horizon <= 0:
         return {}
+    blocking_issues: list[str] = []
+    expected_phase_length = CADENCE_PHASE_LENGTHS.get(cadence)
+    if expected_phase_length is None:
+        blocking_issues.append(
+            "Selected scenario deload_cadence is missing or unsupported; Season Plan must not infer cadence."
+        )
+    elif expected_phase_length != phase_length:
+        blocking_issues.append(
+            "Selected scenario phase_length_weeks does not match its inherited deload_cadence."
+        )
     shortened_entries = [_as_map(item) for item in _as_list(selected_structure_context.get("shortened_phases"))]
     lengths: list[tuple[int, bool]] = []
     # Shorten the earliest low-authority slots first, preserving full final phases near the event.
@@ -248,19 +288,28 @@ def build_phase_slot_context(
                 "iso_week_range": f"{_week_key(start)}--{_week_key(end)}",
                 "length_weeks": length,
                 "is_shortened": is_shortened,
+                "scenario_cadence": cadence,
+                "cadence_week_roles": _cadence_week_roles(
+                    cadence=cadence,
+                    length_weeks=length,
+                    is_shortened=is_shortened,
+                ),
                 "week_keys": [_week_key(_add_weeks(start, offset)) for offset in range(length)],
             }
         )
         covered_weeks += length
         cursor = _next_week(end)
+    if covered_weeks != horizon:
+        blocking_issues.append("Selected scenario phase slots do not cover the planning horizon exactly.")
     return {
         "selected_scenario_id": selected_structure_context.get("selected_scenario_id"),
         "planning_horizon_weeks": horizon,
-        "deload_cadence": selected_structure_context.get("deload_cadence"),
+        "deload_cadence": cadence,
         "phase_length_weeks": phase_length,
         "phase_count_expected": selected_structure_context.get("phase_count_expected"),
         "covered_weeks": covered_weeks,
         "coverage_matches_horizon": covered_weeks == horizon,
+        "blocking_issues": blocking_issues,
         "phase_slots": slots,
     }
 
@@ -272,7 +321,8 @@ def render_phase_slot_context_block(context: JsonMap) -> str:
         return ""
     lines = [
         "**Deterministic Season Phase Slot Context**",
-        "These slots define phase count, order, length, and ISO-week coverage. Assign schema-valid cycles and planning content to these slots; do not add, remove, or resize slots.",
+        "These slots define phase count, order, length, ISO-week coverage, and cadence roles inherited from the selected Season Scenario. Assign schema-valid cycles and planning content to these slots; do not add, remove, resize, or re-cadence slots.",
+        "cadence_week_roles are deterministic planning context only: reflect them in deload_rationale, duration/intensity pattern, and load-corridor notes; do not persist them as new Season Plan fields.",
         f"selected_scenario_id: {context.get('selected_scenario_id')}",
         f"planning_horizon_weeks: {context.get('planning_horizon_weeks')}",
         f"deload_cadence: {context.get('deload_cadence')}",
@@ -290,8 +340,14 @@ def render_phase_slot_context_block(context: JsonMap) -> str:
             f"{slot_map.get('iso_week_range')}, "
             f"length_weeks {slot_map.get('length_weeks')}, "
             f"is_shortened {slot_map.get('is_shortened')}, "
+            f"scenario_cadence {slot_map.get('scenario_cadence')}, "
+            f"cadence_week_roles {', '.join(str(item) for item in _as_list(slot_map.get('cadence_week_roles')))}, "
             f"weeks {', '.join(str(item) for item in _as_list(slot_map.get('week_keys')))}"
         )
+    blocking_issues = [str(item) for item in _as_list(context.get("blocking_issues")) if str(item).strip()]
+    if blocking_issues:
+        lines.append("blocking_issues:")
+        lines.extend(f"- {issue}" for issue in blocking_issues)
     return "\n".join(lines) + "\n"
 
 

@@ -905,7 +905,12 @@ def test_create_season_plan_injects_selected_scenario_phase_math(
     assert "consistent_with_horizon: True" in captured_inputs[0]
     assert "**Deterministic Season Phase Slot Context**" in captured_inputs[0]
     assert "P01: 2026-12--2026-13" in captured_inputs[0]
+    assert "scenario_cadence 2:1" in captured_inputs[0]
+    assert "cadence_week_roles SHORTENED_RE_ENTRY, SHORTENED_CONSOLIDATION" in captured_inputs[0]
     assert "P06: 2026-26--2026-28" in captured_inputs[0]
+    assert "**Deterministic Season Phase Load Context**" in captured_inputs[0]
+    assert "season_phase_role" in captured_inputs[0]
+    assert "role_week_load_bands" in captured_inputs[0]
 
 
 def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):

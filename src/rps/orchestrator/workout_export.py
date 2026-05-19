@@ -6,6 +6,7 @@ import logging
 from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
+from typing import cast
 
 from rps.workouts.exporter import build_workout_export_payload
 from rps.workspace.guarded_store import normalize_artifact_owner
@@ -96,7 +97,15 @@ def run_workout_export(
         schemas = SchemaRegistry(schema_dir=schema_dir)
         week_plan_validator = schemas.validator_for("week_plan.schema.json")
         week_plan_for_validation = deepcopy(week_plan)
-        normalize_artifact_owner(week_plan_for_validation, ArtifactType.WEEK_PLAN)
+        week_plan_for_validation = cast(
+            dict[str, object],
+            normalize_artifact_owner(
+                week_plan_for_validation,
+                ArtifactType.WEEK_PLAN,
+            ),
+        )
+        if not isinstance(week_plan_for_validation, dict):
+            raise ValueError("WEEK_PLAN payload is not an object")
         meta = week_plan_for_validation.get("meta")
         if isinstance(meta, dict):
             meta.pop("version_key", None)

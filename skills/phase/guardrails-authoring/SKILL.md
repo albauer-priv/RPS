@@ -9,12 +9,14 @@ Author guardrails for one exact phase range.
 
 Method:
 1. Consume the injected deterministic S5 bands for the exact phase range.
-2. Consume `Deterministic Phase Execution Context` for required ISO weeks, phase length, week index, cycle, and deload intent.
-3. Resolve a deterministic baseline week from the recent history when baseline-based progression logic is needed.
-4. Copy each code-owned S5 band and trace into `phase_guardrails.load_guardrails.weekly_kj_bands`.
-5. If S5 reports STOP/fallback status, expose the status and request bounded replan rather than widening the band.
-6. Express execution boundaries that later structure and week planning must respect.
-7. Encode what is allowed, suppressed, or protected in this phase.
+2. Consume `Deterministic Phase Execution Context` for required ISO weeks, phase length, week index, cycle, phase role, inherited week roles, scenario cadence, and deload intent.
+3. Treat `phase_cadence_week_roles` and `week_role_by_iso_week` as binding; do not invent week roles or replace the selected scenario cadence.
+4. Resolve a deterministic baseline week from the recent history when baseline-based progression logic is needed.
+5. Copy each code-owned role-aware S5 band and trace into `phase_guardrails.load_guardrails.weekly_kj_bands`.
+   Band notes must preserve S5 band, phase role, week role, role progression band, and availability feasibility trace.
+6. If S5 reports STOP/fallback status, expose the status and request bounded replan rather than widening the band.
+7. Express execution boundaries that later structure and week planning must respect.
+8. Encode what is allowed, suppressed, or protected in this phase.
 
 Baseline selection:
 - use the recent `6-8` week lookback, default `8`
@@ -57,6 +59,8 @@ Hard rules:
 - guardrails are binding for downstream structure and week planning
 - keep the exact range traceable and stable
 - emitted weeks must match `Deterministic Phase Execution Context.required_phase_weeks`
+- emitted week bands must preserve the injected phase role and week role for every ISO week
+- deload, mini-reset, re-entry, reload, and taper weeks must be numerically visible unless S5 fallback trace explains why not
 - surface unrealistic load pressure explicitly in review/replan guidance
 - align execution rules with season-owned cadence and taper logic
 - `weekly_kj_bands` must match injected deterministic S5 bands

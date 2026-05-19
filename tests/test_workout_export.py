@@ -117,6 +117,33 @@ class WorkoutExportTests(unittest.TestCase):
         with self.assertRaises(WorkoutValidationError):
             validate_week_plan_exportability(week_plan)
 
+    def test_validate_week_plan_rejects_missing_step_duration(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 68% 85-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+
+        with self.assertRaises(WorkoutValidationError):
+            validate_week_plan_exportability(week_plan)
+
+    def test_validate_week_plan_rejects_missing_required_activation(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n- 20m 90% 88-92rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+        week_plan["data"]["workouts"][0]["title"] = "Sweet Spot Development"
+
+        issues = [issue.format() for issue in collect_week_plan_export_issues(week_plan)]
+
+        self.assertTrue(any("Activation section is required" in issue for issue in issues))
+
+    def test_validate_week_plan_rejects_section_order_violation(self) -> None:
+        week_plan = _sample_week_plan(
+            "Main Set\n- 20m 70% 85rpm\n\nWarmup\n- 8m ramp 50%-70% 85-90rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm"
+        )
+
+        issues = [issue.format() for issue in collect_week_plan_export_issues(week_plan)]
+
+        self.assertTrue(any("workout sections are out of policy order" in issue for issue in issues))
+
     def test_build_export_maps_week_plan_to_intervals_array(self) -> None:
         week_plan = _sample_week_plan(
             "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n2x\n- 20m 84% 88-92rpm\n- 5m 60% 85rpm\n\nCooldown\n- 8m ramp 60%-45% 80rpm"

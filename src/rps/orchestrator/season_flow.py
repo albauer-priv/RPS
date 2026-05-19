@@ -11,15 +11,18 @@ from rps.agents.runtime import run_agent_multi_output as run_agent_multi_output_
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime.compat import crewai_runtime_status
 from rps.crewai_runtime.flows import run_season_flow
+from rps.crewai_runtime.guardrails import guardrail_runtime_context
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,
     save_advisory_memory,
     save_athlete_state_snapshot,
 )
 from rps.orchestrator.resolved_context import build_resolved_activity_context_block
+from rps.planning.contracts import blocking_messages, validate_snapshot_freshness
 from rps.planning.deterministic_context import (
     build_cadence_options_block,
     build_load_capacity_block,
+    build_season_phase_load_block,
     build_season_phase_slot_block,
     build_season_scenario_horizon_block,
     build_selected_scenario_structure_block,
@@ -88,6 +91,26 @@ def _load_latest_payload(
     except Exception:
         return None
     return loaded if isinstance(loaded, dict) else None
+
+
+def _payload_version(payload: JsonMap | None) -> str | None:
+    meta = payload.get("meta") if isinstance(payload, dict) else None
+    if not isinstance(meta, dict):
+        return None
+    version = meta.get("version_key")
+    return version if isinstance(version, str) else None
+
+
+def _expected_source_versions(entries: list[tuple[str, JsonMap | None]]) -> JsonMap:
+    return {
+        label: version
+        for label, payload in entries
+        if (version := _payload_version(payload)) is not None
+    }
+
+
+def _as_list(value: object) -> list[object]:
+    return value if isinstance(value, list) else []
 
 
 def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
@@ -327,6 +350,9 @@ def create_season_plan(
     load_capacity_block = ""
     selected_scenario_structure_block = ""
     phase_slot_block = ""
+    season_phase_load_block = ""
+    phase_slot_context_payload: JsonMap = {}
+    season_phase_load_context_payload: JsonMap = {}
     historical_context_line = ""
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
@@ -357,6 +383,26 @@ def create_season_plan(
         athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
             athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
+        snapshot_issues = validate_snapshot_freshness(
+            snapshot_payload=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {},
+            expected_source_versions=_expected_source_versions(
+                [
+                    ("athlete_profile", athlete_profile_payload),
+                    ("kpi_profile", kpi_profile_payload),
+                    ("season_scenario_selection", selection_payload),
+                    ("availability", availability_payload),
+                    ("planning_events", planning_events_payload),
+                    ("logistics", logistics_payload),
+                    ("zone_model", zone_model_payload),
+                    ("wellness", wellness_payload),
+                ]
+            ),
+            authoritative=True,
+            snapshot_label="ATHLETE_STATE_SNAPSHOT",
+        )
+        snapshot_blockers = blocking_messages(snapshot_issues)
+        if snapshot_blockers:
+            return {"ok": False, "error": "Season snapshot freshness failed: " + "; ".join(snapshot_blockers[:5])}
         historical_activity_versions = _resolve_latest_historical_week_versions(
             store,
             athlete_id,
@@ -396,24 +442,65 @@ def create_season_plan(
                 )
             ]
         )
+        if "availability_load_capacity_kj:" not in load_capacity_block:
+            return {
+                "ok": False,
+                "error": "Season deterministic load capacity context is missing availability_load_capacity_kj.",
+            }
         selected_structure_context = build_selected_scenario_structure_block(
             season_scenarios_payload=season_scenarios_payload or {},
             selection_payload=selection_payload or {},
             selected_scenario_id=selected,
         )
+        if not selected_structure_context.payload:
+            return {
+                "ok": False,
+                "error": "Season deterministic selected scenario structure context is missing.",
+            }
         phase_slot_context = build_season_phase_slot_block(
             selected_structure_context=selected_structure_context.payload,
             target_week=target_week,
         )
+        phase_slot_context_payload = phase_slot_context.payload
+        slot_issues = [
+            str(item)
+            for item in _as_list(phase_slot_context_payload.get("blocking_issues"))
+            if str(item).strip()
+        ]
+        if not phase_slot_context_payload or slot_issues:
+            return {
+                "ok": False,
+                "error": "Season deterministic phase slot context is invalid: " + "; ".join(slot_issues or ["missing"]),
+            }
+        season_phase_load_context = build_season_phase_load_block(
+            phase_slot_context=phase_slot_context.payload,
+            target_week=target_week,
+            athlete_profile_payload=athlete_profile_payload or {},
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            wellness_payload=wellness_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),
+        )
+        season_phase_load_context_payload = season_phase_load_context.payload
+        load_issues = [
+            str(item)
+            for item in _as_list(season_phase_load_context_payload.get("blocking_issues"))
+            if str(item).strip()
+        ]
+        if not season_phase_load_context_payload or load_issues:
+            return {
+                "ok": False,
+                "error": "Season deterministic phase load context is invalid: " + "; ".join(load_issues or ["missing"]),
+            }
         selected_scenario_structure_block = render_context_blocks([selected_structure_context])
         phase_slot_block = render_context_blocks([phase_slot_context])
-    except Exception:
-        athlete_state_snapshot_block = ""
-        resolved_activity_block = ""
-        load_capacity_block = ""
-        selected_scenario_structure_block = ""
-        phase_slot_block = ""
-        historical_context_line = ""
+        season_phase_load_block = render_context_blocks([season_phase_load_context])
+    except Exception as exc:
+        logger.exception("Season deterministic context construction failed.")
+        return {"ok": False, "error": f"Season deterministic context construction failed: {exc}"}
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -425,6 +512,7 @@ def create_season_plan(
         f"{load_capacity_block}"
         f"{selected_scenario_structure_block}"
         f"{phase_slot_block}"
+        f"{season_phase_load_block}"
         f"{override_line}"
         f"{injected_block}"
         "Return only the final schema-compliant SEASON_PLAN artifact envelope."
@@ -436,17 +524,21 @@ def create_season_plan(
         week,
         selected or "latest",
     )
-    result = run_agent_multi_output(
-        runtime_for,
-        agent_name=spec.name,
-        athlete_id=athlete_id,
-        task=AgentTask.CREATE_SEASON_PLAN,
-        user_input=user_input,
-        run_id=run_id,
-        model_override=model_resolver(spec.name) if model_resolver else None,
-        temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        workspace_root=runtime_for(spec.name).workspace_root,
-    )
+    with guardrail_runtime_context(
+        phase_slot_context=phase_slot_context_payload,
+        season_phase_load_context=season_phase_load_context_payload,
+    ):
+        result = run_agent_multi_output(
+            runtime_for,
+            agent_name=spec.name,
+            athlete_id=athlete_id,
+            task=AgentTask.CREATE_SEASON_PLAN,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            workspace_root=runtime_for(spec.name).workspace_root,
+        )
     try:
         if result.get("ok") and result.get("produced"):
             store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
