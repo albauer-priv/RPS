@@ -24,6 +24,7 @@ Hard rules:
 - use explicit athlete and logistics facts from upstream context
 - keep hard blockers authoritative over scenario preference
 - emit season-level constraint synthesis only
+- do not make KPI semantics, historical continuity, or cadence/load philosophy the main output unless they directly prove or constrain a hard boundary
 
 Retrieval policy:
 - Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `athlete_profile`, `availability`, and `logistics`.

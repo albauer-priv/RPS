@@ -13,6 +13,10 @@ Focus on:
 - re-entry needs after disruption
 - signs that aggressive progression or long build strings are unsafe
 
+Hard rules:
+- stay evidence-led and recent-history-led
+- do not restate fixed rest days, availability caps, phase corridors, event taper handling, or KPI pacing semantics as the main conclusion unless the historical record directly constrains them
+
 Output format:
 - Return the task expected_output as a compact context summary.
 - Include authoritative inputs, selected ranges, constraints, missing data, and assumptions.

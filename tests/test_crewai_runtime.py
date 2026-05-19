@@ -816,6 +816,22 @@ def test_season_event_and_peak_tasks_expose_workspace_read_tools() -> None:
     ]
 
 
+def test_season_specialist_task_scopes_are_explicitly_separated() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    task_blueprints = build_task_blueprints(bundle)
+
+    constraint_description = task_blueprints["season_constraint_review"].description
+    historical_description = task_blueprints["season_historical_context_review"].description
+    kpi_description = task_blueprints["season_kpi_guidance_review"].description
+
+    assert "hard and soft constraints only" in constraint_description
+    assert "historical continuity" in constraint_description
+    assert "recent tolerance, disruption risk, and continuity evidence only" in historical_description
+    assert "Do not restate fixed rest days, phase corridors, event taper handling, or KPI pacing semantics as primary findings" in historical_description
+    assert "Keep the output centered on pacing/rate-band interpretation" in kpi_description
+    assert "Do not restate fixed rest days, availability bounds, phase corridors, load caps, event-anchor/taper handling, or historical continuity as primary findings" in kpi_description
+
+
 def test_agent_memory_read_only_mode_uses_slice() -> None:
     class FakeMemory:
         def __init__(self) -> None:

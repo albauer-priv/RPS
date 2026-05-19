@@ -1021,6 +1021,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intervals posting receipt helpers now use explicit receipt/payload row types instead of broad dynamic dict typing, including safer text normalization for generated external IDs.
 ## 2026-05-19
 
+- fix: season constraint, historical-context, and KPI-guidance specialists now have explicit scope separation in tasks, prompts, and skills so KPI semantics no longer drift back into constraint/event/corridor authority and historical reviews stay evidence-led instead of restating downstream governance
 - refactor: reduced the repo-supported LLM env surface to global provider defaults only; per-agent, coach-specific, and crew-planning env overrides are no longer active runtime inputs
 - docs: deployment environment documentation now points role-specific model policy to `config/crewai/runtime_profiles.yaml` instead of per-agent env keys
 - refactor: reduced `src/rps/core/config.py` to a minimal app-level settings surface with only global LLM defaults and local path settings
