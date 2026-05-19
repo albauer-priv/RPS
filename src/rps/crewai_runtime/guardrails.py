@@ -58,6 +58,12 @@ def guardrail_runtime_context(**context: Any):
         _GUARDRAIL_CONTEXT.reset(token)
 
 
+def current_guardrail_runtime_context() -> JsonMap:
+    """Return the currently bound runtime guardrail context."""
+
+    return dict(_GUARDRAIL_CONTEXT.get({}))
+
+
 def _coerce_payload(result: Any) -> Any:
     """Extract the richest payload view from a CrewAI TaskOutput-like object."""
 

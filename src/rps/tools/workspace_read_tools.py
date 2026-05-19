@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from rps.crewai_runtime.guardrails import current_guardrail_runtime_context
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.iso_helpers import IsoWeekRange
@@ -193,6 +194,64 @@ def read_tool_defs() -> list[JsonDict]:
         },
         {
             "type": "function",
+            "name": "workspace_get_phase_slot_contract",
+            "description": (
+                "Load the code-owned deterministic season phase-slot contract bound to the current run. "
+                "Use this instead of searching workspace artifacts for inherited season cadence, phase ids, "
+                "phase order, or phase ISO-week coverage."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "workspace_get_season_phase_load_context",
+            "description": (
+                "Load the code-owned deterministic season phase-load context bound to the current run. "
+                "Use this for recommended_phase_corridor values, availability caps, role-week load bands, "
+                "and taper/load feasibility instead of searching for a persisted recommendation artifact."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "workspace_get_phase_execution_context",
+            "description": (
+                "Load the code-owned deterministic phase execution context bound to the current run. "
+                "Use this for phase week roles, exact phase range, active S5 bands, and phase-level execution authority."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
+            "name": "workspace_get_week_calendar_context",
+            "description": (
+                "Load the code-owned deterministic week calendar and availability context bound to the current run. "
+                "Use this for active week role, active weekly band, Mon-Sun dates, availability caps, fixed rest days, and allowed domains."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "type": "function",
             "name": "workspace_resolve_season_phase",
             "description": "Resolve the season plan phase covering a target ISO week based on SEASON_PLAN latest.",
             "parameters": {
@@ -370,6 +429,44 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         artifact_type = _parse_artifact_type(args["artifact_type"])
         return workspace.list_versions(artifact_type)
 
+    def _contract_payload(context_key: str, label: str) -> JsonDict:
+        context = current_guardrail_runtime_context()
+        payload = _as_map(context.get(context_key))
+        if not payload:
+            return {
+                "ok": False,
+                "context_name": label,
+                "error": (
+                    f"{label} is not bound in the current runtime context. "
+                    "Do not invent or rediscover this contract from workspace artifacts."
+                ),
+            }
+        return {"ok": True, "context_name": label, "contract": payload}
+
+    def workspace_get_phase_slot_contract(args: dict[str, Any]) -> object:
+        """Return the bound deterministic season phase-slot contract."""
+
+        del args
+        return _contract_payload("phase_slot_context", "phase_slot_context")
+
+    def workspace_get_season_phase_load_context(args: dict[str, Any]) -> object:
+        """Return the bound deterministic season phase-load contract."""
+
+        del args
+        return _contract_payload("season_phase_load_context", "season_phase_load_context")
+
+    def workspace_get_phase_execution_context(args: dict[str, Any]) -> object:
+        """Return the bound deterministic phase execution context."""
+
+        del args
+        return _contract_payload("phase_execution_context", "phase_execution_context")
+
+    def workspace_get_week_calendar_context(args: dict[str, Any]) -> object:
+        """Return the bound deterministic week calendar context."""
+
+        del args
+        return _contract_payload("week_calendar_context", "week_calendar_context")
+
     def workspace_resolve_season_phase(args: dict[str, Any]) -> object:
         """Resolve the season plan phase covering the target week."""
         year = int(args["year"])
@@ -508,6 +605,10 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         "workspace_get_latest": workspace_get_latest,
         "workspace_get_version": workspace_get_version,
         "workspace_list_versions": workspace_list_versions,
+        "workspace_get_phase_slot_contract": workspace_get_phase_slot_contract,
+        "workspace_get_season_phase_load_context": workspace_get_season_phase_load_context,
+        "workspace_get_phase_execution_context": workspace_get_phase_execution_context,
+        "workspace_get_week_calendar_context": workspace_get_week_calendar_context,
         "workspace_resolve_season_phase": workspace_resolve_season_phase,
         "workspace_resolve_phase_range": workspace_resolve_phase_range,
         "workspace_find_best_phase_artefact": workspace_find_best_phase_artefact,

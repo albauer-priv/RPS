@@ -16,6 +16,7 @@ if str(SRC) not in sys.path:
 
 from rps.agents.task_router import AgentTaskRouter, RouterContext  # noqa: E402
 from rps.agents.tasks import AgentTask  # noqa: E402
+from rps.crewai_runtime.guardrails import guardrail_runtime_context  # noqa: E402
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers  # noqa: E402
 from rps.tools.workspace_tools import ToolContext, get_tool_handlers  # noqa: E402
 from rps.workspace.api import Workspace  # noqa: E402
@@ -424,6 +425,71 @@ class GuardTests(unittest.TestCase):
 
 class WorkspaceReadToolTests(unittest.TestCase):
     """Coverage for workspace read tool helpers."""
+
+    def test_workspace_contract_tools_return_bound_deterministic_context(self) -> None:
+        """Verify season contract tools read the currently bound runtime contract payloads."""
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id="ath_contract",
+                    workspace_root=root,
+                    agent_name="season_plan_manager",
+                )
+            )
+            phase_slot_context = {
+                "phase_slots": [
+                    {"phase_id": "P01", "iso_week_range": "2026-21--2026-23"},
+                ]
+            }
+            season_phase_load_context = {
+                "phases": [
+                    {
+                        "phase_id": "P01",
+                        "recommended_phase_corridor": {"min": 7400, "max": 9200},
+                    }
+                ]
+            }
+
+            with guardrail_runtime_context(
+                phase_slot_context=phase_slot_context,
+                season_phase_load_context=season_phase_load_context,
+            ):
+                slot_result = handlers["workspace_get_phase_slot_contract"]({})
+                load_result = handlers["workspace_get_season_phase_load_context"]({})
+
+            self.assertTrue(slot_result["ok"])
+            self.assertEqual(slot_result["contract"], phase_slot_context)
+            self.assertTrue(load_result["ok"])
+            self.assertEqual(load_result["contract"], season_phase_load_context)
+
+    def test_workspace_phase_and_week_contract_tools_return_bound_context(self) -> None:
+        """Verify phase/week deterministic contract tools read the currently bound runtime payloads."""
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id="ath_contract_2",
+                    workspace_root=root,
+                    agent_name="week_plan_manager",
+                )
+            )
+            phase_execution_context = {"phase_id": "P03", "week_role_by_iso_week": {"2026-26": "LOAD_1"}}
+            week_calendar_context = {"target_iso_week": "2026-26", "phase_week_role": "LOAD_1"}
+
+            with guardrail_runtime_context(
+                phase_execution_context=phase_execution_context,
+                week_calendar_context=week_calendar_context,
+            ):
+                phase_result = handlers["workspace_get_phase_execution_context"]({})
+                week_result = handlers["workspace_get_week_calendar_context"]({})
+
+            self.assertTrue(phase_result["ok"])
+            self.assertEqual(phase_result["contract"], phase_execution_context)
+            self.assertTrue(week_result["ok"])
+            self.assertEqual(week_result["contract"], week_calendar_context)
 
     def test_workspace_get_phase_context_includes_phase_info(self) -> None:
         """Verify phase context includes derived phase week and focus."""

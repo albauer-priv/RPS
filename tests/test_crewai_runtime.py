@@ -13,6 +13,7 @@ from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
     _coerce_artifact_envelope,
+    _contract_context_blocks_for_task,
     _emit_crew_task_prepared_events,
     _task_tools_for_blueprint,
     run_agent_multi_output_crewai,
@@ -977,6 +978,83 @@ def test_season_plan_bundle_accepts_phase_blueprints_with_inherited_cadence_role
     assert model.phase_blueprints[0].scenario_cadence == "2:1:1"
     assert model.phase_blueprints[0].cadence_week_roles == ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"]
     assert model.phase_blueprints[0].availability_cap_kj == 10000
+
+
+def test_season_plan_finalize_declares_deterministic_contract_tools() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert blueprints["season_plan_finalize"].config["tools"] == [
+        "workspace_get_phase_slot_contract",
+        "workspace_get_season_phase_load_context",
+    ]
+
+
+def test_contract_context_blocks_for_season_finalize_include_bound_contracts() -> None:
+    with guardrail_runtime_context(
+        phase_slot_context={"phase_slots": [{"phase_id": "P01"}]},
+        season_phase_load_context={"phases": [{"phase_id": "P01"}]},
+    ):
+        blocks = _contract_context_blocks_for_task(
+            crew_name="season_planning",
+            task_name="season_plan_finalize",
+        )
+
+    assert any("Deterministic Season Phase Slot Contract" in block for block in blocks)
+    assert any("Deterministic Season Phase Load Contract" in block for block in blocks)
+    assert any("Do not search the workspace" in block for block in blocks)
+
+
+def test_season_plan_manager_disables_free_delegation_via_yaml_override() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    agent_blueprints = build_agent_blueprints(bundle)
+
+    assert agent_blueprints["season_plan_manager"].config["allow_delegation"] is False
+
+
+def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert blueprints["phase_bundle_finalize"].config["tools"] == [
+        "workspace_get_phase_execution_context",
+        "workspace_get_phase_slot_contract",
+    ]
+    assert blueprints["week_plan_finalize"].config["tools"] == [
+        "workspace_get_week_calendar_context",
+        "workspace_get_phase_execution_context",
+    ]
+
+
+def test_contract_context_blocks_for_phase_and_week_finalizers_include_bound_contracts() -> None:
+    with guardrail_runtime_context(
+        phase_slot_context={"phase_slots": [{"phase_id": "P01"}]},
+        phase_execution_context={"phase_id": "P01", "phase_s5_bands": []},
+        week_calendar_context={"target_iso_week": "2026-21", "phase_week_role": "LOAD_1"},
+    ):
+        phase_blocks = _contract_context_blocks_for_task(
+            crew_name="phase_planning",
+            task_name="phase_bundle_finalize",
+        )
+        week_blocks = _contract_context_blocks_for_task(
+            crew_name="week_planning",
+            task_name="week_plan_finalize",
+        )
+
+    assert any("Deterministic Phase Execution Contract" in block for block in phase_blocks)
+    assert any("Deterministic Season Phase Slot Contract" in block for block in phase_blocks)
+    assert any("Do not delegate or rediscover week roles" in block for block in phase_blocks)
+    assert any("Deterministic Week Calendar Contract" in block for block in week_blocks)
+    assert any("Deterministic Phase Execution Contract" in block for block in week_blocks)
+    assert any("Do not delegate or rediscover active week role" in block for block in week_blocks)
+
+
+def test_phase_and_week_managers_disable_free_delegation_via_yaml_override() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    agent_blueprints = build_agent_blueprints(bundle)
+
+    assert agent_blueprints["phase_bundle_manager"].config["allow_delegation"] is False
+    assert agent_blueprints["week_plan_manager"].config["allow_delegation"] is False
 
 
 def test_phase_week_blueprint_model_accepts_role_aware_s5_band() -> None:
@@ -1983,7 +2061,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert writer_agent["cache"] is False
     assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
     manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal season planning synthesizer")
-    assert manager_agent["allow_delegation"] is True
+    assert manager_agent["allow_delegation"] is False
     assert manager_agent["max_iter"] == 5
 
 

@@ -28,7 +28,11 @@ from rps.crewai_runtime.generated_artifact_models import (
     artifact_model_for_schema_file,
     artifact_model_for_task_name,
 )
-from rps.crewai_runtime.guardrails import build_task_guardrail_kwargs, guardrail_runtime_context
+from rps.crewai_runtime.guardrails import (
+    build_task_guardrail_kwargs,
+    current_guardrail_runtime_context,
+    guardrail_runtime_context,
+)
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
     resolve_agent_knowledge_profile,
@@ -458,6 +462,80 @@ def _augment_user_input(user_input: str, *context_blocks: str) -> str:
     if not blocks:
         return user_input
     return "\n\n".join([user_input, "Additional runtime context:", *blocks])
+
+
+def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list[str]:
+    """Return structured deterministic contract blocks relevant to one CrewAI task."""
+
+    context = current_guardrail_runtime_context()
+    blocks: list[str] = []
+    if crew_name == "season_planning":
+        phase_slot_context = context.get("phase_slot_context")
+        if phase_slot_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Season Phase Slot Contract",
+                    phase_slot_context,
+                )
+            )
+        season_phase_load_context = context.get("season_phase_load_context")
+        if season_phase_load_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Season Phase Load Contract",
+                    season_phase_load_context,
+                )
+            )
+        if task_name == "season_plan_finalize" and blocks:
+            blocks.append(
+                "Season finalization rule: consume these deterministic contracts directly. "
+                "Do not search the workspace for non-persisted phase-load recommendation artifacts."
+            )
+    elif crew_name == "phase_planning":
+        phase_execution_context = context.get("phase_execution_context")
+        if phase_execution_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Phase Execution Contract",
+                    phase_execution_context,
+                )
+            )
+        phase_slot_context = context.get("phase_slot_context")
+        if phase_slot_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Season Phase Slot Contract",
+                    phase_slot_context,
+                )
+            )
+        if task_name == "phase_bundle_finalize" and blocks:
+            blocks.append(
+                "Phase finalization rule: consume these deterministic contracts directly. "
+                "Do not delegate or rediscover week roles, S5 bands, or phase-range authority from prose."
+            )
+    elif crew_name == "week_planning":
+        week_calendar_context = context.get("week_calendar_context")
+        if week_calendar_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Week Calendar Contract",
+                    week_calendar_context,
+                )
+            )
+        phase_execution_context = context.get("phase_execution_context")
+        if phase_execution_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Phase Execution Contract",
+                    phase_execution_context,
+                )
+            )
+        if task_name == "week_plan_finalize" and blocks:
+            blocks.append(
+                "Week finalization rule: consume these deterministic contracts directly. "
+                "Do not delegate or rediscover active week role, active weekly band, availability caps, or fixed rest rules from prose."
+            )
+    return blocks
 
 
 def _resolve_prompt_agent_name(agent_name: str, blueprint: Any) -> str:
@@ -969,13 +1047,17 @@ def _execute_crewai_hierarchical_crew(
         agent_name = task_blueprint.agent
         prompt_agent = _resolve_prompt_agent_name(agent_name, agent_blueprints[agent_name])
         if task_name == final_task_name and final_public_task is not None:
+            contract_blocks = _contract_context_blocks_for_task(
+                crew_name=crew_name,
+                task_name=task_name,
+            )
             description = _build_task_description(
                 runtime,
                 bundle=bundle,
                 crew_name=crew_name,
                 agent_name=manager_agent_name,
                 task=final_public_task,
-                user_input=user_input,
+                user_input=_augment_user_input(user_input, *contract_blocks),
             )
             if prior_tasks:
                 description = "\n".join(
@@ -986,6 +1068,10 @@ def _execute_crewai_hierarchical_crew(
                     ]
                 )
         else:
+            contract_blocks = _contract_context_blocks_for_task(
+                crew_name=crew_name,
+                task_name=task_name,
+            )
             description = _build_internal_task_description(
                 runtime,
                 agent_name=agent_name,
@@ -993,7 +1079,7 @@ def _execute_crewai_hierarchical_crew(
                 bundle=bundle,
                 crew_name=crew_name,
                 task_blueprint=task_blueprint,
-                user_input=user_input,
+                user_input=_augment_user_input(user_input, *contract_blocks),
             )
         context_tasks: list[object] | None
         if getattr(task_blueprint, "context_names", ()):

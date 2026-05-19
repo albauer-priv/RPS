@@ -15,6 +15,12 @@ Method:
 
 Use only existing upstream authority and injected deterministic context.
 
+When exact deterministic execution values are needed, use the contract tools directly:
+- `workspace_get_week_calendar_context`
+- `workspace_get_phase_execution_context`
+
+Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive active week role, active weekly band, availability caps, fixed rest days, or allowed domains during this step.
+
 Required bundle semantics:
 - `day_blueprints` must cover exactly Mon..Sun of the target ISO week in order.
 - Each day blueprint must state fixed-rest status, availability cap, phase role, phase week role, day role, intended domain, duration, kJ, workout reference, and warnings.

@@ -11,7 +11,11 @@ Method:
 1. Keep guardrails authoritative over structure.
 2. Apply cadence/recovery as a constraint on structure, not as a separate plan.
 3. Preserve event integration only where it does not violate season authority.
-4. Emit one review-ready phase bundle.
+4. Use deterministic contract tools directly when exact phase-slot or phase-execution values are needed:
+   - `workspace_get_phase_execution_context`
+   - `workspace_get_phase_slot_contract`
+5. Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive deterministic week roles, exact phase range, or S5 bands during this step.
+6. Emit one review-ready phase bundle.
 
 Output format:
 - Return the task expected_output as one consolidated planning bundle or synthesis contribution.

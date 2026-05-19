@@ -88,7 +88,7 @@ agents:
     runtime_status: foundation_only
     output_mode: week_plan_bundle
     prompt_agent: week_planner
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   week_review_manager:
@@ -136,7 +136,7 @@ agents:
     runtime_status: foundation_only
     output_mode: season_plan_bundle
     prompt_agent: season_plan_manager
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   season_review_manager:
@@ -275,7 +275,7 @@ agents:
     runtime_status: foundation_only
     output_mode: phase_bundle
     prompt_agent: phase_bundle_manager
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   phase_review_manager:
