@@ -68,6 +68,11 @@ def test_normalize_season_scenarios_repairs_agent_payload_for_schema() -> None:
             "risk_profile": "Moderate risk.",
             "key_differences": ["Uses deterministic cadence math.", "Keeps recovery explicit."],
             "best_suited_if": "The athlete wants reliable completion.",
+            "typical_week_feel": "Structured but manageable.",
+            "main_payoff": "More reliable execution.",
+            "main_cost": "Less upside than the riskiest option.",
+            "what_gets_prioritized": "Consistency and durability.",
+            "what_gets_de_emphasized": "Unnecessary high-intensity escalation.",
             "scenario_guidance": {
                 "deload_cadence": cadence,
                 "phase_length_weeks": 99,
@@ -130,6 +135,8 @@ def test_normalize_season_scenarios_repairs_agent_payload_for_schema() -> None:
     assert all(isinstance(entry, dict) for entry in normalized["meta"]["trace_upstream"])
     assert isinstance(normalized["data"]["notes"], list)
     assert all(isinstance(scenario["key_differences"], str) for scenario in normalized["data"]["scenarios"])
+    assert all(isinstance(scenario["typical_week_feel"], str) for scenario in normalized["data"]["scenarios"])
+    assert all(isinstance(scenario["main_payoff"], str) for scenario in normalized["data"]["scenarios"])
 
     registry = SchemaRegistry(Path("specs/schemas"))
     validate_or_raise(registry.validator_for("season_scenarios.schema.json"), normalized)

@@ -20,6 +20,11 @@
         "risk_profile",
         "key_differences",
         "best_suited_if",
+        "typical_week_feel",
+        "main_payoff",
+        "main_cost",
+        "what_gets_prioritized",
+        "what_gets_de_emphasized",
         "scenario_guidance"
       ],
       "properties": {
@@ -52,6 +57,26 @@
           "minLength": 1
         },
         "best_suited_if": {
+          "type": "string",
+          "minLength": 1
+        },
+        "typical_week_feel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "main_payoff": {
+          "type": "string",
+          "minLength": 1
+        },
+        "main_cost": {
+          "type": "string",
+          "minLength": 1
+        },
+        "what_gets_prioritized": {
+          "type": "string",
+          "minLength": 1
+        },
+        "what_gets_de_emphasized": {
           "type": "string",
           "minLength": 1
         },
@@ -270,6 +295,11 @@
               "risk_profile",
               "key_differences",
               "best_suited_if",
+              "typical_week_feel",
+              "main_payoff",
+              "main_cost",
+              "what_gets_prioritized",
+              "what_gets_de_emphasized",
               "scenario_guidance"
             ],
             "properties": {
@@ -302,6 +332,26 @@
                 "minLength": 1
               },
               "best_suited_if": {
+                "type": "string",
+                "minLength": 1
+              },
+              "typical_week_feel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "main_payoff": {
+                "type": "string",
+                "minLength": 1
+              },
+              "main_cost": {
+                "type": "string",
+                "minLength": 1
+              },
+              "what_gets_prioritized": {
+                "type": "string",
+                "minLength": 1
+              },
+              "what_gets_de_emphasized": {
                 "type": "string",
                 "minLength": 1
               },
@@ -780,6 +830,11 @@
               "risk_profile",
               "key_differences",
               "best_suited_if",
+              "typical_week_feel",
+              "main_payoff",
+              "main_cost",
+              "what_gets_prioritized",
+              "what_gets_de_emphasized",
               "scenario_guidance"
             ],
             "properties": {
@@ -812,6 +867,26 @@
                 "minLength": 1
               },
               "best_suited_if": {
+                "type": "string",
+                "minLength": 1
+              },
+              "typical_week_feel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "main_payoff": {
+                "type": "string",
+                "minLength": 1
+              },
+              "main_cost": {
+                "type": "string",
+                "minLength": 1
+              },
+              "what_gets_prioritized": {
+                "type": "string",
+                "minLength": 1
+              },
+              "what_gets_de_emphasized": {
                 "type": "string",
                 "minLength": 1
               },

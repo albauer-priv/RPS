@@ -86,6 +86,11 @@ SCENARIO_TEMPLATE = """
 | Risk profile | {{ scenario.risk_profile or 'N/A' }} |
 | Key differences | {{ scenario.key_differences or 'N/A' }} |
 | Best suited if | {{ scenario.best_suited_if or 'N/A' }} |
+| Typical week feel | {{ scenario.typical_week_feel or 'N/A' }} |
+| Main payoff | {{ scenario.main_payoff or 'N/A' }} |
+| Main cost | {{ scenario.main_cost or 'N/A' }} |
+| What gets prioritized | {{ scenario.what_gets_prioritized or 'N/A' }} |
+| What gets de-emphasized | {{ scenario.what_gets_de_emphasized or 'N/A' }} |
 | Decision notes | {% if guidance.decision_notes %}{% for note in guidance.decision_notes %}{{ note }}<br>{% endfor %}{% else %}None{% endif %} |
 | Event alignment notes | {% if guidance.event_alignment_notes %}{% for note in guidance.event_alignment_notes %}{{ note }}<br>{% endfor %}{% else %}None{% endif %} |
 | Risk flags | {% if guidance.risk_flags %}{% for note in guidance.risk_flags %}{{ note }}<br>{% endfor %}{% else %}None{% endif %} |

@@ -52,6 +52,7 @@ Deterministic recommendation context:
 
 Required content per scenario:
 - `scenario_id`, `name`, `core_idea`, `load_philosophy`, `risk_profile`, `key_differences`, `best_suited_if`
+- `typical_week_feel`, `main_payoff`, `main_cost`, `what_gets_prioritized`, `what_gets_de_emphasized`
 - `scenario_guidance` with:
   - `deload_cadence`
   - `phase_length_weeks`
@@ -135,6 +136,12 @@ Positive operating guidance:
 Positive execution pattern:
 - Build three distinct scenario options from the injected horizon, cadence options, event priorities, athlete constraints, and kJ-first risk/exposure logic.
 - Describe each scenario with a clear purpose, load philosophy, cadence structure, event alignment, risk profile, and best-fit condition.
+- Add five short user-facing differentiators that make scenario selection easier without reading the whole prose:
+  - `typical_week_feel`
+  - `main_payoff`
+  - `main_cost`
+  - `what_gets_prioritized`
+  - `what_gets_de_emphasized`
 - Include assumptions and unknowns so selection can happen without recomputing dates or phase counts.
 - Produce scenario guidance that helps Season Planning choose a coherent direction while preserving informational authority.
 - Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.

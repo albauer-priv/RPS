@@ -459,6 +459,11 @@ def normalize_season_scenarios_document(
                 "risk_profile",
                 "key_differences",
                 "best_suited_if",
+                "typical_week_feel",
+                "main_payoff",
+                "main_cost",
+                "what_gets_prioritized",
+                "what_gets_de_emphasized",
                 "scenario_guidance",
             }
             scenario = {key: value for key, value in scenario.items() if key in allowed_scenario_keys}
@@ -475,6 +480,26 @@ def normalize_season_scenarios_document(
                 "best_suited_if",
             ):
                 scenario[key] = _text_value(scenario.get(key))
+            scenario["typical_week_feel"] = _text_value(
+                scenario.get("typical_week_feel"),
+                fallback="Typical weeks should feel coherent with the scenario's load, recovery, and specificity tradeoffs.",
+            )
+            scenario["main_payoff"] = _text_value(
+                scenario.get("main_payoff"),
+                fallback="The scenario provides a distinct training benefit relative to the other options.",
+            )
+            scenario["main_cost"] = _text_value(
+                scenario.get("main_cost"),
+                fallback="The scenario gives up some margin, sharpness, or robustness relative to the other options.",
+            )
+            scenario["what_gets_prioritized"] = _text_value(
+                scenario.get("what_gets_prioritized"),
+                fallback="The scenario emphasizes the most important adaptation or execution priority.",
+            )
+            scenario["what_gets_de_emphasized"] = _text_value(
+                scenario.get("what_gets_de_emphasized"),
+                fallback="The scenario intentionally downplays lower-priority training elements.",
+            )
             guidance = scenario.get("scenario_guidance") or {}
             if not isinstance(guidance, dict):
                 guidance = {}
