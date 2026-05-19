@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeekRange, parse_iso_week, parse_iso_week_range
 
 JsonMap = dict[str, Any]
@@ -191,6 +192,9 @@ def validate_season_plan_against_phase_load_context(
         str(_as_map(item).get("phase_id") or ""): _as_map(item)
         for item in _as_list(season_phase_load_context.get("phases"))
     }
+    season_allowed_domains = normalize_intensity_domain_list(
+        season_phase_load_context.get("season_allowed_intensity_domains")
+    )
     issues: list[PlanningContractIssue] = []
     if not context_by_phase:
         return [
@@ -201,6 +205,7 @@ def validate_season_plan_against_phase_load_context(
         ]
     build_max_values: list[float] = []
     peak_max_values: list[tuple[str, float]] = []
+    phase_allowed_domain_sets: list[tuple[str, list[str]]] = []
     for idx, phase in enumerate(phases):
         phase_id = str(phase.get("phase_id") or "")
         ctx = context_by_phase.get(phase_id)
@@ -230,6 +235,19 @@ def validate_season_plan_against_phase_load_context(
                     )
                 )
         cycle = str(phase.get("cycle") or ctx.get("phase_cycle") or "")
+        phase_semantics = _as_map(phase.get("allowed_forbidden_semantics"))
+        allowed_domains = normalize_intensity_domain_list(phase_semantics.get("allowed_intensity_domains"))
+        if allowed_domains:
+            phase_allowed_domain_sets.append((phase_id or path, allowed_domains))
+            outside = sorted(set(allowed_domains) - set(season_allowed_domains)) if season_allowed_domains else []
+            if outside:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_phase_intensity_domain_outside_authority",
+                        "Phase uses intensity domains outside selected season authority: " + ", ".join(outside) + ".",
+                        path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
+                    )
+                )
         if cycle == "Build" and planned_max is not None:
             build_max_values.append(planned_max)
         event_trace = _as_map(ctx.get("event_taper_trace"))
@@ -251,6 +269,30 @@ def validate_season_plan_against_phase_load_context(
                     PlanningContractIssue(
                         "a_event_peak_taper_not_reduced",
                         f"Peak/A-event phase {phase_id} max {peak_max:g} is not reduced below Build max {build_ceiling:g}.",
+                    )
+                )
+    if season_allowed_domains:
+        scenario_quality_domains = {domain for domain in season_allowed_domains if domain not in {"ENDURANCE"}}
+        if not phase_allowed_domain_sets:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_intensity_domains_missing",
+                    "Season phases are missing allowed_intensity_domains despite selected season authority.",
+                    path="data.phases",
+                )
+            )
+        if scenario_quality_domains and phase_allowed_domain_sets:
+            quality_present = any(
+                scenario_quality_domains.intersection(set(domains))
+                for _phase_id, domains in phase_allowed_domain_sets
+            )
+            collapsed_to_endurance_only = all(domains == ["ENDURANCE"] for _phase_id, domains in phase_allowed_domain_sets)
+            if collapsed_to_endurance_only or not quality_present:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_intensity_domains_collapsed_to_endurance_only",
+                        "Selected season authority permits additional intensity domains, but the Season Plan never carries them into any phase.",
+                        path="data.phases",
                     )
                 )
     return issues

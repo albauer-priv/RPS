@@ -256,6 +256,32 @@ def test_build_load_capacity_context_injects_s5_and_logistics_constraints() -> N
     assert context["logistics_constraints"]
 
 
+def test_build_load_capacity_context_uses_selected_scenario_domains_for_season_path() -> None:
+    context = build_load_capacity_context(
+        target_week=IsoWeek(2026, 20),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 8, "max": 10}}},
+        zone_model_payload=_zone_model(300, 0.66),
+        season_allowed_intensity_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+    )
+
+    assert context["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
+    assert context["availability_load_capacity_kj"]["max"] > context["availability_load_capacity_kj"]["min"]
+
+
+def test_build_load_capacity_context_no_longer_silently_defaults_to_endurance() -> None:
+    context = build_load_capacity_context(
+        target_week=IsoWeek(2026, 20),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 8, "max": 10}}},
+        zone_model_payload=_zone_model(300, 0.66),
+    )
+
+    assert context["allowed_intensity_domains"] == []
+    assert context["availability_load_capacity_kj"] is None
+    assert "missing_allowed_intensity_domains" in context["warnings"]
+
+
 def test_build_load_capacity_context_uses_role_aware_s5_overlay() -> None:
     context = build_load_capacity_context(
         target_week=IsoWeek(2026, 20),
@@ -321,6 +347,7 @@ def test_season_phase_load_context_caps_phase_corridors_by_availability_and_role
             ],
         },
         target_week=IsoWeek(2026, 20),
+        selected_structure_context={"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
         athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
         availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 8, "max": 10}}},
         zone_model_payload=_zone_model(300, 0.66),
@@ -332,6 +359,7 @@ def test_season_phase_load_context_caps_phase_corridors_by_availability_and_role
     assert p01["season_phase_role"] == "shortened_re_entry"
     assert p02["phase_cycle"] == "Build"
     assert p03["phase_cycle"] == "Peak"
+    assert context["season_allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
     assert p02["recommended_phase_corridor"]["max"] > p01["recommended_phase_corridor"]["max"]
     assert p03["recommended_phase_corridor"]["max"] < p02["recommended_phase_corridor"]["max"]
     assert p02["recommended_phase_corridor"]["max"] <= p02["availability_cap_kj"]["typical"]

@@ -268,6 +268,9 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
                             "max": item.get("load_corridor_max"),
                         }
                     },
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": item.get("allowed_domains") or [],
+                    },
                 }
                 for item in blueprints
             ]
@@ -494,6 +497,65 @@ def season_scenario_selection_shape(result: Any) -> GuardrailResult:
     forbidden_keys = {"phases", "agenda", "workouts", "weekly_kj_bands"}
     if any(key in data for key in forbidden_keys):
         return (False, "Scenario selection must not contain season, phase, week, or workout planning payloads.")
+    return (True, mapping)
+
+
+def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
+    """Check that season scenarios differ by exposure/risk profile, not only syntax."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season scenarios output must decode to an object.")
+    meta = _as_map(mapping.get("meta"))
+    data = _as_map(mapping.get("data"))
+    if meta.get("artifact_type") != "SEASON_SCENARIOS":
+        return (False, "Season scenarios meta.artifact_type must be SEASON_SCENARIOS.")
+    scenarios = [_as_map(item) for item in _as_list(data.get("scenarios"))]
+    if len(scenarios) != 3:
+        return (False, "Season scenarios must include exactly three scenarios.")
+
+    seen_ids: set[str] = set()
+    signatures: set[tuple[str, str, str, tuple[str, ...]]] = set()
+    by_id: dict[str, JsonMap] = {}
+    for scenario in scenarios:
+        scenario_id = str(scenario.get("scenario_id") or "").strip().upper()
+        if scenario_id not in {"A", "B", "C"}:
+            return (False, "Season scenarios must contain only scenario ids A, B, and C.")
+        seen_ids.add(scenario_id)
+        by_id[scenario_id] = scenario
+        guidance = _as_map(scenario.get("scenario_guidance"))
+        intensity = _as_map(guidance.get("intensity_guidance"))
+        allowed_domains = [str(item).strip().upper() for item in _as_list(intensity.get("allowed_domains")) if str(item).strip()]
+        if "ENDURANCE" not in allowed_domains:
+            return (False, f"Scenario {scenario_id} must include ENDURANCE in allowed_domains.")
+        load_philosophy = str(scenario.get("load_philosophy") or "").strip().lower()
+        risk_profile = str(scenario.get("risk_profile") or "").strip().lower()
+        key_diff = str(scenario.get("key_differences") or "").strip().lower()
+        signatures.add((load_philosophy, risk_profile, key_diff, tuple(allowed_domains)))
+    if seen_ids != {"A", "B", "C"}:
+        return (False, "Season scenarios must include scenario ids A, B, and C exactly once.")
+    if len(signatures) < 3:
+        return (False, "Season scenarios must differ materially in load/risk/specificity profile; cosmetic low/mid/high variants are not enough.")
+
+    scenario_c = by_id["C"]
+    guidance_c = _as_map(scenario_c.get("scenario_guidance"))
+    intensity_c = _as_map(guidance_c.get("intensity_guidance"))
+    allowed_c = {str(item).strip().upper() for item in _as_list(intensity_c.get("allowed_domains")) if str(item).strip()}
+    if allowed_c == {"ENDURANCE"}:
+        return (False, "Scenario C must express ambitious specificity beyond ENDURANCE-only semantics.")
+    c_story = " ".join(
+        [
+            str(scenario_c.get("load_philosophy") or ""),
+            str(scenario_c.get("risk_profile") or ""),
+            str(scenario_c.get("key_differences") or ""),
+            " ".join(str(item) for item in _as_list(guidance_c.get("decision_notes"))),
+            " ".join(str(item) for item in _as_list(guidance_c.get("constraint_summary"))),
+        ]
+    ).lower()
+    if not any(marker in c_story for marker in ("back-to-back", "b2b", "hard-late", "event simulation", "specificity", "fatigue")):
+        return (False, "Scenario C must describe higher specificity or fatigue exposure, not only a larger kJ envelope.")
+    if "VO2MAX" in allowed_c and not any(marker in c_story for marker in ("vo2", "ceiling", "fresh", "high-intensity", "support")):
+        return (False, "Scenario C may allow VO2MAX only when its ceiling-support role is explained.")
     return (True, mapping)
 
 
@@ -1146,6 +1208,7 @@ REGISTRY: dict[str, GuardrailFn] = {
     "artifact_envelope_basic": artifact_envelope_basic,
     "artifact_meta_data_present": artifact_meta_data_present,
     "artifact_schema_valid": artifact_schema_valid,
+    "season_scenarios_profile_quality": season_scenarios_profile_quality,
     "season_scenario_selection_shape": season_scenario_selection_shape,
     "season_phase_coverage_and_cadence": season_phase_coverage_and_cadence,
     "season_phase_load_context_match": season_phase_load_context_match,

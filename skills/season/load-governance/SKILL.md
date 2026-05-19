@@ -14,6 +14,7 @@ Method:
 4. Set sustainable phase corridors that can realistically be repeated and progressed without repeated catch-up weeks; do not copy availability capacity min/typical/max as every phase's target corridor.
 5. Choose progression framing and cadence ownership at season level; lower layers may apply but not reinvent it.
 6. Prefer feasible corridors over aspirational overload and protect `A` event clarity inside schema-valid cycle values.
+7. Treat selected-scenario intensity domains as season authority. Phase Guardrails may narrow them downstream, but must not be used to reconstruct season authority backward.
 
 Deterministic load context:
 - use the injected `availability_load_capacity_kj` min/typical/max directly
@@ -28,6 +29,9 @@ Deterministic load context:
 - Season sets strategic corridors; Phase applies deterministic feasibility and S5 intersection once a concrete phase range and allowed domains exist
 - Season phase role modulates corridor meaning before Phase runs: Base stabilizes, Build progresses, Peak tapers/sharpens, Transition re-enters/consolidates
 - use `ambition_if_range` to shape QUALITY intent while preserving segment-derived IF and code-owned load math
+- durability-first means dominant `ENDURANCE`, not `ENDURANCE only`
+- `TEMPO` and, when scenario-permitted, `SWEET_SPOT` can be season-valid especially in later Base, Build, or rehearsal-oriented build
+- `THRESHOLD` and `VO2MAX` may remain narrower or excluded by scenario/phase context; do not widen them heuristically
 
 Progression guardrails:
 - standard week-over-week ramp: `+8%` to `+12%`
@@ -70,6 +74,7 @@ Hard rules:
 - season load governance must remain explicit enough that phase planning can inherit it deterministically
 - final `A` event taper corridors must show meaningful load reduction versus Build unless a documented review rationale proves otherwise
 - `self_check.every_phase_maps_to_cycle_and_deload_intent` may be true only after coverage, cycle, cadence, and deload intent are checked
+- do not let a downstream `PHASE_GUARDRAILS`-style `ENDURANCE`-only restriction erase broader season authority when the selected scenario permits targeted quality domains
 
 Output format:
 - Return the task expected_output with load bands, progression notes, assumptions, and STOP or warning states separated clearly.

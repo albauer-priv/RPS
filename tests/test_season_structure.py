@@ -22,6 +22,10 @@ def test_selected_scenario_structure_context_derives_phase_math() -> None:
                     {
                         "scenario_id": "B",
                         "name": "Compact resilient build",
+                        "intensity_guidance": {
+                            "allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                            "avoid_domains": ["VO2MAX"],
+                        },
                         "scenario_guidance": {
                             "deload_cadence": "2:1",
                             "phase_length_weeks": 3,
@@ -49,6 +53,8 @@ def test_selected_scenario_structure_context_derives_phase_math() -> None:
     assert context["full_phases"] == 5
     assert context["reconstructed_horizon_weeks"] == 17
     assert context["consistent_with_horizon"] is True
+    assert context["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
+    assert "VO2MAX" in context["forbidden_intensity_domains"]
 
 
 def test_selected_scenario_structure_block_renders_planning_reference() -> None:
@@ -66,6 +72,8 @@ def test_selected_scenario_structure_block_renders_planning_reference() -> None:
             "reconstructed_horizon_weeks": 16,
             "consistent_with_horizon": True,
             "shortened_phases": [],
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+            "forbidden_intensity_domains": ["SWEET_SPOT", "THRESHOLD", "VO2MAX"],
         }
     )
 
@@ -73,6 +81,7 @@ def test_selected_scenario_structure_block_renders_planning_reference() -> None:
     assert "deload_cadence: 2:1:1" in block
     assert "phase_length_weeks: 4" in block
     assert "shortened_phases: none" in block
+    assert "allowed_intensity_domains: ENDURANCE, TEMPO" in block
 
 
 def test_planning_horizon_context_uses_latest_abc_event() -> None:

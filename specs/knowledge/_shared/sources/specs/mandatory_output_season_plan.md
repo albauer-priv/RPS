@@ -416,3 +416,5 @@ All required booleans must be present. Set to `true` only if valid:
   }
 }
 ```
+
+Note: this season-level example intentionally permits more than one intensity domain. That does not force every downstream phase to keep the same breadth. `SEASON_PLAN` defines season authority, while concrete `PHASE_GUARDRAILS` may narrow phase execution semantics downstream.

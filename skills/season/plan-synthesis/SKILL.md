@@ -30,6 +30,7 @@ Method:
 13. Keep every emitted `cycle` schema-valid: `Base`, `Build`, `Peak`, or `Transition`.
 14. Emit one review-ready season bundle, not multiple competing variants.
 15. Final synthesis is integration work, not coworker re-discovery. Do not ask other agents to re-derive deterministic contract values during this step.
+16. Carry season-level intensity-domain authority from the selected scenario into phase blueprints. A phase may narrow downstream semantics, but you must not reconstruct season authority backward from Phase Guardrails or another narrower downstream example.
 
 Hard rules:
 - emit one final macrocycle bundle
@@ -41,6 +42,8 @@ Hard rules:
 - if injected season phase load `blocking_issues` are present, surface them as Season bundle blocking issues
 - never set a phase corridor above the injected availability cap unless the blueprint marks a review-visible exception
 - every phase blueprint must include phase role, availability cap, baseline, role-week load bands, progression trace, and load feasibility status
+- every phase blueprint must include `allowed_domains`; use durability-first semantics as `ENDURANCE` dominant, not `ENDURANCE only`
+- if the selected scenario permits `TEMPO` or other quality domains, at least one suitable later-season phase must preserve that allowance unless the bundle makes a clear phase-specific exclusion case
 - mark coverage/cadence self-checks true only after verification
 - surface infeasible load corridors explicitly with review/replan guidance
 

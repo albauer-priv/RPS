@@ -103,7 +103,7 @@ tasks:
     kind: persisted_artifact
     output: artifact_envelope
     tools: read_only_workspace
-    description: Create the season-scenarios artifact envelope for the selected planning horizon.
+    description: Create the season-scenarios artifact envelope for the selected planning horizon. Differentiate A/B/C primarily by kJ-envelope, specificity-under-fatigue, density, recovery tolerance, and risk contract; treat intensity domains as permissions rather than the primary scenario identity.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario
@@ -191,7 +191,7 @@ tasks:
     agent: season_load_corridor_specialist
     kind: internal_reasoning
     output: load_governance_audit
-    description: "Draft season corridor logic and load realism checks. Tool usage: prefer deterministic injected load context and `workspace_get_latest` snapshot/planning artefacts; use `workspace_get_version` only for explicit historical load references."
+    description: "Draft season corridor logic and load realism checks. Preserve season-level intensity authority from the selected scenario; do not infer season semantics backward from a narrower Phase Guardrails example. Tool usage: prefer deterministic injected load context and `workspace_get_latest` snapshot/planning artefacts; use `workspace_get_version` only for explicit historical load references."
     expected_output: A structured season load-corridor draft.
     tools:
       - workspace_get_latest
@@ -202,7 +202,7 @@ tasks:
     agent: season_progression_specialist
     kind: internal_reasoning
     output: load_governance_audit
-    description: "Draft season progression, cadence, and overload guidance. Tool usage: prefer deterministic injected cadence/load context; use `workspace_get_latest` for latest planning artefacts and `workspace_get_version` only for explicit historical week-sensitive evidence."
+    description: "Draft season progression, cadence, overload, and phase-level domain-shaping guidance. Durability-first means `ENDURANCE` dominant, not `ENDURANCE only`; preserve scenario-permitted quality where later Base/Build/rehearsal semantics justify it. Tool usage: prefer deterministic injected cadence/load context; use `workspace_get_latest` for latest planning artefacts and `workspace_get_version` only for explicit historical week-sensitive evidence."
     expected_output: A structured season progression draft.
     tools:
       - workspace_get_latest
@@ -227,8 +227,8 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints.
-    expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, and role-week load bands.
+    description: Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails.
+    expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, role-week load bands, and explicit `allowed_domains`.
   season_governance_review:
     agent: season_governance_auditor
     kind: internal_reasoning
@@ -252,7 +252,7 @@ tasks:
     agent: season_plan_auditor
     kind: internal_reasoning
     output: season_plan_audit
-    description: "Audit the injected candidate season bundle for macrocycle and authority coherence. Tool usage: prefer prior specialist context, the injected candidate bundle, and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
+    description: "Audit the injected candidate season bundle for macrocycle and authority coherence. Block any full-season collapse to `ENDURANCE only` when deterministic selected-scenario authority is broader, while allowing individual phases to stay narrower. Tool usage: prefer prior specialist context, the injected candidate bundle, and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
     expected_output: A structured season-plan audit with warnings and blocking issues.
     tools:
       - workspace_get_latest
@@ -265,7 +265,7 @@ tasks:
     tools:
       - workspace_get_phase_slot_contract
       - workspace_get_season_phase_load_context
-    description: Review the injected candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, and snapshot contracts. Do not retrieve or expect a synthetic `candidate_season_bundle` workspace artefact.
+    description: Review the injected candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, season-domain-authority, and snapshot contracts. Do not retrieve or expect a synthetic `candidate_season_bundle` workspace artefact.
     expected_output: A structured contract-review draft that treats code-owned contract mismatches as blocking replan reasons.
   season_review:
     agent: season_review_manager

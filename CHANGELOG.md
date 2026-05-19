@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added deterministic season intensity-domain authority propagation from `SEASON_SCENARIOS` / `SEASON_SCENARIO_SELECTION` into season load-capacity and season phase-load context, plus season contract checks that block a full-season collapse to `ENDURANCE only` when selected-scenario authority is broader.
+- Added active kJ-first season-scenario methodology plus runtime quality checks so Scenario A/B/C differ primarily by exposure, recovery margin, specificity, and risk contract instead of domain breadth alone.
 - Added deterministic Season Scenario recommendations from historical baseline, activity trends, availability, events, athlete profile, and KPI context; the Season page now surfaces the recommendation and warns when a saved selection references an older scenario set.
 - Added read-only deterministic season contract tools for CrewAI (`workspace_get_phase_slot_contract`, `workspace_get_season_phase_load_context`) so season tasks can consume code-owned phase-slot and phase-load authority without searching for synthetic artifacts.
 - Added read-only deterministic phase/week contract tools for CrewAI (`workspace_get_phase_execution_context`, `workspace_get_week_calendar_context`) so phase and week finalizers can consume active execution authority directly.
@@ -21,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed the season-plan guarded-store selected-scenario contract path to use the correct `season_scenarios_payload` call shape and to keep phase-level domain narrowing from back-propagating into season-level authority.
 - Fixed CrewAI outer-flow state handling by declaring `workspace_root` on typed Season/Phase/Week/Report/Feed-Forward/Coach flow states, so run-store telemetry and exception reporting no longer fail on Pydantic state assignment.
 - Fixed CrewAI flow-state persistence by storing `workspace_root` as a JSON-serializable string in typed flow state and converting back to `Path` only at runtime-event/exception boundaries.
 - Fixed planning-crew cost concentration by switching Season, Phase, and Week planning crews from manager-driven hierarchical execution to explicit sequential specialist execution, leaving manager agents only on final synthesis tasks.

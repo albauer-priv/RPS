@@ -538,8 +538,9 @@ class GuardedValidatedStore:
         if target_week is None:
             return {}, {}
         selected = build_selected_scenario_structure_block(
-            scenarios_payload=scenarios,
+            season_scenarios_payload=scenarios,
             selection_payload=selection,
+            selected_scenario_id=None,
         ).payload
         if not selected:
             return {}, {}
@@ -557,6 +558,7 @@ class GuardedValidatedStore:
             logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
             planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
             zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
+            selected_structure_context=selected,
             wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
             kpi_profile_payload=self._load_latest_optional(ArtifactType.KPI_PROFILE),
             kpi_rate_band=selected_kpi_rate_band_from_selection(selection),
@@ -579,8 +581,9 @@ class GuardedValidatedStore:
         if target_week is None:
             return {}
         selected = build_selected_scenario_structure_block(
-            scenarios_payload=scenarios,
+            season_scenarios_payload=scenarios,
             selection_payload=selection,
+            selected_scenario_id=None,
         ).payload
         if not selected:
             return {}

@@ -12,6 +12,7 @@ from datetime import date, timedelta
 from math import inf
 from typing import Any
 
+from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
 from rps.workspace.phase_resolution import date_to_iso_week
 
@@ -479,6 +480,7 @@ def build_load_capacity_context(
     zone_model_payload: JsonMap | None = None,
     season_plan_payload: JsonMap | None = None,
     phase_guardrails_payload: JsonMap | None = None,
+    season_allowed_intensity_domains: list[str] | None = None,
     wellness_payload: JsonMap | None = None,
     kpi_profile_payload: JsonMap | None = None,
     kpi_rate_band: JsonMap | None = None,
@@ -503,6 +505,7 @@ def build_load_capacity_context(
         phase_range=phase_range,
         season_plan_payload=season_plan_payload or {},
         phase_guardrails_payload=phase_guardrails_payload or {},
+        season_allowed_domains=season_allowed_intensity_domains or [],
     )
     logistics_constraints = _logistics_constraints(
         logistics_payload or {},
@@ -651,6 +654,7 @@ def build_season_phase_load_context(
     logistics_payload: JsonMap | None = None,
     planning_events_payload: JsonMap | None = None,
     zone_model_payload: JsonMap | None = None,
+    selected_structure_context: JsonMap | None = None,
     wellness_payload: JsonMap | None = None,
     kpi_profile_payload: JsonMap | None = None,
     kpi_rate_band: JsonMap | None = None,
@@ -669,6 +673,9 @@ def build_season_phase_load_context(
         logistics_payload=logistics_payload or {},
         zone_model_payload=zone_model_payload or {},
         season_plan_payload={},
+        season_allowed_intensity_domains=normalize_intensity_domain_list(
+            _as_map(selected_structure_context or {}).get("allowed_intensity_domains")
+        ),
         wellness_payload=wellness_payload or {},
         kpi_profile_payload=kpi_profile_payload or {},
         kpi_rate_band=kpi_rate_band,
@@ -679,11 +686,16 @@ def build_season_phase_load_context(
     baseline = _as_float(previous_load_kj)
     warnings: list[str] = []
     blocking_issues: list[str] = []
+    selected_context = _as_map(selected_structure_context or {})
+    season_allowed_domains = normalize_intensity_domain_list(selected_context.get("allowed_intensity_domains"))
+    season_forbidden_domains = normalize_intensity_domain_list(selected_context.get("forbidden_intensity_domains"))
     if baseline is None or baseline <= 0:
         baseline = typical_cap * 0.65 if typical_cap > 0 else None
         warnings.append("season_phase_load_context baseline_load_kj inferred from availability typical cap.")
     if typical_cap <= 0:
         blocking_issues.append("availability typical capacity missing or zero; season phase corridors cannot be bounded.")
+    if not season_allowed_domains:
+        blocking_issues.append("selected scenario allowed_intensity_domains missing; season phase domain authority cannot be derived.")
 
     slots = [_as_map(item) for item in _as_list(phase_slot_context.get("phase_slots"))]
     phase_entries: list[JsonMap] = []
@@ -759,6 +771,8 @@ def build_season_phase_load_context(
                 "cadence_week_roles": slot.get("cadence_week_roles") or [],
                 "availability_cap_kj": {"typical": int(round(typical_cap)), "max": int(round(max_cap))},
                 "baseline_load_kj": int(round(phase_baseline)),
+                "season_allowed_intensity_domains": season_allowed_domains,
+                "season_forbidden_intensity_domains": season_forbidden_domains,
                 "recommended_phase_corridor": {
                     "min": int(round(phase_min)),
                     "max": int(round(phase_max)),
@@ -781,6 +795,8 @@ def build_season_phase_load_context(
         "selected_scenario_id": phase_slot_context.get("selected_scenario_id"),
         "availability_load_capacity_kj": capacity,
         "baseline_load_kj": None if baseline is None else int(round(baseline)),
+        "season_allowed_intensity_domains": season_allowed_domains,
+        "season_forbidden_intensity_domains": season_forbidden_domains,
         "phases": phase_entries,
         "warnings": warnings,
         "blocking_issues": blocking_issues,
@@ -857,6 +873,10 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
         f"unit_semantics: {context.get('unit_semantics')}",
         f"selected_scenario_id: {context.get('selected_scenario_id')}",
         f"baseline_load_kj: {context.get('baseline_load_kj')}",
+        "season_allowed_intensity_domains: "
+        + ", ".join(str(item) for item in _as_list(context.get("season_allowed_intensity_domains"))),
+        "season_forbidden_intensity_domains: "
+        + ", ".join(str(item) for item in _as_list(context.get("season_forbidden_intensity_domains"))),
     ]
     capacity = _as_map(context.get("availability_load_capacity_kj"))
     if capacity:
@@ -1141,10 +1161,14 @@ def _allowed_domains(
     phase_range: IsoWeekRange | None,
     season_plan_payload: JsonMap,
     phase_guardrails_payload: JsonMap,
+    season_allowed_domains: list[str],
 ) -> list[str]:
+    season_domains = normalize_intensity_domain_list(season_allowed_domains)
+    if phase_range is None and season_domains:
+        return season_domains
     guardrails_data = _as_map(phase_guardrails_payload.get("data"))
     semantics = _as_map(guardrails_data.get("allowed_forbidden_semantics"))
-    domains = [str(item).strip().upper() for item in _as_list(semantics.get("allowed_intensity_domains")) if str(item).strip()]
+    domains = normalize_intensity_domain_list(semantics.get("allowed_intensity_domains"))
     if domains:
         return domains
     phase = _season_phase_for_context(
@@ -1153,16 +1177,9 @@ def _allowed_domains(
         season_plan_payload=season_plan_payload,
     )
     phase_semantics = _as_map(phase.get("allowed_forbidden_semantics"))
-    domains = [
-        str(item).strip().upper()
-        for item in _as_list(phase_semantics.get("allowed_intensity_domains"))
-        if str(item).strip()
-    ]
+    domains = normalize_intensity_domain_list(phase_semantics.get("allowed_intensity_domains"))
     if domains:
         return domains
-    season_phases = _as_list(_as_map(season_plan_payload.get("data")).get("phases"))
-    if phase_range is None and not season_phases:
-        return ["ENDURANCE"]
     return []
 
 

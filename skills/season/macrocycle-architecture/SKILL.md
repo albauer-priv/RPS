@@ -34,6 +34,7 @@ Permitted ultra/brevet archetype:
 - use it to shape phase intent and domain eligibility while keeping workout prescription and governance corridors in their responsible components
 - durability-first is not intensity-free: `RECOVERY` and `ENDURANCE` protect repeatability, while `TEMPO` or other scenario-permitted quality may be used as tightly bounded phase intent when recovery and event specificity justify it
 - do not introduce free `THRESHOLD` or `VO2MAX` blocks in the Season Plan artifact; if aerobic-ceiling work is relevant, express it as high-level phase intent only when the selected scenario permits the domain
+- once a scenario is selected, refer to it neutrally as the selected scenario or user-selected scenario; do not re-argue the choice with evaluative language
 
 Allowed multi-`A` models:
 - `multiple macrocycles`: only when `A` events are separated enough for full recovery and rebuild

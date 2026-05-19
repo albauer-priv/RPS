@@ -460,6 +460,16 @@ def create_season_plan(
                 f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
                 "activity artefacts. "
             )
+        selected_structure_context = build_selected_scenario_structure_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=selected,
+        )
+        if not selected_structure_context.payload:
+            return {
+                "ok": False,
+                "error": "Season deterministic selected scenario structure context is missing.",
+            }
         load_capacity_block = render_context_blocks(
             [
                 build_load_capacity_block(
@@ -469,6 +479,9 @@ def create_season_plan(
                     logistics_payload=logistics_payload or {},
                     zone_model_payload=zone_model_payload or {},
                     season_plan_payload={},
+                    season_allowed_intensity_domains=list(
+                        selected_structure_context.payload.get("allowed_intensity_domains") or []
+                    ),
                     wellness_payload=wellness_payload or {},
                     kpi_profile_payload=kpi_profile_payload or {},
                     kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),
@@ -479,16 +492,6 @@ def create_season_plan(
             return {
                 "ok": False,
                 "error": "Season deterministic load capacity context is missing availability_load_capacity_kj.",
-            }
-        selected_structure_context = build_selected_scenario_structure_block(
-            season_scenarios_payload=season_scenarios_payload or {},
-            selection_payload=selection_payload or {},
-            selected_scenario_id=selected,
-        )
-        if not selected_structure_context.payload:
-            return {
-                "ok": False,
-                "error": "Season deterministic selected scenario structure context is missing.",
             }
         phase_slot_context = build_season_phase_slot_block(
             selected_structure_context=selected_structure_context.payload,
@@ -513,6 +516,7 @@ def create_season_plan(
             logistics_payload=logistics_payload or {},
             planning_events_payload=planning_events_payload or {},
             zone_model_payload=zone_model_payload or {},
+            selected_structure_context=selected_structure_context.payload,
             wellness_payload=wellness_payload or {},
             kpi_profile_payload=kpi_profile_payload or {},
             kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),

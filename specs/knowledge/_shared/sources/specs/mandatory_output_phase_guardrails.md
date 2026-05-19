@@ -308,3 +308,5 @@ Additional hard stops (binding):
   }
 }
 ```
+
+Note: this example is intentionally a narrow phase-level execution case. It is not a season-level default and must not be reused backward as proof that the selected season scenario or `SEASON_PLAN` may only allow `ENDURANCE`.

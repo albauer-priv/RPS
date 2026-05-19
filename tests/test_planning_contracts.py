@@ -85,6 +85,92 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
     assert any(issue.code == "a_event_peak_taper_not_reduced" for issue in issues)
 
 
+def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_collapse() -> None:
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "cycle": "Base",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 3000, "max": 5000}},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                },
+                {
+                    "phase_id": "P02",
+                    "cycle": "Build",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 4500, "max": 6500}},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                },
+            ]
+        }
+    }
+    load_context = {
+        "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+        "phases": [
+            {
+                "phase_id": "P01",
+                "recommended_phase_corridor": {"min": 2500, "max": 5500},
+                "event_taper_trace": {},
+            },
+            {
+                "phase_id": "P02",
+                "recommended_phase_corridor": {"min": 4000, "max": 7000},
+                "event_taper_trace": {},
+            },
+        ],
+    }
+
+    issues = validate_season_plan_against_phase_load_context(
+        season_plan_payload=season_plan,
+        season_phase_load_context=load_context,
+    )
+
+    assert any(issue.code == "season_intensity_domains_collapsed_to_endurance_only" for issue in issues)
+
+
+def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing() -> None:
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "cycle": "Base",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 3000, "max": 5000}},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                },
+                {
+                    "phase_id": "P02",
+                    "cycle": "Build",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 4500, "max": 6500}},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
+                },
+            ]
+        }
+    }
+    load_context = {
+        "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+        "phases": [
+            {
+                "phase_id": "P01",
+                "recommended_phase_corridor": {"min": 2500, "max": 5500},
+                "event_taper_trace": {},
+            },
+            {
+                "phase_id": "P02",
+                "recommended_phase_corridor": {"min": 4000, "max": 7000},
+                "event_taper_trace": {},
+            },
+        ],
+    }
+
+    issues = validate_season_plan_against_phase_load_context(
+        season_plan_payload=season_plan,
+        season_phase_load_context=load_context,
+    )
+
+    assert not any(issue.code == "season_intensity_domains_collapsed_to_endurance_only" for issue in issues)
+
+
 def test_validate_phase_against_execution_context_checks_roles_and_s5() -> None:
     phase_payload = {
         "data": {

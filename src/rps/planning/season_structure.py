@@ -5,6 +5,10 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+from rps.workspace.intensity_domains import (
+    CANONICAL_INTENSITY_DOMAINS,
+    normalize_intensity_domain_list,
+)
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.phase_resolution import date_to_iso_week
 
@@ -37,6 +41,24 @@ def _as_int(value: object) -> int | None:
     if isinstance(value, int):
         return value
     return None
+
+
+def _scenario_intensity_domains(scenario_payload: JsonMap) -> tuple[list[str], list[str]]:
+    """Return normalized season-authority intensity domains for the selected scenario."""
+
+    intensity_guidance = _as_map(scenario_payload.get("intensity_guidance"))
+    if not intensity_guidance:
+        intensity_guidance = _as_map(_as_map(scenario_payload.get("scenario_guidance")).get("intensity_guidance"))
+    allowed = normalize_intensity_domain_list(intensity_guidance.get("allowed_domains"))
+    avoid = normalize_intensity_domain_list(intensity_guidance.get("avoid_domains"))
+    forbidden = [
+        domain
+        for domain in CANONICAL_INTENSITY_DOMAINS
+        if domain not in {"NONE", "RECOVERY"} and domain not in allowed
+    ]
+    if avoid:
+        forbidden = list(dict.fromkeys([*forbidden, *[domain for domain in avoid if domain not in {"NONE", "RECOVERY"}]]))
+    return allowed, forbidden
 
 
 def _week_key(week: IsoWeek) -> str:
@@ -182,6 +204,7 @@ def build_selected_scenario_structure_context(
     )
     full_week_count = (full_phases or 0) * (phase_length or 0)
     reconstructed_weeks = full_week_count + shortened_week_count
+    allowed_domains, forbidden_domains = _scenario_intensity_domains(selected_scenario)
 
     return {
         "selected_scenario_id": selected_id,
@@ -200,6 +223,8 @@ def build_selected_scenario_structure_context(
             if reconstructed_weeks > 0 and _as_int(scenarios_data.get("planning_horizon_weeks")) is not None
             else None
         ),
+        "allowed_intensity_domains": allowed_domains,
+        "forbidden_intensity_domains": forbidden_domains,
         "event_alignment_notes": guidance.get("event_alignment_notes") or [],
         "risk_flags": guidance.get("risk_flags") or [],
     }
@@ -224,6 +249,10 @@ def render_selected_scenario_structure_block(context: JsonMap) -> str:
         f"max_shortened_phases: {context.get('max_shortened_phases')}",
         f"reconstructed_horizon_weeks: {context.get('reconstructed_horizon_weeks')}",
         f"consistent_with_horizon: {context.get('consistent_with_horizon')}",
+        "allowed_intensity_domains: "
+        + ", ".join(str(item) for item in _as_list(context.get("allowed_intensity_domains"))),
+        "forbidden_intensity_domains: "
+        + ", ".join(str(item) for item in _as_list(context.get("forbidden_intensity_domains"))),
     ]
     shortened = [_as_map(item) for item in _as_list(context.get("shortened_phases"))]
     if shortened:

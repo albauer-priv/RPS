@@ -3,16 +3,36 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, structure pressure, and event emphasis.
 metadata:
   author: rps
-  version: "3.0"
+  version: "4.0"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
 Method:
 1. Respect the injected deterministic horizon context, A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
-3. Vary scenarios by cadence pressure, macrocycle compression, event emphasis, and intensity guidance rather than by arbitrary narrative style.
+3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
 5. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
+
+kJ-first scenario methodology:
+- In ultra/brevet planning, the planned kJ-envelope is the leading steering quantity for scenario identity.
+- Scenario differentiation must consider:
+  - `weekly kJ range`
+  - `block kJ exposure`
+  - `peak-week kJ`
+  - `long-ride kJ`
+  - `accumulated pre-load before quality work`
+  - `density / complexity`
+  - `recovery tolerance`
+  - `specificity under fatigue`
+- A/B/C must not be only `lower / medium / higher weekly kJ` variants.
+- If time budget makes clear kJ separation unrealistic, scenarios must differ through risk contract, density, specificity, and recovery tolerance rather than artificial kJ inflation.
+- Progression logic follows:
+  - `time / kJ`
+  - `frequency`
+  - `density / complexity`
+  - `intensity`
+- Intensity is a later shaping lever, not the primary scenario identity.
 
 Deterministic horizon context:
 - use `last_event_date`, `last_event_iso_week`, `weeks_until_last_event_from_target_week_start`, `inclusive_planning_horizon_weeks`, and `season_iso_week_range` directly when provided
@@ -50,6 +70,27 @@ Required content per scenario:
   - `assumptions`
   - `unknowns`
 
+Required A/B/C target profiles:
+- **Scenario A = robust completion-first**
+  - lower feasible kJ-envelope
+  - high recovery margin
+  - low density
+  - minimal intensity allowance
+  - high executability under work stress, illness risk, or masters recovery limits
+  - `ENDURANCE` is the core domain; `TEMPO` is optional and sparse only when the scenario still reads completion-first
+- **Scenario B = durability-forward target plan**
+  - realistic target kJ-envelope
+  - systematic long-ride progression
+  - selected `TEMPO` / optional `SWEET_SPOT` economy work
+  - balanced recovery risk
+  - default shape for many brevet/ultra seasons when performance should improve without compromising robustness
+- **Scenario C = ambitious performance-forward long build**
+  - upper plausible kJ-envelope
+  - higher specificity under fatigue
+  - more B2B / hard-late / event simulation
+  - optional `THRESHOLD` or `VO2MAX` only if explicitly justified
+  - ambition comes primarily from specificity and fatigue exposure, not from automatic high-intensity escalation
+
 Scenario math rules:
 - `planning_horizon_weeks` must match the inclusive week span of `meta.iso_week_range`.
 - if deterministic horizon context is present, it is the source of truth for scenario horizon math
@@ -58,12 +99,31 @@ Scenario math rules:
 - `intensity_guidance` must use canonical agenda intensity domains only: `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`.
 - Keep `avoid_domains` to trainable intensity domains; use `NONE` and `RECOVERY` only for availability/recovery semantics.
 
+Intensity-domain semantics:
+- `allowed_domains` are permissions, not obligations.
+- `ENDURANCE` is the core domain of every scenario.
+- `TEMPO` is in many ultra/brevet contexts the most likely first additional domain because it supports sub-threshold economy and long stable duration, but it is not dogma.
+- `SWEET_SPOT` is optional when time budget limits kJ separation or when economy / sustained sub-threshold work is part of the scenario story.
+- `THRESHOLD` and `VO2MAX` are special-case permissions, not default markers of ambition.
+- Scenario C is not defined by `VO2MAX`.
+- Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
+
+Internal consistency checks:
+- Ask whether the scenario is more than just a different weekly-kJ number.
+- Ensure `risk_profile`, `load_philosophy`, `decision_notes`, and `intensity_guidance` tell the same story.
+- If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
+- If Scenario B is the performance-default option, make economy/sub-threshold logic plausible in the scenario story.
+- If Scenario C uses no additional domains beyond `ENDURANCE` or `TEMPO`, make the ambition visible through B2B, hard-late, pre-load, event simulation, or other specificity-under-fatigue markers.
+
 Hard rules:
 - output exactly three scenarios
 - keep numeric weekly kJ targets for season/phase planning tasks
 - use canonical intensity domains
 - keep scenarios advisory until selection and season planning
 - use the injected deterministic planning horizon
+- do not define scenarios primarily by domain breadth
+- do not let Scenario C become "the VO2 scenario" by default
+- do not invent fake kJ separation when the actual time budget cannot support it
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
@@ -73,12 +133,12 @@ Positive operating guidance:
 - Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Positive execution pattern:
-- Build three distinct scenario options from the injected horizon, cadence options, event priorities, and athlete constraints.
+- Build three distinct scenario options from the injected horizon, cadence options, event priorities, athlete constraints, and kJ-first risk/exposure logic.
 - Describe each scenario with a clear purpose, load philosophy, cadence structure, event alignment, risk profile, and best-fit condition.
 - Include assumptions and unknowns so selection can happen without recomputing dates or phase counts.
 - Produce scenario guidance that helps Season Planning choose a coherent direction while preserving informational authority.
 - Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.
-- Explain the tradeoff between conservative, balanced, and assertive choices in terms the selection task can compare.
+- Explain the tradeoff between robust, balanced, and ambitious choices in terms of exposure, recovery margin, specificity, and failure tolerance.
 - Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored.
 - Return scenarios that are complete, differentiated, traceable, and ready for direct selection.
 

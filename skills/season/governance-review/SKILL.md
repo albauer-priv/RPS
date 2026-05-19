@@ -23,6 +23,7 @@ Checklist:
 - Base, Build, Peak, Transition, shortened/re-entry, B-event rehearsal, and A-event taper phases show distinct load semantics
 - Deload, mini-reset, reload, re-entry, and taper behavior are numerically visible in phase and role-week bands
 - durability-first keeps `RECOVERY` and dominant `ENDURANCE`, with targeted `TEMPO` or scenario-permitted quality only when coherent
+- season authority for intensity domains comes from the selected scenario and deterministic season context; downstream phase restrictions must not be used to narrow the season bundle retroactively
 
 Output format:
 - Return the task expected_output as a structured review contribution.

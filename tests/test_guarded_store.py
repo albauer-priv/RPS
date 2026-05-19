@@ -2,6 +2,7 @@ import pytest
 
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.schema_registry import SchemaValidationError
+from rps.workspace.types import ArtifactType
 
 
 def _store(tmp_path):
@@ -10,6 +11,47 @@ def _store(tmp_path):
         schema_dir=tmp_path,
         workspace_root=tmp_path,
     )
+
+
+def test_season_contract_contexts_build_selected_structure_from_latest_payloads(tmp_path):
+    store = _store(tmp_path)
+    season_plan = {"meta": {"iso_week": "2026-21"}}
+    scenarios_payload = {
+        "data": {
+            "planning_horizon_weeks": 17,
+            "scenarios": [
+                {
+                    "scenario_id": "C",
+                    "name": "Selected scenario",
+                    "scenario_guidance": {
+                        "deload_cadence": "3:1",
+                        "phase_length_weeks": 4,
+                        "phase_count_expected": 5,
+                        "phase_plan_summary": {
+                            "full_phases": 3,
+                            "shortened_phases": [{"len": 3, "count": 1}, {"len": 2, "count": 1}],
+                        },
+                    },
+                }
+            ],
+        }
+    }
+    selection_payload = {"data": {"selected_scenario_id": "C"}}
+
+    def _load_latest_optional(artifact_type):
+        if artifact_type == ArtifactType.SEASON_SCENARIOS:
+            return scenarios_payload
+        if artifact_type == ArtifactType.SEASON_SCENARIO_SELECTION:
+            return selection_payload
+        return {}
+
+    store._load_latest_optional = _load_latest_optional
+
+    phase_slots, _phase_load = store._season_contract_contexts(season_plan)
+
+    assert phase_slots["selected_scenario_id"] == "C"
+    assert phase_slots["phase_slots"]
+    assert phase_slots["phase_slots"][0]["phase_id"] == "P01"
 
 
 def test_phase_guardrails_event_window_matches_structured_events(tmp_path):
