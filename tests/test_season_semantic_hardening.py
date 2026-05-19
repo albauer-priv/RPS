@@ -21,6 +21,7 @@ def test_season_skills_preserve_durability_without_intensity_free_collapse() -> 
     macrocycle = _read("skills/season/macrocycle-architecture/SKILL.md")
     governance = _read("skills/season/governance-review/SKILL.md")
     synthesis = _read("skills/season/plan-synthesis/SKILL.md")
+    phase_intensity = _read("skills/phase/intensity-distribution/SKILL.md")
     scenario = _read("skills/season/scenario-generation/SKILL.md")
 
     assert "durability-first is not intensity-free" in macrocycle
@@ -33,3 +34,8 @@ def test_season_skills_preserve_durability_without_intensity_free_collapse() -> 
     assert "Scenario C = ambitious performance-forward long build" in scenario
     assert "must not be only `lower / medium / higher weekly kJ` variants" in scenario
     assert "`allowed_domains` are permissions, not obligations" in scenario
+    assert "Phase intent and intensity semantics:" in synthesis
+    assert "Phase intent and intensity semantics:" in phase_intensity
+    assert "`Transition` | `transition_consolidation`" in synthesis
+    assert "K3` appears only under `allowed_load_modalities`" in synthesis
+    assert "Intensity is not the main escalation lever; fatigue-context specificity is." in phase_intensity
