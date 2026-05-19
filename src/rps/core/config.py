@@ -1,16 +1,20 @@
-"""Configuration helpers."""
+"""Minimal application configuration helpers."""
 
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import dataclass
 from pathlib import Path
+
+_GROQ_BASE_URL_MARKER = "api.groq.com"
+_DEFAULT_GROQ_MODEL = "groq/openai/gpt-oss-20b"
+_DEFAULT_OPENAI_MODEL = "gpt-5.4-mini"
+_DEFAULT_GROQ_MAX_COMPLETION_TOKENS = 2048
 
 
 @dataclass(frozen=True)
 class Settings:
-    """LLM connection settings sourced from the environment."""
+    """Provider connection settings sourced from the environment."""
 
     openai_api_key: str
     openai_org_id: str | None
@@ -20,68 +24,60 @@ class Settings:
 
 @dataclass(frozen=True)
 class AppSettings:
-    """Application-level runtime settings for storage and prompts."""
+    """Minimal app-level defaults plus local path settings."""
 
     openai_model: str
-    openai_model_overrides: dict[str, str]
     openai_temperature: float | None
-    openai_temperature_overrides: dict[str, float]
     openai_reasoning_effort: str | None
     openai_reasoning_summary: str | None
-    openai_reasoning_effort_overrides: dict[str, str]
-    openai_reasoning_summary_overrides: dict[str, str]
     openai_max_completion_tokens: int | None
-    openai_max_completion_tokens_overrides: dict[str, int]
-    crew_planning_overrides: dict[str, bool]
-    crew_planning_model_overrides: dict[str, str]
     workspace_root: Path
     schema_dir: Path
     prompts_dir: Path
 
-    def model_for_agent(self, agent_name: str) -> str:
-        """Return the model override for an agent, or the default model."""
-        key = normalize_agent_name(agent_name)
-        return self.openai_model_overrides.get(key, self.openai_model)
+    def model_for_agent(self, _agent_name: str) -> str:
+        """Return the global app default model."""
 
-    def temperature_for_agent(self, agent_name: str) -> float | None:
-        """Return the temperature override for an agent, or the default temperature."""
-        key = normalize_agent_name(agent_name)
-        return self.openai_temperature_overrides.get(key, self.openai_temperature)
+        return self.openai_model
 
-    def reasoning_effort_for_agent(self, agent_name: str) -> str | None:
-        """Return the reasoning effort override for an agent, or the default."""
-        key = normalize_agent_name(agent_name)
-        return self.openai_reasoning_effort_overrides.get(key, self.openai_reasoning_effort)
+    def temperature_for_agent(self, _agent_name: str) -> float | None:
+        """Return the global app default temperature."""
 
-    def reasoning_summary_for_agent(self, agent_name: str) -> str | None:
-        """Return the reasoning summary override for an agent, or the default."""
-        key = normalize_agent_name(agent_name)
-        return self.openai_reasoning_summary_overrides.get(key, self.openai_reasoning_summary)
+        return self.openai_temperature
 
-    def max_completion_tokens_for_agent(self, agent_name: str) -> int | None:
-        """Return max completion tokens override for an agent, or the default."""
-        key = normalize_agent_name(agent_name)
-        return self.openai_max_completion_tokens_overrides.get(key, self.openai_max_completion_tokens)
+    def reasoning_effort_for_agent(self, _agent_name: str) -> str | None:
+        """Return the global app default reasoning effort."""
 
-    def planning_enabled_for_crew(self, crew_name: str, default_enabled: bool = False) -> bool:
-        """Return the crew planning override, or the provided default."""
-        key = normalize_agent_name(crew_name)
-        return self.crew_planning_overrides.get(key, default_enabled)
+        return self.openai_reasoning_effort
 
-    def planning_model_for_crew(self, crew_name: str, default_model: str | None = None) -> str | None:
-        """Return the crew planning-model override, or the provided default."""
-        key = normalize_agent_name(crew_name)
-        return self.crew_planning_model_overrides.get(key, default_model)
+    def reasoning_summary_for_agent(self, _agent_name: str) -> str | None:
+        """Return the global app default reasoning summary."""
 
+        return self.openai_reasoning_summary
 
-def normalize_agent_name(value: str) -> str:
-    """Normalize an agent name for env key mapping."""
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_")
-    return cleaned.lower()
+    def max_completion_tokens_for_agent(self, _agent_name: str) -> int | None:
+        """Return the global app default max completion tokens."""
+
+        return self.openai_max_completion_tokens
+
+    def planning_enabled_for_crew(self, _crew_name: str, default_enabled: bool = False) -> bool:
+        """Return the provided crew default unchanged.
+
+        Crew-planning policy is owned by runtime profiles and provider helpers,
+        not by app-level settings.
+        """
+
+        return default_enabled
+
+    def planning_model_for_crew(self, _crew_name: str, default_model: str | None = None) -> str | None:
+        """Return the provided planning-model default unchanged."""
+
+        return default_model
 
 
 def _parse_float(value: str | None) -> float | None:
-    """Parse a float from env, returning None on invalid input."""
+    """Parse a float from env, returning ``None`` on invalid input."""
+
     if value is None:
         return None
     raw = value.strip()
@@ -94,7 +90,8 @@ def _parse_float(value: str | None) -> float | None:
 
 
 def _parse_int(value: str | None) -> int | None:
-    """Parse an int from env, returning None on invalid input."""
+    """Parse an int from env, returning ``None`` on invalid input."""
+
     if value is None:
         return None
     raw = value.strip()
@@ -106,17 +103,32 @@ def _parse_int(value: str | None) -> int | None:
         return None
 
 
+def _default_model(base_url: str | None) -> str:
+    """Return the global default model for the active provider."""
+
+    if base_url and _GROQ_BASE_URL_MARKER in base_url:
+        return _DEFAULT_GROQ_MODEL
+    return _DEFAULT_OPENAI_MODEL
+
+
+def _default_max_completion_tokens(base_url: str | None) -> int | None:
+    """Return the global default max completion tokens for the active provider."""
+
+    if base_url and _GROQ_BASE_URL_MARKER in base_url:
+        return _DEFAULT_GROQ_MAX_COMPLETION_TOKENS
+    return None
+
+
 def load_env_file(path: str | Path) -> None:
-    """Load a simple KEY=VALUE env file into the process environment."""
+    """Load a simple ``KEY=VALUE`` env file into the process environment."""
+
     env_path = Path(path)
     if not env_path.exists():
         return
 
     for raw_line in env_path.read_text().splitlines():
         line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" not in line:
+        if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
         key = key.strip()
@@ -129,7 +141,8 @@ def load_env_file(path: str | Path) -> None:
 
 
 def load_settings() -> Settings:
-    """Return LLM connection settings, raising if required values are missing."""
+    """Return provider connection settings, raising if required values are missing."""
+
     api_key = os.getenv("RPS_LLM_API_KEY")
     if not api_key:
         raise RuntimeError("RPS_LLM_API_KEY is required")
@@ -143,109 +156,20 @@ def load_settings() -> Settings:
 
 
 def load_app_settings() -> AppSettings:
-    """Return application runtime settings with sensible defaults."""
-    overrides: dict[str, str] = {}
-    for key, value in os.environ.items():
-        if not key.startswith("RPS_LLM_MODEL_") or key == "RPS_LLM_MODEL":
-            continue
-        if not value:
-            continue
-        agent_key = normalize_agent_name(key[len("RPS_LLM_MODEL_"):])
-        if agent_key:
-            overrides[agent_key] = value
-
-    temp_overrides: dict[str, float] = {}
-    for key, value in os.environ.items():
-        if not key.startswith("RPS_LLM_TEMPERATURE_") or key == "RPS_LLM_TEMPERATURE":
-            continue
-        parsed = _parse_float(value)
-        if parsed is None:
-            continue
-        agent_key = normalize_agent_name(key[len("RPS_LLM_TEMPERATURE_"):])
-        if agent_key:
-            temp_overrides[agent_key] = parsed
-
-    reasoning_effort_overrides: dict[str, str] = {}
-    for key, value in os.environ.items():
-        if not key.startswith("RPS_LLM_REASONING_EFFORT_") or key == "RPS_LLM_REASONING_EFFORT":
-            continue
-        if not value:
-            continue
-        agent_key = normalize_agent_name(key[len("RPS_LLM_REASONING_EFFORT_"):])
-        if agent_key:
-            reasoning_effort_overrides[agent_key] = value
-
-    reasoning_summary_overrides: dict[str, str] = {}
-    for key, value in os.environ.items():
-        if not key.startswith("RPS_LLM_REASONING_SUMMARY_") or key == "RPS_LLM_REASONING_SUMMARY":
-            continue
-        if not value:
-            continue
-        agent_key = normalize_agent_name(key[len("RPS_LLM_REASONING_SUMMARY_"):])
-        if agent_key:
-            reasoning_summary_overrides[agent_key] = value
-
-    max_completion_overrides: dict[str, int] = {}
-    for key, value in os.environ.items():
-        if not key.startswith("RPS_LLM_MAX_COMPLETION_TOKENS_") or key == "RPS_LLM_MAX_COMPLETION_TOKENS":
-            continue
-        parsed = _parse_int(value)
-        if parsed is None:
-            continue
-        agent_key = normalize_agent_name(key[len("RPS_LLM_MAX_COMPLETION_TOKENS_"):])
-        if agent_key:
-            max_completion_overrides[agent_key] = parsed
-
-    crew_planning_overrides: dict[str, bool] = {}
-    for key, value in os.environ.items():
-        if (
-            not key.startswith("RPS_CREW_PLANNING_")
-            or key == "RPS_CREW_PLANNING_LLM"
-            or key.startswith("RPS_CREW_PLANNING_LLM_")
-        ):
-            continue
-        normalized = normalize_agent_name(key[len("RPS_CREW_PLANNING_"):])
-        lowered = value.strip().lower()
-        if lowered in {"1", "true", "yes", "on"}:
-            crew_planning_overrides[normalized] = True
-        elif lowered in {"0", "false", "no", "off"}:
-            crew_planning_overrides[normalized] = False
-
-    crew_planning_model_overrides: dict[str, str] = {}
-    for key, value in os.environ.items():
-        if not key.startswith("RPS_CREW_PLANNING_LLM_") or key == "RPS_CREW_PLANNING_LLM":
-            continue
-        if not value:
-            continue
-        crew_key = normalize_agent_name(key[len("RPS_CREW_PLANNING_LLM_"):])
-        if crew_key:
-            crew_planning_model_overrides[crew_key] = value
+    """Return minimal application runtime settings with sensible defaults."""
 
     base_url = os.getenv("RPS_LLM_BASE_URL")
-    default_model = os.getenv("RPS_LLM_MODEL")
-    if not default_model:
-        if base_url and "api.groq.com" in base_url:
-            default_model = "groq/openai/gpt-oss-20b"
-        else:
-            default_model = "gpt-5.4-mini"
-
+    default_model = os.getenv("RPS_LLM_MODEL") or _default_model(base_url)
     default_max_completion = _parse_int(os.getenv("RPS_LLM_MAX_COMPLETION_TOKENS"))
-    if default_max_completion is None and base_url and "api.groq.com" in base_url:
-        default_max_completion = 2048
+    if default_max_completion is None:
+        default_max_completion = _default_max_completion_tokens(base_url)
 
     return AppSettings(
         openai_model=default_model,
-        openai_model_overrides=overrides,
         openai_temperature=_parse_float(os.getenv("RPS_LLM_TEMPERATURE")),
-        openai_temperature_overrides=temp_overrides,
         openai_reasoning_effort=os.getenv("RPS_LLM_REASONING_EFFORT"),
         openai_reasoning_summary=os.getenv("RPS_LLM_REASONING_SUMMARY"),
-        openai_reasoning_effort_overrides=reasoning_effort_overrides,
-        openai_reasoning_summary_overrides=reasoning_summary_overrides,
         openai_max_completion_tokens=default_max_completion,
-        openai_max_completion_tokens_overrides=max_completion_overrides,
-        crew_planning_overrides=crew_planning_overrides,
-        crew_planning_model_overrides=crew_planning_model_overrides,
         workspace_root=Path(os.getenv("ATHLETE_WORKSPACE_ROOT", "runtime/athletes")),
         schema_dir=Path(os.getenv("SCHEMA_DIR", "specs/schemas")),
         prompts_dir=Path(os.getenv("PROMPTS_DIR", "prompts")),

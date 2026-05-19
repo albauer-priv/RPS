@@ -1005,6 +1005,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intervals posting receipt helpers now use explicit receipt/payload row types instead of broad dynamic dict typing, including safer text normalization for generated external IDs.
 ## 2026-05-19
 
+- refactor: reduced the repo-supported LLM env surface to global provider defaults only; per-agent, coach-specific, and crew-planning env overrides are no longer active runtime inputs
+- docs: deployment environment documentation now points role-specific model policy to `config/crewai/runtime_profiles.yaml` instead of per-agent env keys
+- refactor: reduced `src/rps/core/config.py` to a minimal app-level settings surface with only global LLM defaults and local path settings
+- fix: app-level `SETTINGS` no longer reconstruct agent- or crew-scoped environment override policy that already belongs to CrewAI provider config and runtime profiles
+
+## 2026-05-19
+
 - fix: active `SEASON_PHASE_FEED_FORWARD` and `PHASE_FEED_FORWARD` CrewAI tasks now use their dedicated feed-forward manager agents instead of artifact-writer prompts
 - fix: review managers now use dedicated review prompts instead of reusing planning-manager prompts, reducing synthesis/review role leakage
 - fix: `conversation_manager` is now a non-delegating bounded router/finalizer and its prompt/skill rules explicitly preserve preview/apply and pending-scope boundaries

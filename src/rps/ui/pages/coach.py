@@ -891,9 +891,9 @@ surface = ConversationalSurface(
     shared_context=conversation_context,
     prompts_dir=SETTINGS.prompts_dir,
 )
-model = os.getenv("RPS_LLM_MODEL_COACH") or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5-mini"
-base_url = os.getenv("RPS_LLM_BASE_URL_COACH") or os.getenv("RPS_LLM_BASE_URL")
-key_hint = "set" if os.getenv("RPS_LLM_API_KEY_COACH") or os.getenv("RPS_LLM_API_KEY") else "missing"
+model = SETTINGS.model_for_agent("coach")
+base_url = os.getenv("RPS_LLM_BASE_URL")
+key_hint = "set" if os.getenv("RPS_LLM_API_KEY") else "missing"
 ui_log(f"Coach initialized with model={model} base_url={base_url or 'default'} api_key={key_hint}")
 
 pending = _coach_pending()

@@ -1,36 +1,9 @@
-"""Direct CrewAI provider configuration resolved from RPS environment variables."""
+"""Direct CrewAI provider configuration from a minimal global RPS env surface."""
 
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import dataclass
-
-
-def _agent_env_key(agent_name: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", agent_name).strip("_")
-    return cleaned.upper() or "AGENT"
-
-
-def _resolve_env(base_key: str, agent_name: str | None) -> str | None:
-    if agent_name:
-        agent_key = _agent_env_key(agent_name)
-        override = os.getenv(f"{base_key}_{agent_key}")
-        if override:
-            return override
-    return os.getenv(base_key)
-
-
-def _resolve_bool_env(base_key: str, scope_name: str | None) -> bool | None:
-    raw = _resolve_env(base_key, scope_name)
-    if raw is None:
-        return None
-    value = raw.strip().lower()
-    if value in {"1", "true", "yes", "on"}:
-        return True
-    if value in {"0", "false", "no", "off"}:
-        return False
-    return None
 
 
 @dataclass(frozen=True)
@@ -57,38 +30,37 @@ def resolve_crewai_provider_config(
     reasoning_summary_override: str | None = None,
     max_completion_tokens_override: int | None = None,
 ) -> CrewAIProviderConfig:
-    """Resolve CrewAI/OpenAI provider settings directly from RPS env vars."""
+    """Resolve CrewAI/OpenAI provider settings from global RPS env vars only."""
 
-    api_key = _resolve_env("RPS_LLM_API_KEY", agent_name)
+    del agent_name
+
+    api_key = os.getenv("RPS_LLM_API_KEY")
     if not api_key:
         raise RuntimeError("RPS_LLM_API_KEY is required")
-    model = (
-        model_override
-        or _resolve_env("RPS_LLM_MODEL", agent_name)
-        or "openai/gpt-5-mini"
-    )
+
+    model = model_override or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5-mini"
 
     temperature = temperature_override
     if temperature is None:
-        raw_temperature = _resolve_env("RPS_LLM_TEMPERATURE", agent_name)
+        raw_temperature = os.getenv("RPS_LLM_TEMPERATURE")
         if raw_temperature:
             temperature = float(raw_temperature)
 
-    reasoning_effort = reasoning_effort_override or _resolve_env("RPS_LLM_REASONING_EFFORT", agent_name)
-    reasoning_summary = reasoning_summary_override or _resolve_env("RPS_LLM_REASONING_SUMMARY", agent_name)
+    reasoning_effort = reasoning_effort_override or os.getenv("RPS_LLM_REASONING_EFFORT")
+    reasoning_summary = reasoning_summary_override or os.getenv("RPS_LLM_REASONING_SUMMARY")
 
     max_completion_tokens = max_completion_tokens_override
     if max_completion_tokens is None:
-        raw_max = _resolve_env("RPS_LLM_MAX_COMPLETION_TOKENS", agent_name)
+        raw_max = os.getenv("RPS_LLM_MAX_COMPLETION_TOKENS")
         if raw_max:
             max_completion_tokens = int(raw_max)
 
     return CrewAIProviderConfig(
         api_key=api_key,
         model=model,
-        base_url=_resolve_env("RPS_LLM_BASE_URL", agent_name),
-        org_id=_resolve_env("RPS_LLM_ORG_ID", agent_name),
-        project_id=_resolve_env("RPS_LLM_PROJECT_ID", agent_name),
+        base_url=os.getenv("RPS_LLM_BASE_URL"),
+        org_id=os.getenv("RPS_LLM_ORG_ID"),
+        project_id=os.getenv("RPS_LLM_PROJECT_ID"),
         temperature=temperature,
         reasoning_effort=reasoning_effort,
         reasoning_summary=reasoning_summary,
@@ -135,12 +107,10 @@ def build_crewai_llm_kwargs(
 
 
 def resolve_crewai_planning_enabled(crew_name: str, *, default_enabled: bool) -> bool:
-    """Resolve optional env override for CrewAI crew-level planning."""
+    """Return the configured planning-enabled default unchanged."""
 
-    override = _resolve_bool_env("RPS_CREW_PLANNING", crew_name)
-    if override is None:
-        return default_enabled
-    return override
+    del crew_name
+    return default_enabled
 
 
 def resolve_crewai_planning_model(
@@ -148,9 +118,10 @@ def resolve_crewai_planning_model(
     *,
     default_model: str | None,
 ) -> str | None:
-    """Resolve the crew-level planning model with dedicated overrides."""
+    """Return the configured planning-model default unchanged."""
 
-    return _resolve_env("RPS_CREW_PLANNING_LLM", crew_name) or default_model
+    del crew_name
+    return default_model
 
 
 def build_crewai_planning_llm_kwargs(
@@ -163,16 +134,16 @@ def build_crewai_planning_llm_kwargs(
     model = resolve_crewai_planning_model(crew_name, default_model=default_model)
     if not model:
         return None
-    api_key = _resolve_env("RPS_LLM_API_KEY", None)
+    api_key = os.getenv("RPS_LLM_API_KEY")
     if not api_key:
         raise RuntimeError("RPS_LLM_API_KEY is required")
     kwargs: dict[str, object] = {
         "model": model,
         "api_key": api_key,
     }
-    base_url = _resolve_env("RPS_LLM_BASE_URL", None)
-    org_id = _resolve_env("RPS_LLM_ORG_ID", None)
-    project_id = _resolve_env("RPS_LLM_PROJECT_ID", None)
+    base_url = os.getenv("RPS_LLM_BASE_URL")
+    org_id = os.getenv("RPS_LLM_ORG_ID")
+    project_id = os.getenv("RPS_LLM_PROJECT_ID")
     if base_url:
         kwargs["base_url"] = base_url
     if org_id:

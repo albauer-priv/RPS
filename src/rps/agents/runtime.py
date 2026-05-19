@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -11,9 +9,7 @@ from typing import Any
 from rps.crewai_runtime.compat import CrewAIRuntimeStatus, crewai_runtime_status
 from rps.prompts.loader import PromptLoader
 
-logger = logging.getLogger(__name__)
 JsonMap = dict[str, Any]
-_SUPPORTED_BACKENDS = {"auto", "crewai"}
 
 
 @dataclass(frozen=True)
@@ -42,28 +38,13 @@ class AgentRuntimeSelection:
     crewai_status: CrewAIRuntimeStatus
 
 
-def configured_agent_backend() -> str:
-    """Return the configured agent backend mode.
-
-    Supported values:
-    - ``auto``: require CrewAI when it can execute.
-    - ``crewai``: require CrewAI and fail fast when it cannot execute.
-    """
-
-    raw = os.getenv("RPS_AGENT_RUNTIME", "crewai").strip().lower() or "crewai"
-    if raw in _SUPPORTED_BACKENDS:
-        return raw
-    logger.warning("Unknown RPS_AGENT_RUNTIME=%s; forcing crewai.", raw)
-    return "crewai"
-
-
 def resolve_agent_runtime_selection(
     requested_backend: str | None = None,
 ) -> AgentRuntimeSelection:
-    """Resolve the effective backend for agent execution."""
+    """Resolve the fixed CrewAI backend for agent execution."""
 
-    requested = (requested_backend or configured_agent_backend()).strip().lower() or "crewai"
-    if requested not in _SUPPORTED_BACKENDS:
+    requested = (requested_backend or "crewai").strip().lower() or "crewai"
+    if requested != "crewai":
         requested = "crewai"
     status = crewai_runtime_status()
     can_execute = status.ok

@@ -1992,7 +1992,7 @@ def test_runtime_gateway_defaults_to_crewai(monkeypatch) -> None:
 
 def test_runtime_gateway_rejects_unknown_backend(monkeypatch) -> None:
     monkeypatch.setenv("RPS_AGENT_RUNTIME", "legacy")
-    selection = agent_runtime.resolve_agent_runtime_selection()
+    selection = agent_runtime.resolve_agent_runtime_selection(requested_backend="legacy")
 
     assert selection.requested_backend == "crewai"
     assert selection.effective_backend == "crewai"
@@ -2745,16 +2745,14 @@ def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> 
     monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
     monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
     monkeypatch.setenv("RPS_LLM_BASE_URL", "https://api.openai.com/v1")
-    monkeypatch.setenv("RPS_LLM_API_KEY_COACH", "coach-key")
-    monkeypatch.setenv("RPS_LLM_MODEL_COACH", "openai/gpt-5-nano")
 
     config = resolve_crewai_provider_config("coach")
     kwargs = build_crewai_llm_kwargs("coach")
 
-    assert config.api_key == "coach-key"
-    assert config.model == "openai/gpt-5-nano"
-    assert kwargs["api_key"] == "coach-key"
-    assert kwargs["model"] == "openai/gpt-5-nano"
+    assert config.api_key == "global-key"
+    assert config.model == "openai/gpt-5-mini"
+    assert kwargs["api_key"] == "global-key"
+    assert kwargs["model"] == "openai/gpt-5-mini"
 
 
 def test_app_settings_default_model_uses_gpt54_family(monkeypatch) -> None:
@@ -2769,18 +2767,35 @@ def test_app_settings_default_model_uses_gpt54_family(monkeypatch) -> None:
 def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
     monkeypatch.setenv("RPS_LLM_BASE_URL", "https://api.openai.com/v1")
-    monkeypatch.setenv("RPS_CREW_PLANNING_SEASON_PLANNING", "false")
-    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-5.4-mini")
 
-    assert resolve_crewai_planning_enabled("season_planning", default_enabled=True) is False
+    assert resolve_crewai_planning_enabled("season_planning", default_enabled=True) is True
     planning_kwargs = build_crewai_planning_llm_kwargs(
         "season_planning",
         default_model="gpt-5.4",
     )
     assert planning_kwargs is not None
-    assert planning_kwargs["model"] == "gpt-5.4-mini"
+    assert planning_kwargs["model"] == "gpt-5.4"
     assert planning_kwargs["api_key"] == "global-key"
 
     settings = load_app_settings()
-    assert settings.planning_enabled_for_crew("season_planning", True) is False
-    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-5.4-mini"
+    assert settings.planning_enabled_for_crew("season_planning", True) is True
+    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-5.4"
+
+
+def test_app_settings_ignore_agent_and_crew_scoped_env_overrides(monkeypatch) -> None:
+    monkeypatch.setenv("RPS_LLM_MODEL", "gpt-5.4-mini")
+    monkeypatch.setenv("RPS_LLM_MODEL_COACH", "gpt-5.4")
+    monkeypatch.setenv("RPS_LLM_TEMPERATURE", "0.2")
+    monkeypatch.setenv("RPS_LLM_TEMPERATURE_COACH", "0.9")
+    monkeypatch.setenv("RPS_CREW_PLANNING_SEASON_PLANNING", "false")
+    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-5.4-nano")
+
+    settings = load_app_settings()
+
+    assert settings.model_for_agent("coach") == "gpt-5.4-mini"
+    assert settings.temperature_for_agent("coach") == 0.2
+    assert settings.planning_enabled_for_crew("season_planning", True) is True
+    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-5.4"
+    provider = resolve_crewai_provider_config("coach")
+    assert provider.model == "gpt-5.4-mini"
+    assert provider.temperature == 0.2

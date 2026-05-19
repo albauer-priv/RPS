@@ -51,8 +51,8 @@ This file is the **README for coding agents** working in this repository. It con
 * **Recent status:** Data & Metrics decoupling chart shows weekly trend plus per-activity values.
 * **Recent status:** Schema bundler strips nested `$id` values to prevent duplicate canonical-uri errors (Groq tool schema compile).
 * **Recent status:** Multi-output runner stages tools (read/search first, store-only second) to reduce token usage.
-* **Recent status:** LiteLLM Groq requests set `tool_choice=auto` and retry on TPM limits using `RPS_TPM_*` env.
-* **Recent status:** Added `RPS_LLM_MAX_COMPLETION_TOKENS` (and per-agent overrides) plus Groq default model fallback.
+* **Recent status:** CrewAI/OpenAI runtime config is now reduced to a minimal global env surface; role-specific model policy lives in `config/crewai/runtime_profiles.yaml`.
+* **Recent status:** Added `RPS_LLM_MAX_COMPLETION_TOKENS` as a global provider default plus Groq default model fallback.
 * **Recent status:** Legacy CLI entrypoint removed; project is UI-only (Streamlit + maintenance scripts).
 * **Recent status:** UI pages now use a consistent header order (Title → Athlete → Status hints → Actions).
 * **Recent status:** Workouts and System Status pages no longer show duplicate status panels.
@@ -480,11 +480,13 @@ ADR log is maintained as external files under `doc/adr/` (see `doc/adr/README.md
 ## 11) Runtime/env variables (do not hardcode)
 
 * `RPS_LLM_API_KEY`
-* `RPS_LLM_MODEL*`, `RPS_LLM_TEMPERATURE*`, `RPS_LLM_REASONING_EFFORT*`
-* `RPS_LLM_EMBEDDING_MODEL`, `RPS_LLM_EMBEDDING_BATCH_SIZE`
-* `RPS_LLM_ENABLE_WEB_SEARCH`, `RPS_LLM_WEB_SEARCH_AGENTS`
-* `RPS_LLM_STREAM*`
-* `RPS_LOG_LEVEL_FILE`, `RPS_LOG_LEVEL_CONSOLE`, `RPS_LOG_LEVEL_UI`
+* `RPS_LLM_BASE_URL`, `RPS_LLM_ORG_ID`, `RPS_LLM_PROJECT_ID`
+* `RPS_LLM_MODEL`, `RPS_LLM_TEMPERATURE`, `RPS_LLM_REASONING_EFFORT`, `RPS_LLM_REASONING_SUMMARY`, `RPS_LLM_MAX_COMPLETION_TOKENS`
+* `ATHLETE_WORKSPACE_ROOT`, `SCHEMA_DIR`, `PROMPTS_DIR`
+* `ATHLETE_ID`, `API_KEY`, `BASE_URL`
+* `RPS_LOG_LEVEL`, `RPS_LOG_CONSOLE`, `RPS_LOG_FILE`, `RPS_LOG_UI`
+* `RPS_LOG_ROTATE_MB`, `RPS_LOG_RETENTION_DAYS`, `RPS_RUN_RETENTION_DAYS`
+* `RPS_INTERVALS_MAX_AGE_HOURS`, `RPS_HISTORICAL_YEARS`, `RPS_DISABLE_INTERVALS_REFRESH`
 
 Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored.
 
