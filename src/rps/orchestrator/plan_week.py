@@ -991,7 +991,7 @@ def plan_week(
         )
         phase_slot_context = build_season_phase_slot_block(
             selected_structure_context=selected_structure_context.payload,
-            target_week=target,
+            target_week=phase_range.start,
         )
         phase_execution_seed = build_phase_execution_context(
             target_week=target,

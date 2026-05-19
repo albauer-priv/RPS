@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coach recommendation and finalization prompts now define the desired positive cycling-coach voice directly instead of relying mainly on negative style constraints.
 
 ### Fixed
+- Fixed contract-aware Plan Week phase reruns so deterministic scenario phase slots are anchored to the active phase range start, and updated Plan page smoke tests to use valid Scenario/Phase/Week contract fixtures.
 - Fixed repeated artifact persistence failures caused by agent-invented `schema_id`, `owner_agent`, or operational trace version strings by canonicalizing envelopes in `GuardedValidatedStore` and legacy read normalization.
 - Fixed Season Plan persistence after writer-crew execution by aligning schema owner constants with the new writer-agent ownership model.
 - Fixed CrewAI progress visibility by emitting planned task/agent rows before each Crew kickoff, so long runs show the upcoming task chain immediately.

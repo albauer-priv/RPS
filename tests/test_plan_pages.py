@@ -20,6 +20,213 @@ EXPECTED_SCOPED_ACTION_CALLS = 2
 MIN_PLAN_HUB_NUMBER_INPUTS = 2
 
 
+def _write_minimal_scenario_chain(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    version_key: str = "2026-12",
+    horizon_weeks: int = 3,
+    cadence: str = "2:1",
+    selected_scenario_id: str = "A",
+) -> None:
+    phase_length = {"2:1": 3, "3:1": 4, "2:1:1": 4}[cadence]
+    phase_count = (horizon_weeks + phase_length - 1) // phase_length
+    shortened_len = horizon_weeks - ((phase_count - 1) * phase_length)
+    shortened = [{"len": shortened_len, "count": 1}] if shortened_len < phase_length else []
+    full_phases = phase_count - len(shortened)
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIOS,
+        version_key,
+        {
+            "data": {
+                "planning_horizon_weeks": horizon_weeks,
+                "scenarios": [
+                    {
+                        "scenario_id": selected_scenario_id,
+                        "name": "Minimal contract scenario",
+                        "scenario_guidance": {
+                            "deload_cadence": cadence,
+                            "phase_length_weeks": phase_length,
+                            "phase_count_expected": phase_count,
+                            "max_shortened_phases": len(shortened),
+                            "shortening_budget_weeks": 0 if not shortened else phase_length - shortened_len,
+                            "phase_plan_summary": {
+                                "full_phases": full_phases,
+                                "shortened_phases": shortened,
+                            },
+                            "event_alignment_notes": ["Test scenario anchor."],
+                            "risk_flags": [],
+                        },
+                    }
+                ],
+            }
+        },
+        producer_agent="test",
+        run_id=f"store_scenarios_{version_key}",
+        update_latest=True,
+    )
+    existing_selection: dict[str, object] = {}
+    try:
+        loaded = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        if isinstance(loaded, dict):
+            existing_selection = loaded
+    except Exception:
+        existing_selection = {}
+    selection_data = existing_selection.get("data")
+    if not isinstance(selection_data, dict):
+        selection_data = {}
+    selection_data["selected_scenario_id"] = selected_scenario_id
+    selection_data.setdefault("season_scenarios_ref", "season_scenarios/latest.json")
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        version_key,
+        {"data": selection_data},
+        producer_agent="test",
+        run_id=f"store_selection_{version_key}",
+        update_latest=True,
+    )
+    if not store.latest_exists(athlete_id, ArtifactType.ZONE_MODEL):
+        store.save_document(
+            athlete_id,
+            ArtifactType.ZONE_MODEL,
+            "zone_model",
+            {
+                "data": {
+                    "model_metadata": {"ftp_watts": 300},
+                    "zones": [
+                        {
+                            "zone_id": "Z2",
+                            "name": "Endurance",
+                            "ftp_percent_range": {"min": 56, "max": 75},
+                            "typical_if": 0.66,
+                        }
+                    ],
+                }
+            },
+            producer_agent="test",
+            run_id="store_zone_model",
+            update_latest=True,
+        )
+
+
+def _write_minimal_availability(store: LocalArtifactStore, athlete_id: str) -> None:
+    store.latest_path(athlete_id, ArtifactType.AVAILABILITY).write_text(
+        json.dumps(
+            {
+                "data": {
+                    "weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5},
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "availability_table": [],
+                    "source_type": "manual",
+                    "source_ref": "test",
+                    "notes": "",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    if not store.latest_exists(athlete_id, ArtifactType.ZONE_MODEL):
+        store.save_document(
+            athlete_id,
+            ArtifactType.ZONE_MODEL,
+            "zone_model",
+            {
+                "data": {
+                    "model_metadata": {"ftp_watts": 300},
+                    "zones": [
+                        {
+                            "zone_id": "Z2",
+                            "name": "Endurance",
+                            "ftp_percent_range": {"min": 56, "max": 75},
+                            "typical_if": 0.66,
+                        }
+                    ],
+                }
+            },
+            producer_agent="test",
+            run_id="store_zone_model",
+            update_latest=True,
+        )
+
+
+def _write_contract_phase_docs(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    phase_range: str = "2026-11--2026-13",
+    weeks: tuple[str, ...] = ("2026-11", "2026-12", "2026-13"),
+) -> None:
+    roles = ["LOAD_1", "LOAD_2", "DELOAD"][: len(weeks)]
+    bands = [
+        {"week": week, "band": {"min": 1000 + idx * 100, "max": 2000 + idx * 100, "notes": "Contract band"}}
+        for idx, week in enumerate(weeks)
+    ]
+    store.save_document(
+        athlete_id,
+        ArtifactType.PHASE_GUARDRAILS,
+        phase_range,
+        {
+            "meta": {"artifact_type": "PHASE_GUARDRAILS", "iso_week_range": phase_range},
+            "data": {
+                "load_guardrails": {"weekly_kj_bands": bands},
+                "allowed_forbidden_semantics": {
+                    "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                    "forbidden_day_roles": [],
+                    "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO"],
+                    "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    "allowed_load_modalities": ["NONE"],
+                    "quality_density": {"max_quality_days_per_week": 1},
+                },
+            },
+        },
+        producer_agent="phase_architect",
+        run_id=f"store_phase_guardrails_{phase_range}",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.PHASE_STRUCTURE,
+        phase_range,
+        {
+            "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": phase_range},
+            "data": {
+                "execution_principles": {
+                    "phase_role": "Base",
+                    "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+                    "load_intensity_handling": {"max_quality_days_per_week": 1},
+                },
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [
+                            {"week": week, "role": role}
+                            for week, role in zip(weeks, roles, strict=False)
+                        ],
+                        "allowed_role_set": roles,
+                    }
+                },
+                "load_ranges": {
+                    "weekly_kj_bands": bands,
+                    "source": "phase_guardrails_latest.json",
+                },
+            },
+        },
+        producer_agent="phase_architect",
+        run_id=f"store_phase_structure_{phase_range}",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.PHASE_PREVIEW,
+        phase_range,
+        {"meta": {"artifact_type": "PHASE_PREVIEW", "iso_week_range": phase_range}, "data": {}},
+        producer_agent="phase_architect",
+        run_id=f"store_phase_preview_{phase_range}",
+        update_latest=True,
+    )
+
+
 @pytest.fixture(autouse=True)
 def _env_setup(monkeypatch, tmp_path):
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
@@ -653,6 +860,7 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
         json.dumps({"data": {"kpi_moving_time_rate_guidance_selection": None}}),
         encoding="utf-8",
     )
+    _write_minimal_scenario_chain(store, "test_athlete", horizon_weeks=8)
 
     season_flow.create_season_scenarios(
         _fake_runtime_for,
@@ -801,6 +1009,7 @@ def test_create_season_plan_includes_selected_kpi_guidance(
         run_id="test_kpi_profile",
         update_latest=True,
     )
+    _write_minimal_scenario_chain(store, "test_athlete", horizon_weeks=8)
 
     season_flow.create_season_plan(
         _fake_runtime_for,
@@ -843,6 +1052,7 @@ def test_create_season_plan_injects_selected_scenario_phase_math(
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
     store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    _write_minimal_availability(store, "test_athlete")
     store.save_document(
         "test_athlete",
         ArtifactType.SEASON_SCENARIOS,
@@ -939,6 +1149,7 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
         ),
         encoding="utf-8",
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
         ArtifactType.PHASE_GUARDRAILS,
         ArtifactType.PHASE_STRUCTURE,
@@ -1015,6 +1226,7 @@ def test_plan_week_force_phase_guardrails_and_structure_reruns_preview(
         run_id="season_plan_test",
         update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
         ArtifactType.PHASE_GUARDRAILS,
         ArtifactType.PHASE_STRUCTURE,
@@ -1095,6 +1307,7 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(
         ),
         encoding="utf-8",
     )
+    _write_minimal_scenario_chain(store, athlete_id)
 
     runtime = SimpleNamespace(
         workspace_root=tmp_path,
@@ -1191,6 +1404,7 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
         run_id="seed",
         update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     store.save_document(
         athlete_id,
         ArtifactType.PHASE_GUARDRAILS,
@@ -1252,8 +1466,6 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._resolve_latest_historical_week_versions", lambda *_args, **_kwargs: {})
-    monkeypatch.setattr("rps.orchestrator.plan_week.save_athlete_state_snapshot", lambda *_args, **_kwargs: {})
-    monkeypatch.setattr("rps.orchestrator.plan_week.save_planning_context_snapshot", lambda *_args, **_kwargs: {})
     monkeypatch.setattr("rps.orchestrator.plan_week.build_athlete_state_snapshot_prompt_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week.build_planning_context_snapshot_prompt_block", lambda *_args, **_kwargs: "")
 
@@ -1362,6 +1574,7 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
         run_id="test_selection",
         update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     generic_input = {"meta": {"artifact_type": "GENERIC"}, "data": {}}
     store.save_document(
         athlete_id,
@@ -1542,6 +1755,7 @@ def test_plan_week_week_planner_uses_historical_activity_versions(
             run_id=f"store_{artifact_type.value.lower()}",
             update_latest=True,
         )
+    _write_contract_phase_docs(store, athlete_id)
     store.save_document(
         athlete_id,
         ArtifactType.ACTIVITIES_ACTUAL,
@@ -1639,6 +1853,7 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
             run_id=f"store_{artifact_type.value.lower()}",
             update_latest=True,
         )
+    _write_contract_phase_docs(store, athlete_id)
     store.save_document(
         athlete_id,
         ArtifactType.WELLNESS,
@@ -1686,6 +1901,7 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
         run_id="store_selection_202612",
         update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     store.latest_path(athlete_id, ArtifactType.AVAILABILITY).write_text(
         json.dumps(
             {
@@ -1910,6 +2126,7 @@ def test_create_season_plan_injects_resolved_logistics_and_zone_context(
         ),
         encoding="utf-8",
     )
+    _write_minimal_scenario_chain(store, "test_athlete", horizon_weeks=8)
 
     season_flow.create_season_plan(
         _fake_runtime_for,
@@ -1986,6 +2203,7 @@ def test_create_season_plan_uses_historical_activity_versions(
         run_id="activities_trend_202616",
         update_latest=True,
     )
+    _write_minimal_scenario_chain(store, "test_athlete")
 
     season_flow.create_season_plan(
         _fake_runtime_for,
@@ -2492,6 +2710,7 @@ def test_plan_week_injects_resolved_logistics_and_zone_context(
             run_id=f"store_{artifact_type.value.lower()}",
             update_latest=True,
         )
+    _write_contract_phase_docs(store, athlete_id)
     store.save_document(
         athlete_id,
         ArtifactType.ACTIVITIES_ACTUAL,
@@ -2681,6 +2900,7 @@ def test_plan_week_skips_export_when_week_plan_creation_fails(
             run_id=f"store_{artifact_type.value.lower()}",
             update_latest=True,
         )
+    _write_contract_phase_docs(store, athlete_id)
 
     runtime = SimpleNamespace(
         workspace_root=tmp_path,
