@@ -588,6 +588,11 @@ else:
         st.markdown(f"- Risk profile: {scenario.get('risk_profile', 'N/A')}")
         st.markdown(f"- Key differences: {scenario.get('key_differences', 'N/A')}")
         st.markdown(f"- Best suited if: {scenario.get('best_suited_if', 'N/A')}")
+        st.markdown(f"- Typical week feel: {scenario.get('typical_week_feel', 'N/A')}")
+        st.markdown(f"- Main payoff: {scenario.get('main_payoff', 'N/A')}")
+        st.markdown(f"- Main cost: {scenario.get('main_cost', 'N/A')}")
+        st.markdown(f"- What gets prioritized: {scenario.get('what_gets_prioritized', 'N/A')}")
+        st.markdown(f"- What gets de-emphasized: {scenario.get('what_gets_de_emphasized', 'N/A')}")
 
 if not scenario_options:
     st.info("No scenario IDs available to select.")
