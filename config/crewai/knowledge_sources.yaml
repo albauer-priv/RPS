@@ -67,31 +67,31 @@ crews:
 
 agents:
   conversation_manager: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
-  week_context_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
-  week_constraint_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
+  week_context_specialist: {bundles: [], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
+  week_constraint_specialist: {bundles: [], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
   week_recommendation_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  week_load_target_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  week_revision_specialist: {bundles: [factual_interfaces, factual_week_refs], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  week_load_target_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  week_revision_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   week_workout_authoring_specialist: {bundles: [factual_week_refs], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   week_consistency_auditor: {bundles: [factual_interfaces, factual_week_refs], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   week_load_governance_reviewer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   week_workout_syntax_reviewer: {bundles: [factual_week_refs], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  week_plan_manager: {bundles: [factual_interfaces, factual_week_refs], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
+  week_plan_manager: {bundles: [], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   week_review_manager: {bundles: [factual_interfaces, factual_week_refs], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   pending_resolution_specialist: {bundles: [], knowledge_config: {results_limit: 2, score_threshold: 0.6}}
   season_scenario: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   season_planner: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
-  season_context_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  scenario_interpreter: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  event_priority_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  peak_window_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  macrocycle_architect: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  season_constraint_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  season_historical_context_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  season_kpi_guidance_specialist: {bundles: [factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  season_load_corridor_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  season_progression_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  season_plan_manager: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
+  season_context_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  scenario_interpreter: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  event_priority_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  peak_window_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  macrocycle_architect: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  season_constraint_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  season_historical_context_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  season_kpi_guidance_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  season_load_corridor_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  season_progression_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  season_plan_manager: {bundles: [], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   season_plan_auditor: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   season_governance_auditor: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   season_constraints_reviewer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
@@ -99,15 +99,15 @@ agents:
   season_artifact_writer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
   season_feed_forward_manager: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   phase_architect: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
-  phase_context_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  phase_guardrail_band_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  phase_execution_rules_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  phase_structure_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  phase_cadence_recovery_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  phase_intensity_distribution_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  phase_event_integration_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  phase_preview_synthesizer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
-  phase_bundle_manager: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
+  phase_context_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  phase_guardrail_band_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  phase_execution_rules_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  phase_structure_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  phase_cadence_recovery_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  phase_intensity_distribution_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  phase_event_integration_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  phase_preview_synthesizer: {bundles: [], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
+  phase_bundle_manager: {bundles: [], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   phase_constraint_auditor: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   phase_governance_auditor: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   phase_structure_reviewer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}

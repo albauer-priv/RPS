@@ -12,7 +12,9 @@ from rps.agents import runtime as agent_runtime
 from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
+    _build_internal_task_description,
     _coerce_artifact_envelope,
+    _compact_internal_user_input,
     _contract_context_blocks_for_task,
     _emit_crew_task_prepared_events,
     _execute_crewai_multiagent_crew,
@@ -63,6 +65,7 @@ from rps.crewai_runtime.guardrails import (
     week_workout_structure_policy_check,
 )
 from rps.crewai_runtime.knowledge import (
+    _compact_knowledge_query,
     build_crewai_knowledge_kwargs,
     resolve_agent_knowledge_profile,
     resolve_crew_knowledge_profile,
@@ -592,14 +595,23 @@ def test_build_crewai_knowledge_kwargs_mirrors_rps_openai_env(monkeypatch, tmp_p
     skill_root = tmp_path
     source = skill_root / "sample.md"
     source.write_text("knowledge", encoding="utf-8")
+    monkeypatch.setattr("rps.crewai_runtime.knowledge._KNOWLEDGE_SEARCH_GUARDS_READY", False)
 
     class FakeStringKnowledgeSource:
         def __init__(self, *, content: str):
             self.content = content
 
+    class FakeKnowledgeStorage:
+        def search(self, query, *args, **kwargs):
+            self.last_query = query
+            return []
+
     fake_module = types.ModuleType("crewai.knowledge.source.string_knowledge_source")
     fake_module.StringKnowledgeSource = FakeStringKnowledgeSource
+    fake_storage_module = types.ModuleType("crewai.knowledge.storage.knowledge_storage")
+    fake_storage_module.KnowledgeStorage = FakeKnowledgeStorage
     monkeypatch.setitem(sys.modules, "crewai.knowledge.source.string_knowledge_source", fake_module)
+    monkeypatch.setitem(sys.modules, "crewai.knowledge.storage.knowledge_storage", fake_storage_module)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-rps-key")
 
@@ -610,6 +622,10 @@ def test_build_crewai_knowledge_kwargs_mirrors_rps_openai_env(monkeypatch, tmp_p
 
     assert "knowledge_sources" in kwargs
     assert os.environ["OPENAI_API_KEY"] == "test-rps-key"
+    storage = FakeKnowledgeStorage()
+    storage.search("System and agent instructions: " + ("x " * 5000) + "Current Task: compact me")
+    assert isinstance(storage.last_query, str)
+    assert len(storage.last_query) <= 4000
 
 
 def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
@@ -650,6 +666,94 @@ def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
         surface="default",
     )
     assert writer_memory["mode"] == "read_only"
+
+
+def test_planning_specialists_resolve_without_static_knowledge() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+
+    for agent_name in (
+        "season_context_specialist",
+        "season_plan_manager",
+        "phase_context_specialist",
+        "phase_bundle_manager",
+        "week_context_specialist",
+        "week_plan_manager",
+    ):
+        profile = resolve_agent_knowledge_profile(bundle, agent_name=agent_name)
+        assert profile["sources"] == []
+
+
+def test_compact_knowledge_query_caps_large_prompt_text() -> None:
+    giant = (
+        "System and agent instructions:\n# System prompt\n"
+        + ("boilerplate " * 5000)
+        + "\nCurrent Task: Summarize the active season constraints and event anchors."
+    )
+
+    compacted = _compact_knowledge_query(giant)
+
+    assert isinstance(compacted, str)
+    assert "Current Task:" in compacted
+    assert len(compacted) <= 4000
+    assert len(compacted.split()) <= 600
+
+
+def test_compact_internal_user_input_preserves_priority_markers() -> None:
+    giant = (
+        "## Task Context The following is the full task you are helping complete. "
+        + ("boilerplate " * 2500)
+        + "Current Task: Define peak window logic for the selected season. "
+        + ("filler " * 1500)
+        + "Current Step Extract the primary anchor event and taper placement constraints. "
+        + "Context from previous steps: Scenario C selected. "
+        + "Use the latest season-level SEASON_SCENARIO_SELECTION and SEASON_SCENARIOS as context."
+    )
+
+    compacted = _compact_internal_user_input(giant)
+
+    assert "Current Task:" in compacted
+    assert "Current Step" in compacted
+    assert "Context from previous steps:" in compacted
+    assert "Use the latest" in compacted
+    assert len(compacted) <= 2800
+    assert len(compacted.split()) <= 450
+
+
+def test_internal_task_description_is_tool_first_and_compact() -> None:
+    runtime = AgentRuntime(
+        model="gpt-5.4-mini",
+        temperature=0.2,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime"),
+    )
+    bundle = load_crewai_config_bundle(root=Path("."))
+    task_blueprints = build_task_blueprints(bundle)
+
+    description = _build_internal_task_description(
+        runtime,
+        agent_name="peak_window_specialist",
+        prompt_agent="event_priority_anchor_specialist",
+        bundle=bundle,
+        crew_name="season_planning",
+        task_blueprint=task_blueprints["season_peak_window_review"],
+        user_input=(
+            "## Task Context The following is the full task you are helping complete. "
+            + ("boilerplate " * 2000)
+            + "Current Task: Define peak-window and taper-window logic for the season plan. "
+            + "Current Step Use the selected scenario, planning events, and season context."
+        ),
+    )
+
+    assert "Shared system instructions for all agents." not in description
+    assert "payload_json" in description
+    assert "call the tool instead of asking the user for it" in description
+    assert "If prior specialist context already contains the needed facts" in description
+    assert "If you are blocked after relevant tool attempts" in description
+    assert "Current Task: Define peak-window and taper-window logic for the season plan." in description
 
 
 def test_agent_memory_read_only_mode_uses_slice() -> None:

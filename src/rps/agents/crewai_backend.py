@@ -73,6 +73,29 @@ from .runtime import AgentRuntime
 logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[3]
 
+_INTERNAL_PROMPT_CHAR_LIMIT = 2800
+_INTERNAL_PROMPT_WORD_LIMIT = 450
+_INTERNAL_PROMPT_SEGMENT_CHAR_LIMIT = 420
+_INTERNAL_PROMPT_PRIORITY_MARKERS: tuple[str, ...] = (
+    "Current Task:",
+    "Current Step",
+    "Context from previous steps:",
+    "Athlete State Snapshot",
+    "Use the latest",
+    "Target ISO week:",
+    "Internal specialist task:",
+    "User request:",
+)
+
+_INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning step:
+- Use prior specialist context and the provided workspace tools before claiming any input is missing.
+- An input is missing only after the relevant workspace tool fails, returns not found, or prior specialist context truly does not contain it.
+- If a required input is tool-loadable, do not ask the user to paste or re-provide it.
+- If the task has workspace tools, use them first and keep the number of retrieval attempts tight and relevant.
+- If still blocked, return one compact blocked result only once. Include: missing_inputs, attempted_tools, and reason.
+- No repeated paragraphs. No duplicate missing-input lists. No generic apology text.
+"""
+
 JsonMap = dict[str, Any]
 ToolMap = dict[str, Any]
 
@@ -464,6 +487,47 @@ def _augment_user_input(user_input: str, *context_blocks: str) -> str:
     if not blocks:
         return user_input
     return "\n\n".join([user_input, "Additional runtime context:", *blocks])
+
+
+def _compact_internal_user_input(user_input: str) -> str:
+    """Reduce oversized specialist-task input while preserving the most relevant markers."""
+
+    text = " ".join(str(user_input).split()).strip()
+    if not text:
+        return ""
+    if len(text) <= _INTERNAL_PROMPT_CHAR_LIMIT and len(text.split()) <= _INTERNAL_PROMPT_WORD_LIMIT:
+        return text
+
+    chosen_segments: list[str] = []
+    lower_text = text.lower()
+    for marker in _INTERNAL_PROMPT_PRIORITY_MARKERS:
+        lower_marker = marker.lower()
+        index = lower_text.find(lower_marker)
+        if index < 0:
+            continue
+        next_index = len(text)
+        for candidate in _INTERNAL_PROMPT_PRIORITY_MARKERS:
+            if candidate == marker:
+                continue
+            candidate_index = lower_text.find(candidate.lower(), index + len(lower_marker))
+            if candidate_index >= 0:
+                next_index = min(next_index, candidate_index)
+        segment = text[index:next_index].strip(" -")
+        if len(segment) > _INTERNAL_PROMPT_SEGMENT_CHAR_LIMIT:
+            segment = segment[:_INTERNAL_PROMPT_SEGMENT_CHAR_LIMIT].rstrip()
+        if segment and segment not in chosen_segments:
+            chosen_segments.append(segment)
+
+    if not chosen_segments:
+        chosen_segments.append(text)
+
+    compacted = " ".join(chosen_segments)
+    words = compacted.split()
+    if len(words) > _INTERNAL_PROMPT_WORD_LIMIT:
+        compacted = " ".join(words[:_INTERNAL_PROMPT_WORD_LIMIT]).strip()
+    if len(compacted) > _INTERNAL_PROMPT_CHAR_LIMIT:
+        compacted = compacted[: _INTERNAL_PROMPT_CHAR_LIMIT].rstrip()
+    return compacted
 
 
 def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list[str]:
@@ -1312,10 +1376,18 @@ def _build_internal_task_description(
 ) -> str:
     """Build a specialist-task description with top-level prompt context."""
 
-    prompt = runtime.prompt_loader.combined_system_prompt(prompt_agent)
+    prompt = runtime.prompt_loader.agent_prompt(prompt_agent)
+    compact_user_input = _compact_internal_user_input(user_input)
     parts = [
-        "System and agent instructions:",
+        "Agent instructions:",
         prompt,
+        "",
+        _INTERNAL_TOOL_FIRST_RULES.strip(),
+        "",
+        "Tool contract:",
+        "- All available workspace tools accept exactly one string parameter named `payload_json`.",
+        "- `payload_json` must be a JSON object string that matches the tool's expected arguments.",
+        "- If a needed input is available through `workspace_get_input`, `workspace_get_latest`, or `workspace_get_version`, call the tool instead of asking the user for it.",
     ]
     parts.extend(
         [
@@ -1323,7 +1395,7 @@ def _build_internal_task_description(
             f"Internal specialist task: {task_blueprint.description}",
             "",
             "User request:",
-            user_input,
+            compact_user_input,
         ]
     )
     if context_blocks:
@@ -1331,6 +1403,9 @@ def _build_internal_task_description(
         parts.extend(context_blocks)
     parts.extend(
         [
+            "",
+            "If prior specialist context already contains the needed facts, use it directly and do not ask for original workspace artefacts again.",
+            "If you are blocked after relevant tool attempts, return one compact blocked result only once.",
             "",
             "Return only the typed output required for this specialist task.",
         ]
