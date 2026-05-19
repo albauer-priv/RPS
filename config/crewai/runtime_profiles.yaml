@@ -121,12 +121,11 @@ agents:
     reasoning:
       enabled: false
   season_plan_manager:
-    model: gpt-5.4
+    model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 3
+      enabled: false
   season_review_manager:
-    model: gpt-5.4
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   season_feed_forward_manager:

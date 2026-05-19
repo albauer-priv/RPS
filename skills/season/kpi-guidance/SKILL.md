@@ -11,6 +11,8 @@ Rules:
 - KPI guidance informs feasibility and emphasis
 - Apply KPI guidance inside binding event, availability, and safety constraints
 - selected KPI rate bands should narrow corridor realism, not force unsafe ramps
+- Treat moving-time-rate guidance as pacing semantics only, not elapsed-time governance
+- Do not emit fixed rest-day, availability-cap, phase-corridor, or event-taper authority except to state that KPI guidance cannot override them
 
 Output format:
 - Return the task expected_output as a compact context summary.

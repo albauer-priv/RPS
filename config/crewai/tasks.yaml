@@ -164,7 +164,7 @@ tasks:
     agent: season_constraint_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: "Summarize binding athlete, availability, logistics, and event constraints for season planning. Tool usage: use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots."
+    description: "Summarize binding athlete, availability, logistics, and event constraints for season planning. Include fixed rest days, feasibility bounds, travel/work limitations, and binding event-timing constraints. Do not convert KPI rate-band guidance into independent authority. Tool usage: use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots."
     expected_output: A structured constraint audit for season planning.
     tools:
       - workspace_get_input
@@ -182,7 +182,7 @@ tasks:
     agent: season_kpi_guidance_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: "Summarize KPI-profile and moving-time-rate guidance for binding season planning. Tool usage: use `workspace_get_latest` for latest KPI and snapshot context; use `workspace_get_input` only for athlete-managed inputs when explicitly needed."
+    description: "Summarize KPI-profile, moving-time-rate, and pacing-band guidance for season planning. Focus on KPI semantics only: selected KPI bands, moving-time vs elapsed-time interpretation, pacing guardrails, and explicit limits of KPI authority. Do not restate fixed rest days, availability bounds, phase corridors, load caps, event-anchor/taper handling, or historical continuity as primary findings unless needed only to explain why KPI guidance cannot override them. Tool usage: use `workspace_get_latest` for latest KPI and snapshot context; use `workspace_get_input` only for athlete-managed inputs when explicitly needed."
     expected_output: A structured KPI-guidance review.
     tools:
       - workspace_get_input

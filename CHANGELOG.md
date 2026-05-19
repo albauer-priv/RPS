@@ -1068,6 +1068,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System docs updated for workspace handling and validation flow.
 ## 2026-05-04
 
+- fix: season KPI-guidance task/prompt/skill are now scoped to KPI and moving-time-rate semantics only, instead of drifting into constraint, event-handling, and phase-corridor authority already owned by other season specialists
+- perf: `season_plan_manager` and `season_review_manager` now run on `gpt-5.4-mini` with reasoning disabled, while `macrocycle_architect` remains on `gpt-5.4`; season telemetry/tests were updated to reflect the cheaper manager path
+- fix: Streamlit startup now ensures athlete file logging immediately, and Plan Hub run logs attach at the root logger so cross-module runtime/telemetry events are written into the active run log instead of only the worker module logger
 - docs: clarified intentional feed-forward version-key asymmetry across `SEASON_PHASE_FEED_FORWARD` and `PHASE_FEED_FORWARD` in artefact flow, workspace, and Feed Forward UI docs
 - fix: scoped phase-run completion logs now report the effective executed phase artefacts, including bundled `PHASE_PREVIEW` reruns
 - fix: `WEEK_PLAN` store/export now normalizes and validates linked workout duration, agenda duration, agenda mechanical `planned_kj`, and summary mechanical totals before save/export

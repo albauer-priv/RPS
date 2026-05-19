@@ -186,8 +186,14 @@ def _attach_run_logger(log_ref: str | None) -> logging.Handler | None:
     if not log_ref:
         return None
     try:
+        root = logging.getLogger()
         path = Path(log_ref)
         path.parent.mkdir(parents=True, exist_ok=True)
+        target = str(path.resolve())
+        for existing in root.handlers:
+            base_filename = getattr(existing, "baseFilename", None)
+            if base_filename and str(Path(base_filename).resolve()) == target:
+                return existing
         max_mb = os.getenv("RPS_LOG_ROTATE_MB")
         max_bytes = 50 * 1024 * 1024
         if max_mb is not None and max_mb != "":
@@ -198,8 +204,8 @@ def _attach_run_logger(log_ref: str | None) -> logging.Handler | None:
         handler = DailySizeRotatingFileHandler(path, max_bytes)
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
         handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        root.addHandler(handler)
+        root.setLevel(min(root.level or logging.INFO, logging.INFO))
         return handler
     except OSError:
         return None
@@ -680,7 +686,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
     finally:
         release_athlete_lock(config.root, config.athlete_id)
         if handler:
-            logger.removeHandler(handler)
+            logging.getLogger().removeHandler(handler)
             handler.close()
 
     logger.info("Plan hub worker stopped run_id=%s athlete=%s", config.run_id, config.athlete_id)

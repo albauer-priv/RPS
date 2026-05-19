@@ -15,10 +15,11 @@ from rps.ui.run_store import (
     prune_run_history,
     start_background_tracker,
 )
-from rps.ui.shared import SETTINGS, get_athlete_id
+from rps.ui.shared import SETTINGS, ensure_logging, get_athlete_id
 from rps.workspace.index_manager import WorkspaceIndexManager
 
 st.set_page_config(page_title="RPS - Randonneur Performance System", layout="wide")
+ensure_logging(get_athlete_id())
 
 
 def _cleanup_index_background(root: Path) -> None:

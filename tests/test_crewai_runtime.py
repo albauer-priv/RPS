@@ -303,6 +303,8 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert bundle.runtime_profiles["crews"]["season_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.4-mini"
+    assert bundle.runtime_profiles["agents"]["season_plan_manager"]["model"] == "gpt-5.4-mini"
+    assert bundle.runtime_profiles["agents"]["season_plan_manager"]["reasoning"]["enabled"] is False
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.4"
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["reasoning"]["enabled"] is False
     assert bundle.runtime_profiles["agents"]["week_artifact_writer"]["reasoning"]["enabled"] is False
@@ -1334,7 +1336,7 @@ def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
 def test_season_review_manager_disables_reasoning_agent_path() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     review_manager = bundle.runtime_profiles["agents"]["season_review_manager"]
-    assert review_manager["model"] == "gpt-5.4"
+    assert review_manager["model"] == "gpt-5.4-mini"
     assert review_manager["reasoning"]["enabled"] is False
 
 
@@ -2156,8 +2158,10 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     crewai_telemetry.register_runtime_label(task, kind="task", label="season_plan_finalize")
     crewai_telemetry.register_runtime_label(crew, kind="crew", label="season_planning")
     crewai_telemetry.register_runtime_label(agent, kind="agent", label="season_plan_manager")
-    crewai_telemetry.register_runtime_metadata(task, assigned_agent="season_plan_manager", assigned_model="gpt-5.4")
-    crewai_telemetry.register_runtime_metadata(agent, model="gpt-5.4")
+    crewai_telemetry.register_runtime_metadata(
+        task, assigned_agent="season_plan_manager", assigned_model="gpt-5.4-mini"
+    )
+    crewai_telemetry.register_runtime_metadata(agent, model="gpt-5.4-mini")
 
     caplog.set_level(logging.INFO, logger="rps.crewai_runtime.telemetry")
     with crewai_telemetry.runtime_event_scope(
@@ -2174,12 +2178,12 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     assert events[1]["task"] == "season_plan_finalize"
     assert events[1]["agent"] == "season_plan_manager"
     assert events[1]["assigned_agent"] == "season_plan_manager"
-    assert events[1]["model"] == "gpt-5.4"
+    assert events[1]["model"] == "gpt-5.4-mini"
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "crew=season_planning" in log_text
     assert "task=season_plan_finalize" in log_text
     assert "agent=season_plan_manager" in log_text
-    assert "model=gpt-5.4" in log_text
+    assert "model=gpt-5.4-mini" in log_text
 
 
 def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path, caplog) -> None:
@@ -2200,7 +2204,7 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
         crew_name="season_planning",
         tasks=[
             ("season_context_read", "season_context_specialist", "gpt-5.4-nano"),
-            ("season_plan_finalize", "season_plan_manager", "gpt-5.4"),
+            ("season_plan_finalize", "season_plan_manager", "gpt-5.4-mini"),
         ],
         athlete_id="athlete",
         run_id="run-prepared",
@@ -2215,7 +2219,7 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
     assert events[0]["status"] == "1/2"
     assert events[1]["task"] == "season_plan_finalize"
     assert events[1]["agent"] == "season_plan_manager"
-    assert events[1]["model"] == "gpt-5.4"
+    assert events[1]["model"] == "gpt-5.4-mini"
     assert events[1]["status"] == "2/2"
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "type=CREW_TASK_PREPARED" in log_text
