@@ -1938,6 +1938,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         tasks=[AgentTask.CREATE_SEASON_PLAN],
         user_input="Create the season plan.",
         run_id="run-1",
+        model_override="gpt-5.4-nano",
     )
 
     assert result["ok"] is True
@@ -1957,7 +1958,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert writer_agent["max_iter"] == 2
     assert writer_agent["respect_context_window"] is True
     assert writer_agent["cache"] is False
-    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-4.1-mini"
+    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
     manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal season planning synthesizer")
     assert manager_agent["allow_delegation"] is True
     assert manager_agent["max_iter"] == 5
@@ -2123,7 +2124,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert writer_agent["allow_delegation"] is False
     assert writer_agent["max_iter"] == 2
     assert writer_agent["respect_context_window"] is True
-    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-4.1-mini"
+    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:
@@ -2500,11 +2501,20 @@ def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> 
     assert kwargs["model"] == "openai/gpt-5-nano"
 
 
+def test_app_settings_default_model_uses_gpt54_family(monkeypatch) -> None:
+    monkeypatch.delenv("RPS_LLM_MODEL", raising=False)
+    monkeypatch.delenv("RPS_LLM_BASE_URL", raising=False)
+
+    settings = load_app_settings()
+
+    assert settings.openai_model == "gpt-5.4-mini"
+
+
 def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
     monkeypatch.setenv("RPS_LLM_BASE_URL", "https://api.openai.com/v1")
     monkeypatch.setenv("RPS_CREW_PLANNING_SEASON_PLANNING", "false")
-    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-4.1")
+    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-5.4-mini")
 
     assert resolve_crewai_planning_enabled("season_planning", default_enabled=True) is False
     planning_kwargs = build_crewai_planning_llm_kwargs(
@@ -2512,9 +2522,9 @@ def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
         default_model="gpt-5.4",
     )
     assert planning_kwargs is not None
-    assert planning_kwargs["model"] == "gpt-4.1"
+    assert planning_kwargs["model"] == "gpt-5.4-mini"
     assert planning_kwargs["api_key"] == "global-key"
 
     settings = load_app_settings()
     assert settings.planning_enabled_for_crew("season_planning", True) is False
-    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-4.1"
+    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-5.4-mini"

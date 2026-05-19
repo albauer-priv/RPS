@@ -532,7 +532,7 @@ def _build_crewai_agent(
         crewai_llm_cls,
         runtime,
         agent_name=blueprint.name,
-        model_override=model_override or runtime_profile.get("model"),
+        model_override=runtime_profile.get("model") or model_override,
         temperature_override=temperature_override,
         reasoning_effort_override=runtime_profile.get("reasoning_effort"),
         reasoning_summary_override=runtime_profile.get("reasoning_summary"),

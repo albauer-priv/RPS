@@ -227,7 +227,7 @@ def load_app_settings() -> AppSettings:
         if base_url and "api.groq.com" in base_url:
             default_model = "groq/openai/gpt-oss-20b"
         else:
-            default_model = "gpt-4.1"
+            default_model = "gpt-5.4-mini"
 
     default_max_completion = _parse_int(os.getenv("RPS_LLM_MAX_COMPLETION_TOKENS"))
     if default_max_completion is None and base_url and "api.groq.com" in base_url:

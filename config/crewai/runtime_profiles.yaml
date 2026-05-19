@@ -2,9 +2,6 @@ allowed_models:
   - gpt-5.4
   - gpt-5.4-mini
   - gpt-5.4-nano
-  - gpt-4.1-mini
-  - gpt-4o-mini
-  - gpt-4.1
 
 crews:
   coach_conversation:
@@ -85,7 +82,7 @@ agents:
       enabled: true
       max_attempts: 1
   week_workout_authoring_specialist:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   week_consistency_auditor:
@@ -99,7 +96,7 @@ agents:
       enabled: true
       max_attempts: 1
   week_workout_syntax_reviewer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   week_plan_manager:
@@ -144,7 +141,7 @@ agents:
     reasoning:
       enabled: false
   season_artifact_writer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   scenario_interpreter:
@@ -228,7 +225,7 @@ agents:
     reasoning:
       enabled: false
   phase_artifact_writer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   phase_guardrail_band_specialist:
@@ -237,7 +234,7 @@ agents:
       enabled: true
       max_attempts: 2
   phase_execution_rules_specialist:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   phase_structure_specialist:
@@ -261,7 +258,7 @@ agents:
       enabled: true
       max_attempts: 2
   phase_preview_synthesizer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
   phase_constraint_auditor:
@@ -280,7 +277,7 @@ agents:
       enabled: true
       max_attempts: 2
   phase_preview_reviewer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
 
@@ -289,7 +286,7 @@ agents:
     reasoning:
       enabled: false
   week_artifact_writer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
 
@@ -312,6 +309,6 @@ agents:
       enabled: true
       max_attempts: 3
   report_artifact_writer:
-    model: gpt-4.1-mini
+    model: gpt-5.4-mini
     reasoning:
       enabled: false
