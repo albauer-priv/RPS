@@ -25,6 +25,11 @@ Hard rules:
 - keep hard blockers authoritative over scenario preference
 - emit season-level constraint synthesis only
 
+Retrieval policy:
+- Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `athlete_profile`, `availability`, and `logistics`.
+- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots.
+- Use `workspace_get_version` only when the task explicitly requires a week-sensitive historical artefact version.
+
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
 - Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.

@@ -87,6 +87,15 @@ _INTERNAL_PROMPT_PRIORITY_MARKERS: tuple[str, ...] = (
     "User request:",
 )
 
+_AUTHORITATIVE_RUNTIME_BLOCK_PREFIXES: tuple[str, ...] = (
+    "**Athlete State Snapshot**",
+    "**Planning Context Snapshot**",
+    "**Current Week Status Snapshot**",
+    "**Advisory Memory**",
+    "**Resolved ",
+    "**Deterministic ",
+)
+
 _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning step:
 - Use prior specialist context and the provided workspace tools before claiming any input is missing.
 - An input is missing only after the relevant workspace tool fails, returns not found, or prior specialist context truly does not contain it.
@@ -528,6 +537,42 @@ def _compact_internal_user_input(user_input: str) -> str:
     if len(compacted) > _INTERNAL_PROMPT_CHAR_LIMIT:
         compacted = compacted[: _INTERNAL_PROMPT_CHAR_LIMIT].rstrip()
     return compacted
+
+
+def _extract_authoritative_runtime_blocks(user_input: str) -> list[str]:
+    """Preserve authoritative markdown context blocks that specialists must see in full."""
+
+    if not isinstance(user_input, str) or not user_input.strip():
+        return []
+
+    blocks: list[str] = []
+    current: list[str] = []
+    current_title: str | None = None
+
+    def _flush() -> None:
+        nonlocal current, current_title
+        if current_title and current:
+            block = "\n".join(line.rstrip() for line in current).strip()
+            if block and block not in blocks:
+                blocks.append(block)
+        current = []
+        current_title = None
+
+    for raw_line in user_input.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if any(stripped.startswith(prefix) for prefix in _AUTHORITATIVE_RUNTIME_BLOCK_PREFIXES):
+            _flush()
+            current_title = stripped
+            current = [line]
+            continue
+        if current_title is not None:
+            if stripped.startswith("**") and stripped.endswith("**"):
+                _flush()
+                continue
+            current.append(line)
+    _flush()
+    return blocks
 
 
 def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list[str]:
@@ -1378,6 +1423,7 @@ def _build_internal_task_description(
 
     prompt = runtime.prompt_loader.agent_prompt(prompt_agent)
     compact_user_input = _compact_internal_user_input(user_input)
+    authoritative_runtime_blocks = _extract_authoritative_runtime_blocks(user_input)
     parts = [
         "Agent instructions:",
         prompt,
@@ -1398,6 +1444,9 @@ def _build_internal_task_description(
             compact_user_input,
         ]
     )
+    if authoritative_runtime_blocks:
+        parts.extend(["", "Authoritative runtime context:"])
+        parts.extend(authoritative_runtime_blocks)
     if context_blocks:
         parts.extend(["", "Internal context from prior specialist tasks:"])
         parts.extend(context_blocks)

@@ -122,7 +122,7 @@ tasks:
       - workspace_get_version
       - workspace_get_phase_slot_contract
       - workspace_get_season_phase_load_context
-    description: Summarize season planning context, selected scenario state, and upstream inputs.
+    description: "Summarize season planning context, selected scenario state, and upstream inputs. Tool usage: use `workspace_get_input` for athlete-managed inputs (`planning_events`, `athlete_profile`, `availability`, `logistics`); use `workspace_get_latest` for latest authoritative planning artefacts and snapshots; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
     expected_output: A structured planning draft for season context.
   season_scenario_interpretation:
     agent: scenario_interpreter
@@ -134,14 +134,22 @@ tasks:
     agent: event_priority_specialist
     kind: internal_reasoning
     output: season_event_anchor
-    description: Define A/B/C priority handling and event anchors for season planning.
+    description: "Define A/B/C priority handling and event anchors for season planning. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `ATHLETE_STATE_SNAPSHOT`; use `workspace_get_version` only when a week-sensitive historical artefact is explicitly required."
     expected_output: A structured event-priority draft.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_version
   season_peak_window_review:
     agent: peak_window_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: Define peak window and taper-window logic for the season plan.
+    description: "Define peak window and taper-window logic for the season plan. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for selected-scenario and snapshot context; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
     expected_output: A structured planning draft for peak-window logic.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_version
   season_macrocycle_draft:
     agent: macrocycle_architect
     kind: internal_reasoning
@@ -152,32 +160,51 @@ tasks:
     agent: season_constraint_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: Summarize binding athlete, availability, logistics, and event constraints for season planning.
+    description: "Summarize binding athlete, availability, logistics, and event constraints for season planning. Tool usage: use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots."
     expected_output: A structured constraint audit for season planning.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
   season_historical_context_review:
     agent: season_historical_context_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: Summarize historical load, recovery, and re-entry implications for the current season run.
+    description: "Summarize historical load, recovery, and re-entry implications for the current season run. Tool usage: use `workspace_get_version` for week-sensitive `ACTIVITIES_ACTUAL` and `ACTIVITIES_TREND`; use `workspace_get_latest` only for non-week-sensitive supporting artefacts."
     expected_output: A structured historical-context review.
+    tools:
+      - workspace_get_latest
+      - workspace_get_version
   season_kpi_guidance_review:
     agent: season_kpi_guidance_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: Summarize KPI-profile and moving-time-rate guidance for binding season planning.
+    description: "Summarize KPI-profile and moving-time-rate guidance for binding season planning. Tool usage: use `workspace_get_latest` for latest KPI and snapshot context; use `workspace_get_input` only for athlete-managed inputs when explicitly needed."
     expected_output: A structured KPI-guidance review.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
   season_load_corridor_draft:
     agent: season_load_corridor_specialist
     kind: internal_reasoning
     output: load_governance_audit
-    description: Draft season corridor logic and load realism checks.
+    description: "Draft season corridor logic and load realism checks. Tool usage: prefer deterministic injected load context and `workspace_get_latest` snapshot/planning artefacts; use `workspace_get_version` only for explicit historical load references."
     expected_output: A structured season load-corridor draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_version
+      - workspace_get_phase_slot_contract
+      - workspace_get_season_phase_load_context
   season_progression_review:
     agent: season_progression_specialist
     kind: internal_reasoning
     output: load_governance_audit
-    description: Draft season progression, cadence, and overload guidance.
+    description: "Draft season progression, cadence, and overload guidance. Tool usage: prefer deterministic injected cadence/load context; use `workspace_get_latest` for latest planning artefacts and `workspace_get_version` only for explicit historical week-sensitive evidence."
     expected_output: A structured season progression draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_version
+      - workspace_get_phase_slot_contract
+      - workspace_get_season_phase_load_context
   season_plan_finalize:
     agent: season_plan_manager
     kind: internal_reasoning
@@ -202,20 +229,31 @@ tasks:
     agent: season_governance_auditor
     kind: internal_reasoning
     output: load_governance_audit
-    description: Review the candidate season bundle for governance realism and progression compliance.
+    description: "Review the candidate season bundle for governance realism and progression compliance. Tool usage: prefer prior specialist context and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed."
     expected_output: A structured load-governance review.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_slot_contract
+      - workspace_get_season_phase_load_context
   season_constraints_review:
     agent: season_constraints_reviewer
     kind: internal_reasoning
     output: constraint_audit
-    description: Review the candidate season bundle for athlete, event, and logistics constraint compliance.
+    description: "Review the candidate season bundle for athlete, event, and logistics constraint compliance. Tool usage: prefer prior specialist context; use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots when needed."
     expected_output: A structured season constraint review.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
   season_plan_audit:
     agent: season_plan_auditor
     kind: internal_reasoning
     output: season_plan_audit
-    description: Audit the candidate season bundle for macrocycle and authority coherence.
+    description: "Audit the candidate season bundle for macrocycle and authority coherence. Tool usage: prefer prior specialist context and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed."
     expected_output: A structured season-plan audit with warnings and blocking issues.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_slot_contract
+      - workspace_get_season_phase_load_context
   season_contract_review:
     agent: season_plan_auditor
     kind: internal_reasoning
@@ -263,50 +301,86 @@ tasks:
       - workspace_get_phase_context
       - workspace_get_phase_execution_context
       - workspace_get_phase_slot_contract
-    description: Summarize exact phase-range context and upstream authority.
+    description: "Summarize exact phase-range context and upstream authority. Tool usage: use `workspace_get_input` for athlete-managed inputs; use `workspace_get_phase_context`, `workspace_get_phase_execution_context`, and `workspace_get_phase_slot_contract` for authoritative phase contracts; use `workspace_get_latest` only for latest supporting artefacts."
     expected_output: A structured phase context draft.
   phase_guardrail_band_draft:
     agent: phase_guardrail_band_specialist
     kind: internal_reasoning
     output: phase_guardrails_payload
-    description: Draft weekly band and corridor content for the exact phase range.
+    description: "Draft weekly band and corridor content for the exact phase range. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase-guardrails payload draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_execution_rules_draft:
     agent: phase_execution_rules_specialist
     kind: internal_reasoning
     output: phase_guardrails_payload
-    description: Draft allowed/forbidden semantics and execution non-negotiables for the exact phase range.
+    description: "Draft allowed/forbidden semantics and execution non-negotiables for the exact phase range. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase execution-rules draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_structure_draft:
     agent: phase_structure_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: Draft phase structure and week-skeleton logic for the exact phase range.
+    description: "Draft phase structure and week-skeleton logic for the exact phase range. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase-structure payload draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_cadence_recovery_draft:
     agent: phase_cadence_recovery_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: Apply season cadence, deload, and re-entry logic to the exact phase range.
+    description: "Apply season cadence, deload, and re-entry logic to the exact phase range. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured cadence/recovery draft for the phase structure.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_intensity_distribution_draft:
     agent: phase_intensity_distribution_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: Draft phase-appropriate intensity handling and density within existing guardrails.
+    description: "Draft phase-appropriate intensity handling and density within existing guardrails. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured intensity-handling draft for the phase structure.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_event_integration_draft:
     agent: phase_event_integration_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: Draft B/C event propagation rules inside the phase structure.
+    description: "Draft B/C event propagation rules inside the phase structure. Tool usage: use `workspace_get_input` for `planning_events`; use phase contract tools or `workspace_get_latest` for authoritative phase and season context."
     expected_output: A structured phase event-integration draft.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_preview_draft:
     agent: phase_preview_synthesizer
     kind: internal_reasoning
     output: phase_preview_payload
-    description: Draft a derived phase preview that adds no new planning decisions.
+    description: "Draft a derived phase preview that adds no new planning decisions. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase-preview payload draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_bundle_finalize:
     agent: phase_bundle_manager
     kind: internal_reasoning
@@ -329,26 +403,47 @@ tasks:
     agent: phase_constraint_auditor
     kind: internal_reasoning
     output: constraint_audit
-    description: Audit phase constraints, event propagation, and applicable season feed-forward consistency.
+    description: "Audit phase constraints, event propagation, and applicable season feed-forward consistency. Tool usage: use `workspace_get_input` for athlete-managed inputs; use phase contract tools or `workspace_get_latest` for authoritative phase/season context."
     expected_output: A structured phase constraint audit.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_governance_review:
     agent: phase_governance_auditor
     kind: internal_reasoning
     output: load_governance_audit
-    description: Audit phase corridor coherence, durability-first policy, and compression risk.
+    description: "Audit phase corridor coherence, durability-first policy, and compression risk. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` for authoritative phase context when needed."
     expected_output: A structured phase governance review.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_structure_review:
     agent: phase_structure_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: Review structural consistency across the candidate phase bundle.
+    description: "Review structural consistency across the candidate phase bundle. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` for authoritative phase context when needed."
     expected_output: A structured phase structure review draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_preview_review:
     agent: phase_preview_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: Review whether the candidate phase preview remains derived and non-decisional.
+    description: "Review whether the candidate phase preview remains derived and non-decisional. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` for authoritative phase context when needed."
     expected_output: A structured phase preview review draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
   phase_contract_review:
     agent: phase_structure_reviewer
     kind: internal_reasoning
@@ -409,32 +504,56 @@ tasks:
       - workspace_get_phase_context
       - workspace_get_week_calendar_context
       - workspace_get_phase_execution_context
-    description: Inspect selected-week plan, actuals, and open constraints for planning.
+    description: "Inspect selected-week plan, actuals, and open constraints for planning. Tool usage: use `workspace_get_input` for athlete-managed inputs; use `workspace_get_week_calendar_context` and `workspace_get_phase_execution_context` for deterministic week authority; use `workspace_get_latest` for latest plan/report artefacts; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
     expected_output: A structured week context assessment.
   week_constraint_review:
     agent: week_constraint_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: Summarize binding week-level constraints from upstream artifacts and athlete context.
+    description: "Summarize binding week-level constraints from upstream artifacts and athlete context. Tool usage: use `workspace_get_input` for athlete-managed inputs; use deterministic week/phase contract tools and `workspace_get_latest` for authoritative context."
     expected_output: A structured week constraint draft.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_load_target_draft:
     agent: week_load_target_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: Convert the active corridor into day and workout target logic for the week.
+    description: "Convert the active corridor into day and workout target logic for the week. Tool usage: prefer deterministic week/phase contract tools and `workspace_get_latest`; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
     expected_output: A structured week load-target draft.
+    tools:
+      - workspace_get_latest
+      - workspace_get_version
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_revision_draft:
     agent: week_revision_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: Draft a candidate week structure or bounded revision consistent with active intent.
+    description: "Draft a candidate week structure or bounded revision consistent with active intent. Tool usage: use deterministic week/phase contract tools for authoritative execution values; use `workspace_get_latest` for latest supporting artefacts and `workspace_get_input` for athlete-managed inputs when needed."
     expected_output: A structured week revision draft.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_workout_text_draft:
     agent: week_workout_authoring_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: Draft valid workout construction and syntax decisions for the candidate week.
+    description: "Draft valid workout construction and syntax decisions for the candidate week. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
     expected_output: A structured workout-authoring draft.
+    tools:
+      - workspace_get_input
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_plan_finalize:
     agent: week_plan_manager
     kind: internal_reasoning
@@ -454,20 +573,35 @@ tasks:
     agent: week_consistency_auditor
     kind: internal_reasoning
     output: planning_draft
-    description: Review candidate week coherence across role, duration, and load intent.
+    description: "Review candidate week coherence across role, duration, and load intent. Tool usage: prefer prior specialist context; use deterministic week/phase contract tools or `workspace_get_latest` for authoritative context when needed."
     expected_output: A structured week consistency review.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_load_governance_review:
     agent: week_load_governance_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: Review candidate week corridor compliance and reconciliation behavior.
+    description: "Review candidate week corridor compliance and reconciliation behavior. Tool usage: prefer prior specialist context; use deterministic week/phase contract tools or `workspace_get_latest` for authoritative context when needed."
     expected_output: A structured week load-governance review.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_workout_syntax_review:
     agent: week_workout_syntax_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: Review candidate workout text for syntax subset and export safety.
+    description: "Review candidate workout text for syntax subset and export safety. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
     expected_output: A structured week workout-syntax review.
+    tools:
+      - workspace_get_latest
+      - workspace_get_phase_context
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
   week_contract_review:
     agent: week_consistency_auditor
     kind: internal_reasoning

@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added compact task-execution telemetry fields for assigned agent and actual model, so `events.jsonl` and `rps.log` can explain provider usage without dumping prompt bodies.
 - Added a central CrewAI knowledge-search guard that compacts and hard-caps remaining search queries before embedding/search calls.
 - Added a compact internal planning specialist task wrapper that spells out `payload_json`, tool-first retrieval, and a one-shot blocked-answer format.
+- Added authoritative-runtime block preservation for internal specialist prompts, so snapshot, resolved-context, and deterministic-contract markdown blocks survive compacted task injection intact.
+- Added short tool-usage guidance on bounded season planning tasks and season skills, clarifying when to use `workspace_get_input`, `workspace_get_latest`, and `workspace_get_version`.
+- Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
 - Fixed CrewAI outer-flow state handling by declaring `workspace_root` on typed Season/Phase/Week/Report/Feed-Forward/Coach flow states, so run-store telemetry and exception reporting no longer fail on Pydantic state assignment.
@@ -23,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed planning-crew cost concentration by switching Season, Phase, and Week planning crews from manager-driven hierarchical execution to explicit sequential specialist execution, leaving manager agents only on final synthesis tasks.
 - Fixed planning knowledge oversubscription by removing static knowledge bundles from deterministic Season/Phase/Week planning specialists that already rely on contracts, snapshots, and workspace tools.
 - Fixed internal planning specialist prompt bloat by replacing the full shared system wrapper with a compact agent-specific prompt plus tailored binding rules and compacted task context.
+- Fixed bounded season specialists so event-priority and peak-window tasks can read workspace context directly, and disabled reasoning/replan loops for bounded season specialists and auditors that should act as deterministic tool-bound workers.
 - Fixed season manager contract consumption so season planning tasks receive structured deterministic season phase-slot/load JSON context and the finalizer is scoped to contract tools instead of broad workspace rediscovery.
 - Fixed season finalization re-dispatching deterministic contract lookup through coworker delegation by disabling free delegation for `season_plan_manager` and tightening the final-synthesis guidance.
 - Fixed phase/week finalization rediscovery risk by binding deterministic execution contracts into finalizer task context, scoping finalizers to contract tools, and disabling free delegation for `phase_bundle_manager` and `week_plan_manager`.

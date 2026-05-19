@@ -18,6 +18,7 @@ from rps.agents.crewai_backend import (
     _contract_context_blocks_for_task,
     _emit_crew_task_prepared_events,
     _execute_crewai_multiagent_crew,
+    _extract_authoritative_runtime_blocks,
     _task_tools_for_blueprint,
     run_agent_multi_output_crewai,
 )
@@ -719,6 +720,36 @@ def test_compact_internal_user_input_preserves_priority_markers() -> None:
     assert len(compacted.split()) <= 450
 
 
+def test_extract_authoritative_runtime_blocks_preserves_snapshot_and_resolved_context() -> None:
+    user_input = """
+## Task Context
+boilerplate text
+
+**Athlete State Snapshot**
+snapshot_ref: athlete_state_snapshot_2026-21__20260519_122903.json
+event_candidates:
+- A event
+
+## Current Step
+Use the event list.
+
+**Resolved Planning Event Context**
+- Event 1
+- Event 2
+
+**Deterministic Season Phase Slot Context**
+- slot data
+""".strip()
+
+    blocks = _extract_authoritative_runtime_blocks(user_input)
+
+    assert len(blocks) == 3
+    assert blocks[0].startswith("**Athlete State Snapshot**")
+    assert "snapshot_ref:" in blocks[0]
+    assert blocks[1].startswith("**Resolved Planning Event Context**")
+    assert blocks[2].startswith("**Deterministic Season Phase Slot Context**")
+
+
 def test_internal_task_description_is_tool_first_and_compact() -> None:
     runtime = AgentRuntime(
         model="gpt-5.4-mini",
@@ -745,6 +776,11 @@ def test_internal_task_description_is_tool_first_and_compact() -> None:
             + ("boilerplate " * 2000)
             + "Current Task: Define peak-window and taper-window logic for the season plan. "
             + "Current Step Use the selected scenario, planning events, and season context."
+            + "\n\n**Athlete State Snapshot**\n"
+            + "snapshot_ref: athlete_state_snapshot_2026-21__20260519_122903.json\n"
+            + "event_candidates:\n- A event\n"
+            + "\n**Resolved Planning Event Context**\n"
+            + "- Event 1\n- Event 2\n"
         ),
     )
 
@@ -754,6 +790,20 @@ def test_internal_task_description_is_tool_first_and_compact() -> None:
     assert "If prior specialist context already contains the needed facts" in description
     assert "If you are blocked after relevant tool attempts" in description
     assert "Current Task: Define peak-window and taper-window logic for the season plan." in description
+    assert "Authoritative runtime context:" in description
+    assert "**Athlete State Snapshot**" in description
+    assert "**Resolved Planning Event Context**" in description
+
+
+def test_season_event_and_peak_tasks_expose_workspace_read_tools() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    task_blueprints = build_task_blueprints(bundle)
+
+    event_tools = task_blueprints["season_event_priority_review"].config.get("tools")
+    peak_tools = task_blueprints["season_peak_window_review"].config.get("tools")
+
+    assert event_tools == ["workspace_get_input", "workspace_get_latest", "workspace_get_version"]
+    assert peak_tools == ["workspace_get_input", "workspace_get_latest", "workspace_get_version"]
 
 
 def test_agent_memory_read_only_mode_uses_slice() -> None:

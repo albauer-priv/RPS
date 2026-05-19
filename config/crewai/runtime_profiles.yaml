@@ -151,13 +151,11 @@ agents:
   event_priority_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   peak_window_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   macrocycle_architect:
     model: gpt-5.4
     reasoning:
@@ -166,18 +164,15 @@ agents:
   season_load_corridor_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   season_progression_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   season_constraint_specialist:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   season_historical_context_specialist:
     model: gpt-5.4-nano
     reasoning:
@@ -189,18 +184,15 @@ agents:
   season_plan_auditor:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   season_governance_auditor:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
   season_constraints_reviewer:
     model: gpt-5.4-mini
     reasoning:
-      enabled: true
-      max_attempts: 2
+      enabled: false
 
   phase_architect:
     model: gpt-5.4-mini

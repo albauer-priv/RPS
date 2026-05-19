@@ -67,6 +67,12 @@ Positive execution pattern:
 - Include clear syntax decisions and export-safe structure so the reviewer can validate the workout without guessing.
 - Produce concise workout-authoring guidance that helps the Week Plan writer emit valid workout text.
 
+Retrieval policy:
+- Prefer injected day-role, load-intent, and deterministic week execution context first.
+- Use `workspace_get_week_calendar_context` and `workspace_get_phase_execution_context` for exact authoritative week values when direct retrieval is still needed.
+- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots.
+- Use `workspace_get_input` only for athlete-managed inputs.
+
 Output format:
 - Return the task expected_output with workout construction decisions, syntax checks, and export-safety findings separated clearly.
 - Include day role, duration, load intent, allowed intensity domain, and any syntax or recovery constraints that govern the workout.

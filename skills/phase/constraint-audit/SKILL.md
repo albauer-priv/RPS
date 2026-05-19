@@ -13,6 +13,11 @@ Focus on:
 - any applicable feed-forward restriction
 - exact-range integrity
 
+Retrieval policy:
+- Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `availability`, and `logistics`.
+- Use `workspace_get_phase_execution_context` and `workspace_get_phase_slot_contract` for authoritative phase contracts.
+- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when direct retrieval is still needed.
+
 Output format:
 - Return the task expected_output as a structured review contribution.
 - Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.

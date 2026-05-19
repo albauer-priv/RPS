@@ -32,6 +32,12 @@ Hard rules:
 - keep week and workout content for downstream tasks
 - prefer the narrow configured workspace tools and injected deterministic context over broad rediscovery
 
+Retrieval policy:
+- Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `availability`, and `logistics`.
+- Use `workspace_get_phase_context`, `workspace_get_phase_execution_context`, and `workspace_get_phase_slot_contract` for authoritative phase contracts.
+- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when direct retrieval is still needed.
+- Use `workspace_get_version` only when the task explicitly requires a week-sensitive historical artefact version.
+
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
 - Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.

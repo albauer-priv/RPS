@@ -44,6 +44,12 @@ Hard rules:
 - mark coverage/cadence self-checks true only after verification
 - surface infeasible load corridors explicitly with review/replan guidance
 
+Retrieval policy:
+- Use deterministic injected runtime contracts first when they are present.
+- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when a task still needs direct retrieval.
+- Use `workspace_get_input` only for athlete-managed inputs.
+- Use `workspace_get_version` only for explicit week-sensitive historical artefacts.
+
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
 - Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.

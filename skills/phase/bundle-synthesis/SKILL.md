@@ -17,6 +17,12 @@ Method:
 5. Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive deterministic week roles, exact phase range, or S5 bands during this step.
 6. Emit one review-ready phase bundle.
 
+Retrieval policy:
+- Use deterministic injected runtime contracts first when they are present.
+- Use `workspace_get_phase_execution_context` and `workspace_get_phase_slot_contract` for exact authoritative phase values.
+- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots only when direct retrieval is still needed.
+- Use `workspace_get_input` only for athlete-managed inputs.
+
 Output format:
 - Return the task expected_output as one consolidated planning bundle or synthesis contribution.
 - Include the selected inputs, decisions, unresolved risks, and writer-ready summary needed by the next task.
