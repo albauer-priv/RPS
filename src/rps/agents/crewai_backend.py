@@ -535,6 +535,72 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 "Week finalization rule: consume these deterministic contracts directly. "
                 "Do not delegate or rediscover active week role, active weekly band, availability caps, or fixed rest rules from prose."
             )
+    elif crew_name == "season_review":
+        phase_slot_context = context.get("phase_slot_context")
+        if phase_slot_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Season Phase Slot Contract",
+                    phase_slot_context,
+                )
+            )
+        season_phase_load_context = context.get("season_phase_load_context")
+        if season_phase_load_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Season Phase Load Contract",
+                    season_phase_load_context,
+                )
+            )
+        if task_name == "season_review" and blocks:
+            blocks.append(
+                "Season review rule: decide against these deterministic contracts directly. "
+                "Do not delegate or rediscover cadence, phase-slot, or phase-load authority from prose."
+            )
+    elif crew_name == "phase_review":
+        phase_execution_context = context.get("phase_execution_context")
+        if phase_execution_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Phase Execution Contract",
+                    phase_execution_context,
+                )
+            )
+        phase_slot_context = context.get("phase_slot_context")
+        if phase_slot_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Season Phase Slot Contract",
+                    phase_slot_context,
+                )
+            )
+        if task_name == "phase_review" and blocks:
+            blocks.append(
+                "Phase review rule: decide against these deterministic contracts directly. "
+                "Do not delegate or rediscover phase-range, week-role, or S5 authority from prose."
+            )
+    elif crew_name == "week_review":
+        week_calendar_context = context.get("week_calendar_context")
+        if week_calendar_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Week Calendar Contract",
+                    week_calendar_context,
+                )
+            )
+        phase_execution_context = context.get("phase_execution_context")
+        if phase_execution_context:
+            blocks.append(
+                _render_json_block(
+                    "Deterministic Phase Execution Contract",
+                    phase_execution_context,
+                )
+            )
+        if task_name == "week_review" and blocks:
+            blocks.append(
+                "Week review rule: decide against these deterministic contracts directly. "
+                "Do not delegate or rediscover active band, availability caps, or recovery-day authority from prose."
+            )
     return blocks
 
 

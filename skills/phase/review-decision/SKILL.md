@@ -11,6 +11,10 @@ Method:
 1. Treat guardrail, governance, and exact-range violations as approval gates.
 2. Keep replan scope as small as possible.
 3. Preserve approved upstream decisions and unaffected phase sections.
+4. Use deterministic phase contract tools directly when exact contract values are needed:
+   - `workspace_get_phase_execution_context`
+   - `workspace_get_phase_slot_contract`
+5. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive phase-range, week-role, or S5 contract authority during this step.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

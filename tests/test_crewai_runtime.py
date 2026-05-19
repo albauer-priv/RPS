@@ -1057,6 +1057,62 @@ def test_phase_and_week_managers_disable_free_delegation_via_yaml_override() -> 
     assert agent_blueprints["week_plan_manager"].config["allow_delegation"] is False
 
 
+def test_review_finalizers_declare_deterministic_contract_tools() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert blueprints["season_review"].config["tools"] == [
+        "workspace_get_phase_slot_contract",
+        "workspace_get_season_phase_load_context",
+    ]
+    assert blueprints["phase_review"].config["tools"] == [
+        "workspace_get_phase_execution_context",
+        "workspace_get_phase_slot_contract",
+    ]
+    assert blueprints["week_review"].config["tools"] == [
+        "workspace_get_week_calendar_context",
+        "workspace_get_phase_execution_context",
+    ]
+
+
+def test_contract_context_blocks_for_review_finalizers_include_bound_contracts() -> None:
+    with guardrail_runtime_context(
+        phase_slot_context={"phase_slots": [{"phase_id": "P01"}]},
+        season_phase_load_context={"phases": [{"phase_id": "P01"}]},
+        phase_execution_context={"phase_id": "P01", "phase_s5_bands": []},
+        week_calendar_context={"target_iso_week": "2026-21", "phase_week_role": "LOAD_1"},
+    ):
+        season_blocks = _contract_context_blocks_for_task(
+            crew_name="season_review",
+            task_name="season_review",
+        )
+        phase_blocks = _contract_context_blocks_for_task(
+            crew_name="phase_review",
+            task_name="phase_review",
+        )
+        week_blocks = _contract_context_blocks_for_task(
+            crew_name="week_review",
+            task_name="week_review",
+        )
+
+    assert any("Deterministic Season Phase Slot Contract" in block for block in season_blocks)
+    assert any("Deterministic Season Phase Load Contract" in block for block in season_blocks)
+    assert any("Season review rule" in block for block in season_blocks)
+    assert any("Deterministic Phase Execution Contract" in block for block in phase_blocks)
+    assert any("Phase review rule" in block for block in phase_blocks)
+    assert any("Deterministic Week Calendar Contract" in block for block in week_blocks)
+    assert any("Week review rule" in block for block in week_blocks)
+
+
+def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    agent_blueprints = build_agent_blueprints(bundle)
+
+    assert agent_blueprints["season_review_manager"].config["allow_delegation"] is False
+    assert agent_blueprints["phase_review_manager"].config["allow_delegation"] is False
+    assert agent_blueprints["week_review_manager"].config["allow_delegation"] is False
+
+
 def test_phase_week_blueprint_model_accepts_role_aware_s5_band() -> None:
     model = PhaseWeekBlueprintModel(
         week="2026-26",

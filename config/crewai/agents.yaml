@@ -98,7 +98,7 @@ agents:
     runtime_status: foundation_only
     output_mode: week_review_decision
     prompt_agent: week_planner
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   pending_resolution_specialist:
@@ -146,7 +146,7 @@ agents:
     runtime_status: foundation_only
     output_mode: season_review_decision
     prompt_agent: season_plan_manager
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   season_feed_forward_manager:
@@ -285,7 +285,7 @@ agents:
     runtime_status: foundation_only
     output_mode: phase_review_decision
     prompt_agent: phase_bundle_manager
-    allow_delegation: true
+    allow_delegation: false
     max_iter: 5
     respect_context_window: true
   phase_feed_forward_manager:

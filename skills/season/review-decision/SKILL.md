@@ -13,6 +13,10 @@ Method:
 3. Replan instructions must preserve valid event anchors and unaffected macrocycle decisions.
 4. If cadence, phase count, phase length, or ISO-week coverage conflicts with the selected Scenario, choose `replan_required` and target the Season synthesis/review specialists.
 5. If the final writer-ready summary lacks phase blueprint semantics, including inherited cadence roles and A/B event treatment, choose `replan_required` rather than approving a vague artifact handoff.
+6. Use deterministic season contract tools directly when exact contract values are needed:
+   - `workspace_get_phase_slot_contract`
+   - `workspace_get_season_phase_load_context`
+7. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive cadence, phase-slot, or phase-load contract authority during this step.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

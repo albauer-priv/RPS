@@ -221,6 +221,9 @@ tasks:
     agent: season_review_manager
     kind: internal_reasoning
     output: season_review_decision
+    tools:
+      - workspace_get_phase_slot_contract
+      - workspace_get_season_phase_load_context
     context:
       - season_governance_review
       - season_constraints_review
@@ -342,6 +345,9 @@ tasks:
     agent: phase_review_manager
     kind: internal_reasoning
     output: phase_review_decision
+    tools:
+      - workspace_get_phase_execution_context
+      - workspace_get_phase_slot_contract
     context:
       - phase_constraint_audit
       - phase_governance_review
@@ -449,6 +455,9 @@ tasks:
     agent: week_review_manager
     kind: internal_reasoning
     output: week_review_decision
+    tools:
+      - workspace_get_week_calendar_context
+      - workspace_get_phase_execution_context
     context:
       - week_consistency_review
       - week_load_governance_review
