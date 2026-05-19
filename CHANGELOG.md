@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed Intervals historical baseline validation by making artifact metadata canonicalization respect closed `meta` schemas instead of adding planning-only ISO/trace fields to schema-strict data-pipeline artifacts.
+
 ## [0.14.0] - 2026-05-19
 
 ### Added

@@ -60,6 +60,28 @@ def _schema_meta_const(schema: JsonMap | None, key: str) -> str | None:
     return None
 
 
+def _schema_meta_schema(schema: JsonMap | None) -> JsonMap:
+    if not isinstance(schema, dict):
+        return {}
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return {}
+    meta_schema = properties.get("meta")
+    return meta_schema if isinstance(meta_schema, dict) else {}
+
+
+def _schema_meta_properties(schema: JsonMap | None) -> set[str]:
+    meta_schema = _schema_meta_schema(schema)
+    properties = meta_schema.get("properties")
+    if not isinstance(properties, dict):
+        return set()
+    return {str(key) for key in properties}
+
+
+def _schema_meta_is_closed(schema: JsonMap | None) -> bool:
+    return _schema_meta_schema(schema).get("additionalProperties") is False
+
+
 def _looks_like_envelope_schema(schema: JsonMap | None) -> bool:
     if not isinstance(schema, dict):
         return False
@@ -196,6 +218,10 @@ def canonicalize_artifact_envelope_meta(
         meta["notes"] = ""
     else:
         meta["notes"] = str(notes)
+
+    if _schema_meta_is_closed(schema):
+        allowed = _schema_meta_properties(schema)
+        meta = {key: value for key, value in meta.items() if key in allowed}
 
     normalized["meta"] = meta
     return normalized

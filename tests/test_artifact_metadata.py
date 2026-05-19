@@ -3,6 +3,7 @@ from pathlib import Path
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
 from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 from rps.workspace.types import ArtifactType
 
 
@@ -251,3 +252,58 @@ def test_guarded_store_persists_season_plan_with_agent_owned_bad_meta(tmp_path) 
     assert meta["schema_id"] == "SeasonPlanInterface"
     assert meta["owner_agent"] == "Season-Artifact-Writer"
     assert meta["trace_upstream"][0]["version_key"] == "20260315_091949"
+
+
+def test_meta_builder_respects_closed_historical_baseline_meta_schema() -> None:
+    registry = SchemaRegistry(Path("specs/schemas"))
+    schema = registry.get_schema("historical_baseline.schema.json")
+    validator = registry.validator_for("historical_baseline.schema.json")
+    document = {
+        "meta": {
+            "artifact_type": "HISTORICAL_BASELINE",
+            "schema_id": "HistoricalBaselineInterface",
+            "schema_version": "1.2",
+            "version": "1.2",
+            "authority": "Derived",
+            "owner_agent": "Intervals-Pipeline",
+            "run_id": "intervals_historical_baseline_20260519T075109Z",
+            "created_at": "2026-05-19T07:51:09Z",
+            "scope": "Athlete",
+            "data_confidence": "MEDIUM",
+            "trace_upstream": [],
+            "notes": "Yearly aggregates.",
+        },
+        "data": {
+            "metrics": {
+                "kj_per_year": 1000.0,
+                "kj_per_activity": 100.0,
+                "kj_per_hour": 500.0,
+                "long_ride_tolerance_kj": 0.0,
+            },
+            "yearly_summary": [
+                {
+                    "year": 2026,
+                    "activities": 10,
+                    "moving_time_seconds": 7200.0,
+                    "distance_km": 200.0,
+                    "work_kj": 1000.0,
+                    "kj_per_activity": 100.0,
+                    "kj_per_hour": 500.0,
+                }
+            ],
+            "source": {"source_type": "intervals", "range": "1 years"},
+        },
+    }
+
+    normalized = canonicalize_artifact_envelope_meta(
+        document,
+        artifact_type=ArtifactType.HISTORICAL_BASELINE,
+        schema=schema,
+    )
+
+    assert "iso_week" not in normalized["meta"]
+    assert "iso_week_range" not in normalized["meta"]
+    assert "temporal_scope" not in normalized["meta"]
+    assert "trace_data" not in normalized["meta"]
+    assert "trace_events" not in normalized["meta"]
+    validate_or_raise(validator, normalized)
