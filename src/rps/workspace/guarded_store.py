@@ -776,7 +776,6 @@ class GuardedValidatedStore:
                 athlete_profile_payload=self._load_latest_optional(ArtifactType.ATHLETE_PROFILE),
                 availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
                 logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
-                planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
                 zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
                 wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
                 kpi_profile_payload=self._load_latest_optional(ArtifactType.KPI_PROFILE),
@@ -784,8 +783,16 @@ class GuardedValidatedStore:
                     self._load_latest_optional(ArtifactType.SEASON_SCENARIO_SELECTION)
                 ),
             ).payload
+        except TypeError:
+            self.logger.exception(
+                "Failed to build store load-capacity context due to invalid builder arguments."
+            )
         except Exception:
+            self.logger.exception(
+                "Failed to build store load-capacity context from workspace inputs."
+            )
             return {}
+        return {}
 
     def _load_phase_capacity_context_for_store(
         self,
@@ -828,7 +835,6 @@ class GuardedValidatedStore:
                 athlete_profile_payload=self._load_latest_optional(ArtifactType.ATHLETE_PROFILE),
                 availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
                 logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
-                planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
                 zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
                 season_plan_payload=season_plan,
                 wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
@@ -840,8 +846,22 @@ class GuardedValidatedStore:
                 phase_role_by_week=phase_role_by_week,
                 scenario_cadence=phase_execution_seed.get("scenario_cadence"),
             ).payload
+        except TypeError:
+            self.logger.exception(
+                "Failed to build phase-scoped load-capacity context due to invalid builder arguments "
+                "for phase_range=%s target_week=%s week_roles=%s.",
+                getattr(phase_range, "range_key", phase_range),
+                target_week,
+                sorted(week_role_by_week),
+            )
         except Exception:
+            self.logger.exception(
+                "Failed to build phase-scoped load-capacity context for phase_range=%s target_week=%s.",
+                getattr(phase_range, "range_key", phase_range),
+                target_week,
+            )
             return {}
+        return {}
 
     def _enforce_store_contract_constraints(
         self,
@@ -884,6 +904,33 @@ class GuardedValidatedStore:
                         season_plan=season_plan,
                         phase_info=phase_info,
                         phase_slots=phase_slots,
+                    )
+                    load_capacity_s5_bands = self._as_list(load_capacity_context.get("s5_bands"))
+                    self.logger.info(
+                        "Phase structure validation context phase_range=%s phase_slots=%s s5_band_weeks=%s week_roles=%s",
+                        range_spec.range_key,
+                        bool(phase_slots),
+                        [
+                            str(self._as_map(item).get("week"))
+                            for item in load_capacity_s5_bands
+                            if str(self._as_map(item).get("week")).strip()
+                        ],
+                        sorted(
+                            str(key)
+                            for key in self._as_map(
+                                build_phase_execution_context(
+                                    target_week=range_spec.start,
+                                    phase_info=phase_info,
+                                    phase_range=range_spec,
+                                    season_plan_payload=season_plan,
+                                    phase_slot_context=phase_slots,
+                                    availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+                                    logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+                                    planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+                                    load_capacity_context={},
+                                ).get("week_role_by_iso_week")
+                            )
+                        ),
                     )
                     context = build_phase_execution_context(
                         target_week=range_spec.start,

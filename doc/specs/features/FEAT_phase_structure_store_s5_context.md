@@ -1,5 +1,5 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
 Last-Updated: 2026-05-20
 Owner: Planning Contracts
@@ -23,8 +23,9 @@ Owner: Planning Contracts
 
 **Problem**
 
-* The store rebuilt `load_capacity_context` without phase-scoped inputs such as `target_week`, `phase_range`, `season_plan_payload`, `week_role_by_week`, `phase_role_by_week`, and `scenario_cadence`.
-* As a result, `build_phase_execution_context(...)` received an incomplete load-capacity payload and emitted an empty `phase_s5_bands` list.
+* The store helper passed an invalid `planning_events_payload` keyword into `build_load_capacity_block(...)`, then swallowed the resulting exception and returned `{}`.
+* The store also needs phase-scoped inputs such as `target_week`, `phase_range`, `season_plan_payload`, `week_role_by_week`, `phase_role_by_week`, and `scenario_cadence`.
+* As a result, `build_phase_execution_context(...)` received an empty load-capacity payload and emitted an empty `phase_s5_bands` list.
 * Guarded-store validation then failed with `phase_s5_context_missing` although the orchestrator had already derived valid S5 bands for the same phase.
 
 **Constraints**
@@ -71,13 +72,14 @@ Owner: Planning Contracts
 
 **Components / Modules**
 
-* `src/rps/workspace/guarded_store.py`: build phase-scoped load-capacity context for `PHASE_STRUCTURE` validation.
-* `tests/test_guarded_store.py`: regression coverage for forwarded phase-scope parameters.
+* `src/rps/workspace/guarded_store.py`: build phase-scoped load-capacity context for `PHASE_STRUCTURE` validation and log deterministic failures.
+* `src/rps/planning/deterministic_context.py`: tighten `build_load_capacity_block(...)` to the real supported keyword set.
+* `tests/test_guarded_store.py`: regression coverage for forwarded phase-scope parameters and logged builder failures.
 
 **Data flow**
 
-* Inputs: season plan, selected scenario, availability, logistics, planning events, zone model, wellness, KPI profile
-* Processing: derive phase execution seed -> forward phase-scoped values into `build_load_capacity_block(...)`
+* Inputs: season plan, selected scenario, availability, logistics, zone model, wellness, KPI profile
+* Processing: derive phase execution seed -> forward phase-scoped values into `build_load_capacity_block(...)` -> log empty/failed S5 state before contract validation
 * Outputs: non-empty deterministic `phase_s5_bands` in store-time validation context
 
 **Schema / Artefacts**
@@ -113,6 +115,7 @@ Owner: Planning Contracts
 **Required refactoring**
 
 * Introduce a phase-specific store helper for load-capacity context assembly
+* Remove silent exception swallowing for load-capacity helper failures
 
 ---
 
@@ -165,10 +168,12 @@ Owner: Planning Contracts
 * [x] `PHASE_STRUCTURE` store-time validation rebuilds phase-scoped load-capacity context with `target_week` and `phase_range`.
 * [x] Week-role and scenario-cadence inputs are forwarded into phase-scoped S5 derivation.
 * [x] Regression test covers the new store helper wiring.
-* [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
-* [ ] Validation passes: `./scripts/run_lint.sh`
-* [ ] Validation passes: `./scripts/run_typecheck.sh`
-* [ ] Validation passes: targeted `pytest`
+* [x] Invalid builder kwargs are rejected by the wrapper instead of being silently forwarded.
+* [x] Builder failures are logged explicitly in the guarded store.
+* [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
+* [x] Validation passes: `./scripts/run_lint.sh`
+* [x] Validation passes: `./scripts/run_typecheck.sh`
+* [x] Validation passes: targeted `pytest`
 
 ---
 
@@ -199,6 +204,7 @@ Owner: Planning Contracts
 **New/changed events**
 
 * No new log event required
+* Guarded store now logs phase validation context weeks and load-capacity builder failures explicitly
 
 **Diagnostics**
 

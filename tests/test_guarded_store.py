@@ -1,5 +1,6 @@
 import pytest
 
+from rps.planning.deterministic_context import build_load_capacity_block
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.iso_helpers import parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_registry import SchemaValidationError
@@ -481,10 +482,50 @@ def test_phase_structure_store_builds_phase_scoped_capacity_context(tmp_path, mo
             return {"data": {}}
         return {}
 
-    def fake_build_load_capacity_block(**kwargs):
+    def fake_build_load_capacity_block(
+        *,
+        target_week=None,
+        phase_range=None,
+        athlete_profile_payload=None,
+        availability_payload=None,
+        logistics_payload=None,
+        zone_model_payload=None,
+        season_plan_payload=None,
+        phase_guardrails_payload=None,
+        season_allowed_intensity_domains=None,
+        wellness_payload=None,
+        kpi_profile_payload=None,
+        kpi_rate_band=None,
+        previous_load_kj=None,
+        baseline_load_kj=None,
+        week_role_by_week=None,
+        phase_role_by_week=None,
+        scenario_cadence=None,
+    ):
+        kwargs = {
+            "target_week": target_week,
+            "phase_range": phase_range,
+            "athlete_profile_payload": athlete_profile_payload,
+            "availability_payload": availability_payload,
+            "logistics_payload": logistics_payload,
+            "zone_model_payload": zone_model_payload,
+            "season_plan_payload": season_plan_payload,
+            "phase_guardrails_payload": phase_guardrails_payload,
+            "season_allowed_intensity_domains": season_allowed_intensity_domains,
+            "wellness_payload": wellness_payload,
+            "kpi_profile_payload": kpi_profile_payload,
+            "kpi_rate_band": kpi_rate_band,
+            "previous_load_kj": previous_load_kj,
+            "baseline_load_kj": baseline_load_kj,
+            "week_role_by_week": week_role_by_week,
+            "phase_role_by_week": phase_role_by_week,
+            "scenario_cadence": scenario_cadence,
+        }
         captured.update(kwargs)
+
         class _Block:
             payload = {"s5_bands": [{"week": "2026-21", "band": {"min": 7000, "max": 8000}}]}
+
         return _Block()
 
     monkeypatch.setattr(store, "_load_latest_optional", fake_load_latest_optional)
@@ -516,6 +557,62 @@ def test_phase_structure_store_builds_phase_scoped_capacity_context(tmp_path, mo
         "2026-23": "Base",
     }
     assert captured["scenario_cadence"] == "2:1:1"
+
+
+def test_phase_structure_store_logs_capacity_builder_failures(tmp_path, monkeypatch, caplog):
+    store = _store(tmp_path)
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "cycle": "Base",
+                    "phase_intent": "shortened_re_entry",
+                    "iso_week_range": "2026-21--2026-23",
+                }
+            ]
+        }
+    }
+    phase_slots = {
+        "phase_slots": [
+            {
+                "phase_id": "P01",
+                "iso_week_range": "2026-21--2026-23",
+                "scenario_cadence": "2:1:1",
+                "cadence_week_roles": [
+                    "SHORTENED_RE_ENTRY",
+                    "SHORTENED_CONSOLIDATION",
+                    "SHORTENED_MINI_RESET",
+                ],
+            }
+        ]
+    }
+
+    monkeypatch.setattr(store, "_load_latest_optional", lambda _artifact_type: {})
+
+    def fail_build_load_capacity_block(**_kwargs):
+        raise TypeError("unexpected keyword argument")
+
+    monkeypatch.setattr("rps.workspace.guarded_store.build_load_capacity_block", fail_build_load_capacity_block)
+    phase_info = resolve_season_plan_phase_info(season_plan, parse_iso_week("2026-21"))
+    assert phase_info is not None
+
+    with caplog.at_level("ERROR"):
+        payload = store._load_phase_capacity_context_for_store(
+            target_week=parse_iso_week("2026-21"),
+            phase_range=parse_iso_week_range("2026-21--2026-23"),
+            season_plan=season_plan,
+            phase_info=phase_info,
+            phase_slots=phase_slots,
+        )
+
+    assert payload == {}
+    assert "Failed to build phase-scoped load-capacity context due to invalid builder arguments" in caplog.text
+
+
+def test_build_load_capacity_block_rejects_unknown_kwargs() -> None:
+    with pytest.raises(TypeError):
+        build_load_capacity_block(planning_events_payload={})  # type: ignore[call-arg]
 
 
 def test_phase_guardrails_missing_structured_event_still_fails(tmp_path):

@@ -135,10 +135,47 @@ def build_season_phase_slot_block(
     )
 
 
-def build_load_capacity_block(**kwargs: Any) -> DeterministicContextBlock:
+def build_load_capacity_block(
+    *,
+    target_week: IsoWeek | None = None,
+    phase_range: IsoWeekRange | None = None,
+    athlete_profile_payload: JsonMap | None = None,
+    availability_payload: JsonMap | None = None,
+    logistics_payload: JsonMap | None = None,
+    zone_model_payload: JsonMap | None = None,
+    season_plan_payload: JsonMap | None = None,
+    phase_guardrails_payload: JsonMap | None = None,
+    season_allowed_intensity_domains: list[str] | None = None,
+    wellness_payload: JsonMap | None = None,
+    kpi_profile_payload: JsonMap | None = None,
+    kpi_rate_band: JsonMap | None = None,
+    previous_load_kj: float | None = None,
+    baseline_load_kj: float | None = None,
+    week_role_by_week: dict[str, str] | None = None,
+    phase_role_by_week: dict[str, str] | None = None,
+    scenario_cadence: str | None = None,
+) -> DeterministicContextBlock:
     """Build deterministic load capacity and S5 context."""
 
-    payload = build_load_capacity_context(**kwargs)
+    payload = build_load_capacity_context(
+        target_week=target_week,
+        phase_range=phase_range,
+        athlete_profile_payload=athlete_profile_payload,
+        availability_payload=availability_payload,
+        logistics_payload=logistics_payload,
+        zone_model_payload=zone_model_payload,
+        season_plan_payload=season_plan_payload,
+        phase_guardrails_payload=phase_guardrails_payload,
+        season_allowed_intensity_domains=season_allowed_intensity_domains,
+        wellness_payload=wellness_payload,
+        kpi_profile_payload=kpi_profile_payload,
+        kpi_rate_band=kpi_rate_band,
+        previous_load_kj=previous_load_kj,
+        baseline_load_kj=baseline_load_kj,
+        week_role_by_week=week_role_by_week,
+        phase_role_by_week=phase_role_by_week,
+        scenario_cadence=scenario_cadence,
+    )
     return DeterministicContextBlock(
         name="load_capacity",
         title="Deterministic Load Capacity Context",
