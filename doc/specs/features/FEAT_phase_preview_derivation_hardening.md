@@ -1,5 +1,5 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
 Last-Updated: 2026-05-20
 Owner: Workspace
@@ -25,6 +25,7 @@ Owner: Workspace
 
 * This leaves a gap between intent and enforcement.
 * A preview could remain traceable while still drifting away from `PHASE_STRUCTURE` and `PHASE_GUARDRAILS` in structured fields such as week coverage, agenda day roles, intensity domains, modalities, fixed non-training days, or quality-day caps.
+* The first hardening pass still trusted raw writer output too much. Repairable issues such as missing exact `phase_structure_<version>.json` traceability, operational `NONE`/`RECOVERY` domains, or excess `QUALITY` labels could still fail the store even though they are deterministic derivations rather than new planning decisions.
 
 **Constraints**
 
@@ -41,6 +42,7 @@ Owner: Workspace
 * [x] Enforce that `PHASE_PREVIEW.weekly_agenda_preview` stays inside the stored `PHASE_STRUCTURE` authority.
 * [x] Ensure preview weeks cover the same phase range as the stored structure.
 * [x] Ensure preview agenda respects allowed day roles, intensity domains, load modalities, fixed non-training days, and quality-day caps.
+* [x] Deterministically repair preview fields that are purely derived and can be normalized without introducing new planning decisions.
 * [x] Keep preview synthesis/review skills aligned with the new guarded-store invariants.
 
 **Non-Goals**
@@ -56,7 +58,10 @@ Owner: Workspace
 **User/System behavior**
 
 * `PHASE_PREVIEW` still exists and still serves as the informative explanatory layer.
-* Store-time validation now rejects previews whose structured agenda contradicts the stored structure.
+* Store-time validation now normalizes deterministic preview/structure details before rejecting contradictions.
+* Exact `PHASE_STRUCTURE` filename traceability is injected during store validation when missing.
+* Fixed non-training days remain pinned to `intensity_domain = NONE` and `load_modality = NONE`.
+* Excess `QUALITY` labels above the phase cap are downgraded deterministically before validation.
 * Narrative flexibility remains, but structured preview content must stay inside phase authority.
 
 **UI impact**
@@ -79,7 +84,10 @@ Owner: Workspace
 **Components / Modules**
 
 * `src/rps/workspace/guarded_store.py`
-  * extend preview validation beyond traceability
+  * normalize preview against stored structure before validation
+* `src/rps/agents/output_normalization.py`
+  * project operational intensity domains into `PHASE_STRUCTURE`
+  * repair deterministic `PHASE_PREVIEW` derivation fields
 * `skills/phase/preview-synthesis/SKILL.md`
   * make derivation rules explicit for agenda fields
 * `skills/phase/preview-review/SKILL.md`
@@ -93,6 +101,8 @@ Owner: Workspace
   * candidate `PHASE_PREVIEW`
   * stored exact-range `PHASE_STRUCTURE`
 * Processing:
+  * normalize structure operational domains for fixed rest/recovery semantics
+  * normalize preview traceability and quality-cap overflows
   * validate traceability
   * compare preview agenda weeks and day semantics against structure authority
 * Outputs:
@@ -113,7 +123,7 @@ Owner: Workspace
 
 * Backward compatible: Yes at schema level; behavior is stricter.
 * Breaking changes: previously accepted but semantically drifting previews may now fail to store.
-* Fallback behavior: review/replan should correct the preview to match structure.
+* Fallback behavior: deterministic repair is applied first; only unrecoverable mismatches are rejected.
 
 **Conflicts with ADRs / Principles**
 
@@ -132,26 +142,29 @@ Owner: Workspace
 **Required refactoring**
 
 * Replace traceability-only preview validation with structure-aware validation.
+* Add deterministic repair for preview fields that are strictly derived from stored structure authority.
 
 ---
 
 ## 6) Options & Recommendation
 
-### Option A — Guarded-store structured derivation checks
+### Option A — Guarded-store structured derivation checks with deterministic repair
 
 **Summary**
 
-* Enforce only structured invariants at store time and leave free-form narrative text to review skills.
+* Normalize repairable structured fields at store time, then enforce the remaining structured invariants and leave free-form narrative text to review skills.
 
 **Pros**
 
 * Strong protection where drift is most harmful.
+* Avoids rejecting previews for purely derived formatting/label issues.
 * Avoids brittle NLP-style narrative matching.
 * Preserves preview usefulness.
 
 **Cons**
 
 * Some semantic drift can still exist in narrative prose.
+* Repair logic must stay narrowly scoped to avoid introducing new planning decisions.
 
 **Risk**
 
@@ -185,6 +198,7 @@ Owner: Workspace
 * [x] Agenda day roles, intensity domains, and load modalities must stay inside structure authority.
 * [x] Fixed non-training days must remain non-training in preview agenda.
 * [x] Preview weekly `QUALITY` count must not exceed the structure cap.
+* [x] `PHASE_STRUCTURE` operational domains for rest/recovery semantics are normalized before preview validation.
 * [x] Validation passes: `python3 -m py_compile`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted pytest.
 
 ---
@@ -194,7 +208,7 @@ Owner: Workspace
 **Migration strategy**
 
 * No data migration.
-* Existing previews remain readable; only future writes are stricter.
+* Existing previews remain readable; future writes gain deterministic repair before strict validation.
 
 **Rollout / gating**
 
@@ -210,6 +224,11 @@ Owner: Workspace
   * Safe behavior: stop persistence and surface the mismatch
   * Recovery: adjust the preview draft or review guidance
 
+* Failure mode: deterministic repair over-corrects a day label.
+  * Detection: stored preview differs from raw draft in structured agenda fields
+  * Safe behavior: repair is limited to traceability, fixed rest semantics, operational domains, and quality-cap downgrades
+  * Recovery: narrow the normalizer scope or push the correction upstream into synthesis/review prompts
+
 * Failure mode: narrative still drifts while structured agenda passes.
   * Detection: preview review output
   * Safe behavior: review can still reject
@@ -221,7 +240,7 @@ Owner: Workspace
 
 **New/changed events**
 
-* No new log events; existing guarded-store schema-validation failures now cover more preview mismatches.
+* No new log events; existing guarded-store validation now covers normalized preview/structure mismatches with clearer store outcomes.
 
 **Diagnostics**
 

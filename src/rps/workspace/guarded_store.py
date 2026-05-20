@@ -12,6 +12,7 @@ from typing import cast
 
 from rps.agents.output_normalization import (
     normalize_phase_guardrails_document,
+    normalize_phase_preview_document,
     normalize_phase_structure_document,
 )
 from rps.agents.tasks import OutputSpec
@@ -560,6 +561,11 @@ class GuardedValidatedStore:
         expected_arch = (
             f"{ARTIFACT_PATHS[ArtifactType.PHASE_STRUCTURE].filename_prefix}_"
             f"{arch_version_key}.json"
+        )
+        normalize_phase_preview_document(
+            document,
+            phase_structure_document=phase_structure,
+            phase_structure_version_key=arch_version_key,
         )
         data = self._as_map(document.get("data"))
         traceability = self._as_map(data.get("traceability"))

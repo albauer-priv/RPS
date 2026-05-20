@@ -6,6 +6,7 @@ from rps.agents.output_normalization import (
     extract_planning_events_document,
     injection_mode_for_tasks,
     normalize_phase_guardrails_document,
+    normalize_phase_preview_document,
     normalize_phase_structure_document,
     normalize_season_scenarios_document,
     normalize_workout_percent_ranges,
@@ -152,6 +153,83 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
         normalized["data"]["load_ranges"]["source"]
         == "phase_guardrails_2026-21--2026-23__20260520_094539.json"
     )
+
+
+def test_normalize_phase_structure_adds_operational_intensity_domains() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE"},
+        "data": {
+            "structural_phase_elements": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            }
+        },
+    }
+
+    normalized = normalize_phase_structure_document(document)
+
+    assert normalized["data"]["structural_phase_elements"]["allowed_intensity_domains"] == [
+        "ENDURANCE",
+        "TEMPO",
+        "SWEET_SPOT",
+        "NONE",
+        "RECOVERY",
+    ]
+
+
+def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_PREVIEW"},
+        "data": {
+            "traceability": {"derived_from": ["Season plan version 2026-21__20260520_084154"]},
+            "weekly_agenda_preview": [
+                {
+                    "week": "2026-22",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "TEMPO", "load_modality": "K3", "notes": "wrong"},
+                        {"day_of_week": "Tue", "day_role": "QUALITY", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "ok"},
+                        {"day_of_week": "Wed", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE", "notes": "ok"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "ok"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "SWEET_SPOT", "load_modality": "K3", "notes": "wrong"},
+                        {"day_of_week": "Sat", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "load_modality": "NONE", "notes": "excess"},
+                        {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "ok"},
+                    ],
+                }
+            ],
+        },
+    }
+    phase_structure = {
+        "data": {
+            "structural_phase_elements": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"max_quality_days_per_week": 2},
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+        }
+    }
+
+    normalized = normalize_phase_preview_document(
+        document,
+        phase_structure_document=phase_structure,
+        phase_structure_version_key="2026-21--2026-23__20260520_112942",
+    )
+
+    assert (
+        "phase_structure_2026-21--2026-23__20260520_112942.json"
+        in normalized["data"]["traceability"]["derived_from"]
+    )
+    days = normalized["data"]["weekly_agenda_preview"][0]["days"]
+    assert days[0]["intensity_domain"] == "NONE"
+    assert days[0]["load_modality"] == "NONE"
+    assert days[4]["intensity_domain"] == "NONE"
+    assert days[4]["load_modality"] == "NONE"
+    assert days[5]["day_role"] == "ENDURANCE"
+    assert days[5]["intensity_domain"] == "ENDURANCE"
 
 
 def test_extract_planning_events_document_parses_workspace_payload() -> None:

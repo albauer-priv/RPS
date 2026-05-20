@@ -345,6 +345,124 @@ def normalize_phase_structure_document(
                     load_ranges["source"] = f"phase_guardrails_{phase_guardrails_version_key}.json"
                 data["load_ranges"] = load_ranges
 
+    structural_phase_elements = data.get("structural_phase_elements")
+    if isinstance(structural_phase_elements, dict):
+        allowed_day_roles = set(_text_list(structural_phase_elements.get("allowed_day_roles")))
+        required_operational_domains = [
+            "NONE"
+            for role in ("REST", "OFF_BIKE", "TRAVEL")
+            if role in allowed_day_roles
+        ]
+        if "RECOVERY" in allowed_day_roles:
+            required_operational_domains.append("RECOVERY")
+        normalized_domains = _merge_unique_strings(
+            _text_list(structural_phase_elements.get("allowed_intensity_domains")),
+            required_operational_domains,
+        )
+        if normalized_domains:
+            structural_phase_elements["allowed_intensity_domains"] = normalized_domains
+        data["structural_phase_elements"] = structural_phase_elements
+
+    document["data"] = data
+    return document
+
+
+def normalize_phase_preview_document(
+    document: dict[str, Any],
+    *,
+    phase_structure_document: dict[str, Any] | None = None,
+    phase_structure_version_key: str | None = None,
+) -> dict[str, Any]:
+    """Repair derived PHASE_PREVIEW fields using stored structure authority."""
+
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta") or {}
+    artifact_type = str(meta.get("artifact_type", "")).upper()
+    if artifact_type and artifact_type != "PHASE_PREVIEW":
+        return document
+    data = document.get("data")
+    if not isinstance(data, dict):
+        return document
+
+    traceability = data.get("traceability")
+    if not isinstance(traceability, dict):
+        traceability = {}
+    derived_from = _text_list(traceability.get("derived_from"))
+    if phase_structure_version_key:
+        derived_from = _merge_unique_strings(
+            derived_from,
+            [f"phase_structure_{phase_structure_version_key}.json"],
+        )
+    if derived_from:
+        traceability["derived_from"] = derived_from
+    data["traceability"] = traceability
+
+    if not isinstance(phase_structure_document, dict):
+        document["data"] = data
+        return document
+
+    structure_data = phase_structure_document.get("data")
+    if not isinstance(structure_data, dict):
+        document["data"] = data
+        return document
+
+    structural_phase_elements = structure_data.get("structural_phase_elements")
+    execution_principles = structure_data.get("execution_principles")
+    if not isinstance(structural_phase_elements, dict):
+        structural_phase_elements = {}
+    if not isinstance(execution_principles, dict):
+        execution_principles = {}
+    load_intensity = execution_principles.get("load_intensity_handling")
+    recovery_protection = execution_principles.get("recovery_protection")
+    if not isinstance(load_intensity, dict):
+        load_intensity = {}
+    if not isinstance(recovery_protection, dict):
+        recovery_protection = {}
+
+    allowed_intensity_domains = set(_text_list(structural_phase_elements.get("allowed_intensity_domains")))
+    fixed_non_training_days = set(_text_list(recovery_protection.get("fixed_non_training_days")))
+    quality_cap = load_intensity.get("max_quality_days_per_week")
+    quality_cap = quality_cap if isinstance(quality_cap, int) else None
+
+    fallback_training_domain = "ENDURANCE"
+    if fallback_training_domain not in allowed_intensity_domains:
+        for candidate in _text_list(structural_phase_elements.get("allowed_intensity_domains")):
+            if candidate not in {"NONE", "RECOVERY"}:
+                fallback_training_domain = candidate
+                break
+
+    weekly_agenda_preview = data.get("weekly_agenda_preview")
+    if not isinstance(weekly_agenda_preview, list):
+        document["data"] = data
+        return document
+
+    for week_entry in weekly_agenda_preview:
+        if not isinstance(week_entry, dict):
+            continue
+        days = week_entry.get("days")
+        if not isinstance(days, list):
+            continue
+        quality_days_seen = 0
+        for day in days:
+            if not isinstance(day, dict):
+                continue
+            day_of_week = str(day.get("day_of_week") or "").strip()
+            day_role = str(day.get("day_role") or "").strip()
+            if day_of_week in fixed_non_training_days:
+                day["day_role"] = "REST"
+                day["intensity_domain"] = "NONE"
+                day["load_modality"] = "NONE"
+                continue
+            if day_role == "QUALITY":
+                quality_days_seen += 1
+                if quality_cap is not None and quality_days_seen > quality_cap:
+                    day["day_role"] = "ENDURANCE"
+                    day["intensity_domain"] = fallback_training_domain
+                    day["load_modality"] = "NONE"
+        week_entry["days"] = days
+
+    data["weekly_agenda_preview"] = weekly_agenda_preview
     document["data"] = data
     return document
 
