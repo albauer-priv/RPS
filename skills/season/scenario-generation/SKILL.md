@@ -3,7 +3,7 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, structure pressure, and event emphasis.
 metadata:
   author: rps
-  version: "4.0"
+  version: "4.1"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -108,11 +108,15 @@ Intensity-domain semantics:
 - `THRESHOLD` and `VO2MAX` are special-case permissions, not default markers of ambition.
 - Scenario C is not defined by `VO2MAX`.
 - Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
+- If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse ceiling-support / fresh high-intensity permission and not the primary scenario identity.
 
 Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.
 - Ensure `risk_profile`, `load_philosophy`, `decision_notes`, and `intensity_guidance` tell the same story.
 - If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
+- Use explicit wording such as `ceiling-support`, `fresh`, `high-intensity`, `support`, or `VO2` so the rationale is unambiguous.
+- Put the explanation in the actual stored scenario fields, not only in surrounding prose.
+- If you cannot write that explanation cleanly, remove `VO2MAX` from `allowed_domains`.
 - If Scenario B is the performance-default option, make economy/sub-threshold logic plausible in the scenario story.
 - If Scenario C uses no additional domains beyond `ENDURANCE` or `TEMPO`, make the ambition visible through B2B, hard-late, pre-load, event simulation, or other specificity-under-fatigue markers.
 
@@ -124,6 +128,7 @@ Hard rules:
 - use the injected deterministic planning horizon
 - do not define scenarios primarily by domain breadth
 - do not let Scenario C become "the VO2 scenario" by default
+- do not keep `VO2MAX` in Scenario C without an explicit ceiling-support explanation in `decision_notes` or `kpi_guardrail_notes`
 - do not invent fake kJ separation when the actual time budget cannot support it
 
 Positive operating guidance:

@@ -103,7 +103,7 @@ tasks:
     kind: persisted_artifact
     output: artifact_envelope
     tools: read_only_workspace
-    description: Create the season-scenarios artifact envelope for the selected planning horizon. Differentiate A/B/C primarily by kJ-envelope, specificity-under-fatigue, density, recovery tolerance, and risk contract; treat intensity domains as permissions rather than the primary scenario identity. Also make the scenarios easy to choose as user-facing options by providing `typical_week_feel`, `main_payoff`, `main_cost`, `what_gets_prioritized`, and `what_gets_de_emphasized`.
+    description: Create the season-scenarios artifact envelope for the selected planning horizon. Differentiate A/B/C primarily by kJ-envelope, specificity-under-fatigue, density, recovery tolerance, and risk contract; treat intensity domains as permissions rather than the primary scenario identity. Also make the scenarios easy to choose as user-facing options by providing `typical_week_feel`, `main_payoff`, `main_cost`, `what_gets_prioritized`, and `what_gets_de_emphasized`. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in `decision_notes` and/or `kpi_guardrail_notes` that it is only a sparse ceiling-support / fresh high-intensity permission and not the primary scenario identity; otherwise omit `VO2MAX`.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario
