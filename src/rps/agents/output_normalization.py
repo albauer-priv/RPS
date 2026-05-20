@@ -38,6 +38,9 @@ _DISALLOWED_AVOID_DOMAINS = {"NONE", "RECOVERY"}
 _SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(?:\.[0-9]+)?$")
 _META_SCOPES = {"Shared", "Season", "Phase", "Week", "Context"}
 _SCENARIO_IDS = ("A", "B", "C")
+_INLINE_LOOP_STEP_RE = re.compile(
+    r"^(?P<indent>\s*)-\s*(?P<count>\d+)[xX]\s+(?P<step>(?:\d+(?:\.\d+)?(?:s|m|h)|\d+m\d+|\d+h\d+m).*)$"
+)
 
 
 def normalize_workout_percent_ranges(text: str) -> str:
@@ -48,6 +51,27 @@ def normalize_workout_percent_ranges(text: str) -> str:
         r"\1%-\2%",
         text,
     )
+
+
+def normalize_workout_inline_loop_headers(text: str) -> str:
+    """Normalize inline loop shorthand like ``- 3x 12m 80%-84% 88rpm`` to a standalone loop header."""
+
+    normalized_lines: list[str] = []
+    changed = False
+    for raw_line in text.splitlines():
+        match = _INLINE_LOOP_STEP_RE.fullmatch(raw_line)
+        if not match:
+            normalized_lines.append(raw_line)
+            continue
+        indent = match.group("indent")
+        count = match.group("count")
+        step = match.group("step")
+        normalized_lines.append(f"{indent}{count}x")
+        normalized_lines.append(f"{indent}- {step}")
+        changed = True
+    if not changed:
+        return text
+    return "\n".join(normalized_lines)
 
 
 def _as_positive_int(value: object) -> int | None:

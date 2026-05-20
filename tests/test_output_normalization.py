@@ -9,6 +9,7 @@ from rps.agents.output_normalization import (
     normalize_phase_preview_document,
     normalize_phase_structure_document,
     normalize_season_scenarios_document,
+    normalize_workout_inline_loop_headers,
     normalize_workout_percent_ranges,
 )
 from rps.agents.tasks import AgentTask
@@ -353,3 +354,12 @@ def test_injection_mode_for_tasks_is_single_mode_only() -> None:
 
 def test_normalize_workout_percent_ranges_repairs_missing_middle_percent() -> None:
     assert normalize_workout_percent_ranges("- 3h44m 68-72% 85-90rpm") == "- 3h44m 68%-72% 85-90rpm"
+
+
+def test_normalize_workout_inline_loop_headers_splits_inline_repeat_step() -> None:
+    assert normalize_workout_inline_loop_headers("- 3x 12m 80%-84% 88-94rpm") == "3x\n- 12m 80%-84% 88-94rpm"
+
+
+def test_normalize_workout_inline_loop_headers_preserves_non_loop_step() -> None:
+    text = "- 12m 80%-84% 88-94rpm"
+    assert normalize_workout_inline_loop_headers(text) == text

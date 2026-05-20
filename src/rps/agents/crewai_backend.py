@@ -14,6 +14,7 @@ from rps.agents.output_normalization import (
     extract_planning_events_document,
     normalize_phase_guardrails_document,
     normalize_season_scenarios_document,
+    normalize_workout_inline_loop_headers,
     normalize_workout_percent_ranges,
 )
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
@@ -446,7 +447,9 @@ def _normalize_week_plan_meta(document: JsonMap) -> JsonMap:
                     continue
                 workout_text = workout.get("workout_text")
                 if isinstance(workout_text, str):
-                    workout["workout_text"] = normalize_workout_percent_ranges(workout_text)
+                    workout["workout_text"] = normalize_workout_inline_loop_headers(
+                        normalize_workout_percent_ranges(workout_text)
+                    )
             data["workouts"] = workouts
         document["data"] = data
     return document
