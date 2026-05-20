@@ -43,6 +43,7 @@ trace versions. The Workspace layer overwrites schema-critical fields before sav
 #### 3) `data.phase_intent_summary`
 Required:
 - `phase_type` (string)
+- `phase_intent` (normalized inherited phase intent from `PHASE_STRUCTURE.upstream_intent.phase_intent`)
 - `primary_objective` (string)
 - `non_negotiables` (array, min 1)
 - `key_risks_warnings` (array, min 1)

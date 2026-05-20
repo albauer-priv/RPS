@@ -66,6 +66,8 @@ Required content per scenario:
   - `constraint_summary`
   - `kpi_guardrail_notes`
   - `decision_notes`
+  - `season_archetype`
+  - `season_archetype_rationale`
   - `intensity_guidance.allowed_domains`
   - `intensity_guidance.avoid_domains`
   - `assumptions`
@@ -109,6 +111,18 @@ Intensity-domain semantics:
 - Scenario C is not defined by `VO2MAX`.
 - Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
 - If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse ceiling-support / fresh high-intensity permission and not the primary scenario identity.
+
+Season archetype semantics:
+- `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
+- Use `none` by default.
+- Use `ceiling_first_durability` only when the scenario explicitly supports a ceiling-first then economy/durability sequence.
+- `ceiling_first_durability` must stay optional and context-justified through:
+  - enough planning runway before peak
+  - long-duration durability objective
+  - weekday time-crunch / weekend leverage
+  - recovery tolerance that can support conditional early VO2
+- If `season_archetype = ceiling_first_durability`, `season_archetype_rationale` must state why early ceiling support is permitted and why later durability/specificity work still has enough runway.
+- If the scenario does not clearly justify that sequence, emit `season_archetype = none`.
 
 Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.

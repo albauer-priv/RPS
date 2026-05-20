@@ -244,6 +244,7 @@
               "date_range",
               "iso_week_range",
               "cycle",
+              "phase_intent",
               "deload",
               "narrative",
               "overview",
@@ -295,6 +296,25 @@
                   "Build",
                   "Peak",
                   "Transition"
+                ]
+              },
+              "phase_intent": {
+                "type": "string",
+                "enum": [
+                  "recovery_reset",
+                  "shortened_re_entry",
+                  "shortened_consolidation",
+                  "transition_consolidation",
+                  "foundation",
+                  "general_build",
+                  "build_progression",
+                  "ceiling_support",
+                  "transition_coupling",
+                  "durability_build",
+                  "specificity_build",
+                  "b_event_rehearsal",
+                  "peak_preparation",
+                  "a_event_peak_taper"
                 ]
               },
               "deload": {
@@ -974,6 +994,7 @@
         "date_range",
         "iso_week_range",
         "cycle",
+        "phase_intent",
         "deload",
         "narrative",
         "overview",
@@ -1025,6 +1046,25 @@
             "Build",
             "Peak",
             "Transition"
+          ]
+        },
+        "phase_intent": {
+          "type": "string",
+          "enum": [
+            "recovery_reset",
+            "shortened_re_entry",
+            "shortened_consolidation",
+            "transition_consolidation",
+            "foundation",
+            "general_build",
+            "build_progression",
+            "ceiling_support",
+            "transition_coupling",
+            "durability_build",
+            "specificity_build",
+            "b_event_rehearsal",
+            "peak_preparation",
+            "a_event_peak_taper"
           ]
         },
         "deload": {
@@ -1675,6 +1715,7 @@
               "date_range",
               "iso_week_range",
               "cycle",
+              "phase_intent",
               "deload",
               "narrative",
               "overview",
@@ -1726,6 +1767,25 @@
                   "Build",
                   "Peak",
                   "Transition"
+                ]
+              },
+              "phase_intent": {
+                "type": "string",
+                "enum": [
+                  "recovery_reset",
+                  "shortened_re_entry",
+                  "shortened_consolidation",
+                  "transition_consolidation",
+                  "foundation",
+                  "general_build",
+                  "build_progression",
+                  "ceiling_support",
+                  "transition_coupling",
+                  "durability_build",
+                  "specificity_build",
+                  "b_event_rehearsal",
+                  "peak_preparation",
+                  "a_event_peak_taper"
                 ]
               },
               "deload": {

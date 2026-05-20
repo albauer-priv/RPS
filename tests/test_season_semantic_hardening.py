@@ -39,3 +39,6 @@ def test_season_skills_preserve_durability_without_intensity_free_collapse() -> 
     assert "`Transition` | `transition_consolidation`" in synthesis
     assert "K3` appears only under `allowed_load_modalities`" in synthesis
     assert "Intensity is not the main escalation lever; fatigue-context specificity is." in phase_intensity
+    assert "`specificity_build`" in synthesis
+    assert "`season_archetype`" in scenario
+    assert "ceiling_first_durability" in scenario

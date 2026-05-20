@@ -13,6 +13,7 @@ from typing import Any, Literal
 
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeekRange, parse_iso_week, parse_iso_week_range
+from rps.workspace.phase_intents import normalize_phase_intent, normalize_season_archetype
 
 JsonMap = dict[str, Any]
 Severity = Literal["blocker", "warning"]
@@ -81,6 +82,32 @@ def _phase_data(document: JsonMap) -> list[JsonMap]:
 def _candidate_or_document(mapping: JsonMap) -> JsonMap:
     candidate = mapping.get("candidate_document")
     return candidate if isinstance(candidate, dict) else mapping
+
+
+def derive_expected_average_weekly_kj_range(*, season_plan_payload: JsonMap) -> JsonMap | None:
+    """Derive the weighted expected average weekly kJ range from phase corridors."""
+
+    document = _candidate_or_document(season_plan_payload)
+    phases = _phase_data(document)
+    total_weeks = 0
+    weighted_min = 0.0
+    weighted_max = 0.0
+    for phase in phases:
+        weeks = _range_week_count(phase.get("iso_week_range"))
+        weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
+        min_value = _as_float(weekly_kj.get("min"))
+        max_value = _as_float(weekly_kj.get("max"))
+        if weeks is None or weeks <= 0 or min_value is None or max_value is None:
+            return None
+        total_weeks += weeks
+        weighted_min += min_value * weeks
+        weighted_max += max_value * weeks
+    if total_weeks <= 0:
+        return None
+    return {
+        "min": int(round(weighted_min / total_weeks)),
+        "max": int(round(weighted_max / total_weeks)),
+    }
 
 
 def validate_snapshot_freshness(
@@ -168,6 +195,16 @@ def validate_season_plan_against_phase_slots(
                     path=f"{path}.iso_week_range",
                 )
             )
+        observed_intent = normalize_phase_intent(phase.get("phase_intent"))
+        expected_intent = normalize_phase_intent(slot.get("phase_intent"))
+        if expected_intent and observed_intent != expected_intent:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_intent_mismatch",
+                    f"phase_intent is {phase.get('phase_intent')!r}, expected {expected_intent!r}.",
+                    path=f"{path}.phase_intent",
+                )
+            )
     if phase_slot_context.get("coverage_matches_horizon") is False:
         issues.append(
             PlanningContractIssue(
@@ -206,6 +243,7 @@ def validate_season_plan_against_phase_load_context(
     build_max_values: list[float] = []
     peak_max_values: list[tuple[str, float]] = []
     phase_allowed_domain_sets: list[tuple[str, list[str]]] = []
+    season_archetype = normalize_season_archetype(season_phase_load_context.get("season_archetype"))
     for idx, phase in enumerate(phases):
         phase_id = str(phase.get("phase_id") or "")
         ctx = context_by_phase.get(phase_id)
@@ -235,8 +273,19 @@ def validate_season_plan_against_phase_load_context(
                     )
                 )
         cycle = str(phase.get("cycle") or ctx.get("phase_cycle") or "")
+        observed_intent = normalize_phase_intent(phase.get("phase_intent"))
+        expected_intent = normalize_phase_intent(ctx.get("phase_intent"))
+        if expected_intent and observed_intent != expected_intent:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_intent_outside_contract",
+                    f"phase_intent {observed_intent!r} does not match deterministic intent {expected_intent!r}.",
+                    path=f"{path}.phase_intent",
+                )
+            )
         phase_semantics = _as_map(phase.get("allowed_forbidden_semantics"))
         allowed_domains = normalize_intensity_domain_list(phase_semantics.get("allowed_intensity_domains"))
+        forbidden_domains = normalize_intensity_domain_list(phase_semantics.get("forbidden_intensity_domains"))
         if allowed_domains:
             phase_allowed_domain_sets.append((phase_id or path, allowed_domains))
             outside = sorted(set(allowed_domains) - set(season_allowed_domains)) if season_allowed_domains else []
@@ -248,6 +297,40 @@ def validate_season_plan_against_phase_load_context(
                         path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
                     )
                 )
+        if observed_intent in {"shortened_re_entry", "shortened_consolidation", "transition_consolidation", "recovery_reset"}:
+            if "VO2MAX" in allowed_domains:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_phase_intent_vo2max_conflict",
+                        "Recovery/re-entry/consolidation intents must not allow VO2MAX.",
+                        path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
+                    )
+                )
+        if observed_intent == "a_event_peak_taper" and "VO2MAX" in allowed_domains:
+            issues.append(
+                PlanningContractIssue(
+                    "season_peak_taper_vo2max_conflict",
+                    "A-event peak/taper intent must not expose VO2MAX as a general allowed domain.",
+                    path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
+                )
+            )
+        if observed_intent == "specificity_build" and cycle not in {"Build", "Peak"}:
+            issues.append(
+                PlanningContractIssue(
+                    "season_specificity_build_cycle_conflict",
+                    "specificity_build must live in Build or late Peak-adjacent structure.",
+                    path=f"{path}.cycle",
+                )
+            )
+        if observed_intent and "VO2MAX" in forbidden_domains and observed_intent == "ceiling_support" and season_archetype == "ceiling_first_durability":
+            issues.append(
+                PlanningContractIssue(
+                    "season_ceiling_support_vo2max_forbidden",
+                    "ceiling_support under ceiling_first_durability should not forbid VO2MAX outright when early VO2 is permitted.",
+                    severity="warning",
+                    path=f"{path}.allowed_forbidden_semantics.forbidden_intensity_domains",
+                )
+            )
         if cycle == "Build" and planned_max is not None:
             build_max_values.append(planned_max)
         event_trace = _as_map(ctx.get("event_taper_trace"))
@@ -295,6 +378,23 @@ def validate_season_plan_against_phase_load_context(
                         path="data.phases",
                     )
                 )
+    expected_envelope = derive_expected_average_weekly_kj_range(season_plan_payload=season_plan_payload)
+    actual_envelope = _as_map(_as_map(document.get("data")).get("season_load_envelope")).get("expected_average_weekly_kj_range")
+    actual_envelope_map = _as_map(actual_envelope)
+    actual_min = _as_float(actual_envelope_map.get("min"))
+    actual_max = _as_float(actual_envelope_map.get("max"))
+    if expected_envelope and None not in {actual_min, actual_max}:
+        if round(actual_min) != expected_envelope["min"] or round(actual_max) != expected_envelope["max"]:
+            issues.append(
+                PlanningContractIssue(
+                    "season_load_envelope_mismatch",
+                    (
+                        f"expected_average_weekly_kj_range is {actual_min:g}-{actual_max:g}, "
+                        f"expected weighted phase-derived {expected_envelope['min']}-{expected_envelope['max']}."
+                    ),
+                    path="data.season_load_envelope.expected_average_weekly_kj_range",
+                )
+            )
     return issues
 
 

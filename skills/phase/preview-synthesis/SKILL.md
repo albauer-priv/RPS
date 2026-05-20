@@ -11,6 +11,7 @@ Rules:
 - summarize existing planning decisions only
 - summarize existing guardrail content only
 - preview must remain traceable to the existing bundle
+- `phase_intent_summary.phase_intent` must be copied explicitly from stored upstream authority
 - `weekly_agenda_preview` must stay inside stored `PHASE_STRUCTURE` authority
 - use only weeks from the exact phase range
 - use only allowed day roles, intensity domains, and load modalities from structure

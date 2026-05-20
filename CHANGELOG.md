@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a normalized season/phase semantic backbone with `scenario_guidance.season_archetype` (`none` / `ceiling_first_durability`) plus schema-backed `phase_intent` propagation across Season Plan, Phase Guardrails, Phase Structure, Phase Preview, deterministic contract context, renderer context, and guarded-store validation.
+- Added deterministic `phase_intent` derivation for season phase slots, including explicit support for `specificity_build` between generic durability build and late peak/taper semantics.
+- Added weighted season-envelope derivation/validation so `season_load_envelope.expected_average_weekly_kj_range` is checked against written phase corridors instead of free-authored arithmetic.
+- Added intent-aware planning guidance across season, phase, week, and workout skills/tasks so week shape and workout-family selection are constrained by inherited `phase_intent`.
 - Added deterministic season intensity-domain authority propagation from `SEASON_SCENARIOS` / `SEASON_SCENARIO_SELECTION` into season load-capacity and season phase-load context, plus season contract checks that block a full-season collapse to `ENDURANCE only` when selected-scenario authority is broader.
 - Added active kJ-first season-scenario methodology plus runtime quality checks so Scenario A/B/C differ primarily by exposure, recovery margin, specificity, and risk contract instead of domain breadth alone.
 - Added an explicit repo-aligned phase-intensity semantic table directly into the active Season and Phase skills, covering `Transition`/`Base`/`Build`/`Peak` phase-intent guidance, conditional bridge use in Transition, `K3` as modality-only, and downward domain authority from Scenario to Phase to Week.

@@ -516,6 +516,8 @@ def normalize_season_scenarios_document(
                 "constraint_summary",
                 "kpi_guardrail_notes",
                 "decision_notes",
+                "season_archetype",
+                "season_archetype_rationale",
                 "intensity_guidance",
                 "assumptions",
                 "unknowns",
@@ -564,10 +566,17 @@ def normalize_season_scenarios_document(
                 "constraint_summary",
                 "kpi_guardrail_notes",
                 "decision_notes",
+                "season_archetype_rationale",
                 "assumptions",
                 "unknowns",
             ):
                 guidance[key] = _text_list(guidance.get(key))
+            season_archetype = str(guidance.get("season_archetype") or "").strip()
+            if season_archetype not in {"none", "ceiling_first_durability"}:
+                season_archetype = "none"
+            guidance["season_archetype"] = season_archetype
+            if season_archetype == "none" and not guidance["season_archetype_rationale"]:
+                guidance["season_archetype_rationale"] = []
             intensity_guidance = guidance.get("intensity_guidance")
             if not isinstance(intensity_guidance, dict):
                 intensity_guidance = {}

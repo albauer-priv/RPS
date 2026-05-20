@@ -25,6 +25,7 @@
           "required": [
             "phase_id",
             "phase_type",
+            "phase_intent",
             "phase_status",
             "change_type",
             "derived_from",
@@ -38,6 +39,25 @@
             "phase_type": {
               "type": "string",
               "minLength": 1
+            },
+            "phase_intent": {
+              "type": "string",
+              "enum": [
+                "recovery_reset",
+                "shortened_re_entry",
+                "shortened_consolidation",
+                "transition_consolidation",
+                "foundation",
+                "general_build",
+                "build_progression",
+                "ceiling_support",
+                "transition_coupling",
+                "durability_build",
+                "specificity_build",
+                "b_event_rehearsal",
+                "peak_preparation",
+                "a_event_peak_taper"
+              ]
             },
             "phase_status": {
               "type": "string",

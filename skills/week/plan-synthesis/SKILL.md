@@ -34,6 +34,14 @@ Required bundle semantics:
 - `workout_blueprints` must exist for every planned workout and state target day role, intensity domain, duration, kJ, required sections, syntax profile, and exportability status.
 - `weekly_load_corridor_kj` must mirror the active Phase/S5 band; do not invent a separate week corridor.
 - If the active band, availability, fixed rest days, and recovery constraints cannot be reconciled, emit blocking issues or replan instructions instead of hiding the conflict.
+- week shape must reflect inherited `phase_intent`
+  - `ceiling_support`: limited fresh VO2-oriented quality only when allowed
+  - `transition_coupling`: bridge week with endurance-dominant support
+  - `durability_build`: duration/kJ, B2B, preload, hard-late emphasis
+  - `specificity_build`: pacing/fueling/terrain/cadence/logistics realism before peak
+  - `b_event_rehearsal`: real rehearsal anchor, not just generic specificity
+  - `peak_preparation`: sharpening and execution readiness without accumulation drift
+  - `a_event_peak_taper`: freshness and primer/openers only
 
 Output format:
 - Return the task expected_output as one consolidated planning bundle or synthesis contribution.

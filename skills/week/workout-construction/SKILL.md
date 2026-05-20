@@ -55,8 +55,25 @@ Intent mapping rules:
 - every workout maps to exactly one agenda/intensity configuration
 - keep workout text aligned with the governing day role and intensity domain
 - keep workout text aligned with the active phase week role; do not write build-style quality into deload, mini-reset, or shortened reset weeks
+- keep workout text aligned with inherited `phase_intent`; legal syntax is not sufficient when the workout family contradicts the active phase semantics
 - add-ons may extend aerobic load only when they preserve the workout classification and phase domain allowance
 - `Endurance`, `Recovery`, `Tempo`, `Sweet Spot`, `Threshold`, `VO2max`, and `K3` intents must remain structurally recognizable
+
+Phase-intent family bias:
+- `ceiling_support`
+  - may use VO2-oriented families only when fresh, explicitly allowed, and still clearly support-oriented
+- `transition_coupling`
+  - bias toward endurance/tempo/sweet-spot bridge work; avoid repeated VO2 loading
+- `durability_build`
+  - bias toward long endurance, hard-late endurance, preload, K3 where allowed, and controlled tempo/sweet-spot support
+- `specificity_build`
+  - bias toward event-like pacing blocks, fueling-practice structures, terrain/cadence/logistics-specific constructions, and race-like long sessions without taper behavior
+- `b_event_rehearsal`
+  - bias toward rehearsal-specific event-simulation structures tied to the real B anchor
+- `peak_preparation`
+  - bias toward short sharpness, execution, and opener-like specificity without new accumulation
+- `a_event_peak_taper`
+  - allow only primer/openers semantics; no new accumulation families
 
 Binding agenda/intensity mapping:
 - `Endurance` -> `ENDURANCE` day role, `ENDURANCE` intensity domain, `NONE` load modality

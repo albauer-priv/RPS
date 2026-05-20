@@ -1,5 +1,6 @@
 from rps.planning.contracts import (
     blocking_messages,
+    derive_expected_average_weekly_kj_range,
     validate_phase_against_execution_context,
     validate_season_plan_against_phase_load_context,
     validate_season_plan_against_phase_slots,
@@ -33,7 +34,7 @@ def test_validate_season_plan_against_phase_slots_rejects_resized_phase() -> Non
     slot_context = {
         "coverage_matches_horizon": True,
         "phase_slots": [
-            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3},
+            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "durability_build"},
         ],
     }
 
@@ -45,6 +46,29 @@ def test_validate_season_plan_against_phase_slots_rejects_resized_phase() -> Non
     assert any(issue.code == "season_phase_slot_mismatch" for issue in issues)
 
 
+def test_validate_season_plan_against_phase_slots_rejects_phase_intent_mismatch() -> None:
+    season_plan = {
+        "data": {
+            "phases": [
+                {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "phase_intent": "durability_build"},
+            ]
+        }
+    }
+    slot_context = {
+        "coverage_matches_horizon": True,
+        "phase_slots": [
+            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "ceiling_support"},
+        ],
+    }
+
+    issues = validate_season_plan_against_phase_slots(
+        season_plan_payload=season_plan,
+        phase_slot_context=slot_context,
+    )
+
+    assert any(issue.code == "season_phase_intent_mismatch" for issue in issues)
+
+
 def test_validate_season_plan_against_phase_load_context_requires_taper_reduction() -> None:
     season_plan = {
         "data": {
@@ -52,11 +76,15 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
                 {
                     "phase_id": "P01",
                     "cycle": "Build",
+                    "phase_intent": "durability_build",
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
                     "weekly_load_corridor": {"weekly_kj": {"min": 8000, "max": 10000}},
                 },
                 {
                     "phase_id": "P02",
                     "cycle": "Peak",
+                    "phase_intent": "a_event_peak_taper",
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
                     "weekly_load_corridor": {"weekly_kj": {"min": 8000, "max": 10000}},
                 },
             ]
@@ -66,11 +94,13 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
         "phases": [
             {
                 "phase_id": "P01",
+                "phase_intent": "durability_build",
                 "recommended_phase_corridor": {"min": 7000, "max": 11000},
                 "event_taper_trace": {},
             },
             {
                 "phase_id": "P02",
+                "phase_intent": "a_event_peak_taper",
                 "recommended_phase_corridor": {"min": 6000, "max": 10000},
                 "event_taper_trace": {"has_a_event": True},
             },
@@ -92,12 +122,14 @@ def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_c
                 {
                     "phase_id": "P01",
                     "cycle": "Base",
+                    "phase_intent": "foundation",
                     "weekly_load_corridor": {"weekly_kj": {"min": 3000, "max": 5000}},
                     "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                 },
                 {
                     "phase_id": "P02",
                     "cycle": "Build",
+                    "phase_intent": "build_progression",
                     "weekly_load_corridor": {"weekly_kj": {"min": 4500, "max": 6500}},
                     "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                 },
@@ -109,11 +141,13 @@ def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_c
         "phases": [
             {
                 "phase_id": "P01",
+                "phase_intent": "foundation",
                 "recommended_phase_corridor": {"min": 2500, "max": 5500},
                 "event_taper_trace": {},
             },
             {
                 "phase_id": "P02",
+                "phase_intent": "build_progression",
                 "recommended_phase_corridor": {"min": 4000, "max": 7000},
                 "event_taper_trace": {},
             },
@@ -135,12 +169,14 @@ def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing(
                 {
                     "phase_id": "P01",
                     "cycle": "Base",
+                    "phase_intent": "foundation",
                     "weekly_load_corridor": {"weekly_kj": {"min": 3000, "max": 5000}},
                     "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
                 },
                 {
                     "phase_id": "P02",
                     "cycle": "Build",
+                    "phase_intent": "durability_build",
                     "weekly_load_corridor": {"weekly_kj": {"min": 4500, "max": 6500}},
                     "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
                 },
@@ -152,11 +188,13 @@ def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing(
         "phases": [
             {
                 "phase_id": "P01",
+                "phase_intent": "foundation",
                 "recommended_phase_corridor": {"min": 2500, "max": 5500},
                 "event_taper_trace": {},
             },
             {
                 "phase_id": "P02",
+                "phase_intent": "durability_build",
                 "recommended_phase_corridor": {"min": 4000, "max": 7000},
                 "event_taper_trace": {},
             },
@@ -169,6 +207,57 @@ def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing(
     )
 
     assert not any(issue.code == "season_intensity_domains_collapsed_to_endurance_only" for issue in issues)
+
+
+def test_derive_expected_average_weekly_kj_range_uses_phase_weighting() -> None:
+    season_plan = {
+        "data": {
+            "phases": [
+                {"iso_week_range": "2026-21--2026-23", "weekly_load_corridor": {"weekly_kj": {"min": 7000, "max": 10000}}},
+                {"iso_week_range": "2026-24--2026-25", "weekly_load_corridor": {"weekly_kj": {"min": 5000, "max": 8000}}},
+            ]
+        }
+    }
+
+    derived = derive_expected_average_weekly_kj_range(season_plan_payload=season_plan)
+
+    assert derived == {"min": 6200, "max": 9200}
+
+
+def test_validate_season_plan_against_phase_load_context_blocks_vo2_in_taper_intent() -> None:
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P05",
+                    "cycle": "Peak",
+                    "phase_intent": "a_event_peak_taper",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 5000, "max": 7000}},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "VO2MAX"]},
+                }
+            ],
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 5000, "max": 7000}},
+        }
+    }
+    load_context = {
+        "season_archetype": "none",
+        "season_allowed_intensity_domains": ["ENDURANCE", "VO2MAX"],
+        "phases": [
+            {
+                "phase_id": "P05",
+                "phase_intent": "a_event_peak_taper",
+                "recommended_phase_corridor": {"min": 5000, "max": 7000},
+                "event_taper_trace": {"has_a_event": True},
+            }
+        ],
+    }
+
+    issues = validate_season_plan_against_phase_load_context(
+        season_plan_payload=season_plan,
+        season_phase_load_context=load_context,
+    )
+
+    assert any(issue.code == "season_peak_taper_vo2max_conflict" for issue in issues)
 
 
 def test_validate_phase_against_execution_context_checks_roles_and_s5() -> None:

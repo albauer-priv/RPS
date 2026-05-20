@@ -1499,6 +1499,7 @@ def test_season_bundle_integrity_requires_phase_blueprints() -> None:
                     "phase_id": "P01",
                     "iso_week_range": "2026-21--2026-23",
                     "scenario_cadence": "2:1",
+                    "phase_intent": "durability_build",
                     "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
                 }
             ],

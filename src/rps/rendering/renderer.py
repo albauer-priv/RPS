@@ -8,6 +8,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
+from rps.workspace.phase_intents import phase_intent_label, season_archetype_label
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -184,6 +185,8 @@ def build_season_plan_context(doc):
                 "date_range": fmt_date_range(phase.get("date_range")),
                 "iso_week_range": phase.get("iso_week_range", ""),
                 "cycle": phase.get("cycle", ""),
+                "phase_intent": phase.get("phase_intent", ""),
+                "phase_intent_label": phase_intent_label(phase.get("phase_intent", "")),
                 "deload": fmt_bool(phase.get("deload")),
                 "deload_rationale": phase.get("deload_rationale"),
                 "narrative": phase.get("narrative", ""),
@@ -252,6 +255,9 @@ def build_season_plan_context(doc):
             "non_negotiable_principles": season_intent.get("non_negotiable_principles", []),
             "kj_corridor_design_notes": season_intent.get("kJ_corridor_design_notes", []),
         },
+        "season_archetype": season_archetype_label(
+            (((data.get("scenario_guidance") or {}).get("season_archetype")) if isinstance(data.get("scenario_guidance"), dict) else "")
+        ),
         "phases": phases,
         "global_constraints": {
             "availability_assumptions": data.get("global_constraints", {}).get(
@@ -350,6 +356,8 @@ def build_phase_guardrails_context(doc):
         "body_metadata": {
             "phase_id": body_metadata.get("phase_id", ""),
             "phase_type": body_metadata.get("phase_type", ""),
+            "phase_intent": body_metadata.get("phase_intent", ""),
+            "phase_intent_label": phase_intent_label(body_metadata.get("phase_intent", "")),
             "phase_status": body_metadata.get("phase_status", ""),
             "change_type": body_metadata.get("change_type", ""),
             "derived_from": body_metadata.get("derived_from"),
@@ -509,6 +517,8 @@ def build_phase_structure_context(doc):
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
         "upstream_intent": {
+            "phase_intent": upstream_intent.get("phase_intent", ""),
+            "phase_intent_label": phase_intent_label(upstream_intent.get("phase_intent", "")),
             "phase_type": upstream_intent.get("phase_type", ""),
             "primary_objective": upstream_intent.get("primary_objective", ""),
             "phase_status": upstream_intent.get("phase_status", ""),
@@ -643,6 +653,8 @@ def build_phase_preview_context(doc):
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
         "phase_intent_summary": {
+            "phase_intent": phase_intent_summary.get("phase_intent", ""),
+            "phase_intent_label": phase_intent_label(phase_intent_summary.get("phase_intent", "")),
             "phase_type": phase_intent_summary.get("phase_type", ""),
             "primary_objective": phase_intent_summary.get("primary_objective", ""),
             "non_negotiables": phase_intent_summary.get("non_negotiables", []),

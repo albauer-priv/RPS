@@ -44,6 +44,7 @@ trace versions. The Workspace layer overwrites schema-critical fields before sav
 #### 3) `data.upstream_intent`
 Required:
 - `phase_type`, `primary_objective` (strings)
+- `phase_intent` (normalized inherited intent from the active Season Plan / PHASE_GUARDRAILS chain)
 - `phase_status`: `Green|Yellow|Red`
 - `non_negotiables` (array, min 1)
 - `constraints` (array, min 1)

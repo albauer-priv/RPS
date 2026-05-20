@@ -14,6 +14,7 @@ Method:
 4. Preserve exact `iso_week`, `iso_week_range`, `temporal_scope`, `trace_upstream`, `trace_data`, and `trace_events` only as non-authoritative context/trace hints when available.
 5. Preserve approved phase blueprint semantics, including inherited `scenario_cadence`, `cadence_week_roles`, A/B event treatment, taper intent, and allowed domains, by reflecting them in existing Season Plan fields.
    Also preserve `season_phase_role`, availability cap, baseline load, role-week load bands, progression trace, and load feasibility status in existing narrative/notes fields.
+   Preserve normalized `phase_intent` explicitly on every written phase.
 6. Keep season-wide constraints, event windows, phase definitions, and citations complete and schema-valid.
 7. Validate locally against `season_plan.schema.json` before any store call.
 
@@ -25,6 +26,8 @@ Writer rules:
 - when cadence roles exist in the approved bundle, reflect them in `deload_rationale`, `typical_duration_intensity_pattern`, and `weekly_load_corridor.weekly_kj.notes`
 - `weekly_load_corridor.weekly_kj.min/max` must come from the approved phase blueprint's availability-bounded recommended phase corridor
 - `weekly_load_corridor.weekly_kj.notes` must mention phase role, availability cap, baseline, and role-week load semantics when available
+- `phase_intent` must be copied exactly from the approved phase blueprint; do not infer or rename it during writing
+- `season_load_envelope.expected_average_weekly_kj_range` must remain coherent with the weighted average of the written phase corridors; if the approved bundle conflicts with that contract, stop rather than guess
 - if a required field is missing, unknown, or schema-invalid: stop rather than guess
 
 Hard rules:

@@ -75,6 +75,8 @@ Each scenario MUST include:
     - `full_phases` (int)
     - `shortened_phases` (array; items `{ "len": int, "count": int }`)
   - `event_alignment_notes` (array of strings; may be empty)
+  - `season_archetype` (`none` or `ceiling_first_durability`)
+  - `season_archetype_rationale` (array of strings; may be empty when `season_archetype = none`)
   - `risk_flags` (array of strings; may be empty)
   - `fixed_rest_days` (array of strings; may be empty)
   - `constraint_summary` (array of strings; may be empty)
@@ -113,6 +115,7 @@ Notes:
   Runtime sets `max_shortened_phases = 0` whenever
   `shortening_budget_weeks = 0`.
   Emit best-effort schema-valid values, but qualitative scenario content is the primary agent responsibility.
+- `season_archetype` is an informational scenario-level semantic. It does not create new cycle enums; it declares whether the selected scenario follows a normalized season sequencing archetype.
 
 ---
 

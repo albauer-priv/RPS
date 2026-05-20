@@ -10,6 +10,7 @@ from rps.workspace.intensity_domains import (
     normalize_intensity_domain_list,
 )
 from rps.workspace.iso_helpers import IsoWeek
+from rps.workspace.phase_intents import normalize_season_archetype
 from rps.workspace.phase_resolution import date_to_iso_week
 
 JsonMap = dict[str, Any]
@@ -59,6 +60,35 @@ def _scenario_intensity_domains(scenario_payload: JsonMap) -> tuple[list[str], l
     if avoid:
         forbidden = list(dict.fromkeys([*forbidden, *[domain for domain in avoid if domain not in {"NONE", "RECOVERY"}]]))
     return allowed, forbidden
+
+
+def _scenario_archetype_context(
+    *,
+    scenario_payload: JsonMap,
+    planning_horizon_weeks: int | None,
+    allowed_domains: list[str],
+) -> JsonMap:
+    """Return normalized season archetype and feasibility flags."""
+
+    guidance = _as_map(scenario_payload.get("scenario_guidance"))
+    archetype = normalize_season_archetype(guidance.get("season_archetype"))
+    horizon = planning_horizon_weeks or 0
+    ceiling_first_permitted = archetype == "ceiling_first_durability" and horizon >= 10
+    early_vo2_permitted = ceiling_first_permitted and "VO2MAX" in allowed_domains and horizon >= 12
+    economy_repeat_permitted = ceiling_first_permitted and horizon >= 16
+    blocking: list[str] = []
+    if archetype == "ceiling_first_durability":
+        if horizon < 10:
+            blocking.append("planning horizon too short for ceiling-first sequencing")
+        if "VO2MAX" not in allowed_domains:
+            blocking.append("selected scenario does not permit VO2MAX authority for early ceiling support")
+    return {
+        "season_archetype": archetype,
+        "ceiling_first_permitted": ceiling_first_permitted,
+        "early_vo2_permitted": early_vo2_permitted,
+        "economy_repeat_permitted": economy_repeat_permitted,
+        "archetype_blocking_reasons": blocking,
+    }
 
 
 def _week_key(week: IsoWeek) -> str:
@@ -205,6 +235,11 @@ def build_selected_scenario_structure_context(
     full_week_count = (full_phases or 0) * (phase_length or 0)
     reconstructed_weeks = full_week_count + shortened_week_count
     allowed_domains, forbidden_domains = _scenario_intensity_domains(selected_scenario)
+    archetype_context = _scenario_archetype_context(
+        scenario_payload=selected_scenario,
+        planning_horizon_weeks=_as_int(scenarios_data.get("planning_horizon_weeks")),
+        allowed_domains=allowed_domains,
+    )
 
     return {
         "selected_scenario_id": selected_id,
@@ -225,6 +260,7 @@ def build_selected_scenario_structure_context(
         ),
         "allowed_intensity_domains": allowed_domains,
         "forbidden_intensity_domains": forbidden_domains,
+        **archetype_context,
         "event_alignment_notes": guidance.get("event_alignment_notes") or [],
         "risk_flags": guidance.get("risk_flags") or [],
     }
@@ -253,6 +289,10 @@ def render_selected_scenario_structure_block(context: JsonMap) -> str:
         + ", ".join(str(item) for item in _as_list(context.get("allowed_intensity_domains"))),
         "forbidden_intensity_domains: "
         + ", ".join(str(item) for item in _as_list(context.get("forbidden_intensity_domains"))),
+        f"season_archetype: {context.get('season_archetype')}",
+        f"ceiling_first_permitted: {context.get('ceiling_first_permitted')}",
+        f"early_vo2_permitted: {context.get('early_vo2_permitted')}",
+        f"economy_repeat_permitted: {context.get('economy_repeat_permitted')}",
     ]
     shortened = [_as_map(item) for item in _as_list(context.get("shortened_phases"))]
     if shortened:
@@ -266,6 +306,10 @@ def render_selected_scenario_structure_block(context: JsonMap) -> str:
         if values:
             lines.append(f"{label}:")
             lines.extend(f"- {value}" for value in values)
+    blocking = [str(item) for item in _as_list(context.get("archetype_blocking_reasons")) if str(item).strip()]
+    if blocking:
+        lines.append("archetype_blocking_reasons:")
+        lines.extend(f"- {value}" for value in blocking)
     return "\n".join(lines) + "\n"
 
 

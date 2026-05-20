@@ -81,12 +81,32 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
+            "phase_intent",
             "phase_type",
             "primary_objective",
             "non_negotiables",
             "key_risks_warnings"
           ],
           "properties": {
+            "phase_intent": {
+              "type": "string",
+              "enum": [
+                "recovery_reset",
+                "shortened_re_entry",
+                "shortened_consolidation",
+                "transition_consolidation",
+                "foundation",
+                "general_build",
+                "build_progression",
+                "ceiling_support",
+                "transition_coupling",
+                "durability_build",
+                "specificity_build",
+                "b_event_rehearsal",
+                "peak_preparation",
+                "a_event_peak_taper"
+              ]
+            },
             "phase_type": {
               "type": "string",
               "minLength": 1

@@ -12,6 +12,7 @@ Method:
 2. Use injected `week_role_by_iso_week` exactly; week roles come from the selected scenario cadence and role-aware S5 context, not from structure authoring.
 3. Use exactly one season-cycle label per phase: `Base`, `Build`, `Peak`, or `Transition`.
 4. Keep the structure compatible with cadence, recovery protection, event windows, phase role, weekly S5 bands, and allowed agenda semantics.
+4a. Keep the structure explicitly compatible with inherited `phase_intent`; structure must narrow around intent, not reinterpret it.
 5. Leave workout-level design and numeric targets to lower layers.
 
 Required structure rules:
@@ -27,12 +28,17 @@ Structural content rules:
 - include allowed role set, mandatory elements, optional elements, and excluded patterns
 - preserve fixed non-training days and long-endurance anchor protection
 - prefer repeatable structure over brittle optimization
+- `specificity_build` must push structure toward pacing/fueling/terrain/logistics realism
+- `durability_build` must emphasize B2B, preload, hard-late, and long-ride protection rather than event-formal rehearsal
+- `b_event_rehearsal` must reflect a real rehearsal anchor
+- `a_event_peak_taper` must preserve freshness and reduce accumulation patterns
 
 Hard rules:
 - keep numeric daily targets in downstream week artifacts
 - keep workouts, intervals, zones, and %FTP in downstream week/workout artifacts
 - provide complete week-role coverage
 - preserve the season objective inside the phase
+- emit `upstream_intent.phase_intent` explicitly and keep it identical to upstream authority
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

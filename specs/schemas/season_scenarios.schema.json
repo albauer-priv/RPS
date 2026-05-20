@@ -83,12 +83,14 @@
             "max_shortened_phases",
             "shortening_budget_weeks",
             "phase_plan_summary",
+            "season_archetype",
             "event_alignment_notes",
             "risk_flags",
             "fixed_rest_days",
             "constraint_summary",
             "kpi_guardrail_notes",
             "decision_notes",
+            "season_archetype_rationale",
             "intensity_guidance",
             "assumptions",
             "unknowns"
@@ -147,6 +149,20 @@
                     }
                   }
                 }
+              }
+            },
+            "season_archetype": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ceiling_first_durability"
+              ]
+            },
+            "season_archetype_rationale": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "event_alignment_notes": {

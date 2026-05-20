@@ -62,6 +62,7 @@ Trace-Upstream:
 - Date range: {{ phase.date_range }}
 - ISO-Week range: {{ phase.iso_week_range }}
 - Cycle: {{ phase.cycle }}
+- Phase intent: {{ phase.phase_intent_label or phase.phase_intent }}
 - Deload: {{ phase.deload }}{% if phase.deload_rationale %} ({{ phase.deload_rationale }}){% endif %}
 
 #### Phase narrative

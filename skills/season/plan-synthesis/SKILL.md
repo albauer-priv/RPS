@@ -31,6 +31,8 @@ Method:
 14. Emit one review-ready season bundle, not multiple competing variants.
 15. Final synthesis is integration work, not coworker re-discovery. Do not ask other agents to re-derive deterministic contract values during this step.
 16. Carry season-level intensity-domain authority from the selected scenario into phase blueprints. A phase may narrow downstream semantics, but you must not reconstruct season authority backward from Phase Guardrails or another narrower downstream example.
+17. Emit one normalized `phase_intent` for every phase blueprint and keep it coherent with cycle, event position, phase role, and allowed-domain narrowing.
+18. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `ceiling_support`, optional `transition_coupling`, later `durability_build`, and `specificity_build` only when the deterministic context permits it.
 
 Phase intent and intensity semantics:
 - Use only schema-valid cycles: `Base`, `Build`, `Peak`, `Transition`.
@@ -47,7 +49,9 @@ Phase intent and intensity semantics:
 | `Base` | `general_build` | aligns with active Base/general-build wording | `ENDURANCE`, `TEMPO` | `SWEET_SPOT` when recovery is stable or time budget is tight | frequent `THRESHOLD`, much `VO2MAX` | `NONE`, `K3` | Later groundwork: still endurance-dominant, with first controlled pressure work. Pyramidal-leaning. |
 | `Build` | `build_progression` | aligns with generic `Build` progression semantics | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | `THRESHOLD` only if explicitly justified by scenario and recovery | high HI density, random `VO2MAX` | `NONE`, `K3` | General build progression: more structure, controlled progression, event-relevant load growth without losing durability-first control. |
 | `Build` | `ceiling_support` | repo-aligned semantic only | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | short `VO2MAX` support block only when fresh and explicitly useful | chronic `THRESHOLD` load, broad HI escalation | `NONE`, `K3` | Early/mid build where aerobic ceiling support may be useful. HI remains support capacity, not the main motor. |
+| `Build` | `transition_coupling` | repo-aligned semantic only | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | rare short `VO2MAX` retention only when clearly justified | broad VO2 block, hidden threshold accumulation | `NONE`, `K3` | Bridge phase: maintain some ceiling support while shifting toward economy and durability. |
 | `Build` | `durability_build` | repo-aligned semantic only | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | targeted `THRESHOLD`; rare `VO2MAX` maintenance only | high HI density | `NONE`, `K3` | Later build focused on fatigue-resistant output: hard-late, B2B, preload, long-ride kJ, and specific work under fatigue. Intensity is not the main escalation lever; fatigue-context specificity is. |
+| `Build` / `Peak` | `specificity_build` | repo-aligned semantic only | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | targeted `THRESHOLD`; rehearsal-specific sharpening only when scenario-permitted | broad new VO2 loading, generic build drift | `NONE`, `K3` | Event-near but still non-taper build. Emphasize pacing, fueling, terrain, cadence, logistics, and race-like long-duration structure without full taper logic. |
 | `Build` | `b_event_rehearsal` | `b_event_rehearsal` | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | targeted rehearsal-specific sharpening only if scenario-permitted | full taper logic, broad new HI blocks | `NONE`, `K3` | B event is rehearsal/minor adjustment only. Preserve long-build continuity and A-event runway. |
 | `Peak` | `peak_preparation` | `peak_preparation` | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | short primers/openers only if already proven | new VO2 blocks, heavy threshold accumulation, new `SWEET_SPOT` accumulation | `NONE`, `K3` | Event-near sharpening and specificity through pacing, fueling, preload, and execution realism. Sweet spot here is maintenance/sharpening only, not a new accumulation block. |
 | `Peak` | `a_event_peak_taper` | `a_event_peak_taper` | `RECOVERY`, `ENDURANCE` | short `TEMPO` or `SWEET_SPOT` primers; rare short `VO2MAX` opener if already known to work | new stimuli, long hard time-in-zone | `NONE` | Dedicated A-event taper. Freshness first; maintain feel without creating fatigue debt. |
@@ -59,6 +63,7 @@ Reading rules:
 - In `Peak`, `SWEET_SPOT` is low-dose maintenance/sharpening only.
 - `build_progression` and `durability_build` may share the same intensity domains, but must differ through fatigue context, B2B, hard-late, preload, and long-ride kJ.
 - `ceiling_support` does not mean `VO2MAX` must appear.
+- `specificity_build` is distinct from `durability_build`, `b_event_rehearsal`, and `peak_preparation`; it is event-near specificity without full rehearsal or taper semantics.
 - Phase intent may narrow scenario domains, but must not exceed scenario-level allowed domains.
 - Authority flows only downward:
   - `scenario.allowed_domains` = upper seasonal authority
@@ -76,6 +81,7 @@ Hard rules:
 - never set a phase corridor above the injected availability cap unless the blueprint marks a review-visible exception
 - every phase blueprint must include phase role, availability cap, baseline, role-week load bands, progression trace, and load feasibility status
 - every phase blueprint must include `allowed_domains`; use durability-first semantics as `ENDURANCE` dominant, not `ENDURANCE only`
+- every phase blueprint must include `phase_intent`; do not leave it implicit in prose
 - if the selected scenario permits `TEMPO` or other quality domains, at least one suitable later-season phase must preserve that allowance unless the bundle makes a clear phase-specific exclusion case
 - mark coverage/cadence self-checks true only after verification
 - surface infeasible load corridors explicitly with review/replan guidance

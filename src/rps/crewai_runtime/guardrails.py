@@ -242,6 +242,11 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
     blueprints = mapping.get("phase_blueprints")
     if not isinstance(blueprints, list) or not blueprints:
         return (False, "Season bundle must include at least one phase blueprint.")
+    for blueprint in blueprints:
+        if not isinstance(blueprint, dict):
+            continue
+        if not str(blueprint.get("phase_intent") or "").strip():
+            return (False, "Season bundle phase blueprints must include phase_intent.")
     return (True, mapping)
 
 
@@ -262,6 +267,7 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
                     "phase_id": item.get("phase_id"),
                     "iso_week_range": item.get("iso_week_range"),
                     "cycle": item.get("cycle"),
+                    "phase_intent": item.get("phase_intent"),
                     "weekly_load_corridor": {
                         "weekly_kj": {
                             "min": item.get("load_corridor_min"),

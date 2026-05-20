@@ -76,6 +76,8 @@ Each scenario MUST include `scenario_guidance` with:
 - `constraint_summary` (array)
 - `kpi_guardrail_notes` (array)
 - `decision_notes` (array)
+- `season_archetype` (`none` or `ceiling_first_durability`)
+- `season_archetype_rationale` (array; may be empty only when `season_archetype = none`)
 - `intensity_guidance` with `allowed_domains` and `avoid_domains` (arrays)
   using canonical agenda intensity domains only
   (`NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`,

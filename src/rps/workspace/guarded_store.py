@@ -346,6 +346,16 @@ class GuardedValidatedStore:
             current = next_iso_week(current)
         return weeks
 
+    def _season_phase_for_range(self, season_plan: JsonMap, range_key: object) -> JsonMap:
+        """Return the season-plan phase matching an exact ISO-week range."""
+
+        target = str(range_key or "").strip()
+        for phase in self._as_list(self._as_map(season_plan.get("data")).get("phases")):
+            phase_map = self._as_map(phase)
+            if str(phase_map.get("iso_week_range") or "").strip() == target:
+                return phase_map
+        return {}
+
     def _enforce_phase_guardrails_constraints(
         self,
         document: JsonMap,
@@ -354,6 +364,8 @@ class GuardedValidatedStore:
         """Ensure season plan constraints are propagated into phase guardrails."""
         constraints = self._season_constraints(season_plan)
         data = self._as_map(document.get("data"))
+        meta = self._as_map(document.get("meta"))
+        season_phase = self._season_phase_for_range(season_plan, meta.get("iso_week_range"))
         blob = self._normalize_payload(data)
         guardrails_events = self._guardrails_event_pairs(document)
         phase_summary = self._as_map(data.get("phase_summary"))
@@ -364,6 +376,12 @@ class GuardedValidatedStore:
             str(execution_non_negotiables.get("recovery_protection_rules") or "").strip()
         )
         errors: list[str] = []
+        expected_phase_intent = str(season_phase.get("phase_intent") or "").strip()
+        observed_phase_intent = str(self._as_map(data.get("body_metadata")).get("phase_intent") or "").strip()
+        if expected_phase_intent and observed_phase_intent != expected_phase_intent:
+            errors.append(
+                f"phase_guardrails.body_metadata.phase_intent must match season plan phase_intent '{expected_phase_intent}'."
+            )
 
         errors.extend(
             f"Season plan availability_assumptions missing in phase_guardrails: {item}"
@@ -438,11 +456,19 @@ class GuardedValidatedStore:
         """Ensure season plan constraints and load ranges are propagated into execution arch."""
         constraints = self._season_constraints(season_plan)
         data = self._as_map(document.get("data"))
+        meta = self._as_map(document.get("meta"))
+        season_phase = self._season_phase_for_range(season_plan, meta.get("iso_week_range"))
         upstream_intent = self._as_map(data.get("upstream_intent"))
         upstream_constraints = self._as_list(upstream_intent.get("constraints"))
         upstream_blob = self._normalize_text(" ".join(str(item) for item in upstream_constraints))
         upstream_items = self._normalized_string_list(upstream_constraints)
         errors: list[str] = []
+        expected_phase_intent = str(season_phase.get("phase_intent") or "").strip()
+        observed_phase_intent = str(upstream_intent.get("phase_intent") or "").strip()
+        if expected_phase_intent and observed_phase_intent != expected_phase_intent:
+            errors.append(
+                f"upstream_intent.phase_intent must match season plan phase_intent '{expected_phase_intent}'."
+            )
 
         errors.extend(
             f"Season plan availability_assumptions missing in upstream_intent.constraints: {item}"
@@ -534,6 +560,13 @@ class GuardedValidatedStore:
             errors.append(f"data.traceability.derived_from must include '{expected_arch}'.")
 
         structure_data = self._as_map(self._as_map(phase_structure).get("data"))
+        structure_upstream_intent = self._as_map(structure_data.get("upstream_intent"))
+        expected_phase_intent = str(structure_upstream_intent.get("phase_intent") or "").strip()
+        observed_phase_intent = str(self._as_map(data.get("phase_intent_summary")).get("phase_intent") or "").strip()
+        if expected_phase_intent and observed_phase_intent != expected_phase_intent:
+            errors.append(
+                f"phase_preview.phase_intent_summary.phase_intent must match phase_structure upstream intent '{expected_phase_intent}'."
+            )
         structural_elements = self._as_map(structure_data.get("structural_phase_elements"))
         execution_principles = self._as_map(structure_data.get("execution_principles"))
         load_intensity = self._as_map(execution_principles.get("load_intensity_handling"))

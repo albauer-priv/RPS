@@ -482,6 +482,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
                 "phase_id": info.phase_id,
                 "phase_name": info.phase_name,
                 "phase_type": info.phase_type,
+                "phase_intent": info.phase_intent,
                 "iso_week_range": {
                     "start": {"year": info.phase_range.start.year, "week": info.phase_range.start.week},
                     "end": {"year": info.phase_range.end.year, "week": info.phase_range.end.week},

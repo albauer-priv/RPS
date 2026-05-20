@@ -55,6 +55,8 @@ def test_selected_scenario_structure_context_derives_phase_math() -> None:
     assert context["consistent_with_horizon"] is True
     assert context["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
     assert "VO2MAX" in context["forbidden_intensity_domains"]
+    assert context["season_archetype"] == "none"
+    assert context["ceiling_first_permitted"] is False
 
 
 def test_selected_scenario_structure_block_renders_planning_reference() -> None:
@@ -74,6 +76,11 @@ def test_selected_scenario_structure_block_renders_planning_reference() -> None:
             "shortened_phases": [],
             "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
             "forbidden_intensity_domains": ["SWEET_SPOT", "THRESHOLD", "VO2MAX"],
+            "season_archetype": "ceiling_first_durability",
+            "ceiling_first_permitted": True,
+            "early_vo2_permitted": True,
+            "economy_repeat_permitted": False,
+            "archetype_blocking_reasons": [],
         }
     )
 
@@ -82,6 +89,41 @@ def test_selected_scenario_structure_block_renders_planning_reference() -> None:
     assert "phase_length_weeks: 4" in block
     assert "shortened_phases: none" in block
     assert "allowed_intensity_domains: ENDURANCE, TEMPO" in block
+    assert "season_archetype: ceiling_first_durability" in block
+
+
+def test_selected_scenario_structure_context_includes_ceiling_first_archetype_flags() -> None:
+    context = build_selected_scenario_structure_context(
+        season_scenarios_payload={
+            "data": {
+                "planning_horizon_weeks": 17,
+                "scenarios": [
+                    {
+                        "scenario_id": "C",
+                        "name": "Ceiling-first build",
+                        "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "VO2MAX"]},
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1",
+                            "phase_length_weeks": 3,
+                            "phase_count_expected": 6,
+                            "max_shortened_phases": 2,
+                            "shortening_budget_weeks": 1,
+                            "season_archetype": "ceiling_first_durability",
+                            "phase_plan_summary": {
+                                "full_phases": 5,
+                                "shortened_phases": [{"len": 2, "count": 1}],
+                            },
+                        },
+                    }
+                ],
+            }
+        },
+        selection_payload={"data": {"selected_scenario_id": "C"}},
+    )
+
+    assert context["season_archetype"] == "ceiling_first_durability"
+    assert context["ceiling_first_permitted"] is True
+    assert context["early_vo2_permitted"] is True
 
 
 def test_planning_horizon_context_uses_latest_abc_event() -> None:

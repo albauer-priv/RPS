@@ -14,6 +14,7 @@ from typing import Any
 
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
+from rps.workspace.phase_intents import normalize_phase_intent, normalize_season_archetype
 from rps.workspace.phase_resolution import date_to_iso_week
 
 JsonMap = dict[str, Any]
@@ -764,6 +765,11 @@ def build_season_phase_load_context(
         blocking_issues.append("selected scenario allowed_intensity_domains missing; season phase domain authority cannot be derived.")
 
     slots = [_as_map(item) for item in _as_list(phase_slot_context.get("phase_slots"))]
+    derived_phase_intents = _derive_phase_intents_for_slots(
+        slots=slots,
+        selected_structure_context=selected_context,
+        planning_events_payload=planning_events_payload or {},
+    )
     phase_entries: list[JsonMap] = []
     phase_reference = baseline or 0.0
     total = len(slots)
@@ -775,6 +781,9 @@ def build_season_phase_load_context(
             total=total,
             is_shortened=bool(slot.get("is_shortened")),
         )
+        phase_intent = normalize_phase_intent(
+            derived_phase_intents.get(str(slot.get("phase_id") or "")) or season_phase_role
+        ) or season_phase_role
         event_trace = _event_taper_trace_for_slot(
             slot=slot,
             planning_events_payload=planning_events_payload or {},
@@ -782,13 +791,15 @@ def build_season_phase_load_context(
         if event_trace.get("has_a_event"):
             cycle = "Peak"
             season_phase_role = "a_event_peak_taper"
+            phase_intent = "a_event_peak_taper"
         elif event_trace.get("has_b_event") and cycle != "Peak":
             season_phase_role = "b_event_rehearsal"
+            phase_intent = "b_event_rehearsal"
 
         phase_baseline = _phase_baseline_for_role(
             prior_reference=phase_reference,
             cycle=cycle,
-            season_phase_role=season_phase_role,
+            season_phase_role=phase_intent,
             availability_cap=typical_cap,
         )
         role_bands: list[JsonMap] = []
@@ -833,6 +844,8 @@ def build_season_phase_load_context(
                 "iso_week_range": slot.get("iso_week_range"),
                 "phase_cycle": cycle,
                 "season_phase_role": season_phase_role,
+                "phase_intent": phase_intent,
+                "season_archetype": normalize_season_archetype(selected_context.get("season_archetype")),
                 "scenario_cadence": slot.get("scenario_cadence"),
                 "cadence_week_roles": slot.get("cadence_week_roles") or [],
                 "availability_cap_kj": {"typical": int(round(typical_cap)), "max": int(round(max_cap))},
@@ -861,6 +874,7 @@ def build_season_phase_load_context(
         "selected_scenario_id": phase_slot_context.get("selected_scenario_id"),
         "availability_load_capacity_kj": capacity,
         "baseline_load_kj": None if baseline is None else int(round(baseline)),
+        "season_archetype": normalize_season_archetype(selected_context.get("season_archetype")),
         "season_allowed_intensity_domains": season_allowed_domains,
         "season_forbidden_intensity_domains": season_forbidden_domains,
         "phases": phase_entries,
@@ -942,6 +956,7 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
         "These values bound strategic Season phase corridors by phase role, inherited week roles, progressive-overload policy, and current availability. Season Plan corridors must stay within these bounds unless a review-visible exception is listed.",
         f"unit_semantics: {context.get('unit_semantics')}",
         f"selected_scenario_id: {context.get('selected_scenario_id')}",
+        f"season_archetype: {context.get('season_archetype')}",
         f"baseline_load_kj: {context.get('baseline_load_kj')}",
         "season_allowed_intensity_domains: "
         + ", ".join(str(item) for item in _as_list(context.get("season_allowed_intensity_domains"))),
@@ -966,6 +981,7 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
             f"{phase.get('phase_id')}: {phase.get('iso_week_range')}, "
             f"phase_cycle {phase.get('phase_cycle')}, "
             f"season_phase_role {phase.get('season_phase_role')}, "
+            f"phase_intent {phase.get('phase_intent')}, "
             f"scenario_cadence {phase.get('scenario_cadence')}, "
             f"cadence_week_roles {', '.join(str(item) for item in _as_list(phase.get('cadence_week_roles')))}, "
             f"availability_cap typical {cap.get('typical')} max {cap.get('max')}, "
@@ -1003,10 +1019,89 @@ def _season_phase_role_for_slot(*, cycle: str, idx: int, total: int, is_shortene
     if cycle == "Peak":
         return "a_event_peak_taper" if idx == total else "peak_preparation"
     if cycle == "Base":
-        return "base_stabilization"
+        return "foundation"
     if cycle == "Transition":
         return "transition_consolidation"
     return "build_progression"
+
+
+def _derive_phase_intents_for_slots(
+    *,
+    slots: list[JsonMap],
+    selected_structure_context: JsonMap,
+    planning_events_payload: JsonMap,
+) -> dict[str, str]:
+    """Derive normalized phase intents for season slots."""
+
+    total = len(slots)
+    intents: dict[str, str] = {}
+    default_cycles: dict[str, str] = {}
+    for idx, slot in enumerate(slots, start=1):
+        cycle = _recommended_cycle_for_slot(idx=idx, total=total, is_shortened=bool(slot.get("is_shortened")))
+        default_cycles[str(slot.get("phase_id") or f"P{idx:02d}")] = cycle
+        intents[str(slot.get("phase_id") or f"P{idx:02d}")] = _season_phase_role_for_slot(
+            cycle=cycle,
+            idx=idx,
+            total=total,
+            is_shortened=bool(slot.get("is_shortened")),
+        )
+
+    archetype = normalize_season_archetype(_as_map(selected_structure_context).get("season_archetype"))
+    if archetype != "ceiling_first_durability":
+        return intents
+    if not _as_map(selected_structure_context).get("ceiling_first_permitted"):
+        return intents
+
+    eligible: list[str] = []
+    for idx, slot in enumerate(slots, start=1):
+        phase_id = str(slot.get("phase_id") or f"P{idx:02d}")
+        cycle = default_cycles.get(phase_id, "")
+        if bool(slot.get("is_shortened")):
+            continue
+        if cycle not in {"Build", "Transition"}:
+            continue
+        trace = _event_taper_trace_for_slot(slot=slot, planning_events_payload=planning_events_payload or {})
+        if trace.get("has_a_event"):
+            continue
+        eligible.append(phase_id)
+
+    if not eligible:
+        return intents
+
+    early_vo2 = bool(_as_map(selected_structure_context).get("early_vo2_permitted"))
+    economy_repeat = bool(_as_map(selected_structure_context).get("economy_repeat_permitted"))
+    cursor = 0
+    remaining = len(eligible)
+    ceiling_slots = 0
+    if early_vo2 and remaining >= 1:
+        ceiling_slots = 2 if remaining >= 4 else 1
+        for _ in range(ceiling_slots):
+            intents[eligible[cursor]] = "ceiling_support"
+            cursor += 1
+        remaining = len(eligible) - cursor
+    if remaining >= 3:
+        intents[eligible[cursor]] = "transition_coupling"
+        cursor += 1
+        remaining = len(eligible) - cursor
+    elif remaining == 2 and ceiling_slots == 0 and early_vo2:
+        intents[eligible[cursor]] = "ceiling_support"
+        cursor += 1
+        remaining = len(eligible) - cursor
+    if remaining <= 0:
+        return intents
+
+    tail = eligible[cursor:]
+    if len(tail) == 1:
+        intents[tail[0]] = "specificity_build"
+        return intents
+
+    for phase_id in tail[:-1]:
+        intents[phase_id] = "durability_build"
+    intents[tail[-1]] = "specificity_build"
+    if economy_repeat and len(tail) >= 3:
+        for phase_id in tail[:-1]:
+            intents[phase_id] = "durability_build"
+    return intents
 
 
 def _phase_baseline_for_role(

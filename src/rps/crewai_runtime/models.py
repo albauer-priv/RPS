@@ -118,6 +118,7 @@ class SeasonMacrocycleDraftModel(StrictOutputModel):
 
     deload_cadence: str | None = None
     phase_length_weeks: int | None = None
+    season_archetype: str | None = None
     macrocycle_order: list[str] = Field(default_factory=list)
     reverse_planning_notes: list[str] = Field(default_factory=list)
     event_window_implications: list[str] = Field(default_factory=list)
@@ -139,6 +140,7 @@ class SeasonPhaseBlueprintModel(StrictOutputModel):
     phase_id: str
     iso_week_range: str
     scenario_cadence: str
+    phase_intent: str | None = None
     season_phase_role: str | None = None
     cadence_week_roles: list[str] = Field(default_factory=list)
     cycle: Literal["Base", "Build", "Peak", "Transition"] | None = None
@@ -215,6 +217,7 @@ class PhaseGuardrailsPayloadModel(StrictOutputModel):
     """Internal phase draft for guardrails payload content."""
 
     phase_summary: list[str] = Field(default_factory=list)
+    phase_intent: str | None = None
     load_guardrails: list[str] = Field(default_factory=list)
     allowed_forbidden_semantics: list[str] = Field(default_factory=list)
     events_constraints: list[str] = Field(default_factory=list)
@@ -225,6 +228,7 @@ class PhaseStructurePayloadModel(StrictOutputModel):
     """Internal phase draft for structural execution guidance."""
 
     upstream_intent: list[str] = Field(default_factory=list)
+    phase_intent: str | None = None
     load_ranges: list[str] = Field(default_factory=list)
     execution_principles: list[str] = Field(default_factory=list)
     structural_phase_elements: list[str] = Field(default_factory=list)
@@ -236,6 +240,7 @@ class PhasePreviewPayloadModel(StrictOutputModel):
     """Internal phase draft for preview-only narrative output."""
 
     phase_intent_summary: list[str] = Field(default_factory=list)
+    phase_intent: str | None = None
     feel_overview: list[str] = Field(default_factory=list)
     weekly_agenda_preview: list[str] = Field(default_factory=list)
     week_to_week_narrative: list[str] = Field(default_factory=list)
@@ -255,6 +260,7 @@ class PhaseWeekBlueprintModel(StrictOutputModel):
 
     week: str
     phase_role: str | None = None
+    phase_intent: str | None = None
     week_role: str
     s5_band_min: int | None = None
     s5_band_max: int | None = None
@@ -270,6 +276,7 @@ class PhaseBundleModel(StrictOutputModel):
     phase_range: str
     phase_id: str | None = None
     phase_type: str | None = None
+    phase_intent: str | None = None
     cadence_source: str | None = None
     week_blueprints: list[PhaseWeekBlueprintModel] = Field(default_factory=list)
     guardrails: PhaseGuardrailsPayloadModel
@@ -303,6 +310,7 @@ class WeekDayBlueprintModel(StrictOutputModel):
     fixed_rest_day: bool = False
     availability_cap_minutes: int | None = None
     phase_role: str | None = None
+    phase_intent: str | None = None
     phase_week_role: str | None = None
     day_role: str
     intended_domain: str | None = None
@@ -318,6 +326,7 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
 
     workout_id: str
     date: str
+    phase_intent: str | None = None
     day_role: str
     intensity_domain: str | None = None
     planned_duration_minutes: int

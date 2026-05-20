@@ -11,6 +11,7 @@ Return:
 - current plan shape
 - actual execution signal
 - active corridor and role constraints
+- inherited `phase_intent` and what it implies for week shape
 - likely change pressure
 
 Summarize context only; route recommendations and revisions to the responsible downstream skill.

@@ -34,6 +34,7 @@ Trace-Upstream:
 ## 1) Phase intent (Read-only summary)
 
 - Phase type: {{ phase_intent_summary.phase_type }}
+- Phase intent: {{ phase_intent_summary.phase_intent_label or phase_intent_summary.phase_intent }}
 - Primary objective: {{ phase_intent_summary.primary_objective }}
 - Non-Negotiables:
 {{ bullet_list(phase_intent_summary.non_negotiables) }}

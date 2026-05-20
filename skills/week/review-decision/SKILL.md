@@ -9,6 +9,7 @@ Combine week review outputs into one explicit decision.
 
 Decision order:
 1. Any syntax, workout-policy semantic, or load-safety blocker can stop approval.
+1a. Any mismatch between inherited `phase_intent` and the candidate week shape or workout family mix is a blocker unless explicitly bounded and justified.
 2. Preserve must-keep constraints and identify smallest acceptable replan scope.
 3. Return either `approved`, `replan_required`, or `rejected`.
 4. Replan instructions must name target specialists, issues to fix, and what must stay unchanged.

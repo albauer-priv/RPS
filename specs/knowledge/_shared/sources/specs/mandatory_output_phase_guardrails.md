@@ -46,6 +46,7 @@ trace versions. The Workspace layer overwrites schema-critical fields before sav
 #### 3) `data.body_metadata`
 Required:
 - `phase_id`, `phase_type` (strings)
+- `phase_intent` (normalized inherited intent from the active Season Plan phase)
 - `phase_status`: `Green|Yellow|Red`
 - `change_type`: `NEW|ADJUSTED|NONE`
 - `derived_from` (string)

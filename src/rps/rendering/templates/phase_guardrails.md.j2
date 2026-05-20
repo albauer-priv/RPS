@@ -35,6 +35,7 @@ Trace-Upstream:
 
 - Phase-ID: {{ body_metadata.phase_id }}
 - Phase-Type: {{ body_metadata.phase_type }}
+- Phase-Intent: {{ body_metadata.phase_intent_label or body_metadata.phase_intent }}
 - Phase-Status: {{ body_metadata.phase_status }}
 - Change-Type: {{ body_metadata.change_type }}
 - Derived-From: {{ body_metadata.derived_from or "N/A" }}

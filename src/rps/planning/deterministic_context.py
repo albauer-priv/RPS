@@ -216,6 +216,7 @@ def build_phase_execution_context(
         "week_index_within_phase": max(1, week_index(target_week) - week_index(phase_range.start) + 1),
         "cycle": phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
         "phase_role": phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
+        "phase_intent": phase_raw.get("phase_intent") or "",
         "scenario_cadence": scenario_cadence,
         "phase_cadence_week_roles": cadence_week_roles,
         "week_role_by_iso_week": week_role_by_iso_week,
@@ -254,6 +255,7 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
         f"week_index_within_phase: {context.get('week_index_within_phase')}",
         f"cycle: {context.get('cycle')}",
         f"phase_role: {context.get('phase_role')}",
+        f"phase_intent: {context.get('phase_intent')}",
         f"scenario_cadence: {context.get('scenario_cadence')}",
         "phase_cadence_week_roles: "
         + ", ".join(str(item) for item in _as_list(context.get("phase_cadence_week_roles"))),
@@ -307,6 +309,7 @@ def build_week_calendar_context(
     active_s5 = _active_s5_band(load_capacity_context or {}, target_key)
     phase_band = _phase_guardrail_band(phase_guardrails_payload or {}, target_key)
     phase_role = _phase_role_from_structure(phase_structure_payload or {}, phase_info)
+    phase_intent = _phase_intent_from_structure(phase_structure_payload or {}, phase_info)
     phase_week_role = _phase_week_role_from_structure(phase_structure_payload or {}, target_key)
     week_role_source = "PHASE_STRUCTURE.week_skeleton_logic.week_roles" if phase_week_role else "phase_position_fallback"
     if not phase_week_role:
@@ -319,6 +322,7 @@ def build_week_calendar_context(
         "phase_iso_week_range": phase_range.range_key,
         "phase_cycle": phase_role,
         "phase_role": phase_role,
+        "phase_intent": phase_intent,
         "phase_week_role": phase_week_role,
         "phase_role_for_week": phase_week_role,
         "phase_week_role_source": week_role_source,
@@ -360,6 +364,7 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
         f"phase_iso_week_range: {context.get('phase_iso_week_range')}",
         f"phase_cycle: {context.get('phase_cycle')}",
         f"phase_role: {context.get('phase_role')}",
+        f"phase_intent: {context.get('phase_intent')}",
         f"phase_week_role: {context.get('phase_week_role')}",
         f"phase_week_role_source: {context.get('phase_week_role_source')}",
         f"phase_role_for_week: {context.get('phase_role_for_week')}",
@@ -708,6 +713,17 @@ def _phase_role_from_structure(phase_structure_payload: JsonMap, phase_info: Any
         return role.strip()
     raw = _as_map(getattr(phase_info, "raw", {}))
     fallback = raw.get("cycle") or getattr(phase_info, "phase_type", "")
+    return str(fallback or "").strip()
+
+
+def _phase_intent_from_structure(phase_structure_payload: JsonMap, phase_info: Any) -> str:
+    data = _as_map(phase_structure_payload.get("data"))
+    upstream_intent = _as_map(data.get("upstream_intent"))
+    intent = upstream_intent.get("phase_intent") or data.get("phase_intent")
+    if isinstance(intent, str) and intent.strip():
+        return intent.strip()
+    raw = _as_map(getattr(phase_info, "raw", {}))
+    fallback = raw.get("phase_intent")
     return str(fallback or "").strip()
 
 

@@ -24,6 +24,7 @@ Checklist:
 14. K3 stays low-cadence and seated in character; over-under stays rhythmic; short VO2max stays 2:1; long VO2max stays 4-6 minute central intervals.
 15. Warmup/Cooldown legality holds: no hidden sustained high-intensity warmup, no non-descending cooldown, no loops or spikes in cooldown.
 16. No advanced EBNF-only tokens leak into the project subset unless explicitly permitted by the skill rules.
+17. Workout family and target placement remain coherent with inherited `phase_intent`, not only with day role and domain legality.
 
 Canonical family checks:
 - `Recovery`: no hidden quality or activation
@@ -53,6 +54,7 @@ Blocking syntax cases:
 - target values violate workout-family parameter ranges without explicit upstream justification
 - QUALITY intent is used to push targets outside the legal domain
 - multiple progression dimensions are advanced at once in the claimed workout evolution
+- the workout is syntactically valid but semantically wrong for inherited `phase_intent`
 
 Output format:
 - Return the task expected_output as a structured review contribution.

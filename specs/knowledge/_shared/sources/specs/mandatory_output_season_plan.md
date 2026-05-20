@@ -76,6 +76,21 @@ Each phase MUST include:
 - `date_range` `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
 - `iso_week_range` `YYYY-WW--YYYY-WW`
 - `cycle` one of: `Base | Build | Peak | Transition`
+- `phase_intent` one of:
+  - `recovery_reset`
+  - `shortened_re_entry`
+  - `shortened_consolidation`
+  - `transition_consolidation`
+  - `foundation`
+  - `general_build`
+  - `build_progression`
+  - `ceiling_support`
+  - `transition_coupling`
+  - `durability_build`
+  - `specificity_build`
+  - `b_event_rehearsal`
+  - `peak_preparation`
+  - `a_event_peak_taper`
 - `deload` (boolean)
 - `deload_rationale` (string; may be empty if deload=false)
 - `narrative` (string)
@@ -109,6 +124,7 @@ Each phase MUST include:
 
 **Rules**
 - `weekly_load_corridor.weekly_kj` is required and must be fully populated.
+- `phase_intent` is the normalized semantic contract for downstream Phase/Week/Workout planning. Keep `cycle` schema-valid and express finer semantics through `phase_intent`, not by inventing new cycle values.
 - `deload` and `deload_rationale` MUST be derived from `progressive_overload_policy.md`
   and the selected cadence (`deload_cadence` / `phase_length_weeks`); do not invent
   alternate cadence logic.

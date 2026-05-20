@@ -19,6 +19,7 @@ class SeasonPlanPhaseInfo:
     phase_id: str
     phase_name: str
     phase_type: str
+    phase_intent: str
     phase_range: IsoWeekRange
     raw: dict[str, Any]
 
@@ -41,6 +42,7 @@ def phase_context_summary(
         "phase_id": info.phase_id,
         "phase_name": phase_name,
         "phase_type": phase_type,
+        "phase_intent": info.phase_intent,
         "phase_focus": phase_focus,
         "phase_week": phase_week,
         "iso_week_range": {
@@ -65,6 +67,7 @@ def resolve_season_plan_phase_info(
         phase_id=str(phase.get("phase_id", "")),
         phase_name=str(phase.get("phase_name", "")),
         phase_type=str(phase.get("phase_type", "")),
+        phase_intent=str(phase.get("phase_intent", "")),
         phase_range=phase_range,
         raw=phase,
     )
