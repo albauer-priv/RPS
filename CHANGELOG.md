@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed `PHASE_PREVIEW` guarded-store validation so agenda previews must stay derived from the stored `PHASE_STRUCTURE`: preview weeks now match phase coverage, agenda roles/domains/modalities stay inside structure authority, fixed non-training days remain non-training, and preview quality-day counts cannot exceed the structure cap.
 - Fixed deterministic season load-capacity inference so representative `typical` capacity no longer comes from the hardest allowed intensity-domain ceiling; inferred season baselines and downstream build corridors are now anchored to a more plausible endurance-led weekly load assumption.
 - Fixed Season Plan rendering/guidance to label phase and envelope load corridors as governance load kJ rather than plain weekly kJ, reducing confusion with mechanical work estimates.
 - Fixed Plan Hub per-run log files to record `INFO` and above only, so readiness polling debug lines and harmless CrewAI/LanceDB debug traces no longer flood user-facing planning logs.

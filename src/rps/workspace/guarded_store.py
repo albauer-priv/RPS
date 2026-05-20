@@ -32,7 +32,13 @@ from rps.workouts.validator import collect_week_plan_export_issues
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
 from rps.workspace.index_exact import IndexExactQuery
-from rps.workspace.iso_helpers import envelope_week, envelope_week_range, parse_iso_week
+from rps.workspace.iso_helpers import (
+    envelope_week,
+    envelope_week_range,
+    next_iso_week,
+    parse_iso_week,
+    parse_iso_week_range,
+)
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -49,6 +55,8 @@ JsonMap = dict[str, object]
 StringListMap = dict[str, list[str]]
 StoreResult = dict[str, object]
 INTEGER_ROUNDING_EPSILON = 1e-9
+_WEEKDAY_ORDER = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+_NON_TRAINING_DAY_ROLES = frozenset({"REST", "OFF_BIKE", "TRAVEL"})
 
 
 def normalize_artifact_owner(document: object, artifact_type: ArtifactType) -> object:
@@ -324,6 +332,20 @@ class GuardedValidatedStore:
                 )
         return latest, str(latest_key)
 
+    def _weeks_in_range(self, range_value: object) -> list[str]:
+        """Return canonical week keys for an inclusive ISO-week range."""
+        parsed = parse_iso_week_range(range_value)
+        if parsed is None:
+            return []
+        weeks: list[str] = []
+        current = parsed.start
+        while True:
+            weeks.append(f"{current.year:04d}-{current.week:02d}")
+            if current == parsed.end:
+                break
+            current = next_iso_week(current)
+        return weeks
+
     def _enforce_phase_guardrails_constraints(
         self,
         document: JsonMap,
@@ -488,15 +510,15 @@ class GuardedValidatedStore:
         if errors:
             raise SchemaValidationError("Season plan constraint propagation failed", errors)
 
-    def _enforce_phase_preview_traceability(
+    def _enforce_phase_preview_constraints(
         self,
         document: JsonMap,
     ) -> None:
-        """Ensure execution preview references phase structure."""
+        """Ensure execution preview stays derived from stored phase structure."""
         meta = self._as_map(document.get("meta"))
         expected_range = meta.get("iso_week_range")
         try:
-            _, arch_version_key = self._load_phase_structure_for_range(expected_range)
+            phase_structure, arch_version_key = self._load_phase_structure_for_range(expected_range)
         except MissingDependenciesError as exc:
             raise SchemaValidationError("Preview traceability failed", [str(exc)]) from exc
 
@@ -507,11 +529,123 @@ class GuardedValidatedStore:
         data = self._as_map(document.get("data"))
         traceability = self._as_map(data.get("traceability"))
         derived_from = self._as_string_list(traceability.get("derived_from"))
+        errors: list[str] = []
         if expected_arch not in derived_from:
-            raise SchemaValidationError(
-                "Preview traceability failed",
-                [f"data.traceability.derived_from must include '{expected_arch}'."],
+            errors.append(f"data.traceability.derived_from must include '{expected_arch}'.")
+
+        structure_data = self._as_map(self._as_map(phase_structure).get("data"))
+        structural_elements = self._as_map(structure_data.get("structural_phase_elements"))
+        execution_principles = self._as_map(structure_data.get("execution_principles"))
+        load_intensity = self._as_map(execution_principles.get("load_intensity_handling"))
+        recovery_protection = self._as_map(execution_principles.get("recovery_protection"))
+        allowed_day_roles = set(self._as_string_list(structural_elements.get("allowed_day_roles")))
+        allowed_intensity_domains = set(
+            self._as_string_list(structural_elements.get("allowed_intensity_domains"))
+        )
+        allowed_load_modalities = set(
+            self._as_string_list(structural_elements.get("allowed_load_modalities"))
+        )
+        forbidden_intensity_domains = set(
+            self._as_string_list(load_intensity.get("forbidden_intensity_domains"))
+        )
+        fixed_non_training_days = set(
+            self._as_string_list(recovery_protection.get("fixed_non_training_days"))
+        )
+        max_quality_days_per_week = load_intensity.get("max_quality_days_per_week")
+        quality_cap = (
+            int(max_quality_days_per_week)
+            if isinstance(max_quality_days_per_week, int)
+            else None
+        )
+
+        structure_weeks = []
+        week_skeleton_logic = self._as_map(structure_data.get("week_skeleton_logic"))
+        week_roles = self._as_map(week_skeleton_logic.get("week_roles"))
+        for entry in self._as_list(week_roles.get("week_roles")):
+            if not isinstance(entry, dict):
+                continue
+            week_key = str(entry.get("week") or "").strip()
+            if week_key:
+                structure_weeks.append(week_key)
+        expected_weeks = structure_weeks or self._weeks_in_range(expected_range)
+
+        preview_weeks = []
+        weekly_agenda_preview = self._as_list(data.get("weekly_agenda_preview"))
+        for week_entry in weekly_agenda_preview:
+            if not isinstance(week_entry, dict):
+                continue
+            week_key = str(week_entry.get("week") or "").strip()
+            if week_key:
+                preview_weeks.append(week_key)
+        if expected_weeks and preview_weeks != expected_weeks:
+            errors.append(
+                "weekly_agenda_preview weeks must match stored phase_structure coverage exactly; "
+                f"expected={expected_weeks}, observed={preview_weeks}."
             )
+
+        for week_entry in weekly_agenda_preview:
+            if not isinstance(week_entry, dict):
+                continue
+            week_key = str(week_entry.get("week") or "").strip() or "unknown-week"
+            days = self._as_list(week_entry.get("days"))
+            observed_days = [str(self._as_map(day).get("day_of_week") or "").strip() for day in days]
+            if sorted(observed_days) != sorted(_WEEKDAY_ORDER):
+                errors.append(
+                    f"{week_key} weekly_agenda_preview must include each weekday exactly once; "
+                    f"observed={observed_days}."
+                )
+            quality_days = 0
+            for day in days:
+                day_map = self._as_map(day)
+                day_of_week = str(day_map.get("day_of_week") or "").strip()
+                day_role = str(day_map.get("day_role") or "").strip()
+                intensity_domain = str(day_map.get("intensity_domain") or "").strip()
+                load_modality = str(day_map.get("load_modality") or "").strip()
+                day_label = f"{week_key} {day_of_week or '?'}"
+
+                if allowed_day_roles and day_role not in allowed_day_roles:
+                    errors.append(
+                        f"{day_label} day_role '{day_role}' is outside "
+                        "phase_structure.structural_phase_elements.allowed_day_roles."
+                    )
+                if allowed_intensity_domains and intensity_domain not in allowed_intensity_domains:
+                    errors.append(
+                        f"{day_label} intensity_domain '{intensity_domain}' is outside "
+                        "phase_structure.structural_phase_elements.allowed_intensity_domains."
+                    )
+                if forbidden_intensity_domains and intensity_domain in forbidden_intensity_domains:
+                    errors.append(
+                        f"{day_label} intensity_domain '{intensity_domain}' is forbidden by "
+                        "phase_structure.execution_principles.load_intensity_handling.forbidden_intensity_domains."
+                    )
+                if allowed_load_modalities and load_modality not in allowed_load_modalities:
+                    errors.append(
+                        f"{day_label} load_modality '{load_modality}' is outside "
+                        "phase_structure.structural_phase_elements.allowed_load_modalities."
+                    )
+                if day_role == "QUALITY":
+                    quality_days += 1
+                if day_of_week in fixed_non_training_days:
+                    if day_role not in _NON_TRAINING_DAY_ROLES:
+                        errors.append(
+                            f"{day_label} must remain non-training because it is a fixed_non_training_day."
+                        )
+                    if intensity_domain != "NONE":
+                        errors.append(
+                            f"{day_label} must use intensity_domain 'NONE' because it is a fixed_non_training_day."
+                        )
+                    if load_modality != "NONE":
+                        errors.append(
+                            f"{day_label} must use load_modality 'NONE' because it is a fixed_non_training_day."
+                        )
+            if quality_cap is not None and quality_days > quality_cap:
+                errors.append(
+                    f"{week_key} preview exceeds max_quality_days_per_week "
+                    f"({quality_days} > {quality_cap})."
+                )
+
+        if errors:
+            raise SchemaValidationError("Preview derivation failed", errors)
 
     def _load_latest_optional(self, artifact_type: ArtifactType) -> JsonMap:
         """Return a latest workspace document when it is available and object-shaped."""
@@ -1004,7 +1138,7 @@ class GuardedValidatedStore:
                 self._enforce_phase_structure_constraints(document, season_plan_doc)
             return
         if target == ArtifactType.PHASE_PREVIEW:
-            self._enforce_phase_preview_traceability(document)
+            self._enforce_phase_preview_constraints(document)
 
     def _enforce_week_plan_exportability(self, document: JsonMap) -> JsonMap:
         """Normalize and validate WEEK_PLAN workout definitions before export/store."""

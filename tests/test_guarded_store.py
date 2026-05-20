@@ -409,3 +409,137 @@ def test_phase_guardrails_missing_structured_event_still_fails(tmp_path):
         store._enforce_phase_guardrails_constraints(document, season_plan)
 
     assert any("planned_event_windows" in err for err in exc.value.errors)
+
+
+def test_phase_preview_constraints_match_phase_structure(tmp_path):
+    store = _store(tmp_path)
+    document = {
+        "meta": {"iso_week_range": "2026-21--2026-22"},
+        "data": {
+            "traceability": {
+                "derived_from": ["phase_structure_2026-21--2026-22__20260520_090000.json"],
+                "conflict_resolution": ["Escalate conflicts."],
+            },
+            "weekly_agenda_preview": [
+                {
+                    "week": "2026-21",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest"},
+                        {"day_of_week": "Tue", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady"},
+                        {"day_of_week": "Wed", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE", "notes": "Focused work"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest"},
+                        {"day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Long ride"},
+                        {"day_of_week": "Sun", "day_role": "RECOVERY", "intensity_domain": "RECOVERY", "load_modality": "NONE", "notes": "Easy"},
+                    ],
+                },
+                {
+                    "week": "2026-22",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest"},
+                        {"day_of_week": "Tue", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady"},
+                        {"day_of_week": "Wed", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "load_modality": "NONE", "notes": "Focused work"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest"},
+                        {"day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Long ride"},
+                        {"day_of_week": "Sun", "day_role": "RECOVERY", "intensity_domain": "RECOVERY", "load_modality": "NONE", "notes": "Easy"},
+                    ],
+                },
+            ],
+        },
+    }
+
+    store._load_phase_structure_for_range = lambda _expected: (
+        {
+            "data": {
+                "structural_phase_elements": {
+                    "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                    "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                    "allowed_load_modalities": ["NONE"],
+                },
+                "execution_principles": {
+                    "load_intensity_handling": {
+                        "max_quality_days_per_week": 1,
+                        "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"],
+                    },
+                    "recovery_protection": {
+                        "fixed_non_training_days": ["Mon", "Fri"],
+                    },
+                },
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [
+                            {"week": "2026-21", "role": "LOAD_1"},
+                            {"week": "2026-22", "role": "LOAD_2"},
+                        ]
+                    }
+                },
+            }
+        },
+        "2026-21--2026-22__20260520_090000",
+    )
+
+    store._enforce_phase_preview_constraints(document)
+
+
+def test_phase_preview_rejects_days_outside_structure_authority(tmp_path):
+    store = _store(tmp_path)
+    document = {
+        "meta": {"iso_week_range": "2026-21--2026-21"},
+        "data": {
+            "traceability": {
+                "derived_from": ["phase_structure_2026-21--2026-21__20260520_090000.json"],
+                "conflict_resolution": ["Escalate conflicts."],
+            },
+            "weekly_agenda_preview": [
+                {
+                    "week": "2026-21",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE", "notes": "Wrong fixed day"},
+                        {"day_of_week": "Tue", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady"},
+                        {"day_of_week": "Wed", "day_role": "QUALITY", "intensity_domain": "VO2MAX", "load_modality": "NONE", "notes": "Forbidden"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Steady"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE", "notes": "Fixed rest"},
+                        {"day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE", "notes": "Long ride"},
+                        {"day_of_week": "Sun", "day_role": "RECOVERY", "intensity_domain": "RECOVERY", "load_modality": "NONE", "notes": "Easy"},
+                    ],
+                }
+            ],
+        },
+    }
+
+    store._load_phase_structure_for_range = lambda _expected: (
+        {
+            "data": {
+                "structural_phase_elements": {
+                    "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                    "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO"],
+                    "allowed_load_modalities": ["NONE"],
+                },
+                "execution_principles": {
+                    "load_intensity_handling": {
+                        "max_quality_days_per_week": 1,
+                        "forbidden_intensity_domains": ["VO2MAX"],
+                    },
+                    "recovery_protection": {
+                        "fixed_non_training_days": ["Mon", "Fri"],
+                    },
+                },
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [
+                            {"week": "2026-21", "role": "LOAD_1"},
+                        ]
+                    }
+                },
+            }
+        },
+        "2026-21--2026-21__20260520_090000",
+    )
+
+    with pytest.raises(SchemaValidationError) as exc:
+        store._enforce_phase_preview_constraints(document)
+
+    assert any("fixed_non_training_day" in err for err in exc.value.errors)
+    assert any("VO2MAX" in err for err in exc.value.errors)
+    assert any("max_quality_days_per_week" in err for err in exc.value.errors)
