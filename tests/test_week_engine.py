@@ -67,7 +67,10 @@ def _seed_week_workspace(
     phase_structure = {
         "meta": {"artifact_type": "PHASE_STRUCTURE", "schema_id": "PhaseStructureInterface", "iso_week_range": "2026-21--2026-23"},
         "data": {
-            "execution_principles": {"phase_role": "Base"},
+            "execution_principles": {
+                "phase_role": "Base",
+                "load_intensity_handling": {"load_modality_constraints": ["NONE"]},
+            },
             "upstream_intent": {"phase_intent": phase_intent},
             "week_skeleton_logic": {
                 "week_roles": {
@@ -79,6 +82,25 @@ def _seed_week_workspace(
                 },
                 "mandatory_elements": {"recovery_opportunities_min": 2, "endurance_anchor_required": True},
             },
+        },
+    }
+    phase_preview = {
+        "meta": {"artifact_type": "PHASE_PREVIEW", "schema_id": "PhasePreviewInterface", "iso_week_range": "2026-21--2026-23"},
+        "data": {
+            "weekly_agenda_preview": [
+                {
+                    "week": "2026-21",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"},
+                        {"day_of_week": "Tue", "day_role": "QUALITY", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Wed", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Thu", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"},
+                        {"day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "SWEET_SPOT", "load_modality": "NONE"},
+                    ],
+                }
+            ]
         },
     }
     availability = {
@@ -114,6 +136,7 @@ def _seed_week_workspace(
     for artifact_type, version_key, payload in (
         (ArtifactType.PHASE_GUARDRAILS, "2026-21--2026-23", phase_guardrails),
         (ArtifactType.PHASE_STRUCTURE, "2026-21--2026-23", phase_structure),
+        (ArtifactType.PHASE_PREVIEW, "2026-21--2026-23", phase_preview),
         (ArtifactType.AVAILABILITY, "20260316_000000", availability),
         (ArtifactType.ZONE_MODEL, "20260520_000000", zone_model),
         (ArtifactType.ATHLETE_PROFILE, "20260315_000000", athlete_profile),
@@ -316,3 +339,31 @@ def test_execute_week_engine_counts_quality_cost_and_downshifts_sat_endurance(tm
     assert workout_ids["2026-21-TUE-QUALITY"]["progression_state"]["quality_cost"] == "true_quality"
     assert workout_ids["2026-21-THU-QUALITY"]["progression_state"]["quality_cost"] == "true_quality"
     assert workout_ids["2026-21-SAT-END"]["protocol_variant"] == "ENDURANCE_LONG_STEADY"
+
+
+def test_execute_week_engine_shortened_reentry_damps_second_tempo_and_warns_on_modality_mismatch(tmp_path: Path) -> None:
+    _seed_week_workspace(tmp_path)
+    store = LocalArtifactStore(root=tmp_path)
+    _seed_previous_week_plan(store)
+
+    result = execute_week_engine(
+        repo_root=Path.cwd(),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=tmp_path,
+        athlete_id="test_athlete",
+        run_id="reentry_shape_run",
+        target_year=2026,
+        target_week=21,
+        preview_only=True,
+    )
+
+    assert result["ok"] is True
+    warnings = result["details"]["planning_bundle"]["warnings"]
+    assert any("load_modality_constraint_mismatch" in item for item in warnings)
+    assert any("phase_preview_alignment" in item for item in warnings)
+    workouts = {item["workout_id"]: item for item in result["document"]["data"]["workouts"]}
+    tue = workouts["2026-21-TUE-QUALITY"]["workout_text"]
+    thu = workouts["2026-21-THU-QUALITY"]["workout_text"]
+    assert "82%-88%" in tue
+    assert "80%-85%" in thu
+    assert tue != thu

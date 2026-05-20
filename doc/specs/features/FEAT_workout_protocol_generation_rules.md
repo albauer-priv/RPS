@@ -489,6 +489,17 @@ Update these docs as part of implementation:
   * maximum two true quality stimuli
 * When durability-specific volume or late-finish load is high:
   * downshift protocol intensity density before stacking more quality
+* In `shortened_*` weeks, quality-day selection should avoid exact duplicate quality protocol variants when a legal alternative exists.
+* In `shortened_re_entry`, if the second quality day still resolves to repeated `TEMPO_CLASSIC`, it must be damped to a lighter stabilization dose instead of repeating the same upper-tempo prescription unchanged.
+* `PHASE_PREVIEW` remains non-binding, but drift from its week-shape hints should surface as warnings.
+
+## Modality Consistency
+
+* Effective allowed load modalities for week planning are the strictest consistent set available.
+* If `PHASE_GUARDRAILS` and `PHASE_STRUCTURE` disagree on allowed load modalities:
+  * use their intersection if non-empty
+  * emit a warning
+  * if the intersection is empty, fall back to `PHASE_GUARDRAILS` and emit a stronger warning
 
 ---
 

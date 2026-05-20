@@ -241,6 +241,35 @@ Default logic:
 * long Z2 remains the base
 * as durability load rises, intensity density should fall
 
+## Re-entry weeks are shaped differently
+
+In a shortened re-entry week, the system should not simply repeat the same upper-tempo session twice just because it is legal.
+
+If the week still lands on two tempo quality days, the second one should usually be lighter or more stabilizing, for example:
+
+* less total Tempo TiZ
+* a lower Tempo target range
+* a different but still legal quality flavor when the phase rules allow it
+
+That is the difference between:
+
+* a week that is merely valid
+* and a week that actually behaves like a re-entry week
+
+## Preview hints vs binding rules
+
+The phase preview gives soft week-shape hints. The engine can use those hints and warn when it drifts away from them.
+
+But the preview is not the binding contract.
+
+Binding rules still come first from:
+
+* phase guardrails
+* phase structure
+* allowed domains
+* quality-density limits
+* fixed recovery days
+
 ## Plain-language rules
 
 * Progress with one main lever at a time.

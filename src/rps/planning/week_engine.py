@@ -83,6 +83,7 @@ def execute_week_engine(
     phase_range = phase_info.phase_range
     phase_guardrails = _load_version_required(store, athlete_id, ArtifactType.PHASE_GUARDRAILS, phase_range.range_key)
     phase_structure = _load_version_required(store, athlete_id, ArtifactType.PHASE_STRUCTURE, phase_range.range_key)
+    phase_preview = _load_version_required(store, athlete_id, ArtifactType.PHASE_PREVIEW, phase_range.range_key)
     availability = _load_latest_optional(store, athlete_id, ArtifactType.AVAILABILITY)
     logistics = _load_latest_optional(store, athlete_id, ArtifactType.LOGISTICS)
     planning_events = _load_latest_optional(store, athlete_id, ArtifactType.PLANNING_EVENTS)
@@ -117,6 +118,11 @@ def execute_week_engine(
         phase_structure_payload=phase_structure,
         load_capacity_context=load_capacity.payload,
     )
+    effective_modalities, week_context_warnings = _resolve_effective_allowed_modalities(
+        week_calendar_context=week_calendar,
+        phase_structure_payload=phase_structure,
+    )
+    week_calendar["allowed_load_modalities"] = effective_modalities
     load_method = build_workout_load_method_context(
         athlete_profile_payload=athlete_profile or {},
         zone_model_payload=zone_model or {},
@@ -130,8 +136,10 @@ def execute_week_engine(
         load_method_context=load_method,
         protocol_config=protocol_config,
         progression_history=progression_history,
+        phase_preview_payload=phase_preview,
         phase_intent=str(week_calendar.get("phase_intent") or phase_info.phase_intent or ""),
         adjustment=adjustment,
+        initial_warnings=week_context_warnings,
     )
     review_decision = _review_bundle(planning_bundle=planning_bundle, week_calendar_context=week_calendar)
     document = build_week_plan_document_from_bundle(
@@ -245,18 +253,21 @@ def _build_week_plan_bundle(
     load_method_context: JsonMap,
     protocol_config: WeekWorkoutProtocolConfig,
     progression_history: list[JsonMap],
+    phase_preview_payload: JsonMap,
     phase_intent: str,
     adjustment: WeekAdjustmentIntent,
+    initial_warnings: list[str],
 ) -> WeekPlanBundleModel:
     target_band = _active_band(week_calendar_context)
     target_load = int(round(target_band["min"] + (target_band["max"] - target_band["min"]) * adjustment.target_load_fraction))
     hourly_loads = _hourly_loads(load_method_context)
     day_blueprints = _allocate_day_blueprints(week_calendar_context=week_calendar_context)
-    workout_blueprints = _select_workout_blueprints(
+    workout_blueprints, selection_warnings = _select_workout_blueprints(
         day_blueprints=day_blueprints,
         protocol_config=protocol_config,
         progression_history=progression_history,
         week_calendar_context=week_calendar_context,
+        phase_preview_payload=phase_preview_payload,
         phase_intent=phase_intent,
         adjustment=adjustment,
     )
@@ -265,6 +276,15 @@ def _build_week_plan_bundle(
         workout_blueprints=workout_blueprints,
         weekly_target_kj=target_load,
         hourly_loads=hourly_loads,
+    )
+    shaping_warnings = _apply_shortened_reentry_quality_shaping(
+        workout_blueprints=workout_blueprints,
+        phase_intent=phase_intent,
+    )
+    preview_warnings = _collect_phase_preview_alignment_warnings(
+        workout_blueprints=workout_blueprints,
+        phase_preview_payload=phase_preview_payload,
+        target_week=str(week_calendar_context.get("target_iso_week") or ""),
     )
     context_summary = WeekContextAssessmentModel(
         summary=f"Deterministic week planning for {week_calendar_context.get('target_iso_week')}.",
@@ -289,6 +309,7 @@ def _build_week_plan_bundle(
         revision_summary=([f"Applied bounded adjustment intent: {adjustment.message}"] if adjustment.message else []),
         workout_authoring_summary=["Workout protocols chosen from configurable registry and rendered deterministically."],
         candidate_document_summary=["Week bundle generated without Week CrewAI planning/review/writer stages."],
+        warnings=[*initial_warnings, *selection_warnings, *shaping_warnings, *preview_warnings],
     )
 
 
@@ -386,20 +407,28 @@ def _select_workout_blueprints(
     protocol_config: WeekWorkoutProtocolConfig,
     progression_history: list[JsonMap],
     week_calendar_context: JsonMap,
+    phase_preview_payload: JsonMap,
     phase_intent: str,
     adjustment: WeekAdjustmentIntent,
-) -> list[WeekWorkoutBlueprintModel]:
+) -> tuple[list[WeekWorkoutBlueprintModel], list[str]]:
     allowed_domains = {str(item).strip().upper() for item in week_calendar_context.get("allowed_intensity_domains") or []}
     allowed_modalities = {str(item).strip().upper() for item in week_calendar_context.get("allowed_load_modalities") or []}
     week_role = str(week_calendar_context.get("phase_week_role") or "").strip().upper()
     true_quality_cap = int(week_calendar_context.get("quality_day_cap") or 0)
     true_quality_used = 0
     workout_blueprints: list[WeekWorkoutBlueprintModel] = []
+    warnings: list[str] = []
     quality_index = 0
+    selected_quality_variants: list[str] = []
+    preview_hints = _phase_preview_hints(
+        phase_preview_payload=phase_preview_payload,
+        target_week=str(week_calendar_context.get("target_iso_week") or ""),
+    )
     for day in day_blueprints:
         if day.fixed_rest_day or not day.workout_id:
             continue
         is_anchor = day.day == "Sat" or (day.day == "Sun" and not adjustment.preserve_sat_anchor)
+        preview_hint = preview_hints.get(day.day)
         protocol = _pick_protocol(
             protocol_config=protocol_config,
             day_role=day.day_role,
@@ -410,9 +439,12 @@ def _select_workout_blueprints(
             is_anchor=is_anchor,
             forced_quality_family=adjustment.forced_quality_family if day.day_role == "QUALITY" and quality_index == 0 else None,
             remaining_true_quality_budget=max(true_quality_cap - true_quality_used, 0),
+            preferred_domain=str(preview_hint.get("intensity_domain") or "").strip().upper() or None,
+            avoid_protocol_variants=set(selected_quality_variants) if day.day_role == "QUALITY" and quality_index > 0 and phase_intent.startswith("shortened_") else set(),
         )
         if day.day_role == "QUALITY":
             quality_index += 1
+            selected_quality_variants.append(protocol.protocol_variant)
         if str(protocol.parameters.get("quality_cost") or "endurance_only").strip().lower() == "true_quality":
             true_quality_used += 1
         previous_signature = match_progression_signature(
@@ -475,7 +507,9 @@ def _select_workout_blueprints(
                 warnings=[],
             )
         )
-    return workout_blueprints
+    if selected_quality_variants.count("TEMPO_CLASSIC") > 1 and phase_intent == "shortened_re_entry":
+        warnings.append("week_quality_monotony: shortened_re_entry resolved to repeated TEMPO_CLASSIC; second quality session will be damped.")
+    return workout_blueprints, warnings
 
 
 def _reconcile_loads(
@@ -577,6 +611,8 @@ def _pick_protocol(
     is_anchor: bool,
     forced_quality_family: str | None,
     remaining_true_quality_budget: int,
+    preferred_domain: str | None,
+    avoid_protocol_variants: set[str],
 ) -> WeekWorkoutProtocol:
     if forced_quality_family:
         forced = protocol_config.protocols.get(forced_quality_family.upper())
@@ -593,6 +629,7 @@ def _pick_protocol(
     role = day_role.upper()
     candidates = list(protocol_config.by_phase_intent.get(phase_intent.lower(), {}).get(role, []))
     candidates.extend(protocol_config.by_day_role.get(role, []))
+    legal_candidates: list[WeekWorkoutProtocol] = []
     seen: set[str] = set()
     for protocol_id in candidates:
         if protocol_id in seen:
@@ -608,7 +645,17 @@ def _pick_protocol(
             allowed_modalities=allowed_modalities,
             is_anchor=is_anchor,
         ) and _quality_budget_allows(protocol=protocol, remaining_true_quality_budget=remaining_true_quality_budget):
-            return protocol
+            legal_candidates.append(protocol)
+    if preferred_domain:
+        preferred_candidates = [item for item in legal_candidates if item.intensity_domain == preferred_domain]
+        if preferred_candidates:
+            legal_candidates = preferred_candidates
+    if avoid_protocol_variants:
+        non_duplicate_candidates = [item for item in legal_candidates if item.protocol_variant not in avoid_protocol_variants]
+        if non_duplicate_candidates:
+            legal_candidates = non_duplicate_candidates
+    if legal_candidates:
+        return legal_candidates[0]
     raise ValueError(f"No legal workout protocol available for day_role={day_role}, phase_intent={phase_intent}, week_role={week_role}.")
 
 
@@ -617,6 +664,92 @@ def _quality_budget_allows(*, protocol: WeekWorkoutProtocol, remaining_true_qual
     if quality_cost != "true_quality":
         return True
     return remaining_true_quality_budget > 0
+
+
+def _resolve_effective_allowed_modalities(*, week_calendar_context: JsonMap, phase_structure_payload: JsonMap) -> tuple[list[str], list[str]]:
+    guardrails_modalities = [str(item).strip().upper() for item in week_calendar_context.get("allowed_load_modalities") or [] if str(item).strip()]
+    execution = _as_map(_as_map(_as_map(phase_structure_payload.get("data")).get("execution_principles")).get("load_intensity_handling"))
+    structure_modalities = [str(item).strip().upper() for item in execution.get("load_modality_constraints") or [] if str(item).strip()]
+    warnings: list[str] = []
+    if not guardrails_modalities:
+        return structure_modalities, warnings
+    if not structure_modalities:
+        return guardrails_modalities, warnings
+    effective = [item for item in guardrails_modalities if item in set(structure_modalities)]
+    if effective:
+        if set(effective) != set(guardrails_modalities) or set(effective) != set(structure_modalities):
+            warnings.append(
+                "load_modality_constraint_mismatch: using intersection of PHASE_GUARDRAILS and PHASE_STRUCTURE modalities "
+                f"({', '.join(effective)})."
+            )
+        return effective, warnings
+    warnings.append("load_modality_constraint_mismatch: empty intersection between PHASE_GUARDRAILS and PHASE_STRUCTURE; falling back to PHASE_GUARDRAILS modalities.")
+    return guardrails_modalities, warnings
+
+
+def _phase_preview_hints(*, phase_preview_payload: JsonMap, target_week: str) -> dict[str, JsonMap]:
+    data = _as_map(phase_preview_payload.get("data"))
+    for week in data.get("weekly_agenda_preview") or []:
+        week_map = _as_map(week)
+        if str(week_map.get("week") or "").strip() != target_week:
+            continue
+        return {
+            str(_as_map(item).get("day_of_week") or "").strip(): _as_map(item)
+            for item in week_map.get("days") or []
+            if str(_as_map(item).get("day_of_week") or "").strip()
+        }
+    return {}
+
+
+def _apply_shortened_reentry_quality_shaping(*, workout_blueprints: list[WeekWorkoutBlueprintModel], phase_intent: str) -> list[str]:
+    if phase_intent != "shortened_re_entry":
+        return []
+    warnings: list[str] = []
+    quality_workouts = [item for item in workout_blueprints if item.day_role == "QUALITY"]
+    first_tempo_seen = False
+    for workout in quality_workouts:
+        if str(workout.protocol_variant or "").upper() != "TEMPO_CLASSIC":
+            continue
+        if not first_tempo_seen:
+            first_tempo_seen = True
+            continue
+        params = dict(workout.progression_parameters)
+        params["work_target"] = "80%-85%"
+        object.__setattr__(workout, "progression_parameters", params)
+        if workout.primary_tiz_target_min is not None:
+            object.__setattr__(workout, "primary_tiz_target_min", min(int(workout.primary_tiz_target_min), 45))
+        object.__setattr__(
+            workout,
+            "selection_reason",
+            f"{workout.selection_reason or ''} Re-entry shaping damped repeated Tempo Classic quality stimulus.",
+        )
+        workout.warnings.append("reentry_shaping: repeated Tempo Classic quality day damped to a lighter stabilization dose.")
+        warnings.append(f"reentry_shaping:{workout.workout_id}: repeated Tempo Classic quality day damped.")
+    return warnings
+
+
+def _collect_phase_preview_alignment_warnings(
+    *,
+    workout_blueprints: list[WeekWorkoutBlueprintModel],
+    phase_preview_payload: JsonMap,
+    target_week: str,
+) -> list[str]:
+    preview_hints = _phase_preview_hints(phase_preview_payload=phase_preview_payload, target_week=target_week)
+    warnings: list[str] = []
+    for workout in workout_blueprints:
+        day = workout.workout_id.split("-")[2].title()[:3] if "-" in workout.workout_id else ""
+        hint = preview_hints.get(day)
+        if not hint:
+            continue
+        hinted_domain = str(hint.get("intensity_domain") or "").strip().upper()
+        hinted_modality = str(hint.get("load_modality") or "").strip().upper()
+        actual_domain = str(workout.intensity_domain or "").strip().upper()
+        actual_modality = str(workout.load_modality or "").strip().upper()
+        if hinted_domain and hinted_domain not in {"NONE", "RECOVERY"} and hinted_domain != actual_domain:
+            warnings.append(f"phase_preview_alignment:{workout.workout_id}: preview suggested domain {hinted_domain}, generated {actual_domain}.")
+        if hinted_modality and hinted_modality not in {"", "NONE"} and hinted_modality != actual_modality:
+            warnings.append(f"phase_preview_alignment:{workout.workout_id}: preview suggested modality {hinted_modality}, generated {actual_modality}.")
+    return warnings
 
 
 def _base_minutes(day: WeekDayBlueprintModel) -> int:

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.15.0] - 2026-05-20
 
 ### Added
+- Added explicit week-shape guidance and documentation for shortened re-entry weeks: the canonical workout-generation docs now describe week-level protocol diversification, softer second-quality handling in re-entry weeks, preview-alignment warnings, and stricter effective modality handling when phase artefacts disagree on `K3`.
 - Added canonical workout-generation documentation under `doc/`: a normative feature spec now defines supported workout domains/protocol classes, TiZ semantics, progression order, caps, prior-week progression reuse, Z2 add-on rules, and week-density rules, and a matching athlete-/coach-readable overview explains the same logic in plain language.
 - Added direct config-driven solver semantics for workout progression caps and quality cost: protocol definitions now encode TiZ counting mode, standard/hard caps, progression priorities, redistribution thresholds, practical VO2 rep ceilings, and late-finish caps for durability sessions.
 - Added a protocol-driven deterministic week workout engine: week workout generation now selects configured workout protocols, solves TiZ/set/rep structure plus optional Z2 add-ons, and renders canonical Intervals subset text from protocol metadata instead of coarse family templates.
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed contract-valid but overly monotonous shortened re-entry weeks: the week engine now avoids duplicate quality protocol variants when possible, dampens a repeated second `TEMPO_CLASSIC` quality day instead of repeating the same upper-tempo dose unchanged, and emits warnings when `PHASE_PREVIEW` or `PHASE_STRUCTURE` disagree with the generated week shape.
 - Fixed week workout progression from being only loosely heuristic: classic intervals now progress by documented order (`4x10 -> 4x12 -> 4x15 -> 5x12`), VO2 microbursts progress by reps before sets using on-time semantics, K3 and durability finish sessions respect explicit caps, and prior planned week state is reused under a stricter documented contract.
 - Fixed week protocol selection so true quality cost is enforced across the whole week: `K3`, tempo, Sweet Spot, threshold, VO2, and late-finish durability protocols now consume quality budget, preventing a third hidden quality stimulus from slipping into endurance days when the weekly cap is already full.
 - Fixed Week runtime dependence on CrewAI synthesis for main planning and scoped week replan/preview paths: `CREATE_WEEK_PLAN` now runs through the deterministic Week engine, bounded recompute shares the same family policy and rendering path, and generated weeks no longer depend on late Week Crew review loops to reach a valid artifact.
