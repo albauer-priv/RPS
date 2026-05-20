@@ -46,6 +46,14 @@ SHORTENED_ROLES = {
     "SHORTENED_MINI_RESET",
     "SHORTENED_RELOAD",
 }
+RESET_WEEK_ROLES = {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"}
+RECOVERY_SENSITIVE_PHASE_INTENTS = {
+    "recovery_reset",
+    "shortened_re_entry",
+    "shortened_consolidation",
+    "transition_consolidation",
+    "a_event_peak_taper",
+}
 
 
 class LoadBandError(ValueError):
@@ -394,6 +402,51 @@ def _role_multiplier_range(*, week_role: str, phase_role: str, scenario_cadence:
     return build_roles.get(role, (0.95, 1.05))
 
 
+def _phase_intent_by_week(
+    *,
+    season_plan_payload: JsonMap | None,
+    weeks: list[IsoWeek],
+) -> dict[str, str]:
+    """Resolve canonical phase intent for each covered week from the active season plan."""
+
+    phases = _as_list(_as_map((season_plan_payload or {}).get("data")).get("phases"))
+    if not phases or not weeks:
+        return {}
+    result: dict[str, str] = {}
+    for phase in phases:
+        phase_map = _as_map(phase)
+        phase_range = parse_iso_week_range(phase_map.get("iso_week_range"))
+        if phase_range is None:
+            continue
+        phase_intent = normalize_phase_intent(phase_map.get("phase_intent"))
+        if not phase_intent:
+            continue
+        for week in weeks:
+            if range_contains(phase_range, week):
+                result[_week_key(week)] = phase_intent
+    return result
+
+
+def _s5_fallback_policy(*, week_role: str, phase_intent: str) -> JsonMap:
+    """Return deterministic S5 fallback behavior from normalized week/phase semantics."""
+
+    normalized_role = str(week_role or "").strip().upper()
+    normalized_intent = normalize_phase_intent(phase_intent)
+    reset_like_role = normalized_role in RESET_WEEK_ROLES
+    shortened_recovery_role = normalized_role in SHORTENED_ROLES and normalized_intent in RECOVERY_SENSITIVE_PHASE_INTENTS
+    protect_role_progression = reset_like_role or shortened_recovery_role
+    kpi_lower_bound_mode = "upper_only" if protect_role_progression else "enforce"
+    return {
+        "week_role": normalized_role,
+        "phase_intent": normalized_intent,
+        "reset_like_week_role": reset_like_role,
+        "recovery_sensitive_phase_intent": normalized_intent in RECOVERY_SENSITIVE_PHASE_INTENTS,
+        "protect_role_progression": protect_role_progression,
+        "kpi_lower_bound_mode": kpi_lower_bound_mode,
+        "allow_progression_overlay_drop": not protect_role_progression,
+    }
+
+
 def selected_kpi_rate_band_from_selection(selection_payload: JsonMap | None) -> JsonMap | None:
     """Return selected KPI moving-time-rate guidance from scenario selection.
 
@@ -421,9 +474,12 @@ def derive_phase_s5_band(
     kpi_escalation_bands: dict[str, NumberBand] | None = None,
     kpi_escalation_order: list[str] | None = None,
     kpi_utilization_override_band: NumberBand | None = None,
+    fallback_policy: JsonMap | None = None,
 ) -> S5BandResult:
     """Derive the final S5 phase band and trace fallback behavior."""
 
+    policy = _as_map(fallback_policy)
+    allow_progression_overlay_drop = bool(policy.get("allow_progression_overlay_drop", True))
     active_kpi_band = kpi_band or NumberBand(0.0, inf)
     base = _intersect_bands(season_band, feasible_band, active_kpi_band)
     with_progression = _intersect_bands(base, progression_band) if progression_band else base
@@ -433,11 +489,12 @@ def derive_phase_s5_band(
         "kpi_band": None if kpi_band is None else kpi_band.as_dict(),
         "progression_band": None if progression_band is None else progression_band.as_dict(),
         "kpi_rate_band_selector_used": kpi_selector_used,
+        "s5_fallback_policy": policy or None,
     }
     if _valid_band(with_progression):
         return _s5_result(with_progression, trace, 0, "normal_intersection")
 
-    if progression_band is not None and _valid_band(base):
+    if progression_band is not None and _valid_band(base) and allow_progression_overlay_drop:
         return _s5_result(base, trace, 1, "dropped_progression_overlay")
 
     escalated = _try_kpi_escalation(
@@ -612,6 +669,10 @@ def build_load_capacity_context(
         season_plan_payload=season_plan_payload or {},
     )
     weeks = _weeks_for_context(target_week=target_week, phase_range=phase_range)
+    phase_intent_by_week = _phase_intent_by_week(
+        season_plan_payload=season_plan_payload or {},
+        weeks=weeks,
+    )
     if season_band is not None:
         role_baseline_load_kj = baseline_load_kj or previous_load_kj
         if role_baseline_load_kj is None and (week_role_by_week or phase_role_by_week):
@@ -653,6 +714,11 @@ def build_load_capacity_context(
             week_key = _week_key(week)
             week_role = str((week_role_by_week or {}).get(week_key) or "").strip()
             phase_role = str((phase_role_by_week or {}).get(week_key) or "").strip()
+            phase_intent = str(phase_intent_by_week.get(week_key) or "").strip()
+            fallback_policy = _s5_fallback_policy(
+                week_role=week_role,
+                phase_intent=phase_intent,
+            )
             role_progression_band = calculate_role_progression_band(
                 baseline_load_kj=role_baseline_load_kj,
                 week_role=week_role,
@@ -666,6 +732,15 @@ def build_load_capacity_context(
                 result["s5_bands"].append({"week": week_key, "error": kpi_error})
                 continue
             try:
+                policy_kpi_band = kpi_band
+                policy_kpi_escalation_bands = kpi_escalation_bands
+                policy_kpi_escalation_order = kpi_escalation_order
+                policy_kpi_utilization_override_band = kpi_utilization_override_band
+                if fallback_policy.get("kpi_lower_bound_mode") == "upper_only" and kpi_band is not None:
+                    policy_kpi_band = NumberBand(0.0, kpi_band.max)
+                    policy_kpi_escalation_bands = {}
+                    policy_kpi_escalation_order = []
+                    policy_kpi_utilization_override_band = None
                 feasible = calculate_availability_feasible_band(
                     availability_hours=typical_hours,
                     ftp_watts=ftp,
@@ -676,12 +751,13 @@ def build_load_capacity_context(
                 s5 = derive_phase_s5_band(
                     season_band=season_band,
                     feasible_band=feasible,
-                    kpi_band=kpi_band,
+                    kpi_band=policy_kpi_band,
                     progression_band=progression_band,
                     kpi_selector_used=str(kpi_rate_band.get("segment")) if isinstance(kpi_rate_band, dict) else None,
-                    kpi_escalation_bands=kpi_escalation_bands,
-                    kpi_escalation_order=kpi_escalation_order,
-                    kpi_utilization_override_band=kpi_utilization_override_band,
+                    kpi_escalation_bands=policy_kpi_escalation_bands,
+                    kpi_escalation_order=policy_kpi_escalation_order,
+                    kpi_utilization_override_band=policy_kpi_utilization_override_band,
+                    fallback_policy=fallback_policy,
                 )
             except LoadBandError as exc:
                 result["s5_bands"].append({"week": week_key, "error": str(exc)})
@@ -692,6 +768,7 @@ def build_load_capacity_context(
                     {
                         "week_role": week_role,
                         "phase_role": phase_role or None,
+                        "phase_intent": phase_intent or None,
                         "scenario_cadence": scenario_cadence,
                         "baseline_load_kj": role_baseline_load_kj,
                         "role_progression_band": (
