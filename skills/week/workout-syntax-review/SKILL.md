@@ -37,6 +37,7 @@ Checklist:
 16. No advanced EBNF-only tokens leak into the project subset unless explicitly permitted by the skill rules.
 17. Workout family and target placement remain coherent with inherited `phase_intent`, not only with day role and domain legality.
 18. The candidate would pass the same strict export subset enforced by the runtime validator; prose serialization is a blocker, not a warning.
+19. Canonical declared workout family/domain and final workout text remain mutually consistent; if they disagree, block approval.
 
 Canonical family checks:
 - `Recovery`: no hidden quality or activation
@@ -69,6 +70,8 @@ Blocking syntax cases:
 - multiple progression dimensions are advanced at once in the claimed workout evolution
 - the workout is syntactically valid but semantically wrong for inherited `phase_intent`
 - a recovery-like workout uses `RECOVERY` when the active phase guardrails forbid `RECOVERY`
+- a threshold-like workout uses `THRESHOLD` when the active phase guardrails forbid `THRESHOLD`
+- the candidate bundle declares a legal family/domain but the actual workout text still signals a forbidden family/domain
 
 Approval rule:
 - do not approve a candidate week bundle that would fail `collect_week_plan_export_issues(...)`

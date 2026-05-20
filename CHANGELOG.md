@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added week domain failure hardening across internal week bundles, review preflight, and writer guardrails: internal workout blueprints now require canonical legality fields, illegal phase-forbidden domains are blocked before writer execution, and writer legality compares final workout content against the approved planning bundle instead of relying on text heuristics alone.
 - Added explicit week-band authority alignment across rendered deterministic week context, week skills, and week review task descriptions so agents treat `active_weekly_kj_band` as binding and `active_s5_band` as fallback/background only.
 - Added a completed runtime migration for week workout authoring/review method sources: the operative rules from the legacy workout export contract, Intervals grammar, project subset validation, and workout policy now live directly in the active week workout skills plus local references.
 - Added a normalized season/phase semantic backbone with `scenario_guidance.season_archetype` (`none` / `ceiling_first_durability`) plus schema-backed `phase_intent` propagation across Season Plan, Phase Guardrails, Phase Structure, Phase Preview, deterministic contract context, renderer context, and guarded-store validation.

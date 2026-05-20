@@ -59,7 +59,7 @@ agents:
     goal: Turn allowed week intent into valid workout structure and syntax without changing the governing role or load intent.
     runtime_status: foundation_only
     output_mode: planning_draft
-    prompt_agent: week_revision_specialist
+    prompt_agent: week_workout_authoring_specialist
   week_consistency_auditor:
     display_name: Week Consistency Auditor
     role: Week consistency reviewer

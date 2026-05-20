@@ -61,6 +61,7 @@ from rps.crewai_runtime.guardrails import (
     season_scenarios_profile_quality,
     week_active_corridor_match,
     week_agenda_shape_and_calendar_check,
+    week_bundle_domain_legality_check,
     week_corridor_and_capacity_check,
     week_daily_availability_check,
     week_phase_role_alignment_check,
@@ -1470,6 +1471,13 @@ def test_review_managers_use_dedicated_review_prompts() -> None:
     assert agent_blueprints["des_review_manager"].config["prompt_agent"] == "des_review_manager"
 
 
+def test_week_workout_authoring_specialist_uses_dedicated_prompt() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    agent_blueprints = build_agent_blueprints(bundle)
+
+    assert agent_blueprints["week_workout_authoring_specialist"].config["prompt_agent"] == "week_workout_authoring_specialist"
+
+
 def test_phase_week_blueprint_model_accepts_role_aware_s5_band() -> None:
     model = PhaseWeekBlueprintModel(
         week="2026-26",
@@ -2132,6 +2140,113 @@ def test_week_phase_role_alignment_reports_forbidden_domain_workout_ids() -> Non
 
     assert failed is False
     assert "RECOVERY (REC-1)" in message
+
+
+def test_week_bundle_domain_legality_check_rejects_forbidden_workout_domains() -> None:
+    bundle = {
+        "context_summary": {},
+        "constraint_summary": [],
+        "load_target_summary": [],
+        "revision_summary": [],
+        "day_blueprints": [
+            {"day": day, "date": date_value, "day_role": "REST" if day in {"Mon", "Fri"} else "ENDURANCE"}
+            for day, date_value in [
+                ("Mon", "2026-05-18"),
+                ("Tue", "2026-05-19"),
+                ("Wed", "2026-05-20"),
+                ("Thu", "2026-05-21"),
+                ("Fri", "2026-05-22"),
+                ("Sat", "2026-05-23"),
+                ("Sun", "2026-05-24"),
+            ]
+        ],
+        "workout_blueprints": [
+            {
+                "workout_id": "REC-1",
+                "date": "2026-05-19",
+                "day_role": "ENDURANCE",
+                "intensity_domain": "RECOVERY",
+                "workout_family": "RECOVERY",
+                "phase_legality_status": "illegal",
+                "planned_duration_minutes": 60,
+                "planned_kj": 500,
+            },
+            {
+                "workout_id": "THR-1",
+                "date": "2026-05-23",
+                "day_role": "QUALITY",
+                "intensity_domain": "THRESHOLD",
+                "workout_family": "THRESHOLD",
+                "phase_legality_status": "illegal",
+                "planned_duration_minutes": 90,
+                "planned_kj": 900,
+            },
+        ],
+    }
+
+    with guardrail_runtime_context(
+        week_calendar_context={
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "forbidden_intensity_domains": ["RECOVERY", "THRESHOLD", "VO2MAX"],
+        }
+    ):
+        failed, message = week_bundle_domain_legality_check(bundle)
+
+    assert failed is False
+    assert "forbidden intensity domains: RECOVERY (REC-1), THRESHOLD (THR-1)" in message
+
+
+def test_week_phase_role_alignment_uses_approved_bundle_before_text_only_inference() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "agenda": [
+                {"day": "Tue", "date": "2026-05-19", "day_role": "ENDURANCE", "planned_duration": "01:00", "planned_kj": 500, "workout_id": "W1"}
+            ],
+            "workouts": [
+                {
+                    "workout_id": "W1",
+                    "title": "Endurance Ride",
+                    "notes": "Threshold-like feel",
+                    "workout_text": "Warmup\n- 5m 55% 85rpm\n\nMain Set\n- 30m 90% 85rpm\n\nCooldown\n- 5m 55% 80rpm",
+                }
+            ],
+        },
+    }
+
+    with guardrail_runtime_context(
+        week_calendar_context={
+            "phase_week_role": "LOAD",
+            "allowed_day_roles": ["REST", "ENDURANCE", "QUALITY"],
+            "quality_day_cap": 2,
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "forbidden_intensity_domains": ["RECOVERY", "THRESHOLD", "VO2MAX"],
+        },
+        approved_planning_bundle={
+            "workout_blueprints": [
+                {
+                    "workout_id": "W1",
+                    "intensity_domain": "ENDURANCE",
+                    "workout_family": "ENDURANCE",
+                    "phase_legality_status": "legal",
+                }
+            ]
+        },
+    ):
+        failed, message = week_phase_role_alignment_check(week_plan)
+
+    assert failed is False
+    assert "blueprint/text mismatch for W1" in message
+    assert "THRESHOLD" in message
+
+
+def test_runtime_profiles_keep_week_crews_planning_disabled_but_manager_reasoning_enabled() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+
+    assert bundle.runtime_profiles["crews"]["week_planning"]["planning"]["enabled"] is False
+    assert bundle.runtime_profiles["crews"]["week_review"]["planning"]["enabled"] is False
+    assert bundle.runtime_profiles["crews"]["week_writer"]["planning"]["enabled"] is False
+    assert bundle.runtime_profiles["agents"]["week_plan_manager"]["reasoning"]["enabled"] is True
 
 
 def test_des_guardrail_rejects_non_diagnostic_recommendation() -> None:

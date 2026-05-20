@@ -34,6 +34,7 @@ from rps.crewai_runtime.guardrails import (
     build_task_guardrail_kwargs,
     current_guardrail_runtime_context,
     guardrail_runtime_context,
+    week_bundle_domain_legality_messages,
 )
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
@@ -1674,6 +1675,41 @@ def _run_review_decision_document(
 ) -> JsonMap:
     """Execute a review crew against a planning bundle and return its decision."""
 
+    review_context = current_guardrail_runtime_context()
+    week_calendar_context = review_context.get("week_calendar_context")
+    legality_issues = week_bundle_domain_legality_messages(
+        planning_bundle,
+        week_calendar_context=week_calendar_context if isinstance(week_calendar_context, dict) else None,
+    )
+    if legality_issues:
+        return {
+            "status": "replan_required",
+            "blocking_issues": legality_issues,
+            "warnings": [
+                "Candidate week bundle violates binding phase workout-domain legality and must be corrected before review approval."
+            ],
+            "replan_instructions": [
+                {
+                    "target_specialists": ["Week Planner", "Workout Authoring"],
+                    "issues_to_fix": legality_issues,
+                    "must_preserve": [
+                        "Preserve fixed rest days and active week structure.",
+                        "Preserve allowed phase intensity domains only.",
+                        "Represent recovery-like low-load work as legal low-end ENDURANCE when RECOVERY is forbidden.",
+                    ],
+                    "priority_order": [
+                        "Replace illegal workout families/domains first.",
+                        "Then realign workout text to the corrected canonical family/domain.",
+                        "Then recheck export-safe syntax and load coherence.",
+                    ],
+                    "max_scope_of_change": (
+                        "Adjust workout domain/family assignments, dependent workout text, and only the minimum day-role intent needed to remove illegal domains."
+                    ),
+                }
+            ],
+            "writer_ready_summary": "",
+        }
+
     candidate_block_title, candidate_bundle_label, candidate_artifact_name = _review_subject_metadata(crew_name)
     review_input = _augment_user_input(
         user_input,
@@ -1814,24 +1850,25 @@ def _run_writer_document(
             _render_json_block("Review decision", review_decision),
         ),
     )
-    document = _execute_crewai_task(
-        agent_cls=agent_cls,
-        crewai_llm_cls=crewai_llm_cls,
-        crew_cls=crew_cls,
-        task_cls=task_cls,
-        process_cls=process_cls,
-        runtime=runtime,
-        bundle=bundle,
-        agent_blueprint=agent_blueprint,
-        task_blueprint=task_blueprint,
-        tools=tools,
-        description=description,
-        crew_name=crew_name,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        model_override=model_override,
-        temperature_override=temperature_override,
-    )
+    with guardrail_runtime_context(approved_planning_bundle=planning_bundle):
+        document = _execute_crewai_task(
+            agent_cls=agent_cls,
+            crewai_llm_cls=crewai_llm_cls,
+            crew_cls=crew_cls,
+            task_cls=task_cls,
+            process_cls=process_cls,
+            runtime=runtime,
+            bundle=bundle,
+            agent_blueprint=agent_blueprint,
+            task_blueprint=task_blueprint,
+            tools=tools,
+            description=description,
+            crew_name=crew_name,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            model_override=model_override,
+            temperature_override=temperature_override,
+        )
     if not isinstance(document, dict):
         raise RuntimeError(f"Writer task '{blueprint_name}' did not return an artifact object.")
     return document

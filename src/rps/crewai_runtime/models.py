@@ -329,6 +329,8 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
     phase_intent: str | None = None
     day_role: str
     intensity_domain: str | None = None
+    workout_family: str | None = None
+    phase_legality_status: Literal["unknown", "legal", "illegal"] = "unknown"
     planned_duration_minutes: int
     planned_kj: int
     required_sections: list[str] = Field(default_factory=list)

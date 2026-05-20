@@ -122,6 +122,7 @@ tasks:
       - typed_output_present
       - week_bundle_integrity
       - week_bundle_matches_context
+      - week_bundle_domain_legality_check
     guardrail_max_retries: 2
   week_review:
     output_mode: pydantic

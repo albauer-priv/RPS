@@ -10,10 +10,11 @@ load corridor, phase week role, cadence role, agenda date matrix, availability
 exception, workout domain, or workout syntax pattern during writing.
 
 Hard writing constraints:
-- `week_summary.weekly_load_corridor_kj` mirrors the active Phase/S5 band.
+- `week_summary.weekly_load_corridor_kj` mirrors the binding active weekly band.
 - `agenda` is exactly Mon..Sun for the target ISO week.
 - Fixed rest days have `00:00`, `0`, and `workout_id null`.
 - Workouts are written only for referenced workout IDs.
+- Do not invent or widen workout domains/families beyond the approved planning bundle.
 - Workout text must already be in the strict project Intervals subset.
 - Workout text uses exact step lines such as `- 10m 68%-72% 85-90rpm`.
 - Workout text must not use prose section labels such as `Warmup:` / `Main Set:`.

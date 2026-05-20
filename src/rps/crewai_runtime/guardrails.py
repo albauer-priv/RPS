@@ -367,6 +367,13 @@ def week_bundle_integrity(result: Any) -> GuardrailResult:
         return (False, "Week bundle day_blueprints must be ordered Mon, Tue, Wed, Thu, Fri, Sat, Sun.")
     if not isinstance(workout_blueprints, list):
         return (False, "Week bundle workout_blueprints must be a list.")
+    for blueprint in workout_blueprints:
+        if not isinstance(blueprint, dict):
+            continue
+        if not str(blueprint.get("intensity_domain") or "").strip():
+            return (False, "Week bundle workout blueprints must include intensity_domain.")
+        if not str(blueprint.get("workout_family") or "").strip():
+            return (False, "Week bundle workout blueprints must include workout_family.")
     return (True, mapping)
 
 
@@ -402,6 +409,82 @@ def week_bundle_matches_context(result: Any) -> GuardrailResult:
                     False,
                     f"Week bundle fixed rest day {expected.get('day')} must carry no duration, load, or workout.",
                 )
+    return (True, mapping)
+
+
+def _normalized_domain_token(value: Any) -> str:
+    return str(value or "").upper().replace(" ", "_").replace("-", "_").strip("_")
+
+
+def week_bundle_domain_legality_messages(
+    mapping: JsonMap,
+    *,
+    week_calendar_context: JsonMap | None = None,
+) -> list[str]:
+    """Return semantic workout-domain legality issues for an internal week bundle."""
+
+    context = week_calendar_context or _week_calendar_context()
+    if not context or not isinstance(mapping, dict):
+        return []
+    workout_blueprints = [_as_map(item) for item in _as_list(mapping.get("workout_blueprints"))]
+    if not workout_blueprints:
+        return []
+    allowed_domains = {
+        _normalized_domain_token(item)
+        for item in _as_list(context.get("allowed_intensity_domains"))
+        if str(item).strip()
+    }
+    forbidden_domains = {
+        _normalized_domain_token(item)
+        for item in _as_list(context.get("forbidden_intensity_domains"))
+        if str(item).strip()
+    }
+    issues: list[str] = []
+    forbidden_family_hits: dict[str, list[str]] = {}
+    forbidden_domain_hits: dict[str, list[str]] = {}
+    missing_fields: list[str] = []
+    illegal_status_ids: list[str] = []
+    outside_allowance: dict[str, list[str]] = {}
+    for blueprint in workout_blueprints:
+        workout_id = str(blueprint.get("workout_id") or "<unknown>")
+        declared_domain = _normalized_domain_token(blueprint.get("intensity_domain"))
+        declared_family = _normalized_domain_token(blueprint.get("workout_family"))
+        legality_status = str(blueprint.get("phase_legality_status") or "").strip().lower()
+        if not declared_domain:
+            missing_fields.append(f"{workout_id}: missing intensity_domain")
+        if not declared_family:
+            missing_fields.append(f"{workout_id}: missing workout_family")
+        if legality_status == "illegal":
+            illegal_status_ids.append(workout_id)
+        if declared_domain in forbidden_domains:
+            forbidden_domain_hits.setdefault(declared_domain, []).append(workout_id)
+        if allowed_domains and declared_domain and declared_domain not in allowed_domains and declared_domain not in {"NONE"}:
+            outside_allowance.setdefault(declared_domain, []).append(workout_id)
+        if declared_family in forbidden_domains:
+            forbidden_family_hits.setdefault(declared_family, []).append(workout_id)
+    if missing_fields:
+        issues.append("Week workout blueprints missing canonical legality fields: " + ", ".join(missing_fields))
+    if illegal_status_ids:
+        issues.append("Week workout blueprints already marked phase-illegal: " + ", ".join(sorted(illegal_status_ids)))
+    if forbidden_domain_hits:
+        rendered = ", ".join(f"{domain} ({', '.join(sorted(ids))})" for domain, ids in sorted(forbidden_domain_hits.items()))
+        issues.append(f"Week workout blueprints declare forbidden intensity domains: {rendered}.")
+    if forbidden_family_hits:
+        rendered = ", ".join(f"{family} ({', '.join(sorted(ids))})" for family, ids in sorted(forbidden_family_hits.items()))
+        issues.append(f"Week workout blueprints declare forbidden workout families: {rendered}.")
+    if outside_allowance:
+        rendered = ", ".join(f"{domain} ({', '.join(sorted(ids))})" for domain, ids in sorted(outside_allowance.items()))
+        issues.append(f"Week workout blueprints declare domains outside phase allowance: {rendered}.")
+    return issues
+
+
+def week_bundle_domain_legality_check(result: Any) -> GuardrailResult:
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week bundle must decode to an object.")
+    issues = week_bundle_domain_legality_messages(mapping)
+    if issues:
+        return (False, "; ".join(issues[:5]))
     return (True, mapping)
 
 
@@ -1034,6 +1117,14 @@ def week_phase_role_alignment_check(result: Any) -> GuardrailResult:
     data = mapping.get("data")
     if not isinstance(data, dict):
         return (True, mapping)
+    approved_bundle = _as_map(_GUARDRAIL_CONTEXT.get({}).get("approved_planning_bundle"))
+    if approved_bundle:
+        bundle_issues = week_bundle_domain_legality_messages(
+            approved_bundle,
+            week_calendar_context=context,
+        )
+        if bundle_issues:
+            return (False, "; ".join(bundle_issues[:5]))
     agenda = [entry for entry in _as_list(data.get("agenda")) if isinstance(entry, dict)]
     allowed_roles = {str(item).upper() for item in _as_list(context.get("allowed_day_roles")) if str(item).strip()}
     forbidden_roles = {str(item).upper() for item in _as_list(context.get("forbidden_day_roles")) if str(item).strip()}
@@ -1056,6 +1147,30 @@ def week_phase_role_alignment_check(result: Any) -> GuardrailResult:
     allowed_domains = {str(item).upper().replace(" ", "_") for item in _as_list(context.get("allowed_intensity_domains"))}
     domain_hits = _workout_domain_hits(data)
     domain_sources = _workout_domain_sources(data)
+    if approved_bundle:
+        blueprint_by_workout_id = {
+            str(_as_map(item).get("workout_id") or ""): _as_map(item)
+            for item in _as_list(approved_bundle.get("workout_blueprints"))
+            if str(_as_map(item).get("workout_id") or "").strip()
+        }
+        for workout in _as_list(data.get("workouts")):
+            workout_map = _as_map(workout)
+            workout_id = str(workout_map.get("workout_id") or "")
+            blueprint = blueprint_by_workout_id.get(workout_id)
+            if not blueprint:
+                continue
+            declared_domain = _normalized_domain_token(blueprint.get("intensity_domain"))
+            declared_family = _normalized_domain_token(blueprint.get("workout_family"))
+            workout_hits = _workout_domain_hits({"workouts": [workout_map]})
+            explicit_forbidden = sorted((workout_hits & forbidden_domains) - {declared_domain, declared_family})
+            if explicit_forbidden:
+                rendered = ", ".join(explicit_forbidden)
+                return (
+                    False,
+                    f"Week workout blueprint/text mismatch for {workout_id}: declared "
+                    f"{declared_domain or '<missing>'}/{declared_family or '<missing>'}, "
+                    f"but final workout content signals forbidden domains {rendered}.",
+                )
     if forbidden_domains:
         forbidden_used = sorted(domain_hits & forbidden_domains)
         if forbidden_used:
@@ -1231,6 +1346,7 @@ REGISTRY: dict[str, GuardrailFn] = {
     "season_phase_load_feasibility": season_phase_load_feasibility,
     "week_bundle_integrity": week_bundle_integrity,
     "week_bundle_matches_context": week_bundle_matches_context,
+    "week_bundle_domain_legality_check": week_bundle_domain_legality_check,
     "review_decision_integrity": review_decision_integrity,
     "artifact_envelope_basic": artifact_envelope_basic,
     "artifact_meta_data_present": artifact_meta_data_present,

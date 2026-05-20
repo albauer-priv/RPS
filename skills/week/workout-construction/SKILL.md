@@ -76,6 +76,7 @@ Guardrails precedence:
 - `PHASE_GUARDRAILS.allowed_forbidden_semantics` is the binding week legality authority
 - do not widen allowed domains from broader operational context
 - if `PHASE_GUARDRAILS` forbids `RECOVERY`, do not author a `Recovery` family workout
+- if `PHASE_GUARDRAILS` forbids `THRESHOLD`, do not author a `Threshold` family workout
 - when the intent is low-cost aerobic absorption but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead
 - rest days remain `NONE`; do not hide training inside recovery/rest language
 
@@ -176,6 +177,7 @@ Canonical workout families:
 - interval length: `8-20 min`
 - target TiZ: `40-60 min`
 - progression: extend interval length, then total TiZ, then small intensity step only after volume stabilizes
+- do not drift Sweet Spot wording or structure into Threshold semantics when Threshold is forbidden
 
 `Threshold`
 - purpose: improve lactate clearance and race-pace durability
