@@ -160,6 +160,24 @@ def test_preview_update_workout_text_honors_loop_duration_derivation():
     assert agenda_row["planned_duration"] == "01:08"
 
 
+def test_preview_update_workout_text_canonicalizes_inline_loop_headers():
+    workout_text = (
+        "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\n"
+        "Main Set\n- 2x 20m 80% 88-92rpm\n- 5m 60% 85rpm\n\n"
+        "Cooldown\n- 8m ramp 60%-45% 80-85rpm"
+    )
+
+    preview = preview_update_workout_text(
+        _sample_week_plan(),
+        workout_id="W-2026-18-THU",
+        workout_text=workout_text,
+    )
+
+    workout = next(item for item in preview.document["data"]["workouts"] if item["workout_id"] == "W-2026-18-THU")
+    assert "\n2x\n- 20m 80% 88-92rpm" in workout["workout_text"]
+    assert "- 2x 20m 80% 88-92rpm" not in workout["workout_text"]
+
+
 def test_apply_week_plan_edit_stores_new_week_plan_and_export(tmp_path):
     store = LocalArtifactStore(root=tmp_path)
     athlete_id = "test_athlete"

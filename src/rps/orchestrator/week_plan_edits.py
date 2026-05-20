@@ -13,6 +13,7 @@ from typing import TypeAlias
 
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.orchestrator.workout_export import run_workout_export
+from rps.workouts.generator import canonicalize_workout_entry
 from rps.workouts.validator import collect_week_plan_export_issues
 from rps.workouts.week_plan_consistency import (
     derive_workout_duration_hhmm,
@@ -298,6 +299,9 @@ def preview_update_workout_text(
         workout["notes"] = notes.strip()
     if start is not None and start.strip():
         workout["start"] = _require_time(start)
+    canonical_workout = canonicalize_workout_entry(workout)
+    workout.clear()
+    workout.update(canonical_workout)
 
     normalized_text = str(workout["workout_text"])
     derived_duration = derive_workout_duration_hhmmss(normalized_text)

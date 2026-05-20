@@ -330,6 +330,10 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
     day_role: str
     intensity_domain: str | None = None
     workout_family: str | None = None
+    load_modality: str | None = None
+    generator_profile: str | None = None
+    activation_required: bool | None = None
+    low_end_endurance: bool = False
     phase_legality_status: Literal["unknown", "legal", "illegal"] = "unknown"
     planned_duration_minutes: int
     planned_kj: int

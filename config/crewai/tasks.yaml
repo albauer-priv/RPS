@@ -552,7 +552,7 @@ tasks:
     agent: week_workout_authoring_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Draft valid workout construction, workout-family selection, inherited `phase_intent` family bias, QUALITY-intent target placement, and strict export-safe Intervals-subset syntax decisions for the candidate week. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
+    description: "Draft structured workout-family selection, inherited `phase_intent` family bias, QUALITY-intent target placement, and rendering-safe workout blueprint guidance for the candidate week. Final `workout_text` is rendered deterministically in code from approved workout blueprints; do not rely on free-text workout authoring as the source of truth. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
     expected_output: A structured workout-authoring draft.
     tools:
       - workspace_get_input

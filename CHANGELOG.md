@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a deterministic workout generation stack for week planning: structured workout blueprints can now render through code-owned workout AST/renderer models, canonical section ordering, standalone loop headers, and strict validator-backed subset output instead of relying on LLM-authored final `workout_text`.
 - Added week domain failure hardening across internal week bundles, review preflight, and writer guardrails: internal workout blueprints now require canonical legality fields, illegal phase-forbidden domains are blocked before writer execution, and writer legality compares final workout content against the approved planning bundle instead of relying on text heuristics alone.
 - Added explicit week-band authority alignment across rendered deterministic week context, week skills, and week review task descriptions so agents treat `active_weekly_kj_band` as binding and `active_s5_band` as fallback/background only.
 - Added a completed runtime migration for week workout authoring/review method sources: the operative rules from the legacy workout export contract, Intervals grammar, project subset validation, and workout policy now live directly in the active week workout skills plus local references.
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed recurring `WEEK_PLAN` failures caused by free-text workout authoring drift: week artifact creation now deterministically renders canonical workout text for supported planning families, preview text edits are canonicalized before persistence, and semantic checks compare parsed/generated structure instead of title/notes keyword heuristics.
 - Fixed recoverable `WEEK_PLAN` writer failures caused by inline loop-step shorthand like `- 3x 12m ...`; week-plan normalization now rewrites that form into the project-valid standalone `3x` loop header plus step line before writer guardrails run.
 - Fixed the active week workout runtime source split by tightening the authoring/review/writer skills and prompt around the strict project Intervals subset, explicit `PHASE_GUARDRAILS` legality precedence, and the rule that recovery-like low-load work must be authored as legal low-end `ENDURANCE` when `RECOVERY` is forbidden upstream.
 - Fixed bounded week replans so later planning rounds no longer receive the full prior review-decision payload with stale blockers and warnings; the runtime now forwards only sanitized active replan instructions, preventing contradictory week-bundle narratives from exhausting replan rounds after the actionable load fix was already applied.

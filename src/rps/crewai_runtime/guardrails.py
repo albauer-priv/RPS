@@ -1295,18 +1295,67 @@ def _workout_domain_hits(data: JsonMap) -> set[str]:
 
 def _workout_domain_sources(data: JsonMap) -> dict[str, set[str]]:
     sources: dict[str, set[str]] = {}
-    domains = {"RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD", "VO2MAX"}
     for workout in _as_list(data.get("workouts")):
         workout_map = _as_map(workout)
         workout_id = str(workout_map.get("workout_id") or "<unknown>")
-        haystack = " ".join(
-            str(workout_map.get(field) or "")
-            for field in ("title", "notes", "workout_text")
-        ).upper().replace(" ", "_").replace("-", "_")
-        for domain in domains:
-            if domain in haystack:
-                sources.setdefault(domain, set()).add(workout_id)
+        for domain in _derived_workout_domains(workout_map):
+            sources.setdefault(domain, set()).add(workout_id)
     return sources
+
+
+def _derived_workout_domains(workout: JsonMap) -> set[str]:
+    text = str(workout.get("workout_text") or "").strip()
+    if not text:
+        return set()
+    try:
+        from rps.workouts.structured import parse_workout_text
+
+        structure = parse_workout_text(
+            text,
+            context_text=" ".join(str(workout.get(field) or "") for field in ("title", "notes")),
+        )
+    except Exception:
+        haystack = text.upper().replace(" ", "_").replace("-", "_")
+        domains = {"ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD", "VO2MAX"}
+        return {domain for domain in domains if domain in haystack}
+
+    step_targets: list[float] = []
+    has_activation = False
+    low_cadence = False
+    for section in structure.sections:
+        if section.name == "#### Activation":
+            has_activation = True
+        for block in section.blocks:
+            steps = block.steps if hasattr(block, "steps") else (block,)
+            for step in steps:
+                target = str(step.target)
+                low, high = _percent_bounds(target)
+                step_targets.extend([low, high])
+                cadence = str(step.cadence)
+                if cadence.endswith("rpm") and cadence.split("rpm", 1)[0].startswith("50"):
+                    low_cadence = True
+    if not step_targets:
+        return set()
+    max_target = max(step_targets)
+    if low_cadence and max_target >= 84.0:
+        return {"ENDURANCE"}
+    if max_target >= 96.0:
+        return {"THRESHOLD"}
+    if max_target >= 88.0 and has_activation:
+        return {"SWEET_SPOT"}
+    if max_target >= 76.0:
+        return {"TEMPO"}
+    return {"ENDURANCE"}
+
+
+def _percent_bounds(target: str) -> tuple[float, float]:
+    rendered = str(target).replace("ramp ", "")
+    values = [float(item[:-1]) for item in re.findall(r"\d+(?:\.\d+)?%", rendered)]
+    if not values:
+        return 0.0, 0.0
+    if len(values) == 1:
+        return values[0], values[0]
+    return min(values), max(values)
 
 
 def des_diagnostic_only(result: Any) -> GuardrailResult:

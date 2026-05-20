@@ -33,6 +33,7 @@ from rps.planning.deterministic_context import (
 )
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.rendering.auto_render import render_sidecar
+from rps.workouts.generator import canonicalize_workout_entry
 from rps.workouts.validator import collect_week_plan_export_issues
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
@@ -1304,6 +1305,18 @@ class GuardedValidatedStore:
 
     def _enforce_week_plan_exportability(self, document: JsonMap) -> JsonMap:
         """Normalize and validate WEEK_PLAN workout definitions before export/store."""
+        data = self._as_map(document.get("data"))
+        workouts = self._as_list(data.get("workouts"))
+        try:
+            data["workouts"] = [
+                canonicalize_workout_entry(self._as_map(workout))
+                if self._as_map(workout)
+                else workout
+                for workout in workouts
+            ]
+        except ValueError as exc:
+            raise SchemaValidationError("Week plan exportability failed", [str(exc)]) from exc
+        document["data"] = data
         document = normalize_week_plan_consistency(document)
         issues = collect_week_plan_export_issues(document)
         if not issues:

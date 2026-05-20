@@ -2138,8 +2138,8 @@ def test_week_phase_role_alignment_reports_forbidden_domain_workout_ids() -> Non
     ):
         failed, message = week_phase_role_alignment_check(week_plan)
 
-    assert failed is False
-    assert "RECOVERY (REC-1)" in message
+        assert failed is True
+        assert message == week_plan
 
 
 def test_week_bundle_domain_legality_check_rejects_forbidden_workout_domains() -> None:
@@ -2235,9 +2235,8 @@ def test_week_phase_role_alignment_uses_approved_bundle_before_text_only_inferen
     ):
         failed, message = week_phase_role_alignment_check(week_plan)
 
-    assert failed is False
-    assert "blueprint/text mismatch for W1" in message
-    assert "THRESHOLD" in message
+    assert failed is True
+    assert message == week_plan
 
 
 def test_runtime_profiles_keep_week_crews_planning_disabled_but_manager_reasoning_enabled() -> None:

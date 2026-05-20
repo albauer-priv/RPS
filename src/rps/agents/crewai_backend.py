@@ -65,6 +65,7 @@ from rps.crewai_runtime.telemetry import (
     runtime_event_scope,
 )
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT
 from rps.workspace.guarded_store import GuardedValidatedStore
@@ -1830,10 +1831,23 @@ def _run_writer_document(
     tools: list[Any] | ToolMap,
     athlete_id: str,
     run_id: str,
+    loaded_inputs: dict[str, object] | None = None,
     model_override: str | None = None,
     temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute a writer task from approved bundle + review context and return the final document."""
+
+    if public_task == AgentTask.CREATE_WEEK_PLAN:
+        week_calendar_result = {}
+        if isinstance(loaded_inputs, dict):
+            maybe_result = loaded_inputs.get("workspace_get_week_calendar_context")
+            if isinstance(maybe_result, dict):
+                week_calendar_result = dict(maybe_result.get("contract") or {})
+        return build_week_plan_document_from_bundle(
+            planning_bundle=planning_bundle,
+            week_calendar_context=week_calendar_result,
+            review_decision=review_decision,
+        )
 
     blueprint_name = _TASK_BLUEPRINT_BY_AGENT_TASK[public_task]
     task_blueprint = task_blueprints[blueprint_name]
@@ -2144,9 +2158,10 @@ def _build_crewai_tooling(
     tools: ToolMap = {}
 
     def _capture_loaded_input(tool_name: str, args: JsonMap, result: object) -> None:
-        if tool_name != "workspace_get_input":
-            return
         if not isinstance(result, dict) or result.get("ok") is not True:
+            return
+        loaded_inputs[tool_name] = result
+        if tool_name != "workspace_get_input":
             return
         key = args.get("input_type") or args.get("artifact_type") or args.get("input_name")
         if isinstance(key, str):
@@ -2331,6 +2346,7 @@ def _run_single_task_document_crewai(
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            loaded_inputs=loaded_inputs,
             model_override=model_override,
             temperature_override=temperature_override,
         )
@@ -2410,6 +2426,7 @@ def _run_single_task_document_crewai(
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            loaded_inputs=loaded_inputs,
             model_override=model_override,
             temperature_override=temperature_override,
         )
@@ -2478,6 +2495,7 @@ def _run_single_task_document_crewai(
             tools=tools,
             athlete_id=athlete_id,
             run_id=run_id,
+            loaded_inputs=loaded_inputs,
             model_override=model_override,
             temperature_override=temperature_override,
         )
