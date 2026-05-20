@@ -19,6 +19,7 @@ from rps.agents.crewai_backend import (
     _emit_crew_task_prepared_events,
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
+    _run_multicrew_cycle,
     _task_tools_for_blueprint,
     run_agent_multi_output_crewai,
 )
@@ -2962,6 +2963,71 @@ def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_exec
     assert captured_crew["crews"][0].get("process") == "sequential"
     manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal week bundle synthesizer")
     assert getattr(manager_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+
+
+def test_run_multicrew_cycle_replays_only_sanitized_replan_context(tmp_path) -> None:
+    captured_inputs: list[str] = []
+
+    def _planning_runner(loop_input: str) -> dict[str, object]:
+        captured_inputs.append(loop_input)
+        return {"bundle": "candidate", "warnings": []}
+
+    decisions = iter(
+        [
+            {
+                "status": "replan_required",
+                "blocking_issues": ["Old blocker that must not be replayed wholesale."],
+                "warnings": ["Stale warning that should not be forwarded."],
+                "replan_instructions": [
+                    {
+                        "target_specialists": ["Week Planner"],
+                        "issues_to_fix": ["Reduce weekly kJ into active band."],
+                        "must_preserve": ["Fixed rest days Mon and Fri."],
+                        "priority_order": ["Bring weekly kJ into band first."],
+                        "max_scope_of_change": "Adjust durations only.",
+                    }
+                ],
+                "writer_ready_summary": "Use the repaired draft only.",
+            },
+            {
+                "status": "approved",
+                "warnings": [],
+                "blocking_issues": [],
+                "replan_instructions": [],
+                "writer_ready_summary": "",
+            },
+        ]
+    )
+
+    def _review_runner(loop_input: str, planning_bundle: dict[str, object]) -> dict[str, object]:
+        return next(decisions)
+
+    planning_bundle, review_decision = _run_multicrew_cycle(
+        runtime=AgentRuntime(
+            model="gpt-5.4-mini",
+            temperature=None,
+            reasoning_effort=None,
+            reasoning_summary=None,
+            max_completion_tokens=None,
+            prompt_loader=SimpleNamespace(),
+            schema_dir=tmp_path,
+            workspace_root=tmp_path,
+        ),
+        bundle=SimpleNamespace(),
+        user_input="Create week plan.",
+        planning_runner=_planning_runner,
+        review_runner=_review_runner,
+        max_replan_rounds=2,
+    )
+
+    assert planning_bundle == {"bundle": "candidate", "warnings": []}
+    assert review_decision["status"] == "approved"
+    assert len(captured_inputs) == 2
+    second_input = captured_inputs[1]
+    assert "Active replan instructions" in second_input
+    assert "Reduce weekly kJ into active band." in second_input
+    assert "Stale warning that should not be forwarded." not in second_input
+    assert "Old blocker that must not be replayed wholesale." not in second_input
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:

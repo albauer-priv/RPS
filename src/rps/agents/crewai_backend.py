@@ -499,6 +499,16 @@ def _augment_user_input(user_input: str, *context_blocks: str) -> str:
     return "\n\n".join([user_input, "Additional runtime context:", *blocks])
 
 
+def _sanitize_replan_decision_context(decision: JsonMap) -> JsonMap:
+    """Return only the active replan delta that should survive into the next round."""
+
+    return {
+        "status": str(decision.get("status") or "").lower(),
+        "replan_instructions": list(decision.get("replan_instructions") or []),
+        "writer_ready_summary": str(decision.get("writer_ready_summary") or "").strip(),
+    }
+
+
 def _compact_internal_user_input(user_input: str) -> str:
     """Reduce oversized specialist-task input while preserving the most relevant markers."""
 
@@ -1856,9 +1866,14 @@ def _run_multicrew_cycle(
                 "Review requested another replan after exhausting the allowed replan rounds."
             )
         attempt += 1
+        replan_context = _sanitize_replan_decision_context(latest_decision)
         planning_input = _augment_user_input(
             user_input,
-            _render_json_block("Replan instructions", latest_decision),
+            _render_json_block("Active replan instructions", replan_context),
+            (
+                "Replan handoff rule: treat the injected Active replan instructions as the only active delta from the previous review. "
+                "Do not copy prior blocking issues or warnings forward unless they still apply after the new draft."
+            ),
         )
 
 
