@@ -8,8 +8,8 @@ metadata:
 Translate a weekly corridor into executable week targets.
 
 Method:
-1. Start from the active phase/S5 corridor, capacity context, and phase intent.
-2. Use `Deterministic Week Calendar and Availability Context` for exact Mon-Sun dates, phase role, active phase week role, fixed rest days, day availability, logistics, events, and active S5 band.
+1. Start from the binding active weekly corridor, capacity context, and phase intent.
+2. Use `Deterministic Week Calendar and Availability Context` for exact Mon-Sun dates, phase role, active phase week role, fixed rest days, day availability, logistics, events, and the binding `active_weekly_kj_band`. Treat `active_s5_band` as fallback/background only when no week-specific band is present.
 3. Use `Deterministic Workout Load Estimation Context` for code-owned per-hour mechanical/governance load calibration.
 4. Allocate load to structurally important days first: key sessions, durable endurance, and protected recovery.
 5. Reconcile residual load with duration-first adjustments before any intensity escalation.
@@ -47,12 +47,12 @@ Progressive-overload execution:
 
 Load semantics:
 - work from governance load (`planned_weekly_load_kj`) when matching the corridor
-- `week_summary.planned_weekly_load_kj` must remain inside the active Phase/S5 band unless a guarded replan is requested
-- `week_summary.weekly_load_corridor_kj` mirrors the active Phase/S5 `weekly_kj_bands[w]`
+- `week_summary.planned_weekly_load_kj` must remain inside the binding active weekly band unless a guarded replan is requested
+- `week_summary.weekly_load_corridor_kj` mirrors the binding active weekly band for the target week
 - when availability cannot support the active band, stop or mark replan; do not add intensity to force the number
 - preserve the distinction between corridor compliance and raw mechanical work
 - when a workout estimate is weak, expose fallback assumptions instead of pretending precision
-- use injected deterministic S5/capacity values directly and preserve their exact bounds
+- use injected deterministic week-band/capacity values directly and preserve their exact bounds
 - treat workout `planned_kj` as mechanical work and compare week totals to governance corridors through the approved load-estimation method
 - use injected domain-hourly estimates for rough planning; exact workout text is checked by code-owned segment parsing after output
 - segment parsing applies `%FTP`/range/ramp targets, loop repeats, `r_i` clamping, final-only rounding, and IF-direct fallback only for unparseable/intent-only workouts
@@ -69,7 +69,7 @@ Hard rules:
 - keep recovery days protected from load compression
 - preserve recovery protection and key role logic
 - preserve phase intent even when the corridor is tight
-- a week outside the Phase/S5 band must be rejected or sent to replan, not stored silently
+- a week outside the binding active weekly band must be rejected or sent to replan, not stored silently
 - day dates and fixed-rest-day handling must match the deterministic day matrix
 
 Positive operating guidance:

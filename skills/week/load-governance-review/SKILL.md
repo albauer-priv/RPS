@@ -8,9 +8,9 @@ metadata:
 Review the candidate week against the active corridor and week-load method.
 
 Method:
-1. Check whether `week_summary.planned_weekly_load_kj` remains inside the active Phase/S5 governance band.
+1. Check whether `week_summary.planned_weekly_load_kj` remains inside the binding active weekly governance band.
 2. Confirm agenda dates, fixed-rest-day handling, and day availability follow `Deterministic Week Calendar and Availability Context`.
-3. Confirm `week_summary.weekly_load_corridor_kj` exactly mirrors the active Phase/S5 band.
+3. Confirm `week_summary.weekly_load_corridor_kj` exactly mirrors the binding active weekly band.
 4. Verify that the active phase week role shapes the load distribution and quality density.
 5. Verify that residual handling and duration-first reconciliation stay conservative.
 6. Reject any hidden intensity inflation used only to hit load numbers.
@@ -20,8 +20,8 @@ Method:
 10. Use deterministic workout-load estimates or their trace when available, and approve totals only when they align with parsed workout text.
 
 Block approval when:
-- planned weekly load is above or below the active Phase/S5 band without a replan decision
-- `weekly_load_corridor_kj` differs from the active Phase/S5 band without a code-owned fallback trace
+- planned weekly load is above or below the binding active weekly band without a replan decision
+- `weekly_load_corridor_kj` differs from the binding active weekly band without a code-owned fallback trace
 - capacity context is contradicted without a deterministic fallback trace
 - load is compressed onto recovery days
 - active week role is `DELOAD`, `MINI_RESET`, or `SHORTENED_MINI_RESET` but the candidate keeps build-style quality/load distribution

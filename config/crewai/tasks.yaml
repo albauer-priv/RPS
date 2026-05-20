@@ -615,7 +615,7 @@ tasks:
     tools:
       - workspace_get_week_calendar_context
       - workspace_get_phase_execution_context
-    description: Review the injected candidate week bundle and writer handoff against deterministic week execution, active S5-band, availability, day-blueprint, and workout-blueprint contracts. Do not retrieve or expect a synthetic `candidate_week_bundle` workspace artefact.
+    description: Review the injected candidate week bundle and writer handoff against deterministic week execution, the binding target-week active weekly band, availability, day-blueprint, and workout-blueprint contracts. Use `active_s5_band` only as fallback/background when no week-specific band is present. Do not retrieve or expect a synthetic `candidate_week_bundle` workspace artefact.
     expected_output: A structured contract-review draft that treats deterministic week-contract mismatches as blocking replan reasons.
   week_review:
     agent: week_review_manager

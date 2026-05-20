@@ -17,8 +17,8 @@ Week planning does not select the season cadence. It executes the active phase/w
 
 Rules:
 
-- `week_summary.planned_weekly_load_kj` must remain inside the active Phase/S5 band.
-- `week_summary.weekly_load_corridor_kj` must mirror the active Phase/S5 band for the target ISO week.
+- `week_summary.planned_weekly_load_kj` must remain inside the binding active weekly band.
+- `week_summary.weekly_load_corridor_kj` must mirror the binding active weekly band for the target ISO week.
 - Workout-level `planned_kj` is mechanical work; corridor compliance uses governance load.
 - If the week is a load week, use volume/work and durable duration before intensity.
 - If the week is deload, mini-reset, or re-entry, preserve that role even if the corridor midpoint looks attractive.

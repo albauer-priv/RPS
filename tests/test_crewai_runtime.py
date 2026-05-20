@@ -121,7 +121,10 @@ from rps.orchestrator.coach_operations import (
     preview_scoped_week_replan_operation,
 )
 from rps.orchestrator.resolved_context import build_resolved_load_governance_context_block
-from rps.planning.deterministic_context import build_week_calendar_context
+from rps.planning.deterministic_context import (
+    build_week_calendar_context,
+    render_week_calendar_context_block,
+)
 from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import load_events
 from rps.workspace.iso_helpers import IsoWeek
@@ -1827,6 +1830,41 @@ def test_week_calendar_context_uses_phase_structure_week_role() -> None:
     assert context["phase_week_role_source"] == "PHASE_STRUCTURE.week_skeleton_logic.week_roles"
     assert context["active_weekly_kj_band"] == {"min": 1000, "max": 2000}
     assert context["quality_day_cap"] == 1
+
+
+def test_render_week_calendar_context_marks_active_weekly_band_as_binding() -> None:
+    text = render_week_calendar_context_block(
+        {
+            "target_iso_week": "2026-21",
+            "week_start_date": "2026-05-18",
+            "week_end_date": "2026-05-24",
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-21--2026-23",
+            "phase_cycle": "Base",
+            "phase_role": "Base",
+            "phase_intent": "shortened_re_entry",
+            "phase_week_role": "SHORTENED_RE_ENTRY",
+            "phase_week_role_source": "PHASE_STRUCTURE.week_skeleton_logic.week_roles",
+            "phase_role_for_week": "SHORTENED_RE_ENTRY",
+            "allowed_day_roles": ["REST", "ENDURANCE", "QUALITY"],
+            "forbidden_day_roles": [],
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "allowed_load_modalities": ["NONE", "K3"],
+            "quality_day_cap": 2,
+            "active_weekly_kj_band": {"min": 7329, "max": 8372},
+            "phase_weekly_kj_band": {"min": 7329, "max": 8372},
+            "active_s5_band": {"min": 10175, "max": 11275},
+            "week_skeleton_mandatory_elements": {"recovery_opportunities_min": 2, "endurance_anchor_required": True},
+            "fixed_rest_days": ["Mon", "Fri"],
+            "day_matrix": [],
+            "event_proximity": {},
+        }
+    )
+
+    assert "binding active weekly band" in text
+    assert "active_weekly_kj_band: min 7329, max 8372 (binding target-week corridor)" in text
+    assert "active_s5_band: min 10175, max 11275 (fallback/broader S5 context)" in text
 
 
 def test_resolved_load_context_finds_mid_phase_season_band() -> None:

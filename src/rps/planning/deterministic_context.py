@@ -393,7 +393,7 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
         return ""
     lines = [
         "**Deterministic Week Calendar and Availability Context**",
-        "Use this Mon-Sun day matrix and active S5 band directly. Do not move load onto fixed rest days or recompute load bounds.",
+        "Use this Mon-Sun day matrix and the binding active weekly band directly. When `active_weekly_kj_band` is present, it outranks `active_s5_band`; `active_s5_band` is broader fallback/capacity context only.",
         f"target_iso_week: {context.get('target_iso_week')}",
         f"week_start_date: {context.get('week_start_date')}",
         f"week_end_date: {context.get('week_end_date')}",
@@ -412,15 +412,17 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
         "allowed_load_modalities: " + ", ".join(str(item) for item in _as_list(context.get("allowed_load_modalities"))),
         f"quality_day_cap: {context.get('quality_day_cap')}",
     ]
-    s5 = _as_map(context.get("active_s5_band"))
-    if s5:
-        lines.append(f"active_s5_band: min {s5.get('min')}, max {s5.get('max')}")
+    active_band = _as_map(context.get("active_weekly_kj_band"))
+    if active_band:
+        lines.append(
+            f"active_weekly_kj_band: min {active_band.get('min')}, max {active_band.get('max')} (binding target-week corridor)"
+        )
     phase_band = _as_map(context.get("phase_weekly_kj_band"))
     if phase_band:
         lines.append(f"phase_weekly_kj_band: min {phase_band.get('min')}, max {phase_band.get('max')}")
-    active_band = _as_map(context.get("active_weekly_kj_band"))
-    if active_band:
-        lines.append(f"active_weekly_kj_band: min {active_band.get('min')}, max {active_band.get('max')}")
+    s5 = _as_map(context.get("active_s5_band"))
+    if s5:
+        lines.append(f"active_s5_band: min {s5.get('min')}, max {s5.get('max')} (fallback/broader S5 context)")
     mandatory = _as_map(context.get("week_skeleton_mandatory_elements"))
     if mandatory:
         lines.append(

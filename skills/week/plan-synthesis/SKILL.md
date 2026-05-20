@@ -8,7 +8,7 @@ metadata:
 Synthesize specialist outputs into one internal week bundle.
 
 Method:
-1. Preserve authoritative constraints, active Phase/S5 corridor, and the active phase week role from deterministic context.
+1. Preserve authoritative constraints, the binding active weekly corridor, and the active phase week role from deterministic context.
 2. Resolve conflicts in favor of recovery protection, phase intent, availability, and event-taper semantics.
 3. Keep workout authoring subordinate to week role, day role, load distribution, and export syntax.
 4. Emit exactly one coherent candidate that is ready for review, not a list of alternatives.
@@ -32,7 +32,7 @@ Required bundle semantics:
 - `day_blueprints` must cover exactly Mon..Sun of the target ISO week in order.
 - Each day blueprint must state fixed-rest status, availability cap, phase role, phase week role, day role, intended domain, duration, kJ, workout reference, and warnings.
 - `workout_blueprints` must exist for every planned workout and state target day role, intensity domain, duration, kJ, required sections, syntax profile, and exportability status.
-- `weekly_load_corridor_kj` must mirror the active Phase/S5 band; do not invent a separate week corridor.
+- `weekly_load_corridor_kj` must mirror the binding active weekly band; do not invent a separate week corridor.
 - If the active band, availability, fixed rest days, and recovery constraints cannot be reconciled, emit blocking issues or replan instructions instead of hiding the conflict.
 - week shape must reflect inherited `phase_intent`
   - `ceiling_support`: limited fresh VO2-oriented quality only when allowed

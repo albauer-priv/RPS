@@ -10,7 +10,7 @@ Audit the candidate week before it is written.
 Checklist:
 1. Day roles remain coherent with phase intent and active phase week role.
 2. Agenda covers exactly Mon..Sun of the target ISO week and matches deterministic dates.
-3. Planned load and duration reconcile against the active Phase/S5 band without hidden inflation.
+3. Planned load and duration reconcile against the binding active weekly band without hidden inflation.
 4. Fixed rest days, zero-availability days, and recovery days stay protected.
 5. Quality-day count and workout domains remain inside phase guardrails.
 6. Workout structures match declared intent and keep intensity explicit.
@@ -19,7 +19,7 @@ Checklist:
 9. The candidate week shape and workout families remain coherent with inherited `phase_intent`, not just with legal domains.
 
 Block approval when:
-- `weekly_load_corridor_kj` is not the active Phase/S5 band
+- `weekly_load_corridor_kj` is not the binding active weekly band
 - a `DELOAD`, `MINI_RESET`, or `SHORTENED_MINI_RESET` week carries build-style quality
 - a day exceeds deterministic availability
 - a workout cannot be exported safely

@@ -24,7 +24,7 @@ Required content:
 Writer rules:
 - `agenda` days must carry `day`, `date`, `day_role`, `planned_duration`, `planned_kj`, `workout_id`
 - `agenda` must match the deterministic Mon-Sun date matrix
-- `week_summary.weekly_load_corridor_kj` must mirror the active Phase/S5 band from deterministic context
+- `week_summary.weekly_load_corridor_kj` must mirror the binding active weekly band from deterministic context
 - fixed rest days must be `00:00`, `0`, and `workout_id null`
 - any `workout_id` referenced in `agenda` must appear in `workouts`
 - workout objects require `workout_id`, `title`, `date`, `start`, `duration`, `workout_text`, and `notes`
