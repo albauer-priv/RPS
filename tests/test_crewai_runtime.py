@@ -1618,6 +1618,57 @@ def test_season_scenarios_profile_quality_accepts_same_domains_with_distinct_pro
     assert payload["data"]["scenarios"][2]["scenario_id"] == "C"
 
 
+def test_season_scenarios_profile_quality_accepts_vo2_rationale_from_kpi_guardrail_notes() -> None:
+    ok, payload = season_scenarios_profile_quality(
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIOS", "schema_id": "SeasonScenariosInterface"},
+            "data": {
+                "scenarios": [
+                    {
+                        "scenario_id": "A",
+                        "load_philosophy": "Lower feasible kJ-envelope with high recovery margin.",
+                        "risk_profile": "Highest executability and lowest density.",
+                        "key_differences": "Completion-first with minimal fatigue exposure.",
+                        "scenario_guidance": {
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                            "decision_notes": ["Protect recovery margin."],
+                            "constraint_summary": ["Low density."],
+                        },
+                    },
+                    {
+                        "scenario_id": "B",
+                        "load_philosophy": "Realistic target kJ-envelope with systematic long-ride progression.",
+                        "risk_profile": "Balanced recovery risk.",
+                        "key_differences": "Durability-forward target plan.",
+                        "scenario_guidance": {
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
+                            "decision_notes": ["Use selected tempo economy work."],
+                            "constraint_summary": ["Long-ride progression."],
+                        },
+                    },
+                    {
+                        "scenario_id": "C",
+                        "load_philosophy": "Upper plausible kJ-envelope with more event simulation.",
+                        "risk_profile": "Ambitious performance-forward long build with higher specificity under fatigue.",
+                        "key_differences": "More back-to-back and hard-late specificity.",
+                        "scenario_guidance": {
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "VO2MAX"]},
+                            "decision_notes": ["Use back-to-back and hard-late specificity under fatigue."],
+                            "constraint_summary": ["Event simulation and fatigue exposure."],
+                            "kpi_guardrail_notes": [
+                                "VO2MAX is allowed only as sparse ceiling-support work when fresh, not as the primary scenario identity."
+                            ],
+                        },
+                    },
+                ]
+            },
+        }
+    )
+
+    assert ok is True
+    assert payload["data"]["scenarios"][2]["scenario_id"] == "C"
+
+
 def test_season_scenarios_profile_quality_rejects_weak_scenario_c() -> None:
     failed, message = season_scenarios_profile_quality(
         {
@@ -1660,6 +1711,14 @@ def test_season_scenarios_task_policy_uses_profile_quality_guardrail() -> None:
     policy = resolve_task_policy(blueprints["season_scenarios"], bundle.task_policies)
 
     assert "season_scenarios_profile_quality" in policy.guardrails
+
+
+def test_season_scenarios_task_uses_narrow_workspace_tools() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+    task = blueprints["season_scenarios"]
+
+    assert task.config["tools"] == ["workspace_get_input", "workspace_get_latest"]
 
 
 def test_phase_s5_band_guardrail_rejects_explicit_s5_mismatch() -> None:

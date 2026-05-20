@@ -550,6 +550,7 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
             str(scenario_c.get("key_differences") or ""),
             " ".join(str(item) for item in _as_list(guidance_c.get("decision_notes"))),
             " ".join(str(item) for item in _as_list(guidance_c.get("constraint_summary"))),
+            " ".join(str(item) for item in _as_list(guidance_c.get("kpi_guardrail_notes"))),
         ]
     ).lower()
     if not any(marker in c_story for marker in ("back-to-back", "b2b", "hard-late", "event simulation", "specificity", "fatigue")):

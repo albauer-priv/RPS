@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed `season_scenarios` runtime alignment by making the Scenario-C `VO2MAX` guardrail read `kpi_guardrail_notes` in addition to `decision_notes` / `constraint_summary`, and narrowed the task tool scope to `workspace_get_input` plus `workspace_get_latest` instead of the full read-only workspace bundle.
 - Fixed the `season_scenarios` task/skill guidance for Scenario C so `VO2MAX` is only allowed when `decision_notes` or `kpi_guardrail_notes` explicitly explain its sparse ceiling-support / fresh high-intensity role; otherwise the model is instructed to omit `VO2MAX`.
 - Fixed `PHASE_PREVIEW` guarded-store validation so agenda previews must stay derived from the stored `PHASE_STRUCTURE`: preview weeks now match phase coverage, agenda roles/domains/modalities stay inside structure authority, fixed non-training days remain non-training, and preview quality-day counts cannot exceed the structure cap.
 - Fixed deterministic season load-capacity inference so representative `typical` capacity no longer comes from the hardest allowed intensity-domain ceiling; inferred season baselines and downstream build corridors are now anchored to a more plausible endurance-led weekly load assumption.

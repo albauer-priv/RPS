@@ -22,13 +22,15 @@ Owner: Planning
 
 **Problem**
 
-* The current instruction is not sharp enough to reliably place the explanation in the exact fields inspected by the guardrail.
-* This causes repeated guardrail retries and failed `SEASON_SCENARIOS` runs.
+* The current instruction was not sharp enough to reliably place the explanation in the exact fields inspected by the guardrail.
+* In addition, the guardrail only searched `decision_notes` and `constraint_summary`, while the task/skill also allowed the rationale in `kpi_guardrail_notes`.
+* The `season_scenarios` task also exposed the full `read_only_workspace` tool surface although the run only needs `workspace_get_input` and `workspace_get_latest`.
+* This caused repeated guardrail retries and bloated season-scenario runs.
 
 **Constraints**
 
 * No schema change.
-* No guardrail logic change in this fix.
+* No schema change.
 * Keep Scenario C ambitious through specificity/fatigue exposure first, not through default `VO2MAX`.
 
 ---
@@ -38,13 +40,14 @@ Owner: Planning
 **Goals**
 
 * [x] Make `VO2MAX` justification placement explicit in the active task and skill.
-* [x] Require the explanation in `decision_notes` and/or `kpi_guardrail_notes`, which are the fields the guardrail already expects semantically.
+* [x] Require the explanation in `decision_notes` and/or `kpi_guardrail_notes`.
+* [x] Make the guardrail read `kpi_guardrail_notes` in addition to the existing Scenario C story fields.
+* [x] Reduce the `season_scenarios` task tool surface to the two actually needed workspace read tools.
 * [x] Reduce avoidable guardrail retries for Scenario C.
 
 **Non-Goals**
 
 * [ ] No change to season-scenario schema.
-* [ ] No change to the semantic guardrail itself.
 * [ ] No attempt to force Scenario C to always use `VO2MAX`.
 
 ---
@@ -56,6 +59,8 @@ Owner: Planning
 * When Scenario C includes `VO2MAX` in `allowed_domains`, the generated scenario must explicitly state that `VO2MAX` is only a sparse ceiling-support / fresh high-intensity permission.
 * That explanation must be placed in `decision_notes` and/or `kpi_guardrail_notes`.
 * If the model cannot justify `VO2MAX` that way, it should omit `VO2MAX` from Scenario C.
+* The runtime guardrail now accepts the rationale from either field.
+* The task receives only `workspace_get_input` and `workspace_get_latest`, not the full read-only workspace tool bundle.
 
 **UI impact**
 
@@ -77,8 +82,14 @@ Owner: Planning
 
 * `config/crewai/tasks.yaml`
   * sharpen task description for Scenario C + `VO2MAX`
+  * reduce tool scope
 * `skills/season/scenario-generation/SKILL.md`
   * add stronger field-placement rules and explicit wording expectations
+* `src/rps/crewai_runtime/guardrails.py`
+  * include `kpi_guardrail_notes` in Scenario C story evaluation
+* `tests/test_crewai_runtime.py`
+  * cover guardrail acceptance from `kpi_guardrail_notes`
+  * cover narrow task tool scope
 
 **Data flow**
 
@@ -137,26 +148,27 @@ Owner: Planning
 
 **Cons**
 
-* Still relies on model compliance rather than schema-level enforcement
+* Leaves the field mismatch between task/skill and guardrail unresolved
 
-### Option B — relax or rewrite guardrail
+### Option B — align task/skill, guardrail, and tool scope
 
 **Summary**
 
-* Make the guardrail broader or more permissive.
+* Keep the guardrail intent, but align its searched fields with the prompt contract and remove unnecessary tools from the task.
 
 **Pros**
 
-* Fewer retries
+* Fixes the actual mismatch
+* Reduces token/tool noise
 
 **Cons**
 
-* Weakens the intended scenario semantics
+* Slightly broader code change than wording-only
 
 ### Recommendation
 
-* Choose: Option A
-* Rationale: the guardrail is correct; the instruction placement was too soft.
+* Choose: Option B
+* Rationale: the wording mattered, but the remaining failure came from a real field mismatch plus an unnecessarily broad tool surface.
 
 ---
 
@@ -164,6 +176,8 @@ Owner: Planning
 
 * [x] `season_scenarios` task text explicitly requires `VO2MAX` explanation placement in `decision_notes`/`kpi_guardrail_notes`.
 * [x] `scenario-generation` skill explicitly tells the model to omit `VO2MAX` if it cannot provide that explanation.
+* [x] `season_scenarios_profile_quality` accepts a valid Scenario C rationale from `kpi_guardrail_notes`.
+* [x] `season_scenarios` task exposes only `workspace_get_input` and `workspace_get_latest`.
 * [x] Config bundle still loads.
 * [x] Syntax/lint/type gates stay green.
 
@@ -188,6 +202,11 @@ Owner: Planning
   * Detection: existing `season_scenarios_profile_quality` guardrail
   * Safe behavior: task retries then fails without persisting bad scenarios
   * Recovery: further sharpen instruction or adjust guardrail only if needed
+
+* Failure mode: tool scope grows again and bloats prompt/tool registration.
+  * Detection: task config / runtime telemetry
+  * Safe behavior: no correctness loss, but higher noise and token overhead
+  * Recovery: keep the task-scoped tools explicit
 
 ---
 
