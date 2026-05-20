@@ -33,17 +33,17 @@ def test_build_week_plan_document_from_bundle_is_exportable() -> None:
             {"day": "Mon", "date": "2026-05-18", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
             {"day": "Tue", "date": "2026-05-19", "day_role": "QUALITY", "planned_duration_minutes": 75, "planned_kj": 900, "workout_id": "W-TUE"},
             {"day": "Wed", "date": "2026-05-20", "day_role": "ENDURANCE", "planned_duration_minutes": 60, "planned_kj": 700, "workout_id": "W-WED"},
-            {"day": "Thu", "date": "2026-05-21", "day_role": "QUALITY", "planned_duration_minutes": 90, "planned_kj": 1100, "workout_id": "W-THU"},
+            {"day": "Thu", "date": "2026-05-21", "day_role": "QUALITY", "planned_duration_minutes": 105, "planned_kj": 1300, "workout_id": "W-THU"},
             {"day": "Fri", "date": "2026-05-22", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
             {"day": "Sat", "date": "2026-05-23", "day_role": "ENDURANCE", "planned_duration_minutes": 210, "planned_kj": 2600, "workout_id": "W-SAT"},
             {"day": "Sun", "date": "2026-05-24", "day_role": "RECOVERY", "planned_duration_minutes": 60, "planned_kj": 600, "workout_id": "W-SUN"},
         ],
         "workout_blueprints": [
-            {"workout_id": "W-TUE", "date": "2026-05-19", "day_role": "QUALITY", "intensity_domain": "TEMPO", "workout_family": "TEMPO", "planned_duration_minutes": 75, "planned_kj": 900},
-            {"workout_id": "W-WED", "date": "2026-05-20", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE", "planned_duration_minutes": 60, "planned_kj": 700},
-            {"workout_id": "W-THU", "date": "2026-05-21", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "workout_family": "SWEET_SPOT", "planned_duration_minutes": 90, "planned_kj": 1100},
-            {"workout_id": "W-SAT", "date": "2026-05-23", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE", "planned_duration_minutes": 210, "planned_kj": 2600},
-            {"workout_id": "W-SUN", "date": "2026-05-24", "day_role": "RECOVERY", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE_LOW", "planned_duration_minutes": 60, "planned_kj": 600},
+            {"workout_id": "W-TUE", "date": "2026-05-19", "day_role": "QUALITY", "intensity_domain": "TEMPO", "workout_family": "TEMPO", "protocol_type": "CLASSIC_INTERVALS", "protocol_variant": "TEMPO_CLASSIC", "planned_duration_minutes": 75, "planned_kj": 900, "primary_tiz_target_min": 48, "addon_policy": "Z2_FILL", "progression_parameters": {"warmup_minutes": 10, "cooldown_minutes": 8, "work_target": "82%-88%", "work_cadence": "90-95rpm", "recovery_target": "60%-65%", "recovery_cadence": "85-90rpm", "recovery_duration_minutes": 6, "tiz_min_minutes": 36, "tiz_max_minutes": 60, "set_count_min": 3, "set_count_max": 5, "work_duration_min_minutes": 10, "work_duration_max_minutes": 15, "addon_target": "68%-72%", "addon_cadence": "85-95rpm", "addon_min_block_minutes": 10, "addon_max_block_minutes": 45, "addon_step_minutes": 5, "addon_max_share_of_session": 0.45}, "progression_state": {"primary_axis": "work_duration", "secondary_axis": "set_redistribution"}},
+            {"workout_id": "W-WED", "date": "2026-05-20", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE", "protocol_type": "LONG_STEADY", "protocol_variant": "ENDURANCE_STEADY", "planned_duration_minutes": 60, "planned_kj": 700, "progression_parameters": {"warmup_minutes": 8, "cooldown_minutes": 8, "main_target": "68%-72%", "main_cadence": "85-90rpm"}},
+            {"workout_id": "W-THU", "date": "2026-05-21", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "workout_family": "SWEET_SPOT", "protocol_type": "CLASSIC_INTERVALS", "protocol_variant": "SWEET_SPOT_CLASSIC", "planned_duration_minutes": 105, "planned_kj": 1300, "primary_tiz_target_min": 48, "addon_policy": "Z2_FILL", "activation_required": True, "progression_parameters": {"warmup_minutes": 10, "cooldown_minutes": 8, "activation_profile": "SWEET_SPOT_STANDARD", "work_target": "88%-92%", "work_cadence": "85-90rpm", "recovery_target": "60%-65%", "recovery_cadence": "85-90rpm", "recovery_duration_minutes": 3, "tiz_min_minutes": 40, "tiz_max_minutes": 60, "set_count_min": 2, "set_count_max": 5, "work_duration_min_minutes": 10, "work_duration_max_minutes": 20, "addon_target": "68%-72%", "addon_cadence": "85-95rpm", "addon_min_block_minutes": 10, "addon_max_block_minutes": 45, "addon_step_minutes": 5, "addon_max_share_of_session": 0.45}, "progression_state": {"primary_axis": "work_duration", "secondary_axis": "set_redistribution"}},
+            {"workout_id": "W-SAT", "date": "2026-05-23", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE", "protocol_type": "LONG_STEADY", "protocol_variant": "ENDURANCE_LONG_STEADY", "planned_duration_minutes": 210, "planned_kj": 2600, "progression_parameters": {"warmup_minutes": 10, "cooldown_minutes": 8, "main_target": "68%-72%", "main_cadence": "85-90rpm"}},
+            {"workout_id": "W-SUN", "date": "2026-05-24", "day_role": "RECOVERY", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE_LOW", "protocol_type": "LONG_STEADY", "protocol_variant": "ENDURANCE_LOW", "planned_duration_minutes": 60, "planned_kj": 600, "progression_parameters": {"warmup_minutes": 6, "cooldown_minutes": 6, "main_target": "60%-65%", "main_cadence": "85-90rpm"}},
         ],
         "load_target_summary": ["Shortened re-entry week with two quality sessions and a weekend endurance anchor."],
         "warnings": [],
@@ -66,6 +66,7 @@ def test_build_week_plan_document_from_bundle_is_exportable() -> None:
     validate_week_plan_exportability(document)
     rendered = "\n".join(workout["workout_text"] for workout in document["data"]["workouts"])
     assert "- 3x " not in rendered
+    assert "#### Z2 Add-On" in rendered
 
 
 def test_week_phase_role_alignment_ignores_recovery_wording_in_title_and_notes() -> None:
@@ -109,3 +110,65 @@ def test_week_phase_role_alignment_ignores_recovery_wording_in_title_and_notes()
 
     assert failed is True
     assert payload == week_plan
+
+
+def test_protocol_solver_renders_vo2_microburst_sets_without_nested_loops() -> None:
+    planning_bundle = {
+        "day_blueprints": [
+            {"day": "Mon", "date": "2026-05-18", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+                {"day": "Tue", "date": "2026-05-19", "day_role": "QUALITY", "planned_duration_minutes": 120, "planned_kj": 1500, "workout_id": "VO2-TUE"},
+            {"day": "Wed", "date": "2026-05-20", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Thu", "date": "2026-05-21", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Fri", "date": "2026-05-22", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Sat", "date": "2026-05-23", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Sun", "date": "2026-05-24", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+        ],
+        "workout_blueprints": [
+            {
+                "workout_id": "VO2-TUE",
+                "date": "2026-05-19",
+                "day_role": "QUALITY",
+                "intensity_domain": "VO2MAX",
+                "workout_family": "VO2MAX",
+                "protocol_type": "MICROBURST_SETS",
+                "protocol_variant": "VO2_40_20",
+                    "planned_duration_minutes": 120,
+                    "planned_kj": 1500,
+                "primary_tiz_target_min": 20,
+                "addon_policy": "Z2_FILL",
+                "activation_required": True,
+                "progression_parameters": {
+                    "warmup_minutes": 10,
+                    "cooldown_minutes": 8,
+                    "activation_profile": "VO2_STANDARD",
+                    "work_duration_seconds": 40,
+                    "recovery_duration_seconds": 20,
+                    "work_target_by_set": ["110%-112%", "112%-115%", "115%-118%"],
+                    "work_cadence": "92-95rpm",
+                    "recovery_target": "50%",
+                    "recovery_cadence": "85rpm",
+                    "between_set_recovery_minutes": 4,
+                    "between_set_recovery_target": "55%",
+                    "between_set_recovery_cadence": "85rpm",
+                    "set_count_min": 2,
+                    "set_count_max": 4,
+                    "reps_per_set_min": 8,
+                    "reps_per_set_max": 15,
+                    "addon_target": "68%-72%",
+                    "addon_cadence": "85-95rpm",
+                    "addon_min_block_minutes": 10,
+                    "addon_max_block_minutes": 30,
+                    "addon_step_minutes": 5,
+                    "addon_max_share_of_session": 0.35,
+                },
+                "progression_state": {"primary_axis": "reps", "secondary_axis": "sets"},
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    validate_week_plan_exportability(document)
+    text = document["data"]["workouts"][0]["workout_text"]
+    assert "10x" in text or "9x" in text or "13x" in text
+    assert "- 10x " not in text
+    assert "#### Z2 Add-On" in text

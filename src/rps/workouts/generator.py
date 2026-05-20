@@ -7,13 +7,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 from rps.crewai_runtime.models import WeekPlanBundleModel, WeekWorkoutBlueprintModel
-from rps.workouts.structured import (
-    WorkoutLoop,
-    WorkoutSection,
-    WorkoutStep,
-    WorkoutStructure,
-    render_workout_structure,
-)
+from rps.workouts.protocol_solver import solve_protocol_workout
+from rps.workouts.structured import render_workout_structure
 from rps.workspace.intensity_domains import normalize_intensity_domain
 
 JsonMap = dict[str, Any]
@@ -30,13 +25,20 @@ class WorkoutBlueprintRenderSpec:
     intensity_domain: str
     workout_family: str
     family_variant: str | None
+    protocol_type: str | None
+    protocol_variant: str | None
     planned_duration_minutes: int
     planned_kj: int
+    target_kj: int | None
+    primary_tiz_target_min: int | None
     phase_intent: str | None
     load_modality: str
     generator_profile: str | None
+    addon_policy: str | None
     low_end_endurance: bool
     activation_required: bool
+    progression_parameters: JsonMap
+    progression_state: JsonMap
 
 
 def build_week_plan_document_from_bundle(
@@ -76,7 +78,7 @@ def build_week_plan_document_from_bundle(
             "trace_data": [],
             "trace_events": [],
             "data_confidence": "HIGH",
-            "notes": "Deterministic week-plan workout generation applied.",
+            "notes": "Deterministic protocol-driven week-plan workout generation applied.",
         },
         "data": {
             "week_summary": {
@@ -134,16 +136,16 @@ def _build_workouts(bundle: WeekPlanBundleModel) -> list[JsonMap]:
     workouts: list[JsonMap] = []
     for blueprint in ordered_blueprints:
         spec = _resolve_render_spec(blueprint)
-        structure = _generate_workout_structure(spec)
+        solved = solve_protocol_workout(spec)
         workouts.append(
             {
                 "workout_id": spec.workout_id,
-                "title": _title_for_spec(spec),
-                "notes": _notes_for_spec(spec),
+                "title": solved.title,
+                "notes": solved.notes,
                 "date": spec.date,
                 "start": "00:00",
                 "duration": _minutes_to_hhmmss(spec.planned_duration_minutes),
-                "workout_text": render_workout_structure(structure),
+                "workout_text": render_workout_structure(solved.structure),
             }
         )
     return workouts
@@ -152,7 +154,7 @@ def _build_workouts(bundle: WeekPlanBundleModel) -> list[JsonMap]:
 def _resolve_render_spec(blueprint: WeekWorkoutBlueprintModel) -> WorkoutBlueprintRenderSpec:
     domain = normalize_intensity_domain(blueprint.intensity_domain) or _domain_from_day_role(blueprint.day_role)
     family = str(blueprint.workout_family or domain or "ENDURANCE").strip().upper().replace(" ", "_")
-    load_modality = "K3" if "K3" in family or "K3" in blueprint.workout_id.upper() else "NONE"
+    load_modality = "K3" if "K3" in family or "K3" in blueprint.workout_id.upper() else str(blueprint.load_modality or "NONE")
     if load_modality == "K3":
         family = "K3"
         domain = "ENDURANCE" if domain == "ENDURANCE" else domain
@@ -160,10 +162,9 @@ def _resolve_render_spec(blueprint: WeekWorkoutBlueprintModel) -> WorkoutBluepri
         family in {"RECOVERY", "ENDURANCE_LOW"}
         or blueprint.day_role.upper() == "RECOVERY"
         or "EASY" in blueprint.workout_id.upper()
+        or bool(blueprint.low_end_endurance)
     )
-    activation_required = domain == "SWEET_SPOT"
-    if family not in {"ENDURANCE", "RECOVERY", "ENDURANCE_LOW", "ENDURANCE_HIGH", "TEMPO", "SWEET_SPOT", "K3"}:
-        family = domain or "ENDURANCE"
+    activation_required = bool(blueprint.activation_required) or domain == "SWEET_SPOT"
     return WorkoutBlueprintRenderSpec(
         workout_id=blueprint.workout_id,
         date=blueprint.date,
@@ -171,160 +172,21 @@ def _resolve_render_spec(blueprint: WeekWorkoutBlueprintModel) -> WorkoutBluepri
         intensity_domain=domain or "ENDURANCE",
         workout_family=family,
         family_variant=str(blueprint.family_variant or blueprint.workout_family or "").strip() or None,
+        protocol_type=str(blueprint.protocol_type or blueprint.generator_profile or "").strip().upper() or None,
+        protocol_variant=str(blueprint.protocol_variant or blueprint.family_variant or blueprint.workout_family or "").strip().upper() or None,
         planned_duration_minutes=max(int(blueprint.planned_duration_minutes), 20),
         planned_kj=int(blueprint.planned_kj),
+        target_kj=int(blueprint.target_kj) if blueprint.target_kj is not None else None,
+        primary_tiz_target_min=int(blueprint.primary_tiz_target_min) if blueprint.primary_tiz_target_min is not None else None,
         phase_intent=blueprint.phase_intent,
-        load_modality=load_modality,
+        load_modality=str(load_modality).strip().upper(),
         generator_profile=str(blueprint.generator_profile or "").strip() or None,
+        addon_policy=str(blueprint.addon_policy or "").strip().upper() or None,
         low_end_endurance=low_end_endurance,
         activation_required=activation_required,
+        progression_parameters=dict(blueprint.progression_parameters),
+        progression_state=dict(blueprint.progression_state),
     )
-
-
-def _generate_workout_structure(spec: WorkoutBlueprintRenderSpec) -> WorkoutStructure:
-    if spec.generator_profile == "k3_progressive_torque" or spec.workout_family == "K3":
-        return _generate_k3(spec)
-    if spec.generator_profile == "tiz_first_sweet_spot" or spec.intensity_domain == "SWEET_SPOT":
-        return _generate_sweet_spot(spec)
-    if spec.generator_profile == "controlled_tempo_expansion" or spec.intensity_domain == "TEMPO":
-        return _generate_tempo(spec)
-    if spec.intensity_domain == "ENDURANCE":
-        return _generate_endurance(spec)
-    raise ValueError(f"Unsupported workout blueprint family/domain for {spec.workout_id}: {spec.workout_family}/{spec.intensity_domain}")
-
-
-def _generate_endurance(spec: WorkoutBlueprintRenderSpec) -> WorkoutStructure:
-    low_end = spec.low_end_endurance
-    warm = 6 if low_end and spec.planned_duration_minutes <= 75 else 8 if spec.planned_duration_minutes < 180 else 10
-    cool = 6 if low_end and spec.planned_duration_minutes <= 75 else 8 if spec.planned_duration_minutes < 180 else 10
-    main = max(spec.planned_duration_minutes - warm - cool, 10)
-    warm_target = "ramp 50%-60%" if low_end else "ramp 50%-65%"
-    main_target = "60%-65%" if low_end else "68%-72%"
-    cool_target = "ramp 55%-45%" if low_end else "ramp 60%-45%"
-    return WorkoutStructure(
-        sections=(
-            WorkoutSection("Warmup", (WorkoutStep(f"{warm}m", warm_target, "85-90rpm"),)),
-            WorkoutSection("Main Set", (WorkoutStep(_minutes_token(main), main_target, "85-90rpm"),)),
-            WorkoutSection("Cooldown", (WorkoutStep(f"{cool}m", cool_target, "80-85rpm"),)),
-        )
-    )
-
-
-def _generate_tempo(spec: WorkoutBlueprintRenderSpec) -> WorkoutStructure:
-    warm = 8
-    cool = 8
-    main = max(spec.planned_duration_minutes - warm - cool, 10)
-    return WorkoutStructure(
-        sections=(
-            WorkoutSection("Warmup", (WorkoutStep("8m", "ramp 50%-70%", "85-90rpm"),)),
-            WorkoutSection("Main Set", (WorkoutStep(_minutes_token(main), "80%-83%", "85-90rpm"),)),
-            WorkoutSection("Cooldown", (WorkoutStep("8m", "ramp 60%-45%", "80-85rpm"),)),
-        )
-    )
-
-
-def _generate_sweet_spot(spec: WorkoutBlueprintRenderSpec) -> WorkoutStructure:
-    warm = 8
-    activation = 3
-    cool = 8
-    main = max(spec.planned_duration_minutes - warm - activation - cool, 12)
-    loops, work_minutes, remainder = _interval_layout(total_minutes=main, recovery_minutes=3, preferred_work_minutes=12)
-    blocks: list[WorkoutLoop | WorkoutStep] = [
-        WorkoutLoop(
-            loops,
-            (
-                WorkoutStep(f"{work_minutes}m", "88%-90%", "85-90rpm"),
-                WorkoutStep("3m", "60%", "85rpm"),
-            ),
-        )
-    ]
-    if remainder > 0:
-        blocks.append(WorkoutStep(_minutes_token(remainder), "68%-72%", "85-90rpm"))
-    return WorkoutStructure(
-        sections=(
-            WorkoutSection("Warmup", (WorkoutStep("8m", "ramp 50%-70%", "85-90rpm"),)),
-            WorkoutSection(
-                "#### Activation",
-                (
-                    WorkoutLoop(
-                        3,
-                        (
-                            WorkoutStep("20s", "120%", "95rpm"),
-                            WorkoutStep("40s", "60%", "85rpm"),
-                        ),
-                    ),
-                ),
-            ),
-            WorkoutSection("Main Set", tuple(blocks)),
-            WorkoutSection("Cooldown", (WorkoutStep("8m", "ramp 60%-45%", "80-85rpm"),)),
-        )
-    )
-
-
-def _generate_k3(spec: WorkoutBlueprintRenderSpec) -> WorkoutStructure:
-    warm = 8
-    cool = 8
-    main = max(spec.planned_duration_minutes - warm - cool, 18)
-    loops, work_minutes, remainder = _interval_layout(total_minutes=main, recovery_minutes=3, preferred_work_minutes=8)
-    blocks: list[WorkoutLoop | WorkoutStep] = [
-        WorkoutLoop(
-            loops,
-            (
-                WorkoutStep(f"{work_minutes}m", "85%-88%", "50-60rpm"),
-                WorkoutStep("3m", "60%", "85rpm"),
-            ),
-        )
-    ]
-    if remainder > 0:
-        blocks.append(WorkoutStep(_minutes_token(remainder), "68%-72%", "85-90rpm"))
-    return WorkoutStructure(
-        sections=(
-            WorkoutSection("Warmup", (WorkoutStep("8m", "ramp 50%-70%", "85-90rpm"),)),
-            WorkoutSection("Main Set", tuple(blocks)),
-            WorkoutSection("Cooldown", (WorkoutStep("8m", "ramp 60%-45%", "80-85rpm"),)),
-        )
-    )
-
-
-def _interval_layout(*, total_minutes: int, recovery_minutes: int, preferred_work_minutes: int) -> tuple[int, int, int]:
-    loops = max(1, min(4, total_minutes // max(preferred_work_minutes + recovery_minutes, 1)))
-    work = max(6, (total_minutes // loops) - recovery_minutes)
-    used = loops * (work + recovery_minutes)
-    remainder = max(total_minutes - used, 0)
-    return loops, work, remainder
-
-
-def _title_for_spec(spec: WorkoutBlueprintRenderSpec) -> str:
-    phase_prefix = _phase_prefix(spec.phase_intent)
-    variant = (spec.family_variant or spec.workout_family).upper()
-    if variant == "K3_SWEET_SPOT" or spec.workout_family == "K3":
-        return f"{phase_prefix} K3 Strength Endurance".strip()
-    if variant == "SWEET_SPOT_STABILIZATION":
-        return f"{phase_prefix} Sweet Spot Stabilization".strip()
-    if spec.intensity_domain == "SWEET_SPOT":
-        return f"{phase_prefix} Sweet Spot".strip()
-    if variant == "TEMPO_STEADY":
-        return f"{phase_prefix} Tempo Steady".strip()
-    if spec.intensity_domain == "TEMPO":
-        return f"{phase_prefix} Tempo".strip()
-    if variant == "ENDURANCE_LOW" or spec.low_end_endurance:
-        return "Low-End Endurance Support"
-    if variant == "ENDURANCE_LONG_STEADY" or spec.planned_duration_minutes >= 180:
-        return "Long Endurance Anchor"
-    return "Aerobic Endurance Support"
-
-
-def _notes_for_spec(spec: WorkoutBlueprintRenderSpec) -> str:
-    variant = (spec.family_variant or spec.workout_family).upper()
-    if variant == "K3_SWEET_SPOT" or spec.workout_family == "K3":
-        return "Deterministic K3 workout generated from the approved week blueprint."
-    if variant == "SWEET_SPOT_STABILIZATION" or spec.intensity_domain == "SWEET_SPOT":
-        return "Deterministic Sweet Spot workout generated from the approved week blueprint."
-    if variant == "TEMPO_STEADY" or spec.intensity_domain == "TEMPO":
-        return "Deterministic Tempo workout generated from the approved week blueprint."
-    if variant == "ENDURANCE_LOW" or spec.low_end_endurance:
-        return "Deterministic low-end Endurance workout generated from the approved week blueprint."
-    return "Deterministic Endurance workout generated from the approved week blueprint."
 
 
 def _week_objective(bundle: WeekPlanBundleModel, context: JsonMap) -> str:
@@ -381,13 +243,6 @@ def _canonical_day_role(day_role: str) -> str:
     return role or "ENDURANCE"
 
 
-def _phase_prefix(phase_intent: str | None) -> str:
-    if not phase_intent:
-        return "Controlled"
-    rendered = str(phase_intent).strip().replace("_", " ")
-    return rendered.title()
-
-
 def _minutes_to_hhmm(total_minutes: int) -> str:
     hours, minutes = divmod(max(int(total_minutes), 0), 60)
     return f"{hours:02d}:{minutes:02d}"
@@ -395,13 +250,3 @@ def _minutes_to_hhmm(total_minutes: int) -> str:
 
 def _minutes_to_hhmmss(total_minutes: int) -> str:
     return f"{_minutes_to_hhmm(total_minutes)}:00"
-
-
-def _minutes_token(total_minutes: int) -> str:
-    total_minutes = max(int(total_minutes), 1)
-    hours, minutes = divmod(total_minutes, 60)
-    if hours and minutes:
-        return f"{hours}h{minutes}m"
-    if hours:
-        return f"{hours}h"
-    return f"{minutes}m"

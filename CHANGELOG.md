@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a protocol-driven deterministic week workout engine: week workout generation now selects configured workout protocols, solves TiZ/set/rep structure plus optional Z2 add-ons, and renders canonical Intervals subset text from protocol metadata instead of coarse family templates.
 - Added a deterministic Week planning engine with configurable workout-family registry and selection policy, replacing runtime Week CrewAI planning/review/writer execution with code-owned contract loading, day-role allocation, load reconciliation, family selection, and validator-backed workout rendering.
 - Added a deterministic workout generation stack for week planning: structured workout blueprints can now render through code-owned workout AST/renderer models, canonical section ordering, standalone loop headers, and strict validator-backed subset output instead of relying on LLM-authored final `workout_text`.
 - Added week domain failure hardening across internal week bundles, review preflight, and writer guardrails: internal workout blueprints now require canonical legality fields, illegal phase-forbidden domains are blocked before writer execution, and writer legality compares final workout content against the approved planning bundle instead of relying on text heuristics alone.

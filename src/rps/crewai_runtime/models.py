@@ -331,8 +331,14 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
     intensity_domain: str | None = None
     workout_family: str | None = None
     family_variant: str | None = None
+    protocol_type: str | None = None
+    protocol_variant: str | None = None
     load_modality: str | None = None
     generator_profile: str | None = None
+    addon_policy: str | None = None
+    primary_tiz_target_min: int | None = None
+    target_kj: int | None = None
+    progression_state: dict[str, Any] = Field(default_factory=dict, json_schema_extra={"additionalProperties": False})
     selection_reason: str | None = None
     activation_required: bool | None = None
     low_end_endurance: bool = False

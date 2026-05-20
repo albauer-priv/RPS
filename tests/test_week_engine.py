@@ -122,26 +122,33 @@ def _seed_week_workspace(root: Path, athlete_id: str = "test_athlete") -> LocalA
     return store
 
 
-def test_load_week_workout_family_config_rejects_unknown_generator_profile(tmp_path: Path) -> None:
+def test_load_week_workout_family_config_rejects_unknown_addon_policy(tmp_path: Path) -> None:
     config_dir = tmp_path / "config" / "planning"
     config_dir.mkdir(parents=True)
-    (config_dir / "week_workout_families.yaml").write_text(
-        "families:\n"
+    (config_dir / "week_workout_protocols.yaml").write_text(
+        "addon_policies:\n"
+        "  NONE:\n"
+        "    target_domain: null\n"
+        "protocols:\n"
         "  BAD:\n"
-        "    family_id: BAD\n"
         "    intensity_domain: ENDURANCE\n"
         "    load_modality: NONE\n"
-        "    generator_profile: unknown_profile\n"
+        "    protocol_type: LONG_STEADY\n"
+        "    protocol_variant: BAD\n"
         "    allowed_day_roles: [ENDURANCE]\n"
         "    allowed_phase_intents: ['*']\n"
         "    allowed_week_roles: ['*']\n"
+        "    tags: []\n"
+        "    primary_axis: duration\n"
+        "    secondary_axis: none\n"
+        "    addon_policy: MISSING\n"
         "selection_policy:\n"
         "  by_day_role:\n"
         "    ENDURANCE: [BAD]\n",
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="unknown generator_profile"):
+    with pytest.raises(ValueError, match="unknown add-on policy"):
         load_week_workout_family_config(tmp_path)
 
 
@@ -167,7 +174,8 @@ def test_execute_week_engine_preview_generates_valid_exportable_week_plan(tmp_pa
     rendered = "\n".join(workout["workout_text"] for workout in document["data"]["workouts"])
     assert "- 3x " not in rendered
     workout_ids = {workout["workout_id"]: workout for workout in result["details"]["planning_bundle"]["workout_blueprints"]}
-    assert workout_ids["2026-21-WED-REC"]["workout_family"] == "ENDURANCE_LOW"
+    assert workout_ids["2026-21-WED-REC"]["protocol_type"] == "LONG_STEADY"
+    assert workout_ids["2026-21-WED-REC"]["protocol_variant"] == "ENDURANCE_LOW"
 
 
 def test_execute_week_engine_persists_week_plan_without_crewai_week_crews(tmp_path: Path) -> None:

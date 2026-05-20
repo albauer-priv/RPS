@@ -1,4 +1,4 @@
-"""Deterministic week-planning engine with configurable workout families."""
+"""Deterministic week-planning engine with configurable workout protocols."""
 
 from __future__ import annotations
 
@@ -6,8 +6,6 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
-import yaml
 
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.crewai_runtime.models import (
@@ -28,6 +26,12 @@ from rps.planning.deterministic_context import (
     build_week_calendar_context,
 )
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
+from rps.planning.week_protocols import (
+    WeekWorkoutProtocol,
+    WeekWorkoutProtocolConfig,
+    load_week_workout_protocol_config,
+    protocol_is_allowed,
+)
 from rps.planning.workout_load import build_workout_load_method_context
 from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.validator import collect_week_plan_export_issues
@@ -42,26 +46,6 @@ JsonMap = dict[str, Any]
 _DAY_ORDER = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 _WEEK_KEY_RE = re.compile(r"\b(?P<year>\d{4})-(?P<week>\d{2})\b")
 _YEAR_WEEK_RE = re.compile(r"year=(?P<year>\d{4}),\s*week=(?P<week>\d{1,2})")
-
-
-@dataclass(frozen=True)
-class WeekWorkoutFamily:
-    family_id: str
-    intensity_domain: str
-    load_modality: str
-    generator_profile: str
-    allowed_day_roles: tuple[str, ...]
-    allowed_phase_intents: tuple[str, ...]
-    allowed_week_roles: tuple[str, ...]
-    tags: frozenset[str]
-
-
-@dataclass(frozen=True)
-class WeekWorkoutFamilyConfig:
-    families: dict[str, WeekWorkoutFamily]
-    by_phase_intent: dict[str, dict[str, list[str]]]
-    by_day_role: dict[str, list[str]]
-
 
 @dataclass(frozen=True)
 class WeekAdjustmentIntent:
@@ -134,12 +118,12 @@ def execute_week_engine(
         zone_model_payload=zone_model or {},
         allowed_intensity_domains=list(week_calendar.get("allowed_intensity_domains") or []),
     )
-    family_config = load_week_workout_family_config(repo_root)
+    protocol_config = load_week_workout_protocol_config(repo_root)
     adjustment = parse_week_adjustment_intent(user_message)
     planning_bundle = _build_week_plan_bundle(
         week_calendar_context=week_calendar,
         load_method_context=load_method,
-        family_config=family_config,
+        protocol_config=protocol_config,
         phase_intent=str(week_calendar.get("phase_intent") or phase_info.phase_intent or ""),
         adjustment=adjustment,
     )
@@ -193,81 +177,10 @@ def execute_week_engine(
     }
 
 
-def load_week_workout_family_config(root: Path | str) -> WeekWorkoutFamilyConfig:
-    """Load and validate configurable workout families."""
+def load_week_workout_family_config(root: Path | str) -> WeekWorkoutProtocolConfig:
+    """Backward-compatible wrapper for the protocol config loader."""
 
-    config_path = Path(root) / "config" / "planning" / "week_workout_families.yaml"
-    data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError("week_workout_families.yaml must contain a top-level mapping.")
-    families_raw = data.get("families")
-    if not isinstance(families_raw, dict) or not families_raw:
-        raise ValueError("week_workout_families.yaml must define at least one family.")
-    known_profiles = {
-        "duration_first_endurance",
-        "controlled_tempo_expansion",
-        "tiz_first_sweet_spot",
-        "k3_progressive_torque",
-    }
-    families: dict[str, WeekWorkoutFamily] = {}
-    for key, raw in families_raw.items():
-        if not isinstance(raw, dict):
-            raise ValueError(f"Family '{key}' must be a mapping.")
-        family_id = str(raw.get("family_id") or key).strip().upper()
-        profile = str(raw.get("generator_profile") or "").strip()
-        if profile not in known_profiles:
-            raise ValueError(f"Family '{family_id}' references unknown generator_profile '{profile}'.")
-        families[family_id] = WeekWorkoutFamily(
-            family_id=family_id,
-            intensity_domain=str(raw.get("intensity_domain") or "").strip().upper(),
-            load_modality=str(raw.get("load_modality") or "NONE").strip().upper(),
-            generator_profile=profile,
-            allowed_day_roles=tuple(str(item).strip().upper() for item in raw.get("allowed_day_roles") or [] if str(item).strip()),
-            allowed_phase_intents=tuple(str(item).strip().lower() for item in raw.get("allowed_phase_intents") or [] if str(item).strip()),
-            allowed_week_roles=tuple(str(item).strip().upper() for item in raw.get("allowed_week_roles") or [] if str(item).strip()),
-            tags=frozenset(str(item).strip().lower() for item in raw.get("tags") or [] if str(item).strip()),
-        )
-    policy = data.get("selection_policy") or {}
-    if not isinstance(policy, dict):
-        raise ValueError("selection_policy must be a mapping.")
-    by_phase_intent: dict[str, dict[str, list[str]]] = {}
-    phase_raw = policy.get("by_phase_intent") or {}
-    if not isinstance(phase_raw, dict):
-        raise ValueError("selection_policy.by_phase_intent must be a mapping.")
-    for phase_intent, mapping in phase_raw.items():
-        if not isinstance(mapping, dict):
-            raise ValueError(f"selection policy for phase_intent '{phase_intent}' must be a mapping.")
-        by_phase_intent[str(phase_intent).strip().lower()] = {
-            str(day_role).strip().upper(): [str(item).strip().upper() for item in items or [] if str(item).strip()]
-            for day_role, items in mapping.items()
-        }
-    by_day_role_raw = policy.get("by_day_role") or {}
-    if not isinstance(by_day_role_raw, dict):
-        raise ValueError("selection_policy.by_day_role must be a mapping.")
-    by_day_role = {
-        str(day_role).strip().upper(): [str(item).strip().upper() for item in items or [] if str(item).strip()]
-        for day_role, items in by_day_role_raw.items()
-    }
-    unknown = {
-        family_id
-        for candidates in by_day_role.values()
-        for family_id in candidates
-        if family_id not in families
-    } | {
-        family_id
-        for mapping in by_phase_intent.values()
-        for candidates in mapping.values()
-        for family_id in candidates
-        if family_id not in families
-    }
-    if unknown:
-        joined = ", ".join(sorted(unknown))
-        raise ValueError(f"selection policy references unknown families: {joined}")
-    return WeekWorkoutFamilyConfig(
-        families=families,
-        by_phase_intent=by_phase_intent,
-        by_day_role=by_day_role,
-    )
+    return load_week_workout_protocol_config(root)
 
 
 def parse_week_adjustment_intent(message: str) -> WeekAdjustmentIntent:
@@ -282,11 +195,11 @@ def parse_week_adjustment_intent(message: str) -> WeekAdjustmentIntent:
         target_load_fraction = 0.25
     forced_quality_family = None
     if "sweet spot" in lowered:
-        forced_quality_family = "SWEET_SPOT_STABILIZATION"
+        forced_quality_family = "SWEET_SPOT_CLASSIC_INTERVALS"
     elif "tempo" in lowered:
-        forced_quality_family = "TEMPO_STEADY"
+        forced_quality_family = "TEMPO_CLASSIC_INTERVALS"
     elif "k3" in lowered or "torque" in lowered:
-        forced_quality_family = "K3_SWEET_SPOT"
+        forced_quality_family = "K3_CLASSIC_INTERVALS"
     preserve_sat_anchor = "preserve sat anchor" in lowered or "keep sat" in lowered or "keep saturday" in lowered
     return WeekAdjustmentIntent(
         message=cleaned,
@@ -324,7 +237,7 @@ def _build_week_plan_bundle(
     *,
     week_calendar_context: JsonMap,
     load_method_context: JsonMap,
-    family_config: WeekWorkoutFamilyConfig,
+    protocol_config: WeekWorkoutProtocolConfig,
     phase_intent: str,
     adjustment: WeekAdjustmentIntent,
 ) -> WeekPlanBundleModel:
@@ -334,7 +247,7 @@ def _build_week_plan_bundle(
     day_blueprints = _allocate_day_blueprints(week_calendar_context=week_calendar_context)
     workout_blueprints = _select_workout_blueprints(
         day_blueprints=day_blueprints,
-        family_config=family_config,
+        protocol_config=protocol_config,
         week_calendar_context=week_calendar_context,
         phase_intent=phase_intent,
         adjustment=adjustment,
@@ -350,7 +263,7 @@ def _build_week_plan_bundle(
         key_constraints=[
             f"Active weekly band: {target_band['min']}-{target_band['max']} kJ",
             "Fixed rest days preserved.",
-            "Workout families selected from configuration.",
+            "Workout protocols selected from configuration.",
         ],
         completed_vs_planned=[],
         likely_change_request=bool(adjustment.message),
@@ -365,7 +278,7 @@ def _build_week_plan_bundle(
         ],
         load_target_summary=[f"Deterministic weekly load target set to {target_load} kJ within the binding active band."],
         revision_summary=([f"Applied bounded adjustment intent: {adjustment.message}"] if adjustment.message else []),
-        workout_authoring_summary=["Workout families chosen from configurable registry and rendered deterministically."],
+        workout_authoring_summary=["Workout protocols chosen from configurable registry and rendered deterministically."],
         candidate_document_summary=["Week bundle generated without Week CrewAI planning/review/writer stages."],
     )
 
@@ -406,7 +319,7 @@ def _review_bundle(*, planning_bundle: WeekPlanBundleModel, week_calendar_contex
                         "Recovery-aware spacing",
                     ],
                     priority_order=["1) satisfy active weekly band", "2) keep contract legality", "3) keep export-safe syntax"],
-                    max_scope_of_change="Adjust deterministic family selection and/or workout durations only.",
+                    max_scope_of_change="Adjust deterministic protocol selection, progression, add-on composition, and/or workout durations only.",
                 )
             ],
             writer_ready_summary="",
@@ -461,7 +374,7 @@ def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> list[WeekDayB
 def _select_workout_blueprints(
     *,
     day_blueprints: list[WeekDayBlueprintModel],
-    family_config: WeekWorkoutFamilyConfig,
+    protocol_config: WeekWorkoutProtocolConfig,
     week_calendar_context: JsonMap,
     phase_intent: str,
     adjustment: WeekAdjustmentIntent,
@@ -475,8 +388,8 @@ def _select_workout_blueprints(
         if day.fixed_rest_day or not day.workout_id:
             continue
         is_anchor = day.day == "Sat" or (day.day == "Sun" and not adjustment.preserve_sat_anchor)
-        family = _pick_family(
-            family_config=family_config,
+        protocol = _pick_protocol(
+            protocol_config=protocol_config,
             day_role=day.day_role,
             phase_intent=phase_intent,
             week_role=week_role,
@@ -487,21 +400,40 @@ def _select_workout_blueprints(
         )
         if day.day_role == "QUALITY":
             quality_index += 1
+        progression_parameters = dict(protocol.parameters)
+        addon_policy = protocol_config.addon_policies.get(protocol.addon_policy)
+        if addon_policy is not None and addon_policy.policy_id != "NONE":
+            progression_parameters.update(
+                {
+                    "addon_target_domain": addon_policy.target_domain,
+                    "addon_target": addon_policy.target,
+                    "addon_cadence": addon_policy.cadence,
+                    "addon_min_block_minutes": addon_policy.min_block_minutes,
+                    "addon_max_block_minutes": addon_policy.max_block_minutes,
+                    "addon_step_minutes": addon_policy.step_minutes,
+                    "addon_max_share_of_session": addon_policy.max_share_of_session,
+                }
+            )
         workout_blueprints.append(
             WeekWorkoutBlueprintModel(
                 workout_id=day.workout_id,
                 date=day.date,
                 phase_intent=phase_intent,
                 day_role=day.day_role,
-                intensity_domain=family.intensity_domain,
-                workout_family=family.family_id,
-                family_variant=family.family_id,
-                load_modality=family.load_modality,
-                generator_profile=family.generator_profile,
-                selection_reason=f"Selected from configurable family policy for {day.day_role}.",
-                activation_required="activation_capable" in family.tags,
-                low_end_endurance="recovery_like" in family.tags,
-                progression_parameters={},
+                intensity_domain=protocol.intensity_domain,
+                workout_family=protocol.intensity_domain,
+                family_variant=protocol.protocol_variant,
+                protocol_type=protocol.protocol_type,
+                protocol_variant=protocol.protocol_variant,
+                load_modality=protocol.load_modality,
+                generator_profile=protocol.protocol_type,
+                addon_policy=protocol.addon_policy,
+                target_kj=0,
+                progression_state={"primary_axis": protocol.primary_axis, "secondary_axis": protocol.secondary_axis},
+                selection_reason=f"Selected protocol {protocol.protocol_id} for {day.day_role}.",
+                activation_required="activation_capable" in protocol.tags,
+                low_end_endurance="recovery_like" in protocol.tags,
+                progression_parameters=progression_parameters,
                 phase_legality_status="legal",
                 planned_duration_minutes=0,
                 planned_kj=0,
@@ -531,6 +463,7 @@ def _reconcile_loads(
         object.__setattr__(day, "planned_kj", int(round(base_minutes * rate / 60.0)))
         object.__setattr__(workout, "planned_duration_minutes", day.planned_duration_minutes)
         object.__setattr__(workout, "planned_kj", day.planned_kj)
+        object.__setattr__(workout, "target_kj", day.planned_kj)
         object.__setattr__(workout, "exportability_status", "valid")
     total = sum(day.planned_kj for day in day_blueprints)
     candidates = [
@@ -557,6 +490,7 @@ def _reconcile_loads(
             object.__setattr__(day, "planned_kj", new_kj)
             object.__setattr__(workout, "planned_duration_minutes", new_minutes)
             object.__setattr__(workout, "planned_kj", new_kj)
+            object.__setattr__(workout, "target_kj", new_kj)
             progressed = True
             if total >= weekly_target_kj:
                 break
@@ -583,16 +517,25 @@ def _reconcile_loads(
             object.__setattr__(day, "planned_kj", new_kj)
             object.__setattr__(workout, "planned_duration_minutes", new_minutes)
             object.__setattr__(workout, "planned_kj", new_kj)
+            object.__setattr__(workout, "target_kj", new_kj)
             progressed = True
             if total <= weekly_target_kj:
                 break
         if not progressed:
             break
+    for day in day_blueprints:
+        if day.fixed_rest_day or not day.workout_id:
+            continue
+        workout = by_workout.get(day.workout_id or "")
+        if workout is None:
+            continue
+        primary_tiz = _estimate_primary_tiz_minutes(workout=workout, session_minutes=day.planned_duration_minutes)
+        object.__setattr__(workout, "primary_tiz_target_min", primary_tiz)
 
 
-def _pick_family(
+def _pick_protocol(
     *,
-    family_config: WeekWorkoutFamilyConfig,
+    protocol_config: WeekWorkoutProtocolConfig,
     day_role: str,
     phase_intent: str,
     week_role: str,
@@ -600,45 +543,39 @@ def _pick_family(
     allowed_modalities: set[str],
     is_anchor: bool,
     forced_quality_family: str | None,
-) -> WeekWorkoutFamily:
+) -> WeekWorkoutProtocol:
     if forced_quality_family:
-        forced = family_config.families.get(forced_quality_family.upper())
-        if forced and _family_is_allowed(forced, day_role, phase_intent, week_role, allowed_domains, allowed_modalities, is_anchor):
+        forced = protocol_config.protocols.get(forced_quality_family.upper())
+        if forced and protocol_is_allowed(
+            forced,
+            day_role=day_role,
+            phase_intent=phase_intent,
+            week_role=week_role,
+            allowed_domains=allowed_domains,
+            allowed_modalities=allowed_modalities,
+            is_anchor=is_anchor,
+        ):
             return forced
     role = day_role.upper()
-    candidates = list(family_config.by_phase_intent.get(phase_intent.lower(), {}).get(role, []))
-    candidates.extend(family_config.by_day_role.get(role, []))
+    candidates = list(protocol_config.by_phase_intent.get(phase_intent.lower(), {}).get(role, []))
+    candidates.extend(protocol_config.by_day_role.get(role, []))
     seen: set[str] = set()
-    for family_id in candidates:
-        if family_id in seen:
+    for protocol_id in candidates:
+        if protocol_id in seen:
             continue
-        seen.add(family_id)
-        family = family_config.families[family_id]
-        if _family_is_allowed(family, day_role, phase_intent, week_role, allowed_domains, allowed_modalities, is_anchor):
-            return family
-    raise ValueError(f"No legal workout family available for day_role={day_role}, phase_intent={phase_intent}, week_role={week_role}.")
-
-
-def _family_is_allowed(
-    family: WeekWorkoutFamily,
-    day_role: str,
-    phase_intent: str,
-    week_role: str,
-    allowed_domains: set[str],
-    allowed_modalities: set[str],
-    is_anchor: bool,
-) -> bool:
-    if family.allowed_day_roles and day_role.upper() not in family.allowed_day_roles:
-        return False
-    if family.allowed_phase_intents and "*" not in family.allowed_phase_intents and phase_intent.lower() not in family.allowed_phase_intents:
-        return False
-    if family.allowed_week_roles and "*" not in family.allowed_week_roles and week_role.upper() not in family.allowed_week_roles:
-        return False
-    if family.intensity_domain.upper() not in allowed_domains:
-        return False
-    if family.load_modality.upper() not in allowed_modalities:
-        return False
-    return not (is_anchor and "anchor" not in family.tags and day_role.upper() == "ENDURANCE")
+        seen.add(protocol_id)
+        protocol = protocol_config.protocols[protocol_id]
+        if protocol_is_allowed(
+            protocol,
+            day_role=day_role,
+            phase_intent=phase_intent,
+            week_role=week_role,
+            allowed_domains=allowed_domains,
+            allowed_modalities=allowed_modalities,
+            is_anchor=is_anchor,
+        ):
+            return protocol
+    raise ValueError(f"No legal workout protocol available for day_role={day_role}, phase_intent={phase_intent}, week_role={week_role}.")
 
 
 def _base_minutes(day: WeekDayBlueprintModel) -> int:
@@ -694,6 +631,24 @@ def _default_workout_id(context: JsonMap, day: str, day_role: str) -> str:
         "ENDURANCE": "END",
     }.get(day_role.upper(), day_role.upper() or "END")
     return f"{iso_week}-{day.upper()}-{suffix}"
+
+
+def _estimate_primary_tiz_minutes(*, workout: WeekWorkoutBlueprintModel, session_minutes: int) -> int:
+    params = dict(workout.progression_parameters)
+    tiz_min = int(params.get("tiz_min_minutes") or 0)
+    tiz_max = int(params.get("tiz_max_minutes") or 0)
+    protocol_type = str(workout.protocol_type or "").upper()
+    warm = int(params.get("warmup_minutes") or 0)
+    cool = int(params.get("cooldown_minutes") or 0)
+    activation_minutes = 3 if str(params.get("activation_profile") or "").strip() else 0
+    available = max(session_minutes - warm - cool - activation_minutes, 0)
+    if protocol_type == "LONG_STEADY":
+        return max(min(available, tiz_max or available), tiz_min or 0)
+    if protocol_type == "FATIGUE_FINISH":
+        finish_min = int(params.get("finish_min_minutes") or 20)
+        finish_max = int(params.get("finish_max_minutes") or finish_min)
+        return min(max(finish_min, min(finish_max, max(session_minutes - int(params.get("preload_min_minutes") or 120), 0))), finish_max)
+    return max(min(available, tiz_max or available), tiz_min or 0)
 
 
 def _hourly_loads(context: JsonMap) -> dict[str, int]:

@@ -1,0 +1,354 @@
+domains:
+  ENDURANCE:
+    description: Aerobic low-intensity work.
+  TEMPO:
+    description: Sub-threshold steady quality.
+  SWEET_SPOT:
+    description: Stable sustained work near threshold with TiZ-first progression.
+  VO2MAX:
+    description: High-intensity oxygen-kinetics work with density-first progression.
+
+addon_policies:
+  NONE:
+    target_domain: null
+  Z2_FILL:
+    target_domain: ENDURANCE
+    target: 68%-72%
+    cadence: 85-95rpm
+    min_block_minutes: 10
+    max_block_minutes: 45
+    step_minutes: 5
+    max_share_of_session: 0.45
+    allowed_primary_protocols:
+      - TEMPO_CLASSIC_INTERVALS
+      - SWEET_SPOT_CLASSIC_INTERVALS
+      - SWEET_SPOT_EXTENSIVE
+      - K3_CLASSIC_INTERVALS
+      - VO2_LONG_INTERVALS
+      - VO2_MICROBURST_30_15
+      - VO2_MICROBURST_40_20
+
+protocols:
+  ENDURANCE_LOW_STEADY:
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    protocol_type: LONG_STEADY
+    protocol_variant: ENDURANCE_LOW
+    allowed_day_roles: [RECOVERY, ENDURANCE, OPTIONAL]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: [recovery_like]
+    primary_axis: duration
+    secondary_axis: none
+    addon_policy: NONE
+    warmup_minutes: 6
+    cooldown_minutes: 6
+    main_target: 60%-65%
+    main_cadence: 85-90rpm
+    session_duration_max_minutes: 240
+  ENDURANCE_STEADY:
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    protocol_type: LONG_STEADY
+    protocol_variant: ENDURANCE_STEADY
+    allowed_day_roles: [ENDURANCE, OPTIONAL]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: []
+    primary_axis: duration
+    secondary_axis: none
+    addon_policy: NONE
+    warmup_minutes: 8
+    cooldown_minutes: 8
+    main_target: 68%-72%
+    main_cadence: 85-90rpm
+    session_duration_max_minutes: 360
+  ENDURANCE_LONG_STEADY:
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    protocol_type: LONG_STEADY
+    protocol_variant: ENDURANCE_LONG_STEADY
+    allowed_day_roles: [ENDURANCE]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: [anchor, long_endurance]
+    primary_axis: duration
+    secondary_axis: none
+    addon_policy: NONE
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    main_target: 68%-72%
+    main_cadence: 85-90rpm
+    session_duration_max_minutes: 420
+  TEMPO_CLASSIC_INTERVALS:
+    intensity_domain: TEMPO
+    load_modality: NONE
+    protocol_type: CLASSIC_INTERVALS
+    protocol_variant: TEMPO_CLASSIC
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: [quality]
+    primary_axis: work_duration
+    secondary_axis: set_redistribution
+    redistribution_rule: extend_work_then_redistribute_sets
+    addon_policy: Z2_FILL
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    work_target: 82%-88%
+    work_cadence: 90-95rpm
+    recovery_target: 60%-65%
+    recovery_cadence: 85-90rpm
+    recovery_duration_minutes: 6
+    tiz_min_minutes: 36
+    tiz_max_minutes: 60
+    set_count_min: 3
+    set_count_max: 5
+    work_duration_min_minutes: 10
+    work_duration_max_minutes: 15
+    session_duration_max_minutes: 120
+  SWEET_SPOT_CLASSIC_INTERVALS:
+    intensity_domain: SWEET_SPOT
+    load_modality: NONE
+    protocol_type: CLASSIC_INTERVALS
+    protocol_variant: SWEET_SPOT_CLASSIC
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: [shortened_re_entry, shortened_consolidation, shortened_reload, durability_build, specificity_build, base]
+    allowed_week_roles: ["*"]
+    tags: [quality, activation_capable]
+    primary_axis: work_duration
+    secondary_axis: set_redistribution
+    redistribution_rule: extend_work_then_redistribute_sets
+    addon_policy: Z2_FILL
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    activation_profile: SWEET_SPOT_STANDARD
+    work_target: 88%-92%
+    work_cadence: 85-90rpm
+    recovery_target: 60%-65%
+    recovery_cadence: 85-90rpm
+    recovery_duration_minutes: 3
+    tiz_min_minutes: 40
+    tiz_max_minutes: 60
+    set_count_min: 2
+    set_count_max: 5
+    work_duration_min_minutes: 10
+    work_duration_max_minutes: 20
+    session_duration_max_minutes: 125
+  SWEET_SPOT_EXTENSIVE:
+    intensity_domain: SWEET_SPOT
+    load_modality: NONE
+    protocol_type: CLASSIC_INTERVALS
+    protocol_variant: SWEET_SPOT_EXTENSIVE
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: [durability_build, specificity_build, base]
+    allowed_week_roles: ["*"]
+    tags: [quality]
+    primary_axis: tiz
+    secondary_axis: set_redistribution
+    redistribution_rule: prefer_long_intervals
+    addon_policy: Z2_FILL
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    work_target: 88%-90%
+    work_cadence: 85-90rpm
+    recovery_target: 60%
+    recovery_cadence: 85rpm
+    recovery_duration_minutes: 3
+    tiz_min_minutes: 50
+    tiz_max_minutes: 90
+    set_count_min: 2
+    set_count_max: 3
+    work_duration_min_minutes: 20
+    work_duration_max_minutes: 35
+    session_duration_max_minutes: 150
+  K3_CLASSIC_INTERVALS:
+    intensity_domain: ENDURANCE
+    load_modality: K3
+    protocol_type: STRENGTH_ENDURANCE_INTERVALS
+    protocol_variant: K3_CLASSIC
+    allowed_day_roles: [QUALITY, ENDURANCE]
+    allowed_phase_intents: [shortened_re_entry, shortened_consolidation, shortened_reload, durability_build, base]
+    allowed_week_roles: ["*"]
+    tags: [quality]
+    primary_axis: work_duration
+    secondary_axis: set_count
+    addon_policy: Z2_FILL
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    work_target: 85%-90%
+    work_cadence: 50-60rpm
+    recovery_target: 55%-60%
+    recovery_cadence: 85rpm
+    recovery_duration_minutes: 3
+    tiz_min_minutes: 24
+    tiz_max_minutes: 40
+    set_count_min: 3
+    set_count_max: 5
+    work_duration_min_minutes: 6
+    work_duration_max_minutes: 10
+    session_duration_max_minutes: 110
+  VO2_MICROBURST_30_15:
+    intensity_domain: VO2MAX
+    load_modality: NONE
+    protocol_type: MICROBURST_SETS
+    protocol_variant: VO2_30_15
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: [vo2_focus, build, specificity_build]
+    allowed_week_roles: ["*"]
+    tags: [quality, activation_capable]
+    primary_axis: reps
+    secondary_axis: sets
+    addon_policy: Z2_FILL
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    activation_profile: VO2_STANDARD
+    work_target: 115%
+    work_cadence: 92-95rpm
+    recovery_target: 50%
+    recovery_cadence: 85rpm
+    between_set_recovery_minutes: 3
+    between_set_recovery_target: 55%
+    between_set_recovery_cadence: 85rpm
+    work_duration_seconds: 30
+    recovery_duration_seconds: 15
+    tiz_min_minutes: 12
+    tiz_max_minutes: 20
+    set_count_min: 2
+    set_count_max: 4
+    reps_per_set_min: 8
+    reps_per_set_max: 15
+    session_duration_max_minutes: 95
+  VO2_MICROBURST_40_20:
+    intensity_domain: VO2MAX
+    load_modality: NONE
+    protocol_type: MICROBURST_SETS
+    protocol_variant: VO2_40_20
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: [vo2_focus, build, specificity_build]
+    allowed_week_roles: ["*"]
+    tags: [quality, activation_capable]
+    primary_axis: reps
+    secondary_axis: sets
+    addon_policy: Z2_FILL
+    warmup_minutes: 10
+    cooldown_minutes: 8
+    activation_profile: VO2_STANDARD
+    work_target_by_set: [110%-112%, 112%-115%, 115%-118%, 115%-118%]
+    work_cadence: 92-95rpm
+    recovery_target: 50%
+    recovery_cadence: 85rpm
+    between_set_recovery_minutes: 4
+    between_set_recovery_target: 55%
+    between_set_recovery_cadence: 85rpm
+    work_duration_seconds: 40
+    recovery_duration_seconds: 20
+    tiz_min_minutes: 14
+    tiz_max_minutes: 24
+    set_count_min: 2
+    set_count_max: 4
+    reps_per_set_min: 8
+    reps_per_set_max: 15
+    session_duration_max_minutes: 95
+  VO2_LONG_INTERVALS:
+    intensity_domain: VO2MAX
+    load_modality: NONE
+    protocol_type: CLASSIC_INTERVALS
+    protocol_variant: VO2_LONG_INTERVALS
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: [vo2_focus, build, specificity_build]
+    allowed_week_roles: ["*"]
+    tags: [quality, activation_capable]
+    primary_axis: set_count
+    secondary_axis: work_duration
+    addon_policy: Z2_FILL
+    warmup_minutes: 8
+    cooldown_minutes: 10
+    activation_profile: VO2_STANDARD
+    work_target: 108%-112%
+    work_cadence: 92-95rpm
+    recovery_target: 55%
+    recovery_cadence: 85rpm
+    recovery_duration_minutes: 2
+    tiz_min_minutes: 16
+    tiz_max_minutes: 30
+    set_count_min: 4
+    set_count_max: 6
+    work_duration_min_minutes: 4
+    work_duration_max_minutes: 6
+    session_duration_max_minutes: 100
+  TEMPO_STEADY_BREVET:
+    intensity_domain: TEMPO
+    load_modality: NONE
+    protocol_type: LONG_STEADY
+    protocol_variant: TEMPO_STEADY_BREVET
+    allowed_day_roles: [QUALITY, ENDURANCE]
+    allowed_phase_intents: [specificity_build, durability_build, base]
+    allowed_week_roles: ["*"]
+    tags: [quality]
+    primary_axis: duration
+    secondary_axis: none
+    addon_policy: NONE
+    warmup_minutes: 8
+    cooldown_minutes: 8
+    main_target: 82%-85%
+    main_cadence: 88-92rpm
+    session_duration_max_minutes: 150
+  ENDURANCE_FATIGUE_FINISH:
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    protocol_type: FATIGUE_FINISH
+    protocol_variant: ENDURANCE_FATIGUE_FINISH
+    allowed_day_roles: [ENDURANCE]
+    allowed_phase_intents: [durability_build, specificity_build, base]
+    allowed_week_roles: ["*"]
+    tags: [anchor, long_endurance]
+    primary_axis: preload_duration
+    secondary_axis: finish_duration
+    addon_policy: NONE
+    warmup_minutes: 8
+    cooldown_minutes: 8
+    preload_target: 68%-72%
+    preload_cadence: 85-90rpm
+    finish_target: 82%-88%
+    finish_cadence: 88rpm
+    preload_min_minutes: 120
+    finish_min_minutes: 20
+    finish_max_minutes: 60
+    session_duration_max_minutes: 360
+
+selection_policy:
+  by_phase_intent:
+    shortened_re_entry:
+      QUALITY: [TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_CLASSIC_INTERVALS, K3_CLASSIC_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    shortened_consolidation:
+      QUALITY: [TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_CLASSIC_INTERVALS, K3_CLASSIC_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    shortened_reload:
+      QUALITY: [TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_CLASSIC_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    specificity_build:
+      QUALITY: [TEMPO_STEADY_BREVET, TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_EXTENSIVE, SWEET_SPOT_CLASSIC_INTERVALS, VO2_LONG_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_FATIGUE_FINISH, ENDURANCE_LONG_STEADY, ENDURANCE_STEADY]
+    durability_build:
+      QUALITY: [TEMPO_STEADY_BREVET, SWEET_SPOT_EXTENSIVE, TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_CLASSIC_INTERVALS, K3_CLASSIC_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_FATIGUE_FINISH, ENDURANCE_LONG_STEADY, ENDURANCE_STEADY]
+    base:
+      QUALITY: [TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_CLASSIC_INTERVALS, K3_CLASSIC_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_LONG_STEADY, ENDURANCE_STEADY]
+    vo2_focus:
+      QUALITY: [VO2_MICROBURST_30_15, VO2_MICROBURST_40_20, VO2_LONG_INTERVALS]
+      RECOVERY: [ENDURANCE_LOW_STEADY]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+  by_day_role:
+    QUALITY: [TEMPO_CLASSIC_INTERVALS, SWEET_SPOT_CLASSIC_INTERVALS, K3_CLASSIC_INTERVALS]
+    RECOVERY: [ENDURANCE_LOW_STEADY]
+    ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    OPTIONAL: [ENDURANCE_LOW_STEADY, ENDURANCE_STEADY]
