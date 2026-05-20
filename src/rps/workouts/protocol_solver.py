@@ -29,12 +29,16 @@ def solve_protocol_workout(spec: Any) -> SolvedWorkout:
         return _solve_classic_intervals(spec)
     if protocol_type == "MICROBURST_SETS":
         return _solve_microburst_sets(spec)
+    if protocol_type == "OVER_UNDER_INTERVALS":
+        return _solve_over_under_intervals(spec)
     if protocol_type == "STRENGTH_ENDURANCE_INTERVALS":
         return _solve_strength_endurance(spec)
     if protocol_type == "FATIGUE_FINISH":
         return _solve_fatigue_finish(spec)
     if protocol_type == "RAMP_INTERVALS":
         return _solve_ramp_intervals(spec)
+    if protocol_type == "DAY_TYPE_ONLY":
+        raise ValueError(f"Protocol '{spec.protocol_variant or spec.workout_id}' is a day-type-only definition and cannot render workout_text.")
     raise ValueError(f"Unsupported protocol_type '{protocol_type}' for {spec.workout_id}.")
 
 
@@ -123,6 +127,40 @@ def _solve_strength_endurance(spec: Any) -> SolvedWorkout:
                     (
                         WorkoutStep(f"{work_min}m", str(params.get("work_target") or "85%-90%"), str(params.get("work_cadence") or "50-60rpm")),
                         WorkoutStep(f"{recovery_min}m", str(params.get("recovery_target") or "55%-60%"), str(params.get("recovery_cadence") or "85rpm")),
+                    ),
+                ),
+            ),
+        ),
+    ]
+    if addon_minutes > 0:
+        sections.append(_z2_addon_section(spec=spec, addon_minutes=addon_minutes))
+    sections.append(WorkoutSection("Cooldown", (WorkoutStep(f"{cool}m", "ramp 60%-45%", "80-85rpm"),)))
+    return SolvedWorkout(title=_title_for_protocol(spec), notes=_notes_for_protocol(spec), structure=WorkoutStructure(tuple(sections)))
+
+
+def _solve_over_under_intervals(spec: Any) -> SolvedWorkout:
+    params = spec.progression_parameters
+    warm = int(params.get("warmup_minutes") or 8)
+    cool = int(params.get("cooldown_minutes") or 8)
+    under_minutes = int(params.get("under_duration_minutes") or 3)
+    over_minutes = int(params.get("over_duration_minutes") or 1)
+    oscillation_min = int(params.get("oscillation_count_min") or 4)
+    oscillation_max = int(params.get("oscillation_count_max") or 8)
+    target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or ((under_minutes + over_minutes) * oscillation_min))
+    per_oscillation = max(under_minutes + over_minutes, 1)
+    oscillations = min(oscillation_max, max(oscillation_min, (target_tiz + per_oscillation - 1) // per_oscillation))
+    primary_used = warm + cool + oscillations * per_oscillation
+    addon_minutes = _solve_addon_minutes(spec=spec, primary_minutes=primary_used)
+    sections: list[WorkoutSection] = [
+        WorkoutSection("Warmup", (WorkoutStep(f"{warm}m", "ramp 50%-75%", "85-95rpm"),)),
+        WorkoutSection(
+            "Main Set",
+            (
+                WorkoutLoop(
+                    oscillations,
+                    (
+                        WorkoutStep(f"{under_minutes}m", str(params.get("under_target") or "95%"), str(params.get("under_cadence") or "85-90rpm")),
+                        WorkoutStep(f"{over_minutes}m", str(params.get("over_target") or "105%"), str(params.get("over_cadence") or "90rpm")),
                     ),
                 ),
             ),
@@ -340,7 +378,7 @@ def _z2_addon_section(*, spec: Any, addon_minutes: int) -> WorkoutSection:
 
 
 def _activation_section(profile: str) -> WorkoutSection:
-    if profile == "VO2_STANDARD":
+    if profile in {"VO2_STANDARD", "SWEET_SPOT_STANDARD", "THRESHOLD_STANDARD"}:
         return WorkoutSection(
             "#### Activation",
             (
@@ -369,12 +407,18 @@ def _activation_section(profile: str) -> WorkoutSection:
 
 def _title_for_protocol(spec: Any) -> str:
     variant = str(spec.protocol_variant or spec.protocol_type or spec.workout_family).upper()
+    if variant.startswith("VO2_20_10"):
+        return "VO2max 20/10 Microbursts"
     if variant.startswith("VO2_40_20"):
         return "VO2max 40/20 Microbursts"
     if variant.startswith("VO2_30_15"):
         return "VO2max 30/15 Microbursts"
     if "VO2_LONG" in variant:
         return "VO2max Long Intervals"
+    if "THRESHOLD" in variant:
+        return "Threshold Intervals"
+    if "OVER_UNDER" in variant:
+        return "Tempo Over/Under"
     if "SWEET_SPOT_EXTENSIVE" in variant:
         return "Sweet Spot Extensive"
     if "SWEET_SPOT" in variant:
@@ -385,8 +429,12 @@ def _title_for_protocol(spec: Any) -> str:
         return "Tempo Intervals"
     if "K3" in variant:
         return "K3 Strength Endurance"
+    if "PREFATIGUE_FINISH" in variant:
+        return "Endurance Pre-Fatigue Finish"
     if "FATIGUE_FINISH" in variant:
         return "Endurance Fatigue Finish"
+    if "BACK_TO_BACK" in variant:
+        return "Endurance Back-to-Back Load"
     if "ENDURANCE_LONG" in variant:
         return "Long Endurance Anchor"
     if spec.low_end_endurance:

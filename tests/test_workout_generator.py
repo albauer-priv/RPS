@@ -172,3 +172,117 @@ def test_protocol_solver_renders_vo2_microburst_sets_without_nested_loops() -> N
     assert "10x" in text or "9x" in text or "13x" in text
     assert "- 10x " not in text
     assert "#### Z2 Add-On" in text
+
+
+def test_protocol_solver_renders_threshold_classic_with_activation() -> None:
+    planning_bundle = {
+        "day_blueprints": [
+            {"day": "Mon", "date": "2026-05-18", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Tue", "date": "2026-05-19", "day_role": "QUALITY", "planned_duration_minutes": 90, "planned_kj": 1200, "workout_id": "THR-TUE"},
+            {"day": "Wed", "date": "2026-05-20", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Thu", "date": "2026-05-21", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Fri", "date": "2026-05-22", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Sat", "date": "2026-05-23", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Sun", "date": "2026-05-24", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+        ],
+        "workout_blueprints": [
+            {
+                "workout_id": "THR-TUE",
+                "date": "2026-05-19",
+                "day_role": "QUALITY",
+                "intensity_domain": "THRESHOLD",
+                "workout_family": "THRESHOLD",
+                "protocol_type": "CLASSIC_INTERVALS",
+                "protocol_variant": "THRESHOLD_CLASSIC",
+                "planned_duration_minutes": 90,
+                "planned_kj": 1200,
+                "primary_tiz_target_min": 30,
+                "addon_policy": "Z2_FILL",
+                "activation_required": True,
+                "progression_parameters": {
+                    "warmup_minutes": 8,
+                    "cooldown_minutes": 10,
+                    "activation_profile": "THRESHOLD_STANDARD",
+                    "work_target": "95%-100%",
+                    "work_cadence": "85-90rpm",
+                    "recovery_target": "60%",
+                    "recovery_cadence": "85rpm",
+                    "recovery_duration_minutes": 3,
+                    "tiz_min_minutes": 24,
+                    "tiz_max_minutes": 45,
+                    "set_count_min": 3,
+                    "set_count_max": 5,
+                    "work_duration_min_minutes": 6,
+                    "work_duration_max_minutes": 15,
+                    "addon_target": "68%-72%",
+                    "addon_cadence": "85-95rpm",
+                    "addon_min_block_minutes": 10,
+                    "addon_max_block_minutes": 30,
+                    "addon_step_minutes": 5,
+                    "addon_max_share_of_session": 0.35,
+                },
+                "progression_state": {"primary_axis": "tiz", "secondary_axis": "set_count"},
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    validate_week_plan_exportability(document)
+    text = document["data"]["workouts"][0]["workout_text"]
+    assert "#### Activation" in text
+    assert "95%-100%" in text
+
+
+def test_protocol_solver_renders_tempo_over_under_intervals() -> None:
+    planning_bundle = {
+        "day_blueprints": [
+            {"day": "Mon", "date": "2026-05-18", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Tue", "date": "2026-05-19", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Wed", "date": "2026-05-20", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Thu", "date": "2026-05-21", "day_role": "QUALITY", "planned_duration_minutes": 85, "planned_kj": 1100, "workout_id": "OU-THU"},
+            {"day": "Fri", "date": "2026-05-22", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Sat", "date": "2026-05-23", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+            {"day": "Sun", "date": "2026-05-24", "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None},
+        ],
+        "workout_blueprints": [
+            {
+                "workout_id": "OU-THU",
+                "date": "2026-05-21",
+                "day_role": "QUALITY",
+                "intensity_domain": "TEMPO",
+                "workout_family": "TEMPO",
+                "protocol_type": "OVER_UNDER_INTERVALS",
+                "protocol_variant": "TEMPO_OVER_UNDER",
+                "planned_duration_minutes": 85,
+                "planned_kj": 1100,
+                "primary_tiz_target_min": 24,
+                "addon_policy": "Z2_FILL",
+                "progression_parameters": {
+                    "warmup_minutes": 8,
+                    "cooldown_minutes": 10,
+                    "under_target": "95%",
+                    "under_cadence": "85-90rpm",
+                    "over_target": "105%",
+                    "over_cadence": "90rpm",
+                    "under_duration_minutes": 3,
+                    "over_duration_minutes": 1,
+                    "oscillation_count_min": 4,
+                    "oscillation_count_max": 8,
+                    "addon_target": "68%-72%",
+                    "addon_cadence": "85-95rpm",
+                    "addon_min_block_minutes": 10,
+                    "addon_max_block_minutes": 30,
+                    "addon_step_minutes": 5,
+                    "addon_max_share_of_session": 0.35,
+                },
+                "progression_state": {"primary_axis": "oscillation_count", "secondary_axis": "tiz"},
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    validate_week_plan_exportability(document)
+    text = document["data"]["workouts"][0]["workout_text"]
+    assert "4x" in text or "5x" in text or "6x" in text
+    assert "95% 85-90rpm" in text
+    assert "105% 90rpm" in text
