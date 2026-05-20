@@ -1,6 +1,6 @@
 ---
-Version: 1.0
-Status: Implemented
+Version: 1.1
+Status: Updated
 Last-Updated: 2026-05-20
 Owner: Planning
 ---
@@ -59,6 +59,7 @@ Owner: Planning
 * Week planning selects a protocol definition instead of only a workout family.
 * The Week engine computes a workout blueprint with protocol metadata, progression parameters, target TiZ, and optional add-on policy.
 * The workout renderer solves a concrete protocol instance from those rules and exports canonical Intervals subset text.
+* When a prior-week `WEEK_PLAN` exists, the Week engine infers the last protocol structure from canonical workout text and reuses that progression reference while solving the next legal step.
 * Preview/replan and coach-triggered week regeneration use the same solver and renderer as the main week path.
 
 **UI impact**
@@ -80,12 +81,13 @@ Owner: Planning
 * `src/rps/planning/week_engine.py`: load protocol config, select protocols, attach protocol metadata to workout blueprints, set TiZ/add-on targets.
 * `src/rps/workouts/generator.py`: replace family renderer with protocol solver and deterministic add-on composition.
 * `src/rps/workouts/structured.py`: preserve canonical section rendering; internal richer protocol semantics stay code-owned and render into the flat subset.
+* `src/rps/workouts/progression_history.py`: infer prior protocol signatures from persisted week-plan workout text.
 * `config/planning/week_workout_protocols.yaml`: protocol registry, selection policy, constraints, and progression rules.
 
 **Data flow**
 
-* Inputs: week calendar context, load method context, protocol config, bounded adjustment intent.
-* Processing: day-role allocation -> protocol selection -> load reconciliation -> protocol solving -> canonical export rendering.
+* Inputs: week calendar context, load method context, protocol config, prior-week progression history, bounded adjustment intent.
+* Processing: day-role allocation -> protocol selection -> prior signature matching -> load reconciliation -> protocol solving -> canonical export rendering.
 * Outputs: `WeekPlanBundle`, persisted `WEEK_PLAN`, preview documents, bounded recompute results.
 
 **Schema / Artefacts**
@@ -169,6 +171,7 @@ Owner: Planning
 
 * [x] Week workout generation is protocol-driven, not family-template-driven.
 * [x] Quality workouts can solve TiZ progression and optional Z2 add-ons deterministically.
+* [ ] Policy-defined progression order is explicitly operationalized from prior protocol state, not only approximated by generic TiZ fitting.
 * [x] Export remains subset-valid and contains no nested loops or freeride.
 * [x] Preview/replan and bounded week regeneration use the same generator path as main week creation.
 * [x] Validation passes: `py_compile`, lint, typecheck, targeted week/workout tests.
@@ -232,4 +235,3 @@ Update these docs as part of implementation:
 * [specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/principles/principles_durability_first_cycling.md)
 * [specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md)
 * [specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md)
-

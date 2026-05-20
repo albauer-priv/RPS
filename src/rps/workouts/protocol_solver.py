@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -78,6 +79,7 @@ def _solve_classic_intervals(spec: Any) -> SolvedWorkout:
         recovery_duration=int(params.get("recovery_duration_minutes") or 3),
         preferred_primary_axis=str(spec.progression_state.get("primary_axis") or ""),
         preferred_secondary_axis=str(spec.progression_state.get("secondary_axis") or ""),
+        previous_signature=_previous_signature(spec),
     )
     main_blocks: list[WorkoutLoop | WorkoutStep] = [
         WorkoutLoop(
@@ -114,6 +116,7 @@ def _solve_strength_endurance(spec: Any) -> SolvedWorkout:
         recovery_duration=int(params.get("recovery_duration_minutes") or 3),
         preferred_primary_axis="work_duration",
         preferred_secondary_axis="set_count",
+        previous_signature=_previous_signature(spec),
     )
     primary_used = sets * work_min + sets * recovery_min
     addon_minutes = _solve_addon_minutes(spec=spec, primary_minutes=primary_used + warm + cool)
@@ -148,7 +151,14 @@ def _solve_over_under_intervals(spec: Any) -> SolvedWorkout:
     oscillation_max = int(params.get("oscillation_count_max") or 8)
     target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or ((under_minutes + over_minutes) * oscillation_min))
     per_oscillation = max(under_minutes + over_minutes, 1)
+    previous = _previous_signature(spec)
     oscillations = min(oscillation_max, max(oscillation_min, (target_tiz + per_oscillation - 1) // per_oscillation))
+    previous_oscillations = int(previous.get("oscillation_count") or 0)
+    previous_tiz = int(previous.get("tiz_minutes") or 0)
+    if previous_oscillations and target_tiz >= previous_tiz:
+        oscillations = max(oscillations, previous_oscillations)
+        while oscillations < oscillation_max and oscillations * per_oscillation < target_tiz:
+            oscillations += 1
     primary_used = warm + cool + oscillations * per_oscillation
     addon_minutes = _solve_addon_minutes(spec=spec, primary_minutes=primary_used)
     sections: list[WorkoutSection] = [
@@ -182,6 +192,7 @@ def _solve_microburst_sets(spec: Any) -> SolvedWorkout:
     recovery_seconds = int(params.get("recovery_duration_seconds") or 15)
     target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 12)
     total_reps = max(1, int(round(target_tiz * 60 / work_seconds)))
+    previous = _previous_signature(spec)
     set_count, reps_per_set = _solve_microburst_distribution(
         total_reps=total_reps,
         set_count_min=int(params.get("set_count_min") or 2),
@@ -189,6 +200,12 @@ def _solve_microburst_sets(spec: Any) -> SolvedWorkout:
         reps_per_set_min=int(params.get("reps_per_set_min") or 8),
         reps_per_set_max=int(params.get("reps_per_set_max") or 15),
         preferred_set_count=len(list(params.get("work_target_by_set") or [])) or None,
+        previous_signature=previous,
+        preferred_primary_axis=str(spec.progression_state.get("primary_axis") or ""),
+        preferred_secondary_axis=str(spec.progression_state.get("secondary_axis") or ""),
+        protocol_variant=str(spec.protocol_variant or ""),
+        work_seconds=work_seconds,
+        recovery_seconds=recovery_seconds,
     )
     blocks: list[WorkoutLoop | WorkoutStep] = []
     target_by_set = list(params.get("work_target_by_set") or [])
@@ -238,6 +255,7 @@ def _solve_ramp_intervals(spec: Any) -> SolvedWorkout:
         recovery_duration=int(params.get("recovery_duration_minutes") or 3),
         preferred_primary_axis="set_count",
         preferred_secondary_axis="work_duration",
+        previous_signature=_previous_signature(spec),
     )
     structure = WorkoutStructure(
         sections=(
@@ -296,7 +314,41 @@ def _solve_classic_interval_distribution(
     recovery_duration: int,
     preferred_primary_axis: str,
     preferred_secondary_axis: str,
+    previous_signature: JsonMap | None,
 ) -> tuple[int, int, int]:
+    previous = previous_signature or {}
+    previous_sets = int(previous.get("set_count") or 0)
+    previous_work = int(previous.get("work_duration_minutes") or 0)
+    previous_tiz = int(previous.get("tiz_minutes") or 0)
+    if previous_sets and previous_work:
+        previous_sets = min(max(previous_sets, set_count_min), set_count_max)
+        previous_work = min(max(previous_work, work_duration_min), work_duration_max)
+        if target_tiz > previous_tiz and preferred_primary_axis == "work_duration":
+            work = previous_work
+            while work < work_duration_max and previous_sets * work < target_tiz:
+                work += 1
+            if previous_sets * work >= target_tiz:
+                return work, recovery_duration, previous_sets
+            if preferred_secondary_axis in {"set_redistribution", "set_count"}:
+                progressed = _redistribute_sets_for_tiz(
+                    target_tiz=target_tiz,
+                    current_sets=previous_sets,
+                    set_count_max=set_count_max,
+                    work_duration_min=work_duration_min,
+                    work_duration_max=work_duration_max,
+                )
+                if progressed is not None:
+                    progressed_work, progressed_sets = progressed
+                    return progressed_work, recovery_duration, progressed_sets
+        if (
+            target_tiz == previous_tiz
+            and preferred_secondary_axis == "set_redistribution"
+            and previous_work >= work_duration_max
+            and previous_sets < set_count_max
+        ):
+            redistributed_sets = previous_sets + 1
+            redistributed_work = min(work_duration_max, max(work_duration_min, math.ceil(target_tiz / redistributed_sets)))
+            return redistributed_work, recovery_duration, redistributed_sets
     best: tuple[int, int, int, int] | None = None
     for sets in range(set_count_min, set_count_max + 1):
         for work in range(work_duration_min, work_duration_max + 1):
@@ -330,7 +382,34 @@ def _solve_microburst_distribution(
     reps_per_set_min: int,
     reps_per_set_max: int,
     preferred_set_count: int | None,
+    previous_signature: JsonMap | None,
+    preferred_primary_axis: str,
+    preferred_secondary_axis: str,
+    protocol_variant: str,
+    work_seconds: int,
+    recovery_seconds: int,
 ) -> tuple[int, list[int]]:
+    previous = previous_signature or {}
+    previous_reps_raw = previous.get("reps_per_set")
+    previous_reps = [int(item) for item in previous_reps_raw] if isinstance(previous_reps_raw, list) and previous_reps_raw else []
+    if (
+        previous_reps
+        and int(previous.get("work_duration_seconds") or 0) == work_seconds
+        and int(previous.get("recovery_duration_seconds") or 0) == recovery_seconds
+    ):
+        progressed = _progress_microburst_from_previous(
+            previous_reps=previous_reps,
+            target_total_reps=total_reps,
+            set_count_min=set_count_min,
+            set_count_max=set_count_max,
+            reps_per_set_min=reps_per_set_min,
+            reps_per_set_max=reps_per_set_max,
+            preferred_primary_axis=preferred_primary_axis,
+            preferred_secondary_axis=preferred_secondary_axis,
+            protocol_variant=protocol_variant,
+        )
+        if progressed is not None:
+            return len(progressed), progressed
     best: tuple[int, int, int] | None = None
     best_distribution: list[int] = []
     for set_count in range(set_count_min, set_count_max + 1):
@@ -375,6 +454,89 @@ def _z2_addon_section(*, spec: Any, addon_minutes: int) -> WorkoutSection:
     target = str(params.get("addon_target") or "68%-72%")
     cadence = str(params.get("addon_cadence") or "85-95rpm")
     return WorkoutSection("#### Z2 Add-On", (WorkoutStep(_minutes_token(addon_minutes), target, cadence),))
+
+
+def _previous_signature(spec: Any) -> JsonMap:
+    payload = spec.progression_state.get("previous_signature")
+    return payload if isinstance(payload, dict) else {}
+
+
+def _redistribute_sets_for_tiz(
+    *,
+    target_tiz: int,
+    current_sets: int,
+    set_count_max: int,
+    work_duration_min: int,
+    work_duration_max: int,
+) -> tuple[int, int] | None:
+    next_sets = current_sets + 1
+    if next_sets > set_count_max:
+        return None
+    work = math.ceil(target_tiz / next_sets)
+    if work_duration_min <= work <= work_duration_max:
+        return work, next_sets
+    return None
+
+
+def _progress_microburst_from_previous(
+    *,
+    previous_reps: list[int],
+    target_total_reps: int,
+    set_count_min: int,
+    set_count_max: int,
+    reps_per_set_min: int,
+    reps_per_set_max: int,
+    preferred_primary_axis: str,
+    preferred_secondary_axis: str,
+    protocol_variant: str,
+) -> list[int] | None:
+    reps = list(previous_reps)
+    previous_total = sum(reps)
+    practical_reps_ceiling = min(reps_per_set_max, 13 if "VO2_40_20" in protocol_variant.upper() or "VO2_30_15" in protocol_variant.upper() else reps_per_set_max)
+    if target_total_reps > previous_total and preferred_primary_axis == "reps":
+        while sum(reps) < target_total_reps and max(reps) < practical_reps_ceiling:
+            for idx in range(len(reps)):
+                if reps[idx] >= practical_reps_ceiling or sum(reps) >= target_total_reps:
+                    continue
+                reps[idx] += 1
+        if sum(reps) >= target_total_reps:
+            return reps
+        if preferred_secondary_axis == "sets" and len(reps) < set_count_max:
+            preferred_sets = len(reps) + 1
+            return _balanced_reps_distribution(
+                total_reps=max(target_total_reps, previous_total),
+                set_count=max(set_count_min, preferred_sets),
+                reps_per_set_min=reps_per_set_min,
+                reps_per_set_max=reps_per_set_max,
+            )
+    if (
+        target_total_reps == previous_total
+        and preferred_secondary_axis == "sets"
+        and len(reps) < set_count_max
+        and max(previous_reps) >= practical_reps_ceiling
+    ):
+        return _balanced_reps_distribution(
+            total_reps=target_total_reps,
+            set_count=max(set_count_min, len(reps) + 1),
+            reps_per_set_min=reps_per_set_min,
+            reps_per_set_max=reps_per_set_max,
+        )
+    return None
+
+
+def _balanced_reps_distribution(
+    *,
+    total_reps: int,
+    set_count: int,
+    reps_per_set_min: int,
+    reps_per_set_max: int,
+) -> list[int] | None:
+    base = total_reps // set_count
+    remainder = total_reps % set_count
+    reps = [base + (1 if idx < remainder else 0) for idx in range(set_count)]
+    if any(rep < reps_per_set_min or rep > reps_per_set_max for rep in reps):
+        return None
+    return reps
 
 
 def _activation_section(profile: str) -> WorkoutSection:

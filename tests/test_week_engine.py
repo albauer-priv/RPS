@@ -122,6 +122,43 @@ def _seed_week_workspace(root: Path, athlete_id: str = "test_athlete") -> LocalA
     return store
 
 
+def _seed_previous_week_plan(store: LocalArtifactStore, athlete_id: str = "test_athlete") -> None:
+    store.save_document(
+        athlete_id,
+        ArtifactType.WEEK_PLAN,
+        "2026-20",
+        {
+            "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+            "data": {
+                "week_summary": {"planned_weekly_load_kj": 7200},
+                "agenda": [
+                    {"day": "Mon", "date": "2026-05-11", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                    {"day": "Tue", "date": "2026-05-12", "day_role": "QUALITY", "planned_duration": "01:38", "planned_kj": 1100, "workout_id": "2026-20-TUE-QUALITY"},
+                    {"day": "Wed", "date": "2026-05-13", "day_role": "RECOVERY", "planned_duration": "01:00", "planned_kj": 500, "workout_id": "2026-20-WED-REC"},
+                    {"day": "Thu", "date": "2026-05-14", "day_role": "ENDURANCE", "planned_duration": "01:30", "planned_kj": 800, "workout_id": "2026-20-THU-END"},
+                    {"day": "Fri", "date": "2026-05-15", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                    {"day": "Sat", "date": "2026-05-16", "day_role": "ENDURANCE", "planned_duration": "03:30", "planned_kj": 2600, "workout_id": "2026-20-SAT-END"},
+                    {"day": "Sun", "date": "2026-05-17", "day_role": "ENDURANCE", "planned_duration": "01:20", "planned_kj": 700, "workout_id": "2026-20-SUN-END"},
+                ],
+                "workouts": [
+                    {
+                        "workout_id": "2026-20-TUE-QUALITY",
+                        "title": "Tempo Intervals",
+                        "notes": "Deterministic Tempo Classic workout generated from the approved week blueprint.",
+                        "date": "2026-05-12",
+                        "start": "00:00",
+                        "duration": "01:38:00",
+                        "workout_text": "Warmup\n- 10m ramp 50%-75% 85-95rpm\n\nMain Set\n4x\n- 10m 82%-88% 90-95rpm\n- 6m 60%-65% 85-90rpm\n\nCooldown\n- 8m ramp 60%-45% 80-85rpm",
+                    }
+                ],
+            },
+        },
+        producer_agent="test",
+        run_id="seed_prev",
+        update_latest=True,
+    )
+
+
 def test_load_week_workout_family_config_rejects_unknown_addon_policy(tmp_path: Path) -> None:
     config_dir = tmp_path / "config" / "planning"
     config_dir.mkdir(parents=True)
@@ -201,3 +238,28 @@ def test_execute_week_engine_persists_week_plan_without_crewai_week_crews(tmp_pa
     assert saved["data"]["week_summary"]["planned_weekly_load_kj"] >= 7329
     rendered = "\n".join(workout["workout_text"] for workout in saved["data"]["workouts"])
     assert "- 3x " not in rendered
+
+
+def test_execute_week_engine_reuses_previous_week_progression_signature(tmp_path: Path) -> None:
+    _seed_week_workspace(tmp_path)
+    store = LocalArtifactStore(root=tmp_path)
+    _seed_previous_week_plan(store)
+
+    result = execute_week_engine(
+        repo_root=Path.cwd(),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=tmp_path,
+        athlete_id="test_athlete",
+        run_id="progression_run",
+        target_year=2026,
+        target_week=21,
+        preview_only=True,
+    )
+
+    assert result["ok"] is True
+    workout_ids = {workout["workout_id"]: workout for workout in result["details"]["planning_bundle"]["workout_blueprints"]}
+    tempo = workout_ids["2026-21-TUE-QUALITY"]
+    previous = tempo["progression_state"]["previous_signature"]
+    assert previous["protocol_type"] == "CLASSIC_INTERVALS"
+    assert previous["set_count"] == 4
+    assert previous["work_duration_minutes"] == 10

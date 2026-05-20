@@ -34,9 +34,13 @@ from rps.planning.week_protocols import (
 )
 from rps.planning.workout_load import build_workout_load_method_context
 from rps.workouts.generator import build_week_plan_document_from_bundle
+from rps.workouts.progression_history import (
+    extract_progression_signatures_from_week_plan,
+    match_progression_signature,
+)
 from rps.workouts.validator import collect_week_plan_export_issues
 from rps.workspace.guarded_store import GuardedValidatedStore
-from rps.workspace.iso_helpers import IsoWeek
+from rps.workspace.iso_helpers import IsoWeek, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
@@ -119,11 +123,13 @@ def execute_week_engine(
         allowed_intensity_domains=list(week_calendar.get("allowed_intensity_domains") or []),
     )
     protocol_config = load_week_workout_protocol_config(repo_root)
+    progression_history = _load_prior_progression_signatures(store=store, athlete_id=athlete_id, target_week=target)
     adjustment = parse_week_adjustment_intent(user_message)
     planning_bundle = _build_week_plan_bundle(
         week_calendar_context=week_calendar,
         load_method_context=load_method,
         protocol_config=protocol_config,
+        progression_history=progression_history,
         phase_intent=str(week_calendar.get("phase_intent") or phase_info.phase_intent or ""),
         adjustment=adjustment,
     )
@@ -238,6 +244,7 @@ def _build_week_plan_bundle(
     week_calendar_context: JsonMap,
     load_method_context: JsonMap,
     protocol_config: WeekWorkoutProtocolConfig,
+    progression_history: list[JsonMap],
     phase_intent: str,
     adjustment: WeekAdjustmentIntent,
 ) -> WeekPlanBundleModel:
@@ -248,6 +255,7 @@ def _build_week_plan_bundle(
     workout_blueprints = _select_workout_blueprints(
         day_blueprints=day_blueprints,
         protocol_config=protocol_config,
+        progression_history=progression_history,
         week_calendar_context=week_calendar_context,
         phase_intent=phase_intent,
         adjustment=adjustment,
@@ -264,6 +272,7 @@ def _build_week_plan_bundle(
             f"Active weekly band: {target_band['min']}-{target_band['max']} kJ",
             "Fixed rest days preserved.",
             "Workout protocols selected from configuration.",
+            "Previous week progression state is reused when a matching protocol signature exists.",
         ],
         completed_vs_planned=[],
         likely_change_request=bool(adjustment.message),
@@ -375,6 +384,7 @@ def _select_workout_blueprints(
     *,
     day_blueprints: list[WeekDayBlueprintModel],
     protocol_config: WeekWorkoutProtocolConfig,
+    progression_history: list[JsonMap],
     week_calendar_context: JsonMap,
     phase_intent: str,
     adjustment: WeekAdjustmentIntent,
@@ -400,6 +410,13 @@ def _select_workout_blueprints(
         )
         if day.day_role == "QUALITY":
             quality_index += 1
+        previous_signature = match_progression_signature(
+            signatures=progression_history,
+            protocol_type=protocol.protocol_type,
+            protocol_variant=protocol.protocol_variant,
+            workout_family=protocol.intensity_domain,
+            day_role=day.day_role,
+        )
         progression_parameters = dict(protocol.parameters)
         addon_policy = protocol_config.addon_policies.get(protocol.addon_policy)
         if addon_policy is not None and addon_policy.policy_id != "NONE":
@@ -429,8 +446,16 @@ def _select_workout_blueprints(
                 generator_profile=protocol.protocol_type,
                 addon_policy=protocol.addon_policy,
                 target_kj=0,
-                progression_state={"primary_axis": protocol.primary_axis, "secondary_axis": protocol.secondary_axis},
-                selection_reason=f"Selected protocol {protocol.protocol_id} for {day.day_role}.",
+                progression_state={
+                    "primary_axis": protocol.primary_axis,
+                    "secondary_axis": protocol.secondary_axis,
+                    "redistribution_rule": protocol.redistribution_rule,
+                    "previous_signature": dict(previous_signature) if previous_signature else {},
+                },
+                selection_reason=(
+                    f"Selected protocol {protocol.protocol_id} for {day.day_role}."
+                    + (f" Prior progression signature matched {previous_signature.get('protocol_variant_guess')}." if previous_signature else "")
+                ),
                 activation_required="activation_capable" in protocol.tags,
                 low_end_endurance="recovery_like" in protocol.tags,
                 progression_parameters=progression_parameters,
@@ -698,6 +723,21 @@ def _load_version_required(store: LocalArtifactStore, athlete_id: str, artifact_
     if not isinstance(payload, dict):
         raise ValueError(f"Missing or invalid {artifact_type.value} {version_key}.")
     return payload
+
+
+def _load_prior_progression_signatures(*, store: LocalArtifactStore, athlete_id: str, target_week: IsoWeek) -> list[JsonMap]:
+    previous = previous_iso_week(target_week)
+    previous_key = f"{previous.year:04d}-{previous.week:02d}"
+    resolved = store.resolve_week_version_key(athlete_id, ArtifactType.WEEK_PLAN, previous_key)
+    if not resolved:
+        return []
+    try:
+        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, resolved)
+    except Exception:
+        return []
+    if not isinstance(payload, dict):
+        return []
+    return extract_progression_signatures_from_week_plan(payload)
 
 
 def _as_map(value: object) -> JsonMap:
