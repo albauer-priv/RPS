@@ -24,14 +24,14 @@ Purpose:
 | `specs/knowledge/_shared/sources/principles/evidence_layer_durability.md` | Retrieval / Reference | `skills/shared/durability-methodology/references/evidence_layer_durability.md` |
 | `specs/knowledge/_shared/sources/policies/progressive_overload_policy.md` | Superseded -> Skill | `skills/season/load-governance/SKILL.md`, `skills/phase/guardrails-authoring/SKILL.md`, `skills/phase/cadence-recovery/SKILL.md`, `skills/week/load-estimation-week/SKILL.md` |
 | `specs/knowledge/_shared/sources/policies/load_distribution_policy.md` | Superseded -> Skill | `skills/week/load-estimation-week/SKILL.md` |
-| `specs/knowledge/_shared/sources/policies/workout_policy.md` | Superseded -> Skill | `skills/week/workout-text-authoring/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
+| `specs/knowledge/_shared/sources/policies/workout_policy.md` | Superseded -> Skill | `skills/week/workout-construction/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
 | `specs/knowledge/_shared/sources/policies/kpi_signal_effects_policy.md` | Superseded -> Skill | `skills/phase/intensity-distribution/SKILL.md`, `skills/report/analysis-methodology/SKILL.md` |
 | `specs/knowledge/_shared/sources/policies/des_evaluation_policy.md` | Superseded -> Skill | `skills/report/analysis-methodology/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/load_estimation_spec.md` | Superseded -> Skill | `skills/shared/load-estimation-core/SKILL.md`, `skills/season/load-governance/SKILL.md`, `skills/phase/guardrails-authoring/SKILL.md`, `skills/week/load-estimation-week/SKILL.md`, `skills/week/load-governance-review/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/data_confidence_spec.md` | Superseded -> Skill | `skills/shared/traceability-and-naming/SKILL.md`, `skills/report/context-analysis/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/file_naming_spec.md` | Superseded -> Skill | `skills/shared/traceability-and-naming/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/traceability_spec.md` | Superseded -> Skill | `skills/shared/traceability-and-naming/SKILL.md`, `skills/season/artifact-writing/SKILL.md`, `skills/phase/artifact-writing/SKILL.md`, `skills/week/artifact-writing/SKILL.md`, `skills/report/artifact-writing/SKILL.md` |
-| `specs/knowledge/_shared/sources/specs/agenda_enum_spec.md` | Superseded -> Skill | `skills/phase/execution-rules/SKILL.md`, `skills/phase/structure-authoring/SKILL.md`, `skills/week/workout-text-authoring/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
+| `specs/knowledge/_shared/sources/specs/agenda_enum_spec.md` | Superseded -> Skill | `skills/phase/execution-rules/SKILL.md`, `skills/phase/structure-authoring/SKILL.md`, `skills/week/workout-construction/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/season_cycle_enum_spec.md` | Superseded -> Skill | `skills/phase/structure-authoring/SKILL.md`, `skills/season/macrocycle-architecture/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/athlete_profile_interface_spec.md` | Superseded -> Skill | `skills/season/context-analysis/SKILL.md`, `skills/season/constraint-synthesis/SKILL.md`, `skills/phase/context-analysis/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/availability_interface_spec.md` | Superseded -> Skill | `skills/season/context-analysis/SKILL.md`, `skills/season/constraint-synthesis/SKILL.md`, `skills/phase/context-analysis/SKILL.md`, `skills/week/constraint-analysis/SKILL.md` |
@@ -50,9 +50,9 @@ Purpose:
 | `specs/knowledge/_shared/sources/specs/mandatory_output_phase_feed_forward.md` | Superseded -> Skill | `skills/phase/feed-forward/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/mandatory_output_week_plan.md` | Superseded -> Skill | `skills/week/artifact-writing/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/mandatory_output_des_analysis_report.md` | Superseded -> Skill | `skills/report/artifact-writing/SKILL.md`, `skills/report/analysis-methodology/SKILL.md` |
-| `specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md` | Superseded -> Skill | `skills/week/workout-text-authoring/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
-| `specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md` | Superseded -> Skill | `skills/week/workout-text-authoring/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
-| `specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md` | Superseded -> Skill | `skills/week/workout-text-authoring/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md`, `skills/week/artifact-writing/SKILL.md` |
+| `specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md` | Superseded -> Skill | `skills/week/workout-construction/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
+| `specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md` | Superseded -> Skill | `skills/week/workout-construction/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md` |
+| `specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md` | Superseded -> Skill | `skills/week/workout-construction/SKILL.md`, `skills/week/workout-syntax-review/SKILL.md`, `skills/week/artifact-writing/SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/events_interface_spec.md` | Deprecated Legacy | superseded by `specs/knowledge/_shared/sources/specs/planning_events_interface_spec.md` |
 | `specs/knowledge/_shared/sources/specs/artefact_json_schema_spec.md` | Machine Layer | envelope/schema validation remains external to `SKILL.md` |
 | `specs/knowledge/_shared/sources/specs/header_schema_spec.md` | Machine Layer | header/schema validation remains external to `SKILL.md` |

@@ -158,7 +158,7 @@ This is the main system table for answering:
 | Week | `week_planning` | `week_recommendation_specialist` | Advisory / intent specialist | `form_coaching_recommendation`, `form_adjustment_intent` | turn context into coaching advice or a clean adjustment intent | `skills/week/recommendation-and-adjustment` |
 | Week | `week_planning` | `week_load_target_specialist` | Corridor-to-target translator | `week_load_target_draft` | convert corridor into day and workout target logic | `skills/week/load-estimation-week` |
 | Week | `week_planning` | `week_revision_specialist` | Week candidate author | `create_week_preview`, `week_revision_draft` | build a bounded preview or candidate week revision | `skills/week/revision-methodology` |
-| Week | `week_planning` | `week_workout_authoring_specialist` | Workout text author | `week_workout_text_draft` | build valid workout text and syntax | `skills/week/workout-text-authoring` |
+| Week | `week_planning` | `week_workout_authoring_specialist` | Workout construction author | `week_workout_text_draft` | build valid workout construction and syntax | `skills/week/workout-construction` |
 | Week | `week_planning` | `week_plan_manager` | Planning synthesizer | `week_plan_finalize` | consolidate week drafts into one internal `WeekPlanBundle` | `skills/week/plan-synthesis` |
 | Week | `week_review` | `week_consistency_auditor` | Consistency reviewer | `week_consistency_review` | verify role, duration, and load coherence | `skills/week/consistency-audit` |
 | Week | `week_review` | `week_load_governance_reviewer` | Corridor reviewer | `week_load_governance_review` | verify corridor compliance and reconciliation behavior | `skills/week/load-governance-review` |

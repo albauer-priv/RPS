@@ -1085,3 +1085,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix: scoped phase-run completion logs now report the effective executed phase artefacts, including bundled `PHASE_PREVIEW` reruns
 - fix: `WEEK_PLAN` store/export now normalizes and validates linked workout duration, agenda duration, agenda mechanical `planned_kj`, and summary mechanical totals before save/export
 - fix: deterministic workout duration derived from `workout_text` now overrides drifting stored `duration` / `planned_duration` values instead of only repairing sentinel durations
+# Unreleased
+
+- Completed the missing runtime migration of `workout_policy.md` into the active week workout skills. `skills/week/workout-construction/SKILL.md` now carries QUALITY intent target-band lookup, canonical workout-family semantics, parameter ranges, and progression constraints; `skills/week/workout-syntax-review/SKILL.md` now reviews policy-semantic compliance in addition to syntax/export safety.
+- Consolidated the week workout runtime rules into active `SKILL.md` files, removed redundant workout-text reference fragments, and tightened week review/decision skills so workout-policy semantic drift is treated as an approval blocker.

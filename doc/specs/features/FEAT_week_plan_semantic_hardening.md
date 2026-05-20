@@ -234,7 +234,7 @@ Update these docs as part of implementation:
 * [x] `skills/week/load-estimation-week/SKILL.md` — load distribution against active S5 band and availability.
 * [x] `skills/week/load-governance-review/SKILL.md` — active corridor and role-aware checks.
 * [x] `skills/week/consistency-audit/SKILL.md` — agenda/workout/role coherence.
-* [x] `skills/week/workout-text-authoring/SKILL.md` — workout structure and Intervals subset.
+* [x] `skills/week/workout-construction/SKILL.md` — workout structure and Intervals subset.
 * [x] `skills/week/workout-syntax-review/SKILL.md` — structural syntax checks.
 * [x] `skills/week/artifact-writing/SKILL.md` — writer constraints.
 * [x] `prompts/agents/week_artifact_writer.md` — no unapproved agenda/workout invention.

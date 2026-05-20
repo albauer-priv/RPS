@@ -109,7 +109,7 @@ agents:
   week_revision_specialist:
     skill: skills/week/revision-methodology
   week_workout_authoring_specialist:
-    skill: skills/week/workout-text-authoring
+    skill: skills/week/workout-construction
   week_consistency_auditor:
     skill: skills/week/consistency-audit
   week_load_governance_reviewer:

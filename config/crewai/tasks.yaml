@@ -550,7 +550,7 @@ tasks:
     agent: week_workout_authoring_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Draft valid workout construction and syntax decisions for the candidate week. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
+    description: "Draft valid workout construction, workout-family selection, QUALITY-intent target placement, and export-safe syntax decisions for the candidate week. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
     expected_output: A structured workout-authoring draft.
     tools:
       - workspace_get_input
@@ -599,7 +599,7 @@ tasks:
     agent: week_workout_syntax_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review candidate workout text for syntax subset and export safety. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
+    description: "Review candidate workout text for syntax subset, workout-policy semantic compliance, and export safety. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
     expected_output: A structured week workout-syntax review.
     tools:
       - workspace_get_latest

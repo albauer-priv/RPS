@@ -66,7 +66,7 @@ review method for that agent.
 Examples:
 - `macrocycle_architect` -> `skills/season/macrocycle-architecture`
 - `phase_guardrail_band_specialist` -> `skills/phase/guardrails-authoring`
-- `week_workout_authoring_specialist` -> `skills/week/workout-text-authoring`
+- `week_workout_authoring_specialist` -> `skills/week/workout-construction`
 - `week_workout_syntax_reviewer` -> `skills/week/workout-syntax-review`
 - `report_artifact_writer` -> `skills/report/artifact-writing`
 
@@ -161,7 +161,7 @@ Applies to:
 - `week_recommendation_specialist` -> `skills/week/recommendation-and-adjustment`
 - `week_load_target_specialist` -> `skills/week/load-estimation-week`
 - `week_revision_specialist` -> `skills/week/revision-methodology`
-- `week_workout_authoring_specialist` -> `skills/week/workout-text-authoring`
+- `week_workout_authoring_specialist` -> `skills/week/workout-construction`
 - `week_consistency_auditor` -> `skills/week/consistency-audit`
 - `week_load_governance_reviewer` -> `skills/week/load-governance-review`
 - `week_workout_syntax_reviewer` -> `skills/week/workout-syntax-review`

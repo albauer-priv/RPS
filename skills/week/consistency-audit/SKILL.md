@@ -15,12 +15,14 @@ Checklist:
 5. Quality-day count and workout domains remain inside phase guardrails.
 6. Workout structures match declared intent and keep intensity explicit.
 7. Candidate edits remain bounded to the requested scope.
+8. Workout-family choice, QUALITY-intent placement, and warmup/cooldown legality remain coherent with the approved week semantics.
 
 Block approval when:
 - `weekly_load_corridor_kj` is not the active Phase/S5 band
 - a `DELOAD`, `MINI_RESET`, or `SHORTENED_MINI_RESET` week carries build-style quality
 - a day exceeds deterministic availability
 - a workout cannot be exported safely
+- a workout is syntactically exportable but semantically drifts from the approved workout family, legal domain placement, or warmup/cooldown rules
 
 Return blocking issues, warnings, and what may remain unchanged during replan.
 
