@@ -6,6 +6,7 @@ from rps.agents.output_normalization import (
     extract_planning_events_document,
     injection_mode_for_tasks,
     normalize_phase_guardrails_document,
+    normalize_phase_structure_document,
     normalize_season_scenarios_document,
     normalize_workout_percent_ranges,
 )
@@ -92,6 +93,65 @@ def test_normalize_phase_guardrails_projects_season_constraints() -> None:
             "constraint": "Planned season event window preserved from season_plan: 2026-05-16 (A)",
         }
     ]
+
+
+def test_normalize_phase_structure_projects_constraints_and_guardrails_source() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE"},
+        "data": {
+            "upstream_intent": {
+                "constraints": ["Do not widen the phase beyond 2026-21--2026-23."],
+            },
+            "load_ranges": {"source": "Deterministic Load Capacity Context"},
+        },
+    }
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [
+                    "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
+                ],
+                "risk_constraints": [
+                    "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated.",
+                ],
+                "planned_event_windows": ["2026-15 B Brevet 200 km Toelzer-Land-Runde"],
+                "recovery_protection": {
+                    "notes": ["Respect the locked rest days as hard recovery boundaries."]
+                },
+            }
+        }
+    }
+    phase_guardrails = {
+        "data": {
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-21", "band": {"min": 7329, "max": 8372, "notes": "x"}}
+                ]
+            }
+        }
+    }
+
+    normalized = normalize_phase_structure_document(
+        document,
+        season_plan_document=season_plan,
+        phase_guardrails_document=phase_guardrails,
+        phase_guardrails_version_key="2026-21--2026-23__20260520_094539",
+    )
+
+    assert normalized["data"]["upstream_intent"]["constraints"] == [
+        "Do not widen the phase beyond 2026-21--2026-23.",
+        "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
+        "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated.",
+        "Respect the locked rest days as hard recovery boundaries.",
+        "2026-15 B Brevet 200 km Toelzer-Land-Runde",
+    ]
+    assert normalized["data"]["load_ranges"]["weekly_kj_bands"] == [
+        {"week": "2026-21", "band": {"min": 7329, "max": 8372, "notes": "x"}}
+    ]
+    assert (
+        normalized["data"]["load_ranges"]["source"]
+        == "phase_guardrails_2026-21--2026-23__20260520_094539.json"
+    )
 
 
 def test_extract_planning_events_document_parses_workspace_payload() -> None:

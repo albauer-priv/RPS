@@ -10,7 +10,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import cast
 
-from rps.agents.output_normalization import normalize_phase_guardrails_document
+from rps.agents.output_normalization import (
+    normalize_phase_guardrails_document,
+    normalize_phase_structure_document,
+)
 from rps.agents.tasks import OutputSpec
 from rps.planning.contracts import (
     blocking_messages,
@@ -455,9 +458,21 @@ class GuardedValidatedStore:
         season_plan: JsonMap,
     ) -> None:
         """Ensure season plan constraints and load ranges are propagated into execution arch."""
+        meta = self._as_map(document.get("meta"))
+        expected_range = meta.get("iso_week_range")
+        try:
+            phase_guardrails, bg_version_key = self._load_phase_guardrails_for_range(expected_range)
+        except MissingDependenciesError as exc:
+            raise SchemaValidationError("Season plan constraint propagation failed", [str(exc)]) from exc
+        normalize_phase_structure_document(
+            document,
+            season_plan_document=season_plan,
+            phase_guardrails_document=phase_guardrails,
+            phase_guardrails_version_key=bg_version_key,
+        )
+
         constraints = self._season_constraints(season_plan)
         data = self._as_map(document.get("data"))
-        meta = self._as_map(document.get("meta"))
         season_phase = self._season_phase_for_range(season_plan, meta.get("iso_week_range"))
         upstream_intent = self._as_map(data.get("upstream_intent"))
         upstream_constraints = self._as_list(upstream_intent.get("constraints"))
@@ -502,13 +517,6 @@ class GuardedValidatedStore:
             )
 
         load_ranges = self._as_map(data.get("load_ranges"))
-        meta = self._as_map(document.get("meta"))
-        expected_range = meta.get("iso_week_range")
-        try:
-            phase_guardrails, bg_version_key = self._load_phase_guardrails_for_range(expected_range)
-        except MissingDependenciesError as exc:
-            raise SchemaValidationError("Season plan constraint propagation failed", [str(exc)]) from exc
-
         phase_guardrails_data = self._as_map(phase_guardrails.get("data"))
         bg_guardrails = self._as_map(phase_guardrails_data.get("load_guardrails"))
         for label in ("weekly_kj_bands",):

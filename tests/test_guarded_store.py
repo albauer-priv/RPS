@@ -338,6 +338,55 @@ def test_phase_structure_matches_constraints_as_list_items(tmp_path):
     store._enforce_phase_structure_constraints(document, season_plan)
 
 
+def test_phase_structure_is_repaired_from_season_and_guardrails_before_validation(tmp_path):
+    store = _store(tmp_path)
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": ["Fixed rest days Mon and Fri."],
+                "risk_constraints": ["Travel disruption may reduce execution quality."],
+                "planned_event_windows": ["2026-04-25 B event rehearsal window"],
+                "recovery_protection": {
+                    "fixed_rest_days": ["Mon", "Fri"],
+                    "notes": ["Protect recovery anchors."],
+                },
+            }
+        }
+    }
+    document = {
+        "meta": {"iso_week_range": "2026-17--2026-19"},
+        "data": {
+            "upstream_intent": {"constraints": ["Do not widen the phase beyond 2026-17--2026-19."]},
+            "execution_principles": {
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [],
+                "source": "Deterministic Load Capacity Context",
+            },
+        },
+    }
+
+    store._load_phase_guardrails_for_range = lambda _expected: (
+        {
+            "data": {
+                "load_guardrails": {
+                    "weekly_kj_bands": [
+                        {
+                            "week": "2026-17",
+                            "band": {"min": 7000, "max": 8200, "notes": "Band"},
+                        }
+                    ],
+                }
+            }
+        },
+        "2026-17--2026-19__20260520_094539",
+    )
+
+    store._enforce_phase_structure_constraints(document, season_plan)
+    assert document["data"]["load_ranges"]["source"] == "phase_guardrails_2026-17--2026-19__20260520_094539.json"
+
+
 def test_phase_structure_accepts_combined_recovery_notes_constraint(tmp_path):
     store = _store(tmp_path)
     season_plan = {

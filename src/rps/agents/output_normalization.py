@@ -285,6 +285,70 @@ def _project_phase_guardrails_season_constraints(
     return document
 
 
+def normalize_phase_structure_document(
+    document: dict[str, Any],
+    *,
+    season_plan_document: dict[str, Any] | None = None,
+    phase_guardrails_document: dict[str, Any] | None = None,
+    phase_guardrails_version_key: str | None = None,
+) -> dict[str, Any]:
+    """Deterministically project required season and guardrails constraints into PHASE_STRUCTURE."""
+
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta") or {}
+    artifact_type = str(meta.get("artifact_type", "")).upper()
+    if artifact_type and artifact_type != "PHASE_STRUCTURE":
+        return document
+    data = document.get("data")
+    if not isinstance(data, dict):
+        return document
+
+    upstream_intent = data.get("upstream_intent")
+    if not isinstance(upstream_intent, dict):
+        upstream_intent = {}
+    upstream_constraints = _text_list(upstream_intent.get("constraints"))
+    if isinstance(season_plan_document, dict):
+        season_data = season_plan_document.get("data")
+        if isinstance(season_data, dict):
+            global_constraints = season_data.get("global_constraints")
+            if isinstance(global_constraints, dict):
+                recovery_notes: list[str] = []
+                recovery_protection = global_constraints.get("recovery_protection")
+                if isinstance(recovery_protection, dict):
+                    recovery_notes = _text_list(recovery_protection.get("notes"))
+                required_constraints = (
+                    _text_list(global_constraints.get("availability_assumptions"))
+                    + _text_list(global_constraints.get("risk_constraints"))
+                    + recovery_notes
+                    + _text_list(global_constraints.get("planned_event_windows"))
+                )
+                upstream_intent["constraints"] = _merge_unique_strings(
+                    upstream_constraints,
+                    required_constraints,
+                )
+                upstream_constraints = upstream_intent["constraints"]
+    data["upstream_intent"] = upstream_intent
+
+    if isinstance(phase_guardrails_document, dict):
+        guardrails_data = phase_guardrails_document.get("data")
+        if isinstance(guardrails_data, dict):
+            load_guardrails = guardrails_data.get("load_guardrails")
+            if isinstance(load_guardrails, dict):
+                weekly_kj_bands = load_guardrails.get("weekly_kj_bands")
+                load_ranges = data.get("load_ranges")
+                if not isinstance(load_ranges, dict):
+                    load_ranges = {}
+                if isinstance(weekly_kj_bands, list):
+                    load_ranges["weekly_kj_bands"] = weekly_kj_bands
+                if phase_guardrails_version_key:
+                    load_ranges["source"] = f"phase_guardrails_{phase_guardrails_version_key}.json"
+                data["load_ranges"] = load_ranges
+
+    document["data"] = data
+    return document
+
+
 def _derive_planning_horizon_from_events(
     meta: dict[str, Any],
     planning_events_document: dict[str, Any] | None,
