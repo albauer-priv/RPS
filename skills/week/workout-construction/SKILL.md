@@ -3,9 +3,20 @@ name: workout-construction
 description: Construct valid workouts for the RPS project subset and execution intent.
 metadata:
   author: rps
-  version: "5.0"
+  version: "6.0"
 ---
 Author workout text only after the governing role, duration, and load intent are already set.
+
+Runtime source boundary:
+- This skill is the active runtime method for week workout authoring.
+- Do not depend on legacy workout prose under `specs/knowledge/_shared/sources/...` at runtime.
+- Use local `references/intervals_subset_examples.md` for compact accepted forms and cycling examples.
+
+Author from this source order:
+1. active day role, duration, load intent, and deterministic week context
+2. active `PHASE_GUARDRAILS` legality
+3. active `PHASE_STRUCTURE` operational shaping only when it does not widen guardrails legality
+4. this skill body and local references
 
 Top-level document rules:
 - optional description paragraphs may appear before the first block
@@ -32,6 +43,8 @@ Step grammar in the project subset:
 - loops use a separate `Nx` header and stay single-level
 - comments, if used, start with `#`, remain on their own line, and are separated cleanly from steps and loops by a blank line
 - keep at least one blank line between blocks, comment blocks, and pauses so parsing stays deterministic
+- do not serialize workouts as prose labels such as `Warmup:` / `Main Set:` / `Cooldown:`
+- do not use natural-language prescriptions inside `workout_text`; the step grammar is the workout
 
 Subset restrictions against the wider EBNF:
 - do not use distance durations such as `10km`, `400m`, `5mi`
@@ -59,6 +72,13 @@ Intent mapping rules:
 - add-ons may extend aerobic load only when they preserve the workout classification and phase domain allowance
 - `Endurance`, `Recovery`, `Tempo`, `Sweet Spot`, `Threshold`, `VO2max`, and `K3` intents must remain structurally recognizable
 
+Guardrails precedence:
+- `PHASE_GUARDRAILS.allowed_forbidden_semantics` is the binding week legality authority
+- do not widen allowed domains from broader operational context
+- if `PHASE_GUARDRAILS` forbids `RECOVERY`, do not author a `Recovery` family workout
+- when the intent is low-cost aerobic absorption but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead
+- rest days remain `NONE`; do not hide training inside recovery/rest language
+
 Phase-intent family bias:
 - `ceiling_support`
   - may use VO2-oriented families only when fresh, explicitly allowed, and still clearly support-oriented
@@ -84,6 +104,10 @@ Binding agenda/intensity mapping:
 - `VO2max` -> `QUALITY` day role, `VO2MAX` intensity domain, `NONE` load modality
 - `K3` -> `QUALITY` day role, `ENDURANCE` or `SWEET_SPOT` intensity domain, `K3` load modality
 - if the candidate workout cannot map cleanly to one row, do not invent it
+
+Operational legality override:
+- the `Recovery` mapping applies only when the active phase guardrails allow `RECOVERY`
+- when `RECOVERY` is forbidden, use an `Endurance` family with low-end endurance targets instead of inventing a recovery-domain exception
 
 QUALITY intent target-band lookup:
 - apply only when an explicit QUALITY intent is present upstream and the domain is already allowed
@@ -123,6 +147,7 @@ Canonical workout families:
 - keep all work inside `RECOVERY`
 - no hidden quality, no load modality, no activation
 - keep the text simple; recovery should not masquerade as endurance progression
+- do not use this family when the active phase guardrails forbid `RECOVERY`
 
 `Endurance / Z2`
 - purpose: aerobic base and fatigue resistance
@@ -131,6 +156,7 @@ Canonical workout families:
 - progression: duration first; optional variability must stay low-intensity
 - canonical structure may be simple steady main work with minimal syntax overhead
 - endurance can be plain steady work; do not force activation or fake interval structure
+- when `RECOVERY` is forbidden but a low-cost day is still needed, place the workout at the bottom of the legal `ENDURANCE` band and keep the structure simple
 
 `Tempo`
 - purpose: controlled aerobic pressure without threshold escalation
@@ -324,6 +350,8 @@ Required text discipline:
 - keep loops flat and place main work in the main-work section
 - use supported step-line time formats
 - keep workout text within the project subset even when the wider Intervals EBNF would permit more tokens
+- use the exact line form `- <duration> <target> <cadence>`; generic prose about power or cadence is not sufficient
+- if you cannot express the workout cleanly in the subset, do not approximate it with prose
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

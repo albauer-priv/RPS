@@ -3,7 +3,7 @@ name: artifact-writing
 description: Serialize the final approved week plan envelope without adding planning decisions.
 metadata:
   author: rps
-  version: "3.1"
+  version: "3.2"
 ---
 Write the final approved `WEEK_PLAN` data only.
 
@@ -28,7 +28,9 @@ Writer rules:
 - fixed rest days must be `00:00`, `0`, and `workout_id null`
 - any `workout_id` referenced in `agenda` must appear in `workouts`
 - workout objects require `workout_id`, `title`, `date`, `start`, `duration`, `workout_text`, and `notes`
+- workout text must already be in the strict project Intervals subset
 - workout text must include Warmup, Main Set, Cooldown, mandatory Activation where applicable, ordered sections, step duration, power target, and cadence
+- workout text must use step lines like `- 10m 68%-72% 85-90rpm`; do not serialize workouts as prose
 - required strings must be non-empty unless the schema explicitly allows empty notes
 
 Hard rules:
@@ -36,6 +38,7 @@ Hard rules:
 - call tools only after the envelope is schema-valid
 - include all required workout references
 - use available approved content for required fields and mark blockers when content is absent
+- do not rewrite invalid prose into a guessed workout; invalid workout syntax is a blocker for approval upstream
 
 Output format:
 - Return only the schema-compliant object required by the active task expected_output.

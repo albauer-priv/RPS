@@ -144,6 +144,17 @@ class WorkoutExportTests(unittest.TestCase):
 
         self.assertTrue(any("workout sections are out of policy order" in issue for issue in issues))
 
+    def test_validate_week_plan_rejects_prose_workout_text(self) -> None:
+        week_plan = _sample_week_plan(
+            "Warmup: 20 min progressive spin, power 160-190 W, cadence 90-95 rpm.\n"
+            "Main Set: 3 x 25 min steady Z2 endurance, power 185-205 W.\n"
+            "Cooldown: 15 min easy spin, power 120-150 W."
+        )
+
+        issues = [issue.format() for issue in collect_week_plan_export_issues(week_plan)]
+
+        self.assertTrue(any("step line" in issue or "no sections" in issue or "forbidden" in issue.lower() for issue in issues))
+
     def test_build_export_maps_week_plan_to_intervals_array(self) -> None:
         week_plan = _sample_week_plan(
             "Warmup\n- 8m ramp 50%-70% 85-90rpm\n\nMain Set\n2x\n- 20m 84% 88-92rpm\n- 5m 60% 85rpm\n\nCooldown\n- 8m ramp 60%-45% 80rpm"

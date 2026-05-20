@@ -3,9 +3,20 @@ name: workout-syntax-review
 description: Review workout text against the project subset, grammar restrictions, and export-safe constraints.
 metadata:
   author: rps
-  version: "2.0"
+  version: "3.0"
 ---
 Review candidate workout text as syntax, export policy, and workout-policy semantic compliance.
+
+Runtime source boundary:
+- This skill is the active runtime method for week workout syntax and semantics review.
+- Do not depend on legacy workout prose under `specs/knowledge/_shared/sources/...` at runtime.
+- Use local `references/validation_checklist.md` for the compact blocking checklist.
+
+Review authority order:
+1. `PHASE_GUARDRAILS` legality
+2. active week contract context
+3. project workout subset and exportability
+4. inherited `phase_intent` fit
 
 Checklist:
 1. Top-level document uses only allowed blocks and at most one `Category:` line.
@@ -25,6 +36,7 @@ Checklist:
 15. Warmup/Cooldown legality holds: no hidden sustained high-intensity warmup, no non-descending cooldown, no loops or spikes in cooldown.
 16. No advanced EBNF-only tokens leak into the project subset unless explicitly permitted by the skill rules.
 17. Workout family and target placement remain coherent with inherited `phase_intent`, not only with day role and domain legality.
+18. The candidate would pass the same strict export subset enforced by the runtime validator; prose serialization is a blocker, not a warning.
 
 Canonical family checks:
 - `Recovery`: no hidden quality or activation
@@ -42,6 +54,7 @@ Blocking syntax cases:
 - `@` shorthand
 - HR/pace/zone/absolute-watt target
 - distance duration
+- prose section serialization such as `Warmup:` / `Main Set:` / `Cooldown:`
 - missing duration on any step line
 - missing cadence on any step line
 - missing Warmup or Cooldown
@@ -55,6 +68,11 @@ Blocking syntax cases:
 - QUALITY intent is used to push targets outside the legal domain
 - multiple progression dimensions are advanced at once in the claimed workout evolution
 - the workout is syntactically valid but semantically wrong for inherited `phase_intent`
+- a recovery-like workout uses `RECOVERY` when the active phase guardrails forbid `RECOVERY`
+
+Approval rule:
+- do not approve a candidate week bundle that would fail `collect_week_plan_export_issues(...)`
+- if syntax/export validity and week semantics disagree, return a blocker and bounded replan, not `approved`
 
 Output format:
 - Return the task expected_output as a structured review contribution.

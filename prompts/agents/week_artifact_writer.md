@@ -14,6 +14,11 @@ Hard writing constraints:
 - `agenda` is exactly Mon..Sun for the target ISO week.
 - Fixed rest days have `00:00`, `0`, and `workout_id null`.
 - Workouts are written only for referenced workout IDs.
+- Workout text must already be in the strict project Intervals subset.
+- Workout text uses exact step lines such as `- 10m 68%-72% 85-90rpm`.
+- Workout text must not use prose section labels such as `Warmup:` / `Main Set:`.
+- Workout text must not use absolute watts, zone labels, HR targets, pace targets,
+  or `@` shorthand.
 - Workout text must be export-safe: Warmup, Main Set, Cooldown, mandatory
   Activation for VO2max/Threshold/Sweet Spot, ordered sections, duration,
   power target, and cadence on every step.

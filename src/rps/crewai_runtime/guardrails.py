@@ -1055,14 +1055,29 @@ def week_phase_role_alignment_check(result: Any) -> GuardrailResult:
     forbidden_domains = {str(item).upper().replace(" ", "_") for item in _as_list(context.get("forbidden_intensity_domains"))}
     allowed_domains = {str(item).upper().replace(" ", "_") for item in _as_list(context.get("allowed_intensity_domains"))}
     domain_hits = _workout_domain_hits(data)
+    domain_sources = _workout_domain_sources(data)
     if forbidden_domains:
         forbidden_used = sorted(domain_hits & forbidden_domains)
         if forbidden_used:
-            return (False, f"Week workouts use forbidden phase intensity domains: {', '.join(forbidden_used)}.")
+            details = []
+            for domain in forbidden_used:
+                workout_ids = sorted(domain_sources.get(domain, set()))
+                if workout_ids:
+                    details.append(f"{domain} ({', '.join(workout_ids)})")
+                else:
+                    details.append(domain)
+            return (False, f"Week workouts use forbidden phase intensity domains: {', '.join(details)}.")
     if allowed_domains:
         domain_outside = sorted(domain_hits - allowed_domains - {"NONE", "RECOVERY", "ENDURANCE"})
         if domain_outside:
-            return (False, f"Week workouts use intensity domains outside phase allowance: {', '.join(domain_outside)}.")
+            details = []
+            for domain in domain_outside:
+                workout_ids = sorted(domain_sources.get(domain, set()))
+                if workout_ids:
+                    details.append(f"{domain} ({', '.join(workout_ids)})")
+                else:
+                    details.append(domain)
+            return (False, f"Week workouts use intensity domains outside phase allowance: {', '.join(details)}.")
     return (True, mapping)
 
 
@@ -1160,18 +1175,23 @@ def _target_week_from_context_or_meta(mapping: JsonMap) -> IsoWeek | None:
 
 
 def _workout_domain_hits(data: JsonMap) -> set[str]:
-    hits: set[str] = set()
+    return set(_workout_domain_sources(data))
+
+
+def _workout_domain_sources(data: JsonMap) -> dict[str, set[str]]:
+    sources: dict[str, set[str]] = {}
     domains = {"RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD", "VO2MAX"}
     for workout in _as_list(data.get("workouts")):
         workout_map = _as_map(workout)
+        workout_id = str(workout_map.get("workout_id") or "<unknown>")
         haystack = " ".join(
             str(workout_map.get(field) or "")
             for field in ("title", "notes", "workout_text")
         ).upper().replace(" ", "_").replace("-", "_")
         for domain in domains:
             if domain in haystack:
-                hits.add(domain)
-    return hits
+                sources.setdefault(domain, set()).add(workout_id)
+    return sources
 
 
 def des_diagnostic_only(result: Any) -> GuardrailResult:

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a completed runtime migration for week workout authoring/review method sources: the operative rules from the legacy workout export contract, Intervals grammar, project subset validation, and workout policy now live directly in the active week workout skills plus local references.
 - Added a normalized season/phase semantic backbone with `scenario_guidance.season_archetype` (`none` / `ceiling_first_durability`) plus schema-backed `phase_intent` propagation across Season Plan, Phase Guardrails, Phase Structure, Phase Preview, deterministic contract context, renderer context, and guarded-store validation.
 - Added deterministic `phase_intent` derivation for season phase slots, including explicit support for `specificity_build` between generic durability build and late peak/taper semantics.
 - Added weighted season-envelope derivation/validation so `season_load_envelope.expected_average_weekly_kj_range` is checked against written phase corridors instead of free-authored arithmetic.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed the active week workout runtime source split by tightening the authoring/review/writer skills and prompt around the strict project Intervals subset, explicit `PHASE_GUARDRAILS` legality precedence, and the rule that recovery-like low-load work must be authored as legal low-end `ENDURANCE` when `RECOVERY` is forbidden upstream.
 - Fixed bounded week replans so later planning rounds no longer receive the full prior review-decision payload with stale blockers and warnings; the runtime now forwards only sanitized active replan instructions, preventing contradictory week-bundle narratives from exhausting replan rounds after the actionable load fix was already applied.
 - Fixed `PHASE_PREVIEW` persistence after the `PHASE_STRUCTURE` S5-context repair by adding deterministic preview normalization against stored structure authority: exact `phase_structure_<version>.json` traceability is now injected at store time, fixed rest days are pinned back to `NONE`/`NONE`, excess `QUALITY` labels are downgraded before validation, and `PHASE_STRUCTURE` operational intensity domains now include required `NONE` / `RECOVERY` semantics when the allowed day roles require them.
 - Fixed silent `PHASE_STRUCTURE` S5-context loss in guarded-store validation by removing the invalid `planning_events_payload` load-capacity kwarg, tightening the deterministic load-capacity wrapper signature, and logging phase-scoped builder failures instead of swallowing them into an empty context.

@@ -2063,6 +2063,39 @@ def test_week_workout_structure_guardrail_rejects_missing_cooldown() -> None:
     assert "missing required section: Cooldown" in message
 
 
+def test_week_phase_role_alignment_reports_forbidden_domain_workout_ids() -> None:
+    week_plan = {
+        "meta": {"artifact_type": "WEEK_PLAN", "schema_id": "WeekPlanInterface", "iso_week": "2026-20"},
+        "data": {
+            "agenda": [
+                {"day": "Thu", "date": "2026-05-14", "day_role": "RECOVERY", "planned_duration": "00:45", "planned_kj": 250, "workout_id": "REC-1"}
+            ],
+            "workouts": [
+                {
+                    "workout_id": "REC-1",
+                    "title": "Recovery Spin",
+                    "notes": "RECOVERY",
+                    "workout_text": "Warmup\n- 5m 55% 85rpm\n\nMain Set\n- 30m 60% 85rpm\n\nCooldown\n- 5m 55% 80rpm",
+                }
+            ],
+        },
+    }
+
+    with guardrail_runtime_context(
+        week_calendar_context={
+            "phase_week_role": "LOAD",
+            "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+            "quality_day_cap": 2,
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+            "forbidden_intensity_domains": ["RECOVERY", "THRESHOLD", "VO2MAX"],
+        }
+    ):
+        failed, message = week_phase_role_alignment_check(week_plan)
+
+    assert failed is False
+    assert "RECOVERY (REC-1)" in message
+
+
 def test_des_guardrail_rejects_non_diagnostic_recommendation() -> None:
     failed, message = des_diagnostic_only(
         {

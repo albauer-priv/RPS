@@ -552,7 +552,7 @@ tasks:
     agent: week_workout_authoring_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Draft valid workout construction, workout-family selection, inherited `phase_intent` family bias, QUALITY-intent target placement, and export-safe syntax decisions for the candidate week. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
+    description: "Draft valid workout construction, workout-family selection, inherited `phase_intent` family bias, QUALITY-intent target placement, and strict export-safe Intervals-subset syntax decisions for the candidate week. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
     expected_output: A structured workout-authoring draft.
     tools:
       - workspace_get_input
@@ -601,7 +601,7 @@ tasks:
     agent: week_workout_syntax_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review candidate workout text for syntax subset, workout-policy semantic compliance, inherited `phase_intent` fit, and export safety. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
+    description: "Review candidate workout text for strict project syntax subset compliance, workout-policy semantic compliance, inherited `phase_intent` fit, phase-guardrails legality precedence, and export safety. Do not approve prose workout text or illegal `RECOVERY` drift when the active phase forbids `RECOVERY`. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
     expected_output: A structured week workout-syntax review.
     tools:
       - workspace_get_latest
@@ -629,13 +629,13 @@ tasks:
       - week_load_governance_review
       - week_workout_syntax_review
       - week_contract_review
-    description: Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_week_bundle` workspace artefact.
+    description: Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Approval requires strict export-safe workout syntax and phase-guardrails legality, not only narrative coherence. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_week_bundle` workspace artefact.
     expected_output: A structured week review decision.
   week_plan:
     agent: week_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
-    description: Create or revise the week-plan artifact envelope for the selected ISO week.
+    description: Create or revise the week-plan artifact envelope for the selected ISO week using only already-approved strict project-subset workout text; do not serialize prose workouts.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
 
   report_context_read:
