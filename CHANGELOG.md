@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-05-20
+
 ### Added
 - Added canonical workout-generation documentation under `doc/`: a normative feature spec now defines supported workout domains/protocol classes, TiZ semantics, progression order, caps, prior-week progression reuse, Z2 add-on rules, and week-density rules, and a matching athlete-/coach-readable overview explains the same logic in plain language.
 - Added direct config-driven solver semantics for workout progression caps and quality cost: protocol definitions now encode TiZ counting mode, standard/hard caps, progression priorities, redistribution thresholds, practical VO2 rep ceilings, and late-finish caps for durability sessions.
