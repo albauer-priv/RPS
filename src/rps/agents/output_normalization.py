@@ -135,6 +135,156 @@ def extract_planning_events_document(raw: object) -> dict[str, Any] | None:
     return None
 
 
+def extract_loaded_document(raw: object) -> dict[str, Any] | None:
+    """Return a parsed document from a workspace tool result or raw mapping."""
+
+    if isinstance(raw, dict) and isinstance(raw.get("document"), dict):
+        return raw["document"]
+    if isinstance(raw, dict) and isinstance(raw.get("data"), dict):
+        return raw
+    if isinstance(raw, dict) and raw.get("ok") is True:
+        content = raw.get("content")
+        if isinstance(content, str):
+            try:
+                parsed = json.loads(content)
+            except json.JSONDecodeError:
+                return None
+            if isinstance(parsed, dict):
+                return parsed
+    return None
+
+
+def _merge_unique_strings(existing: list[str], required: list[str]) -> list[str]:
+    """Append missing stripped strings while preserving order."""
+
+    merged = [item.strip() for item in existing if item and item.strip()]
+    seen = {item for item in merged}
+    for item in required:
+        stripped = str(item).strip()
+        if stripped and stripped not in seen:
+            merged.append(stripped)
+            seen.add(stripped)
+    return merged
+
+
+def _parse_compact_event_window(value: object) -> tuple[str, str] | None:
+    """Return `(date, type)` when a planned-event window carries a concrete date marker."""
+
+    rendered = str(value or "").strip()
+    match = re.search(
+        r"(\d{4}-\d{2}-\d{2})\s*(?:\((A|B|C)\)|([ABC])\b)",
+        rendered,
+        re.IGNORECASE,
+    )
+    if match is None:
+        return None
+    event_type = (match.group(2) or match.group(3) or "").upper()
+    if not event_type:
+        return None
+    return match.group(1), event_type
+
+
+def _project_phase_guardrails_season_constraints(
+    document: dict[str, Any],
+    *,
+    season_plan_document: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Deterministically propagate required season constraints into PHASE_GUARDRAILS."""
+
+    if not isinstance(document, dict):
+        return document
+    meta = document.get("meta") or {}
+    if str(meta.get("artifact_type", "")).upper() != "PHASE_GUARDRAILS":
+        return document
+    if not isinstance(season_plan_document, dict):
+        return document
+    season_data = season_plan_document.get("data")
+    if not isinstance(season_data, dict):
+        return document
+    global_constraints = season_data.get("global_constraints")
+    if not isinstance(global_constraints, dict):
+        return document
+    data = document.get("data")
+    if not isinstance(data, dict):
+        return document
+
+    phase_summary = data.get("phase_summary")
+    if not isinstance(phase_summary, dict):
+        phase_summary = {}
+    non_negotiables = _merge_unique_strings(
+        _text_list(phase_summary.get("non_negotiables")),
+        _text_list(global_constraints.get("availability_assumptions")),
+    )
+    key_risks = _merge_unique_strings(
+        _text_list(phase_summary.get("key_risks_warnings")),
+        _text_list(global_constraints.get("risk_constraints")),
+    )
+    passthrough_event_windows = [
+        item
+        for item in _text_list(global_constraints.get("planned_event_windows"))
+        if _parse_compact_event_window(item) is None
+    ]
+    phase_summary["non_negotiables"] = _merge_unique_strings(non_negotiables, passthrough_event_windows)
+    phase_summary["key_risks_warnings"] = key_risks
+    data["phase_summary"] = phase_summary
+
+    execution_non_negotiables = data.get("execution_non_negotiables")
+    if not isinstance(execution_non_negotiables, dict):
+        execution_non_negotiables = {}
+    recovery_rules = _text_value(
+        execution_non_negotiables.get("recovery_protection_rules"),
+        fallback="",
+    )
+    recovery_notes: list[str] = []
+    recovery_protection = global_constraints.get("recovery_protection")
+    if isinstance(recovery_protection, dict):
+        recovery_notes = _text_list(recovery_protection.get("notes"))
+    recovery_parts = [recovery_rules] if recovery_rules else []
+    for item in recovery_notes:
+        if item not in recovery_rules:
+            recovery_parts.append(item)
+    if recovery_parts:
+        execution_non_negotiables["recovery_protection_rules"] = " | ".join(
+            part for part in recovery_parts if part
+        )
+    data["execution_non_negotiables"] = execution_non_negotiables
+
+    events_constraints = data.get("events_constraints")
+    if not isinstance(events_constraints, dict):
+        events_constraints = {}
+    events = events_constraints.get("events")
+    if not isinstance(events, list):
+        events = []
+    existing_pairs = {
+        (str(entry.get("date") or "").strip(), str(entry.get("type") or "").strip().upper())
+        for entry in events
+        if isinstance(entry, dict)
+    }
+    for item in _text_list(global_constraints.get("planned_event_windows")):
+        parsed = _parse_compact_event_window(item)
+        if parsed is None or parsed in existing_pairs:
+            continue
+        event_date, event_type = parsed
+        try:
+            parsed_date = datetime.date.fromisoformat(event_date)
+            iso_year, iso_week, _ = parsed_date.isocalendar()
+        except ValueError:
+            continue
+        events.append(
+            {
+                "date": event_date,
+                "week": f"{iso_year:04d}-{iso_week:02d}",
+                "type": event_type,
+                "constraint": f"Planned season event window preserved from season_plan: {item}",
+            }
+        )
+        existing_pairs.add(parsed)
+    events_constraints["events"] = events
+    data["events_constraints"] = events_constraints
+    document["data"] = data
+    return document
+
+
 def _derive_planning_horizon_from_events(
     meta: dict[str, Any],
     planning_events_document: dict[str, Any] | None,
@@ -293,7 +443,11 @@ def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[s
     return normalized
 
 
-def normalize_phase_guardrails_document(document: dict[str, Any]) -> dict[str, Any]:
+def normalize_phase_guardrails_document(
+    document: dict[str, Any],
+    *,
+    season_plan_document: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Normalize PHASE_GUARDRAILS shape quirks before validation."""
 
     if not isinstance(document, dict):
@@ -335,7 +489,10 @@ def normalize_phase_guardrails_document(document: dict[str, Any]) -> dict[str, A
                 _widen_band(entry)
 
     document["data"] = data
-    return document
+    return _project_phase_guardrails_season_constraints(
+        document,
+        season_plan_document=season_plan_document,
+    )
 
 
 def normalize_season_scenarios_document(

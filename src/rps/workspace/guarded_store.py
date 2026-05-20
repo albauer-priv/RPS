@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import cast
 
+from rps.agents.output_normalization import normalize_phase_guardrails_document
 from rps.agents.tasks import OutputSpec
 from rps.planning.contracts import (
     blocking_messages,
@@ -1166,6 +1167,10 @@ class GuardedValidatedStore:
                     self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
                 )
             if target == ArtifactType.PHASE_GUARDRAILS:
+                normalize_phase_guardrails_document(
+                    document,
+                    season_plan_document=season_plan_doc,
+                )
                 self._enforce_phase_guardrails_constraints(document, season_plan_doc)
             else:
                 self._enforce_phase_structure_constraints(document, season_plan_doc)

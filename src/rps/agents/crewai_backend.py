@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from rps.agents.output_normalization import (
+    extract_loaded_document,
     extract_planning_events_document,
     normalize_phase_guardrails_document,
     normalize_season_scenarios_document,
@@ -1906,7 +1907,10 @@ def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, o
     )
     normalized = _normalize_artifact_meta(normalized, spec.artifact_type)
     normalized = _fill_season_plan(normalized)
-    normalized = normalize_phase_guardrails_document(normalized)
+    normalized = normalize_phase_guardrails_document(
+        normalized,
+        season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
+    )
     if spec.artifact_type == ArtifactType.WEEK_PLAN:
         normalized = _normalize_week_plan_meta(normalized)
         normalized = normalize_week_plan_consistency(normalized)

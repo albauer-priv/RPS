@@ -28,6 +28,72 @@ def test_normalize_phase_guardrails_recovery_rules_and_band_order() -> None:
     assert normalized["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"] == {"min": 6200.0, "max": 8000.0}
 
 
+def test_normalize_phase_guardrails_projects_season_constraints() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_GUARDRAILS"},
+        "data": {
+            "phase_summary": {
+                "non_negotiables": ["Exact phase range is 2026-21--2026-23."],
+                "key_risks_warnings": ["Do not drift into threshold or VO2MAX work."],
+            },
+            "events_constraints": {"events": []},
+            "execution_non_negotiables": {
+                "recovery_protection_rules": "Respect locked rest days.",
+            },
+            "load_guardrails": {"weekly_kj_bands": []},
+        },
+    }
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [
+                    "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
+                    "Fixed rest days are Monday and Friday.",
+                ],
+                "risk_constraints": [
+                    "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated.",
+                ],
+                "planned_event_windows": [
+                    "2026-15 B Brevet 200 km Toelzer-Land-Runde",
+                    "2026-05-16 (A)",
+                ],
+                "recovery_protection": {
+                    "notes": [
+                        "Respect the locked rest days as hard recovery boundaries.",
+                        "Use the shortened phases to restore continuity before the full build.",
+                    ]
+                },
+            }
+        }
+    }
+
+    normalized = normalize_phase_guardrails_document(
+        document,
+        season_plan_document=season_plan,
+    )
+
+    non_negotiables = normalized["data"]["phase_summary"]["non_negotiables"]
+    assert "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h." in non_negotiables
+    assert "Fixed rest days are Monday and Friday." in non_negotiables
+    assert "2026-15 B Brevet 200 km Toelzer-Land-Runde" in non_negotiables
+    assert (
+        "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated."
+        in normalized["data"]["phase_summary"]["key_risks_warnings"]
+    )
+    recovery_rules = normalized["data"]["execution_non_negotiables"]["recovery_protection_rules"]
+    assert "Respect locked rest days." in recovery_rules
+    assert "Respect the locked rest days as hard recovery boundaries." in recovery_rules
+    assert "Use the shortened phases to restore continuity before the full build." in recovery_rules
+    assert normalized["data"]["events_constraints"]["events"] == [
+        {
+            "date": "2026-05-16",
+            "week": "2026-20",
+            "type": "A",
+            "constraint": "Planned season event window preserved from season_plan: 2026-05-16 (A)",
+        }
+    ]
+
+
 def test_extract_planning_events_document_parses_workspace_payload() -> None:
     payload = {"ok": True, "content": '{"data":{"events":[{"type":"A","date":"2026-05-10"}]}}'}
     parsed = extract_planning_events_document(payload)

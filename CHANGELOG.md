@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed `PHASE_GUARDRAILS` persistence after successful phase runs by deterministically projecting required `SEASON_PLAN.global_constraints` into the normalized guardrails payload before guarded-store validation; missing availability assumptions, risk constraints, recovery notes, and planned event windows are now repaired in code instead of failing at store time.
 - Fixed deterministic S5 fallback behavior for recovery-sensitive phase/week semantics so shortened re-entry / reset weeks no longer drop their role-aware progression reduction when KPI lower bounds conflict; reset-like weeks now retain material load reduction through a code-owned `phase_intent` + `week_role` fallback policy.
 - Fixed `season_scenarios` runtime alignment by making the Scenario-C `VO2MAX` guardrail read `kpi_guardrail_notes` in addition to `decision_notes` / `constraint_summary`, and narrowed the task tool scope to `workspace_get_input` plus `workspace_get_latest` instead of the full read-only workspace bundle.
 - Fixed the `season_scenarios` task/skill guidance for Scenario C so `VO2MAX` is only allowed when `decision_notes` or `kpi_guardrail_notes` explicitly explain its sparse ceiling-support / fresh high-intensity role; otherwise the model is instructed to omit `VO2MAX`.
