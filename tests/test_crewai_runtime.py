@@ -3453,11 +3453,11 @@ def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
     _install_fake_flow_module(monkeypatch)
     captured: dict[str, object] = {}
 
-    def _fake_run_agent_multi_output(*args, **kwargs):
-        captured["tasks"] = kwargs["tasks"]
+    def _fake_execute_week_engine(**kwargs):
+        captured.update(kwargs)
         return {"ok": True, "produced": {"store_week_plan": {"run_id": kwargs["run_id"]}}}
 
-    monkeypatch.setattr("rps.crewai_runtime.flows.run_agent_multi_output", _fake_run_agent_multi_output)
+    monkeypatch.setattr("rps.crewai_runtime.flows.execute_week_engine", _fake_execute_week_engine)
 
     runtime = AgentRuntime(
         model="openai/gpt-5-mini",
@@ -3475,24 +3475,25 @@ def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
         agent_name="week_planner",
         athlete_id="i150546",
         tasks=[AgentTask.CREATE_WEEK_PLAN],
-        user_input="Create week plan.",
+        user_input="Target ISO week: year=2026, week=21. Message: ",
         run_id="week-flow-run",
     )
 
     assert result["ok"] is True
-    assert captured["tasks"] == [AgentTask.CREATE_WEEK_PLAN]
+    assert captured["target_year"] == 2026
+    assert captured["target_week"] == 21
+    assert captured["preview_only"] is False
 
 
 def test_run_week_flow_preview_only_dispatches_preview_runner(monkeypatch) -> None:
     _install_fake_flow_module(monkeypatch)
     captured: dict[str, object] = {}
 
-    def _fake_run_agent_multi_output_preview(*args, **kwargs):
-        captured["tasks"] = kwargs["tasks"]
-        captured["preview_only"] = True
+    def _fake_execute_week_engine(**kwargs):
+        captured.update(kwargs)
         return {"ok": True, "artifact_type": "WEEK_PLAN", "document": {"meta": {}, "data": {}}}
 
-    monkeypatch.setattr("rps.crewai_runtime.flows.run_agent_multi_output_preview", _fake_run_agent_multi_output_preview)
+    monkeypatch.setattr("rps.crewai_runtime.flows.execute_week_engine", _fake_execute_week_engine)
 
     runtime = AgentRuntime(
         model="openai/gpt-5-mini",
@@ -3510,14 +3511,14 @@ def test_run_week_flow_preview_only_dispatches_preview_runner(monkeypatch) -> No
         agent_name="week_planner",
         athlete_id="i150546",
         tasks=[AgentTask.CREATE_WEEK_PLAN],
-        user_input="Preview week plan.",
+        user_input="Target ISO week: year=2026, week=21. Message: make it easier",
         run_id="week-flow-preview-run",
         preview_only=True,
     )
 
     assert result["ok"] is True
-    assert captured["tasks"] == [AgentTask.CREATE_WEEK_PLAN]
     assert captured["preview_only"] is True
+    assert captured["user_message"] == "make it easier"
 
 
 def test_run_report_flow_executes_runner(monkeypatch) -> None:

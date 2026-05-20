@@ -10,12 +10,17 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from rps.agents.crewai_backend import run_phase_bundle_crewai
-from rps.agents.runtime import AgentRuntime, run_agent_multi_output, run_agent_multi_output_preview
+from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime.telemetry import (
     emit_runtime_event,
     emit_runtime_exception_event,
     runtime_event_scope,
+)
+from rps.planning.week_engine import (
+    execute_week_engine,
+    extract_message_from_user_input,
+    parse_target_week_from_user_input,
 )
 
 from .config import load_crewai_config_bundle
@@ -505,17 +510,19 @@ def run_week_flow(
 
         @listen(bootstrap)
         def run_planning_cycle(self, _label: str) -> JsonMap:
-            runner = run_agent_multi_output_preview if preview_only else run_agent_multi_output
             try:
-                self.state.result = runner(
-                    runtime_for(agent_name),
-                    agent_name=agent_name,
+                target_year, target_week = parse_target_week_from_user_input(user_input)
+                runtime = runtime_for(agent_name)
+                self.state.result = execute_week_engine(
+                    repo_root=Path.cwd(),
+                    schema_dir=runtime.schema_dir,
+                    workspace_root=runtime.workspace_root,
                     athlete_id=athlete_id,
-                    tasks=tasks,
-                    user_input=user_input,
                     run_id=run_id,
-                    model_override=model_override,
-                    temperature_override=temperature_override,
+                    target_year=target_year,
+                    target_week=target_week,
+                    user_message=extract_message_from_user_input(user_input),
+                    preview_only=preview_only,
                 )
             except Exception as exc:
                 self.state.result = _record_flow_exception(self.state, exc)

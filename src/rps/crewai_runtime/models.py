@@ -330,10 +330,13 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
     day_role: str
     intensity_domain: str | None = None
     workout_family: str | None = None
+    family_variant: str | None = None
     load_modality: str | None = None
     generator_profile: str | None = None
+    selection_reason: str | None = None
     activation_required: bool | None = None
     low_end_endurance: bool = False
+    progression_parameters: dict[str, Any] = Field(default_factory=dict, json_schema_extra={"additionalProperties": False})
     phase_legality_status: Literal["unknown", "legal", "illegal"] = "unknown"
     planned_duration_minutes: int
     planned_kj: int

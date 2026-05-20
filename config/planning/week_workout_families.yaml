@@ -1,0 +1,79 @@
+families:
+  ENDURANCE_LOW:
+    family_id: ENDURANCE_LOW
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    generator_profile: duration_first_endurance
+    allowed_day_roles: [RECOVERY, ENDURANCE, OPTIONAL]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: [recovery_like]
+  ENDURANCE_STEADY:
+    family_id: ENDURANCE_STEADY
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    generator_profile: duration_first_endurance
+    allowed_day_roles: [ENDURANCE, OPTIONAL]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: []
+  ENDURANCE_LONG_STEADY:
+    family_id: ENDURANCE_LONG_STEADY
+    intensity_domain: ENDURANCE
+    load_modality: NONE
+    generator_profile: duration_first_endurance
+    allowed_day_roles: [ENDURANCE]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: [anchor, long_endurance]
+  TEMPO_STEADY:
+    family_id: TEMPO_STEADY
+    intensity_domain: TEMPO
+    load_modality: NONE
+    generator_profile: controlled_tempo_expansion
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: ["*"]
+    allowed_week_roles: ["*"]
+    tags: [quality]
+  SWEET_SPOT_STABILIZATION:
+    family_id: SWEET_SPOT_STABILIZATION
+    intensity_domain: SWEET_SPOT
+    load_modality: NONE
+    generator_profile: tiz_first_sweet_spot
+    allowed_day_roles: [QUALITY]
+    allowed_phase_intents: [shortened_re_entry, shortened_consolidation, shortened_reload, durability_build, specificity_build, base]
+    allowed_week_roles: ["*"]
+    tags: [quality, activation_capable]
+  K3_SWEET_SPOT:
+    family_id: K3_SWEET_SPOT
+    intensity_domain: ENDURANCE
+    load_modality: K3
+    generator_profile: k3_progressive_torque
+    allowed_day_roles: [QUALITY, ENDURANCE]
+    allowed_phase_intents: [shortened_re_entry, shortened_consolidation, shortened_reload, durability_build, base]
+    allowed_week_roles: ["*"]
+    tags: [quality]
+
+selection_policy:
+  by_phase_intent:
+    shortened_re_entry:
+      QUALITY: [SWEET_SPOT_STABILIZATION, TEMPO_STEADY, K3_SWEET_SPOT]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    shortened_consolidation:
+      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    shortened_reload:
+      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    specificity_build:
+      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+  by_day_role:
+    QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
+    RECOVERY: [ENDURANCE_LOW]
+    ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    OPTIONAL: [ENDURANCE_LOW, ENDURANCE_STEADY]

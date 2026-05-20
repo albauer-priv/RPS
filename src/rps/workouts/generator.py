@@ -29,10 +29,12 @@ class WorkoutBlueprintRenderSpec:
     day_role: str
     intensity_domain: str
     workout_family: str
+    family_variant: str | None
     planned_duration_minutes: int
     planned_kj: int
     phase_intent: str | None
     load_modality: str
+    generator_profile: str | None
     low_end_endurance: bool
     activation_required: bool
 
@@ -168,21 +170,23 @@ def _resolve_render_spec(blueprint: WeekWorkoutBlueprintModel) -> WorkoutBluepri
         day_role=blueprint.day_role,
         intensity_domain=domain or "ENDURANCE",
         workout_family=family,
+        family_variant=str(blueprint.family_variant or blueprint.workout_family or "").strip() or None,
         planned_duration_minutes=max(int(blueprint.planned_duration_minutes), 20),
         planned_kj=int(blueprint.planned_kj),
         phase_intent=blueprint.phase_intent,
         load_modality=load_modality,
+        generator_profile=str(blueprint.generator_profile or "").strip() or None,
         low_end_endurance=low_end_endurance,
         activation_required=activation_required,
     )
 
 
 def _generate_workout_structure(spec: WorkoutBlueprintRenderSpec) -> WorkoutStructure:
-    if spec.workout_family == "K3":
+    if spec.generator_profile == "k3_progressive_torque" or spec.workout_family == "K3":
         return _generate_k3(spec)
-    if spec.intensity_domain == "SWEET_SPOT":
+    if spec.generator_profile == "tiz_first_sweet_spot" or spec.intensity_domain == "SWEET_SPOT":
         return _generate_sweet_spot(spec)
-    if spec.intensity_domain == "TEMPO":
+    if spec.generator_profile == "controlled_tempo_expansion" or spec.intensity_domain == "TEMPO":
         return _generate_tempo(spec)
     if spec.intensity_domain == "ENDURANCE":
         return _generate_endurance(spec)
@@ -292,27 +296,33 @@ def _interval_layout(*, total_minutes: int, recovery_minutes: int, preferred_wor
 
 def _title_for_spec(spec: WorkoutBlueprintRenderSpec) -> str:
     phase_prefix = _phase_prefix(spec.phase_intent)
-    if spec.workout_family == "K3":
+    variant = (spec.family_variant or spec.workout_family).upper()
+    if variant == "K3_SWEET_SPOT" or spec.workout_family == "K3":
         return f"{phase_prefix} K3 Strength Endurance".strip()
+    if variant == "SWEET_SPOT_STABILIZATION":
+        return f"{phase_prefix} Sweet Spot Stabilization".strip()
     if spec.intensity_domain == "SWEET_SPOT":
         return f"{phase_prefix} Sweet Spot".strip()
+    if variant == "TEMPO_STEADY":
+        return f"{phase_prefix} Tempo Steady".strip()
     if spec.intensity_domain == "TEMPO":
         return f"{phase_prefix} Tempo".strip()
-    if spec.low_end_endurance:
+    if variant == "ENDURANCE_LOW" or spec.low_end_endurance:
         return "Low-End Endurance Support"
-    if spec.planned_duration_minutes >= 180:
+    if variant == "ENDURANCE_LONG_STEADY" or spec.planned_duration_minutes >= 180:
         return "Long Endurance Anchor"
     return "Aerobic Endurance Support"
 
 
 def _notes_for_spec(spec: WorkoutBlueprintRenderSpec) -> str:
-    if spec.workout_family == "K3":
+    variant = (spec.family_variant or spec.workout_family).upper()
+    if variant == "K3_SWEET_SPOT" or spec.workout_family == "K3":
         return "Deterministic K3 workout generated from the approved week blueprint."
-    if spec.intensity_domain == "SWEET_SPOT":
+    if variant == "SWEET_SPOT_STABILIZATION" or spec.intensity_domain == "SWEET_SPOT":
         return "Deterministic Sweet Spot workout generated from the approved week blueprint."
-    if spec.intensity_domain == "TEMPO":
+    if variant == "TEMPO_STEADY" or spec.intensity_domain == "TEMPO":
         return "Deterministic Tempo workout generated from the approved week blueprint."
-    if spec.low_end_endurance:
+    if variant == "ENDURANCE_LOW" or spec.low_end_endurance:
         return "Deterministic low-end Endurance workout generated from the approved week blueprint."
     return "Deterministic Endurance workout generated from the approved week blueprint."
 

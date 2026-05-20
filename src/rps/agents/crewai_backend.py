@@ -64,6 +64,11 @@ from rps.crewai_runtime.telemetry import (
     register_runtime_metadata,
     runtime_event_scope,
 )
+from rps.planning.week_engine import (
+    execute_week_engine,
+    extract_message_from_user_input,
+    parse_target_week_from_user_input,
+)
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
@@ -2570,6 +2575,35 @@ def run_agent_multi_output_crewai(
         }
 
     task = tasks[0]
+    if task == AgentTask.CREATE_WEEK_PLAN:
+        try:
+            target_year, target_week = parse_target_week_from_user_input(user_input)
+            return execute_week_engine(
+                repo_root=ROOT,
+                schema_dir=runtime.schema_dir,
+                workspace_root=runtime.workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                target_year=target_year,
+                target_week=target_week,
+                user_message=extract_message_from_user_input(user_input),
+                preview_only=False,
+            )
+        except Exception as exc:
+            emit_runtime_exception_event(
+                root=runtime.workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                exc=exc,
+                crew="single_task",
+                task=task.value,
+                agent=agent_name,
+            )
+            return {
+                "ok": False,
+                "error": str(exc),
+                "produced": {},
+            }
     if task in {
         AgentTask.CREATE_PHASE_GUARDRAILS,
         AgentTask.CREATE_PHASE_STRUCTURE,
@@ -2660,6 +2694,31 @@ def run_agent_multi_output_preview_crewai(
         }
 
     task = tasks[0]
+    if task == AgentTask.CREATE_WEEK_PLAN:
+        try:
+            target_year, target_week = parse_target_week_from_user_input(user_input)
+            return execute_week_engine(
+                repo_root=ROOT,
+                schema_dir=runtime.schema_dir,
+                workspace_root=runtime.workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                target_year=target_year,
+                target_week=target_week,
+                user_message=extract_message_from_user_input(user_input),
+                preview_only=True,
+            )
+        except Exception as exc:
+            emit_runtime_exception_event(
+                root=runtime.workspace_root,
+                athlete_id=athlete_id,
+                run_id=run_id,
+                exc=exc,
+                crew="single_task_preview",
+                task=task.value,
+                agent=agent_name,
+            )
+            return {"ok": False, "error": str(exc), "document": {}}
     if task in {
         AgentTask.CREATE_PHASE_GUARDRAILS,
         AgentTask.CREATE_PHASE_STRUCTURE,
