@@ -392,6 +392,8 @@ def _select_workout_blueprints(
     allowed_domains = {str(item).strip().upper() for item in week_calendar_context.get("allowed_intensity_domains") or []}
     allowed_modalities = {str(item).strip().upper() for item in week_calendar_context.get("allowed_load_modalities") or []}
     week_role = str(week_calendar_context.get("phase_week_role") or "").strip().upper()
+    true_quality_cap = int(week_calendar_context.get("quality_day_cap") or 0)
+    true_quality_used = 0
     workout_blueprints: list[WeekWorkoutBlueprintModel] = []
     quality_index = 0
     for day in day_blueprints:
@@ -407,9 +409,12 @@ def _select_workout_blueprints(
             allowed_modalities=allowed_modalities,
             is_anchor=is_anchor,
             forced_quality_family=adjustment.forced_quality_family if day.day_role == "QUALITY" and quality_index == 0 else None,
+            remaining_true_quality_budget=max(true_quality_cap - true_quality_used, 0),
         )
         if day.day_role == "QUALITY":
             quality_index += 1
+        if str(protocol.parameters.get("quality_cost") or "endurance_only").strip().lower() == "true_quality":
+            true_quality_used += 1
         previous_signature = match_progression_signature(
             signatures=progression_history,
             protocol_type=protocol.protocol_type,
@@ -449,7 +454,10 @@ def _select_workout_blueprints(
                 progression_state={
                     "primary_axis": protocol.primary_axis,
                     "secondary_axis": protocol.secondary_axis,
+                    "progression_priority": list(protocol.parameters.get("progression_priority") or []),
                     "redistribution_rule": protocol.redistribution_rule,
+                    "count_tiz_as": str(protocol.parameters.get("count_tiz_as") or "full_work"),
+                    "quality_cost": str(protocol.parameters.get("quality_cost") or "endurance_only"),
                     "previous_signature": dict(previous_signature) if previous_signature else {},
                 },
                 selection_reason=(
@@ -568,6 +576,7 @@ def _pick_protocol(
     allowed_modalities: set[str],
     is_anchor: bool,
     forced_quality_family: str | None,
+    remaining_true_quality_budget: int,
 ) -> WeekWorkoutProtocol:
     if forced_quality_family:
         forced = protocol_config.protocols.get(forced_quality_family.upper())
@@ -579,7 +588,7 @@ def _pick_protocol(
             allowed_domains=allowed_domains,
             allowed_modalities=allowed_modalities,
             is_anchor=is_anchor,
-        ):
+        ) and _quality_budget_allows(protocol=forced, remaining_true_quality_budget=remaining_true_quality_budget):
             return forced
     role = day_role.upper()
     candidates = list(protocol_config.by_phase_intent.get(phase_intent.lower(), {}).get(role, []))
@@ -598,9 +607,16 @@ def _pick_protocol(
             allowed_domains=allowed_domains,
             allowed_modalities=allowed_modalities,
             is_anchor=is_anchor,
-        ):
+        ) and _quality_budget_allows(protocol=protocol, remaining_true_quality_budget=remaining_true_quality_budget):
             return protocol
     raise ValueError(f"No legal workout protocol available for day_role={day_role}, phase_intent={phase_intent}, week_role={week_role}.")
+
+
+def _quality_budget_allows(*, protocol: WeekWorkoutProtocol, remaining_true_quality_budget: int) -> bool:
+    quality_cost = str(protocol.parameters.get("quality_cost") or "endurance_only").strip().lower()
+    if quality_cost != "true_quality":
+        return True
+    return remaining_true_quality_budget > 0
 
 
 def _base_minutes(day: WeekDayBlueprintModel) -> int:
@@ -662,18 +678,28 @@ def _estimate_primary_tiz_minutes(*, workout: WeekWorkoutBlueprintModel, session
     params = dict(workout.progression_parameters)
     tiz_min = int(params.get("tiz_min_minutes") or 0)
     tiz_max = int(params.get("tiz_max_minutes") or 0)
+    tiz_standard_cap = int(params.get("tiz_standard_cap_minutes") or 0)
+    tiz_hard_cap = int(params.get("tiz_hard_cap_minutes") or 0)
+    count_tiz_as = str(params.get("count_tiz_as") or "full_work").strip().lower()
     protocol_type = str(workout.protocol_type or "").upper()
     warm = int(params.get("warmup_minutes") or 0)
     cool = int(params.get("cooldown_minutes") or 0)
     activation_minutes = 3 if str(params.get("activation_profile") or "").strip() else 0
     available = max(session_minutes - warm - cool - activation_minutes, 0)
+    default_upper = tiz_standard_cap or tiz_hard_cap or tiz_max or available
     if protocol_type == "LONG_STEADY":
-        return max(min(available, tiz_max or available), tiz_min or 0)
+        return max(min(available, default_upper, tiz_hard_cap or available, tiz_max or available), tiz_min or 0)
     if protocol_type == "FATIGUE_FINISH":
         finish_min = int(params.get("finish_min_minutes") or 20)
         finish_max = int(params.get("finish_max_minutes") or finish_min)
-        return min(max(finish_min, min(finish_max, max(session_minutes - int(params.get("preload_min_minutes") or 120), 0))), finish_max)
-    return max(min(available, tiz_max or available), tiz_min or 0)
+        late_standard = int(params.get("late_finish_standard_cap_minutes") or 0)
+        late_hard = int(params.get("late_finish_hard_cap_minutes") or 0)
+        finish_available = max(session_minutes - int(params.get("preload_min_minutes") or 120), 0)
+        capped = min(finish_available, finish_max, late_standard or finish_max, late_hard or finish_max)
+        return min(max(finish_min, capped), late_hard or finish_max)
+    if count_tiz_as == "on_time":
+        return max(min(available, default_upper, tiz_hard_cap or available, tiz_max or available), tiz_min or 0)
+    return max(min(available, default_upper, tiz_hard_cap or available, tiz_max or available), tiz_min or 0)
 
 
 def _hourly_loads(context: JsonMap) -> dict[str, int]:

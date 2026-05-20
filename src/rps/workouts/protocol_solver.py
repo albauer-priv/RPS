@@ -69,7 +69,11 @@ def _solve_classic_intervals(spec: Any) -> SolvedWorkout:
     cool = int(params.get("cooldown_minutes") or 8)
     activation_profile = str(params.get("activation_profile") or "").strip().upper()
     activation_minutes = 3 if activation_profile else 0
-    target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 0)
+    target_tiz = _effective_target_tiz(
+        spec=spec,
+        requested=int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 0),
+        fallback_min=int(params.get("tiz_min_minutes") or 0),
+    )
     work_min, recovery_min, sets = _solve_classic_interval_distribution(
         target_tiz=max(target_tiz, 1),
         set_count_min=int(params.get("set_count_min") or 1),
@@ -77,8 +81,10 @@ def _solve_classic_intervals(spec: Any) -> SolvedWorkout:
         work_duration_min=int(params.get("work_duration_min_minutes") or 1),
         work_duration_max=int(params.get("work_duration_max_minutes") or 60),
         recovery_duration=int(params.get("recovery_duration_minutes") or 3),
+        progression_priority=[str(item) for item in spec.progression_state.get("progression_priority") or []],
         preferred_primary_axis=str(spec.progression_state.get("primary_axis") or ""),
         preferred_secondary_axis=str(spec.progression_state.get("secondary_axis") or ""),
+        redistribute_when_work_exceeds=int(params.get("redistribute_when_work_exceeds_minutes") or 0),
         previous_signature=_previous_signature(spec),
     )
     main_blocks: list[WorkoutLoop | WorkoutStep] = [
@@ -106,7 +112,11 @@ def _solve_strength_endurance(spec: Any) -> SolvedWorkout:
     params = spec.progression_parameters
     warm = int(params.get("warmup_minutes") or 10)
     cool = int(params.get("cooldown_minutes") or 8)
-    target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 24)
+    target_tiz = _effective_target_tiz(
+        spec=spec,
+        requested=int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 24),
+        fallback_min=int(params.get("tiz_min_minutes") or 24),
+    )
     work_min, recovery_min, sets = _solve_classic_interval_distribution(
         target_tiz=target_tiz,
         set_count_min=int(params.get("set_count_min") or 3),
@@ -114,8 +124,10 @@ def _solve_strength_endurance(spec: Any) -> SolvedWorkout:
         work_duration_min=int(params.get("work_duration_min_minutes") or 6),
         work_duration_max=int(params.get("work_duration_max_minutes") or 10),
         recovery_duration=int(params.get("recovery_duration_minutes") or 3),
+        progression_priority=[str(item) for item in spec.progression_state.get("progression_priority") or []],
         preferred_primary_axis="work_duration",
         preferred_secondary_axis="set_count",
+        redistribute_when_work_exceeds=int(params.get("redistribute_when_work_exceeds_minutes") or 0),
         previous_signature=_previous_signature(spec),
     )
     primary_used = sets * work_min + sets * recovery_min
@@ -149,7 +161,11 @@ def _solve_over_under_intervals(spec: Any) -> SolvedWorkout:
     over_minutes = int(params.get("over_duration_minutes") or 1)
     oscillation_min = int(params.get("oscillation_count_min") or 4)
     oscillation_max = int(params.get("oscillation_count_max") or 8)
-    target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or ((under_minutes + over_minutes) * oscillation_min))
+    target_tiz = _effective_target_tiz(
+        spec=spec,
+        requested=int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or ((under_minutes + over_minutes) * oscillation_min)),
+        fallback_min=int(params.get("tiz_min_minutes") or ((under_minutes + over_minutes) * oscillation_min)),
+    )
     per_oscillation = max(under_minutes + over_minutes, 1)
     previous = _previous_signature(spec)
     oscillations = min(oscillation_max, max(oscillation_min, (target_tiz + per_oscillation - 1) // per_oscillation))
@@ -190,7 +206,11 @@ def _solve_microburst_sets(spec: Any) -> SolvedWorkout:
     activation_minutes = 3 if activation_profile else 0
     work_seconds = int(params.get("work_duration_seconds") or 30)
     recovery_seconds = int(params.get("recovery_duration_seconds") or 15)
-    target_tiz = int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 12)
+    target_tiz = _effective_target_tiz(
+        spec=spec,
+        requested=int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 12),
+        fallback_min=int(params.get("tiz_min_minutes") or 12),
+    )
     total_reps = max(1, int(round(target_tiz * 60 / work_seconds)))
     previous = _previous_signature(spec)
     set_count, reps_per_set = _solve_microburst_distribution(
@@ -203,9 +223,11 @@ def _solve_microburst_sets(spec: Any) -> SolvedWorkout:
         previous_signature=previous,
         preferred_primary_axis=str(spec.progression_state.get("primary_axis") or ""),
         preferred_secondary_axis=str(spec.progression_state.get("secondary_axis") or ""),
+        progression_priority=[str(item) for item in spec.progression_state.get("progression_priority") or []],
         protocol_variant=str(spec.protocol_variant or ""),
         work_seconds=work_seconds,
         recovery_seconds=recovery_seconds,
+        reps_practical_ceiling=int(params.get("reps_practical_ceiling") or 0),
     )
     blocks: list[WorkoutLoop | WorkoutStep] = []
     target_by_set = list(params.get("work_target_by_set") or [])
@@ -247,14 +269,20 @@ def _solve_ramp_intervals(spec: Any) -> SolvedWorkout:
     warm = int(params.get("warmup_minutes") or 8)
     cool = int(params.get("cooldown_minutes") or 8)
     work_min, recovery_min, sets = _solve_classic_interval_distribution(
-        target_tiz=int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 16),
+        target_tiz=_effective_target_tiz(
+            spec=spec,
+            requested=int(spec.primary_tiz_target_min or params.get("tiz_min_minutes") or 16),
+            fallback_min=int(params.get("tiz_min_minutes") or 16),
+        ),
         set_count_min=int(params.get("set_count_min") or 3),
         set_count_max=int(params.get("set_count_max") or 5),
         work_duration_min=int(params.get("work_duration_min_minutes") or 6),
         work_duration_max=int(params.get("work_duration_max_minutes") or 8),
         recovery_duration=int(params.get("recovery_duration_minutes") or 3),
+        progression_priority=[str(item) for item in spec.progression_state.get("progression_priority") or []],
         preferred_primary_axis="set_count",
         preferred_secondary_axis="work_duration",
+        redistribute_when_work_exceeds=int(params.get("redistribute_when_work_exceeds_minutes") or 0),
         previous_signature=_previous_signature(spec),
     )
     structure = WorkoutStructure(
@@ -285,6 +313,11 @@ def _solve_fatigue_finish(spec: Any) -> SolvedWorkout:
     preload_min = int(params.get("preload_min_minutes") or 120)
     finish_min = int(params.get("finish_min_minutes") or 20)
     finish_max = int(params.get("finish_max_minutes") or 60)
+    finish_max = min(
+        finish_max,
+        int(params.get("late_finish_hard_cap_minutes") or finish_max),
+        int(params.get("late_finish_standard_cap_minutes") or finish_max),
+    )
     usable = max(spec.planned_duration_minutes - warm - cool, preload_min + finish_min)
     finish = min(finish_max, max(finish_min, usable - preload_min))
     preload = max(usable - finish, preload_min)
@@ -312,42 +345,59 @@ def _solve_classic_interval_distribution(
     work_duration_min: int,
     work_duration_max: int,
     recovery_duration: int,
+    progression_priority: list[str],
     preferred_primary_axis: str,
     preferred_secondary_axis: str,
+    redistribute_when_work_exceeds: int,
     previous_signature: JsonMap | None,
 ) -> tuple[int, int, int]:
     previous = previous_signature or {}
     previous_sets = int(previous.get("set_count") or 0)
     previous_work = int(previous.get("work_duration_minutes") or 0)
     previous_tiz = int(previous.get("tiz_minutes") or 0)
+    priorities = [item.strip().lower() for item in progression_priority if str(item).strip()]
+    primary = priorities[0] if priorities else preferred_primary_axis
+    secondary = priorities[1] if len(priorities) > 1 else preferred_secondary_axis
+    redistribute_threshold = redistribute_when_work_exceeds or work_duration_max
     if previous_sets and previous_work:
         previous_sets = min(max(previous_sets, set_count_min), set_count_max)
         previous_work = min(max(previous_work, work_duration_min), work_duration_max)
-        if target_tiz > previous_tiz and preferred_primary_axis == "work_duration":
+        if target_tiz > previous_tiz and primary == "work_duration":
             work = previous_work
-            while work < work_duration_max and previous_sets * work < target_tiz:
+            while work < min(work_duration_max, redistribute_threshold) and previous_sets * work < target_tiz:
                 work += 1
             if previous_sets * work >= target_tiz:
                 return work, recovery_duration, previous_sets
-            if preferred_secondary_axis in {"set_redistribution", "set_count"}:
+            if secondary in {"set_redistribution", "set_count"}:
                 progressed = _redistribute_sets_for_tiz(
                     target_tiz=target_tiz,
                     current_sets=previous_sets,
                     set_count_max=set_count_max,
                     work_duration_min=work_duration_min,
-                    work_duration_max=work_duration_max,
+                    work_duration_max=min(work_duration_max, redistribute_threshold),
                 )
                 if progressed is not None:
                     progressed_work, progressed_sets = progressed
                     return progressed_work, recovery_duration, progressed_sets
+        if target_tiz > previous_tiz and primary == "set_count":
+            progressed = _redistribute_sets_for_tiz(
+                target_tiz=target_tiz,
+                current_sets=previous_sets,
+                set_count_max=set_count_max,
+                work_duration_min=work_duration_min,
+                work_duration_max=work_duration_max,
+            )
+            if progressed is not None:
+                progressed_work, progressed_sets = progressed
+                return progressed_work, recovery_duration, progressed_sets
         if (
             target_tiz == previous_tiz
-            and preferred_secondary_axis == "set_redistribution"
-            and previous_work >= work_duration_max
+            and secondary == "set_redistribution"
+            and previous_work >= redistribute_threshold
             and previous_sets < set_count_max
         ):
             redistributed_sets = previous_sets + 1
-            redistributed_work = min(work_duration_max, max(work_duration_min, math.ceil(target_tiz / redistributed_sets)))
+            redistributed_work = min(redistribute_threshold, max(work_duration_min, math.ceil(target_tiz / redistributed_sets)))
             return redistributed_work, recovery_duration, redistributed_sets
     best: tuple[int, int, int, int] | None = None
     for sets in range(set_count_min, set_count_max + 1):
@@ -356,11 +406,12 @@ def _solve_classic_interval_distribution(
             if tiz < target_tiz:
                 continue
             score = (tiz - target_tiz) * 100
-            if preferred_primary_axis == "work_duration":
+            if primary == "work_duration":
                 score += abs(work - min(work_duration_max, max(work_duration_min, target_tiz // max(sets, 1))))
-            if preferred_secondary_axis == "set_redistribution":
+                score += max(0, work - redistribute_threshold) * 25
+            if secondary == "set_redistribution":
                 score += sets * 2
-            elif preferred_secondary_axis == "set_count":
+            elif secondary == "set_count":
                 score += sets
             total = sets * (work + recovery_duration)
             candidate = (score, total, work, sets)
@@ -385,11 +436,15 @@ def _solve_microburst_distribution(
     previous_signature: JsonMap | None,
     preferred_primary_axis: str,
     preferred_secondary_axis: str,
+    progression_priority: list[str],
     protocol_variant: str,
     work_seconds: int,
     recovery_seconds: int,
+    reps_practical_ceiling: int,
 ) -> tuple[int, list[int]]:
     previous = previous_signature or {}
+    priorities = [item.strip().lower() for item in progression_priority if str(item).strip()]
+    effective_reps_max = min(reps_per_set_max, reps_practical_ceiling or reps_per_set_max)
     previous_reps_raw = previous.get("reps_per_set")
     previous_reps = [int(item) for item in previous_reps_raw] if isinstance(previous_reps_raw, list) and previous_reps_raw else []
     if (
@@ -404,9 +459,10 @@ def _solve_microburst_distribution(
             set_count_max=set_count_max,
             reps_per_set_min=reps_per_set_min,
             reps_per_set_max=reps_per_set_max,
-            preferred_primary_axis=preferred_primary_axis,
-            preferred_secondary_axis=preferred_secondary_axis,
+            preferred_primary_axis=priorities[0] if priorities else preferred_primary_axis,
+            preferred_secondary_axis=priorities[1] if len(priorities) > 1 else preferred_secondary_axis,
             protocol_variant=protocol_variant,
+            reps_practical_ceiling=reps_practical_ceiling,
         )
         if progressed is not None:
             return len(progressed), progressed
@@ -416,7 +472,7 @@ def _solve_microburst_distribution(
         base = total_reps // set_count
         remainder = total_reps % set_count
         reps = [base + (1 if idx < remainder else 0) for idx in range(set_count)]
-        if any(rep < reps_per_set_min or rep > reps_per_set_max for rep in reps):
+        if any(rep < reps_per_set_min or rep > effective_reps_max for rep in reps):
             continue
         spread = max(reps) - min(reps)
         preference_penalty = abs(set_count - preferred_set_count) if preferred_set_count is not None else 0
@@ -425,10 +481,10 @@ def _solve_microburst_distribution(
             best = score
             best_distribution = reps
     if not best_distribution:
-        set_count = min(max(set_count_min, (total_reps + reps_per_set_max - 1) // reps_per_set_max), set_count_max)
+        set_count = min(max(set_count_min, (total_reps + effective_reps_max - 1) // effective_reps_max), set_count_max)
         base = total_reps // max(set_count, 1)
         remainder = total_reps % max(set_count, 1)
-        best_distribution = [min(reps_per_set_max, base + (1 if idx < remainder else 0)) for idx in range(set_count)]
+        best_distribution = [min(effective_reps_max, base + (1 if idx < remainder else 0)) for idx in range(set_count)]
         return set_count, best_distribution
     return len(best_distribution), best_distribution
 
@@ -447,6 +503,17 @@ def _solve_addon_minutes(*, spec: Any, primary_minutes: int) -> int:
     max_share = float(params.get("addon_max_share_of_session") or 0.45)
     max_allowed = int(total * max_share)
     return max(0, min((remaining // step) * step, max_allowed, int(params.get("addon_max_block_minutes") or remaining), max(remaining, 0))) if remaining >= min_block else 0
+
+
+def _effective_target_tiz(*, spec: Any, requested: int, fallback_min: int) -> int:
+    params = spec.progression_parameters
+    standard_cap = int(params.get("tiz_standard_cap_minutes") or 0)
+    hard_cap = int(params.get("tiz_hard_cap_minutes") or 0)
+    upper = hard_cap or standard_cap or requested or fallback_min
+    if standard_cap and requested <= 0:
+        upper = standard_cap
+    target = requested or fallback_min
+    return max(min(target, upper), fallback_min)
 
 
 def _z2_addon_section(*, spec: Any, addon_minutes: int) -> WorkoutSection:
@@ -489,17 +556,18 @@ def _progress_microburst_from_previous(
     preferred_primary_axis: str,
     preferred_secondary_axis: str,
     protocol_variant: str,
+    reps_practical_ceiling: int,
 ) -> list[int] | None:
     reps = list(previous_reps)
     previous_total = sum(reps)
-    practical_reps_ceiling = min(reps_per_set_max, 13 if "VO2_40_20" in protocol_variant.upper() or "VO2_30_15" in protocol_variant.upper() else reps_per_set_max)
+    practical_reps_ceiling = min(reps_per_set_max, reps_practical_ceiling or reps_per_set_max)
     if target_total_reps > previous_total and preferred_primary_axis == "reps":
         while sum(reps) < target_total_reps and max(reps) < practical_reps_ceiling:
             for idx in range(len(reps)):
                 if reps[idx] >= practical_reps_ceiling or sum(reps) >= target_total_reps:
                     continue
                 reps[idx] += 1
-        if sum(reps) >= target_total_reps:
+        if sum(reps) >= target_total_reps or target_total_reps - sum(reps) <= 1:
             return reps
         if preferred_secondary_axis == "sets" and len(reps) < set_count_max:
             preferred_sets = len(reps) + 1

@@ -10,9 +10,17 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 
-def _seed_week_workspace(root: Path, athlete_id: str = "test_athlete") -> LocalArtifactStore:
+def _seed_week_workspace(
+    root: Path,
+    athlete_id: str = "test_athlete",
+    *,
+    phase_intent: str = "shortened_re_entry",
+    week_role: str = "SHORTENED_RE_ENTRY",
+    allowed_domains: list[str] | None = None,
+) -> LocalArtifactStore:
     store = LocalArtifactStore(root=root)
     store.ensure_workspace(athlete_id)
+    domains = allowed_domains or ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
     store.save_document(
         athlete_id,
         ArtifactType.SEASON_PLAN,
@@ -25,7 +33,7 @@ def _seed_week_workspace(root: Path, athlete_id: str = "test_athlete") -> LocalA
                         "phase_id": "P01",
                         "phase_name": "Shortened Re-Entry",
                         "phase_type": "Base",
-                        "phase_intent": "shortened_re_entry",
+                        "phase_intent": phase_intent,
                         "cycle": "Base",
                         "iso_week_range": "2026-21--2026-23",
                     }
@@ -49,7 +57,7 @@ def _seed_week_workspace(root: Path, athlete_id: str = "test_athlete") -> LocalA
             "allowed_forbidden_semantics": {
                 "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY", "OPTIONAL", "OFF_BIKE"],
                 "forbidden_day_roles": [],
-                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_intensity_domains": domains,
                 "forbidden_intensity_domains": ["RECOVERY", "THRESHOLD", "VO2MAX"],
                 "allowed_load_modalities": ["NONE", "K3"],
                 "quality_density": {"max_quality_days_per_week": 2},
@@ -60,11 +68,11 @@ def _seed_week_workspace(root: Path, athlete_id: str = "test_athlete") -> LocalA
         "meta": {"artifact_type": "PHASE_STRUCTURE", "schema_id": "PhaseStructureInterface", "iso_week_range": "2026-21--2026-23"},
         "data": {
             "execution_principles": {"phase_role": "Base"},
-            "upstream_intent": {"phase_intent": "shortened_re_entry"},
+            "upstream_intent": {"phase_intent": phase_intent},
             "week_skeleton_logic": {
                 "week_roles": {
                     "week_roles": [
-                        {"week": "2026-21", "role": "SHORTENED_RE_ENTRY"},
+                        {"week": "2026-21", "role": week_role},
                         {"week": "2026-22", "role": "SHORTENED_CONSOLIDATION"},
                         {"week": "2026-23", "role": "SHORTENED_MINI_RESET"},
                     ]
@@ -263,3 +271,48 @@ def test_execute_week_engine_reuses_previous_week_progression_signature(tmp_path
     assert previous["protocol_type"] == "CLASSIC_INTERVALS"
     assert previous["set_count"] == 4
     assert previous["work_duration_minutes"] == 10
+
+
+def test_execute_week_engine_falls_back_cleanly_without_previous_week_signature(tmp_path: Path) -> None:
+    _seed_week_workspace(tmp_path)
+
+    result = execute_week_engine(
+        repo_root=Path.cwd(),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=tmp_path,
+        athlete_id="test_athlete",
+        run_id="no_prev_run",
+        target_year=2026,
+        target_week=21,
+        preview_only=True,
+    )
+
+    assert result["ok"] is True
+    workout_ids = {workout["workout_id"]: workout for workout in result["details"]["planning_bundle"]["workout_blueprints"]}
+    assert workout_ids["2026-21-TUE-QUALITY"]["progression_state"]["previous_signature"] == {}
+
+
+def test_execute_week_engine_counts_quality_cost_and_downshifts_sat_endurance(tmp_path: Path) -> None:
+    _seed_week_workspace(
+        tmp_path,
+        phase_intent="specificity_build",
+        week_role="SPECIFICITY_BUILD",
+        allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+    )
+
+    result = execute_week_engine(
+        repo_root=Path.cwd(),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=tmp_path,
+        athlete_id="test_athlete",
+        run_id="density_run",
+        target_year=2026,
+        target_week=21,
+        preview_only=True,
+    )
+
+    assert result["ok"] is True
+    workout_ids = {workout["workout_id"]: workout for workout in result["details"]["planning_bundle"]["workout_blueprints"]}
+    assert workout_ids["2026-21-TUE-QUALITY"]["progression_state"]["quality_cost"] == "true_quality"
+    assert workout_ids["2026-21-THU-QUALITY"]["progression_state"]["quality_cost"] == "true_quality"
+    assert workout_ids["2026-21-SAT-END"]["protocol_variant"] == "ENDURANCE_LONG_STEADY"

@@ -2,8 +2,29 @@ from __future__ import annotations
 
 from rps.crewai_runtime.guardrails import guardrail_runtime_context, week_phase_role_alignment_check
 from rps.workouts.generator import build_week_plan_document_from_bundle
+from rps.workouts.progression_history import extract_progression_signatures_from_week_plan
 from rps.workouts.structured import canonicalize_workout_text
 from rps.workouts.validator import validate_week_plan_exportability
+
+
+def _full_week_blueprints(active_day: str, active_date: str, active_role: str, active_minutes: int, active_kj: int, workout_id: str) -> list[dict[str, object]]:
+    dates = {
+        "Mon": "2026-05-18",
+        "Tue": "2026-05-19",
+        "Wed": "2026-05-20",
+        "Thu": "2026-05-21",
+        "Fri": "2026-05-22",
+        "Sat": "2026-05-23",
+        "Sun": "2026-05-24",
+    }
+    dates[active_day] = active_date
+    rows: list[dict[str, object]] = []
+    for day in ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"):
+        if day == active_day:
+            rows.append({"day": day, "date": dates[day], "day_role": active_role, "planned_duration_minutes": active_minutes, "planned_kj": active_kj, "workout_id": workout_id})
+        else:
+            rows.append({"day": day, "date": dates[day], "day_role": "REST", "planned_duration_minutes": 0, "planned_kj": 0, "workout_id": None})
+    return rows
 
 
 def test_canonicalize_workout_text_rewrites_inline_loop_and_headers() -> None:
@@ -390,6 +411,52 @@ def test_protocol_solver_redistributes_classic_intervals_after_reaching_work_cei
     assert "\n5x\n- 12m 82%-88% 90-95rpm" in text
 
 
+def test_protocol_solver_progresses_classic_intervals_from_4x12_to_4x15() -> None:
+    planning_bundle = {
+        "day_blueprints": _full_week_blueprints("Tue", "2026-05-19", "QUALITY", 100, 1250, "TEMPO-TUE"),
+        "workout_blueprints": [
+            {
+                "workout_id": "TEMPO-TUE",
+                "date": "2026-05-19",
+                "day_role": "QUALITY",
+                "intensity_domain": "TEMPO",
+                "workout_family": "TEMPO",
+                "protocol_type": "CLASSIC_INTERVALS",
+                "protocol_variant": "TEMPO_CLASSIC",
+                "planned_duration_minutes": 100,
+                "planned_kj": 1250,
+                "primary_tiz_target_min": 60,
+                "addon_policy": "NONE",
+                "progression_parameters": {
+                    "warmup_minutes": 10,
+                    "cooldown_minutes": 8,
+                    "work_target": "82%-88%",
+                    "work_cadence": "90-95rpm",
+                    "recovery_target": "60%-65%",
+                    "recovery_cadence": "85-90rpm",
+                    "recovery_duration_minutes": 6,
+                    "work_duration_min_minutes": 10,
+                    "work_duration_max_minutes": 15,
+                    "set_count_min": 3,
+                    "set_count_max": 5,
+                    "progression_priority": ["work_duration", "set_count"],
+                    "redistribute_when_work_exceeds_minutes": 15,
+                },
+                "progression_state": {
+                    "primary_axis": "work_duration",
+                    "secondary_axis": "set_redistribution",
+                    "progression_priority": ["work_duration", "set_count"],
+                    "previous_signature": {"protocol_type": "CLASSIC_INTERVALS", "set_count": 4, "work_duration_minutes": 12, "tiz_minutes": 48},
+                },
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    text = document["data"]["workouts"][0]["workout_text"]
+    assert "\n4x\n- 15m 82%-88% 90-95rpm" in text
+
+
 def test_protocol_solver_progresses_microbursts_from_previous_signature() -> None:
     planning_bundle = {
         "day_blueprints": [
@@ -449,3 +516,196 @@ def test_protocol_solver_progresses_microbursts_from_previous_signature() -> Non
     document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
     text = document["data"]["workouts"][0]["workout_text"]
     assert "\n12x\n- 40s 110%-112% 92-95rpm" in text
+
+
+def test_protocol_solver_progresses_30_15_microbursts_to_3x13() -> None:
+    planning_bundle = {
+        "day_blueprints": _full_week_blueprints("Tue", "2026-05-19", "QUALITY", 100, 1250, "VO2-TUE"),
+        "workout_blueprints": [
+            {
+                "workout_id": "VO2-TUE",
+                "date": "2026-05-19",
+                "day_role": "QUALITY",
+                "intensity_domain": "VO2MAX",
+                "workout_family": "VO2MAX",
+                "protocol_type": "MICROBURST_SETS",
+                "protocol_variant": "VO2_30_15",
+                "planned_duration_minutes": 100,
+                "planned_kj": 1250,
+                "primary_tiz_target_min": 20,
+                "addon_policy": "NONE",
+                "progression_parameters": {
+                    "warmup_minutes": 10,
+                    "cooldown_minutes": 8,
+                    "activation_profile": "VO2_STANDARD",
+                    "work_duration_seconds": 30,
+                    "recovery_duration_seconds": 15,
+                    "work_target": "115%",
+                    "work_cadence": "92-95rpm",
+                    "recovery_target": "50%",
+                    "recovery_cadence": "85rpm",
+                    "between_set_recovery_minutes": 3,
+                    "between_set_recovery_target": "55%",
+                    "between_set_recovery_cadence": "85rpm",
+                    "set_count_min": 2,
+                    "set_count_max": 4,
+                    "reps_per_set_min": 8,
+                    "reps_per_set_max": 15,
+                    "reps_practical_ceiling": 13,
+                    "tiz_standard_cap_minutes": 22,
+                    "tiz_hard_cap_minutes": 30,
+                },
+                "progression_state": {
+                    "primary_axis": "reps",
+                    "secondary_axis": "sets",
+                    "progression_priority": ["reps", "sets"],
+                    "previous_signature": {
+                        "protocol_type": "MICROBURST_SETS",
+                        "work_duration_seconds": 30,
+                        "recovery_duration_seconds": 15,
+                        "reps_per_set": [10, 10, 10],
+                    },
+                },
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    text = document["data"]["workouts"][0]["workout_text"]
+    assert "\n13x\n- 30s 115% 92-95rpm" in text
+
+
+def test_protocol_solver_clamps_vo2_40_20_to_hard_on_time_cap() -> None:
+    planning_bundle = {
+        "day_blueprints": _full_week_blueprints("Tue", "2026-05-19", "QUALITY", 120, 1500, "VO2-TUE"),
+        "workout_blueprints": [
+            {
+                "workout_id": "VO2-TUE",
+                "date": "2026-05-19",
+                "day_role": "QUALITY",
+                "intensity_domain": "VO2MAX",
+                "workout_family": "VO2MAX",
+                "protocol_type": "MICROBURST_SETS",
+                "protocol_variant": "VO2_40_20",
+                "planned_duration_minutes": 120,
+                "planned_kj": 1500,
+                "primary_tiz_target_min": 40,
+                "addon_policy": "NONE",
+                "progression_parameters": {
+                    "warmup_minutes": 10,
+                    "cooldown_minutes": 8,
+                    "activation_profile": "VO2_STANDARD",
+                    "work_duration_seconds": 40,
+                    "recovery_duration_seconds": 20,
+                    "work_target_by_set": ["110%-112%", "112%-115%", "115%-118%", "115%-118%"],
+                    "work_cadence": "92-95rpm",
+                    "recovery_target": "50%",
+                    "recovery_cadence": "85rpm",
+                    "between_set_recovery_minutes": 4,
+                    "between_set_recovery_target": "55%",
+                    "between_set_recovery_cadence": "85rpm",
+                    "set_count_min": 2,
+                    "set_count_max": 4,
+                    "reps_per_set_min": 8,
+                    "reps_per_set_max": 15,
+                    "reps_practical_ceiling": 10,
+                    "tiz_standard_cap_minutes": 22,
+                    "tiz_hard_cap_minutes": 30,
+                },
+                "progression_state": {"primary_axis": "reps", "secondary_axis": "sets", "progression_priority": ["reps", "sets"]},
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    signatures = extract_progression_signatures_from_week_plan(document)
+    assert signatures[0]["tiz_minutes"] <= 30
+
+
+def test_protocol_solver_clamps_k3_to_hard_tiz_cap() -> None:
+    planning_bundle = {
+        "day_blueprints": _full_week_blueprints("Tue", "2026-05-19", "QUALITY", 110, 1300, "K3-TUE"),
+        "workout_blueprints": [
+            {
+                "workout_id": "K3-TUE",
+                "date": "2026-05-19",
+                "day_role": "QUALITY",
+                "intensity_domain": "ENDURANCE",
+                "workout_family": "ENDURANCE",
+                "protocol_type": "STRENGTH_ENDURANCE_INTERVALS",
+                "protocol_variant": "K3_CLASSIC",
+                "planned_duration_minutes": 110,
+                "planned_kj": 1300,
+                "primary_tiz_target_min": 90,
+                "addon_policy": "NONE",
+                "progression_parameters": {
+                    "warmup_minutes": 10,
+                    "cooldown_minutes": 8,
+                    "work_target": "85%-90%",
+                    "work_cadence": "55-65rpm",
+                    "recovery_target": "55%-60%",
+                    "recovery_cadence": "85rpm",
+                    "recovery_duration_minutes": 3,
+                    "work_duration_min_minutes": 6,
+                    "work_duration_max_minutes": 15,
+                    "set_count_min": 2,
+                    "set_count_max": 5,
+                    "tiz_min_minutes": 24,
+                    "tiz_standard_cap_minutes": 40,
+                    "tiz_hard_cap_minutes": 60,
+                    "progression_priority": ["work_duration", "set_count"],
+                    "redistribute_when_work_exceeds_minutes": 12,
+                },
+                "progression_state": {"primary_axis": "work_duration", "secondary_axis": "set_count", "progression_priority": ["work_duration", "set_count"]},
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    signatures = extract_progression_signatures_from_week_plan(document)
+    assert signatures[0]["tiz_minutes"] <= 60
+
+
+def test_protocol_solver_progresses_over_under_by_oscillation_count() -> None:
+    planning_bundle = {
+        "day_blueprints": _full_week_blueprints("Thu", "2026-05-21", "QUALITY", 85, 1100, "OU-THU"),
+        "workout_blueprints": [
+            {
+                "workout_id": "OU-THU",
+                "date": "2026-05-21",
+                "day_role": "QUALITY",
+                "intensity_domain": "TEMPO",
+                "workout_family": "TEMPO",
+                "protocol_type": "OVER_UNDER_INTERVALS",
+                "protocol_variant": "TEMPO_OVER_UNDER",
+                "planned_duration_minutes": 85,
+                "planned_kj": 1100,
+                "primary_tiz_target_min": 24,
+                "addon_policy": "NONE",
+                "progression_parameters": {
+                    "warmup_minutes": 8,
+                    "cooldown_minutes": 10,
+                    "under_target": "95%",
+                    "under_cadence": "85-90rpm",
+                    "over_target": "105%",
+                    "over_cadence": "90rpm",
+                    "under_duration_minutes": 3,
+                    "over_duration_minutes": 1,
+                    "oscillation_count_min": 4,
+                    "oscillation_count_max": 8,
+                    "tiz_standard_cap_minutes": 32,
+                    "tiz_hard_cap_minutes": 45,
+                },
+                "progression_state": {
+                    "primary_axis": "oscillation_count",
+                    "secondary_axis": "tiz",
+                    "progression_priority": ["oscillation_count", "tiz"],
+                    "previous_signature": {"protocol_type": "OVER_UNDER_INTERVALS", "oscillation_count": 4, "tiz_minutes": 16},
+                },
+            }
+        ],
+    }
+
+    document = build_week_plan_document_from_bundle(planning_bundle=planning_bundle, week_calendar_context={"target_iso_week": "2026-21"})
+    text = document["data"]["workouts"][0]["workout_text"]
+    assert "\n6x\n- 3m 95% 85-90rpm" in text

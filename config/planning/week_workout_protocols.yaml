@@ -45,12 +45,18 @@ protocols:
     tags: [recovery_like]
     primary_axis: duration
     secondary_axis: none
+    progression_priority: [duration]
+    count_tiz_as: full_work
+    quality_cost: endurance_only
     addon_policy: NONE
     warmup_minutes: 6
     cooldown_minutes: 6
     main_target: 60%-65%
     main_cadence: 85-90rpm
+    tiz_standard_cap_minutes: 180
+    tiz_hard_cap_minutes: 240
     session_duration_max_minutes: 240
+
   ENDURANCE_STEADY:
     intensity_domain: ENDURANCE
     load_modality: NONE
@@ -62,12 +68,18 @@ protocols:
     tags: []
     primary_axis: duration
     secondary_axis: none
+    progression_priority: [duration]
+    count_tiz_as: full_work
+    quality_cost: endurance_only
     addon_policy: NONE
     warmup_minutes: 8
     cooldown_minutes: 8
     main_target: 68%-72%
     main_cadence: 85-90rpm
+    tiz_standard_cap_minutes: 240
+    tiz_hard_cap_minutes: 360
     session_duration_max_minutes: 360
+
   ENDURANCE_LONG_STEADY:
     intensity_domain: ENDURANCE
     load_modality: NONE
@@ -79,12 +91,18 @@ protocols:
     tags: [anchor, long_endurance]
     primary_axis: duration
     secondary_axis: none
+    progression_priority: [duration]
+    count_tiz_as: full_work
+    quality_cost: endurance_only
     addon_policy: NONE
     warmup_minutes: 10
     cooldown_minutes: 8
     main_target: 68%-72%
     main_cadence: 85-90rpm
+    tiz_standard_cap_minutes: 300
+    tiz_hard_cap_minutes: 420
     session_duration_max_minutes: 420
+
   TEMPO_CLASSIC_INTERVALS:
     intensity_domain: TEMPO
     load_modality: NONE
@@ -96,7 +114,11 @@ protocols:
     tags: [quality]
     primary_axis: work_duration
     secondary_axis: set_redistribution
+    progression_priority: [work_duration, set_count]
     redistribution_rule: extend_work_then_redistribute_sets
+    redistribute_when_work_exceeds_minutes: 15
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
@@ -107,11 +129,14 @@ protocols:
     recovery_duration_minutes: 6
     tiz_min_minutes: 36
     tiz_max_minutes: 60
+    tiz_standard_cap_minutes: 120
+    tiz_hard_cap_minutes: 180
     set_count_min: 3
     set_count_max: 5
     work_duration_min_minutes: 10
     work_duration_max_minutes: 15
-    session_duration_max_minutes: 120
+    session_duration_max_minutes: 180
+
   SWEET_SPOT_CLASSIC_INTERVALS:
     intensity_domain: SWEET_SPOT
     load_modality: NONE
@@ -123,7 +148,11 @@ protocols:
     tags: [quality, activation_capable]
     primary_axis: work_duration
     secondary_axis: set_redistribution
+    progression_priority: [work_duration, set_count]
     redistribution_rule: extend_work_then_redistribute_sets
+    redistribute_when_work_exceeds_minutes: 15
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
@@ -135,11 +164,14 @@ protocols:
     recovery_duration_minutes: 3
     tiz_min_minutes: 40
     tiz_max_minutes: 60
+    tiz_standard_cap_minutes: 60
+    tiz_hard_cap_minutes: 90
     set_count_min: 2
     set_count_max: 5
     work_duration_min_minutes: 10
     work_duration_max_minutes: 20
     session_duration_max_minutes: 125
+
   SWEET_SPOT_EXTENSIVE:
     intensity_domain: SWEET_SPOT
     load_modality: NONE
@@ -149,9 +181,13 @@ protocols:
     allowed_phase_intents: [durability_build, specificity_build, base]
     allowed_week_roles: ["*"]
     tags: [quality]
-    primary_axis: tiz
+    primary_axis: work_duration
     secondary_axis: set_redistribution
+    progression_priority: [work_duration, set_count]
     redistribution_rule: prefer_long_intervals
+    redistribute_when_work_exceeds_minutes: 30
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
@@ -162,11 +198,14 @@ protocols:
     recovery_duration_minutes: 3
     tiz_min_minutes: 50
     tiz_max_minutes: 90
+    tiz_standard_cap_minutes: 60
+    tiz_hard_cap_minutes: 90
     set_count_min: 2
     set_count_max: 3
     work_duration_min_minutes: 20
     work_duration_max_minutes: 35
     session_duration_max_minutes: 150
+
   THRESHOLD_CLASSIC_INTERVALS:
     intensity_domain: THRESHOLD
     load_modality: NONE
@@ -176,9 +215,13 @@ protocols:
     allowed_phase_intents: [build, specificity_build]
     allowed_week_roles: ["*"]
     tags: [quality, activation_capable]
-    primary_axis: tiz
+    primary_axis: work_duration
     secondary_axis: set_count
+    progression_priority: [work_duration, set_count]
     redistribution_rule: increase_tiz_keep_recovery_short
+    redistribute_when_work_exceeds_minutes: 15
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 8
     cooldown_minutes: 10
@@ -190,11 +233,14 @@ protocols:
     recovery_duration_minutes: 3
     tiz_min_minutes: 24
     tiz_max_minutes: 45
+    tiz_standard_cap_minutes: 45
+    tiz_hard_cap_minutes: 60
     set_count_min: 3
     set_count_max: 5
     work_duration_min_minutes: 6
     work_duration_max_minutes: 15
     session_duration_max_minutes: 120
+
   TEMPO_OVER_UNDER:
     intensity_domain: TEMPO
     load_modality: NONE
@@ -206,7 +252,10 @@ protocols:
     tags: [quality]
     primary_axis: oscillation_count
     secondary_axis: tiz
+    progression_priority: [oscillation_count, tiz]
     redistribution_rule: increase_oscillations_before_duration
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 8
     cooldown_minutes: 10
@@ -220,7 +269,10 @@ protocols:
     oscillation_count_max: 8
     tiz_min_minutes: 16
     tiz_max_minutes: 32
+    tiz_standard_cap_minutes: 32
+    tiz_hard_cap_minutes: 45
     session_duration_max_minutes: 105
+
   K3_CLASSIC_INTERVALS:
     intensity_domain: ENDURANCE
     load_modality: K3
@@ -232,21 +284,28 @@ protocols:
     tags: [quality]
     primary_axis: work_duration
     secondary_axis: set_count
+    progression_priority: [work_duration, set_count]
+    redistribute_when_work_exceeds_minutes: 12
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
     work_target: 85%-90%
-    work_cadence: 50-60rpm
+    work_cadence: 55-65rpm
     recovery_target: 55%-60%
     recovery_cadence: 85rpm
     recovery_duration_minutes: 3
     tiz_min_minutes: 24
-    tiz_max_minutes: 40
-    set_count_min: 3
+    tiz_max_minutes: 45
+    tiz_standard_cap_minutes: 40
+    tiz_hard_cap_minutes: 60
+    set_count_min: 2
     set_count_max: 5
     work_duration_min_minutes: 6
-    work_duration_max_minutes: 10
-    session_duration_max_minutes: 110
+    work_duration_max_minutes: 15
+    session_duration_max_minutes: 120
+
   VO2_MICROBURST_30_15:
     intensity_domain: VO2MAX
     load_modality: NONE
@@ -258,6 +317,9 @@ protocols:
     tags: [quality, activation_capable]
     primary_axis: reps
     secondary_axis: sets
+    progression_priority: [reps, sets]
+    count_tiz_as: on_time
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
@@ -273,11 +335,15 @@ protocols:
     recovery_duration_seconds: 15
     tiz_min_minutes: 12
     tiz_max_minutes: 20
+    tiz_standard_cap_minutes: 22
+    tiz_hard_cap_minutes: 30
+    reps_practical_ceiling: 13
     set_count_min: 2
     set_count_max: 4
     reps_per_set_min: 8
     reps_per_set_max: 15
     session_duration_max_minutes: 95
+
   VO2_MICROBURST_20_10:
     intensity_domain: VO2MAX
     load_modality: NONE
@@ -289,6 +355,9 @@ protocols:
     tags: [quality, activation_capable]
     primary_axis: reps
     secondary_axis: sets
+    progression_priority: [reps, sets]
+    count_tiz_as: on_time
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
@@ -304,11 +373,15 @@ protocols:
     recovery_duration_seconds: 10
     tiz_min_minutes: 12
     tiz_max_minutes: 20
+    tiz_standard_cap_minutes: 20
+    tiz_hard_cap_minutes: 25
+    reps_practical_ceiling: 20
     set_count_min: 2
     set_count_max: 4
     reps_per_set_min: 10
     reps_per_set_max: 20
     session_duration_max_minutes: 90
+
   VO2_MICROBURST_40_20:
     intensity_domain: VO2MAX
     load_modality: NONE
@@ -320,6 +393,9 @@ protocols:
     tags: [quality, activation_capable]
     primary_axis: reps
     secondary_axis: sets
+    progression_priority: [reps, sets]
+    count_tiz_as: on_time
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 10
     cooldown_minutes: 8
@@ -335,11 +411,15 @@ protocols:
     recovery_duration_seconds: 20
     tiz_min_minutes: 14
     tiz_max_minutes: 24
+    tiz_standard_cap_minutes: 22
+    tiz_hard_cap_minutes: 30
+    reps_practical_ceiling: 10
     set_count_min: 2
     set_count_max: 4
     reps_per_set_min: 8
     reps_per_set_max: 15
     session_duration_max_minutes: 95
+
   VO2_LONG_INTERVALS:
     intensity_domain: VO2MAX
     load_modality: NONE
@@ -351,6 +431,10 @@ protocols:
     tags: [quality, activation_capable]
     primary_axis: set_count
     secondary_axis: work_duration
+    progression_priority: [set_count, work_duration]
+    redistribute_when_work_exceeds_minutes: 6
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: Z2_FILL
     warmup_minutes: 8
     cooldown_minutes: 10
@@ -362,11 +446,14 @@ protocols:
     recovery_duration_minutes: 2
     tiz_min_minutes: 16
     tiz_max_minutes: 30
+    tiz_standard_cap_minutes: 22
+    tiz_hard_cap_minutes: 30
     set_count_min: 4
     set_count_max: 6
     work_duration_min_minutes: 4
     work_duration_max_minutes: 6
     session_duration_max_minutes: 100
+
   TEMPO_STEADY_BREVET:
     intensity_domain: TEMPO
     load_modality: NONE
@@ -378,12 +465,18 @@ protocols:
     tags: [quality]
     primary_axis: duration
     secondary_axis: none
+    progression_priority: [duration]
+    count_tiz_as: full_work
+    quality_cost: true_quality
     addon_policy: NONE
     warmup_minutes: 8
     cooldown_minutes: 8
     main_target: 82%-85%
     main_cadence: 88-92rpm
-    session_duration_max_minutes: 150
+    tiz_standard_cap_minutes: 120
+    tiz_hard_cap_minutes: 180
+    session_duration_max_minutes: 180
+
   ENDURANCE_FATIGUE_FINISH:
     intensity_domain: ENDURANCE
     load_modality: NONE
@@ -395,6 +488,9 @@ protocols:
     tags: [anchor, long_endurance]
     primary_axis: preload_duration
     secondary_axis: finish_duration
+    progression_priority: [preload_duration, finish_duration]
+    count_tiz_as: late_segment
+    quality_cost: true_quality
     addon_policy: NONE
     warmup_minutes: 8
     cooldown_minutes: 8
@@ -404,8 +500,11 @@ protocols:
     finish_cadence: 88rpm
     preload_min_minutes: 120
     finish_min_minutes: 20
-    finish_max_minutes: 60
+    finish_max_minutes: 75
+    late_finish_standard_cap_minutes: 75
+    late_finish_hard_cap_minutes: 90
     session_duration_max_minutes: 360
+
   ENDURANCE_PREFATIGUE_FINISH:
     intensity_domain: ENDURANCE
     load_modality: NONE
@@ -417,6 +516,9 @@ protocols:
     tags: [long_endurance, durability_specific]
     primary_axis: preload_duration
     secondary_axis: finish_duration
+    progression_priority: [preload_duration, finish_duration]
+    count_tiz_as: late_segment
+    quality_cost: true_quality
     addon_policy: NONE
     warmup_minutes: 8
     cooldown_minutes: 8
@@ -426,8 +528,11 @@ protocols:
     finish_cadence: 88-92rpm
     preload_min_minutes: 90
     finish_min_minutes: 20
-    finish_max_minutes: 45
+    finish_max_minutes: 60
+    late_finish_standard_cap_minutes: 60
+    late_finish_hard_cap_minutes: 90
     session_duration_max_minutes: 300
+
   ENDURANCE_BACK_TO_BACK_DAYTYPE:
     intensity_domain: ENDURANCE
     load_modality: NONE
@@ -439,6 +544,9 @@ protocols:
     tags: [durability_specific, day_type_only]
     primary_axis: weekly_kj
     secondary_axis: repeatability
+    progression_priority: [weekly_kj, repeatability]
+    count_tiz_as: full_work
+    quality_cost: endurance_only
     addon_policy: NONE
     day1_load_kj_per_kg_min: 35
     day1_load_kj_per_kg_max: 45

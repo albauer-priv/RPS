@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added canonical workout-generation documentation under `doc/`: a normative feature spec now defines supported workout domains/protocol classes, TiZ semantics, progression order, caps, prior-week progression reuse, Z2 add-on rules, and week-density rules, and a matching athlete-/coach-readable overview explains the same logic in plain language.
+- Added direct config-driven solver semantics for workout progression caps and quality cost: protocol definitions now encode TiZ counting mode, standard/hard caps, progression priorities, redistribution thresholds, practical VO2 rep ceilings, and late-finish caps for durability sessions.
 - Added a protocol-driven deterministic week workout engine: week workout generation now selects configured workout protocols, solves TiZ/set/rep structure plus optional Z2 add-ons, and renders canonical Intervals subset text from protocol metadata instead of coarse family templates.
 - Added full first-pass protocol coverage for the canonical workout types defined in the active workout policy and durability-first principle, including threshold intervals, tempo over-under, VO2 20/10 microbursts, and durability-specific endurance finish day types.
 - Added prior-week protocol progression reuse for deterministic week workout solving: the Week engine now infers the last canonical interval structure from the previous `WEEK_PLAN` and feeds that signature into classic-interval, microburst, and over/under progression decisions.
@@ -37,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed week workout progression from being only loosely heuristic: classic intervals now progress by documented order (`4x10 -> 4x12 -> 4x15 -> 5x12`), VO2 microbursts progress by reps before sets using on-time semantics, K3 and durability finish sessions respect explicit caps, and prior planned week state is reused under a stricter documented contract.
+- Fixed week protocol selection so true quality cost is enforced across the whole week: `K3`, tempo, Sweet Spot, threshold, VO2, and late-finish durability protocols now consume quality budget, preventing a third hidden quality stimulus from slipping into endurance days when the weekly cap is already full.
 - Fixed Week runtime dependence on CrewAI synthesis for main planning and scoped week replan/preview paths: `CREATE_WEEK_PLAN` now runs through the deterministic Week engine, bounded recompute shares the same family policy and rendering path, and generated weeks no longer depend on late Week Crew review loops to reach a valid artifact.
 - Fixed recurring `WEEK_PLAN` failures caused by free-text workout authoring drift: week artifact creation now deterministically renders canonical workout text for supported planning families, preview text edits are canonicalized before persistence, and semantic checks compare parsed/generated structure instead of title/notes keyword heuristics.
 - Fixed recoverable `WEEK_PLAN` writer failures caused by inline loop-step shorthand like `- 3x 12m ...`; week-plan normalization now rewrites that form into the project-valid standalone `3x` loop header plus step line before writer guardrails run.
