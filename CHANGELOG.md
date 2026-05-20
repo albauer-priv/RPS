@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added matching tool-usage guidance plus direct task tool scopes for bounded phase and week planning specialists, so task instructions now match the workspace/contract tools actually available at execution time.
 
 ### Fixed
+- Fixed `PHASE_STRUCTURE` store-time S5 validation by rebuilding phase-scoped load-capacity context with the active phase range, week roles, phase role, season plan, and scenario cadence before guarded-store contract checks.
 - Fixed `PHASE_STRUCTURE` persistence after successful phase guardrails writes by deterministically projecting required season constraints into `upstream_intent.constraints` and rewriting `load_ranges.source` / `weekly_kj_bands` from the stored exact-range `PHASE_GUARDRAILS`.
 - Fixed `PHASE_GUARDRAILS` persistence after successful phase runs by deterministically projecting required `SEASON_PLAN.global_constraints` into the normalized guardrails payload before guarded-store validation; missing availability assumptions, risk constraints, recovery notes, and planned event windows are now repaired in code instead of failing at store time.
 - Fixed deterministic S5 fallback behavior for recovery-sensitive phase/week semantics so shortened re-entry / reset weeks no longer drop their role-aware progression reduction when KPI lower bounds conflict; reset-like weeks now retain material load reduction through a code-owned `phase_intent` + `week_role` fallback policy.

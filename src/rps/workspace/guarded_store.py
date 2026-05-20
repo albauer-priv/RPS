@@ -787,6 +787,62 @@ class GuardedValidatedStore:
         except Exception:
             return {}
 
+    def _load_phase_capacity_context_for_store(
+        self,
+        *,
+        target_week,
+        phase_range,
+        season_plan: JsonMap,
+        phase_info,
+        phase_slots: JsonMap,
+    ) -> JsonMap:
+        """Build phase-scoped deterministic load-capacity context for phase-store validation."""
+
+        phase_execution_seed = build_phase_execution_context(
+            target_week=target_week,
+            phase_info=phase_info,
+            phase_range=phase_range,
+            season_plan_payload=season_plan,
+            phase_slot_context=phase_slots,
+            availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+            logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+            planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+            load_capacity_context={},
+        )
+        week_role_raw = self._as_map(phase_execution_seed.get("week_role_by_iso_week"))
+        week_role_by_week = {
+            str(key): str(value)
+            for key, value in week_role_raw.items()
+            if str(key).strip() and str(value).strip()
+        }
+        phase_role = str(phase_execution_seed.get("phase_role") or "").strip()
+        phase_role_by_week = {
+            week_key: phase_role
+            for week_key in week_role_by_week
+            if phase_role
+        }
+        try:
+            return build_load_capacity_block(
+                target_week=target_week,
+                phase_range=phase_range,
+                athlete_profile_payload=self._load_latest_optional(ArtifactType.ATHLETE_PROFILE),
+                availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
+                logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
+                planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
+                zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
+                season_plan_payload=season_plan,
+                wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
+                kpi_profile_payload=self._load_latest_optional(ArtifactType.KPI_PROFILE),
+                kpi_rate_band=selected_kpi_rate_band_from_selection(
+                    self._load_latest_optional(ArtifactType.SEASON_SCENARIO_SELECTION)
+                ),
+                week_role_by_week=week_role_by_week,
+                phase_role_by_week=phase_role_by_week,
+                scenario_cadence=phase_execution_seed.get("scenario_cadence"),
+            ).payload
+        except Exception:
+            return {}
+
     def _enforce_store_contract_constraints(
         self,
         target: ArtifactType,
@@ -822,6 +878,13 @@ class GuardedValidatedStore:
             if range_spec and season_plan and phase_slots:
                 phase_info = resolve_season_plan_phase_info(season_plan, range_spec.start)
                 if phase_info:
+                    load_capacity_context = self._load_phase_capacity_context_for_store(
+                        target_week=range_spec.start,
+                        phase_range=range_spec,
+                        season_plan=season_plan,
+                        phase_info=phase_info,
+                        phase_slots=phase_slots,
+                    )
                     context = build_phase_execution_context(
                         target_week=range_spec.start,
                         phase_info=phase_info,
@@ -831,7 +894,7 @@ class GuardedValidatedStore:
                         availability_payload=self._load_latest_optional(ArtifactType.AVAILABILITY),
                         logistics_payload=self._load_latest_optional(ArtifactType.LOGISTICS),
                         planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
-                        load_capacity_context=self._load_capacity_context_for_store(),
+                        load_capacity_context=load_capacity_context,
                     )
                     errors.extend(
                         blocking_messages(

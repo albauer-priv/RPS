@@ -1,7 +1,9 @@
 import pytest
 
 from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.iso_helpers import parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_registry import SchemaValidationError
+from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
 
@@ -438,6 +440,82 @@ def test_phase_structure_accepts_combined_recovery_notes_constraint(tmp_path):
     )
 
     store._enforce_phase_structure_constraints(document, season_plan)
+
+
+def test_phase_structure_store_builds_phase_scoped_capacity_context(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    captured: dict[str, object] = {}
+
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "cycle": "Base",
+                    "phase_intent": "shortened_re_entry",
+                    "iso_week_range": "2026-21--2026-23",
+                }
+            ]
+        }
+    }
+    phase_slots = {
+        "phase_slots": [
+            {
+                "phase_id": "P01",
+                "phase_label": "Shortened Re-Entry",
+                "iso_week_range": "2026-21--2026-23",
+                "scenario_cadence": "2:1:1",
+                "cadence_week_roles": [
+                    "SHORTENED_RE_ENTRY",
+                    "SHORTENED_CONSOLIDATION",
+                    "SHORTENED_MINI_RESET",
+                ],
+            }
+        ]
+    }
+
+    def fake_load_latest_optional(artifact_type):
+        if artifact_type == ArtifactType.AVAILABILITY:
+            return {"data": {"availability_table": {"weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5}}}}
+        if artifact_type == ArtifactType.SEASON_SCENARIO_SELECTION:
+            return {"data": {}}
+        return {}
+
+    def fake_build_load_capacity_block(**kwargs):
+        captured.update(kwargs)
+        class _Block:
+            payload = {"s5_bands": [{"week": "2026-21", "band": {"min": 7000, "max": 8000}}]}
+        return _Block()
+
+    monkeypatch.setattr(store, "_load_latest_optional", fake_load_latest_optional)
+    monkeypatch.setattr("rps.workspace.guarded_store.build_load_capacity_block", fake_build_load_capacity_block)
+
+    phase_info = resolve_season_plan_phase_info(season_plan, parse_iso_week("2026-21"))
+    assert phase_info is not None
+
+    payload = store._load_phase_capacity_context_for_store(
+        target_week=parse_iso_week("2026-21"),
+        phase_range=parse_iso_week_range("2026-21--2026-23"),
+        season_plan=season_plan,
+        phase_info=phase_info,
+        phase_slots=phase_slots,
+    )
+
+    assert payload["s5_bands"] == [{"week": "2026-21", "band": {"min": 7000, "max": 8000}}]
+    assert captured["target_week"] == parse_iso_week("2026-21")
+    assert captured["phase_range"] == parse_iso_week_range("2026-21--2026-23")
+    assert captured["season_plan_payload"] == season_plan
+    assert captured["week_role_by_week"] == {
+        "2026-21": "SHORTENED_RE_ENTRY",
+        "2026-22": "SHORTENED_CONSOLIDATION",
+        "2026-23": "SHORTENED_MINI_RESET",
+    }
+    assert captured["phase_role_by_week"] == {
+        "2026-21": "Base",
+        "2026-22": "Base",
+        "2026-23": "Base",
+    }
+    assert captured["scenario_cadence"] == "2:1:1"
 
 
 def test_phase_guardrails_missing_structured_event_still_fails(tmp_path):
