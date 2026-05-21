@@ -507,6 +507,34 @@ def _derive_season_semantic_notes(*, planning_bundle: JsonMap) -> list[str]:
     return notes
 
 
+def _derive_season_load_envelope_counts(*, phase_blueprints: list[JsonMap]) -> tuple[int, int]:
+    """Return deterministic high-load and deload/low-load week counts.
+
+    Counts are derived from canonical cadence-week roles so the persisted season
+    envelope is complete even when the draft bundle omits these summary fields.
+    """
+
+    high_load_roles = {"LOAD_2", "RELOAD", "SHORTENED_RELOAD"}
+    low_load_roles = {
+        "DELOAD",
+        "MINI_RESET",
+        "SHORTENED_MINI_RESET",
+        "SHORTENED_RE_ENTRY",
+        "TRANSITION",
+        "RECOVERY",
+    }
+    high_load_weeks = 0
+    low_load_weeks = 0
+    for blueprint in phase_blueprints:
+        for role in _as_list(_as_map(blueprint).get("cadence_week_roles")):
+            normalized_role = str(role or "").strip().upper().replace(" ", "_")
+            if normalized_role in high_load_roles:
+                high_load_weeks += 1
+            if normalized_role in low_load_roles:
+                low_load_weeks += 1
+    return high_load_weeks, low_load_weeks
+
+
 def _format_role_week_load_bands(entries: list[object]) -> list[str]:
     """Render deterministic role-week bands into stable compact strings."""
 
@@ -637,10 +665,25 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     expected_envelope = derive_expected_average_weekly_kj_range(season_plan_payload=candidate_document)
     existing_envelope = _as_map(planning_bundle.get("season_load_envelope"))
     if expected_envelope:
+        expected_high_load_weeks_count, expected_deload_or_low_load_weeks_count = _derive_season_load_envelope_counts(
+            phase_blueprints=normalized_blueprints
+        )
+        existing_high_load_weeks_count = _as_int(existing_envelope.get("expected_high_load_weeks_count"))
+        existing_deload_or_low_load_weeks_count = _as_int(
+            existing_envelope.get("expected_deload_or_low_load_weeks_count")
+        )
         normalized_bundle["season_load_envelope"] = {
             "expected_average_weekly_kj_range": expected_envelope,
-            "expected_high_load_weeks_count": existing_envelope.get("expected_high_load_weeks_count"),
-            "expected_deload_or_low_load_weeks_count": existing_envelope.get("expected_deload_or_low_load_weeks_count"),
+            "expected_high_load_weeks_count": (
+                existing_high_load_weeks_count
+                if existing_high_load_weeks_count is not None
+                else expected_high_load_weeks_count
+            ),
+            "expected_deload_or_low_load_weeks_count": (
+                existing_deload_or_low_load_weeks_count
+                if existing_deload_or_low_load_weeks_count is not None
+                else expected_deload_or_low_load_weeks_count
+            ),
         }
     normalized_bundle["season_semantic_notes"] = _derive_season_semantic_notes(planning_bundle=normalized_bundle)
     return normalized_bundle
@@ -843,6 +886,26 @@ def _sanitize_replan_decision_context(decision: JsonMap) -> JsonMap:
         "replan_instructions": list(decision.get("replan_instructions") or []),
         "writer_ready_summary": str(decision.get("writer_ready_summary") or "").strip(),
     }
+
+
+def _as_int(value: object) -> int | None:
+    """Return an integer for int-like values, otherwise ``None``."""
+
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value) if value.is_integer() else None
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            return int(text)
+        except ValueError:
+            return None
+    return None
 
 
 def _compact_internal_user_input(user_input: str) -> str:

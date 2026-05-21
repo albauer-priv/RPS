@@ -1807,6 +1807,62 @@ def test_normalize_season_plan_draft_bundle_supports_variable_phase_counts() -> 
     assert len(normalized["phase_blueprints"]) == 6
     assert normalized["phase_blueprints"][2]["build_subtype"] == "durability_build"
     assert normalized["phase_blueprints"][5]["phase_intent"] == "taper_freshening"
+    assert normalized["season_load_envelope"]["expected_high_load_weeks_count"] == 0
+    assert normalized["season_load_envelope"]["expected_deload_or_low_load_weeks_count"] == 0
+
+
+def test_normalize_season_plan_draft_bundle_derives_envelope_counts_when_missing() -> None:
+    draft_bundle = {
+        "event_priority": {"primary_a_events": ["A1"]},
+        "macrocycle": {"deload_cadence": "2:1:1"},
+        "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 1, "max": 2}},
+        "phase_blueprints": [
+            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "scenario_cadence": "2:1:1"},
+            {"phase_id": "P02", "iso_week_range": "2026-24--2026-27", "scenario_cadence": "2:1:1"},
+        ],
+    }
+    with guardrail_runtime_context(
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "season_phase_role": "shortened_re_entry",
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION", "SHORTENED_MINI_RESET"],
+                    "availability_cap_kj": {"typical": 10000, "max": 11000},
+                    "baseline_load_kj": 8200,
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [],
+                    "progression_trace": {"source": "deterministic"},
+                },
+                {
+                    "phase_id": "P02",
+                    "iso_week_range": "2026-24--2026-27",
+                    "phase_type": "BUILD",
+                    "phase_intent": "durability_build",
+                    "build_subtype": "durability_build",
+                    "season_phase_role": "durability_build",
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                    "availability_cap_kj": {"typical": 12000, "max": 13000},
+                    "baseline_load_kj": 9200,
+                    "recommended_phase_corridor": {"min": 9000, "max": 12000},
+                    "role_week_load_bands": [],
+                    "progression_trace": {"source": "deterministic"},
+                },
+            ],
+        }
+    ):
+        normalized = normalize_season_plan_draft_bundle(draft_bundle)
+
+    envelope = normalized["season_load_envelope"]
+    assert envelope["expected_high_load_weeks_count"] == 2
+    assert envelope["expected_deload_or_low_load_weeks_count"] == 3
 
 
 def test_normalize_season_plan_draft_bundle_canonicalizes_invalid_deterministic_phase_type() -> None:
