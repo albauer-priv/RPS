@@ -57,7 +57,7 @@ def test_validate_season_plan_against_phase_slots_rejects_phase_intent_mismatch(
     slot_context = {
         "coverage_matches_horizon": True,
         "phase_slots": [
-            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "ceiling_support"},
+            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "vo2_build"},
         ],
     }
 
@@ -75,19 +75,22 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
             "phases": [
                 {
                     "phase_id": "P01",
-                    "cycle": "Build",
+                    "phase_type": "BUILD",
                     "phase_intent": "durability_build",
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
+                    "build_subtype": "durability_build",
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"], "forbidden_intensity_domains": ["VO2MAX"]},
                     "weekly_load_corridor": {"weekly_kj": {"min": 8000, "max": 10000}},
                 },
                 {
                     "phase_id": "P02",
-                    "cycle": "Peak",
-                    "phase_intent": "a_event_peak_taper",
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
+                    "phase_type": "TAPER",
+                    "phase_intent": "taper_freshening",
+                    "build_subtype": None,
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"], "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"]},
                     "weekly_load_corridor": {"weekly_kj": {"min": 8000, "max": 10000}},
                 },
-            ]
+            ],
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
         }
     }
     load_context = {
@@ -100,7 +103,7 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
             },
             {
                 "phase_id": "P02",
-                "phase_intent": "a_event_peak_taper",
+                "phase_intent": "taper_freshening",
                 "recommended_phase_corridor": {"min": 6000, "max": 10000},
                 "event_taper_trace": {"has_a_event": True},
             },
@@ -118,20 +121,22 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
 def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_collapse() -> None:
     season_plan = {
         "data": {
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
             "phases": [
                 {
                     "phase_id": "P01",
-                    "cycle": "Base",
-                    "phase_intent": "foundation",
+                    "phase_type": "BASE",
+                    "phase_intent": "aerobic_base",
                     "weekly_load_corridor": {"weekly_kj": {"min": 3000, "max": 5000}},
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"], "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"]},
                 },
                 {
                     "phase_id": "P02",
-                    "cycle": "Build",
-                    "phase_intent": "build_progression",
+                    "phase_type": "BUILD",
+                    "phase_intent": "durability_build",
+                    "build_subtype": "durability_build",
                     "weekly_load_corridor": {"weekly_kj": {"min": 4500, "max": 6500}},
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"], "forbidden_intensity_domains": ["VO2MAX"]},
                 },
             ]
         }
@@ -141,13 +146,13 @@ def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_c
         "phases": [
             {
                 "phase_id": "P01",
-                "phase_intent": "foundation",
+                "phase_intent": "aerobic_base",
                 "recommended_phase_corridor": {"min": 2500, "max": 5500},
                 "event_taper_trace": {},
             },
             {
                 "phase_id": "P02",
-                "phase_intent": "build_progression",
+                "phase_intent": "durability_build",
                 "recommended_phase_corridor": {"min": 4000, "max": 7000},
                 "event_taper_trace": {},
             },
@@ -165,20 +170,22 @@ def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_c
 def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing() -> None:
     season_plan = {
         "data": {
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
             "phases": [
                 {
                     "phase_id": "P01",
-                    "cycle": "Base",
-                    "phase_intent": "foundation",
+                    "phase_type": "BASE",
+                    "phase_intent": "aerobic_base",
                     "weekly_load_corridor": {"weekly_kj": {"min": 3000, "max": 5000}},
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"]},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE"], "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"]},
                 },
                 {
                     "phase_id": "P02",
-                    "cycle": "Build",
+                    "phase_type": "BUILD",
                     "phase_intent": "durability_build",
+                    "build_subtype": "durability_build",
                     "weekly_load_corridor": {"weekly_kj": {"min": 4500, "max": 6500}},
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"]},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "TEMPO"], "forbidden_intensity_domains": ["VO2MAX"]},
                 },
             ]
         }
@@ -188,7 +195,7 @@ def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing(
         "phases": [
             {
                 "phase_id": "P01",
-                "phase_intent": "foundation",
+                "phase_intent": "aerobic_base",
                 "recommended_phase_corridor": {"min": 2500, "max": 5500},
                 "event_taper_trace": {},
             },
@@ -230,12 +237,13 @@ def test_validate_season_plan_against_phase_load_context_blocks_vo2_in_taper_int
             "phases": [
                 {
                     "phase_id": "P05",
-                    "cycle": "Peak",
-                    "phase_intent": "a_event_peak_taper",
+                    "phase_type": "TAPER",
+                    "phase_intent": "taper_freshening",
                     "weekly_load_corridor": {"weekly_kj": {"min": 5000, "max": 7000}},
-                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "VO2MAX"]},
+                    "allowed_forbidden_semantics": {"allowed_intensity_domains": ["ENDURANCE", "VO2MAX"], "forbidden_intensity_domains": ["THRESHOLD"]},
                 }
             ],
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
             "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 5000, "max": 7000}},
         }
     }
@@ -245,7 +253,7 @@ def test_validate_season_plan_against_phase_load_context_blocks_vo2_in_taper_int
         "phases": [
             {
                 "phase_id": "P05",
-                "phase_intent": "a_event_peak_taper",
+                "phase_intent": "taper_freshening",
                 "recommended_phase_corridor": {"min": 5000, "max": 7000},
                 "event_taper_trace": {"has_a_event": True},
             }

@@ -134,6 +134,31 @@ class SeasonPlanAuditModel(StrictOutputModel):
     cadence_authority_ok: bool = True
 
 
+class SeasonPhaseSemanticContractModel(StrictOutputModel):
+    """Structured method contract that the Season writer must serialize, not infer."""
+
+    methodology_family: str
+    threshold_role: str
+    event_load_policy: str
+    taper_policy: str
+    writer_semantic_notes: list[str] = Field(default_factory=list)
+
+
+class SeasonLoadEnvelopeRangeModel(StrictOutputModel):
+    """Weighted expected weekly kJ range for the season bundle."""
+
+    min: int
+    max: int
+
+
+class SeasonLoadEnvelopeModel(StrictOutputModel):
+    """Deterministic season load-envelope handoff for the writer."""
+
+    expected_average_weekly_kj_range: SeasonLoadEnvelopeRangeModel
+    expected_high_load_weeks_count: int | None = None
+    expected_deload_or_low_load_weeks_count: int | None = None
+
+
 class SeasonPhaseBlueprintModel(StrictOutputModel):
     """Internal phase blueprint preserving selected-scenario cadence semantics."""
 
@@ -143,6 +168,7 @@ class SeasonPhaseBlueprintModel(StrictOutputModel):
     phase_type: str | None = None
     phase_intent: str | None = None
     build_subtype: str | None = None
+    phase_taxonomy_version: str | None = None
     season_phase_role: str | None = None
     cadence_week_roles: list[str] = Field(default_factory=list)
     event_constraints: list[str] = Field(default_factory=list)
@@ -155,6 +181,8 @@ class SeasonPhaseBlueprintModel(StrictOutputModel):
     load_feasibility_status: str | None = None
     taper_intent: str | None = None
     allowed_domains: list[str] = Field(default_factory=list)
+    forbidden_domains: list[str] = Field(default_factory=list)
+    semantic_contract: SeasonPhaseSemanticContractModel | None = None
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -179,6 +207,8 @@ class SeasonPlanBundleModel(StrictOutputModel):
     constraints: list[ConstraintAuditModel] = Field(default_factory=list)
     load_governance: list[LoadGovernanceAuditModel] = Field(default_factory=list)
     phase_blueprints: list[SeasonPhaseBlueprintModel] = Field(default_factory=list)
+    season_load_envelope: SeasonLoadEnvelopeModel | None = None
+    season_semantic_notes: list[str] = Field(default_factory=list)
     decision_summary: list[str] = Field(default_factory=list)
     candidate_document_summary: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)

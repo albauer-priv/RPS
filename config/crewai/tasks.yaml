@@ -229,8 +229,8 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: "Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit explicit canonical phase semantics per phase blueprint: `phase_type`, `phase_intent`, `build_subtype` for `BUILD`, and `phase_taxonomy_version`. Keep them coherent with deterministic slots, archetype context, event anchors, and downstream phase/week/workout semantics."
-    expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, role-week load bands, and explicit `allowed_domains`.
+    description: "Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit explicit canonical phase semantics per phase blueprint: `phase_type`, `phase_intent`, `build_subtype` for `BUILD`, and `phase_taxonomy_version`. The final bundle must be writer-safe: include deterministic `season_load_envelope`, explicit phase `forbidden_domains`, and a structured `semantic_contract` that tells the writer how to serialize methodology, threshold role, event-load handling, and taper semantics without inferring them from prose."
+    expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, role-week load bands, explicit `allowed_domains`, explicit `forbidden_domains`, `phase_taxonomy_version`, and `semantic_contract`, plus season-level `season_load_envelope` and `season_semantic_notes`.
   season_governance_review:
     agent: season_governance_auditor
     kind: internal_reasoning
@@ -287,7 +287,7 @@ tasks:
     agent: season_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
-    description: Create the season-plan artifact envelope for the selected planning horizon.
+    description: Create the season-plan artifact envelope for the selected planning horizon by serializing the approved season bundle exactly. Copy `season_load_envelope`, canonical phase semantics, allowed/forbidden domains, and structured semantic framing from the approved bundle; do not infer or improve them during writing.
     expected_output: Schema-compliant artifact data derived from the approved season bundle and phase blueprints; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_phase_feed_forward:
     agent: season_feed_forward_manager

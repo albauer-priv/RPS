@@ -36,6 +36,8 @@ Method:
    - `phase_intent`
    - `build_subtype` when `phase_type = BUILD`
    - `phase_taxonomy_version`
+   - explicit `forbidden_domains`
+   - explicit `semantic_contract`
 18. Keep `phase_type`, `phase_intent`, and `build_subtype` coherent with cycle, event position, phase role, and allowed-domain narrowing.
 19. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_build` only when explicitly justified, then preserve `durability_build` / `specificity_build` runway only when the deterministic context permits it.
 
@@ -113,6 +115,8 @@ Hard rules:
 - every phase blueprint must include phase role, availability cap, baseline, role-week load bands, progression trace, and load feasibility status
 - every phase blueprint must include `allowed_domains`; use durability-first semantics as `ENDURANCE` dominant, not `ENDURANCE only`
 - every phase blueprint must include `phase_type`, `phase_intent`, and `phase_taxonomy_version`; include `build_subtype` whenever `phase_type = BUILD`
+- every phase blueprint must include `forbidden_domains` and `semantic_contract`; do not leave method-critical season semantics in prose only
+- the final season bundle must include deterministic `season_load_envelope` and `season_semantic_notes` so the writer can copy them directly
 - never guess or alias legacy phase-intent labels during synthesis
 - if the selected scenario permits `TEMPO` or other quality domains, at least one suitable later-season phase must preserve that allowance unless the bundle makes a clear phase-specific exclusion case
 - mark coverage/cadence self-checks true only after verification

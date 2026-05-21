@@ -56,9 +56,11 @@ from rps.crewai_runtime.guardrails import (
     phase_weeks_match_range,
     resolve_task_policy,
     season_bundle_integrity,
+    season_bundle_matches_contract,
     season_phase_load_feasibility,
     season_scenario_selection_shape,
     season_scenarios_profile_quality,
+    season_writer_bundle_match,
     week_active_corridor_match,
     week_agenda_shape_and_calendar_check,
     week_bundle_domain_legality_check,
@@ -97,8 +99,10 @@ from rps.crewai_runtime.models import (
     PlanningDraftModel,
     ReportReviewDecisionModel,
     SeasonEventAnchorModel,
+    SeasonLoadEnvelopeModel,
     SeasonMacrocycleDraftModel,
     SeasonPhaseBlueprintModel,
+    SeasonPhaseSemanticContractModel,
     SeasonPlanAuditModel,
     SeasonPlanBundleModel,
     SeasonReviewDecisionModel,
@@ -1171,6 +1175,12 @@ def test_season_plan_bundle_accepts_phase_blueprints_with_inherited_cadence_role
     model = SeasonPlanBundleModel(
         event_priority=SeasonEventAnchorModel(),
         macrocycle=SeasonMacrocycleDraftModel(deload_cadence="2:1:1", phase_length_weeks=4),
+        season_load_envelope=SeasonLoadEnvelopeModel(
+            expected_average_weekly_kj_range={"min": 7600, "max": 9300},
+            expected_high_load_weeks_count=2,
+            expected_deload_or_low_load_weeks_count=1,
+        ),
+        season_semantic_notes=["Frame the objective against the A event."],
         phase_blueprints=[
             SeasonPhaseBlueprintModel(
                 phase_id="P03",
@@ -1180,6 +1190,7 @@ def test_season_plan_bundle_accepts_phase_blueprints_with_inherited_cadence_role
                 phase_type="BUILD",
                 phase_intent="sst_build",
                 build_subtype="sst_build",
+                phase_taxonomy_version="canonical_phase_taxonomy_v1",
                 event_constraints=[],
                 load_corridor_min=7600,
                 load_corridor_max=9300,
@@ -1191,6 +1202,14 @@ def test_season_plan_bundle_accepts_phase_blueprints_with_inherited_cadence_role
                 load_feasibility_status="feasible",
                 taper_intent="none",
                 allowed_domains=["RECOVERY", "ENDURANCE", "TEMPO"],
+                forbidden_domains=["THRESHOLD", "VO2MAX"],
+                semantic_contract=SeasonPhaseSemanticContractModel(
+                    methodology_family="extensive_subthreshold_build",
+                    threshold_role="secondary",
+                    event_load_policy="event_load_support_only",
+                    taper_policy="not_applicable",
+                    writer_semantic_notes=["Keep threshold secondary to SST-led work."],
+                ),
             )
         ],
     )
@@ -1501,6 +1520,8 @@ def test_season_bundle_integrity_requires_phase_blueprints() -> None:
         {
             "event_priority": {},
             "macrocycle": {},
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 1, "max": 2}},
+            "season_semantic_notes": ["note"],
             "phase_blueprints": [],
         }
     )
@@ -1508,13 +1529,23 @@ def test_season_bundle_integrity_requires_phase_blueprints() -> None:
         {
             "event_priority": {},
             "macrocycle": {},
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 1, "max": 2}},
+            "season_semantic_notes": ["note"],
             "phase_blueprints": [
                 {
                     "phase_id": "P01",
                     "iso_week_range": "2026-21--2026-23",
                     "scenario_cadence": "2:1",
                     "phase_intent": "durability_build",
+                    "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
                     "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                    "semantic_contract": {
+                        "methodology_family": "durability_first_build",
+                        "threshold_role": "secondary",
+                        "event_load_policy": "event_load_support_only",
+                        "taper_policy": "not_applicable",
+                        "writer_semantic_notes": ["note"],
+                    },
                 }
             ],
         }
@@ -1559,6 +1590,109 @@ def test_phase_week_role_load_coherence_rejects_flat_deload() -> None:
 
     assert failed is False
     assert "must reduce materially" in message
+
+
+def test_season_bundle_matches_contract_rejects_domains_outside_semantic_profile() -> None:
+    with guardrail_runtime_context(
+        phase_slot_context={
+            "phase_slots": [
+                {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "shortened_re_entry"}
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_intent": "shortened_re_entry",
+                    "recommended_phase_corridor": {"min": 7000, "max": 9000},
+                    "event_taper_trace": {},
+                }
+            ],
+        },
+    ):
+        failed, message = season_bundle_matches_contract(
+            {
+                "event_priority": {},
+                "macrocycle": {},
+                "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7000, "max": 9000}},
+                "season_semantic_notes": ["Frame the objective against the A event."],
+                "phase_blueprints": [
+                    {
+                        "phase_id": "P01",
+                        "iso_week_range": "2026-21--2026-23",
+                        "scenario_cadence": "2:1",
+                        "phase_type": "BASE",
+                        "phase_intent": "shortened_re_entry",
+                        "build_subtype": None,
+                        "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
+                        "load_corridor_min": 7000,
+                        "load_corridor_max": 9000,
+                        "allowed_domains": ["ENDURANCE", "THRESHOLD"],
+                        "forbidden_domains": ["VO2MAX"],
+                        "semantic_contract": {
+                            "methodology_family": "compressed_reentry",
+                            "threshold_role": "forbidden",
+                            "event_load_policy": "no_event_load_exception",
+                            "taper_policy": "not_applicable",
+                            "writer_semantic_notes": ["Keep the phase recovery-protective."],
+                        },
+                    }
+                ],
+            }
+        )
+
+    assert failed is False
+    assert "season_bundle_phase_domains_outside_semantic_contract" in message
+
+
+def test_season_writer_bundle_match_rejects_envelope_drift() -> None:
+    approved_bundle = {
+        "season_load_envelope": {
+            "expected_average_weekly_kj_range": {"min": 9516, "max": 12892},
+            "expected_high_load_weeks_count": 7,
+            "expected_deload_or_low_load_weeks_count": 5,
+        },
+        "phase_blueprints": [
+            {
+                "phase_id": "P01",
+                "phase_type": "BASE",
+                "phase_intent": "shortened_re_entry",
+                "build_subtype": None,
+                "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
+                "allowed_domains": ["ENDURANCE", "TEMPO"],
+                "forbidden_domains": ["THRESHOLD", "VO2MAX"],
+            }
+        ],
+    }
+    output = {
+        "data": {
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
+            "season_load_envelope": {
+                "expected_average_weekly_kj_range": {"min": 9000, "max": 14000},
+                "expected_high_load_weeks_count": 7,
+                "expected_deload_or_low_load_weeks_count": 5,
+            },
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                }
+            ],
+        }
+    }
+
+    with guardrail_runtime_context(approved_planning_bundle=approved_bundle):
+        failed, message = season_writer_bundle_match(output)
+
+    assert failed is False
+    assert "season_load_envelope" in message
 
 
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:
@@ -2697,12 +2831,28 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 model = model_cls(
                     event_priority=SeasonEventAnchorModel(),
                     macrocycle=SeasonMacrocycleDraftModel(),
+                    season_load_envelope=SeasonLoadEnvelopeModel(
+                        expected_average_weekly_kj_range={"min": 7000, "max": 9000}
+                    ),
+                    season_semantic_notes=["Frame the objective against the A event."],
                     phase_blueprints=[
                         SeasonPhaseBlueprintModel(
                             phase_id="P01",
                             iso_week_range="2026-20--2026-22",
                             scenario_cadence="2:1",
                             cadence_week_roles=["LOAD_1", "LOAD_2", "DELOAD"],
+                            phase_type="BASE",
+                            phase_intent="shortened_re_entry",
+                            phase_taxonomy_version="canonical_phase_taxonomy_v1",
+                            allowed_domains=["ENDURANCE", "TEMPO"],
+                            forbidden_domains=["THRESHOLD", "VO2MAX"],
+                            semantic_contract=SeasonPhaseSemanticContractModel(
+                                methodology_family="compressed_reentry",
+                                threshold_role="forbidden",
+                                event_load_policy="no_event_load_exception",
+                                taper_policy="not_applicable",
+                                writer_semantic_notes=["Keep the phase recovery-protective."],
+                            ),
                         )
                     ],
                 )

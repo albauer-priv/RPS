@@ -77,6 +77,7 @@ tasks:
       - artifact_envelope_basic
       - artifact_meta_data_present
       - artifact_schema_valid
+      - season_writer_bundle_match
       - season_phase_coverage_and_cadence
       - season_phase_load_context_match
       - season_cycle_ordering

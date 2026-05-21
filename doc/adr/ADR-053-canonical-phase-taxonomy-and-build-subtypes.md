@@ -54,6 +54,13 @@ Additional migration rules:
 * unknown legacy values must fail closed,
 * taxonomy version is persisted in `data.body_metadata.phase_taxonomy_version` where body metadata exists.
 
+Season-planning propagation rule:
+
+* canonical phase semantics are code-owned, not writer-inferred,
+* Season bundle/review/writer handoff must carry deterministic `phase_type`, `phase_intent`, `build_subtype`, `phase_taxonomy_version`, and code-owned semantic-contract fields,
+* methodology-critical fields such as allowed/forbidden domains, threshold role, taper/event-kJ framing, and season load-envelope must be validated before writer execution,
+* writer tasks serialize approved Season semantics rather than rediscovering them from prose.
+
 ## Consequences
 
 - Positive outcomes
@@ -61,6 +68,7 @@ Additional migration rules:
   - Build focus becomes explicit and audit-friendly.
   - Legacy taxonomy drift is contained to a well-defined normalization boundary.
   - New writes are schema-enforced against canonical semantics.
+  - Season bundle/review/writer propagation becomes deterministic and auditable, instead of relying on prompt-only compliance.
 
 - Trade-offs / risks
   - This is a breaking semantic migration for new writes.

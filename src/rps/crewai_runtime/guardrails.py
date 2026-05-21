@@ -19,10 +19,12 @@ from rps.planning.contracts import (
     blocking_messages,
     validate_phase_against_execution_context,
     validate_phase_s5_bands_against_context,
+    validate_season_bundle_semantics,
     validate_season_plan_against_phase_load_context,
     validate_season_plan_against_phase_slots,
     validate_week_plan_against_week_context,
 )
+from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
@@ -235,7 +237,7 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Season bundle must decode to an object.")
-    required = ("event_priority", "macrocycle", "phase_blueprints")
+    required = ("event_priority", "macrocycle", "phase_blueprints", "season_load_envelope", "season_semantic_notes")
     missing = [field for field in required if field not in mapping]
     if missing:
         return (False, f"Season bundle missing required keys: {', '.join(missing)}")
@@ -247,6 +249,10 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
             continue
         if not str(blueprint.get("phase_intent") or "").strip():
             return (False, "Season bundle phase blueprints must include phase_intent.")
+        if not str(blueprint.get("phase_taxonomy_version") or "").strip():
+            return (False, "Season bundle phase blueprints must include phase_taxonomy_version.")
+        if not isinstance(blueprint.get("semantic_contract"), dict):
+            return (False, "Season bundle phase blueprints must include semantic_contract.")
     return (True, mapping)
 
 
@@ -256,12 +262,29 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Season bundle must decode to an object.")
+    issues = validate_season_bundle_semantics(season_bundle_payload=mapping)
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
     phase_slot_context = _season_phase_slot_context()
     if not phase_slot_context:
         return (True, mapping)
     blueprints = [_as_map(item) for item in _as_list(mapping.get("phase_blueprints"))]
     candidate = {
+        "season_allowed_domains": _season_phase_load_context().get("season_allowed_intensity_domains") if _season_phase_load_context() else [],
+        "season_load_envelope": mapping.get("season_load_envelope"),
+        "season_semantic_notes": mapping.get("season_semantic_notes"),
         "data": {
+            "body_metadata": {
+                "phase_taxonomy_version": next(
+                    (
+                        str(_as_map(item).get("phase_taxonomy_version"))
+                        for item in blueprints
+                        if str(_as_map(item).get("phase_taxonomy_version") or "").strip()
+                    ),
+                    "",
+                )
+            },
             "phases": [
                 {
                     "phase_id": item.get("phase_id"),
@@ -277,10 +300,12 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
                     },
                     "allowed_forbidden_semantics": {
                         "allowed_intensity_domains": item.get("allowed_domains") or [],
+                        "forbidden_intensity_domains": item.get("forbidden_domains") or [],
                     },
                 }
                 for item in blueprints
-            ]
+            ],
+            "season_load_envelope": mapping.get("season_load_envelope"),
         }
     }
     issues = validate_season_plan_against_phase_slots(
@@ -299,6 +324,66 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
         messages = blocking_messages(issues)
         if messages:
             return (False, "; ".join(messages[:5]))
+    return (True, mapping)
+
+
+def season_writer_bundle_match(result: Any) -> GuardrailResult:
+    """Validate that the final Season Plan copied bundle-owned semantics exactly."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season output must decode to an object.")
+    approved_bundle = _as_map(_GUARDRAIL_CONTEXT.get({}).get("approved_planning_bundle"))
+    if not approved_bundle:
+        return (True, mapping)
+    data = _as_map(mapping.get("data"))
+    body_metadata = _as_map(data.get("body_metadata"))
+    phase_taxonomy_version = str(body_metadata.get("phase_taxonomy_version") or "").strip()
+    bundle_version = str(
+        next(
+            (
+                _as_map(item).get("phase_taxonomy_version")
+                for item in _as_list(approved_bundle.get("phase_blueprints"))
+                if str(_as_map(item).get("phase_taxonomy_version") or "").strip()
+            ),
+            "",
+        )
+        or ""
+    ).strip()
+    if bundle_version and phase_taxonomy_version != bundle_version:
+        return (
+            False,
+            f"Season body_metadata.phase_taxonomy_version is {phase_taxonomy_version!r}, expected {bundle_version!r} from the approved bundle.",
+        )
+    if _as_map(data.get("season_load_envelope")) != _as_map(approved_bundle.get("season_load_envelope")):
+        return (False, "Season output season_load_envelope must match the approved bundle exactly.")
+    approved_by_phase = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(approved_bundle.get("phase_blueprints"))
+    }
+    for phase in _as_list(data.get("phases")):
+        phase_map = _as_map(phase)
+        phase_id = str(phase_map.get("phase_id") or "")
+        approved = approved_by_phase.get(phase_id)
+        if not approved:
+            continue
+        for field in ("phase_type", "phase_intent", "build_subtype"):
+            if phase_map.get(field) != approved.get(field):
+                return (
+                    False,
+                    f"Season phase {phase_id} field {field} must match the approved bundle value {approved.get(field)!r}.",
+                )
+        semantics = _as_map(phase_map.get("allowed_forbidden_semantics"))
+        if normalize_intensity_domain_list(semantics.get("allowed_intensity_domains")) != normalize_intensity_domain_list(approved.get("allowed_domains")):
+            return (
+                False,
+                f"Season phase {phase_id} allowed_intensity_domains must match the approved bundle exactly.",
+            )
+        if normalize_intensity_domain_list(semantics.get("forbidden_intensity_domains")) != normalize_intensity_domain_list(approved.get("forbidden_domains")):
+            return (
+                False,
+                f"Season phase {phase_id} forbidden_intensity_domains must match the approved bundle exactly.",
+            )
     return (True, mapping)
 
 
@@ -1405,6 +1490,7 @@ REGISTRY: dict[str, GuardrailFn] = {
     "season_scenario_selection_shape": season_scenario_selection_shape,
     "season_phase_coverage_and_cadence": season_phase_coverage_and_cadence,
     "season_phase_load_context_match": season_phase_load_context_match,
+    "season_writer_bundle_match": season_writer_bundle_match,
     "season_cycle_ordering": season_cycle_ordering,
     "phase_s5_band_match": phase_s5_band_match,
     "phase_execution_context_match": phase_execution_context_match,

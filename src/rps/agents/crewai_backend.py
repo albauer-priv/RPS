@@ -64,6 +64,7 @@ from rps.crewai_runtime.telemetry import (
     register_runtime_metadata,
     runtime_event_scope,
 )
+from rps.planning.contracts import derive_expected_average_weekly_kj_range
 from rps.planning.week_engine import (
     execute_week_engine,
     extract_message_from_user_input,
@@ -74,6 +75,13 @@ from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT
 from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.phase_intents import (
+    PHASE_TAXONOMY_VERSION,
+    phase_semantic_contract_payload,
+    season_phase_allowed_domains,
+    season_phase_forbidden_domains,
+    validate_phase_semantics,
+)
 from rps.workspace.schema_registry import SchemaValidationError
 from rps.workspace.types import ArtifactType
 
@@ -116,6 +124,14 @@ _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning 
 
 JsonMap = dict[str, Any]
 ToolMap = dict[str, Any]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: object) -> list[object]:
+    return value if isinstance(value, list) else []
 
 _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_SEASON_SCENARIOS: "season_scenarios",
@@ -411,6 +427,98 @@ def _fill_season_plan(document: JsonMap) -> JsonMap:
         }
     document["data"] = data
     return document
+
+
+def _derive_season_semantic_notes(*, planning_bundle: JsonMap) -> list[str]:
+    """Return deterministic season-level notes that the writer must preserve."""
+
+    notes: list[str] = []
+    event_priority = _as_map(planning_bundle.get("event_priority"))
+    primary_a_events = [str(item).strip() for item in _as_list(event_priority.get("primary_a_events")) if str(item).strip()]
+    if primary_a_events:
+        notes.append(
+            "Frame the season objective against the primary A event(s): "
+            + ", ".join(primary_a_events)
+            + ". If longer-distance durability reserve is mentioned, present it as support for the A event rather than a conflicting primary target."
+        )
+    notes.append(
+        "Use durability-first, ceiling-constrained wording. Do not describe the season as ceiling-first when VO2MAX authority is absent or forbidden."
+    )
+    notes.append(
+        "B-event rehearsal load must replace a specificity anchor when noted, not add a second full anchor on top of the normal build load."
+    )
+    notes.append(
+        "When taper weeks include event kJ, describe that load as event work inside taper with reduced pre-event training load, not as a normal reload week."
+    )
+    return notes
+
+
+def _enrich_season_planning_bundle(planning_bundle: JsonMap) -> JsonMap:
+    """Inject deterministic season semantics and load-envelope fields into the reviewed bundle."""
+
+    if not isinstance(planning_bundle, dict):
+        return planning_bundle
+    context = current_guardrail_runtime_context()
+    season_phase_load_context = context.get("season_phase_load_context")
+    season_allowed_domains = []
+    if isinstance(season_phase_load_context, dict):
+        season_allowed_domains = list(season_phase_load_context.get("season_allowed_intensity_domains") or [])
+    planning_bundle["season_allowed_domains"] = list(season_allowed_domains)
+    phase_blueprints = [_as_map(item) for item in _as_list(planning_bundle.get("phase_blueprints"))]
+    enriched_blueprints: list[JsonMap] = []
+    for blueprint in phase_blueprints:
+        enriched = dict(blueprint)
+        semantic_errors = validate_phase_semantics(
+            phase_type=enriched.get("phase_type"),
+            phase_intent=enriched.get("phase_intent"),
+            build_subtype=enriched.get("build_subtype"),
+        )
+        if semantic_errors:
+            warnings = [str(item) for item in _as_list(enriched.get("warnings")) if str(item).strip()]
+            for error in semantic_errors:
+                if error not in warnings:
+                    warnings.append(error)
+            enriched["warnings"] = warnings
+        enriched["phase_taxonomy_version"] = PHASE_TAXONOMY_VERSION
+        enriched["allowed_domains"] = season_phase_allowed_domains(
+            phase_intent=enriched.get("phase_intent"),
+            season_allowed_domains=season_allowed_domains,
+        )
+        enriched["forbidden_domains"] = season_phase_forbidden_domains(
+            phase_intent=enriched.get("phase_intent"),
+            season_allowed_domains=season_allowed_domains,
+        )
+        enriched["semantic_contract"] = phase_semantic_contract_payload(
+            phase_intent=enriched.get("phase_intent")
+        )
+        enriched_blueprints.append(enriched)
+    planning_bundle["phase_blueprints"] = enriched_blueprints
+    candidate_document = {
+        "data": {
+            "phases": [
+                {
+                    "iso_week_range": item.get("iso_week_range"),
+                    "weekly_load_corridor": {
+                        "weekly_kj": {
+                            "min": item.get("load_corridor_min"),
+                            "max": item.get("load_corridor_max"),
+                        }
+                    },
+                }
+                for item in enriched_blueprints
+            ]
+        }
+    }
+    expected_envelope = derive_expected_average_weekly_kj_range(season_plan_payload=candidate_document)
+    if expected_envelope:
+        existing = _as_map(planning_bundle.get("season_load_envelope"))
+        planning_bundle["season_load_envelope"] = {
+            "expected_average_weekly_kj_range": expected_envelope,
+            "expected_high_load_weeks_count": existing.get("expected_high_load_weeks_count"),
+            "expected_deload_or_low_load_weeks_count": existing.get("expected_deload_or_low_load_weeks_count"),
+        }
+    planning_bundle["season_semantic_notes"] = _derive_season_semantic_notes(planning_bundle=planning_bundle)
+    return planning_bundle
 
 
 def _normalize_artifact_meta(document: JsonMap, artifact_type: ArtifactType) -> JsonMap:
@@ -2283,7 +2391,7 @@ def _run_single_task_document_crewai(
 
     if task == AgentTask.CREATE_SEASON_PLAN:
         def _planning_runner(loop_input: str) -> JsonMap:
-            return _run_season_plan_document(
+            planning_bundle = _run_season_plan_document(
                 runtime=runtime,
                 bundle=bundle,
                 user_input=loop_input,
@@ -2300,6 +2408,7 @@ def _run_single_task_document_crewai(
                 model_override=model_override,
                 temperature_override=temperature_override,
             )
+            return _enrich_season_planning_bundle(planning_bundle)
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
             return _run_review_decision_document(

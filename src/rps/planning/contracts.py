@@ -17,6 +17,9 @@ from rps.workspace.phase_intents import (
     normalize_phase_intent,
     normalize_phase_type,
     normalize_season_archetype,
+    semantic_allowed_intensity_domains,
+    semantic_forbidden_intensity_domains,
+    validate_phase_semantics,
 )
 
 JsonMap = dict[str, Any]
@@ -112,6 +115,119 @@ def derive_expected_average_weekly_kj_range(*, season_plan_payload: JsonMap) -> 
         "min": int(round(weighted_min / total_weeks)),
         "max": int(round(weighted_max / total_weeks)),
     }
+
+
+def validate_season_bundle_semantics(*, season_bundle_payload: JsonMap) -> list[PlanningContractIssue]:
+    """Validate structured Season bundle semantics before review and writing."""
+
+    issues: list[PlanningContractIssue] = []
+    season_domains = normalize_intensity_domain_list(_as_map(season_bundle_payload).get("season_allowed_domains"))
+    season_load_envelope = _as_map(season_bundle_payload.get("season_load_envelope"))
+    envelope_range = _as_map(season_load_envelope.get("expected_average_weekly_kj_range"))
+    if not season_load_envelope or _as_float(envelope_range.get("min")) is None or _as_float(envelope_range.get("max")) is None:
+        issues.append(
+            PlanningContractIssue(
+                "season_bundle_load_envelope_missing",
+                "Season bundle must include deterministic season_load_envelope.expected_average_weekly_kj_range.",
+                path="season_load_envelope.expected_average_weekly_kj_range",
+            )
+        )
+    notes = [str(item).strip() for item in _as_list(season_bundle_payload.get("season_semantic_notes")) if str(item).strip()]
+    if not notes:
+        issues.append(
+            PlanningContractIssue(
+                "season_bundle_semantic_notes_missing",
+                "Season bundle must include season_semantic_notes for writer-safe framing.",
+                path="season_semantic_notes",
+            )
+        )
+    for idx, phase in enumerate(_as_list(season_bundle_payload.get("phase_blueprints"))):
+        phase_map = _as_map(phase)
+        path = f"phase_blueprints[{idx}]"
+        errors = validate_phase_semantics(
+            phase_type=phase_map.get("phase_type"),
+            phase_intent=phase_map.get("phase_intent"),
+            build_subtype=phase_map.get("build_subtype"),
+        )
+        for error in errors:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_phase_semantics_invalid",
+                    error,
+                    path=path,
+                )
+            )
+        taxonomy_version = str(phase_map.get("phase_taxonomy_version") or "").strip()
+        if not taxonomy_version:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_phase_taxonomy_version_missing",
+                    "Season phase blueprints must include phase_taxonomy_version.",
+                    path=f"{path}.phase_taxonomy_version",
+                )
+            )
+        allowed_domains = normalize_intensity_domain_list(phase_map.get("allowed_domains"))
+        semantic_max = semantic_allowed_intensity_domains(phase_map.get("phase_intent"))
+        if allowed_domains and semantic_max:
+            outside = sorted(set(allowed_domains) - set(semantic_max))
+            if outside:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_bundle_phase_domains_outside_semantic_contract",
+                        "Phase blueprint uses domains outside the code-owned semantic profile: " + ", ".join(outside) + ".",
+                        path=f"{path}.allowed_domains",
+                    )
+                )
+        if season_domains and allowed_domains:
+            outside_season = sorted(set(allowed_domains) - set(season_domains))
+            if outside_season:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_bundle_phase_domains_outside_season_authority",
+                        "Phase blueprint uses domains outside season authority: " + ", ".join(outside_season) + ".",
+                        path=f"{path}.allowed_domains",
+                    )
+                )
+        forbidden_domains = normalize_intensity_domain_list(phase_map.get("forbidden_domains"))
+        semantic_forbidden = semantic_forbidden_intensity_domains(phase_map.get("phase_intent"))
+        if semantic_forbidden:
+            missing_forbidden = sorted(set(semantic_forbidden) - set(forbidden_domains))
+            if missing_forbidden:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_bundle_phase_forbidden_domains_missing",
+                        "Phase blueprint is missing forbidden domains required by the semantic profile: " + ", ".join(missing_forbidden) + ".",
+                        path=f"{path}.forbidden_domains",
+                    )
+                )
+        semantic_contract = _as_map(phase_map.get("semantic_contract"))
+        if not semantic_contract:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_phase_semantic_contract_missing",
+                    "Season phase blueprints must include semantic_contract.",
+                    path=f"{path}.semantic_contract",
+                )
+            )
+            continue
+        for field in ("methodology_family", "threshold_role", "event_load_policy", "taper_policy"):
+            if not str(semantic_contract.get(field) or "").strip():
+                issues.append(
+                    PlanningContractIssue(
+                        "season_bundle_phase_semantic_contract_incomplete",
+                        f"semantic_contract.{field} must be populated.",
+                        path=f"{path}.semantic_contract.{field}",
+                    )
+                )
+        if not [str(item).strip() for item in _as_list(semantic_contract.get("writer_semantic_notes")) if str(item).strip()]:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_phase_writer_notes_missing",
+                    "semantic_contract.writer_semantic_notes must include at least one note.",
+                    path=f"{path}.semantic_contract.writer_semantic_notes",
+                )
+            )
+    return issues
 
 
 def validate_snapshot_freshness(
@@ -244,6 +360,15 @@ def validate_season_plan_against_phase_load_context(
                 "Deterministic season phase load context is missing; Season Plan cannot be checked.",
             )
         ]
+    body_metadata = _as_map(_as_map(document.get("data")).get("body_metadata"))
+    if not str(body_metadata.get("phase_taxonomy_version") or "").strip():
+        issues.append(
+            PlanningContractIssue(
+                "season_phase_taxonomy_version_missing",
+                "Season Plan body_metadata.phase_taxonomy_version must be populated.",
+                path="data.body_metadata.phase_taxonomy_version",
+            )
+        )
     build_max_values: list[float] = []
     peak_max_values: list[tuple[str, float]] = []
     phase_allowed_domain_sets: list[tuple[str, list[str]]] = []
@@ -279,6 +404,19 @@ def validate_season_plan_against_phase_load_context(
         phase_type = normalize_phase_type(phase.get("phase_type") or phase.get("cycle") or ctx.get("phase_type") or ctx.get("phase_cycle") or "")
         observed_intent = normalize_phase_intent(phase.get("phase_intent"))
         expected_intent = normalize_phase_intent(ctx.get("phase_intent"))
+        semantic_errors = validate_phase_semantics(
+            phase_type=phase.get("phase_type") or phase.get("cycle") or ctx.get("phase_type") or ctx.get("phase_cycle"),
+            phase_intent=phase.get("phase_intent") or ctx.get("phase_intent"),
+            build_subtype=phase.get("build_subtype"),
+        )
+        for error in semantic_errors:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_semantics_invalid",
+                    error,
+                    path=path,
+                )
+            )
         if expected_intent and observed_intent != expected_intent:
             issues.append(
                 PlanningContractIssue(
@@ -290,6 +428,32 @@ def validate_season_plan_against_phase_load_context(
         phase_semantics = _as_map(phase.get("allowed_forbidden_semantics"))
         allowed_domains = normalize_intensity_domain_list(phase_semantics.get("allowed_intensity_domains"))
         forbidden_domains = normalize_intensity_domain_list(phase_semantics.get("forbidden_intensity_domains"))
+        semantic_max = semantic_allowed_intensity_domains(observed_intent)
+        if semantic_max and allowed_domains:
+            outside_semantic = sorted(set(allowed_domains) - set(semantic_max))
+            if outside_semantic:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_phase_domains_outside_semantic_contract",
+                        "Phase uses intensity domains outside the semantic contract for its intent: "
+                        + ", ".join(outside_semantic)
+                        + ".",
+                        path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
+                    )
+                )
+        semantic_forbidden = semantic_forbidden_intensity_domains(observed_intent)
+        if semantic_forbidden:
+            missing_forbidden = sorted(set(semantic_forbidden) - set(forbidden_domains))
+            if missing_forbidden:
+                issues.append(
+                    PlanningContractIssue(
+                        "season_phase_forbidden_domains_missing",
+                        "Phase is missing forbidden intensity domains required by its semantic contract: "
+                        + ", ".join(missing_forbidden)
+                        + ".",
+                        path=f"{path}.allowed_forbidden_semantics.forbidden_intensity_domains",
+                    )
+                )
         if allowed_domains:
             phase_allowed_domain_sets.append((phase_id or path, allowed_domains))
             outside = sorted(set(allowed_domains) - set(season_allowed_domains)) if season_allowed_domains else []

@@ -11,3 +11,16 @@ taper intent, B-event rehearsal treatment, phase role, availability cap,
 baseline load, role-week load bands, progression trace, load-corridor
 rationale, and allowed domains in the existing Season Plan fields without
 adding new schema fields.
+
+Copy, do not infer:
+
+- `season_load_envelope`
+- `phase_type`
+- `phase_intent`
+- `build_subtype`
+- `phase_taxonomy_version`
+- phase `allowed_domains` / `forbidden_domains`
+- bundle-owned semantic framing such as threshold role, event-load handling,
+  and taper/event-kJ explanation
+
+If the approved bundle is missing any of those fields, stop rather than guess.

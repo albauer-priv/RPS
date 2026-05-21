@@ -27,7 +27,9 @@ Writer rules:
 - `weekly_load_corridor.weekly_kj.min/max` must come from the approved phase blueprint's availability-bounded recommended phase corridor
 - `weekly_load_corridor.weekly_kj.notes` must mention phase role, availability cap, baseline, and role-week load semantics when available
 - `phase_type`, `phase_intent`, `build_subtype`, and `phase_taxonomy_version` must be copied exactly from the approved phase blueprint; do not infer, rename, or backfill legacy labels during writing
-- `season_load_envelope.expected_average_weekly_kj_range` must remain coherent with the weighted average of the written phase corridors; if the approved bundle conflicts with that contract, stop rather than guess
+- `season_load_envelope` must be copied exactly from the approved bundle; do not recalculate or widen it during writing
+- approved phase `allowed_domains` / `forbidden_domains` must be copied into the existing phase semantics fields exactly; do not broaden or reinterpret them during writing
+- approved bundle `semantic_contract` notes own the method framing for threshold role, B-event handling, and taper/event-kJ explanation; serialize them into existing narrative fields without inventing a new interpretation
 - if a required field is missing, unknown, or schema-invalid: stop rather than guess
 
 Hard rules:
