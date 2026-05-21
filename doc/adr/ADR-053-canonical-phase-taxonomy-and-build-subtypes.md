@@ -57,6 +57,8 @@ Additional migration rules:
 Season-planning propagation rule:
 
 * canonical phase semantics are code-owned, not writer-inferred,
+* raw Season/Phase finalizer outputs are draft state only and must not be treated as canonical semantics,
+* Python normalization is the required boundary between draft planning output and review/writer-safe bundle state,
 * Season bundle/review/writer handoff must carry deterministic `phase_type`, `phase_intent`, `build_subtype`, `phase_taxonomy_version`, and code-owned semantic-contract fields,
 * methodology-critical fields such as allowed/forbidden domains, threshold role, taper/event-kJ framing, and season load-envelope must be validated before writer execution,
 * writer tasks serialize approved Season semantics rather than rediscovering them from prose.
@@ -69,6 +71,7 @@ Season-planning propagation rule:
   - Legacy taxonomy drift is contained to a well-defined normalization boundary.
   - New writes are schema-enforced against canonical semantics.
   - Season bundle/review/writer propagation becomes deterministic and auditable, instead of relying on prompt-only compliance.
+  - Season and Phase now share the same draft-to-normalized ownership boundary, reducing cross-level contract drift.
 
 - Trade-offs / risks
   - This is a breaking semantic migration for new writes.

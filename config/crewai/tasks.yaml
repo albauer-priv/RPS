@@ -214,7 +214,7 @@ tasks:
   season_plan_finalize:
     agent: season_plan_manager
     kind: internal_reasoning
-    output: season_plan_bundle
+    output: season_plan_draft_bundle
     tools:
       - workspace_get_phase_slot_contract
       - workspace_get_season_phase_load_context
@@ -229,8 +229,8 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: "Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit explicit canonical phase semantics per phase blueprint: `phase_type`, `phase_intent`, `build_subtype` for `BUILD`, and `phase_taxonomy_version`. The final bundle must be writer-safe: include deterministic `season_load_envelope`, explicit phase `forbidden_domains`, and a structured `semantic_contract` that tells the writer how to serialize methodology, threshold role, event-load handling, and taper semantics without inferring them from prose."
-    expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, role-week load bands, explicit `allowed_domains`, explicit `forbidden_domains`, `phase_taxonomy_version`, and `semantic_contract`, plus season-level `season_load_envelope` and `season_semantic_notes`.
+    description: "Consolidate season drafts into one internal SeasonPlanDraftBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit structural phase blueprints only: phase ordering, cadence roles, event constraints, load corridors, availability caps, progression traces, and week-role load bands. Do not invent canonical phase taxonomy fields, deterministic allowed/forbidden domains, semantic contracts, or season load-envelope fields; those are code-owned and added during runtime normalization."
+    expected_output: A structured internal season plan draft bundle with `phase_blueprints` that preserve inherited selected-scenario cadence roles, event constraints, availability caps, progression traces, and role-week load bands. Deterministic canonical semantics and writer-safe contract fields are added later by Python normalization.
   season_governance_review:
     agent: season_governance_auditor
     kind: internal_reasoning
@@ -390,7 +390,7 @@ tasks:
   phase_bundle_finalize:
     agent: phase_bundle_manager
     kind: internal_reasoning
-    output: phase_bundle
+    output: phase_bundle_draft
     tools:
       - workspace_get_phase_execution_context
       - workspace_get_phase_slot_contract
@@ -403,8 +403,8 @@ tasks:
       - phase_intensity_distribution_draft
       - phase_event_integration_draft
       - phase_preview_draft
-    description: Consolidate all internal phase drafts and audits into one internal PhaseBundle before review, including role-aware week blueprints for every phase week.
-    expected_output: A structured internal PhaseBundle with week_blueprints.
+    description: "Consolidate all internal phase drafts and audits into one internal PhaseDraftBundle before review, including role-aware week blueprints for every phase week. Keep top-level phase semantics and week-role structure aligned with the injected deterministic context, but treat canonical phase taxonomy and writer-safe authority fields as code-owned normalization outputs."
+    expected_output: A structured internal Phase draft bundle with `week_blueprints`; Python normalization will turn it into the canonical PhaseBundle used for review and writing.
   phase_constraint_audit:
     agent: phase_constraint_auditor
     kind: internal_reasoning

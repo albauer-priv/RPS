@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added a dual bundled schema publication path for structured outputs: the bundler now emits canonical bundled schemas for persisted validation and `bundled_output` schemas for OpenAI/CrewAI structured output.
 - Added a deterministic Season semantic-contract layer: internal Season bundles now carry code-owned phase semantic profiles, explicit forbidden domains, exact season load-envelope handoff, and writer-safe semantic notes instead of leaving methodology-critical Season framing in prose only.
+- Added explicit draft output models and runtime normalization stages for Season and Phase planning, with stage-aware telemetry for normalization and normalized-contract failures before review/writer handoff.
 
 ### Changed
 - Changed generated schema-backed artifact models to be dual-schema-aware, so `model_json_schema()` now exposes the LLM-safe bundled output schema while post-parse validation still runs against the canonical bundled schema.
 - Changed Season planning/review/writer handoff to validate canonical phase semantics, intent-specific domain limits, bundle completeness, and exact writer copy-through of `season_load_envelope` and phase semantics before persistence.
+- Changed `season_plan_finalize` and `phase_bundle_finalize` to emit draft bundles only; deterministic taxonomy/domain/envelope semantics are now injected by Python normalization and validated after normalization instead of on raw LLM output.
 
 ## [0.16.0] - 2026-05-21
 

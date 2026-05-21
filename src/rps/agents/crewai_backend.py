@@ -34,6 +34,9 @@ from rps.crewai_runtime.guardrails import (
     build_task_guardrail_kwargs,
     current_guardrail_runtime_context,
     guardrail_runtime_context,
+    phase_bundle_matches_context,
+    phase_week_role_load_coherence,
+    season_bundle_matches_contract,
     week_bundle_domain_legality_messages,
 )
 from rps.crewai_runtime.knowledge import (
@@ -453,46 +456,110 @@ def _derive_season_semantic_notes(*, planning_bundle: JsonMap) -> list[str]:
     return notes
 
 
-def _enrich_season_planning_bundle(planning_bundle: JsonMap) -> JsonMap:
-    """Inject deterministic season semantics and load-envelope fields into the reviewed bundle."""
+def _format_role_week_load_bands(entries: list[object]) -> list[str]:
+    """Render deterministic role-week bands into stable compact strings."""
+
+    rendered: list[str] = []
+    for entry in entries:
+        entry_map = _as_map(entry)
+        band = _as_map(entry_map.get("band"))
+        week = str(entry_map.get("week") or "").strip()
+        role = str(entry_map.get("role") or "").strip()
+        band_min = band.get("min")
+        band_max = band.get("max")
+        if week and role and band_min is not None and band_max is not None:
+            rendered.append(f"{week}: {role} {band_min}-{band_max}")
+    return rendered
+
+
+def _normalize_progression_trace(value: object) -> list[str]:
+    """Normalize deterministic progression trace payloads to list form."""
+
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    if isinstance(value, dict):
+        return [f"{key}: {val}" for key, val in value.items() if str(val).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value]
+    return []
+
+
+def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
+    """Convert a raw season planning draft into a deterministic normalized bundle."""
 
     if not isinstance(planning_bundle, dict):
         return planning_bundle
     context = current_guardrail_runtime_context()
-    season_phase_load_context = context.get("season_phase_load_context")
-    season_allowed_domains = []
-    if isinstance(season_phase_load_context, dict):
-        season_allowed_domains = list(season_phase_load_context.get("season_allowed_intensity_domains") or [])
-    planning_bundle["season_allowed_domains"] = list(season_allowed_domains)
-    phase_blueprints = [_as_map(item) for item in _as_list(planning_bundle.get("phase_blueprints"))]
-    enriched_blueprints: list[JsonMap] = []
-    for blueprint in phase_blueprints:
-        enriched = dict(blueprint)
-        semantic_errors = validate_phase_semantics(
-            phase_type=enriched.get("phase_type"),
-            phase_intent=enriched.get("phase_intent"),
-            build_subtype=enriched.get("build_subtype"),
+    season_phase_load_context = _as_map(context.get("season_phase_load_context"))
+    phase_context_by_id = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(season_phase_load_context.get("phases"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
+    phase_context_by_range = {
+        str(_as_map(item).get("iso_week_range") or ""): _as_map(item)
+        for item in _as_list(season_phase_load_context.get("phases"))
+        if str(_as_map(item).get("iso_week_range") or "").strip()
+    }
+    season_allowed_domains = list(season_phase_load_context.get("season_allowed_intensity_domains") or [])
+    normalized_bundle = dict(planning_bundle)
+    normalized_bundle["season_allowed_domains"] = list(season_allowed_domains)
+    normalized_blueprints: list[JsonMap] = []
+    for blueprint in [_as_map(item) for item in _as_list(planning_bundle.get("phase_blueprints"))]:
+        phase_id = str(blueprint.get("phase_id") or "").strip()
+        iso_week_range = str(blueprint.get("iso_week_range") or "").strip()
+        deterministic = phase_context_by_id.get(phase_id) or phase_context_by_range.get(iso_week_range) or {}
+        phase_intent = deterministic.get("phase_intent") or blueprint.get("phase_intent")
+        phase_type = deterministic.get("phase_type") or blueprint.get("phase_type")
+        build_subtype = deterministic.get("build_subtype")
+        if build_subtype is None:
+            build_subtype = blueprint.get("build_subtype")
+        recommended_corridor = _as_map(deterministic.get("recommended_phase_corridor"))
+        availability_cap = _as_map(deterministic.get("availability_cap_kj"))
+        warnings = [str(item) for item in _as_list(blueprint.get("warnings")) if str(item).strip()]
+        for error in validate_phase_semantics(
+            phase_type=phase_type,
+            phase_intent=phase_intent,
+            build_subtype=build_subtype,
+        ):
+            if error not in warnings:
+                warnings.append(error)
+        normalized_blueprints.append(
+            {
+                **blueprint,
+                "phase_type": phase_type,
+                "phase_intent": phase_intent,
+                "build_subtype": build_subtype,
+                "phase_taxonomy_version": PHASE_TAXONOMY_VERSION,
+                "season_phase_role": deterministic.get("season_phase_role") or blueprint.get("season_phase_role"),
+                "scenario_cadence": deterministic.get("scenario_cadence") or blueprint.get("scenario_cadence"),
+                "cadence_week_roles": list(
+                    deterministic.get("cadence_week_roles") or blueprint.get("cadence_week_roles") or []
+                ),
+                "load_corridor_min": recommended_corridor.get("min", blueprint.get("load_corridor_min")),
+                "load_corridor_max": recommended_corridor.get("max", blueprint.get("load_corridor_max")),
+                "availability_cap_kj": availability_cap.get("typical", blueprint.get("availability_cap_kj")),
+                "baseline_load_kj": deterministic.get("baseline_load_kj", blueprint.get("baseline_load_kj")),
+                "role_week_load_bands": _format_role_week_load_bands(
+                    _as_list(deterministic.get("role_week_load_bands"))
+                )
+                or [str(item) for item in _as_list(blueprint.get("role_week_load_bands")) if str(item).strip()],
+                "progression_trace": _normalize_progression_trace(
+                    deterministic.get("progression_trace") or blueprint.get("progression_trace")
+                ),
+                "allowed_domains": season_phase_allowed_domains(
+                    phase_intent=phase_intent,
+                    season_allowed_domains=season_allowed_domains,
+                ),
+                "forbidden_domains": season_phase_forbidden_domains(
+                    phase_intent=phase_intent,
+                    season_allowed_domains=season_allowed_domains,
+                ),
+                "semantic_contract": phase_semantic_contract_payload(phase_intent=phase_intent),
+                "warnings": warnings,
+            }
         )
-        if semantic_errors:
-            warnings = [str(item) for item in _as_list(enriched.get("warnings")) if str(item).strip()]
-            for error in semantic_errors:
-                if error not in warnings:
-                    warnings.append(error)
-            enriched["warnings"] = warnings
-        enriched["phase_taxonomy_version"] = PHASE_TAXONOMY_VERSION
-        enriched["allowed_domains"] = season_phase_allowed_domains(
-            phase_intent=enriched.get("phase_intent"),
-            season_allowed_domains=season_allowed_domains,
-        )
-        enriched["forbidden_domains"] = season_phase_forbidden_domains(
-            phase_intent=enriched.get("phase_intent"),
-            season_allowed_domains=season_allowed_domains,
-        )
-        enriched["semantic_contract"] = phase_semantic_contract_payload(
-            phase_intent=enriched.get("phase_intent")
-        )
-        enriched_blueprints.append(enriched)
-    planning_bundle["phase_blueprints"] = enriched_blueprints
+    normalized_bundle["phase_blueprints"] = normalized_blueprints
     candidate_document = {
         "data": {
             "phases": [
@@ -505,19 +572,107 @@ def _enrich_season_planning_bundle(planning_bundle: JsonMap) -> JsonMap:
                         }
                     },
                 }
-                for item in enriched_blueprints
+                for item in normalized_blueprints
             ]
         }
     }
     expected_envelope = derive_expected_average_weekly_kj_range(season_plan_payload=candidate_document)
+    existing_envelope = _as_map(planning_bundle.get("season_load_envelope"))
     if expected_envelope:
-        existing = _as_map(planning_bundle.get("season_load_envelope"))
-        planning_bundle["season_load_envelope"] = {
+        normalized_bundle["season_load_envelope"] = {
             "expected_average_weekly_kj_range": expected_envelope,
-            "expected_high_load_weeks_count": existing.get("expected_high_load_weeks_count"),
-            "expected_deload_or_low_load_weeks_count": existing.get("expected_deload_or_low_load_weeks_count"),
+            "expected_high_load_weeks_count": existing_envelope.get("expected_high_load_weeks_count"),
+            "expected_deload_or_low_load_weeks_count": existing_envelope.get("expected_deload_or_low_load_weeks_count"),
         }
-    planning_bundle["season_semantic_notes"] = _derive_season_semantic_notes(planning_bundle=planning_bundle)
+    normalized_bundle["season_semantic_notes"] = _derive_season_semantic_notes(planning_bundle=normalized_bundle)
+    return normalized_bundle
+
+
+def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
+    """Convert a raw phase planning draft into a deterministic normalized bundle."""
+
+    if not isinstance(planning_bundle, dict):
+        return planning_bundle
+    context = current_guardrail_runtime_context()
+    phase_execution_context = _as_map(context.get("phase_execution_context"))
+    normalized_bundle = dict(planning_bundle)
+    normalized_bundle["phase_id"] = phase_execution_context.get("phase_id", planning_bundle.get("phase_id"))
+    normalized_bundle["phase_range"] = phase_execution_context.get("phase_iso_week_range", planning_bundle.get("phase_range"))
+    normalized_bundle["phase_type"] = phase_execution_context.get("phase_type", planning_bundle.get("phase_type"))
+    normalized_bundle["phase_intent"] = phase_execution_context.get("phase_intent", planning_bundle.get("phase_intent"))
+    normalized_bundle["build_subtype"] = phase_execution_context.get("build_subtype", planning_bundle.get("build_subtype"))
+    week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
+    s5_band_by_week = {
+        str(_as_map(entry).get("week") or ""): _as_map(_as_map(entry).get("band"))
+        for entry in _as_list(phase_execution_context.get("phase_s5_bands"))
+        if str(_as_map(entry).get("week") or "").strip()
+    }
+    normalized_weeks: list[JsonMap] = []
+    for blueprint in [_as_map(item) for item in _as_list(planning_bundle.get("week_blueprints"))]:
+        week = str(blueprint.get("week") or "").strip()
+        band = s5_band_by_week.get(week, {})
+        normalized_weeks.append(
+            {
+                **blueprint,
+                "phase_role": phase_execution_context.get("phase_role") or phase_execution_context.get("phase_type") or blueprint.get("phase_role"),
+                "phase_intent": phase_execution_context.get("phase_intent") or blueprint.get("phase_intent"),
+                "week_role": week_role_by_iso_week.get(week, blueprint.get("week_role")),
+                "s5_band_min": band.get("min", blueprint.get("s5_band_min")),
+                "s5_band_max": band.get("max", blueprint.get("s5_band_max")),
+            }
+        )
+    normalized_bundle["week_blueprints"] = normalized_weeks
+    return normalized_bundle
+
+
+def _raise_normalized_contract_failure(*, name: str, reason: object) -> None:
+    """Raise a stable runtime error for normalized contract failures."""
+
+    raise RuntimeError(f"{name}: {reason}")
+
+
+def _validate_normalized_season_bundle(planning_bundle: JsonMap, *, runtime: AgentRuntime, athlete_id: str, run_id: str) -> JsonMap:
+    """Validate the normalized season bundle before review/writer handoff."""
+
+    ok, payload_or_reason = season_bundle_matches_contract(planning_bundle)
+    if ok:
+        return planning_bundle
+    emit_runtime_event(
+        root=runtime.workspace_root,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        event_type="SEASON_BUNDLE_NORMALIZED_CONTRACT_FAILED",
+        crew="season_planning",
+        task="season_plan_finalize",
+        component="crew:season_plan_finalize",
+        reason=str(payload_or_reason),
+    )
+    _raise_normalized_contract_failure(name="season_bundle_normalized_contract_failed", reason=payload_or_reason)
+    return planning_bundle
+
+
+def _validate_normalized_phase_bundle(planning_bundle: JsonMap, *, runtime: AgentRuntime, athlete_id: str, run_id: str) -> JsonMap:
+    """Validate the normalized phase bundle before review/writer handoff."""
+
+    checks = (
+        ("phase_bundle_matches_context", phase_bundle_matches_context),
+        ("phase_week_role_load_coherence", phase_week_role_load_coherence),
+    )
+    for name, fn in checks:
+        ok, payload_or_reason = fn(planning_bundle)
+        if ok:
+            continue
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="PHASE_BUNDLE_NORMALIZED_CONTRACT_FAILED",
+            crew="phase_planning",
+            task="phase_bundle_finalize",
+            component="crew:phase_bundle_finalize",
+            reason=f"{name}: {payload_or_reason}",
+        )
+        _raise_normalized_contract_failure(name=name, reason=payload_or_reason)
     return planning_bundle
 
 
@@ -2141,7 +2296,7 @@ def run_phase_bundle_crewai(
 
     try:
         def _planning_runner(loop_input: str) -> JsonMap:
-            return _run_phase_bundle_document(
+            planning_bundle = _run_phase_bundle_document(
                 runtime=runtime,
                 bundle=bundle,
                 user_input=loop_input,
@@ -2157,6 +2312,26 @@ def run_phase_bundle_crewai(
                 run_id=run_id,
                 model_override=model_override,
                 temperature_override=temperature_override,
+            )
+            try:
+                normalized = normalize_phase_draft_bundle(planning_bundle)
+            except Exception as exc:
+                emit_runtime_event(
+                    root=runtime.workspace_root,
+                    athlete_id=athlete_id,
+                    run_id=run_id,
+                    event_type="PHASE_BUNDLE_NORMALIZATION_FAILED",
+                    crew="phase_planning",
+                    task="phase_bundle_finalize",
+                    component="crew:phase_bundle_finalize",
+                    reason=str(exc),
+                )
+                raise
+            return _validate_normalized_phase_bundle(
+                normalized,
+                runtime=runtime,
+                athlete_id=athlete_id,
+                run_id=run_id,
             )
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
@@ -2408,7 +2583,26 @@ def _run_single_task_document_crewai(
                 model_override=model_override,
                 temperature_override=temperature_override,
             )
-            return _enrich_season_planning_bundle(planning_bundle)
+            try:
+                normalized = normalize_season_plan_draft_bundle(planning_bundle)
+            except Exception as exc:
+                emit_runtime_event(
+                    root=runtime.workspace_root,
+                    athlete_id=athlete_id,
+                    run_id=run_id,
+                    event_type="SEASON_BUNDLE_NORMALIZATION_FAILED",
+                    crew="season_planning",
+                    task="season_plan_finalize",
+                    component="crew:season_plan_finalize",
+                    reason=str(exc),
+                )
+                raise
+            return _validate_normalized_season_bundle(
+                normalized,
+                runtime=runtime,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
             return _run_review_decision_document(

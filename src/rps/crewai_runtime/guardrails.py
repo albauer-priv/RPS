@@ -237,7 +237,7 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Season bundle must decode to an object.")
-    required = ("event_priority", "macrocycle", "phase_blueprints", "season_load_envelope", "season_semantic_notes")
+    required = ("event_priority", "macrocycle", "phase_blueprints")
     missing = [field for field in required if field not in mapping]
     if missing:
         return (False, f"Season bundle missing required keys: {', '.join(missing)}")
@@ -247,12 +247,12 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
     for blueprint in blueprints:
         if not isinstance(blueprint, dict):
             continue
-        if not str(blueprint.get("phase_intent") or "").strip():
-            return (False, "Season bundle phase blueprints must include phase_intent.")
-        if not str(blueprint.get("phase_taxonomy_version") or "").strip():
-            return (False, "Season bundle phase blueprints must include phase_taxonomy_version.")
-        if not isinstance(blueprint.get("semantic_contract"), dict):
-            return (False, "Season bundle phase blueprints must include semantic_contract.")
+        if not str(blueprint.get("phase_id") or "").strip():
+            return (False, "Season bundle phase blueprints must include phase_id.")
+        if not str(blueprint.get("iso_week_range") or "").strip():
+            return (False, "Season bundle phase blueprints must include iso_week_range.")
+        if not str(blueprint.get("scenario_cadence") or "").strip():
+            return (False, "Season bundle phase blueprints must include scenario_cadence.")
     return (True, mapping)
 
 

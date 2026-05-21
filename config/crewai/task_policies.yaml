@@ -39,7 +39,6 @@ tasks:
     guardrails:
       - typed_output_present
       - season_bundle_integrity
-      - season_bundle_matches_contract
       - season_phase_load_feasibility
     guardrail_max_retries: 2
   season_plan_audit:
@@ -94,7 +93,6 @@ tasks:
     guardrails:
       - typed_output_present
       - phase_bundle_integrity
-      - phase_bundle_matches_context
       - phase_week_role_load_coherence
     guardrail_max_retries: 2
   phase_review:

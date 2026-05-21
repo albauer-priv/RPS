@@ -21,6 +21,8 @@ from rps.agents.crewai_backend import (
     _extract_authoritative_runtime_blocks,
     _run_multicrew_cycle,
     _task_tools_for_blueprint,
+    normalize_phase_draft_bundle,
+    normalize_season_plan_draft_bundle,
     run_agent_multi_output_crewai,
 )
 from rps.agents.runtime import AgentRuntime
@@ -94,17 +96,21 @@ from rps.crewai_runtime.models import (
     LoadGovernanceAuditModel,
     PendingResolutionResultModel,
     PhaseBundleModel,
+    PhaseDraftBundleModel,
     PhaseReviewDecisionModel,
     PhaseWeekBlueprintModel,
+    PhaseWeekDraftBlueprintModel,
     PlanningDraftModel,
     ReportReviewDecisionModel,
     SeasonEventAnchorModel,
     SeasonLoadEnvelopeModel,
     SeasonMacrocycleDraftModel,
     SeasonPhaseBlueprintModel,
+    SeasonPhaseDraftBlueprintModel,
     SeasonPhaseSemanticContractModel,
     SeasonPlanAuditModel,
     SeasonPlanBundleModel,
+    SeasonPlanDraftBundleModel,
     SeasonReviewDecisionModel,
     TurnModeModel,
     WeekContextAssessmentModel,
@@ -369,7 +375,7 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert tasks["classify_turn"].output_kind == "turn_mode"
     assert tasks["form_adjustment_intent"].output_kind == "adjustment_intent"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
-    assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle"
+    assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle_draft"
     assert tasks["phase_bundle_finalize"].context_names == (
         "phase_context_read",
         "phase_guardrail_band_draft",
@@ -383,9 +389,9 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert tasks["phase_bundle_finalize"].execution_policy["guardrails"] == (
         "typed_output_present",
         "phase_bundle_integrity",
-        "phase_bundle_matches_context",
         "phase_week_role_load_coherence",
     )
+    assert tasks["season_plan_finalize"].output_kind == "season_plan_draft_bundle"
 
 
 def test_task_policy_resolution_and_guardrail_kwargs() -> None:
@@ -469,6 +475,7 @@ def test_crewai_output_models_are_openai_strict_compatible() -> None:
         "season_event_anchor",
         "season_macrocycle_draft",
         "season_plan_audit",
+        "season_plan_draft_bundle",
         "season_plan_bundle",
         "season_review_decision",
         "phase_guardrails_payload",
@@ -476,6 +483,7 @@ def test_crewai_output_models_are_openai_strict_compatible() -> None:
         "phase_preview_payload",
         "constraint_audit",
         "load_governance_audit",
+        "phase_bundle_draft",
         "phase_bundle",
         "phase_review_decision",
         "week_plan_bundle",
@@ -1219,6 +1227,49 @@ def test_season_plan_bundle_accepts_phase_blueprints_with_inherited_cadence_role
     assert model.phase_blueprints[0].availability_cap_kj == 10000
 
 
+def test_draft_bundle_models_accept_legacy_semantic_hints_before_normalization() -> None:
+    season_model = SeasonPlanDraftBundleModel(
+        event_priority=SeasonEventAnchorModel(),
+        macrocycle=SeasonMacrocycleDraftModel(deload_cadence="2:1:1"),
+        phase_blueprints=[
+            SeasonPhaseDraftBlueprintModel(
+                phase_id="P01",
+                iso_week_range="2026-21--2026-23",
+                scenario_cadence="2:1:1",
+                phase_type="PREPARATION",
+                phase_intent="base_preparation",
+                role_week_load_bands=["legacy"],
+            )
+        ],
+    )
+    phase_model = PhaseDraftBundleModel(
+        phase_range="2026-21--2026-23",
+        phase_type="PREPARATION",
+        phase_intent="base_preparation",
+        week_blueprints=[
+            PhaseWeekDraftBlueprintModel(
+                week="2026-21",
+                week_role="LOAD_2",
+            )
+        ],
+        guardrails={"phase_summary": []},
+        structure={"upstream_intent": []},
+        preview={"phase_intent_summary": []},
+        constraint_audit={"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        load_governance_audit={
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "cadence_authority_preserved": True,
+            "durability_first_respected": True,
+        },
+        decision_summary={"cadence_application_notes": [], "override_rationale": []},
+    )
+
+    assert season_model.phase_blueprints[0].phase_intent == "base_preparation"
+    assert phase_model.week_blueprints[0].week_role == "LOAD_2"
+
+
 def test_season_plan_finalize_declares_deterministic_contract_tools() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
@@ -1520,8 +1571,6 @@ def test_season_bundle_integrity_requires_phase_blueprints() -> None:
         {
             "event_priority": {},
             "macrocycle": {},
-            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 1, "max": 2}},
-            "season_semantic_notes": ["note"],
             "phase_blueprints": [],
         }
     )
@@ -1529,23 +1578,12 @@ def test_season_bundle_integrity_requires_phase_blueprints() -> None:
         {
             "event_priority": {},
             "macrocycle": {},
-            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 1, "max": 2}},
-            "season_semantic_notes": ["note"],
             "phase_blueprints": [
                 {
                     "phase_id": "P01",
                     "iso_week_range": "2026-21--2026-23",
                     "scenario_cadence": "2:1",
-                    "phase_intent": "durability_build",
-                    "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
                     "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
-                    "semantic_contract": {
-                        "methodology_family": "durability_first_build",
-                        "threshold_role": "secondary",
-                        "event_load_policy": "event_load_support_only",
-                        "taper_policy": "not_applicable",
-                        "writer_semantic_notes": ["note"],
-                    },
                 }
             ],
         }
@@ -1644,6 +1682,153 @@ def test_season_bundle_matches_contract_rejects_domains_outside_semantic_profile
 
     assert failed is False
     assert "season_bundle_phase_domains_outside_semantic_contract" in message
+
+
+def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
+    draft_bundle = {
+        "event_priority": {"primary_a_events": ["A Event"]},
+        "macrocycle": {"deload_cadence": "2:1:1"},
+        "phase_blueprints": [
+            {
+                "phase_id": "P01",
+                "iso_week_range": "2026-21--2026-23",
+                "scenario_cadence": "2:1:1",
+                "phase_type": "PREPARATION",
+                "phase_intent": "base_preparation",
+                "build_subtype": None,
+                "allowed_domains": ["ENDURANCE", "THRESHOLD"],
+                "role_week_load_bands": ["legacy"],
+            }
+        ],
+    }
+    with guardrail_runtime_context(
+        phase_slot_context={
+            "phase_slots": [
+                {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "shortened_re_entry"}
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "season_phase_role": "shortened_re_entry",
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "MINI_RESET"],
+                    "availability_cap_kj": {"typical": 10000, "max": 11000},
+                    "baseline_load_kj": 8200,
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}},
+                    ],
+                    "progression_trace": {"source": "deterministic"},
+                }
+            ],
+        }
+    ):
+        normalized = normalize_season_plan_draft_bundle(draft_bundle)
+        ok, _ = season_bundle_matches_contract(normalized)
+
+    blueprint = normalized["phase_blueprints"][0]
+    assert blueprint["phase_type"] == "BASE"
+    assert blueprint["phase_intent"] == "shortened_re_entry"
+    assert blueprint["allowed_domains"] == ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
+    assert "THRESHOLD" in blueprint["forbidden_domains"]
+    assert "VO2MAX" in blueprint["forbidden_domains"]
+    assert blueprint["phase_taxonomy_version"] == "canonical_phase_taxonomy_v1"
+    assert blueprint["role_week_load_bands"] == ["2026-21: LOAD_1 7800-8600"]
+    assert normalized["season_load_envelope"]["expected_average_weekly_kj_range"] == {"min": 7800, "max": 9800}
+    assert ok is True
+
+
+def test_normalize_season_plan_draft_bundle_supports_variable_phase_counts() -> None:
+    draft_bundle = {
+        "event_priority": {"primary_a_events": ["A1", "A2"]},
+        "macrocycle": {"deload_cadence": "2:1:1"},
+        "phase_blueprints": [
+            {"phase_id": f"P0{idx}", "iso_week_range": f"2026-{20 + idx}--2026-{20 + idx}", "scenario_cadence": "2:1:1"}
+            for idx in range(1, 7)
+        ],
+    }
+    context_phases = []
+    intents = [
+        ("BASE", "shortened_re_entry"),
+        ("PREPARATION", "general_base"),
+        ("BUILD", "durability_build"),
+        ("TAPER", "taper_freshening"),
+        ("BASE", "shortened_re_entry"),
+        ("TAPER", "taper_freshening"),
+    ]
+    for idx, (phase_type, phase_intent) in enumerate(intents, start=1):
+        context_phases.append(
+            {
+                "phase_id": f"P0{idx}",
+                "iso_week_range": f"2026-{20 + idx}--2026-{20 + idx}",
+                "phase_type": phase_type,
+                "phase_intent": phase_intent,
+                "build_subtype": phase_intent if phase_type == "BUILD" else None,
+                "season_phase_role": phase_intent,
+                "scenario_cadence": "2:1:1",
+                "cadence_week_roles": ["LOAD_1"],
+                "availability_cap_kj": {"typical": 10000, "max": 11000},
+                "baseline_load_kj": 8000 + idx,
+                "recommended_phase_corridor": {"min": 7000 + idx, "max": 9000 + idx},
+                "role_week_load_bands": [{"week": f"2026-{20 + idx}", "role": "LOAD_1", "band": {"min": 7000 + idx, "max": 9000 + idx}}],
+                "progression_trace": {"index": idx},
+            }
+        )
+    with guardrail_runtime_context(
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": context_phases,
+        }
+    ):
+        normalized = normalize_season_plan_draft_bundle(draft_bundle)
+
+    assert len(normalized["phase_blueprints"]) == 6
+    assert normalized["phase_blueprints"][2]["build_subtype"] == "durability_build"
+    assert normalized["phase_blueprints"][5]["phase_intent"] == "taper_freshening"
+
+
+def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_contracts() -> None:
+    draft_bundle = {
+        "phase_range": "2026-21--2026-23",
+        "phase_type": "PREPARATION",
+        "phase_intent": "base_preparation",
+        "week_blueprints": [
+            {"week": "2026-21", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
+        ],
+        "guardrails": {"phase_summary": []},
+        "structure": {"upstream_intent": []},
+        "preview": {"phase_intent_summary": []},
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-21--2026-23",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": None,
+            "week_role_by_iso_week": {"2026-21": "LOAD_1"},
+            "phase_s5_bands": [{"week": "2026-21", "band": {"min": 7800, "max": 8600}}],
+        }
+    ):
+        normalized = normalize_phase_draft_bundle(draft_bundle)
+
+    assert normalized["phase_id"] == "P01"
+    assert normalized["phase_type"] == "BASE"
+    assert normalized["phase_intent"] == "shortened_re_entry"
+    assert normalized["week_blueprints"][0]["week_role"] == "LOAD_1"
+    assert normalized["week_blueprints"][0]["s5_band_min"] == 7800
+    assert normalized["week_blueprints"][0]["s5_band_max"] == 8600
 
 
 def test_season_writer_bundle_match_rejects_envelope_drift() -> None:
@@ -2408,8 +2593,10 @@ def test_output_model_registry_resolves_known_output_kinds() -> None:
     assert output_model_for_kind("season_event_anchor") is SeasonEventAnchorModel
     assert output_model_for_kind("season_macrocycle_draft") is SeasonMacrocycleDraftModel
     assert output_model_for_kind("season_plan_audit") is SeasonPlanAuditModel
+    assert output_model_for_kind("season_plan_draft_bundle") is SeasonPlanDraftBundleModel
     assert output_model_for_kind("constraint_audit") is ConstraintAuditModel
     assert output_model_for_kind("load_governance_audit") is LoadGovernanceAuditModel
+    assert output_model_for_kind("phase_bundle_draft") is PhaseDraftBundleModel
     assert output_model_for_kind("phase_bundle") is PhaseBundleModel
 
 
@@ -2827,32 +3014,18 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                     },
                     data={},
                 )
-            elif model_cls is SeasonPlanBundleModel:
+            elif model_cls is SeasonPlanDraftBundleModel:
                 model = model_cls(
                     event_priority=SeasonEventAnchorModel(),
                     macrocycle=SeasonMacrocycleDraftModel(),
-                    season_load_envelope=SeasonLoadEnvelopeModel(
-                        expected_average_weekly_kj_range={"min": 7000, "max": 9000}
-                    ),
-                    season_semantic_notes=["Frame the objective against the A event."],
                     phase_blueprints=[
-                        SeasonPhaseBlueprintModel(
+                        SeasonPhaseDraftBlueprintModel(
                             phase_id="P01",
                             iso_week_range="2026-20--2026-22",
                             scenario_cadence="2:1",
                             cadence_week_roles=["LOAD_1", "LOAD_2", "DELOAD"],
                             phase_type="BASE",
                             phase_intent="shortened_re_entry",
-                            phase_taxonomy_version="canonical_phase_taxonomy_v1",
-                            allowed_domains=["ENDURANCE", "TEMPO"],
-                            forbidden_domains=["THRESHOLD", "VO2MAX"],
-                            semantic_contract=SeasonPhaseSemanticContractModel(
-                                methodology_family="compressed_reentry",
-                                threshold_role="forbidden",
-                                event_load_policy="no_event_load_exception",
-                                taper_policy="not_applicable",
-                                writer_semantic_notes=["Keep the phase recovery-protective."],
-                            ),
                         )
                     ],
                 )
@@ -2928,6 +3101,39 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     monkeypatch.setattr(
         "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
         _fake_guard_put_validated,
+    )
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend.normalize_season_plan_draft_bundle",
+        lambda _bundle: {
+            "event_priority": {"primary_a_events": ["A Event"]},
+            "macrocycle": {"deload_cadence": "2:1"},
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7000, "max": 9000}},
+            "season_semantic_notes": ["Frame the objective against the A event."],
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-20--2026-22",
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
+                    "allowed_domains": ["ENDURANCE", "TEMPO"],
+                    "forbidden_domains": ["THRESHOLD", "VO2MAX"],
+                    "semantic_contract": {
+                        "methodology_family": "compressed_reentry",
+                        "threshold_role": "forbidden",
+                        "event_load_policy": "no_event_load_exception",
+                        "taper_policy": "not_applicable",
+                        "writer_semantic_notes": ["Keep the phase recovery-protective."],
+                    },
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend._validate_normalized_season_bundle",
+        lambda planning_bundle, **kwargs: planning_bundle,
     )
 
     runtime = AgentRuntime(
@@ -3022,20 +3228,20 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
         def kickoff(self):
             task = self.tasks[-1]
             model_cls = task.output_pydantic
-            if model_cls is PhaseBundleModel:
+            if model_cls is PhaseDraftBundleModel:
                 model = model_cls(
                     phase_range="2026-17--2026-19",
                     phase_id="P01",
                     phase_type="Base",
                     cadence_source="season_plan",
                     week_blueprints=[
-                        {
-                            "week": "2026-17",
-                            "phase_role": "Base",
-                            "week_role": "LOAD_1",
-                            "s5_band_min": 5000,
-                            "s5_band_max": 6000,
-                        }
+                        PhaseWeekDraftBlueprintModel(
+                            week="2026-17",
+                            phase_role="Base",
+                            week_role="LOAD_1",
+                            s5_band_min=5000,
+                            s5_band_max=6000,
+                        )
                     ],
                     guardrails={},
                     structure={},

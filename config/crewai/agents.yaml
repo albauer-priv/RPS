@@ -134,7 +134,7 @@ agents:
     role: Internal season planning synthesizer
     goal: Consolidate specialist season drafts into one internal season bundle without serializing the final envelope.
     runtime_status: foundation_only
-    output_mode: season_plan_bundle
+    output_mode: season_plan_draft_bundle
     prompt_agent: season_plan_manager
     allow_delegation: false
     max_iter: 5
@@ -273,7 +273,7 @@ agents:
     role: Internal phase planning synthesizer
     goal: Convert season governance into one internal phase bundle without writing public envelopes.
     runtime_status: foundation_only
-    output_mode: phase_bundle
+    output_mode: phase_bundle_draft
     prompt_agent: phase_bundle_manager
     allow_delegation: false
     max_iter: 5

@@ -186,6 +186,33 @@ class SeasonPhaseBlueprintModel(StrictOutputModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class SeasonPhaseDraftBlueprintModel(StrictOutputModel):
+    """Raw LLM-authored season phase blueprint before deterministic normalization."""
+
+    phase_id: str
+    iso_week_range: str
+    scenario_cadence: str
+    phase_type: str | None = None
+    phase_intent: str | None = None
+    build_subtype: str | None = None
+    phase_taxonomy_version: str | None = None
+    season_phase_role: str | None = None
+    cadence_week_roles: list[str] = Field(default_factory=list)
+    event_constraints: list[str] = Field(default_factory=list)
+    load_corridor_min: int | None = None
+    load_corridor_max: int | None = None
+    availability_cap_kj: int | None = None
+    baseline_load_kj: int | None = None
+    role_week_load_bands: list[str] = Field(default_factory=list)
+    progression_trace: list[str] = Field(default_factory=list)
+    load_feasibility_status: str | None = None
+    taper_intent: str | None = None
+    allowed_domains: list[str] = Field(default_factory=list)
+    forbidden_domains: list[str] = Field(default_factory=list)
+    semantic_contract: SeasonPhaseSemanticContractModel | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
 class ReplanInstructionModel(StrictOutputModel):
     """Structured replan instruction emitted by review crews."""
 
@@ -207,6 +234,25 @@ class SeasonPlanBundleModel(StrictOutputModel):
     constraints: list[ConstraintAuditModel] = Field(default_factory=list)
     load_governance: list[LoadGovernanceAuditModel] = Field(default_factory=list)
     phase_blueprints: list[SeasonPhaseBlueprintModel] = Field(default_factory=list)
+    season_load_envelope: SeasonLoadEnvelopeModel | None = None
+    season_semantic_notes: list[str] = Field(default_factory=list)
+    decision_summary: list[str] = Field(default_factory=list)
+    candidate_document_summary: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
+class SeasonPlanDraftBundleModel(StrictOutputModel):
+    """Raw LLM-authored season plan bundle before deterministic normalization."""
+
+    context_summary: list[str] = Field(default_factory=list)
+    scenario_interpretation: list[str] = Field(default_factory=list)
+    event_priority: SeasonEventAnchorModel
+    peak_window: list[str] = Field(default_factory=list)
+    macrocycle: SeasonMacrocycleDraftModel
+    constraints: list[ConstraintAuditModel] = Field(default_factory=list)
+    load_governance: list[LoadGovernanceAuditModel] = Field(default_factory=list)
+    phase_blueprints: list[SeasonPhaseDraftBlueprintModel] = Field(default_factory=list)
     season_load_envelope: SeasonLoadEnvelopeModel | None = None
     season_semantic_notes: list[str] = Field(default_factory=list)
     decision_summary: list[str] = Field(default_factory=list)
@@ -301,6 +347,21 @@ class PhaseWeekBlueprintModel(StrictOutputModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class PhaseWeekDraftBlueprintModel(StrictOutputModel):
+    """Raw LLM-authored phase week blueprint before deterministic normalization."""
+
+    week: str
+    phase_role: str | None = None
+    phase_intent: str | None = None
+    week_role: str
+    s5_band_min: int | None = None
+    s5_band_max: int | None = None
+    role_progression_band: str | None = None
+    allowed_domains: list[str] = Field(default_factory=list)
+    event_implication: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
 class PhaseBundleModel(StrictOutputModel):
     """Internal season-authorized phase bundle before deterministic split."""
 
@@ -311,6 +372,29 @@ class PhaseBundleModel(StrictOutputModel):
     build_subtype: str | None = None
     cadence_source: str | None = None
     week_blueprints: list[PhaseWeekBlueprintModel] = Field(default_factory=list)
+    guardrails: PhaseGuardrailsPayloadModel
+    structure: PhaseStructurePayloadModel
+    preview: PhasePreviewPayloadModel
+    guardrails_document_summary: list[str] = Field(default_factory=list)
+    structure_document_summary: list[str] = Field(default_factory=list)
+    preview_document_summary: list[str] = Field(default_factory=list)
+    constraint_audit: ConstraintAuditModel
+    load_governance_audit: LoadGovernanceAuditModel
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    decision_summary: PhaseBundleDecisionModel
+
+
+class PhaseDraftBundleModel(StrictOutputModel):
+    """Raw LLM-authored phase bundle before deterministic normalization."""
+
+    phase_range: str
+    phase_id: str | None = None
+    phase_type: str | None = None
+    phase_intent: str | None = None
+    build_subtype: str | None = None
+    cadence_source: str | None = None
+    week_blueprints: list[PhaseWeekDraftBlueprintModel] = Field(default_factory=list)
     guardrails: PhaseGuardrailsPayloadModel
     structure: PhaseStructurePayloadModel
     preview: PhasePreviewPayloadModel
