@@ -156,8 +156,8 @@ tasks:
     agent: macrocycle_architect
     kind: internal_reasoning
     output: season_macrocycle_draft
-    description: "Reverse-plan macrocycle structure from priority event anchors. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for selected-scenario and snapshot context; use `workspace_get_phase_slot_contract` for deterministic phase-slot structure. Return the structured macrocycle draft directly; do not assume a workspace file-write step."
-    expected_output: A structured macrocycle draft with reverse-planning notes.
+    description: "Reverse-plan macrocycle structure from one or more priority A-event anchors. A season may contain multiple target macrocycles when spacing supports recovery, re-entry, build, and taper; tightly spaced A-events must be modeled as one A-event peak cluster instead of separate overlapping macrocycles. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for selected-scenario and snapshot context; use `workspace_get_phase_slot_contract` for deterministic phase-slot structure. Return the structured macrocycle draft directly; do not assume a workspace file-write step."
+    expected_output: A structured macrocycle draft with reverse-planning notes, A-event relationship classification, and explicit peak-cluster vs separate-macrocycle decisions.
     tools:
       - workspace_get_input
       - workspace_get_latest
@@ -229,8 +229,8 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: "Consolidate season drafts into one internal SeasonPlanDraftBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit structural phase blueprints only: phase ordering, cadence roles, event constraints, load corridors, availability caps, progression traces, and week-role load bands. Do not invent canonical phase taxonomy fields, deterministic allowed/forbidden domains, semantic contracts, or season load-envelope fields; those are code-owned and added during runtime normalization."
-    expected_output: A structured internal season plan draft bundle with `phase_blueprints` that preserve inherited selected-scenario cadence roles, event constraints, availability caps, progression traces, and role-week load bands. Deterministic canonical semantics and writer-safe contract fields are added later by Python normalization.
+    description: "Consolidate season drafts into one internal SeasonPlanDraftBundle with availability-bounded phase-load blueprints. A season may contain one or more target macrocycles; do not assume the final A-event is the only reverse-planning anchor. If multiple A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster; if backplanned macrocycles overlap, resolve by event priority and spacing rather than stacking competing taper/build demands. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit structural phase blueprints only: phase ordering, cadence roles, event constraints, load corridors, availability caps, progression traces, and week-role load bands. Do not invent canonical phase taxonomy fields, deterministic allowed/forbidden domains, semantic contracts, or season load-envelope fields; those are code-owned and added during runtime normalization."
+    expected_output: A structured internal season plan draft bundle with `phase_blueprints` that preserve inherited selected-scenario cadence roles, event constraints, availability caps, progression traces, and role-week load bands. The season justification must classify each A-event as primary, secondary, equal-priority, or cluster-member. Deterministic canonical semantics and writer-safe contract fields are added later by Python normalization.
   season_governance_review:
     agent: season_governance_auditor
     kind: internal_reasoning

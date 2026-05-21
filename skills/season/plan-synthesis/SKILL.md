@@ -9,37 +9,47 @@ Consolidate season drafts into one candidate bundle.
 
 Method:
 1. Preserve event hierarchy and macrocycle logic.
-2. Keep load governance aligned with durability-first planning.
-3. Resolve conflicts in favor of sustainable structure and explicit constraint compliance.
-4. Use the injected selected-scenario structure math as the reference for planning horizon weeks, phase length, expected phase count, full phases, and shortened phases.
-5. Use `Deterministic Season Phase Slot Context` as the binding skeleton for phase ids, order, ISO-week ranges, and phase lengths.
-6. Treat `deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `shortened_phases`, and `shortening_budget_weeks` as inherited Scenario authority; never choose a replacement cadence in Season Plan synthesis.
-7. Preserve each slot's injected `cadence_week_roles` in the internal phase blueprint and reflect them in deload intent, typical duration/intensity pattern, and load-corridor notes.
-8. Use `Deterministic Season Phase Load Context` as the binding feasibility reference for phase role, availability cap, baseline, recommended phase corridor, and role-week load bands.
-9. When numeric phase-slot or phase-load contract values are needed, use the deterministic contract tools directly:
+2. A season may contain one or more target macrocycles backplanned from distinct `A`-event anchors when spacing allows.
+3. If multiple `A` events are present, classify each one in season justification as `primary A-event`, `secondary A-event`, `equal-priority A-event`, or `cluster-member`.
+4. If `A` events are too close for recovery, re-entry, build, and taper, group them into one A-event peak cluster instead of forcing separate macrocycles.
+5. If spacing is sufficient, create a separate target macrocycle for each `A`-event anchor.
+6. If backplanned macrocycles overlap, resolve by event priority and spacing; never stack overlapping taper/build demands from two `A` events.
+7. After an `A` event, require `TRANSITION / transition_recovery` or `PREPARATION / preparation_re_entry` before any new Build phase unless the next `A` event remains inside the same peak cluster.
+8. Keep load governance aligned with durability-first planning.
+9. Resolve conflicts in favor of sustainable structure and explicit constraint compliance.
+10. Use the injected selected-scenario structure math as the reference for planning horizon weeks, phase length, expected phase count, full phases, and shortened phases.
+11. Use `Deterministic Season Phase Slot Context` as the binding skeleton for phase ids, order, ISO-week ranges, and phase lengths.
+12. Treat `deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `shortened_phases`, and `shortening_budget_weeks` as inherited Scenario authority; never choose a replacement cadence in Season Plan synthesis.
+13. Preserve each slot's injected `cadence_week_roles` in the internal phase blueprint and reflect them in deload intent, typical duration/intensity pattern, and load-corridor notes.
+14. Use `Deterministic Season Phase Load Context` as the binding feasibility reference for phase role, availability cap, baseline, recommended phase corridor, and role-week load bands.
+15. When numeric phase-slot or phase-load contract values are needed, use the deterministic contract tools directly:
    - `workspace_get_phase_slot_contract`
    - `workspace_get_season_phase_load_context`
    Never search the workspace for a synthetic recommendation artifact.
-10. Verify that phase count and ISO-week coverage match the season date range without gaps or overlaps.
-11. Apply the selected cadence pattern (`2:1`, `3:1`, or `2:1:1`) to phase deload intent and rationale.
+16. Verify that phase count and ISO-week coverage match the season date range without gaps or overlaps.
+17. Apply the selected cadence pattern (`2:1`, `3:1`, or `2:1:1`) to phase deload intent and rationale.
    - `2:1:1` means two load weeks, one mini-reset, and one reload; do not collapse it into a generic deload phase.
    - `3:1` means three load weeks and a materially reduced deload week.
    - `2:1` means two load weeks and a materially reduced deload week.
    - Shortened slots keep their injected shortened roles and should read as re-entry/consolidation, not as full-length cadence cycles.
-12. Set strategic phase corridors from phase role + availability + progression context, not by copying availability capacity or inventing desired load.
-13. Keep every emitted `cycle` schema-valid: `Base`, `Build`, `Peak`, or `Transition`.
-14. Emit one review-ready season bundle, not multiple competing variants.
-15. Final synthesis is integration work, not coworker re-discovery. Do not ask other agents to re-derive deterministic contract values during this step.
-16. Carry season-level intensity-domain authority from the selected scenario into phase blueprints. A phase may narrow downstream semantics, but you must not reconstruct season authority backward from Phase Guardrails or another narrower downstream example.
-17. Emit explicit canonical phase semantics for every phase blueprint:
+18. Set strategic phase corridors from phase role + availability + progression context, not by copying availability capacity or inventing desired load.
+19. Keep every emitted `cycle` schema-valid: `Base`, `Build`, `Peak`, or `Transition`.
+20. Emit one review-ready season bundle, not multiple competing variants.
+21. Final synthesis is integration work, not coworker re-discovery. Do not ask other agents to re-derive deterministic contract values during this step.
+22. Carry season-level intensity-domain authority from the selected scenario into phase blueprints. A phase may narrow downstream semantics, but you must not reconstruct season authority backward from Phase Guardrails or another narrower downstream example.
+23. Emit explicit canonical phase semantics for every phase blueprint:
    - `phase_type`
    - `phase_intent`
    - `build_subtype` when `phase_type = BUILD`
    - `phase_taxonomy_version`
    - explicit `forbidden_domains`
    - explicit `semantic_contract`
-18. Keep `phase_type`, `phase_intent`, and `build_subtype` coherent with cycle, event position, phase role, and allowed-domain narrowing.
-19. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_build` only when explicitly justified, then preserve `durability_build` / `specificity_build` runway only when the deterministic context permits it.
+24. Keep `phase_type`, `phase_intent`, and `build_subtype` coherent with cycle, event position, phase role, and allowed-domain narrowing.
+25. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_build` only when explicitly justified, then preserve `durability_build` / `specificity_build` runway only when the deterministic context permits it.
+
+Phase intent and intensity semantics:
+- Multi-A-event planning may create one or more target macrocycles and may use an A-event peak cluster when spacing is too short for separate recovery/build/taper structures.
+- Keep these macrocycle decisions at the Season-planning layer; do not invent new phase-taxonomy values to express them.
 
 Canonical phase semantics:
 - Use canonical `phase_type` values only:
@@ -104,7 +114,7 @@ Reading rules:
   - `week.allowed_domains` = fatigue-/execution-filtered week authority
 
 Hard rules:
-- emit one final macrocycle bundle
+- emit one final season bundle with one or more target macrocycles
 - use deterministic selected-scenario structure context for phase-length math
 - preserve deterministic phase slots exactly
 - do not infer cadence from athlete age, preference, or durability principles once a scenario is selected
@@ -119,6 +129,7 @@ Hard rules:
 - the final season bundle must include deterministic `season_load_envelope` and `season_semantic_notes` so the writer can copy them directly
 - never guess or alias legacy phase-intent labels during synthesis
 - if the selected scenario permits `TEMPO` or other quality domains, at least one suitable later-season phase must preserve that allowance unless the bundle makes a clear phase-specific exclusion case
+- make multi-`A` event structure audit-visible through phase narratives, event constraints, phase transition guardrails, season justification, and assumptions / revisit items even though there are no explicit macrocycle id fields yet
 - mark coverage/cadence self-checks true only after verification
 - surface infeasible load corridors explicitly with review/replan guidance
 

@@ -25,11 +25,16 @@ Phase-level usage rules:
 - use quality support for clean adaptive stimulus while keeping low-load weeks recovery-coherent
 - durability-oriented phases bias toward endurance/tempo stability over high-intensity density
 - event-specific weeks may allow tighter emphasis, but not outside agenda semantics and recovery protection
+- Intensity is not the main escalation lever; fatigue-context specificity is.
 - Base/general build is usually LIT-dominant and pyramidal-leaning: high low intensity, dosed tempo/sweet spot, little high intensity
 - Build/performance sharpening is usually more polarized: LIT remains high, moderate density is capped, and high-intensity quality appears only when recovered
 - moderate work is a budget, not a default; reduce it when it degrades high-intensity quality or low-intensity consistency
 - place high-intensity work only when freshness supports clean repeat quality and weekly kJ still leaves recovery margin
 - near the A event, specificity rises through event-like duration, pace stability, fueling stability, back-to-back or hard-late relevance, not random extra moderate work
+
+Phase intent and intensity semantics:
+- Read inherited `phase_type`, `phase_intent`, and `build_subtype` as binding upstream semantics before shaping any allowed/suppressed intensity mix.
+- Keep phase-level intensity decisions inside the canonical taxonomy; do not invent new phase labels to express specificity, peak, or recovery nuance.
 
 Canonical phase semantics:
 - Read inherited `phase_type`, `phase_intent`, and `build_subtype` as binding upstream semantics.

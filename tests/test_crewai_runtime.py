@@ -1302,6 +1302,21 @@ def test_season_plan_manager_disables_free_delegation_via_yaml_override() -> Non
     assert agent_blueprints["season_plan_manager"].config["allow_delegation"] is False
 
 
+def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplanning() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    macrocycle_description = blueprints["season_macrocycle_draft"].description
+    season_finalize_description = blueprints["season_plan_finalize"].description
+    season_finalize_expected_output = blueprints["season_plan_finalize"].expected_output
+
+    assert "multiple target macrocycles" in macrocycle_description
+    assert "A-event peak cluster" in macrocycle_description
+    assert "final A-event is the only reverse-planning anchor" in season_finalize_description
+    assert "backplanned macrocycles overlap" in season_finalize_description
+    assert "season justification must classify each A-event" in season_finalize_expected_output
+
+
 def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)

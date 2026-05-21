@@ -8,7 +8,8 @@ metadata:
 Audit the candidate season bundle holistically.
 
 Checklist:
-- exactly one `A` event per macrocycle
+- each target macrocycle ends in either one `A` event or one explicit `A`-event peak cluster
+- every `A` event is classifiable as primary, secondary, equal-priority, or cluster-member
 - every taper behavior serves an `A` event and remains inside a schema-valid `Peak` cycle
 - `B` and `C` events fit without breaking macrocycle structure
 - recovery and transition phases are explicitly planned
@@ -26,6 +27,7 @@ Checklist:
 
 Block approval when:
 - event hierarchy is contradictory
+- multi-`A` spacing requires a peak cluster or downgrade, but the bundle still implies separate overlapping macrocycles
 - a clustered-event plan tries to use repeated independent tapers
 - a second peak is implied without an explicit multi-peak model
 - season progression requires repeated catch-up or hidden overload

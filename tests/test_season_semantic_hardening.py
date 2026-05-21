@@ -15,6 +15,9 @@ def test_season_skills_preserve_inherited_cadence_semantics() -> None:
     assert "must not replace it" in audit or "different cadence than the selected Scenario" in audit
     assert "MINI_RESET" in synthesis or "mini-reset" in synthesis
     assert "RELOAD" in synthesis or "reload" in synthesis
+    assert "target macrocycles" in synthesis
+    assert "A-event peak cluster" in synthesis
+    assert "cluster-member" in synthesis
 
 
 def test_season_skills_preserve_durability_without_intensity_free_collapse() -> None:
@@ -36,9 +39,20 @@ def test_season_skills_preserve_durability_without_intensity_free_collapse() -> 
     assert "`allowed_domains` are permissions, not obligations" in scenario
     assert "Phase intent and intensity semantics:" in synthesis
     assert "Phase intent and intensity semantics:" in phase_intensity
-    assert "`Transition` | `transition_consolidation`" in synthesis
+    assert "`TRANSITION` | `transition_recovery`" in synthesis
     assert "K3` appears only under `allowed_load_modalities`" in synthesis
     assert "Intensity is not the main escalation lever; fatigue-context specificity is." in phase_intensity
     assert "`specificity_build`" in synthesis
     assert "`season_archetype`" in scenario
     assert "ceiling_first_durability" in scenario
+
+
+def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:
+    macrocycle = _read("skills/season/macrocycle-architecture/SKILL.md")
+    audit = _read("skills/season/audit/SKILL.md")
+
+    assert "one or more priority `A` event anchors" in macrocycle
+    assert "equal-priority `A` events" in macrocycle
+    assert "do not force a second independent macrocycle" in macrocycle
+    assert "each target macrocycle ends in either one `A` event or one explicit `A`-event peak cluster" in audit
+    assert "multi-`A` spacing requires a peak cluster or downgrade" in audit
