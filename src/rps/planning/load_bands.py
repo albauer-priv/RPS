@@ -16,7 +16,9 @@ from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
 from rps.workspace.phase_intents import (
     normalize_phase_intent,
+    normalize_phase_semantics,
     normalize_season_archetype,
+    phase_type_for_intent,
 )
 from rps.workspace.phase_resolution import date_to_iso_week
 
@@ -877,6 +879,14 @@ def build_season_phase_load_context(
             phase_intent = "specificity_build"
 
         build_subtype = phase_intent if phase_type == "BUILD" else None
+        phase_type, phase_intent, build_subtype = _canonicalize_phase_slot_semantics(
+            phase_id=str(slot.get("phase_id") or f"P{idx:02d}"),
+            phase_type=phase_type,
+            phase_intent=phase_intent,
+            build_subtype=build_subtype,
+            warnings=warnings,
+            blocking_issues=blocking_issues,
+        )
 
         phase_baseline = _phase_baseline_for_role(
             prior_reference=phase_reference,
@@ -1088,12 +1098,12 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
 
 
 def _recommended_cycle_for_slot(*, idx: int, total: int, is_shortened: bool) -> str:
-    if total > 0 and idx == total:
-        return "PEAK"
     if idx == 1:
         return "BASE"
     if is_shortened and idx <= 2:
-        return "PREPARATION"
+        return "BASE"
+    if total > 0 and idx == total:
+        return "PEAK"
     return "BUILD"
 
 
@@ -1107,6 +1117,50 @@ def _season_phase_role_for_slot(*, phase_type: str, idx: int, total: int, is_sho
     if phase_type == "PREPARATION":
         return "preparation_re_entry"
     return "threshold_build"
+
+
+def _canonicalize_phase_slot_semantics(
+    *,
+    phase_id: str,
+    phase_type: str,
+    phase_intent: str,
+    build_subtype: str | None,
+    warnings: list[str],
+    blocking_issues: list[str],
+) -> tuple[str, str, str | None]:
+    """Return canonical phase semantics for one deterministic season slot.
+
+    The deterministic load-band context is code-owned. If a recognized intent is
+    paired with the wrong phase type, prefer the canonical type for that intent
+    and record a warning instead of letting an invalid combination leak into the
+    season bundle. Unknown or unrecoverable combinations remain blocking issues.
+    """
+
+    semantics = normalize_phase_semantics(
+        phase_type=phase_type,
+        phase_intent=phase_intent,
+        build_subtype=build_subtype,
+    )
+    if semantics is not None:
+        return semantics.phase_type, semantics.phase_intent, semantics.build_subtype
+
+    canonical_phase_type = phase_type_for_intent(phase_intent)
+    if canonical_phase_type:
+        semantics = normalize_phase_semantics(
+            phase_type=canonical_phase_type,
+            phase_intent=phase_intent,
+            build_subtype=build_subtype,
+        )
+        if semantics is not None:
+            warnings.append(
+                f"{phase_id}: canonicalized phase_type from {phase_type!r} to {canonical_phase_type!r} for phase_intent {phase_intent!r}."
+            )
+            return semantics.phase_type, semantics.phase_intent, semantics.build_subtype
+
+    blocking_issues.append(
+        f"{phase_id}: derived invalid phase semantics phase_type {phase_type!r}, phase_intent {phase_intent!r}."
+    )
+    return phase_type, phase_intent, build_subtype
 
 
 def _derive_phase_intents_for_slots(

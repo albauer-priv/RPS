@@ -1772,7 +1772,7 @@ def test_normalize_season_plan_draft_bundle_supports_variable_phase_counts() -> 
     context_phases = []
     intents = [
         ("BASE", "shortened_re_entry"),
-        ("PREPARATION", "general_base"),
+        ("BASE", "general_base"),
         ("BUILD", "durability_build"),
         ("TAPER", "taper_freshening"),
         ("BASE", "shortened_re_entry"),
@@ -1807,6 +1807,50 @@ def test_normalize_season_plan_draft_bundle_supports_variable_phase_counts() -> 
     assert len(normalized["phase_blueprints"]) == 6
     assert normalized["phase_blueprints"][2]["build_subtype"] == "durability_build"
     assert normalized["phase_blueprints"][5]["phase_intent"] == "taper_freshening"
+
+
+def test_normalize_season_plan_draft_bundle_canonicalizes_invalid_deterministic_phase_type() -> None:
+    draft_bundle = {
+        "event_priority": {"primary_a_events": ["A1"]},
+        "macrocycle": {"deload_cadence": "2:1:1"},
+        "phase_blueprints": [
+            {
+                "phase_id": "P02",
+                "iso_week_range": "2026-24--2026-25",
+                "scenario_cadence": "2:1:1",
+            }
+        ],
+    }
+    with guardrail_runtime_context(
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P02",
+                    "iso_week_range": "2026-24--2026-25",
+                    "phase_type": "PREPARATION",
+                    "phase_intent": "general_base",
+                    "build_subtype": None,
+                    "season_phase_role": "general_base",
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2"],
+                    "availability_cap_kj": {"typical": 10000, "max": 11000},
+                    "baseline_load_kj": 8200,
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [],
+                    "progression_trace": {"source": "deterministic"},
+                }
+            ],
+        }
+    ):
+        normalized = normalize_season_plan_draft_bundle(draft_bundle)
+        ok, message = season_bundle_matches_contract(normalized)
+
+    blueprint = normalized["phase_blueprints"][0]
+    assert blueprint["phase_type"] == "BASE"
+    assert blueprint["phase_intent"] == "general_base"
+    assert any("canonicalized phase_type" in warning for warning in blueprint["warnings"])
+    assert ok is True, message
 
 
 def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_contracts() -> None:

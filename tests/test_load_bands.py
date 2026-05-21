@@ -17,6 +17,7 @@ from rps.planning.load_bands import (
     selected_kpi_rate_band_from_selection,
 )
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
+from rps.workspace.phase_intents import validate_phase_semantics
 
 
 def _zone_model(ftp: float | None = 300.0, typical_if: float | None = 0.66) -> dict:
@@ -502,6 +503,49 @@ def test_season_phase_load_context_infers_baseline_from_representative_typical_c
         "season_phase_load_context baseline_load_kj inferred from representative availability typical capacity."
         in context["warnings"]
     )
+
+
+def test_season_phase_load_context_emits_only_canonical_phase_semantics_for_shortened_slots() -> None:
+    context = build_season_phase_load_context(
+        phase_slot_context={
+            "selected_scenario_id": "B",
+            "phase_slots": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "is_shortened": True,
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION", "SHORTENED_MINI_RESET"],
+                    "week_keys": ["2026-21", "2026-22", "2026-23"],
+                },
+                {
+                    "phase_id": "P02",
+                    "iso_week_range": "2026-24--2026-25",
+                    "is_shortened": True,
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["SHORTENED_CONSOLIDATION", "SHORTENED_MINI_RESET"],
+                    "week_keys": ["2026-24", "2026-25"],
+                },
+            ],
+        },
+        target_week=IsoWeek(2026, 21),
+        selected_structure_context={"allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"]},
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 210, "body_mass_kg": 92}}},
+        availability_payload={"data": {"weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5}}},
+        zone_model_payload=_rich_zone_model(300),
+        previous_load_kj=8000,
+    )
+
+    phase_pairs = [(phase["phase_type"], phase["phase_intent"]) for phase in context["phases"]]
+
+    assert phase_pairs[0] == ("BASE", "shortened_re_entry")
+    assert phase_pairs[1] == ("BASE", "general_base")
+    for phase in context["phases"]:
+        assert not validate_phase_semantics(
+            phase_type=phase["phase_type"],
+            phase_intent=phase["phase_intent"],
+            build_subtype=phase.get("build_subtype"),
+        )
 
 
 def test_selected_kpi_rate_band_from_selection_requires_kj_range() -> None:

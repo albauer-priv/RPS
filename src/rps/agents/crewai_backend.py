@@ -80,7 +80,9 @@ from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.phase_intents import (
     PHASE_TAXONOMY_VERSION,
+    normalize_phase_semantics,
     phase_semantic_contract_payload,
+    phase_type_for_intent,
     season_phase_allowed_domains,
     season_phase_forbidden_domains,
     validate_phase_semantics,
@@ -127,6 +129,55 @@ _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning 
 
 JsonMap = dict[str, Any]
 ToolMap = dict[str, Any]
+
+
+def _canonicalize_phase_semantics_for_bundle(
+    *,
+    phase_type: object,
+    phase_intent: object,
+    build_subtype: object | None = None,
+    warnings: list[str] | None = None,
+    warning_prefix: str | None = None,
+) -> tuple[str, str, str | None]:
+    """Return canonical phase semantics for normalized Season/Phase bundles.
+
+    The normalized bundle is Python-owned. When a valid canonical phase intent is
+    paired with the wrong phase type, prefer the canonical type for that intent
+    and record a warning. Unknown or unrecoverable values remain untouched so
+    downstream contract validation can fail closed.
+    """
+
+    raw_build_subtype = str(build_subtype).strip() if isinstance(build_subtype, str) and str(build_subtype).strip() else None
+
+    semantics = normalize_phase_semantics(
+        phase_type=phase_type,
+        phase_intent=phase_intent,
+        build_subtype=build_subtype,
+    )
+    if semantics is not None:
+        return semantics.phase_type, semantics.phase_intent, semantics.build_subtype
+
+    canonical_phase_type = phase_type_for_intent(phase_intent)
+    if not canonical_phase_type:
+        return str(phase_type or ""), str(phase_intent or ""), raw_build_subtype
+
+    semantics = normalize_phase_semantics(
+        phase_type=canonical_phase_type,
+        phase_intent=phase_intent,
+        build_subtype=build_subtype,
+    )
+    if semantics is None:
+        return str(phase_type or ""), str(phase_intent or ""), raw_build_subtype
+
+    if warnings is not None:
+        prefix = f"{warning_prefix}: " if warning_prefix else ""
+        warning = (
+            f"{prefix}canonicalized phase_type from {phase_type!r} to {canonical_phase_type!r} "
+            f"for phase_intent {phase_intent!r}."
+        )
+        if warning not in warnings:
+            warnings.append(warning)
+    return semantics.phase_type, semantics.phase_intent, semantics.build_subtype
 
 
 def _as_map(value: object) -> JsonMap:
@@ -517,6 +568,13 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
         recommended_corridor = _as_map(deterministic.get("recommended_phase_corridor"))
         availability_cap = _as_map(deterministic.get("availability_cap_kj"))
         warnings = [str(item) for item in _as_list(blueprint.get("warnings")) if str(item).strip()]
+        phase_type, phase_intent, build_subtype = _canonicalize_phase_semantics_for_bundle(
+            phase_type=phase_type,
+            phase_intent=phase_intent,
+            build_subtype=build_subtype,
+            warnings=warnings,
+            warning_prefix=f"{phase_id or iso_week_range or 'phase blueprint'}",
+        )
         for error in validate_phase_semantics(
             phase_type=phase_type,
             phase_intent=phase_intent,
@@ -598,9 +656,14 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     normalized_bundle = dict(planning_bundle)
     normalized_bundle["phase_id"] = phase_execution_context.get("phase_id", planning_bundle.get("phase_id"))
     normalized_bundle["phase_range"] = phase_execution_context.get("phase_iso_week_range", planning_bundle.get("phase_range"))
-    normalized_bundle["phase_type"] = phase_execution_context.get("phase_type", planning_bundle.get("phase_type"))
-    normalized_bundle["phase_intent"] = phase_execution_context.get("phase_intent", planning_bundle.get("phase_intent"))
-    normalized_bundle["build_subtype"] = phase_execution_context.get("build_subtype", planning_bundle.get("build_subtype"))
+    phase_type, phase_intent, build_subtype = _canonicalize_phase_semantics_for_bundle(
+        phase_type=phase_execution_context.get("phase_type", planning_bundle.get("phase_type")),
+        phase_intent=phase_execution_context.get("phase_intent", planning_bundle.get("phase_intent")),
+        build_subtype=phase_execution_context.get("build_subtype", planning_bundle.get("build_subtype")),
+    )
+    normalized_bundle["phase_type"] = phase_type
+    normalized_bundle["phase_intent"] = phase_intent
+    normalized_bundle["build_subtype"] = build_subtype
     week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
     s5_band_by_week = {
         str(_as_map(entry).get("week") or ""): _as_map(_as_map(entry).get("band"))
