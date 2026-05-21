@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added a dual bundled schema publication path for structured outputs: the bundler now emits canonical bundled schemas for persisted validation and `bundled_output` schemas for OpenAI/CrewAI structured output.
+
+### Changed
+- Changed generated schema-backed artifact models to be dual-schema-aware, so `model_json_schema()` now exposes the LLM-safe bundled output schema while post-parse validation still runs against the canonical bundled schema.
+
 ## [0.16.0] - 2026-05-21
 
 ### Added

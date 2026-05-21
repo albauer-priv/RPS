@@ -62,6 +62,7 @@ This folder contains the ADR log for RPS.
 - ADR-051: Code-Owned Artifact Metadata and Trace References
 - ADR-052: Protocol-Driven Week Workout Generation
 - ADR-053: Canonical Phase Taxonomy and Build Subtypes
+- ADR-054: Dual Bundled Structured-Output Schemas
 
 ## Process (Short)
 

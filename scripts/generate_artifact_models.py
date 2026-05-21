@@ -104,6 +104,8 @@ def generate() -> str:
                 f'    """Schema-backed model for `{schema_file}`."""',
                 "",
                 f'    __schema_file__ = "{schema_file}"',
+                f'    __canonical_schema_file__ = "{schema_file}"',
+                f'    __output_schema_file__ = "{schema_file}"',
                 "",
                 "",
             ]

@@ -1,0 +1,952 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "phase_feed_forward.schema.json",
+  "title": "PhaseFeedForward",
+  "type": "object",
+  "$defs": {
+    "delta_band_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week",
+        "band",
+        "rationale",
+        "notes"
+      ],
+      "properties": {
+        "week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "band": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "LoadBand",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "min",
+            "max",
+            "notes"
+          ],
+          "properties": {
+            "min": {
+              "type": "number",
+              "minimum": 0
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "phase_feed_forward_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "body_metadata",
+        "reason_context",
+        "delta_load_guardrails",
+        "temporary_non_negotiables",
+        "week_planner_operating_rules",
+        "explicit_forbidden_content",
+        "self_check",
+        "temporary_semantic_overrides"
+      ],
+      "properties": {
+        "body_metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "applies_to_weeks",
+            "valid_until",
+            "change_type",
+            "derived_from",
+            "upstream_triggers"
+          ],
+          "properties": {
+            "applies_to_weeks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "IsoWeek",
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              }
+            },
+            "valid_until": {
+              "type": "string",
+              "format": "date"
+            },
+            "change_type": {
+              "type": "string",
+              "enum": [
+                "NEW",
+                "ADJUSTED",
+                "NONE"
+              ]
+            },
+            "derived_from": {
+              "type": "string",
+              "minLength": 1
+            },
+            "upstream_triggers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "reason_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trigger_summary",
+            "observed_risk_deviation",
+            "intent_of_adjustment"
+          ],
+          "properties": {
+            "trigger_summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "observed_risk_deviation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "intent_of_adjustment": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "delta_load_guardrails": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adjusted_weekly_kj_bands"
+          ],
+          "properties": {
+            "adjusted_weekly_kj_bands": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "week",
+                  "band",
+                  "rationale",
+                  "notes"
+                ],
+                "properties": {
+                  "week": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "IsoWeek",
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}$"
+                  },
+                  "band": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "LoadBand",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "min",
+                      "max",
+                      "notes"
+                    ],
+                    "properties": {
+                      "min": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "max": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "temporary_semantic_overrides": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "intensity_domain": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "newly_forbidden": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                },
+                "newly_allowed": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "newly_forbidden",
+                "newly_allowed"
+              ]
+            },
+            "load_modality": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "newly_forbidden": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "K3"
+                    ]
+                  }
+                },
+                "newly_allowed": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "K3"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "newly_forbidden",
+                "newly_allowed"
+              ]
+            },
+            "quality_density_override": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_quality_days_per_week",
+                "additional_forbidden_patterns"
+              ],
+              "properties": {
+                "max_quality_days_per_week": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "additional_forbidden_patterns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "intensity_domain",
+            "load_modality",
+            "quality_density_override"
+          ]
+        },
+        "temporary_non_negotiables": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recovery_protection_changes",
+            "anchor_protection_changes",
+            "explicit_expiry_condition"
+          ],
+          "properties": {
+            "recovery_protection_changes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "anchor_protection_changes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "explicit_expiry_condition": {
+              "type": "string"
+            }
+          }
+        },
+        "week_planner_operating_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "explicit_forbidden_content": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "workouts or intervals",
+              "day-by-day schedules",
+              "numeric progression rules",
+              "instructions like +10min Z2"
+            ]
+          }
+        },
+        "self_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "applies_to_weeks_specified",
+            "valid_until_defined",
+            "only_deltas_vs_baseline_included",
+            "no_week_content_present"
+          ],
+          "properties": {
+            "applies_to_weeks_specified": {
+              "const": true,
+              "type": "boolean"
+            },
+            "valid_until_defined": {
+              "const": true,
+              "type": "boolean"
+            },
+            "only_deltas_vs_baseline_included": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_week_content_present": {
+              "const": true,
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ArtefactMeta",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "trace_upstream",
+        "scope",
+        "iso_week",
+        "iso_week_range",
+        "temporal_scope",
+        "trace_data",
+        "trace_events",
+        "data_confidence",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "schema_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "Binding",
+            "Informational",
+            "Derived",
+            "Factual"
+          ]
+        },
+        "owner_agent": {
+          "type": "string",
+          "enum": [
+            "User",
+            "Data-Pipeline",
+            "Season-Scenario-Agent",
+            "Season-Planner",
+            "Season-Artifact-Writer",
+            "Phase-Architect",
+            "Phase-Artifact-Writer",
+            "Week-Planner",
+            "Week-Artifact-Writer",
+            "Workout-Builder",
+            "Performance-Analyst",
+            "Report-Artifact-Writer",
+            "Policy-Owner"
+          ]
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Shared",
+            "Season",
+            "Phase",
+            "Week",
+            "Context"
+          ]
+        },
+        "iso_week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "iso_week_range": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeekRange",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}--\\d{4}-\\d{2}(?:\\+\\d+)?$"
+        },
+        "temporal_scope": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "DateRange",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "trace_upstream": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_data": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_events": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "body_metadata",
+        "reason_context",
+        "delta_load_guardrails",
+        "temporary_non_negotiables",
+        "week_planner_operating_rules",
+        "explicit_forbidden_content",
+        "self_check",
+        "temporary_semantic_overrides"
+      ],
+      "properties": {
+        "body_metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "applies_to_weeks",
+            "valid_until",
+            "change_type",
+            "derived_from",
+            "upstream_triggers"
+          ],
+          "properties": {
+            "applies_to_weeks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "IsoWeek",
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              }
+            },
+            "valid_until": {
+              "type": "string",
+              "format": "date"
+            },
+            "change_type": {
+              "type": "string",
+              "enum": [
+                "NEW",
+                "ADJUSTED",
+                "NONE"
+              ]
+            },
+            "derived_from": {
+              "type": "string",
+              "minLength": 1
+            },
+            "upstream_triggers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "reason_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trigger_summary",
+            "observed_risk_deviation",
+            "intent_of_adjustment"
+          ],
+          "properties": {
+            "trigger_summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "observed_risk_deviation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "intent_of_adjustment": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "delta_load_guardrails": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adjusted_weekly_kj_bands"
+          ],
+          "properties": {
+            "adjusted_weekly_kj_bands": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "week",
+                  "band",
+                  "rationale",
+                  "notes"
+                ],
+                "properties": {
+                  "week": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "IsoWeek",
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}$"
+                  },
+                  "band": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "LoadBand",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "min",
+                      "max",
+                      "notes"
+                    ],
+                    "properties": {
+                      "min": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "max": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "temporary_semantic_overrides": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "intensity_domain": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "newly_forbidden": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                },
+                "newly_allowed": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "newly_forbidden",
+                "newly_allowed"
+              ]
+            },
+            "load_modality": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "newly_forbidden": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "K3"
+                    ]
+                  }
+                },
+                "newly_allowed": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "K3"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "newly_forbidden",
+                "newly_allowed"
+              ]
+            },
+            "quality_density_override": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_quality_days_per_week",
+                "additional_forbidden_patterns"
+              ],
+              "properties": {
+                "max_quality_days_per_week": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "additional_forbidden_patterns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "intensity_domain",
+            "load_modality",
+            "quality_density_override"
+          ]
+        },
+        "temporary_non_negotiables": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recovery_protection_changes",
+            "anchor_protection_changes",
+            "explicit_expiry_condition"
+          ],
+          "properties": {
+            "recovery_protection_changes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "anchor_protection_changes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "explicit_expiry_condition": {
+              "type": "string"
+            }
+          }
+        },
+        "week_planner_operating_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "explicit_forbidden_content": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "workouts or intervals",
+              "day-by-day schedules",
+              "numeric progression rules",
+              "instructions like +10min Z2"
+            ]
+          }
+        },
+        "self_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "applies_to_weeks_specified",
+            "valid_until_defined",
+            "only_deltas_vs_baseline_included",
+            "no_week_content_present"
+          ],
+          "properties": {
+            "applies_to_weeks_specified": {
+              "const": true,
+              "type": "boolean"
+            },
+            "valid_until_defined": {
+              "const": true,
+              "type": "boolean"
+            },
+            "only_deltas_vs_baseline_included": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_week_content_present": {
+              "const": true,
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

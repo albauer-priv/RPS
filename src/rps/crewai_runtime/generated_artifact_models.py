@@ -12,156 +12,208 @@ class ActivitiesActualModel(JsonSchemaArtifactModel):
     """Schema-backed model for `activities_actual.schema.json`."""
 
     __schema_file__ = "activities_actual.schema.json"
+    __canonical_schema_file__ = "activities_actual.schema.json"
+    __output_schema_file__ = "activities_actual.schema.json"
 
 
 class ActivitiesTrendModel(JsonSchemaArtifactModel):
     """Schema-backed model for `activities_trend.schema.json`."""
 
     __schema_file__ = "activities_trend.schema.json"
+    __canonical_schema_file__ = "activities_trend.schema.json"
+    __output_schema_file__ = "activities_trend.schema.json"
 
 
 class AdvisoryMemoryInterfaceModel(JsonSchemaArtifactModel):
     """Schema-backed model for `advisory_memory.schema.json`."""
 
     __schema_file__ = "advisory_memory.schema.json"
+    __canonical_schema_file__ = "advisory_memory.schema.json"
+    __output_schema_file__ = "advisory_memory.schema.json"
 
 
 class ArtefactEnvelopeModel(JsonSchemaArtifactModel):
     """Schema-backed model for `artefact_envelope.schema.json`."""
 
     __schema_file__ = "artefact_envelope.schema.json"
+    __canonical_schema_file__ = "artefact_envelope.schema.json"
+    __output_schema_file__ = "artefact_envelope.schema.json"
 
 
 class AthleteProfileModel(JsonSchemaArtifactModel):
     """Schema-backed model for `athlete_profile.schema.json`."""
 
     __schema_file__ = "athlete_profile.schema.json"
+    __canonical_schema_file__ = "athlete_profile.schema.json"
+    __output_schema_file__ = "athlete_profile.schema.json"
 
 
 class AthleteStateSnapshotModel(JsonSchemaArtifactModel):
     """Schema-backed model for `athlete_state_snapshot.schema.json`."""
 
     __schema_file__ = "athlete_state_snapshot.schema.json"
+    __canonical_schema_file__ = "athlete_state_snapshot.schema.json"
+    __output_schema_file__ = "athlete_state_snapshot.schema.json"
 
 
 class AvailabilityModel(JsonSchemaArtifactModel):
     """Schema-backed model for `availability.schema.json`."""
 
     __schema_file__ = "availability.schema.json"
+    __canonical_schema_file__ = "availability.schema.json"
+    __output_schema_file__ = "availability.schema.json"
 
 
 class CurrentWeekStatusSnapshotModel(JsonSchemaArtifactModel):
     """Schema-backed model for `current_week_status_snapshot.schema.json`."""
 
     __schema_file__ = "current_week_status_snapshot.schema.json"
+    __canonical_schema_file__ = "current_week_status_snapshot.schema.json"
+    __output_schema_file__ = "current_week_status_snapshot.schema.json"
 
 
 class DESAnalysisReportModel(JsonSchemaArtifactModel):
     """Schema-backed model for `des_analysis_report.schema.json`."""
 
     __schema_file__ = "des_analysis_report.schema.json"
+    __canonical_schema_file__ = "des_analysis_report.schema.json"
+    __output_schema_file__ = "des_analysis_report.schema.json"
 
 
 class HistoricalBaselineModel(JsonSchemaArtifactModel):
     """Schema-backed model for `historical_baseline.schema.json`."""
 
     __schema_file__ = "historical_baseline.schema.json"
+    __canonical_schema_file__ = "historical_baseline.schema.json"
+    __output_schema_file__ = "historical_baseline.schema.json"
 
 
 class KPIProfileModel(JsonSchemaArtifactModel):
     """Schema-backed model for `kpi_profile.schema.json`."""
 
     __schema_file__ = "kpi_profile.schema.json"
+    __canonical_schema_file__ = "kpi_profile.schema.json"
+    __output_schema_file__ = "kpi_profile.schema.json"
 
 
 class LogisticsModel(JsonSchemaArtifactModel):
     """Schema-backed model for `logistics.schema.json`."""
 
     __schema_file__ = "logistics.schema.json"
+    __canonical_schema_file__ = "logistics.schema.json"
+    __output_schema_file__ = "logistics.schema.json"
 
 
 class PhaseFeedForwardModel(JsonSchemaArtifactModel):
     """Schema-backed model for `phase_feed_forward.schema.json`."""
 
     __schema_file__ = "phase_feed_forward.schema.json"
+    __canonical_schema_file__ = "phase_feed_forward.schema.json"
+    __output_schema_file__ = "phase_feed_forward.schema.json"
 
 
 class PhaseGuardrailsModel(JsonSchemaArtifactModel):
     """Schema-backed model for `phase_guardrails.schema.json`."""
 
     __schema_file__ = "phase_guardrails.schema.json"
+    __canonical_schema_file__ = "phase_guardrails.schema.json"
+    __output_schema_file__ = "phase_guardrails.schema.json"
 
 
 class PhasePreviewModel(JsonSchemaArtifactModel):
     """Schema-backed model for `phase_preview.schema.json`."""
 
     __schema_file__ = "phase_preview.schema.json"
+    __canonical_schema_file__ = "phase_preview.schema.json"
+    __output_schema_file__ = "phase_preview.schema.json"
 
 
 class PhaseStructureModel(JsonSchemaArtifactModel):
     """Schema-backed model for `phase_structure.schema.json`."""
 
     __schema_file__ = "phase_structure.schema.json"
+    __canonical_schema_file__ = "phase_structure.schema.json"
+    __output_schema_file__ = "phase_structure.schema.json"
 
 
 class PlanningContextSnapshotModel(JsonSchemaArtifactModel):
     """Schema-backed model for `planning_context_snapshot.schema.json`."""
 
     __schema_file__ = "planning_context_snapshot.schema.json"
+    __canonical_schema_file__ = "planning_context_snapshot.schema.json"
+    __output_schema_file__ = "planning_context_snapshot.schema.json"
 
 
 class PlanningEventsModel(JsonSchemaArtifactModel):
     """Schema-backed model for `planning_events.schema.json`."""
 
     __schema_file__ = "planning_events.schema.json"
+    __canonical_schema_file__ = "planning_events.schema.json"
+    __output_schema_file__ = "planning_events.schema.json"
 
 
 class SeasonPhaseFeedForwardModel(JsonSchemaArtifactModel):
     """Schema-backed model for `season_phase_feed_forward.schema.json`."""
 
     __schema_file__ = "season_phase_feed_forward.schema.json"
+    __canonical_schema_file__ = "season_phase_feed_forward.schema.json"
+    __output_schema_file__ = "season_phase_feed_forward.schema.json"
 
 
 class SeasonPlanModel(JsonSchemaArtifactModel):
     """Schema-backed model for `season_plan.schema.json`."""
 
     __schema_file__ = "season_plan.schema.json"
+    __canonical_schema_file__ = "season_plan.schema.json"
+    __output_schema_file__ = "season_plan.schema.json"
 
 
 class SeasonScenarioSelectionModel(JsonSchemaArtifactModel):
     """Schema-backed model for `season_scenario_selection.schema.json`."""
 
     __schema_file__ = "season_scenario_selection.schema.json"
+    __canonical_schema_file__ = "season_scenario_selection.schema.json"
+    __output_schema_file__ = "season_scenario_selection.schema.json"
 
 
 class SeasonScenariosModel(JsonSchemaArtifactModel):
     """Schema-backed model for `season_scenarios.schema.json`."""
 
     __schema_file__ = "season_scenarios.schema.json"
+    __canonical_schema_file__ = "season_scenarios.schema.json"
+    __output_schema_file__ = "season_scenarios.schema.json"
 
 
 class WeekPlanModel(JsonSchemaArtifactModel):
     """Schema-backed model for `week_plan.schema.json`."""
 
     __schema_file__ = "week_plan.schema.json"
+    __canonical_schema_file__ = "week_plan.schema.json"
+    __output_schema_file__ = "week_plan.schema.json"
 
 
 class WeekWorkoutSelectionAuditModel(JsonSchemaArtifactModel):
     """Schema-backed model for `week_workout_selection_audit.schema.json`."""
 
     __schema_file__ = "week_workout_selection_audit.schema.json"
+    __canonical_schema_file__ = "week_workout_selection_audit.schema.json"
+    __output_schema_file__ = "week_workout_selection_audit.schema.json"
 
 
 class WellnessModel(JsonSchemaArtifactModel):
     """Schema-backed model for `wellness.schema.json`."""
 
     __schema_file__ = "wellness.schema.json"
+    __canonical_schema_file__ = "wellness.schema.json"
+    __output_schema_file__ = "wellness.schema.json"
 
 
 class ZoneModel(JsonSchemaArtifactModel):
     """Schema-backed model for `zone_model.schema.json`."""
 
     __schema_file__ = "zone_model.schema.json"
+    __canonical_schema_file__ = "zone_model.schema.json"
+    __output_schema_file__ = "zone_model.schema.json"
 
 
 ARTIFACT_MODEL_BY_SCHEMA_FILE: dict[str, type[JsonSchemaArtifactModel]] = {

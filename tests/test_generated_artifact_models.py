@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from rps.crewai_runtime.generated_artifact_models import (
+    SeasonPlanModel,
     SeasonScenariosModel,
     artifact_model_for_schema_file,
     artifact_model_for_task_name,
@@ -11,10 +12,35 @@ from rps.crewai_runtime.generated_artifact_models import (
 from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 
 
+def _schema_contains_key(schema: object, target: str) -> bool:
+    if isinstance(schema, dict):
+        if target in schema:
+            return True
+        return any(_schema_contains_key(value, target) for value in schema.values())
+    if isinstance(schema, list):
+        return any(_schema_contains_key(item, target) for item in schema)
+    return False
+
+
 def test_generated_artifact_model_registry_resolves_concrete_task_model() -> None:
     assert artifact_model_for_task_name("season_scenarios") is SeasonScenariosModel
     assert artifact_model_for_schema_file("season_scenarios.schema.json") is SeasonScenariosModel
     assert SeasonScenariosModel.model_json_schema()["title"] == "SeasonScenarios"
+    assert SeasonScenariosModel.__canonical_schema_file__ == "season_scenarios.schema.json"
+    assert SeasonScenariosModel.__output_schema_file__ == "season_scenarios.schema.json"
+
+
+def test_generated_artifact_model_uses_output_schema_but_keeps_canonical_schema() -> None:
+    canonical = SeasonPlanModel.json_schema_contract()
+    output = SeasonPlanModel.output_json_schema_contract()
+
+    assert _schema_contains_key(canonical, "if")
+    assert _schema_contains_key(canonical, "then")
+    assert _schema_contains_key(canonical, "else")
+    assert not _schema_contains_key(output, "if")
+    assert not _schema_contains_key(output, "then")
+    assert not _schema_contains_key(output, "else")
+    assert SeasonPlanModel.model_json_schema() == output
 
 
 def test_generated_artifact_model_rejects_schema_invalid_payload() -> None:

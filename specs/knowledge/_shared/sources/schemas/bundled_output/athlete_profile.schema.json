@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "athlete_profile.schema.json",
+  "title": "AthleteProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "scope",
+        "data_confidence",
+        "trace_upstream",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "const": "ATHLETE_PROFILE"
+        },
+        "schema_id": {
+          "type": "string",
+          "const": "AthleteProfileInterface"
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_agent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_confidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace_upstream": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "objectives",
+        "constraints",
+        "strengths",
+        "limitations",
+        "risk_flags",
+        "success_criteria",
+        "measurement_assumptions"
+      ],
+      "properties": {
+        "profile": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "athlete_id",
+            "year",
+            "athlete_name",
+            "athlete_story",
+            "location_time_zone",
+            "primary_disciplines",
+            "training_age_years",
+            "age",
+            "body_mass_kg",
+            "sex",
+            "age_group",
+            "endurance_anchor_w",
+            "ambition_if_range"
+          ],
+          "properties": {
+            "athlete_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1900
+            },
+            "athlete_name": {
+              "type": "string"
+            },
+            "athlete_story": {
+              "type": "string"
+            },
+            "location_time_zone": {
+              "type": "string"
+            },
+            "primary_disciplines": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "training_age_years": {
+              "type": "number",
+              "minimum": 0
+            },
+            "age": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "body_mass_kg": {
+              "type": "number",
+              "minimum": 0
+            },
+            "sex": {
+              "type": "string"
+            },
+            "age_group": {
+              "type": "string"
+            },
+            "endurance_anchor_w": {
+              "type": "number",
+              "minimum": 0
+            },
+            "ambition_if_range": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        "objectives": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "primary",
+            "secondary",
+            "priority_order"
+          ],
+          "properties": {
+            "primary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "secondary": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "priority_order": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "strengths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "risk_flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "success_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "measurement_assumptions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

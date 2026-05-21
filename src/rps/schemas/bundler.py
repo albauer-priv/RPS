@@ -17,6 +17,9 @@ class SchemaBundler:
     _bundle_cache: dict[str, dict[str, Any]] = field(
         default_factory=dict, init=False, repr=False, compare=False
     )
+    _output_bundle_cache: dict[str, dict[str, Any]] = field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
 
     def load_raw(self, schema_file: str) -> dict[str, Any]:
         """Load a schema file from disk without resolving references."""
@@ -52,6 +55,18 @@ class SchemaBundler:
         self._bundle_cache[schema_file] = bundled_schema
         return bundled_schema
 
+    def bundle_output(self, schema_file: str) -> dict[str, Any]:
+        """Return an LLM-safe structured-output schema derived from the canonical bundle."""
+
+        cached = self._output_bundle_cache.get(schema_file)
+        if cached is not None:
+            return cached
+
+        bundled = self.bundle(schema_file)
+        output_schema = self._transform_for_output_schema(bundled)
+        self._output_bundle_cache[schema_file] = output_schema
+        return output_schema
+
     def _strip_schema_ids(self, schema: Any, *, keep_root_id: bool) -> Any:
         """Remove nested $id values to avoid duplicate canonical URIs in bundled schemas."""
         if isinstance(schema, dict):
@@ -64,3 +79,28 @@ class SchemaBundler:
         if isinstance(schema, list):
             return [self._strip_schema_ids(item, keep_root_id=False) for item in schema]
         return schema
+
+    def _transform_for_output_schema(self, schema: Any) -> Any:
+        """Derive an OpenAI/CrewAI structured-output-safe schema from a bundled canonical schema."""
+
+        if isinstance(schema, list):
+            transformed_items = [self._transform_for_output_schema(item) for item in schema]
+            return [item for item in transformed_items if item not in ({}, [])]
+
+        if not isinstance(schema, dict):
+            return schema
+
+        result: dict[str, Any] = {}
+        transformed_all_of: list[Any] = []
+        for key, value in schema.items():
+            if key in {"if", "then", "else"}:
+                continue
+            if key == "allOf":
+                if isinstance(value, list):
+                    transformed_all_of = self._transform_for_output_schema(value)
+                continue
+            result[key] = self._transform_for_output_schema(value)
+
+        if transformed_all_of:
+            result["allOf"] = transformed_all_of
+        return result

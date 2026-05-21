@@ -1,0 +1,952 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "phase_preview.schema.json",
+  "title": "PhasePreview",
+  "type": "object",
+  "$defs": {
+    "weekday": {
+      "type": "string",
+      "enum": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ]
+    },
+    "agenda_day": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "day_of_week",
+        "day_role",
+        "intensity_domain",
+        "load_modality",
+        "notes"
+      ],
+      "properties": {
+        "day_of_week": {
+          "type": "string",
+          "enum": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        "day_role": {
+          "type": "string",
+          "enum": [
+            "REST",
+            "RECOVERY",
+            "ENDURANCE",
+            "QUALITY",
+            "OPTIONAL",
+            "FLEX",
+            "TRAVEL",
+            "EVENT",
+            "OFF_BIKE"
+          ]
+        },
+        "intensity_domain": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "RECOVERY",
+            "ENDURANCE",
+            "TEMPO",
+            "SWEET_SPOT",
+            "THRESHOLD",
+            "VO2MAX"
+          ]
+        },
+        "load_modality": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "K3"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "week_agenda": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week",
+        "days"
+      ],
+      "properties": {
+        "week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "days": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "day_of_week",
+              "day_role",
+              "intensity_domain",
+              "load_modality",
+              "notes"
+            ],
+            "properties": {
+              "day_of_week": {
+                "type": "string",
+                "enum": [
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat",
+                  "Sun"
+                ]
+              },
+              "day_role": {
+                "type": "string",
+                "enum": [
+                  "REST",
+                  "RECOVERY",
+                  "ENDURANCE",
+                  "QUALITY",
+                  "OPTIONAL",
+                  "FLEX",
+                  "TRAVEL",
+                  "EVENT",
+                  "OFF_BIKE"
+                ]
+              },
+              "intensity_domain": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "RECOVERY",
+                  "ENDURANCE",
+                  "TEMPO",
+                  "SWEET_SPOT",
+                  "THRESHOLD",
+                  "VO2MAX"
+                ]
+              },
+              "load_modality": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "K3"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "phase_preview_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase_intent_summary",
+        "feel_overview",
+        "weekly_agenda_preview",
+        "week_to_week_narrative",
+        "deviation_rules",
+        "traceability"
+      ],
+      "properties": {
+        "phase_intent_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_intent",
+            "phase_type",
+            "phase_taxonomy_version",
+            "build_subtype",
+            "primary_objective",
+            "non_negotiables",
+            "key_risks_warnings"
+          ],
+          "properties": {
+            "phase_intent": {
+              "type": "string",
+              "enum": [
+                "transition_recovery",
+                "preparation_re_entry",
+                "shortened_re_entry",
+                "general_base",
+                "aerobic_base",
+                "strength_endurance_base",
+                "sweet_spot_base",
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                "peak_sharpening",
+                "taper_freshening",
+                "race_execution"
+              ]
+            },
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
+            },
+            "phase_type": {
+              "type": "string",
+              "enum": [
+                "TRANSITION",
+                "PREPARATION",
+                "BASE",
+                "BUILD",
+                "PEAK",
+                "TAPER",
+                "RACE"
+              ]
+            },
+            "build_subtype": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                null
+              ]
+            },
+            "primary_objective": {
+              "type": "string",
+              "minLength": 1
+            },
+            "non_negotiables": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "key_risks_warnings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "feel_overview": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dominant_theme",
+            "intensity_handling_conceptual",
+            "recovery_protection_conceptual"
+          ],
+          "properties": {
+            "dominant_theme": {
+              "type": "string",
+              "minLength": 1
+            },
+            "intensity_handling_conceptual": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recovery_protection_conceptual": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "weekly_agenda_preview": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "week",
+              "days"
+            ],
+            "properties": {
+              "week": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "IsoWeek",
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              },
+              "days": {
+                "type": "array",
+                "minItems": 7,
+                "maxItems": 7,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "day_of_week",
+                    "day_role",
+                    "intensity_domain",
+                    "load_modality",
+                    "notes"
+                  ],
+                  "properties": {
+                    "day_of_week": {
+                      "type": "string",
+                      "enum": [
+                        "Mon",
+                        "Tue",
+                        "Wed",
+                        "Thu",
+                        "Fri",
+                        "Sat",
+                        "Sun"
+                      ]
+                    },
+                    "day_role": {
+                      "type": "string",
+                      "enum": [
+                        "REST",
+                        "RECOVERY",
+                        "ENDURANCE",
+                        "QUALITY",
+                        "OPTIONAL",
+                        "FLEX",
+                        "TRAVEL",
+                        "EVENT",
+                        "OFF_BIKE"
+                      ]
+                    },
+                    "intensity_domain": {
+                      "type": "string",
+                      "enum": [
+                        "NONE",
+                        "RECOVERY",
+                        "ENDURANCE",
+                        "TEMPO",
+                        "SWEET_SPOT",
+                        "THRESHOLD",
+                        "VO2MAX"
+                      ]
+                    },
+                    "load_modality": {
+                      "type": "string",
+                      "enum": [
+                        "NONE",
+                        "K3"
+                      ]
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "week_to_week_narrative": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "direction",
+            "what_will_not_change",
+            "what_is_flexible"
+          ],
+          "properties": {
+            "direction": {
+              "type": "string",
+              "minLength": 1
+            },
+            "what_will_not_change": {
+              "type": "string",
+              "minLength": 1
+            },
+            "what_is_flexible": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "deviation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "traceability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "derived_from",
+            "conflict_resolution"
+          ],
+          "properties": {
+            "derived_from": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "conflict_resolution": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ArtefactMeta",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "trace_upstream",
+        "scope",
+        "iso_week",
+        "iso_week_range",
+        "temporal_scope",
+        "trace_data",
+        "trace_events",
+        "data_confidence",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "schema_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "Binding",
+            "Informational",
+            "Derived",
+            "Factual"
+          ]
+        },
+        "owner_agent": {
+          "type": "string",
+          "enum": [
+            "User",
+            "Data-Pipeline",
+            "Season-Scenario-Agent",
+            "Season-Planner",
+            "Season-Artifact-Writer",
+            "Phase-Architect",
+            "Phase-Artifact-Writer",
+            "Week-Planner",
+            "Week-Artifact-Writer",
+            "Workout-Builder",
+            "Performance-Analyst",
+            "Report-Artifact-Writer",
+            "Policy-Owner"
+          ]
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Shared",
+            "Season",
+            "Phase",
+            "Week",
+            "Context"
+          ]
+        },
+        "iso_week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "iso_week_range": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeekRange",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}--\\d{4}-\\d{2}(?:\\+\\d+)?$"
+        },
+        "temporal_scope": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "DateRange",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "trace_upstream": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_data": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_events": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase_intent_summary",
+        "feel_overview",
+        "weekly_agenda_preview",
+        "week_to_week_narrative",
+        "deviation_rules",
+        "traceability"
+      ],
+      "properties": {
+        "phase_intent_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_intent",
+            "phase_type",
+            "phase_taxonomy_version",
+            "build_subtype",
+            "primary_objective",
+            "non_negotiables",
+            "key_risks_warnings"
+          ],
+          "properties": {
+            "phase_intent": {
+              "type": "string",
+              "enum": [
+                "transition_recovery",
+                "preparation_re_entry",
+                "shortened_re_entry",
+                "general_base",
+                "aerobic_base",
+                "strength_endurance_base",
+                "sweet_spot_base",
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                "peak_sharpening",
+                "taper_freshening",
+                "race_execution"
+              ]
+            },
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
+            },
+            "phase_type": {
+              "type": "string",
+              "enum": [
+                "TRANSITION",
+                "PREPARATION",
+                "BASE",
+                "BUILD",
+                "PEAK",
+                "TAPER",
+                "RACE"
+              ]
+            },
+            "build_subtype": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                null
+              ]
+            },
+            "primary_objective": {
+              "type": "string",
+              "minLength": 1
+            },
+            "non_negotiables": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "key_risks_warnings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "feel_overview": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dominant_theme",
+            "intensity_handling_conceptual",
+            "recovery_protection_conceptual"
+          ],
+          "properties": {
+            "dominant_theme": {
+              "type": "string",
+              "minLength": 1
+            },
+            "intensity_handling_conceptual": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recovery_protection_conceptual": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "weekly_agenda_preview": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "week",
+              "days"
+            ],
+            "properties": {
+              "week": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "IsoWeek",
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              },
+              "days": {
+                "type": "array",
+                "minItems": 7,
+                "maxItems": 7,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "day_of_week",
+                    "day_role",
+                    "intensity_domain",
+                    "load_modality",
+                    "notes"
+                  ],
+                  "properties": {
+                    "day_of_week": {
+                      "type": "string",
+                      "enum": [
+                        "Mon",
+                        "Tue",
+                        "Wed",
+                        "Thu",
+                        "Fri",
+                        "Sat",
+                        "Sun"
+                      ]
+                    },
+                    "day_role": {
+                      "type": "string",
+                      "enum": [
+                        "REST",
+                        "RECOVERY",
+                        "ENDURANCE",
+                        "QUALITY",
+                        "OPTIONAL",
+                        "FLEX",
+                        "TRAVEL",
+                        "EVENT",
+                        "OFF_BIKE"
+                      ]
+                    },
+                    "intensity_domain": {
+                      "type": "string",
+                      "enum": [
+                        "NONE",
+                        "RECOVERY",
+                        "ENDURANCE",
+                        "TEMPO",
+                        "SWEET_SPOT",
+                        "THRESHOLD",
+                        "VO2MAX"
+                      ]
+                    },
+                    "load_modality": {
+                      "type": "string",
+                      "enum": [
+                        "NONE",
+                        "K3"
+                      ]
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "week_to_week_narrative": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "direction",
+            "what_will_not_change",
+            "what_is_flexible"
+          ],
+          "properties": {
+            "direction": {
+              "type": "string",
+              "minLength": 1
+            },
+            "what_will_not_change": {
+              "type": "string",
+              "minLength": 1
+            },
+            "what_is_flexible": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "deviation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "traceability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "derived_from",
+            "conflict_resolution"
+          ],
+          "properties": {
+            "derived_from": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "conflict_resolution": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

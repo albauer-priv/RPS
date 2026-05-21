@@ -1,0 +1,1443 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "phase_structure.schema.json",
+  "title": "PhaseStructure",
+  "type": "object",
+  "$defs": {
+    "weekday": {
+      "type": "string",
+      "enum": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ]
+    },
+    "weekly_band_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week",
+        "band"
+      ],
+      "properties": {
+        "week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "band": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "LoadBand",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "min",
+            "max",
+            "notes"
+          ],
+          "properties": {
+            "min": {
+              "type": "number",
+              "minimum": 0
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "phase_structure_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "upstream_intent",
+        "load_ranges",
+        "execution_principles",
+        "structural_phase_elements",
+        "week_skeleton_logic",
+        "adaptation_rules",
+        "relationships",
+        "self_check"
+      ],
+      "properties": {
+        "upstream_intent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_intent",
+            "phase_type",
+            "phase_taxonomy_version",
+            "build_subtype",
+            "primary_objective",
+            "phase_status",
+            "non_negotiables",
+            "constraints",
+            "key_risks_warnings"
+          ],
+          "properties": {
+            "phase_intent": {
+              "type": "string",
+              "enum": [
+                "transition_recovery",
+                "preparation_re_entry",
+                "shortened_re_entry",
+                "general_base",
+                "aerobic_base",
+                "strength_endurance_base",
+                "sweet_spot_base",
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                "peak_sharpening",
+                "taper_freshening",
+                "race_execution"
+              ]
+            },
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
+            },
+            "phase_type": {
+              "type": "string",
+              "enum": [
+                "TRANSITION",
+                "PREPARATION",
+                "BASE",
+                "BUILD",
+                "PEAK",
+                "TAPER",
+                "RACE"
+              ]
+            },
+            "build_subtype": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                null
+              ]
+            },
+            "primary_objective": {
+              "type": "string",
+              "minLength": 1
+            },
+            "phase_status": {
+              "type": "string",
+              "enum": [
+                "Green",
+                "Yellow",
+                "Red"
+              ]
+            },
+            "non_negotiables": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "constraints": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "key_risks_warnings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "load_ranges": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weekly_kj_bands",
+            "source"
+          ],
+          "properties": {
+            "weekly_kj_bands": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "week",
+                  "band"
+                ],
+                "properties": {
+                  "week": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "IsoWeek",
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}$"
+                  },
+                  "band": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "LoadBand",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "min",
+                      "max",
+                      "notes"
+                    ],
+                    "properties": {
+                      "min": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "max": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "execution_principles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "load_intensity_handling",
+            "recovery_protection",
+            "consistency_over_optimization"
+          ],
+          "properties": {
+            "load_intensity_handling": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_quality_days_per_week",
+                "allowed_intensity_domains",
+                "forbidden_intensity_domains",
+                "load_modality_constraints",
+                "quality_intent"
+              ],
+              "properties": {
+                "max_quality_days_per_week": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "quality_intent": {
+                  "type": "string",
+                  "enum": [
+                    "Stabilization",
+                    "Build",
+                    "Overload"
+                  ]
+                },
+                "allowed_intensity_domains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                },
+                "forbidden_intensity_domains": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                },
+                "load_modality_constraints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "K3"
+                    ]
+                  }
+                }
+              }
+            },
+            "recovery_protection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mandatory_recovery_spacing_rules",
+                "forbidden_sequences",
+                "long_endurance_anchor_protection",
+                "fixed_non_training_days"
+              ],
+              "properties": {
+                "fixed_non_training_days": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Mon",
+                      "Tue",
+                      "Wed",
+                      "Thu",
+                      "Fri",
+                      "Sat",
+                      "Sun"
+                    ]
+                  }
+                },
+                "mandatory_recovery_spacing_rules": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "forbidden_sequences": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "long_endurance_anchor_protection": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "consistency_over_optimization": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "statements"
+              ],
+              "properties": {
+                "statements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "structural_phase_elements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_day_roles",
+            "allowed_intensity_domains",
+            "allowed_load_modalities"
+          ],
+          "properties": {
+            "allowed_day_roles": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "REST",
+                  "RECOVERY",
+                  "ENDURANCE",
+                  "QUALITY",
+                  "OPTIONAL",
+                  "FLEX",
+                  "TRAVEL",
+                  "EVENT",
+                  "OFF_BIKE"
+                ]
+              }
+            },
+            "allowed_intensity_domains": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "RECOVERY",
+                  "ENDURANCE",
+                  "TEMPO",
+                  "SWEET_SPOT",
+                  "THRESHOLD",
+                  "VO2MAX"
+                ]
+              }
+            },
+            "allowed_load_modalities": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "K3"
+                ]
+              }
+            }
+          }
+        },
+        "week_skeleton_logic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "week_roles",
+            "mandatory_elements",
+            "optional_elements",
+            "forbidden_patterns"
+          ],
+          "properties": {
+            "week_roles": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "week_roles",
+                "allowed_role_set"
+              ],
+              "properties": {
+                "week_roles": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "week",
+                      "role"
+                    ],
+                    "properties": {
+                      "week": {
+                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        "title": "IsoWeek",
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$"
+                      },
+                      "role": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "allowed_role_set": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "mandatory_elements": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "recovery_opportunities_min",
+                "endurance_anchor_required"
+              ],
+              "properties": {
+                "recovery_opportunities_min": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "endurance_anchor_required": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "optional_elements": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quality_days",
+                "optional_flex_days"
+              ],
+              "properties": {
+                "quality_days": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "capped_by_upstream_limits",
+                    "never_adjacent_unless_allowed"
+                  ],
+                  "properties": {
+                    "capped_by_upstream_limits": {
+                      "type": "boolean"
+                    },
+                    "never_adjacent_unless_allowed": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "optional_flex_days": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "removable_without_compensation"
+                  ],
+                  "properties": {
+                    "removable_without_compensation": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            },
+            "forbidden_patterns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "adaptation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "guides",
+            "does_not_replace"
+          ],
+          "properties": {
+            "guides": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "does_not_replace": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "self_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_status_respected",
+            "phase_range_covered",
+            "week_roles_defined_for_phase_range",
+            "no_new_decision_introduced",
+            "no_numeric_target_introduced",
+            "no_kpi_gate_inferred"
+          ],
+          "properties": {
+            "phase_status_respected": {
+              "const": true,
+              "type": "boolean"
+            },
+            "phase_range_covered": {
+              "const": true,
+              "type": "boolean"
+            },
+            "week_roles_defined_for_phase_range": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_new_decision_introduced": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_numeric_target_introduced": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_kpi_gate_inferred": {
+              "const": true,
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ArtefactMeta",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_type",
+        "schema_id",
+        "schema_version",
+        "version",
+        "authority",
+        "owner_agent",
+        "run_id",
+        "created_at",
+        "trace_upstream",
+        "scope",
+        "iso_week",
+        "iso_week_range",
+        "temporal_scope",
+        "trace_data",
+        "trace_events",
+        "data_confidence",
+        "notes"
+      ],
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_]+$"
+        },
+        "schema_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "Binding",
+            "Informational",
+            "Derived",
+            "Factual"
+          ]
+        },
+        "owner_agent": {
+          "type": "string",
+          "enum": [
+            "User",
+            "Data-Pipeline",
+            "Season-Scenario-Agent",
+            "Season-Planner",
+            "Season-Artifact-Writer",
+            "Phase-Architect",
+            "Phase-Artifact-Writer",
+            "Week-Planner",
+            "Week-Artifact-Writer",
+            "Workout-Builder",
+            "Performance-Analyst",
+            "Report-Artifact-Writer",
+            "Policy-Owner"
+          ]
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Shared",
+            "Season",
+            "Phase",
+            "Week",
+            "Context"
+          ]
+        },
+        "iso_week": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeek",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "iso_week_range": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "IsoWeekRange",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}--\\d{4}-\\d{2}(?:\\+\\d+)?$"
+        },
+        "temporal_scope": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "DateRange",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "trace_upstream": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_data": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trace_events": {
+          "type": "array",
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "TraceReference",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "version",
+              "schema_version",
+              "version_key",
+              "run_id"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "schema_version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+              },
+              "version_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "data_confidence": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "DataConfidenceLevel",
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "UNKNOWN"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "upstream_intent",
+        "load_ranges",
+        "execution_principles",
+        "structural_phase_elements",
+        "week_skeleton_logic",
+        "adaptation_rules",
+        "relationships",
+        "self_check"
+      ],
+      "properties": {
+        "upstream_intent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_intent",
+            "phase_type",
+            "phase_taxonomy_version",
+            "build_subtype",
+            "primary_objective",
+            "phase_status",
+            "non_negotiables",
+            "constraints",
+            "key_risks_warnings"
+          ],
+          "properties": {
+            "phase_intent": {
+              "type": "string",
+              "enum": [
+                "transition_recovery",
+                "preparation_re_entry",
+                "shortened_re_entry",
+                "general_base",
+                "aerobic_base",
+                "strength_endurance_base",
+                "sweet_spot_base",
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                "peak_sharpening",
+                "taper_freshening",
+                "race_execution"
+              ]
+            },
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
+            },
+            "phase_type": {
+              "type": "string",
+              "enum": [
+                "TRANSITION",
+                "PREPARATION",
+                "BASE",
+                "BUILD",
+                "PEAK",
+                "TAPER",
+                "RACE"
+              ]
+            },
+            "build_subtype": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                null
+              ]
+            },
+            "primary_objective": {
+              "type": "string",
+              "minLength": 1
+            },
+            "phase_status": {
+              "type": "string",
+              "enum": [
+                "Green",
+                "Yellow",
+                "Red"
+              ]
+            },
+            "non_negotiables": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "constraints": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "key_risks_warnings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "load_ranges": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weekly_kj_bands",
+            "source"
+          ],
+          "properties": {
+            "weekly_kj_bands": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "week",
+                  "band"
+                ],
+                "properties": {
+                  "week": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "IsoWeek",
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}$"
+                  },
+                  "band": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "LoadBand",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "min",
+                      "max",
+                      "notes"
+                    ],
+                    "properties": {
+                      "min": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "max": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "execution_principles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "load_intensity_handling",
+            "recovery_protection",
+            "consistency_over_optimization"
+          ],
+          "properties": {
+            "load_intensity_handling": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_quality_days_per_week",
+                "allowed_intensity_domains",
+                "forbidden_intensity_domains",
+                "load_modality_constraints",
+                "quality_intent"
+              ],
+              "properties": {
+                "max_quality_days_per_week": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "quality_intent": {
+                  "type": "string",
+                  "enum": [
+                    "Stabilization",
+                    "Build",
+                    "Overload"
+                  ]
+                },
+                "allowed_intensity_domains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                },
+                "forbidden_intensity_domains": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "RECOVERY",
+                      "ENDURANCE",
+                      "TEMPO",
+                      "SWEET_SPOT",
+                      "THRESHOLD",
+                      "VO2MAX"
+                    ]
+                  }
+                },
+                "load_modality_constraints": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "K3"
+                    ]
+                  }
+                }
+              }
+            },
+            "recovery_protection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mandatory_recovery_spacing_rules",
+                "forbidden_sequences",
+                "long_endurance_anchor_protection",
+                "fixed_non_training_days"
+              ],
+              "properties": {
+                "fixed_non_training_days": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Mon",
+                      "Tue",
+                      "Wed",
+                      "Thu",
+                      "Fri",
+                      "Sat",
+                      "Sun"
+                    ]
+                  }
+                },
+                "mandatory_recovery_spacing_rules": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "forbidden_sequences": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "long_endurance_anchor_protection": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "consistency_over_optimization": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "statements"
+              ],
+              "properties": {
+                "statements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "structural_phase_elements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_day_roles",
+            "allowed_intensity_domains",
+            "allowed_load_modalities"
+          ],
+          "properties": {
+            "allowed_day_roles": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "REST",
+                  "RECOVERY",
+                  "ENDURANCE",
+                  "QUALITY",
+                  "OPTIONAL",
+                  "FLEX",
+                  "TRAVEL",
+                  "EVENT",
+                  "OFF_BIKE"
+                ]
+              }
+            },
+            "allowed_intensity_domains": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "RECOVERY",
+                  "ENDURANCE",
+                  "TEMPO",
+                  "SWEET_SPOT",
+                  "THRESHOLD",
+                  "VO2MAX"
+                ]
+              }
+            },
+            "allowed_load_modalities": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "K3"
+                ]
+              }
+            }
+          }
+        },
+        "week_skeleton_logic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "week_roles",
+            "mandatory_elements",
+            "optional_elements",
+            "forbidden_patterns"
+          ],
+          "properties": {
+            "week_roles": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "week_roles",
+                "allowed_role_set"
+              ],
+              "properties": {
+                "week_roles": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "week",
+                      "role"
+                    ],
+                    "properties": {
+                      "week": {
+                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        "title": "IsoWeek",
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$"
+                      },
+                      "role": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "allowed_role_set": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "mandatory_elements": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "recovery_opportunities_min",
+                "endurance_anchor_required"
+              ],
+              "properties": {
+                "recovery_opportunities_min": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "endurance_anchor_required": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "optional_elements": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quality_days",
+                "optional_flex_days"
+              ],
+              "properties": {
+                "quality_days": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "capped_by_upstream_limits",
+                    "never_adjacent_unless_allowed"
+                  ],
+                  "properties": {
+                    "capped_by_upstream_limits": {
+                      "type": "boolean"
+                    },
+                    "never_adjacent_unless_allowed": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "optional_flex_days": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "removable_without_compensation"
+                  ],
+                  "properties": {
+                    "removable_without_compensation": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            },
+            "forbidden_patterns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "adaptation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "guides",
+            "does_not_replace"
+          ],
+          "properties": {
+            "guides": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "does_not_replace": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "self_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_status_respected",
+            "phase_range_covered",
+            "week_roles_defined_for_phase_range",
+            "no_new_decision_introduced",
+            "no_numeric_target_introduced",
+            "no_kpi_gate_inferred"
+          ],
+          "properties": {
+            "phase_status_respected": {
+              "const": true,
+              "type": "boolean"
+            },
+            "phase_range_covered": {
+              "const": true,
+              "type": "boolean"
+            },
+            "week_roles_defined_for_phase_range": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_new_decision_introduced": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_numeric_target_introduced": {
+              "const": true,
+              "type": "boolean"
+            },
+            "no_kpi_gate_inferred": {
+              "const": true,
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}
