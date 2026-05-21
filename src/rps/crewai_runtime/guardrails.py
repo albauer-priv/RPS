@@ -337,7 +337,9 @@ def season_writer_bundle_match(result: Any) -> GuardrailResult:
     if not approved_bundle:
         return (True, mapping)
     data = _as_map(mapping.get("data"))
+    mapping["data"] = data
     body_metadata = _as_map(data.get("body_metadata"))
+    data["body_metadata"] = body_metadata
     phase_taxonomy_version = str(body_metadata.get("phase_taxonomy_version") or "").strip()
     bundle_version = str(
         next(
@@ -350,12 +352,18 @@ def season_writer_bundle_match(result: Any) -> GuardrailResult:
         )
         or ""
     ).strip()
+    if bundle_version:
+        body_metadata["phase_taxonomy_version"] = bundle_version
+        phase_taxonomy_version = bundle_version
     if bundle_version and phase_taxonomy_version != bundle_version:
         return (
             False,
             f"Season body_metadata.phase_taxonomy_version is {phase_taxonomy_version!r}, expected {bundle_version!r} from the approved bundle.",
         )
-    if _as_map(data.get("season_load_envelope")) != _as_map(approved_bundle.get("season_load_envelope")):
+    approved_envelope = _as_map(approved_bundle.get("season_load_envelope"))
+    if approved_envelope:
+        data["season_load_envelope"] = approved_envelope
+    if _as_map(data.get("season_load_envelope")) != approved_envelope:
         return (False, "Season output season_load_envelope must match the approved bundle exactly.")
     approved_by_phase = {
         str(_as_map(item).get("phase_id") or ""): _as_map(item)
@@ -368,12 +376,17 @@ def season_writer_bundle_match(result: Any) -> GuardrailResult:
         if not approved:
             continue
         for field in ("phase_type", "phase_intent", "build_subtype"):
+            phase_map[field] = approved.get(field)
+        for field in ("phase_type", "phase_intent", "build_subtype"):
             if phase_map.get(field) != approved.get(field):
                 return (
                     False,
                     f"Season phase {phase_id} field {field} must match the approved bundle value {approved.get(field)!r}.",
                 )
         semantics = _as_map(phase_map.get("allowed_forbidden_semantics"))
+        phase_map["allowed_forbidden_semantics"] = semantics
+        semantics["allowed_intensity_domains"] = list(approved.get("allowed_domains") or [])
+        semantics["forbidden_intensity_domains"] = list(approved.get("forbidden_domains") or [])
         if normalize_intensity_domain_list(semantics.get("allowed_intensity_domains")) != normalize_intensity_domain_list(approved.get("allowed_domains")):
             return (
                 False,

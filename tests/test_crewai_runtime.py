@@ -1890,7 +1890,7 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
     assert normalized["week_blueprints"][0]["s5_band_max"] == 8600
 
 
-def test_season_writer_bundle_match_rejects_envelope_drift() -> None:
+def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None:
     approved_bundle = {
         "season_load_envelope": {
             "expected_average_weekly_kj_range": {"min": 9516, "max": 12892},
@@ -1933,10 +1933,15 @@ def test_season_writer_bundle_match_rejects_envelope_drift() -> None:
     }
 
     with guardrail_runtime_context(approved_planning_bundle=approved_bundle):
-        failed, message = season_writer_bundle_match(output)
+        ok, repaired = season_writer_bundle_match(output)
 
-    assert failed is False
-    assert "season_load_envelope" in message
+    assert ok is True
+    assert repaired["data"]["season_load_envelope"] == approved_bundle["season_load_envelope"]
+    phase = repaired["data"]["phases"][0]
+    assert phase["phase_type"] == "BASE"
+    assert phase["phase_intent"] == "shortened_re_entry"
+    assert phase["allowed_forbidden_semantics"]["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
+    assert phase["allowed_forbidden_semantics"]["forbidden_intensity_domains"] == ["THRESHOLD", "VO2MAX"]
 
 
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:

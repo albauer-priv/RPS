@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed Season planning/review/writer handoff to validate canonical phase semantics, intent-specific domain limits, bundle completeness, and exact writer copy-through of `season_load_envelope` and phase semantics before persistence.
 - Changed `season_plan_finalize` and `phase_bundle_finalize` to emit draft bundles only; deterministic taxonomy/domain/envelope semantics are now injected by Python normalization and validated after normalization instead of on raw LLM output.
 - Changed deterministic Season/Phase semantic normalization to fail closed on invalid type-intent pairs while canonicalizing recoverable mismatches, so illegal combinations such as `PREPARATION + general_base` no longer pass through load-band context or bundle normalization unchecked.
+- Changed the Season writer guardrail to reapply approved deterministic fields before exact-match validation, so `season_load_envelope`, phase taxonomy fields, and allowed/forbidden domain semantics cannot drift during artifact writing.
 
 ## [0.16.0] - 2026-05-21
 
