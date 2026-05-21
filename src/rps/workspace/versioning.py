@@ -20,6 +20,7 @@ _WEEK_TIMESTAMP_RE = re.compile(r"^\d{8}_\d{6}$")
 
 WEEK_SCOPED_ARTIFACTS = {
     ArtifactType.WEEK_PLAN,
+    ArtifactType.WEEK_WORKOUT_SELECTION_AUDIT,
     ArtifactType.INTERVALS_WORKOUTS,
     ArtifactType.DES_ANALYSIS_REPORT,
     ArtifactType.SEASON_SCENARIOS,

@@ -16,7 +16,7 @@ Review authority order:
 1. `PHASE_GUARDRAILS` legality
 2. active week contract context
 3. project workout subset and exportability
-4. inherited `phase_intent` fit
+4. inherited canonical phase-semantics fit (`phase_type`, `phase_intent`, `build_subtype`)
 
 Checklist:
 1. Top-level document uses only allowed blocks and at most one `Category:` line.
@@ -35,7 +35,7 @@ Checklist:
 14. K3 stays low-cadence and seated in character; over-under stays rhythmic; short VO2max stays 2:1; long VO2max stays 4-6 minute central intervals.
 15. Warmup/Cooldown legality holds: no hidden sustained high-intensity warmup, no non-descending cooldown, no loops or spikes in cooldown.
 16. No advanced EBNF-only tokens leak into the project subset unless explicitly permitted by the skill rules.
-17. Workout family and target placement remain coherent with inherited `phase_intent`, not only with day role and domain legality.
+17. Workout family and target placement remain coherent with inherited canonical phase semantics, not only with day role and domain legality.
 18. The candidate would pass the same strict export subset enforced by the runtime validator; prose serialization is a blocker, not a warning.
 19. Canonical declared workout family/domain and final workout text remain mutually consistent; if they disagree, block approval.
 
@@ -68,7 +68,7 @@ Blocking syntax cases:
 - target values violate workout-family parameter ranges without explicit upstream justification
 - QUALITY intent is used to push targets outside the legal domain
 - multiple progression dimensions are advanced at once in the claimed workout evolution
-- the workout is syntactically valid but semantically wrong for inherited `phase_intent`
+- the workout is syntactically valid but semantically wrong for inherited canonical phase semantics
 - a recovery-like workout uses `RECOVERY` when the active phase guardrails forbid `RECOVERY`
 - a threshold-like workout uses `THRESHOLD` when the active phase guardrails forbid `THRESHOLD`
 - the candidate bundle declares a legal family/domain but the actual workout text still signals a forbidden family/domain

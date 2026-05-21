@@ -663,7 +663,7 @@ def plan_week(
 
     phase_raw = phase_info.raw
     phase_name = phase_raw.get("name") or phase_info.phase_name or phase_info.phase_id
-    phase_type = phase_raw.get("cycle") or phase_info.phase_type
+    phase_type = phase_raw.get("phase_type") or phase_raw.get("cycle") or phase_info.phase_type
     message = (
         "Matching Phase found in Season Plan: "
         f"Phase {phase_info.phase_id} ({phase_name or phase_type or 'unknown'}) "

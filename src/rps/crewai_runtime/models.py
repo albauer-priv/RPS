@@ -140,10 +140,11 @@ class SeasonPhaseBlueprintModel(StrictOutputModel):
     phase_id: str
     iso_week_range: str
     scenario_cadence: str
+    phase_type: str | None = None
     phase_intent: str | None = None
+    build_subtype: str | None = None
     season_phase_role: str | None = None
     cadence_week_roles: list[str] = Field(default_factory=list)
-    cycle: Literal["Base", "Build", "Peak", "Transition"] | None = None
     event_constraints: list[str] = Field(default_factory=list)
     load_corridor_min: int | None = None
     load_corridor_max: int | None = None
@@ -277,6 +278,7 @@ class PhaseBundleModel(StrictOutputModel):
     phase_id: str | None = None
     phase_type: str | None = None
     phase_intent: str | None = None
+    build_subtype: str | None = None
     cadence_source: str | None = None
     week_blueprints: list[PhaseWeekBlueprintModel] = Field(default_factory=list)
     guardrails: PhaseGuardrailsPayloadModel
@@ -334,6 +336,10 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
     protocol_type: str | None = None
     protocol_variant: str | None = None
     load_modality: str | None = None
+    stimulus_class: str | None = None
+    monotony_group: str | None = None
+    selection_score: float | None = None
+    selection_rule_row_ids: list[str] = Field(default_factory=list)
     generator_profile: str | None = None
     addon_policy: str | None = None
     primary_tiz_target_min: int | None = None

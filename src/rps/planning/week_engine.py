@@ -32,6 +32,16 @@ from rps.planning.week_protocols import (
     load_week_workout_protocol_config,
     protocol_is_allowed,
 )
+from rps.planning.week_selection_rules import (
+    WeekWorkoutSelectionRuleConfig,
+    load_week_workout_selection_rule_config,
+)
+from rps.planning.week_selector import (
+    build_source_versions_map,
+    build_trace_upstream,
+    persist_selection_audit,
+    select_workouts_for_week,
+)
 from rps.planning.workout_load import build_workout_load_method_context
 from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.progression_history import (
@@ -128,16 +138,23 @@ def execute_week_engine(
         zone_model_payload=zone_model or {},
         allowed_intensity_domains=list(week_calendar.get("allowed_intensity_domains") or []),
     )
+    week_calendar["phase_type"] = str(phase_info.phase_type or week_calendar.get("phase_cycle") or "")
+    week_calendar["season_archetype"] = str(load_capacity.payload.get("season_archetype") or "")
     protocol_config = load_week_workout_protocol_config(repo_root)
+    selection_rule_config = load_week_workout_selection_rule_config(repo_root)
     progression_history = _load_prior_progression_signatures(store=store, athlete_id=athlete_id, target_week=target)
     adjustment = parse_week_adjustment_intent(user_message)
-    planning_bundle = _build_week_plan_bundle(
+    planning_bundle, selection_audit = _build_week_plan_bundle(
+        athlete_id=athlete_id,
         week_calendar_context=week_calendar,
         load_method_context=load_method,
         protocol_config=protocol_config,
+        selection_rule_config=selection_rule_config,
         progression_history=progression_history,
         phase_preview_payload=phase_preview,
         phase_intent=str(week_calendar.get("phase_intent") or phase_info.phase_intent or ""),
+        phase_type=str(phase_info.phase_type or week_calendar.get("phase_cycle") or ""),
+        season_archetype=str(load_capacity.payload.get("season_archetype") or ""),
         adjustment=adjustment,
         initial_warnings=week_context_warnings,
     )
@@ -166,7 +183,7 @@ def execute_week_engine(
             "ok": True,
             "artifact_type": ArtifactType.WEEK_PLAN.value,
             "document": document,
-            "details": details,
+            "details": {**details, "selection_audit": selection_audit},
             "warnings": list(review_decision.warnings),
         }
 
@@ -182,11 +199,49 @@ def execute_week_engine(
         producer_agent="week_engine",
         update_latest=True,
     )
+    trace_upstream = build_trace_upstream(
+        [
+            (ArtifactType.SEASON_PLAN, season_plan),
+            (ArtifactType.PHASE_GUARDRAILS, phase_guardrails),
+            (ArtifactType.PHASE_STRUCTURE, phase_structure),
+            (ArtifactType.PHASE_PREVIEW, phase_preview),
+        ]
+    )
+    previous_payload = _load_previous_week_plan_payload(store=store, athlete_id=athlete_id, target_week=target)
+    if previous_payload:
+        trace_upstream.extend(build_trace_upstream([(ArtifactType.WEEK_PLAN, previous_payload)]))
+    source_versions = build_source_versions_map(
+        [
+            ("season_plan", season_plan),
+            ("phase_guardrails", phase_guardrails),
+            ("phase_structure", phase_structure),
+            ("phase_preview", phase_preview),
+            ("previous_week_plan", previous_payload or {}),
+        ]
+    )
+    audit_json_path, audit_csv_path = persist_selection_audit(
+        workspace_root=workspace_root,
+        schema_dir=schema_dir,
+        athlete_id=athlete_id,
+        version_key=f"{target_year:04d}-{target_week:02d}",
+        run_id=run_id,
+        target_week_start=str(week_calendar.get("week_start_date") or ""),
+        target_week_end=str(week_calendar.get("week_end_date") or ""),
+        payload=selection_audit,
+        trace_upstream=trace_upstream,
+        source_versions=source_versions,
+    )
     return {
         "ok": True,
-        "produced": {OUTPUT_SPECS[AgentTask.CREATE_WEEK_PLAN].tool_name: saved},
+        "produced": {
+            OUTPUT_SPECS[AgentTask.CREATE_WEEK_PLAN].tool_name: saved,
+            ArtifactType.WEEK_WORKOUT_SELECTION_AUDIT.value: {
+                "path": audit_json_path,
+                "csv_path": audit_csv_path,
+            },
+        },
         "document": document,
-        "details": details,
+        "details": {**details, "selection_audit": selection_audit},
         "warnings": list(review_decision.warnings),
     }
 
@@ -249,27 +304,37 @@ def extract_message_from_user_input(user_input: str) -> str:
 
 def _build_week_plan_bundle(
     *,
+    athlete_id: str,
     week_calendar_context: JsonMap,
     load_method_context: JsonMap,
     protocol_config: WeekWorkoutProtocolConfig,
+    selection_rule_config: WeekWorkoutSelectionRuleConfig,
     progression_history: list[JsonMap],
     phase_preview_payload: JsonMap,
     phase_intent: str,
+    phase_type: str,
+    season_archetype: str,
     adjustment: WeekAdjustmentIntent,
     initial_warnings: list[str],
-) -> WeekPlanBundleModel:
+) -> tuple[WeekPlanBundleModel, JsonMap]:
     target_band = _active_band(week_calendar_context)
     target_load = int(round(target_band["min"] + (target_band["max"] - target_band["min"]) * adjustment.target_load_fraction))
     hourly_loads = _hourly_loads(load_method_context)
-    day_blueprints = _allocate_day_blueprints(week_calendar_context=week_calendar_context)
-    workout_blueprints, selection_warnings = _select_workout_blueprints(
+    day_blueprints, allocation_warnings = _allocate_day_blueprints(week_calendar_context=week_calendar_context)
+    workout_blueprints, selection_warnings, selection_audit = select_workouts_for_week(
+        athlete_id=athlete_id,
+        target_iso_week=str(week_calendar_context.get("target_iso_week") or ""),
         day_blueprints=day_blueprints,
         protocol_config=protocol_config,
+        selection_rules=selection_rule_config,
         progression_history=progression_history,
         week_calendar_context=week_calendar_context,
         phase_preview_payload=phase_preview_payload,
         phase_intent=phase_intent,
-        adjustment=adjustment,
+        phase_type=phase_type,
+        season_archetype=season_archetype,
+        forced_quality_family=adjustment.forced_quality_family,
+        preserve_sat_anchor=adjustment.preserve_sat_anchor,
     )
     _reconcile_loads(
         day_blueprints=day_blueprints,
@@ -297,7 +362,7 @@ def _build_week_plan_bundle(
         completed_vs_planned=[],
         likely_change_request=bool(adjustment.message),
     )
-    return WeekPlanBundleModel(
+    bundle = WeekPlanBundleModel(
         context_summary=context_summary,
         day_blueprints=day_blueprints,
         workout_blueprints=workout_blueprints,
@@ -309,8 +374,9 @@ def _build_week_plan_bundle(
         revision_summary=([f"Applied bounded adjustment intent: {adjustment.message}"] if adjustment.message else []),
         workout_authoring_summary=["Workout protocols chosen from configurable registry and rendered deterministically."],
         candidate_document_summary=["Week bundle generated without Week CrewAI planning/review/writer stages."],
-        warnings=[*initial_warnings, *selection_warnings, *shaping_warnings, *preview_warnings],
+        warnings=[*initial_warnings, *allocation_warnings, *selection_warnings, *shaping_warnings, *preview_warnings],
     )
+    return bundle, selection_audit.payload
 
 
 def _review_bundle(*, planning_bundle: WeekPlanBundleModel, week_calendar_context: JsonMap) -> WeekReviewDecisionModel:
@@ -361,20 +427,26 @@ def _review_bundle(*, planning_bundle: WeekPlanBundleModel, week_calendar_contex
     )
 
 
-def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> list[WeekDayBlueprintModel]:
+def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> tuple[list[WeekDayBlueprintModel], list[str]]:
     phase_intent = str(week_calendar_context.get("phase_intent") or "")
     phase_week_role = str(week_calendar_context.get("phase_week_role") or "")
     allowed_day_roles = {str(item).strip().upper() for item in week_calendar_context.get("allowed_day_roles") or []}
     quality_cap = int(week_calendar_context.get("quality_day_cap") or 0)
     role_is_reset = phase_week_role.upper() in {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"}
+    reentry_is_conservative = phase_intent == "shortened_re_entry" or phase_week_role.upper() == "SHORTENED_RE_ENTRY"
     day_rows = [_as_map(item) for item in week_calendar_context.get("day_matrix") or []]
     roles = {
         "Tue": "QUALITY" if quality_cap >= 1 and not role_is_reset else "ENDURANCE",
         "Wed": "RECOVERY" if "RECOVERY" in allowed_day_roles else "ENDURANCE",
-        "Thu": "QUALITY" if quality_cap >= 2 and not role_is_reset else "ENDURANCE",
+        "Thu": "ENDURANCE" if reentry_is_conservative else ("QUALITY" if quality_cap >= 2 and not role_is_reset else "ENDURANCE"),
         "Sat": "ENDURANCE",
         "Sun": "ENDURANCE",
     }
+    warnings: list[str] = []
+    if reentry_is_conservative and quality_cap >= 2 and not role_is_reset:
+        warnings.append(
+            "reentry_week_shape: shortened_re_entry defaults to one true quality day; Thu is assigned ENDURANCE support unless a higher-demand override is introduced."
+        )
     blueprints: list[WeekDayBlueprintModel] = []
     for row in day_rows:
         day = str(row.get("day") or "")
@@ -398,7 +470,7 @@ def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> list[WeekDayB
                 warnings=[],
             )
         )
-    return blueprints
+    return blueprints, warnings
 
 
 def _select_workout_blueprints(
@@ -897,6 +969,19 @@ def _load_prior_progression_signatures(*, store: LocalArtifactStore, athlete_id:
     if not isinstance(payload, dict):
         return []
     return extract_progression_signatures_from_week_plan(payload)
+
+
+def _load_previous_week_plan_payload(*, store: LocalArtifactStore, athlete_id: str, target_week: IsoWeek) -> JsonMap | None:
+    previous = previous_iso_week(target_week)
+    previous_key = f"{previous.year:04d}-{previous.week:02d}"
+    resolved = store.resolve_week_version_key(athlete_id, ArtifactType.WEEK_PLAN, previous_key)
+    if not resolved:
+        return None
+    try:
+        payload = store.load_version(athlete_id, ArtifactType.WEEK_PLAN, resolved)
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def _as_map(value: object) -> JsonMap:

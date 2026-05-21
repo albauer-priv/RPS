@@ -464,8 +464,8 @@ def test_season_phase_load_context_caps_phase_corridors_by_availability_and_role
     p01, p02, p03 = context["phases"]
 
     assert p01["season_phase_role"] == "shortened_re_entry"
-    assert p02["phase_cycle"] == "Build"
-    assert p03["phase_cycle"] == "Peak"
+    assert p02["phase_cycle"] == "BUILD"
+    assert p03["phase_cycle"] == "PEAK"
     assert context["season_allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
     assert p02["recommended_phase_corridor"]["max"] > p01["recommended_phase_corridor"]["max"]
     assert p03["recommended_phase_corridor"]["max"] < p02["recommended_phase_corridor"]["max"]

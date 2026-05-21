@@ -23,6 +23,7 @@ CANONICAL_OWNER_BY_ARTIFACT: dict[ArtifactType, str] = {
     ArtifactType.PHASE_PREVIEW: "Phase-Artifact-Writer",
     ArtifactType.PHASE_FEED_FORWARD: "Phase-Artifact-Writer",
     ArtifactType.WEEK_PLAN: "Week-Artifact-Writer",
+    ArtifactType.WEEK_WORKOUT_SELECTION_AUDIT: "Week-Selection-Auditor",
     ArtifactType.DES_ANALYSIS_REPORT: "Report-Artifact-Writer",
 }
 

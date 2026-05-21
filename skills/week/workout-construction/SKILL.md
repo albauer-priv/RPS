@@ -68,7 +68,7 @@ Intent mapping rules:
 - every workout maps to exactly one agenda/intensity configuration
 - keep workout text aligned with the governing day role and intensity domain
 - keep workout text aligned with the active phase week role; do not write build-style quality into deload, mini-reset, or shortened reset weeks
-- keep workout text aligned with inherited `phase_intent`; legal syntax is not sufficient when the workout family contradicts the active phase semantics
+- keep workout text aligned with inherited `phase_type`, `phase_intent`, and `build_subtype`; legal syntax is not sufficient when the workout family contradicts the active phase semantics
 - add-ons may extend aerobic load only when they preserve the workout classification and phase domain allowance
 - `Endurance`, `Recovery`, `Tempo`, `Sweet Spot`, `Threshold`, `VO2max`, and `K3` intents must remain structurally recognizable
 
@@ -80,21 +80,33 @@ Guardrails precedence:
 - when the intent is low-cost aerobic absorption but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead
 - rest days remain `NONE`; do not hide training inside recovery/rest language
 
-Phase-intent family bias:
-- `ceiling_support`
-  - may use VO2-oriented families only when fresh, explicitly allowed, and still clearly support-oriented
-- `transition_coupling`
-  - bias toward endurance/tempo/sweet-spot bridge work; avoid repeated VO2 loading
+Canonical family bias:
+- `shortened_re_entry`
+  - bias toward one true quality stimulus plus anchor/support; avoid duplicate upper-tempo defaults
+- `general_base` / `aerobic_base`
+  - bias toward endurance/tempo support; avoid build-style density
+- `strength_endurance_base`
+  - bias toward K3/tempo support where legal; avoid VO2 drift
+- `sweet_spot_base`
+  - bias toward moderate SST support; avoid extensive build-style accumulation
+- `vo2_build`
+  - may use VO2-oriented families only when fresh, explicitly allowed, and `build_subtype` confirms VO2 priority
+- `threshold_build`
+  - bias toward threshold / over-under families, not generic VO2 or SST substitution
+- `sst_build`
+  - bias toward extensivere SST structure with density control; avoid random HI escalation
 - `durability_build`
   - bias toward long endurance, hard-late endurance, preload, K3 where allowed, and controlled tempo/sweet-spot support
 - `specificity_build`
   - bias toward event-like pacing blocks, fueling-practice structures, terrain/cadence/logistics-specific constructions, and race-like long sessions without taper behavior
-- `b_event_rehearsal`
-  - bias toward rehearsal-specific event-simulation structures tied to the real B anchor
-- `peak_preparation`
+- `vlamax_lowering`
+  - bias toward efficiency-oriented endurance/tempo/SST structures; avoid anaerobic drift
+- `peak_sharpening`
   - bias toward short sharpness, execution, and opener-like specificity without new accumulation
-- `a_event_peak_taper`
+- `taper_freshening`
   - allow only primer/openers semantics; no new accumulation families
+- `race_execution`
+  - bias toward execution, logistics, pacing, and minimal extra load
 
 Binding agenda/intensity mapping:
 - `Endurance` -> `ENDURANCE` day role, `ENDURANCE` intensity domain, `NONE` load modality

@@ -21,6 +21,8 @@ The main idea is simple:
 * keep intensity as the last lever
 * respect the bigger week goal, not just one isolated workout
 
+At week level, the system also uses a deterministic selector. That selector decides which workout types fit together inside one week and records its choices in an audit artefact plus a CSV table.
+
 ## Main workout types
 
 ### Endurance / Z2
@@ -117,6 +119,21 @@ What too much looks like:
 
 * treating K3 like low-cost tempo
 * stacking K3 onto an already hard week as if it did not count
+
+## How weekly selection is audited
+
+For every generated `WEEK_PLAN`, the system also writes a week-selection audit.
+
+That audit shows, per candidate and per day:
+
+* which protocol variants were considered
+* which selector-rule row matched
+* whether the candidate was legal
+* which bonuses and penalties were applied
+* the final score
+* which option was selected
+
+That makes week-shape decisions externally reviewable without reading Python code.
 
 ## How progression works
 

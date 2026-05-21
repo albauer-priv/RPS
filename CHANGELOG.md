@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-05-21
+
+### Added
+- Added a canonical phase-taxonomy migration contract: `phase_type`, canonical `phase_intent`, explicit `build_subtype`, and persisted `phase_taxonomy_version` are now documented through a new feature spec and ADR, with the old repo-specific phase-intent backbone marked superseded.
+- Added fail-closed phase-semantic normalization helpers and migration trace semantics so legacy phase-intent values normalize only through explicit mappings, unknown legacy values are rejected, and Build phases carry a first-class selector key.
+- Added schema enforcement for canonical season/phase semantics across `SEASON_PLAN`, `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`, including Build-only `build_subtype` rules and new-write rejection of legacy taxonomy values.
+- Added canonical phase-taxonomy skill/task alignment across Season, Phase, and Week planning: active skills and Crew task descriptions now instruct planners to reason with explicit `phase_type`, `phase_intent`, `build_subtype`, and `phase_taxonomy_version` instead of legacy repo-specific intent labels.
+- Added an auditable deterministic week workout selector above the protocol solver: week planning now evaluates candidate protocol variants with flat selector-rule rows, anti-monotony penalties, preview-alignment bonuses, modality strictness, and stable tie-breaks before solving concrete workout structure.
+- Added a new `WEEK_WORKOUT_SELECTION_AUDIT` artefact plus CSV sidecar so every generated `WEEK_PLAN` can be externally reconstructed from candidate rows, matched selector rules, legality filters, scores, penalties, bonuses, and final picks.
+- Added a canonical flat selector-policy registry in `config/planning/week_workout_selection_rules.yaml` and matching documentation under `doc/` for externally reviewable week-shape logic.
+- Added conservative shortened-re-entry week-shape defaults: re-entry weeks now default to one true quality day plus endurance support, and non-anchor endurance days no longer select long-anchor protocols.
+- Added review-bucket operationalization to the week selector audit and scoring layer: selector rows can now encode `SOLL`, `KANN`, `NUR_WENN`, and `VERMEIDEN`, and specificity-build VO2 carry-over cases are explicitly down-ranked as `NUR_WENN`.
+
+### Changed
+- Changed active Season, Phase, Week, and workout-planning skills plus Crew task descriptions to use only the canonical phase taxonomy and planner-purpose semantics, so `BUILD` focus is expressed upstream through `phase_intent` and `build_subtype` instead of repo-specific legacy labels.
+- Changed operative week workout protocol, family, selector-rule, review-matrix, and audit-guide configuration to the canonical taxonomy, replacing generic or legacy planning labels with explicit `general_base`, `vo2_build`, `threshold_build`, `sst_build`, `durability_build`, `specificity_build`, `peak_sharpening`, `taper_freshening`, and `race_execution` semantics.
+
 ## [0.15.0] - 2026-05-20
 
 ### Added

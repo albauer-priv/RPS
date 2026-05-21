@@ -388,6 +388,12 @@ class GuardedValidatedStore:
             errors.append(
                 f"phase_guardrails.body_metadata.phase_intent must match season plan phase_intent '{expected_phase_intent}'."
             )
+        expected_build_subtype = season_phase.get("build_subtype")
+        observed_build_subtype = self._as_map(data.get("body_metadata")).get("build_subtype")
+        if expected_build_subtype != observed_build_subtype:
+            errors.append(
+                f"phase_guardrails.body_metadata.build_subtype must match season plan build_subtype {expected_build_subtype!r}."
+            )
 
         errors.extend(
             f"Season plan availability_assumptions missing in phase_guardrails: {item}"
@@ -487,6 +493,12 @@ class GuardedValidatedStore:
             errors.append(
                 f"upstream_intent.phase_intent must match season plan phase_intent '{expected_phase_intent}'."
             )
+        expected_build_subtype = season_phase.get("build_subtype")
+        observed_build_subtype = upstream_intent.get("build_subtype")
+        if expected_build_subtype != observed_build_subtype:
+            errors.append(
+                f"upstream_intent.build_subtype must match season plan build_subtype {expected_build_subtype!r}."
+            )
 
         errors.extend(
             f"Season plan availability_assumptions missing in upstream_intent.constraints: {item}"
@@ -582,6 +594,12 @@ class GuardedValidatedStore:
         if expected_phase_intent and observed_phase_intent != expected_phase_intent:
             errors.append(
                 f"phase_preview.phase_intent_summary.phase_intent must match phase_structure upstream intent '{expected_phase_intent}'."
+            )
+        expected_build_subtype = structure_upstream_intent.get("build_subtype")
+        observed_build_subtype = self._as_map(data.get("phase_intent_summary")).get("build_subtype")
+        if expected_build_subtype != observed_build_subtype:
+            errors.append(
+                f"phase_preview.phase_intent_summary.build_subtype must match phase_structure upstream intent build_subtype {expected_build_subtype!r}."
             )
         structural_elements = self._as_map(structure_data.get("structural_phase_elements"))
         execution_principles = self._as_map(structure_data.get("execution_principles"))

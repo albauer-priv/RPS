@@ -146,6 +146,12 @@ class WeekPlanModel(JsonSchemaArtifactModel):
     __schema_file__ = "week_plan.schema.json"
 
 
+class WeekWorkoutSelectionAuditModel(JsonSchemaArtifactModel):
+    """Schema-backed model for `week_workout_selection_audit.schema.json`."""
+
+    __schema_file__ = "week_workout_selection_audit.schema.json"
+
+
 class WellnessModel(JsonSchemaArtifactModel):
     """Schema-backed model for `wellness.schema.json`."""
 
@@ -182,6 +188,7 @@ ARTIFACT_MODEL_BY_SCHEMA_FILE: dict[str, type[JsonSchemaArtifactModel]] = {
     "season_scenario_selection.schema.json": SeasonScenarioSelectionModel,
     "season_scenarios.schema.json": SeasonScenariosModel,
     "week_plan.schema.json": WeekPlanModel,
+    "week_workout_selection_audit.schema.json": WeekWorkoutSelectionAuditModel,
     "wellness.schema.json": WellnessModel,
     "zone_model.schema.json": ZoneModel,
 }
@@ -209,6 +216,7 @@ ARTIFACT_MODEL_BY_TYPE: dict[str, type[JsonSchemaArtifactModel]] = {
     "SEASON_SCENARIO_SELECTION": SeasonScenarioSelectionModel,
     "SEASON_SCENARIOS": SeasonScenariosModel,
     "WEEK_PLAN": WeekPlanModel,
+    "WEEK_WORKOUT_SELECTION_AUDIT": WeekWorkoutSelectionAuditModel,
     "WELLNESS": WellnessModel,
     "ZONE_MODEL": ZoneModel,
 }

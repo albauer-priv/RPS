@@ -80,7 +80,9 @@ Owner: Planning / Workouts
 
 * Components involved:
   * `config/planning/week_workout_protocols.yaml`
+  * `config/planning/week_workout_selection_rules.yaml`
   * `rps.planning.week_engine`
+  * `rps.planning.week_selector`
   * `rps.workouts.progression_history`
   * `rps.workouts.protocol_solver`
   * `rps.workouts.generator`
@@ -96,7 +98,9 @@ Owner: Planning / Workouts
 **Components / Modules**
 
 * `week_workout_protocols.yaml`: canonical protocol metadata and progression semantics.
+* `week_workout_selection_rules.yaml`: flat selector-policy table for week-level combination choice and auditability.
 * `week_engine.py`: protocol selection, prior-state matching, quality-density enforcement, TiZ target estimation.
+* `week_selector.py`: deterministic candidate scoring, anti-monotony shaping, and audit row emission.
 * `progression_history.py`: extract protocol signatures from prior canonical `WEEK_PLAN`.
 * `protocol_solver.py`: deterministic protocol-specific progression and cap enforcement.
 * `generator.py`: render solved internal structure to canonical Intervals subset text.
@@ -119,15 +123,19 @@ Owner: Planning / Workouts
   * render canonical workout text
 * Outputs:
   * `WEEK_PLAN`
+  * `WEEK_WORKOUT_SELECTION_AUDIT`
   * deterministic `workout_text`
   * internal solver trace via blueprint metadata
+  * CSV sidecar for external candidate-by-candidate audit
 
 **Schema / Artefacts**
 
-* New persisted artefacts: none.
+* New persisted artefacts:
+  * `WEEK_WORKOUT_SELECTION_AUDIT`
 * Changed persisted artefacts: none required.
 * Changed internal semantics:
   * `WeekWorkoutBlueprintModel.progression_state`
+  * week-level selector metadata (`stimulus_class`, `monotony_group`, score, rule row ids)
   * protocol config fields
 
 ---

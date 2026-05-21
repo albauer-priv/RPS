@@ -10,9 +10,9 @@ Author the phase structure after guardrails are known.
 Method:
 1. Translate phase purpose into week roles and structural sequence covering every ISO week in the exact phase range.
 2. Use injected `week_role_by_iso_week` exactly; week roles come from the selected scenario cadence and role-aware S5 context, not from structure authoring.
-3. Use exactly one season-cycle label per phase: `Base`, `Build`, `Peak`, or `Transition`.
+3. Use inherited canonical `phase_type` as the semantic container; do not invent or rename phase semantics during structure authoring.
 4. Keep the structure compatible with cadence, recovery protection, event windows, phase role, weekly S5 bands, and allowed agenda semantics.
-4a. Keep the structure explicitly compatible with inherited `phase_intent`; structure must narrow around intent, not reinterpret it.
+4a. Keep the structure explicitly compatible with inherited `phase_type`, `phase_intent`, and `build_subtype`; structure must narrow around intent, not reinterpret it.
 5. Leave workout-level design and numeric targets to lower layers.
 
 Required structure rules:
@@ -29,16 +29,20 @@ Structural content rules:
 - preserve fixed non-training days and long-endurance anchor protection
 - prefer repeatable structure over brittle optimization
 - `specificity_build` must push structure toward pacing/fueling/terrain/logistics realism
-- `durability_build` must emphasize B2B, preload, hard-late, and long-ride protection rather than event-formal rehearsal
-- `b_event_rehearsal` must reflect a real rehearsal anchor
-- `a_event_peak_taper` must preserve freshness and reduce accumulation patterns
+- `durability_build` must emphasize B2B, preload, hard-late, and long-ride protection rather than rehearsal semantics
+- `vo2_build` must keep VO2 weeks fresh and bounded rather than broad mixed-density
+- `threshold_build` must center sustained-power structure
+- `sst_build` must keep moderate density bounded
+- `taper_freshening` must preserve freshness and reduce accumulation patterns
+- `race_execution` must keep event logistics and recovery runway explicit
 
 Hard rules:
 - keep numeric daily targets in downstream week artifacts
 - keep workouts, intervals, zones, and %FTP in downstream week/workout artifacts
 - provide complete week-role coverage
 - preserve the season objective inside the phase
-- emit `upstream_intent.phase_intent` explicitly and keep it identical to upstream authority
+- emit `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` explicitly and keep them identical to upstream authority
+- emit `upstream_intent.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

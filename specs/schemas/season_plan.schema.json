@@ -108,6 +108,7 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
+            "phase_taxonomy_version",
             "planning_horizon_weeks",
             "kpi_profile_ref",
             "moving_time_rate_guidance",
@@ -115,6 +116,10 @@
             "body_mass_kg"
           ],
           "properties": {
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
+            },
             "planning_horizon_weeks": {
               "type": "integer",
               "minimum": 8,
@@ -553,8 +558,9 @@
         "name",
         "date_range",
         "iso_week_range",
-        "cycle",
+        "phase_type",
         "phase_intent",
+        "build_subtype",
         "deload",
         "narrative",
         "overview",
@@ -579,32 +585,52 @@
         "iso_week_range": {
           "$ref": "iso_week_range.schema.json"
         },
-        "cycle": {
+        "phase_type": {
           "type": "string",
           "enum": [
-            "Base",
-            "Build",
-            "Peak",
-            "Transition"
+            "TRANSITION",
+            "PREPARATION",
+            "BASE",
+            "BUILD",
+            "PEAK",
+            "TAPER",
+            "RACE"
           ]
         },
         "phase_intent": {
           "type": "string",
           "enum": [
-            "recovery_reset",
+            "transition_recovery",
+            "preparation_re_entry",
             "shortened_re_entry",
-            "shortened_consolidation",
-            "transition_consolidation",
-            "foundation",
-            "general_build",
-            "build_progression",
-            "ceiling_support",
-            "transition_coupling",
+            "general_base",
+            "aerobic_base",
+            "strength_endurance_base",
+            "sweet_spot_base",
+            "vo2_build",
+            "threshold_build",
+            "sst_build",
             "durability_build",
             "specificity_build",
-            "b_event_rehearsal",
-            "peak_preparation",
-            "a_event_peak_taper"
+            "vlamax_lowering",
+            "peak_sharpening",
+            "taper_freshening",
+            "race_execution"
+          ]
+        },
+        "build_subtype": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "vo2_build",
+            "threshold_build",
+            "sst_build",
+            "durability_build",
+            "specificity_build",
+            "vlamax_lowering",
+            null
           ]
         },
         "deload": {
@@ -788,7 +814,48 @@
             }
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "phase_type"
+            ],
+            "properties": {
+              "phase_type": {
+                "const": "BUILD"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "build_subtype"
+            ],
+            "properties": {
+              "build_subtype": {
+                "enum": [
+                  "vo2_build",
+                  "threshold_build",
+                  "sst_build",
+                  "durability_build",
+                  "specificity_build",
+                  "vlamax_lowering"
+                ]
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "build_subtype"
+            ],
+            "properties": {
+              "build_subtype": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "additionalProperties": false,

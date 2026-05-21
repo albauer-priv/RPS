@@ -20,6 +20,7 @@ ARTIFACT_SCHEMA_FILE: dict[ArtifactType, str] = {
     ArtifactType.PHASE_FEED_FORWARD: "phase_feed_forward.schema.json",
     ArtifactType.ZONE_MODEL: "zone_model.schema.json",
     ArtifactType.WEEK_PLAN: "week_plan.schema.json",
+    ArtifactType.WEEK_WORKOUT_SELECTION_AUDIT: "week_workout_selection_audit.schema.json",
     ArtifactType.INTERVALS_WORKOUTS: "workouts.schema.json",
     ArtifactType.ACTIVITIES_ACTUAL: "activities_actual.schema.json",
     ArtifactType.ACTIVITIES_TREND: "activities_trend.schema.json",

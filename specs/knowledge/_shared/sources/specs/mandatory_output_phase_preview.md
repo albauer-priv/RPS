@@ -43,7 +43,9 @@ trace versions. The Workspace layer overwrites schema-critical fields before sav
 #### 3) `data.phase_intent_summary`
 Required:
 - `phase_type` (string)
+- `phase_taxonomy_version` = `canonical_phase_taxonomy_v1`
 - `phase_intent` (normalized inherited phase intent from `PHASE_STRUCTURE.upstream_intent.phase_intent`)
+- `build_subtype` (`null` outside `BUILD`; equal to `phase_intent` inside `BUILD`)
 - `primary_objective` (string)
 - `non_negotiables` (array, min 1)
 - `key_risks_warnings` (array, min 1)
@@ -129,7 +131,7 @@ Required strings:
   },
   "data": {
     "phase_intent_summary": {
-      "phase_type": "Base",
+      "phase_type": "BASE",
       "primary_objective": "Establish durability",
       "non_negotiables": ["Fixed rest days preserved."],
       "key_risks_warnings": ["Travel risk"]

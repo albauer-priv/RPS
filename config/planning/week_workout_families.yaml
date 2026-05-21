@@ -41,7 +41,7 @@ families:
     load_modality: NONE
     generator_profile: tiz_first_sweet_spot
     allowed_day_roles: [QUALITY]
-    allowed_phase_intents: [shortened_re_entry, shortened_consolidation, shortened_reload, durability_build, specificity_build, base]
+    allowed_phase_intents: [shortened_re_entry, general_base, aerobic_base, strength_endurance_base, sweet_spot_base, sst_build, durability_build, specificity_build]
     allowed_week_roles: ["*"]
     tags: [quality, activation_capable]
   K3_SWEET_SPOT:
@@ -50,7 +50,7 @@ families:
     load_modality: K3
     generator_profile: k3_progressive_torque
     allowed_day_roles: [QUALITY, ENDURANCE]
-    allowed_phase_intents: [shortened_re_entry, shortened_consolidation, shortened_reload, durability_build, base]
+    allowed_phase_intents: [shortened_re_entry, general_base, aerobic_base, strength_endurance_base, sweet_spot_base, durability_build]
     allowed_week_roles: ["*"]
     tags: [quality]
 
@@ -60,16 +60,40 @@ selection_policy:
       QUALITY: [SWEET_SPOT_STABILIZATION, TEMPO_STEADY, K3_SWEET_SPOT]
       RECOVERY: [ENDURANCE_LOW]
       ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
-    shortened_consolidation:
+    general_base:
       QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
       RECOVERY: [ENDURANCE_LOW]
       ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
-    shortened_reload:
-      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION]
+    aerobic_base:
+      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    strength_endurance_base:
+      QUALITY: [K3_SWEET_SPOT, TEMPO_STEADY, SWEET_SPOT_STABILIZATION]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    sweet_spot_base:
+      QUALITY: [SWEET_SPOT_STABILIZATION, TEMPO_STEADY, K3_SWEET_SPOT]
       RECOVERY: [ENDURANCE_LOW]
       ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
     specificity_build:
       QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    durability_build:
+      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION, K3_SWEET_SPOT]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    peak_sharpening:
+      QUALITY: [TEMPO_STEADY, SWEET_SPOT_STABILIZATION]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    taper_freshening:
+      QUALITY: [TEMPO_STEADY]
+      RECOVERY: [ENDURANCE_LOW]
+      ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
+    race_execution:
+      QUALITY: [TEMPO_STEADY]
       RECOVERY: [ENDURANCE_LOW]
       ENDURANCE: [ENDURANCE_STEADY, ENDURANCE_LONG_STEADY]
   by_day_role:

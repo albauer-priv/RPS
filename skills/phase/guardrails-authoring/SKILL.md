@@ -10,7 +10,11 @@ Author guardrails for one exact phase range.
 Method:
 1. Consume the injected deterministic S5 bands for the exact phase range.
 2. Consume `Deterministic Phase Execution Context` for required ISO weeks, phase length, week index, cycle, phase role, inherited week roles, scenario cadence, and deload intent.
-2a. Treat `phase_intent` from deterministic phase execution context as binding semantic authority for domain narrowing, recovery protection, and VO2/taper handling.
+2a. Treat inherited canonical phase semantics from deterministic phase execution context as binding authority:
+   - `phase_type`
+   - `phase_intent`
+   - `build_subtype` when `phase_type = BUILD`
+   Use them for domain narrowing, recovery protection, and VO2/taper handling.
 3. Treat `phase_cadence_week_roles` and `week_role_by_iso_week` as binding; do not invent week roles or replace the selected scenario cadence.
 4. Resolve a deterministic baseline week from the recent history when baseline-based progression logic is needed.
 5. Copy each code-owned role-aware S5 band and trace into `phase_guardrails.load_guardrails.weekly_kj_bands`.
@@ -55,13 +59,15 @@ Execution boundaries:
 - specify what intensity domains are allowed, suppressed, or only touched sparingly
 - make recovery protection explicit where cadence or event context requires it
 - keep exact-range traceability visible in every guardrail result
-- make `allowed_forbidden_semantics` match `phase_intent`
-  - `ceiling_support`: optional sparse fresh `VO2MAX` only when scenario authority permits it
-  - `transition_coupling`: bridge semantics, not a new VO2 block
+- make `allowed_forbidden_semantics` match canonical `phase_type` / `phase_intent` / `build_subtype`
+  - `vo2_build`: optional sparse fresh `VO2MAX` only when scenario authority permits it
+  - `threshold_build`: threshold-oriented, not a new VO2 block
+  - `sst_build`: extensive moderate work with density control
   - `durability_build`: fatigue-resistant specificity, duration/kJ first
   - `specificity_build`: event-near pacing/fueling/terrain/logistics realism without full taper semantics
-  - `b_event_rehearsal`: rehearsal anchored to a real B event, not generic specific work
-  - `peak_preparation` / `a_event_peak_taper`: freshness-sensitive narrowing, no accumulation drift
+  - `vlamax_lowering`: efficiency-oriented, no anaerobic drift
+  - `peak_sharpening` / `taper_freshening`: freshness-sensitive narrowing, no accumulation drift
+  - `race_execution`: protect event execution and recovery runway
 
 Hard rules:
 - guardrails are binding for downstream structure and week planning
@@ -73,7 +79,8 @@ Hard rules:
 - align execution rules with season-owned cadence and taper logic
 - `weekly_kj_bands` must match injected deterministic S5 bands
 - keep recovery days and fixed-rest days protected from load compression
-- emit `body_metadata.phase_intent` explicitly and keep it identical to upstream authority
+- emit `body_metadata.phase_type`, `body_metadata.phase_intent`, and `body_metadata.phase_taxonomy_version` explicitly and keep them identical to upstream authority
+- emit `body_metadata.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

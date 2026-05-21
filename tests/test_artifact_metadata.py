@@ -36,6 +36,7 @@ def _minimal_season_plan_document() -> dict[str, object]:
         },
         "data": {
             "body_metadata": {
+                "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
                 "planning_horizon_weeks": 17,
                 "kpi_profile_ref": "des_brevet_200_400_km_masters",
                 "athlete_profile_ref": "athlete_profile__i150546__20260315_091949",
@@ -59,7 +60,9 @@ def _minimal_season_plan_document() -> dict[str, object]:
                     "name": "Base",
                     "date_range": {"from": "2026-05-18", "to": "2026-06-07"},
                     "iso_week_range": "2026-21--2026-23",
-                    "cycle": "Base",
+                    "phase_type": "BASE",
+                    "phase_intent": "aerobic_base",
+                    "build_subtype": None,
                     "deload": True,
                     "deload_rationale": "Conservative opening block.",
                     "narrative": "Restore durable aerobic consistency.",

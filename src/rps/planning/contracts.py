@@ -13,7 +13,11 @@ from typing import Any, Literal
 
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeekRange, parse_iso_week, parse_iso_week_range
-from rps.workspace.phase_intents import normalize_phase_intent, normalize_season_archetype
+from rps.workspace.phase_intents import (
+    normalize_phase_intent,
+    normalize_phase_type,
+    normalize_season_archetype,
+)
 
 JsonMap = dict[str, Any]
 Severity = Literal["blocker", "warning"]
@@ -272,7 +276,7 @@ def validate_season_plan_against_phase_load_context(
                         path=f"{path}.weekly_load_corridor.weekly_kj",
                     )
                 )
-        cycle = str(phase.get("cycle") or ctx.get("phase_cycle") or "")
+        phase_type = normalize_phase_type(phase.get("phase_type") or phase.get("cycle") or ctx.get("phase_type") or ctx.get("phase_cycle") or "")
         observed_intent = normalize_phase_intent(phase.get("phase_intent"))
         expected_intent = normalize_phase_intent(ctx.get("phase_intent"))
         if expected_intent and observed_intent != expected_intent:
@@ -297,7 +301,7 @@ def validate_season_plan_against_phase_load_context(
                         path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
                     )
                 )
-        if observed_intent in {"shortened_re_entry", "shortened_consolidation", "transition_consolidation", "recovery_reset"}:
+        if observed_intent in {"shortened_re_entry", "preparation_re_entry", "transition_recovery"}:
             if "VO2MAX" in allowed_domains:
                 issues.append(
                     PlanningContractIssue(
@@ -306,42 +310,42 @@ def validate_season_plan_against_phase_load_context(
                         path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
                     )
                 )
-        if observed_intent == "a_event_peak_taper" and "VO2MAX" in allowed_domains:
+        if observed_intent == "taper_freshening" and "VO2MAX" in allowed_domains:
             issues.append(
                 PlanningContractIssue(
                     "season_peak_taper_vo2max_conflict",
-                    "A-event peak/taper intent must not expose VO2MAX as a general allowed domain.",
+                    "Taper intent must not expose VO2MAX as a general allowed domain.",
                     path=f"{path}.allowed_forbidden_semantics.allowed_intensity_domains",
                 )
             )
-        if observed_intent == "specificity_build" and cycle not in {"Build", "Peak"}:
+        if observed_intent == "specificity_build" and phase_type not in {"BUILD", "PEAK"}:
             issues.append(
                 PlanningContractIssue(
                     "season_specificity_build_cycle_conflict",
                     "specificity_build must live in Build or late Peak-adjacent structure.",
-                    path=f"{path}.cycle",
+                    path=f"{path}.phase_type",
                 )
             )
-        if observed_intent and "VO2MAX" in forbidden_domains and observed_intent == "ceiling_support" and season_archetype == "ceiling_first_durability":
+        if observed_intent and "VO2MAX" in forbidden_domains and observed_intent == "vo2_build" and season_archetype == "ceiling_first_durability":
             issues.append(
                 PlanningContractIssue(
                     "season_ceiling_support_vo2max_forbidden",
-                    "ceiling_support under ceiling_first_durability should not forbid VO2MAX outright when early VO2 is permitted.",
+                    "vo2_build under ceiling_first_durability should not forbid VO2MAX outright when early VO2 is permitted.",
                     severity="warning",
                     path=f"{path}.allowed_forbidden_semantics.forbidden_intensity_domains",
                 )
             )
-        if cycle == "Build" and planned_max is not None:
+        if phase_type == "BUILD" and planned_max is not None:
             build_max_values.append(planned_max)
         event_trace = _as_map(ctx.get("event_taper_trace"))
-        if (cycle == "Peak" or event_trace.get("has_a_event")) and planned_max is not None:
+        if (phase_type in {"PEAK", "TAPER"} or event_trace.get("has_a_event")) and planned_max is not None:
             peak_max_values.append((phase_id, planned_max))
-        if event_trace.get("has_b_event") and cycle == "Peak" and not event_trace.get("has_a_event"):
+        if event_trace.get("has_b_event") and phase_type == "PEAK" and not event_trace.get("has_a_event"):
             issues.append(
                 PlanningContractIssue(
                     "b_event_full_peak_not_allowed",
                     "B event phase must remain rehearsal/minor adjustment, not a standalone Peak.",
-                    path=f"{path}.cycle",
+                    path=f"{path}.phase_type",
                 )
             )
     if build_max_values and peak_max_values:

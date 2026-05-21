@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-12
+Last-Updated: 2026-05-21
 Owner: ADR
 ---
 # Architecture Decision Records (ADR)
@@ -61,6 +61,7 @@ This folder contains the ADR log for RPS.
 - ADR-050: Remove Vectorstore Runtime
 - ADR-051: Code-Owned Artifact Metadata and Trace References
 - ADR-052: Protocol-Driven Week Workout Generation
+- ADR-053: Canonical Phase Taxonomy and Build Subtypes
 
 ## Process (Short)
 

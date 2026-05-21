@@ -229,7 +229,7 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit explicit `phase_intent` per phase blueprint and keep it coherent with deterministic slots, archetype context, event anchors, and downstream week/workout semantics.
+    description: "Consolidate season drafts into one internal SeasonPlanBundle with availability-bounded phase-load blueprints. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit explicit canonical phase semantics per phase blueprint: `phase_type`, `phase_intent`, `build_subtype` for `BUILD`, and `phase_taxonomy_version`. Keep them coherent with deterministic slots, archetype context, event anchors, and downstream phase/week/workout semantics."
     expected_output: A structured internal season plan bundle with phase_blueprints that preserve inherited selected-scenario cadence roles, phase roles, availability caps, progression traces, role-week load bands, and explicit `allowed_domains`.
   season_governance_review:
     agent: season_governance_auditor
@@ -313,7 +313,7 @@ tasks:
     agent: phase_guardrail_band_specialist
     kind: internal_reasoning
     output: phase_guardrails_payload
-    description: "Draft weekly band and corridor content for the exact phase range. Keep `body_metadata.phase_intent` explicit and align domain narrowing with inherited phase intent. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft weekly band and corridor content for the exact phase range. Keep `body_metadata.phase_type`, `body_metadata.phase_intent`, `body_metadata.build_subtype`, and `body_metadata.phase_taxonomy_version` explicit and align domain narrowing with inherited canonical phase semantics. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase-guardrails payload draft.
     tools:
       - workspace_get_latest
@@ -335,7 +335,7 @@ tasks:
     agent: phase_structure_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: "Draft phase structure and week-skeleton logic for the exact phase range. Keep `upstream_intent.phase_intent` explicit and let inherited phase intent shape week-role emphasis, specificity, and recovery logic. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft phase structure and week-skeleton logic for the exact phase range. Keep `upstream_intent.phase_type`, `upstream_intent.phase_intent`, `upstream_intent.build_subtype`, and `upstream_intent.phase_taxonomy_version` explicit and let inherited canonical phase semantics shape week-role emphasis, specificity, and recovery logic. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase-structure payload draft.
     tools:
       - workspace_get_latest
@@ -380,7 +380,7 @@ tasks:
     agent: phase_preview_synthesizer
     kind: internal_reasoning
     output: phase_preview_payload
-    description: "Draft a derived phase preview that adds no new planning decisions. Keep `phase_intent_summary.phase_intent` explicit and derived from stored upstream structure authority. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft a derived phase preview that adds no new planning decisions. Keep `phase_intent_summary.phase_type`, `phase_intent_summary.phase_intent`, `phase_intent_summary.build_subtype`, and `phase_intent_summary.phase_taxonomy_version` explicit and derived from stored upstream structure authority. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
     expected_output: A structured phase-preview payload draft.
     tools:
       - workspace_get_latest
@@ -528,7 +528,7 @@ tasks:
     agent: week_load_target_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Convert the active corridor into day and workout target logic for the week. Use inherited `phase_intent` as a primary shaping signal for progression method, specificity, and quality density. Tool usage: prefer deterministic week/phase contract tools and `workspace_get_latest`; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
+    description: "Convert the active corridor into day and workout target logic for the week. Use inherited canonical phase semantics (`phase_type`, `phase_intent`, `build_subtype`) as a primary shaping signal for progression method, specificity, and quality density. Tool usage: prefer deterministic week/phase contract tools and `workspace_get_latest`; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
     expected_output: A structured week load-target draft.
     tools:
       - workspace_get_latest
@@ -540,7 +540,7 @@ tasks:
     agent: week_revision_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Draft a candidate week structure or bounded revision consistent with active week role and inherited `phase_intent`. Tool usage: use deterministic week/phase contract tools for authoritative execution values; use `workspace_get_latest` for latest supporting artefacts and `workspace_get_input` for athlete-managed inputs when needed."
+    description: "Draft a candidate week structure or bounded revision consistent with active week role and inherited canonical phase semantics (`phase_type`, `phase_intent`, `build_subtype`). Tool usage: use deterministic week/phase contract tools for authoritative execution values; use `workspace_get_latest` for latest supporting artefacts and `workspace_get_input` for athlete-managed inputs when needed."
     expected_output: A structured week revision draft.
     tools:
       - workspace_get_input
@@ -552,7 +552,7 @@ tasks:
     agent: week_workout_authoring_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Draft structured workout-family selection, inherited `phase_intent` family bias, QUALITY-intent target placement, and rendering-safe workout blueprint guidance for the candidate week. Final `workout_text` is rendered deterministically in code from approved workout blueprints; do not rely on free-text workout authoring as the source of truth. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
+    description: "Draft structured workout-family selection, inherited canonical phase-semantics family bias (`phase_type`, `phase_intent`, `build_subtype`), QUALITY-intent target placement, and rendering-safe workout blueprint guidance for the candidate week. Final `workout_text` is rendered deterministically in code from approved workout blueprints; do not rely on free-text workout authoring as the source of truth. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
     expected_output: A structured workout-authoring draft.
     tools:
       - workspace_get_input
@@ -601,7 +601,7 @@ tasks:
     agent: week_workout_syntax_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review candidate workout text for strict project syntax subset compliance, workout-policy semantic compliance, inherited `phase_intent` fit, phase-guardrails legality precedence, and export safety. Do not approve prose workout text or illegal `RECOVERY` drift when the active phase forbids `RECOVERY`. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
+    description: "Review candidate workout text for strict project syntax subset compliance, workout-policy semantic compliance, inherited canonical phase-semantics fit (`phase_type`, `phase_intent`, `build_subtype`), phase-guardrails legality precedence, and export safety. Do not approve prose workout text or illegal `RECOVERY` drift when the active phase forbids `RECOVERY`. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
     expected_output: A structured week workout-syntax review.
     tools:
       - workspace_get_latest

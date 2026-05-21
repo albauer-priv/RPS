@@ -8,7 +8,7 @@ metadata:
 Audit the candidate week before it is written.
 
 Checklist:
-1. Day roles remain coherent with phase intent and active phase week role.
+1. Day roles remain coherent with inherited `phase_type`, `phase_intent`, `build_subtype`, and active phase week role.
 2. Agenda covers exactly Mon..Sun of the target ISO week and matches deterministic dates.
 3. Planned load and duration reconcile against the binding active weekly band without hidden inflation.
 4. Fixed rest days, zero-availability days, and recovery days stay protected.
@@ -16,7 +16,7 @@ Checklist:
 6. Workout structures match declared intent and keep intensity explicit.
 7. Candidate edits remain bounded to the requested scope.
 8. Workout-family choice, QUALITY-intent placement, and warmup/cooldown legality remain coherent with the approved week semantics.
-9. The candidate week shape and workout families remain coherent with inherited `phase_intent`, not just with legal domains.
+9. The candidate week shape and workout families remain coherent with inherited canonical phase semantics, not just with legal domains.
 
 Block approval when:
 - `weekly_load_corridor_kj` is not the binding active weekly band

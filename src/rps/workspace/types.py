@@ -42,6 +42,7 @@ class ArtifactType(str, Enum):
 
     # Week layer
     WEEK_PLAN = "WEEK_PLAN"
+    WEEK_WORKOUT_SELECTION_AUDIT = "WEEK_WORKOUT_SELECTION_AUDIT"
 
     # Export payload (raw)
     INTERVALS_WORKOUTS = "INTERVALS_WORKOUTS"

@@ -266,8 +266,9 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
                 {
                     "phase_id": item.get("phase_id"),
                     "iso_week_range": item.get("iso_week_range"),
-                    "cycle": item.get("cycle"),
+                    "phase_type": item.get("phase_type") or item.get("cycle"),
                     "phase_intent": item.get("phase_intent"),
+                    "build_subtype": item.get("build_subtype"),
                     "weekly_load_corridor": {
                         "weekly_kj": {
                             "min": item.get("load_corridor_min"),
@@ -310,7 +311,7 @@ def season_phase_load_feasibility(result: Any) -> GuardrailResult:
         return (True, mapping)
     corridor_max_values: list[float] = []
     role_signatures: set[tuple[str, ...]] = set()
-    cycles: set[str] = set()
+    phase_types: set[str] = set()
     for blueprint in blueprints:
         if not isinstance(blueprint, dict):
             continue
@@ -320,9 +321,9 @@ def season_phase_load_feasibility(result: Any) -> GuardrailResult:
         status = str(blueprint.get("load_feasibility_status") or "").lower()
         if max_value is not None:
             corridor_max_values.append(max_value)
-        cycle = str(blueprint.get("cycle") or "")
-        if cycle:
-            cycles.add(cycle)
+        phase_type = str(blueprint.get("phase_type") or blueprint.get("cycle") or "")
+        if phase_type:
+            phase_types.add(phase_type)
         roles = tuple(str(item) for item in blueprint.get("cadence_week_roles") or [] if str(item).strip())
         if roles:
             role_signatures.add(roles)
@@ -331,11 +332,11 @@ def season_phase_load_feasibility(result: Any) -> GuardrailResult:
                 False,
                 f"Season phase {phase_id} load_corridor_max {max_value:g} exceeds availability_cap_kj {availability_cap:g}.",
             )
-        if blueprint.get("cycle") == "Peak" and max_value is not None:
+        if phase_type == "PEAK" and max_value is not None:
             build_max = [
                 _as_float(item.get("load_corridor_max"))
                 for item in blueprints
-                if isinstance(item, dict) and item.get("cycle") == "Build"
+                if isinstance(item, dict) and (item.get("phase_type") or item.get("cycle")) == "BUILD"
             ]
             build_max = [item for item in build_max if item is not None]
             if build_max and max_value >= max(build_max):
@@ -344,7 +345,7 @@ def season_phase_load_feasibility(result: Any) -> GuardrailResult:
         len(set(corridor_max_values)) == 1
         and len(corridor_max_values) > 2
         and role_signatures
-        and len(cycles) > 1
+        and len(phase_types) > 1
     ):
         return (False, "Season phase corridors are flat across phases despite cadence/phase-role load semantics.")
     return (True, mapping)
@@ -734,13 +735,13 @@ def season_cycle_ordering(result: Any) -> GuardrailResult:
     phases = data.get("phases")
     if not isinstance(phases, list):
         return (True, mapping)
-    allowed = {"Base", "Build", "Peak", "Transition"}
+    allowed = {"TRANSITION", "PREPARATION", "BASE", "BUILD", "PEAK", "TAPER", "RACE"}
     for phase in phases:
         if not isinstance(phase, dict):
             continue
-        cycle = phase.get("cycle")
-        if cycle not in allowed:
-            return (False, f"Season phase cycle must be one of {sorted(allowed)}; got {cycle!r}.")
+        phase_type = phase.get("phase_type") or phase.get("cycle")
+        if phase_type not in allowed:
+            return (False, f"Season phase phase_type must be one of {sorted(allowed)}; got {phase_type!r}.")
     return (True, mapping)
 
 

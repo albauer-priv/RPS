@@ -46,7 +46,9 @@ trace versions. The Workspace layer overwrites schema-critical fields before sav
 #### 3) `data.body_metadata`
 Required:
 - `phase_id`, `phase_type` (strings)
+- `phase_taxonomy_version` = `canonical_phase_taxonomy_v1`
 - `phase_intent` (normalized inherited intent from the active Season Plan phase)
+- `build_subtype` (`null` outside `BUILD`; equal to `phase_intent` inside `BUILD`)
 - `phase_status`: `Green|Yellow|Red`
 - `change_type`: `NEW|ADJUSTED|NONE`
 - `derived_from` (string)
@@ -230,7 +232,7 @@ Additional hard stops (binding):
   "data": {
     "body_metadata": {
       "phase_id": "P01",
-      "phase_type": "Base",
+      "phase_type": "BASE",
       "phase_status": "Green",
       "change_type": "NEW",
       "derived_from": "season_plan_2026_w04",

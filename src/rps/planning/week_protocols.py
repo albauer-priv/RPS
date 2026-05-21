@@ -8,6 +8,8 @@ from typing import Any
 
 import yaml
 
+from rps.workspace.phase_intents import normalize_phase_intent
+
 JsonMap = dict[str, Any]
 
 
@@ -196,7 +198,10 @@ def _normalized_str(value: object) -> str:
 
 
 def _normalized_phase_intent(value: object) -> str:
-    return str(value or "").strip().lower()
+    text = str(value or "").strip()
+    if text == "*":
+        return "*"
+    return normalize_phase_intent(text) or text.strip().lower()
 
 
 def _normalized_tag(value: object) -> str:

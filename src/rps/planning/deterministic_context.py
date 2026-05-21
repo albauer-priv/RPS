@@ -251,9 +251,10 @@ def build_phase_execution_context(
         "phase_length_weeks": len(weeks),
         "week_keys": [_week_key(week) for week in weeks],
         "week_index_within_phase": max(1, week_index(target_week) - week_index(phase_range.start) + 1),
-        "cycle": phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
-        "phase_role": phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
+        "phase_type": phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
+        "phase_role": phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
         "phase_intent": phase_raw.get("phase_intent") or "",
+        "build_subtype": phase_raw.get("build_subtype"),
         "scenario_cadence": scenario_cadence,
         "phase_cadence_week_roles": cadence_week_roles,
         "week_role_by_iso_week": week_role_by_iso_week,
@@ -290,9 +291,10 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
         f"phase_iso_week_range: {context.get('phase_iso_week_range')}",
         f"phase_length_weeks: {context.get('phase_length_weeks')}",
         f"week_index_within_phase: {context.get('week_index_within_phase')}",
-        f"cycle: {context.get('cycle')}",
+        f"phase_type: {context.get('phase_type')}",
         f"phase_role: {context.get('phase_role')}",
         f"phase_intent: {context.get('phase_intent')}",
+        f"build_subtype: {context.get('build_subtype')}",
         f"scenario_cadence: {context.get('scenario_cadence')}",
         "phase_cadence_week_roles: "
         + ", ".join(str(item) for item in _as_list(context.get("phase_cadence_week_roles"))),
@@ -751,7 +753,7 @@ def _phase_role_from_structure(phase_structure_payload: JsonMap, phase_info: Any
     if isinstance(role, str) and role.strip():
         return role.strip()
     raw = _as_map(getattr(phase_info, "raw", {}))
-    fallback = raw.get("cycle") or getattr(phase_info, "phase_type", "")
+    fallback = raw.get("phase_type") or raw.get("cycle") or getattr(phase_info, "phase_type", "")
     return str(fallback or "").strip()
 
 

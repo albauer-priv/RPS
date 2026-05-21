@@ -75,22 +75,27 @@ Each phase MUST include:
 - `name` (string)
 - `date_range` `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
 - `iso_week_range` `YYYY-WW--YYYY-WW`
-- `cycle` one of: `Base | Build | Peak | Transition`
+- `phase_type` one of: `TRANSITION | PREPARATION | BASE | BUILD | PEAK | TAPER | RACE`
 - `phase_intent` one of:
-  - `recovery_reset`
+  - `transition_recovery`
+  - `preparation_re_entry`
   - `shortened_re_entry`
-  - `shortened_consolidation`
-  - `transition_consolidation`
-  - `foundation`
-  - `general_build`
-  - `build_progression`
-  - `ceiling_support`
-  - `transition_coupling`
+  - `general_base`
+  - `aerobic_base`
+  - `strength_endurance_base`
+  - `sweet_spot_base`
+  - `vo2_build`
+  - `threshold_build`
+  - `sst_build`
   - `durability_build`
   - `specificity_build`
-  - `b_event_rehearsal`
-  - `peak_preparation`
-  - `a_event_peak_taper`
+  - `vlamax_lowering`
+  - `peak_sharpening`
+  - `taper_freshening`
+  - `race_execution`
+- `build_subtype`
+  - required and equal to `phase_intent` when `phase_type = BUILD`
+  - otherwise `null`
 - `deload` (boolean)
 - `deload_rationale` (string; may be empty if deload=false)
 - `narrative` (string)
@@ -124,7 +129,9 @@ Each phase MUST include:
 
 **Rules**
 - `weekly_load_corridor.weekly_kj` is required and must be fully populated.
-- `phase_intent` is the normalized semantic contract for downstream Phase/Week/Workout planning. Keep `cycle` schema-valid and express finer semantics through `phase_intent`, not by inventing new cycle values.
+- `phase_intent` is the normalized semantic contract for downstream Phase/Week/Workout planning.
+- `phase_type` is the canonical macro-period container and must not be replaced with legacy `cycle` values.
+- `build_subtype` is an explicit Build selector key, not a second independent semantic degree of freedom.
 - `deload` and `deload_rationale` MUST be derived from `progressive_overload_policy.md`
   and the selected cadence (`deload_cadence` / `phase_length_weeks`); do not invent
   alternate cadence logic.
@@ -275,7 +282,9 @@ All required booleans must be present. Set to `true` only if valid:
         "name": "Base 1",
         "date_range": { "from": "2026-01-19", "to": "2026-02-15" },
         "iso_week_range": "2026-04--2026-07",
-        "cycle": "Base",
+        "phase_type": "BASE",
+        "phase_intent": "aerobic_base",
+        "build_subtype": null,
         "deload": true,
         "deload_rationale": "3:1 cadence within a 4-week base phase.",
         "narrative": "Foundational aerobic base with conservative overload.",
@@ -314,7 +323,9 @@ All required booleans must be present. Set to `true` only if valid:
         "name": "Base 2",
         "date_range": { "from": "2026-02-16", "to": "2026-03-15" },
         "iso_week_range": "2026-08--2026-11",
-        "cycle": "Build",
+        "phase_type": "BUILD",
+        "phase_intent": "threshold_build",
+        "build_subtype": "threshold_build",
         "deload": true,
         "deload_rationale": "3:1 cadence within a 4-week build phase.",
         "narrative": "Continued endurance progression with conservative specificity.",

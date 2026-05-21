@@ -20,20 +20,23 @@ Method:
 - `weekly_kj_bands` must be the final approved S5 output band, not a widened or re-expanded corridor.
 - `explicit_forbidden_content` must contain exactly the required six strings.
 - all required self-check booleans must be present and true.
-- `body_metadata.phase_intent` must match the inherited Season Plan phase intent exactly.
+- `body_metadata.phase_type`, `body_metadata.phase_intent`, and `body_metadata.phase_taxonomy_version` must match inherited upstream authority exactly.
+- `body_metadata.build_subtype` must match inherited upstream authority exactly for `BUILD` phases and stay `null` otherwise.
 
 `PHASE_STRUCTURE` rules:
 - `load_ranges.weekly_kj_bands` must copy phase-guardrails bands exactly.
 - `load_ranges.source` must be the actual stored phase-guardrails filename.
 - week-role coverage must match the full phase range.
-- `upstream_intent.phase_intent` must match the inherited Season Plan / PHASE_GUARDRAILS intent exactly.
+- `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` must match inherited Season Plan / PHASE_GUARDRAILS semantics exactly.
+- `upstream_intent.build_subtype` must match inherited authority exactly for `BUILD` phases and stay `null` otherwise.
 - keep workouts, interval structures, zones, %FTP, and day-by-day kJ targets in downstream artifacts.
 
 `PHASE_PREVIEW` rules:
 - derive from stored `PHASE_STRUCTURE` for the exact range.
 - `traceability` may contain only `derived_from` and `conflict_resolution`.
 - `derived_from` must include the stored phase-structure filename.
-- `phase_intent_summary.phase_intent` must match `PHASE_STRUCTURE.upstream_intent.phase_intent` exactly.
+- `phase_intent_summary.phase_type`, `phase_intent_summary.phase_intent`, and `phase_intent_summary.phase_taxonomy_version` must match `PHASE_STRUCTURE.upstream_intent` exactly.
+- `phase_intent_summary.build_subtype` must match `PHASE_STRUCTURE.upstream_intent.build_subtype` exactly for `BUILD` phases.
 - preview remains semantic and structural, not workout-detailed.
 
 Hard rules:

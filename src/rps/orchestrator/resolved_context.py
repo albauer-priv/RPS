@@ -701,7 +701,7 @@ def build_resolved_phase_context_block(
     if phase_info is None:
         return ""
     phase_name = phase_name_override or phase_info.phase_name or str(phase_info.raw.get("name", ""))
-    phase_type = phase_type_override or phase_info.phase_type or str(phase_info.raw.get("cycle", ""))
+    phase_type = phase_type_override or phase_info.phase_type or str(phase_info.raw.get("phase_type", "") or phase_info.raw.get("cycle", ""))
     phase_intent = str(getattr(phase_info, "phase_intent", "") or phase_info.raw.get("phase_intent", ""))
     phase_week = max(1, week_index(target_week) - week_index(phase_info.phase_range.start) + 1)
     return (

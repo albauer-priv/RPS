@@ -1,20 +1,26 @@
 ---
-Version: 1.0
-Status: Approved
-Last-Updated: 2026-05-20
+Version: 1.1
+Status: Superseded
+Last-Updated: 2026-05-21
 Owner: Planning Semantics
 ---
 # FEAT: Normalized Phase Intent Semantic Backbone
 
 * **ID:** FEAT_phase_intent_semantic_backbone
-* **Status:** Approved
+* **Status:** Superseded
 * **Owner/Area:** Planning Semantics
-* **Last-Updated:** 2026-05-20
-* **Related:** [FEAT_season_plan_semantic_hardening](/doc/specs/features/FEAT_season_plan_semantic_hardening.md), [FEAT_week_plan_semantic_hardening](/doc/specs/features/FEAT_week_plan_semantic_hardening.md), [FEAT_workout_policy_skill_completion](/doc/specs/features/FEAT_workout_policy_skill_completion.md)
+* **Last-Updated:** 2026-05-21
+* **Related:** [FEAT_season_plan_semantic_hardening](/doc/specs/features/FEAT_season_plan_semantic_hardening.md), [FEAT_week_plan_semantic_hardening](/doc/specs/features/FEAT_week_plan_semantic_hardening.md), [FEAT_workout_policy_skill_completion](/doc/specs/features/FEAT_workout_policy_skill_completion.md), [FEAT_canonical_phase_taxonomy_migration](/doc/specs/features/FEAT_canonical_phase_taxonomy_migration.md)
 
 ---
 
 ## 1) Context / Problem
+
+**Superseded note**
+
+* This feature established `phase_intent` as a first-class semantic field.
+* It is now superseded by [FEAT_canonical_phase_taxonomy_migration](/doc/specs/features/FEAT_canonical_phase_taxonomy_migration.md), which replaces the repo-specific taxonomy with canonical `phase_type`, `phase_intent`, and `build_subtype`.
+* Keep this document as implementation history only; do not use its enum set for new writes.
 
 **Current behavior**
 

@@ -14,7 +14,10 @@ from typing import Any
 
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
-from rps.workspace.phase_intents import normalize_phase_intent, normalize_season_archetype
+from rps.workspace.phase_intents import (
+    normalize_phase_intent,
+    normalize_season_archetype,
+)
 from rps.workspace.phase_resolution import date_to_iso_week
 
 JsonMap = dict[str, Any]
@@ -48,11 +51,10 @@ SHORTENED_ROLES = {
 }
 RESET_WEEK_ROLES = {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"}
 RECOVERY_SENSITIVE_PHASE_INTENTS = {
-    "recovery_reset",
+    "transition_recovery",
+    "preparation_re_entry",
     "shortened_re_entry",
-    "shortened_consolidation",
-    "transition_consolidation",
-    "a_event_peak_taper",
+    "taper_freshening",
 }
 
 
@@ -851,9 +853,9 @@ def build_season_phase_load_context(
     phase_reference = baseline or 0.0
     total = len(slots)
     for idx, slot in enumerate(slots, start=1):
-        cycle = _recommended_cycle_for_slot(idx=idx, total=total, is_shortened=bool(slot.get("is_shortened")))
+        phase_type = _recommended_cycle_for_slot(idx=idx, total=total, is_shortened=bool(slot.get("is_shortened")))
         season_phase_role = _season_phase_role_for_slot(
-            cycle=cycle,
+            phase_type=phase_type,
             idx=idx,
             total=total,
             is_shortened=bool(slot.get("is_shortened")),
@@ -866,16 +868,19 @@ def build_season_phase_load_context(
             planning_events_payload=planning_events_payload or {},
         )
         if event_trace.get("has_a_event"):
-            cycle = "Peak"
-            season_phase_role = "a_event_peak_taper"
-            phase_intent = "a_event_peak_taper"
-        elif event_trace.get("has_b_event") and cycle != "Peak":
-            season_phase_role = "b_event_rehearsal"
-            phase_intent = "b_event_rehearsal"
+            phase_type = "TAPER"
+            season_phase_role = "taper_freshening"
+            phase_intent = "taper_freshening"
+        elif event_trace.get("has_b_event") and phase_type not in {"PEAK", "TAPER"}:
+            phase_type = "BUILD"
+            season_phase_role = "specificity_build"
+            phase_intent = "specificity_build"
+
+        build_subtype = phase_intent if phase_type == "BUILD" else None
 
         phase_baseline = _phase_baseline_for_role(
             prior_reference=phase_reference,
-            cycle=cycle,
+            phase_type=phase_type,
             season_phase_role=phase_intent,
             availability_cap=typical_cap,
         )
@@ -884,7 +889,7 @@ def build_season_phase_load_context(
             band = calculate_role_progression_band(
                 baseline_load_kj=phase_baseline,
                 week_role=str(role),
-                phase_role=cycle,
+                phase_role=phase_type,
                 scenario_cadence=str(slot.get("scenario_cadence") or ""),
             )
             if band is None:
@@ -919,9 +924,11 @@ def build_season_phase_load_context(
             {
                 "phase_id": slot.get("phase_id"),
                 "iso_week_range": slot.get("iso_week_range"),
-                "phase_cycle": cycle,
+                "phase_type": phase_type,
+                "phase_cycle": phase_type,
                 "season_phase_role": season_phase_role,
                 "phase_intent": phase_intent,
+                "build_subtype": build_subtype,
                 "season_archetype": normalize_season_archetype(selected_context.get("season_archetype")),
                 "scenario_cadence": slot.get("scenario_cadence"),
                 "cadence_week_roles": slot.get("cadence_week_roles") or [],
@@ -944,7 +951,7 @@ def build_season_phase_load_context(
                 "blocking_issues": [],
             }
         )
-        if phase_max > 0 and cycle != "Peak":
+        if phase_max > 0 and phase_type != "TAPER":
             phase_reference = phase_max
     return {
         "unit_semantics": "planned_weekly_load_kj",
@@ -1056,7 +1063,7 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
         lines.append(
             "- "
             f"{phase.get('phase_id')}: {phase.get('iso_week_range')}, "
-            f"phase_cycle {phase.get('phase_cycle')}, "
+            f"phase_type {phase.get('phase_type')}, "
             f"season_phase_role {phase.get('season_phase_role')}, "
             f"phase_intent {phase.get('phase_intent')}, "
             f"scenario_cadence {phase.get('scenario_cadence')}, "
@@ -1082,24 +1089,24 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
 
 def _recommended_cycle_for_slot(*, idx: int, total: int, is_shortened: bool) -> str:
     if total > 0 and idx == total:
-        return "Peak"
+        return "PEAK"
     if idx == 1:
-        return "Base"
+        return "BASE"
     if is_shortened and idx <= 2:
-        return "Transition"
-    return "Build"
+        return "PREPARATION"
+    return "BUILD"
 
 
-def _season_phase_role_for_slot(*, cycle: str, idx: int, total: int, is_shortened: bool) -> str:
+def _season_phase_role_for_slot(*, phase_type: str, idx: int, total: int, is_shortened: bool) -> str:
     if is_shortened:
-        return "shortened_re_entry" if idx == 1 else "shortened_consolidation"
-    if cycle == "Peak":
-        return "a_event_peak_taper" if idx == total else "peak_preparation"
-    if cycle == "Base":
-        return "foundation"
-    if cycle == "Transition":
-        return "transition_consolidation"
-    return "build_progression"
+        return "shortened_re_entry" if idx == 1 else "general_base"
+    if phase_type == "PEAK":
+        return "peak_sharpening"
+    if phase_type == "BASE":
+        return "aerobic_base"
+    if phase_type == "PREPARATION":
+        return "preparation_re_entry"
+    return "threshold_build"
 
 
 def _derive_phase_intents_for_slots(
@@ -1114,10 +1121,10 @@ def _derive_phase_intents_for_slots(
     intents: dict[str, str] = {}
     default_cycles: dict[str, str] = {}
     for idx, slot in enumerate(slots, start=1):
-        cycle = _recommended_cycle_for_slot(idx=idx, total=total, is_shortened=bool(slot.get("is_shortened")))
-        default_cycles[str(slot.get("phase_id") or f"P{idx:02d}")] = cycle
+        phase_type = _recommended_cycle_for_slot(idx=idx, total=total, is_shortened=bool(slot.get("is_shortened")))
+        default_cycles[str(slot.get("phase_id") or f"P{idx:02d}")] = phase_type
         intents[str(slot.get("phase_id") or f"P{idx:02d}")] = _season_phase_role_for_slot(
-            cycle=cycle,
+            phase_type=phase_type,
             idx=idx,
             total=total,
             is_shortened=bool(slot.get("is_shortened")),
@@ -1132,10 +1139,10 @@ def _derive_phase_intents_for_slots(
     eligible: list[str] = []
     for idx, slot in enumerate(slots, start=1):
         phase_id = str(slot.get("phase_id") or f"P{idx:02d}")
-        cycle = default_cycles.get(phase_id, "")
+        phase_type = default_cycles.get(phase_id, "")
         if bool(slot.get("is_shortened")):
             continue
-        if cycle not in {"Build", "Transition"}:
+        if phase_type != "BUILD":
             continue
         trace = _event_taper_trace_for_slot(slot=slot, planning_events_payload=planning_events_payload or {})
         if trace.get("has_a_event"):
@@ -1153,15 +1160,15 @@ def _derive_phase_intents_for_slots(
     if early_vo2 and remaining >= 1:
         ceiling_slots = 2 if remaining >= 4 else 1
         for _ in range(ceiling_slots):
-            intents[eligible[cursor]] = "ceiling_support"
+            intents[eligible[cursor]] = "vo2_build"
             cursor += 1
         remaining = len(eligible) - cursor
     if remaining >= 3:
-        intents[eligible[cursor]] = "transition_coupling"
+        intents[eligible[cursor]] = "durability_build"
         cursor += 1
         remaining = len(eligible) - cursor
     elif remaining == 2 and ceiling_slots == 0 and early_vo2:
-        intents[eligible[cursor]] = "ceiling_support"
+        intents[eligible[cursor]] = "vo2_build"
         cursor += 1
         remaining = len(eligible) - cursor
     if remaining <= 0:
@@ -1184,18 +1191,18 @@ def _derive_phase_intents_for_slots(
 def _phase_baseline_for_role(
     *,
     prior_reference: float,
-    cycle: str,
+    phase_type: str,
     season_phase_role: str,
     availability_cap: float,
 ) -> float:
     reference = max(0.0, prior_reference)
     cap = availability_cap if availability_cap > 0 else inf
     role = season_phase_role.upper()
-    if "PEAK" in role or cycle == "Peak":
+    if phase_type in {"PEAK", "TAPER", "RACE"} or "PEAK" in role or "TAPER" in role:
         return min(reference * 0.78, cap * 0.75)
-    if "SHORTENED" in role or cycle == "Transition":
+    if "SHORTENED" in role or phase_type in {"TRANSITION", "PREPARATION"}:
         return min(reference * 0.92, cap * 0.72)
-    if cycle == "Base":
+    if phase_type == "BASE":
         return min(reference, cap * 0.72)
     return min(reference * 1.08, cap * 0.86)
 

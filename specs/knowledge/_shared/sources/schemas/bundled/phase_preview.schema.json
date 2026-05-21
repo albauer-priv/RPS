@@ -177,6 +177,8 @@
           "required": [
             "phase_intent",
             "phase_type",
+            "phase_taxonomy_version",
+            "build_subtype",
             "primary_objective",
             "non_negotiables",
             "key_risks_warnings"
@@ -185,25 +187,54 @@
             "phase_intent": {
               "type": "string",
               "enum": [
-                "recovery_reset",
+                "transition_recovery",
+                "preparation_re_entry",
                 "shortened_re_entry",
-                "shortened_consolidation",
-                "transition_consolidation",
-                "foundation",
-                "general_build",
-                "build_progression",
-                "ceiling_support",
-                "transition_coupling",
+                "general_base",
+                "aerobic_base",
+                "strength_endurance_base",
+                "sweet_spot_base",
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
                 "durability_build",
                 "specificity_build",
-                "b_event_rehearsal",
-                "peak_preparation",
-                "a_event_peak_taper"
+                "vlamax_lowering",
+                "peak_sharpening",
+                "taper_freshening",
+                "race_execution"
               ]
+            },
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
             },
             "phase_type": {
               "type": "string",
-              "minLength": 1
+              "enum": [
+                "TRANSITION",
+                "PREPARATION",
+                "BASE",
+                "BUILD",
+                "PEAK",
+                "TAPER",
+                "RACE"
+              ]
+            },
+            "build_subtype": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                null
+              ]
             },
             "primary_objective": {
               "type": "string",
@@ -225,7 +256,48 @@
                 "minLength": 1
               }
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "required": [
+                  "phase_type"
+                ],
+                "properties": {
+                  "phase_type": {
+                    "const": "BUILD"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "build_subtype"
+                ],
+                "properties": {
+                  "build_subtype": {
+                    "enum": [
+                      "vo2_build",
+                      "threshold_build",
+                      "sst_build",
+                      "durability_build",
+                      "specificity_build",
+                      "vlamax_lowering"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "required": [
+                  "build_subtype"
+                ],
+                "properties": {
+                  "build_subtype": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
         },
         "feel_overview": {
           "type": "object",
@@ -668,6 +740,8 @@
           "required": [
             "phase_intent",
             "phase_type",
+            "phase_taxonomy_version",
+            "build_subtype",
             "primary_objective",
             "non_negotiables",
             "key_risks_warnings"
@@ -676,25 +750,54 @@
             "phase_intent": {
               "type": "string",
               "enum": [
-                "recovery_reset",
+                "transition_recovery",
+                "preparation_re_entry",
                 "shortened_re_entry",
-                "shortened_consolidation",
-                "transition_consolidation",
-                "foundation",
-                "general_build",
-                "build_progression",
-                "ceiling_support",
-                "transition_coupling",
+                "general_base",
+                "aerobic_base",
+                "strength_endurance_base",
+                "sweet_spot_base",
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
                 "durability_build",
                 "specificity_build",
-                "b_event_rehearsal",
-                "peak_preparation",
-                "a_event_peak_taper"
+                "vlamax_lowering",
+                "peak_sharpening",
+                "taper_freshening",
+                "race_execution"
               ]
+            },
+            "phase_taxonomy_version": {
+              "const": "canonical_phase_taxonomy_v1",
+              "type": "string"
             },
             "phase_type": {
               "type": "string",
-              "minLength": 1
+              "enum": [
+                "TRANSITION",
+                "PREPARATION",
+                "BASE",
+                "BUILD",
+                "PEAK",
+                "TAPER",
+                "RACE"
+              ]
+            },
+            "build_subtype": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "vo2_build",
+                "threshold_build",
+                "sst_build",
+                "durability_build",
+                "specificity_build",
+                "vlamax_lowering",
+                null
+              ]
             },
             "primary_objective": {
               "type": "string",
@@ -716,7 +819,48 @@
                 "minLength": 1
               }
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "required": [
+                  "phase_type"
+                ],
+                "properties": {
+                  "phase_type": {
+                    "const": "BUILD"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "build_subtype"
+                ],
+                "properties": {
+                  "build_subtype": {
+                    "enum": [
+                      "vo2_build",
+                      "threshold_build",
+                      "sst_build",
+                      "durability_build",
+                      "specificity_build",
+                      "vlamax_lowering"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "required": [
+                  "build_subtype"
+                ],
+                "properties": {
+                  "build_subtype": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
         },
         "feel_overview": {
           "type": "object",
