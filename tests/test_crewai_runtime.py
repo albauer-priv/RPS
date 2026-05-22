@@ -54,12 +54,15 @@ from rps.crewai_runtime.guardrails import (
     build_task_guardrail_kwargs,
     des_diagnostic_only,
     guardrail_runtime_context,
+    phase_bundle_review_readiness,
     phase_s5_band_match,
     phase_week_role_load_coherence,
     phase_weeks_match_range,
     resolve_task_policy,
+    review_decision_integrity,
     season_bundle_integrity,
     season_bundle_matches_contract,
+    season_bundle_review_readiness,
     season_phase_load_context_match,
     season_phase_load_feasibility,
     season_scenario_selection_shape,
@@ -68,6 +71,7 @@ from rps.crewai_runtime.guardrails import (
     week_active_corridor_match,
     week_agenda_shape_and_calendar_check,
     week_bundle_domain_legality_check,
+    week_bundle_review_readiness,
     week_corridor_and_capacity_check,
     week_daily_availability_check,
     week_phase_role_alignment_check,
@@ -392,6 +396,7 @@ def test_crewai_blueprints_build_from_yaml() -> None:
         "typed_output_present",
         "phase_bundle_integrity",
         "phase_week_role_load_coherence",
+        "phase_bundle_review_readiness",
     )
     assert tasks["season_plan_finalize"].output_kind == "season_plan_draft_bundle"
 
@@ -2178,6 +2183,128 @@ def test_season_phase_load_context_match_repairs_missing_role_week_notes_before_
     assert repaired["data"]["phases"][0]["allowed_forbidden_semantics"]["allowed_load_modalities"] == ["NONE", "K3"]
 
 
+def test_season_phase_load_context_match_clears_stale_event_constraints_and_ignores_narrative_semantics() -> None:
+    output = {
+        "data": {
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
+            "season_intent_principles": {"season_objective": "Strong 200 km A-event execution."},
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "narrative": "Controlled threshold support stays available in this phase.",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 7800, "max": 9800, "notes": "Base corridor."}},
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                        "allowed_load_modalities": ["K3"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "events_constraints": [
+                        {
+                            "window": "2026-21",
+                            "type": "B",
+                            "constraint": "No target-week event.",
+                        }
+                    ],
+                }
+            ],
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 9800}},
+            "assumptions_unknowns": {"assumptions": ["a"], "uncertainties": ["u"], "revisit_items": ["r"]},
+            "justification": {"phase_justifications": []},
+        }
+    }
+
+    with guardrail_runtime_context(
+        approved_planning_bundle={
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "allowed_load_modalities": ["NONE", "K3"],
+                    "role_week_load_bands": ["2026-21: LOAD_1 7800-8600"],
+                }
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_intent": "shortened_re_entry",
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
+                    ],
+                    "event_taper_trace": {"events": []},
+                }
+            ],
+        },
+    ):
+        ok, repaired = season_phase_load_context_match(output)
+
+    assert ok is True
+    assert repaired["data"]["phases"][0]["events_constraints"] == []
+
+
+def test_season_bundle_review_readiness_rejects_phantom_event_placeholders() -> None:
+    ok, message = season_bundle_review_readiness(
+        {
+            "event_priority": {},
+            "macrocycle": {},
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                    "event_constraints": ["No target-week event."],
+                }
+            ],
+        }
+    )
+
+    assert ok is False
+    assert "synthetic no-event semantics" in message
+
+
+def test_phase_bundle_review_readiness_rejects_unready_bundle() -> None:
+    ok, message = phase_bundle_review_readiness(
+        {
+            "phase_intent": "general_base",
+            "guardrails": {"phase_intent": "general_base", "phase_summary": []},
+            "structure": {"phase_intent": "specificity_build"},
+            "preview": {"phase_intent": "general_base", "phase_intent_summary": []},
+            "constraint_audit": {"blocking_issues": []},
+            "load_governance_audit": {"blocking_issues": []},
+        }
+    )
+
+    assert ok is False
+    assert "does not match bundle phase_intent" in message or "must provide guardrails.phase_summary" in message
+
+
+def test_week_bundle_review_readiness_rejects_loaded_fixed_rest_day() -> None:
+    ok, message = week_bundle_review_readiness(
+        {
+            "day_blueprints": [
+                {
+                    "day": "Mon",
+                    "date": "2026-05-11",
+                    "fixed_rest_day": True,
+                    "planned_duration_minutes": 45,
+                    "planned_kj": 250,
+                    "workout_id": "W1",
+                }
+            ],
+            "workout_blueprints": [],
+        }
+    )
+
+    assert ok is False
+    assert "Fixed rest day still carries duration" in message
+
+
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:
     ok, payload = season_scenario_selection_shape(
         {
@@ -3531,6 +3658,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                     phase_range="2026-17--2026-19",
                     phase_id="P01",
                     phase_type="Base",
+                    phase_intent="general_base",
                     cadence_source="season_plan",
                     week_blueprints=[
                         PhaseWeekDraftBlueprintModel(
@@ -3541,11 +3669,11 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                             s5_band_max=6000,
                         )
                     ],
-                    guardrails={},
-                    structure={},
-                    preview={},
-                    constraint_audit={},
-                    load_governance_audit={},
+                    guardrails={"phase_intent": "general_base", "phase_summary": ["Conservative base support."]},
+                    structure={"phase_intent": "general_base"},
+                    preview={"phase_intent": "general_base", "phase_intent_summary": ["Stable aerobic build."]},
+                    constraint_audit={"blocking_issues": []},
+                    load_governance_audit={"blocking_issues": []},
                     decision_summary={},
                 )
             elif model_cls is PhaseReviewDecisionModel:
@@ -3869,6 +3997,51 @@ def test_run_multicrew_cycle_replays_only_sanitized_replan_context(tmp_path) -> 
     assert "Reduce weekly kJ into active band." in second_input
     assert "Stale warning that should not be forwarded." not in second_input
     assert "Old blocker that must not be replayed wholesale." not in second_input
+
+
+def test_review_decision_integrity_rejects_approved_blocking_issues() -> None:
+    ok, message = review_decision_integrity(
+        {
+            "status": "approved",
+            "blocking_issues": ["Still broken."],
+            "warnings": [],
+            "replan_instructions": [],
+            "writer_ready_summary": "ready",
+        }
+    )
+
+    assert ok is False
+    assert "must not include blocking_issues" in message
+
+
+def test_review_decision_integrity_requires_writer_ready_summary_for_approval() -> None:
+    ok, message = review_decision_integrity(
+        {
+            "status": "approved",
+            "blocking_issues": [],
+            "warnings": [],
+            "replan_instructions": [],
+            "writer_ready_summary": "",
+        }
+    )
+
+    assert ok is False
+    assert "must include non-empty writer_ready_summary" in message
+
+
+def test_review_decision_integrity_requires_replan_instructions_for_replan() -> None:
+    ok, message = review_decision_integrity(
+        {
+            "status": "replan_required",
+            "blocking_issues": ["Needs repair."],
+            "warnings": [],
+            "replan_instructions": [],
+            "writer_ready_summary": "fix it",
+        }
+    )
+
+    assert ok is False
+    assert "must include replan_instructions" in message
 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:

@@ -229,8 +229,8 @@ tasks:
       - season_kpi_guidance_review
       - season_load_corridor_draft
       - season_progression_review
-    description: "Consolidate season drafts into one internal SeasonPlanDraftBundle with availability-bounded phase-load blueprints. A season may contain one or more target macrocycles; do not assume the final A-event is the only reverse-planning anchor. If multiple A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster; if backplanned macrocycles overlap, resolve by event priority and spacing rather than stacking competing taper/build demands. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Emit structural phase blueprints only: phase ordering, cadence roles, event constraints, load corridors, availability caps, progression traces, and week-role load bands. Do not invent canonical phase taxonomy fields, deterministic allowed/forbidden domains, semantic contracts, or season load-envelope fields; those are code-owned and added during runtime normalization."
-    expected_output: A structured internal season plan draft bundle with `phase_blueprints` that preserve inherited selected-scenario cadence roles, event constraints, availability caps, progression traces, and role-week load bands. The season justification must classify each A-event as primary, secondary, equal-priority, or cluster-member. Deterministic canonical semantics and writer-safe contract fields are added later by Python normalization.
+    description: "Consolidate season drafts into one internal SeasonPlanDraftBundle with availability-bounded phase-load blueprints. A season may contain one or more target macrocycles; do not assume the final A-event is the only reverse-planning anchor. If multiple A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster; if backplanned macrocycles overlap, resolve by event priority and spacing rather than stacking competing taper/build demands. Preserve selected-scenario intensity authority at season level; individual phases may narrow it, but the bundle must not reconstruct season authority backward from Phase Guardrails. Finalize must resolve context-solvable semantic contradictions before review: no phantom event semantics, no writer-only repair assumptions, and no unresolved authority drift that still depends on the writer. Emit structural phase blueprints only: phase ordering, cadence roles, event constraints, load corridors, availability caps, progression traces, and week-role load bands. Do not invent canonical phase taxonomy fields, deterministic allowed/forbidden domains, semantic contracts, or season load-envelope fields; those are code-owned and added during runtime normalization."
+    expected_output: A structured internal season plan draft bundle with `phase_blueprints` that preserve inherited selected-scenario cadence roles, event constraints, availability caps, progression traces, and role-week load bands. The season justification must classify each A-event as primary, secondary, equal-priority, or cluster-member. The bundle must already be review-ready, with only code-owned normalization and artifact serialization left for later stages.
   season_governance_review:
     agent: season_governance_auditor
     kind: internal_reasoning
@@ -281,7 +281,7 @@ tasks:
       - season_constraints_review
       - season_plan_audit
       - season_contract_review
-    description: Integrate season review outputs and decide approve, reject, or bounded replan against the injected candidate season bundle. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_season_bundle` workspace artefact.
+    description: Integrate season review outputs and decide approve, reject, or bounded replan against the injected candidate season bundle. Default to approval when finalize already satisfied bundle and contract readiness. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_season_bundle` workspace artefact.
     expected_output: A structured season review decision.
   season_plan:
     agent: season_artifact_writer
@@ -403,8 +403,8 @@ tasks:
       - phase_intensity_distribution_draft
       - phase_event_integration_draft
       - phase_preview_draft
-    description: "Consolidate all internal phase drafts and audits into one internal PhaseDraftBundle before review, including role-aware week blueprints for every phase week. Keep top-level phase semantics and week-role structure aligned with the injected deterministic context, but treat canonical phase taxonomy and writer-safe authority fields as code-owned normalization outputs."
-    expected_output: A structured internal Phase draft bundle with `week_blueprints`; Python normalization will turn it into the canonical PhaseBundle used for review and writing.
+    description: "Consolidate all internal phase drafts and audits into one internal PhaseDraftBundle before review, including role-aware week blueprints for every phase week. Keep top-level phase semantics and week-role structure aligned with the injected deterministic context. Finalize must resolve context-solvable structure, role, load, and event contradictions before review so the writer is not expected to heal them later. Canonical phase taxonomy and writer-safe authority fields remain code-owned normalization outputs."
+    expected_output: A structured internal Phase draft bundle with `week_blueprints`; after Python normalization the bundle should be review-ready, with only code-owned projection and artifact serialization left for later stages.
   phase_constraint_audit:
     agent: phase_constraint_auditor
     kind: internal_reasoning
@@ -472,7 +472,7 @@ tasks:
       - phase_structure_review
       - phase_preview_review
       - phase_contract_review
-    description: Integrate phase review outputs and decide approve, reject, or bounded replan against the injected candidate phase bundle. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_phase_bundle` workspace artefact.
+    description: Integrate phase review outputs and decide approve, reject, or bounded replan against the injected candidate phase bundle. Default to approval when finalize already satisfied bundle and contract readiness. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_phase_bundle` workspace artefact.
     expected_output: A structured phase review decision.
   phase_guardrails:
     agent: phase_artifact_writer
@@ -573,8 +573,8 @@ tasks:
       - week_load_target_draft
       - week_revision_draft
       - week_workout_text_draft
-    description: Consolidate week drafts into one internal WeekPlanBundle before review.
-    expected_output: A structured internal week plan bundle.
+    description: Consolidate week drafts into one internal WeekPlanBundle before review. Finalize must resolve context-solvable agenda, availability, role, domain, and export-intent contradictions before review so the writer is not expected to heal them later.
+    expected_output: A structured internal week plan bundle that is already review-ready apart from formal approval and deterministic artifact serialization.
   week_consistency_review:
     agent: week_consistency_auditor
     kind: internal_reasoning
@@ -629,7 +629,7 @@ tasks:
       - week_load_governance_review
       - week_workout_syntax_review
       - week_contract_review
-    description: Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Approval requires strict export-safe workout syntax and phase-guardrails legality, not only narrative coherence. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_week_bundle` workspace artefact.
+    description: Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Default to approval when finalize already satisfied bundle readiness. Approval still requires strict export-safe workout syntax and phase-guardrails legality. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_week_bundle` workspace artefact.
     expected_output: A structured week review decision.
   week_plan:
     agent: week_artifact_writer

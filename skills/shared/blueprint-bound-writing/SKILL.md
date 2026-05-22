@@ -13,6 +13,7 @@ Rules:
 3. Do not use CrewAI memory, advisory memory, or narrative recollection for structural fields.
 4. Preserve schema validity and runtime-owned metadata boundaries.
 5. If a required blueprint field is missing, return a blocker rather than filling by guess.
+6. Writers do not perform primary semantic repair. If bundle semantics still need reinterpretation, approval was upstream-incorrect and the output is not writer-ready.
 
 Output expectation:
 

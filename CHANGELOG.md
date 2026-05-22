@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added an upstream-first planning pipeline contract for Season, Phase, and Week flows: finalize agents now own semantic bundle completion, review stages default to formal approval with bounded replan only for true residual defects, and writers are explicitly constrained to serialization plus deterministic final projection.
+
 ### Fixed
 - Fixed Season writer guardrail ordering so final `SEASON_PLAN` contract validation repairs deterministic role-week guardrail notes, canonical load modalities, and real event constraints before evaluating the writer output, preventing false blocking failures on code-owned fields such as `weekly_load_corridor.weekly_kj.notes`.
+- Fixed planning-stage contract enforcement so review-ready bundle checks now run in Season/Phase/Week finalize stages, approved review decisions must carry an explicit writer-ready summary, stale phantom event placeholders are rejected upstream, and Season writer validation no longer blocks on forbidden-domain narrative cleanup that should have been resolved before writing.
 
 ## [0.17.0] - 2026-05-22
 

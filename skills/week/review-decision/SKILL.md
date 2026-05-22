@@ -17,6 +17,7 @@ Decision order:
    - `workspace_get_week_calendar_context`
    - `workspace_get_phase_execution_context`
 6. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive active week role, active band, availability caps, or recovery-day authority during this step.
+7. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, export-safe bundle.
 
 Output format:
 - Return the task expected_output with a clear decision status: `approved`, `replan_required`, or `rejected`.

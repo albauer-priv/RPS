@@ -33,6 +33,7 @@ Writer rules:
 - `events_constraints` must contain real A/B/C planning events only; do not serialize synthetic “no event” placeholders
 - if a primary objective appears materially misaligned with the highest in-horizon A event, preserve the warning in the plan but do not block writing
 - if a required field is missing, unknown, or schema-invalid: stop rather than guess
+- do not treat the writer as a semantic repair pass; if the approved bundle is not writer-ready, fail rather than reinterpret
 
 Hard rules:
 - write only approved season logic during writing

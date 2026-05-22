@@ -12,6 +12,7 @@ Method:
 2. Resolve conflicts in favor of recovery protection, canonical phase semantics, availability, and event/taper semantics.
 3. Keep workout authoring subordinate to week role, day role, load distribution, and export syntax.
 4. Emit exactly one coherent candidate that is ready for review, not a list of alternatives.
+5. Review should mostly confirm. Resolve all context-decidable agenda, availability, role, domain, and export-intent contradictions before handoff.
 
 Use only existing upstream authority and injected deterministic context.
 
@@ -34,6 +35,7 @@ Required bundle semantics:
 - `workout_blueprints` must exist for every planned workout and state target day role, intensity domain, duration, kJ, required sections, syntax profile, and exportability status.
 - `weekly_load_corridor_kj` must mirror the binding active weekly band; do not invent a separate week corridor.
 - If the active band, availability, fixed rest days, and recovery constraints cannot be reconciled, emit blocking issues or replan instructions instead of hiding the conflict.
+- do not assume the writer will repair structural or semantic defects that are already decidable here
 - week shape must reflect inherited `phase_type`, `phase_intent`, and `build_subtype`
   - `shortened_re_entry`: one true quality day, Z2 anchor, endurance support
   - `general_base` / `aerobic_base`: endurance-dominant support with conservative moderate work

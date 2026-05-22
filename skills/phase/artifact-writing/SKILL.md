@@ -44,6 +44,7 @@ Hard rules:
 - stop if a required upstream stored filename cannot be resolved
 - stop if verbatim propagated season constraints are missing where mandated
 - align narrative with the emitted numeric and semantic content
+- do not repair unresolved phase semantics in the writer; fail rather than reinterpret
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

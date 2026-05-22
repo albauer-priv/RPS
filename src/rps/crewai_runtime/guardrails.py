@@ -18,10 +18,13 @@ from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.planning.contracts import (
     blocking_messages,
     validate_phase_against_execution_context,
+    validate_phase_bundle_review_readiness,
     validate_phase_s5_bands_against_context,
+    validate_season_bundle_review_readiness,
     validate_season_bundle_semantics,
     validate_season_plan_against_phase_load_context,
     validate_season_plan_against_phase_slots,
+    validate_week_bundle_review_readiness,
     validate_week_plan_against_week_context,
 )
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
@@ -349,6 +352,19 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def season_bundle_review_readiness(result: Any) -> GuardrailResult:
+    """Ensure a normalized season bundle is review-ready before review runs."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season bundle must decode to an object.")
+    issues = validate_season_bundle_review_readiness(season_bundle_payload=mapping)
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
+    return (True, mapping)
+
+
 def season_writer_bundle_match(result: Any) -> GuardrailResult:
     """Validate that the final Season Plan copied bundle-owned semantics exactly."""
 
@@ -617,6 +633,19 @@ def week_bundle_domain_legality_check(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def week_bundle_review_readiness(result: Any) -> GuardrailResult:
+    """Ensure a week bundle is review-ready before review runs."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Week bundle must decode to an object.")
+    issues = validate_week_bundle_review_readiness(week_bundle_payload=mapping)
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
+    return (True, mapping)
+
+
 def review_decision_integrity(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
@@ -629,6 +658,18 @@ def review_decision_integrity(result: Any) -> GuardrailResult:
             return (False, f"Review decision field '{field}' must be a list.")
     if not isinstance(mapping.get("writer_ready_summary"), str):
         return (False, "Review decision must include writer_ready_summary string.")
+    blocking_issues = [str(item).strip() for item in mapping.get("blocking_issues") or [] if str(item).strip()]
+    replan_instructions = mapping.get("replan_instructions") or []
+    writer_ready_summary = str(mapping.get("writer_ready_summary") or "").strip()
+    if status == "approved":
+        if blocking_issues:
+            return (False, "Approved review decision must not include blocking_issues.")
+        if replan_instructions:
+            return (False, "Approved review decision must not include replan_instructions.")
+        if not writer_ready_summary:
+            return (False, "Approved review decision must include non-empty writer_ready_summary.")
+    if status == "replan_required" and not replan_instructions:
+        return (False, "replan_required review decision must include replan_instructions.")
     return (True, mapping)
 
 
@@ -845,6 +886,7 @@ def season_phase_load_context_match(result: Any) -> GuardrailResult:
     issues = validate_season_plan_against_phase_load_context(
         season_plan_payload=mapping,
         season_phase_load_context=context,
+        include_narrative_semantics=False,
     )
     messages = blocking_messages(issues)
     if messages:
@@ -915,6 +957,19 @@ def phase_s5_band_match(result: Any) -> GuardrailResult:
                 False,
                 f"weekly_kj_bands[{entry.get('week')}] does not match deterministic S5 band {expected[0]}-{expected[1]}.",
             )
+    return (True, mapping)
+
+
+def phase_bundle_review_readiness(result: Any) -> GuardrailResult:
+    """Ensure a normalized phase bundle is review-ready before review runs."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Phase bundle must decode to an object.")
+    issues = validate_phase_bundle_review_readiness(phase_bundle_payload=mapping)
+    messages = blocking_messages(issues)
+    if messages:
+        return (False, "; ".join(messages[:5]))
     return (True, mapping)
 
 
@@ -1475,8 +1530,7 @@ def _repair_season_plan_for_contract_validation(mapping: JsonMap) -> JsonMap:
                 for event in _as_list(_as_map(context_phase.get("event_taper_trace")).get("events"))
                 if str(_as_map(event).get("date") or _as_map(event).get("week") or "").strip()
             ]
-            if events:
-                phase["events_constraints"] = events
+            phase["events_constraints"] = events
     data["phases"] = phases
     return repaired
 
@@ -1595,12 +1649,15 @@ REGISTRY: dict[str, GuardrailFn] = {
     "phase_bundle_integrity": phase_bundle_integrity,
     "phase_bundle_matches_context": phase_bundle_matches_context,
     "phase_week_role_load_coherence": phase_week_role_load_coherence,
+    "phase_bundle_review_readiness": phase_bundle_review_readiness,
     "season_bundle_integrity": season_bundle_integrity,
     "season_bundle_matches_contract": season_bundle_matches_contract,
     "season_phase_load_feasibility": season_phase_load_feasibility,
+    "season_bundle_review_readiness": season_bundle_review_readiness,
     "week_bundle_integrity": week_bundle_integrity,
     "week_bundle_matches_context": week_bundle_matches_context,
     "week_bundle_domain_legality_check": week_bundle_domain_legality_check,
+    "week_bundle_review_readiness": week_bundle_review_readiness,
     "review_decision_integrity": review_decision_integrity,
     "artifact_envelope_basic": artifact_envelope_basic,
     "artifact_meta_data_present": artifact_meta_data_present,

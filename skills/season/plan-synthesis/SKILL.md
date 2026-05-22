@@ -46,6 +46,13 @@ Method:
    - explicit `semantic_contract`
 24. Keep `phase_type`, `phase_intent`, and `build_subtype` coherent with cycle, event position, phase role, and allowed-domain narrowing.
 25. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_build` only when explicitly justified, then preserve `durability_build` / `specificity_build` runway only when the deterministic context permits it.
+26. Finalize must leave review with a nearly writer-ready bundle. Do not rely on the writer to repair semantic contradictions that are already decidable here.
+27. Before handoff, explicitly self-check:
+   - no phantom event placeholders
+   - no positive framing of forbidden domains
+   - no unresolved scenario/phase authority drift
+   - no unresolved cadence / reset / taper contradictions
+   - objective mismatch, if present, surfaced only as warning/revisit item
 
 Phase intent and intensity semantics:
 - Multi-A-event planning may create one or more target macrocycles and may use an A-event peak cluster when spacing is too short for separate recovery/build/taper structures.
@@ -131,6 +138,8 @@ Hard rules:
 - the final season bundle must include deterministic `season_load_envelope` and `season_semantic_notes` so the writer can copy them directly
 - the final season bundle must serialize real event constraints only; never emit synthetic “no event” placeholders into `events_constraints`
 - if the objective appears materially misaligned with the highest in-horizon A event, surface that as a warning/revisit item; do not block synthesis solely for that mismatch
+- do not leave review to discover normal semantic cleanup that can be decided here
+- do not assume the writer will improve or reinterpret bundle semantics
 - never guess or alias legacy phase-intent labels during synthesis
 - if the selected scenario permits `TEMPO` or other quality domains, at least one suitable later-season phase must preserve that allowance unless the bundle makes a clear phase-specific exclusion case
 - make multi-`A` event structure audit-visible through phase narratives, event constraints, phase transition guardrails, season justification, and assumptions / revisit items even though there are no explicit macrocycle id fields yet

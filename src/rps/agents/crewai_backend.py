@@ -36,9 +36,12 @@ from rps.crewai_runtime.guardrails import (
     current_guardrail_runtime_context,
     guardrail_runtime_context,
     phase_bundle_matches_context,
+    phase_bundle_review_readiness,
     phase_week_role_load_coherence,
     season_bundle_matches_contract,
+    season_bundle_review_readiness,
     week_bundle_domain_legality_messages,
+    week_bundle_review_readiness,
 )
 from rps.crewai_runtime.knowledge import (
     build_crewai_knowledge_kwargs,
@@ -975,20 +978,25 @@ def _raise_normalized_contract_failure(*, name: str, reason: object) -> None:
 def _validate_normalized_season_bundle(planning_bundle: JsonMap, *, runtime: AgentRuntime, athlete_id: str, run_id: str) -> JsonMap:
     """Validate the normalized season bundle before review/writer handoff."""
 
-    ok, payload_or_reason = season_bundle_matches_contract(planning_bundle)
-    if ok:
-        return planning_bundle
-    emit_runtime_event(
-        root=runtime.workspace_root,
-        athlete_id=athlete_id,
-        run_id=run_id,
-        event_type="SEASON_BUNDLE_NORMALIZED_CONTRACT_FAILED",
-        crew="season_planning",
-        task="season_plan_finalize",
-        component="crew:season_plan_finalize",
-        reason=str(payload_or_reason),
+    checks = (
+        ("season_bundle_matches_contract", season_bundle_matches_contract),
+        ("season_bundle_review_readiness", season_bundle_review_readiness),
     )
-    _raise_normalized_contract_failure(name="season_bundle_normalized_contract_failed", reason=payload_or_reason)
+    for name, fn in checks:
+        ok, payload_or_reason = fn(planning_bundle)
+        if ok:
+            continue
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="SEASON_BUNDLE_NORMALIZED_CONTRACT_FAILED",
+            crew="season_planning",
+            task="season_plan_finalize",
+            component="crew:season_plan_finalize",
+            reason=f"{name}: {payload_or_reason}",
+        )
+        _raise_normalized_contract_failure(name=name, reason=payload_or_reason)
     return planning_bundle
 
 
@@ -998,6 +1006,7 @@ def _validate_normalized_phase_bundle(planning_bundle: JsonMap, *, runtime: Agen
     checks = (
         ("phase_bundle_matches_context", phase_bundle_matches_context),
         ("phase_week_role_load_coherence", phase_week_role_load_coherence),
+        ("phase_bundle_review_readiness", phase_bundle_review_readiness),
     )
     for name, fn in checks:
         ok, payload_or_reason = fn(planning_bundle)
@@ -1011,6 +1020,28 @@ def _validate_normalized_phase_bundle(planning_bundle: JsonMap, *, runtime: Agen
             crew="phase_planning",
             task="phase_bundle_finalize",
             component="crew:phase_bundle_finalize",
+            reason=f"{name}: {payload_or_reason}",
+        )
+        _raise_normalized_contract_failure(name=name, reason=payload_or_reason)
+    return planning_bundle
+
+
+def _validate_normalized_week_bundle(planning_bundle: JsonMap, *, runtime: AgentRuntime, athlete_id: str, run_id: str) -> JsonMap:
+    """Validate the week bundle before review/writer handoff."""
+
+    checks = (("week_bundle_review_readiness", week_bundle_review_readiness),)
+    for name, fn in checks:
+        ok, payload_or_reason = fn(planning_bundle)
+        if ok:
+            continue
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="WEEK_BUNDLE_NORMALIZED_CONTRACT_FAILED",
+            crew="week_planning",
+            task="week_plan_finalize",
+            component="crew:week_plan_finalize",
             reason=f"{name}: {payload_or_reason}",
         )
         _raise_normalized_contract_failure(name=name, reason=payload_or_reason)
@@ -3022,7 +3053,7 @@ def _run_single_task_document_crewai(
         )
     elif task == AgentTask.CREATE_WEEK_PLAN:
         def _planning_runner(loop_input: str) -> JsonMap:
-            return _execute_crewai_multiagent_crew(
+            planning_bundle = _execute_crewai_multiagent_crew(
                 agent_cls=Agent,
                 crewai_llm_cls=LLM,
                 crew_cls=Crew,
@@ -3045,6 +3076,12 @@ def _run_single_task_document_crewai(
                 temperature_override=temperature_override,
                 execution_mode="sequential",
             ).model_dump()
+            return _validate_normalized_week_bundle(
+                planning_bundle,
+                runtime=runtime,
+                athlete_id=athlete_id,
+                run_id=run_id,
+            )
 
         def _review_runner(loop_input: str, planning_bundle: JsonMap) -> JsonMap:
             return _run_review_decision_document(

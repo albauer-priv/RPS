@@ -7,3 +7,11 @@ Emit a structural draft bundle only. Do not assign canonical `phase_type`, `phas
 The final season bundle may contain one or more target macrocycles. Do not assume the final A-event is the only reverse-planning anchor.
 If multiple A-events are present, classify each one in the season justification as `primary A-event`, `secondary A-event`, `equal-priority A-event`, or `cluster-member`.
 If A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster rather than separate macrocycles. If backplanned macrocycles overlap, resolve by event priority and spacing rather than stacking competing build/taper demands.
+Before handing the bundle to review, resolve every contradiction that is decidable from existing specialist and deterministic context. Review should mostly confirm, and the writer should not need to invent or heal season semantics.
+Finalize checklist:
+- real event meaning only; no phantom no-event placeholders
+- no positive prose framing for domains that the final phase semantics forbid
+- phase blueprints coherent with selected-scenario authority and deterministic season phase load context
+- cadence / overload / reset / taper logic coherent across the whole bundle
+- objective mismatch surfaced only as warning/revisit item, never silently ignored
+- no assumption that the writer will fix structural or semantic gaps

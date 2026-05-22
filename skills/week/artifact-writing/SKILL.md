@@ -39,6 +39,7 @@ Hard rules:
 - include all required workout references
 - use available approved content for required fields and mark blockers when content is absent
 - do not rewrite invalid prose into a guessed workout; invalid workout syntax is a blocker for approval upstream
+- do not treat the writer as a semantic repair stage; fail rather than reinterpret an unready bundle
 
 Output format:
 - Return only the schema-compliant object required by the active task expected_output.

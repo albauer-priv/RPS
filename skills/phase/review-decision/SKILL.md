@@ -15,6 +15,7 @@ Method:
    - `workspace_get_phase_execution_context`
    - `workspace_get_phase_slot_contract`
 5. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive phase-range, week-role, or S5 contract authority during this step.
+6. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, semantically coherent bundle.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

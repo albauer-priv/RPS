@@ -319,6 +319,163 @@ def validate_season_bundle_semantics(*, season_bundle_payload: JsonMap) -> list[
     return issues
 
 
+def validate_season_bundle_review_readiness(*, season_bundle_payload: JsonMap) -> list[PlanningContractIssue]:
+    """Validate that a normalized season bundle is ready for review and writing."""
+
+    issues: list[PlanningContractIssue] = []
+    top_level_blockers = [str(item).strip() for item in _as_list(season_bundle_payload.get("blocking_issues")) if str(item).strip()]
+    if top_level_blockers:
+        issues.append(
+            PlanningContractIssue(
+                "season_bundle_blocking_issues_present",
+                "Season finalize bundle still contains blocking_issues and is not review-ready.",
+                path="blocking_issues",
+            )
+        )
+    for idx, audit in enumerate(_as_list(season_bundle_payload.get("constraints"))):
+        blocking = [str(item).strip() for item in _as_list(_as_map(audit).get("blocking_issues")) if str(item).strip()]
+        if blocking:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_constraint_blockers_present",
+                    "Constraint audit still contains blocking issues: " + "; ".join(blocking[:3]),
+                    path=f"constraints[{idx}].blocking_issues",
+                )
+            )
+    for idx, audit in enumerate(_as_list(season_bundle_payload.get("load_governance"))):
+        blocking = [str(item).strip() for item in _as_list(_as_map(audit).get("blocking_issues")) if str(item).strip()]
+        if blocking:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_governance_blockers_present",
+                    "Load-governance audit still contains blocking issues: " + "; ".join(blocking[:3]),
+                    path=f"load_governance[{idx}].blocking_issues",
+                )
+            )
+    phantom_markers = (
+        "no target-week event",
+        "no logistics exception",
+        "no event-driven load exception",
+        "no target week event",
+    )
+    for idx, blueprint in enumerate(_as_list(season_bundle_payload.get("phase_blueprints"))):
+        event_constraints = [str(item).strip() for item in _as_list(_as_map(blueprint).get("event_constraints")) if str(item).strip()]
+        if any(any(marker in item.lower() for marker in phantom_markers) for item in event_constraints):
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_phantom_event_constraint",
+                    "Season finalize bundle still carries synthetic no-event semantics in phase blueprint event_constraints.",
+                    path=f"phase_blueprints[{idx}].event_constraints",
+                )
+            )
+    return issues
+
+
+def validate_phase_bundle_review_readiness(*, phase_bundle_payload: JsonMap) -> list[PlanningContractIssue]:
+    """Validate that a normalized phase bundle is ready for review and writing."""
+
+    issues: list[PlanningContractIssue] = []
+    top_level_blockers = [str(item).strip() for item in _as_list(phase_bundle_payload.get("blocking_issues")) if str(item).strip()]
+    if top_level_blockers:
+        issues.append(
+            PlanningContractIssue(
+                "phase_bundle_blocking_issues_present",
+                "Phase finalize bundle still contains blocking_issues and is not review-ready.",
+                path="blocking_issues",
+            )
+        )
+    for field in ("constraint_audit", "load_governance_audit"):
+        audit = _as_map(phase_bundle_payload.get(field))
+        blocking = [str(item).strip() for item in _as_list(audit.get("blocking_issues")) if str(item).strip()]
+        if blocking:
+            issues.append(
+                PlanningContractIssue(
+                    "phase_bundle_audit_blockers_present",
+                    f"{field} still contains blocking issues: " + "; ".join(blocking[:3]),
+                    path=f"{field}.blocking_issues",
+                )
+            )
+    phase_intent = str(phase_bundle_payload.get("phase_intent") or "").strip()
+    for field in ("guardrails", "structure", "preview"):
+        nested = _as_map(phase_bundle_payload.get(field))
+        nested_intent = str(nested.get("phase_intent") or "").strip()
+        if phase_intent and nested_intent and nested_intent != phase_intent:
+            issues.append(
+                PlanningContractIssue(
+                    "phase_bundle_nested_intent_mismatch",
+                    f"{field}.phase_intent {nested_intent!r} does not match bundle phase_intent {phase_intent!r}.",
+                    path=f"{field}.phase_intent",
+                )
+            )
+    if not [str(item).strip() for item in _as_list(_as_map(phase_bundle_payload.get("guardrails")).get("phase_summary")) if str(item).strip()]:
+        issues.append(
+            PlanningContractIssue(
+                "phase_bundle_guardrails_summary_missing",
+                "Phase finalize bundle must provide guardrails.phase_summary before review.",
+                path="guardrails.phase_summary",
+            )
+        )
+    if not [str(item).strip() for item in _as_list(_as_map(phase_bundle_payload.get("preview")).get("phase_intent_summary")) if str(item).strip()]:
+        issues.append(
+            PlanningContractIssue(
+                "phase_bundle_preview_summary_missing",
+                "Phase finalize bundle must provide preview.phase_intent_summary before review.",
+                path="preview.phase_intent_summary",
+            )
+        )
+    return issues
+
+
+def validate_week_bundle_review_readiness(*, week_bundle_payload: JsonMap) -> list[PlanningContractIssue]:
+    """Validate that a week bundle is ready for review and writing."""
+
+    issues: list[PlanningContractIssue] = []
+    top_level_blockers = [str(item).strip() for item in _as_list(week_bundle_payload.get("blocking_issues")) if str(item).strip()]
+    if top_level_blockers:
+        issues.append(
+            PlanningContractIssue(
+                "week_bundle_blocking_issues_present",
+                "Week finalize bundle still contains blocking_issues and is not review-ready.",
+                path="blocking_issues",
+            )
+        )
+    for idx, day in enumerate(_as_list(week_bundle_payload.get("day_blueprints"))):
+        day_map = _as_map(day)
+        if day_map.get("fixed_rest_day") is True:
+            planned_duration = _as_int(day_map.get("planned_duration_minutes")) or 0
+            planned_kj = _as_int(day_map.get("planned_kj")) or 0
+            workout_id = str(day_map.get("workout_id") or "").strip()
+            if planned_duration > 0 or planned_kj > 0 or workout_id:
+                issues.append(
+                    PlanningContractIssue(
+                        "week_bundle_fixed_rest_day_loaded",
+                        "Fixed rest day still carries duration, kJ, or workout assignment.",
+                        path=f"day_blueprints[{idx}]",
+                    )
+                )
+    for idx, workout in enumerate(_as_list(week_bundle_payload.get("workout_blueprints"))):
+        workout_map = _as_map(workout)
+        legality = str(workout_map.get("phase_legality_status") or "").strip().lower()
+        exportability = str(workout_map.get("exportability_status") or "").strip().lower()
+        if legality == "illegal":
+            issues.append(
+                PlanningContractIssue(
+                    "week_bundle_illegal_workout_blueprint",
+                    "Week finalize bundle still contains a phase-illegal workout blueprint.",
+                    path=f"workout_blueprints[{idx}].phase_legality_status",
+                )
+            )
+        if exportability == "invalid":
+            issues.append(
+                PlanningContractIssue(
+                    "week_bundle_invalid_exportability_status",
+                    "Week finalize bundle still contains an export-invalid workout blueprint.",
+                    path=f"workout_blueprints[{idx}].exportability_status",
+                )
+            )
+    return issues
+
+
 def validate_snapshot_freshness(
     *,
     snapshot_payload: JsonMap,
@@ -429,6 +586,7 @@ def validate_season_plan_against_phase_load_context(
     *,
     season_plan_payload: JsonMap,
     season_phase_load_context: JsonMap,
+    include_narrative_semantics: bool = True,
 ) -> list[PlanningContractIssue]:
     """Validate Season Plan strategic corridors against deterministic phase load context."""
 
@@ -601,24 +759,25 @@ def validate_season_plan_against_phase_load_context(
             if str(entry_map.get("phase_id") or "") == phase_id:
                 justification = entry_map
                 break
-        narrative_fields = [
-            phase.get("narrative"),
-            overview.get("metabolic_focus"),
-            structural_emphasis.get("typical_focus"),
-            justification.get("intensity_distribution"),
-            *[str(item) for item in _as_list(overview.get("expected_adaptations"))],
-            *[str(item) for item in _as_list(overview.get("non_negotiables"))],
-        ]
-        for forbidden_domain in forbidden_domains:
-            if any(_has_positive_forbidden_domain_mention(text, forbidden_domain) for text in narrative_fields):
-                issues.append(
-                    PlanningContractIssue(
-                        "season_phase_forbidden_domain_positive_narrative",
-                        f"{forbidden_domain} is forbidden for this phase but is described positively in season-plan narrative text.",
-                        path=path,
+        if include_narrative_semantics:
+            narrative_fields = [
+                phase.get("narrative"),
+                overview.get("metabolic_focus"),
+                structural_emphasis.get("typical_focus"),
+                justification.get("intensity_distribution"),
+                *[str(item) for item in _as_list(overview.get("expected_adaptations"))],
+                *[str(item) for item in _as_list(overview.get("non_negotiables"))],
+            ]
+            for forbidden_domain in forbidden_domains:
+                if any(_has_positive_forbidden_domain_mention(text, forbidden_domain) for text in narrative_fields):
+                    issues.append(
+                        PlanningContractIssue(
+                            "season_phase_forbidden_domain_positive_narrative",
+                            f"{forbidden_domain} is forbidden for this phase but is described positively in season-plan narrative text.",
+                            path=path,
+                        )
                     )
-                )
-                break
+                    break
         if observed_intent and "VO2MAX" in forbidden_domains and observed_intent == "vo2_build" and season_archetype == "ceiling_first_durability":
             issues.append(
                 PlanningContractIssue(

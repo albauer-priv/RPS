@@ -16,6 +16,13 @@ Method:
    - `workspace_get_phase_slot_contract`
 5. Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive deterministic week roles, exact phase range, or S5 bands during this step.
 6. Emit one review-ready phase bundle.
+7. Review should mostly confirm. Resolve all context-decidable role/load/structure/event contradictions before handoff.
+8. Before handoff, explicitly self-check:
+   - week roles complete and coherent
+   - S5/load-band logic coherent
+   - guardrails / structure / preview agree
+   - phase semantics and domain shaping contain no unresolved contradictions
+   - no assumption that the writer will repair bundle semantics
 
 Retrieval policy:
 - Use deterministic injected runtime contracts first when they are present.

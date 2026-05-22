@@ -40,6 +40,7 @@ tasks:
       - typed_output_present
       - season_bundle_integrity
       - season_phase_load_feasibility
+      - season_bundle_review_readiness
     guardrail_max_retries: 2
   season_plan_audit:
     guardrails:
@@ -94,6 +95,7 @@ tasks:
       - typed_output_present
       - phase_bundle_integrity
       - phase_week_role_load_coherence
+      - phase_bundle_review_readiness
     guardrail_max_retries: 2
   phase_review:
     output_mode: pydantic
@@ -122,6 +124,7 @@ tasks:
       - week_bundle_integrity
       - week_bundle_matches_context
       - week_bundle_domain_legality_check
+      - week_bundle_review_readiness
     guardrail_max_retries: 2
   week_review:
     output_mode: pydantic
