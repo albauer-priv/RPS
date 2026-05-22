@@ -53,6 +53,10 @@ Method:
    - no unresolved scenario/phase authority drift
    - no unresolved cadence / reset / taper contradictions
    - objective mismatch, if present, surfaced only as warning/revisit item
+28. Treat `phase_blueprints[].event_constraints` as a compact real-event trace:
+   - emit `[]` when a phase has no real event-linked constraint
+   - emit short positive real-event lines when a phase does have one
+   - never emit negative placeholder prose such as `No target-week event`, `No logistics exception`, or `No event-driven load exception`
 
 Phase intent and intensity semantics:
 - Multi-A-event planning may create one or more target macrocycles and may use an A-event peak cluster when spacing is too short for separate recovery/build/taper structures.
@@ -137,6 +141,11 @@ Hard rules:
 - every phase blueprint must include `forbidden_domains` and `semantic_contract`; do not leave method-critical season semantics in prose only
 - the final season bundle must include deterministic `season_load_envelope` and `season_semantic_notes` so the writer can copy them directly
 - the final season bundle must serialize real event constraints only; never emit synthetic “no event” placeholders into `events_constraints`
+- for internal `phase_blueprints[].event_constraints`, prefer these shapes:
+  - `[]`
+  - `["2026-09-12 A event: dedicated taper-contained event handling."]`
+  - `["2026-08-15 B event: rehearsal within ongoing build."]`
+  Keep each line factual, short, and tied to a real planning event.
 - if the objective appears materially misaligned with the highest in-horizon A event, surface that as a warning/revisit item; do not block synthesis solely for that mismatch
 - do not leave review to discover normal semantic cleanup that can be decided here
 - do not assume the writer will improve or reinterpret bundle semantics

@@ -2249,23 +2249,28 @@ def test_season_phase_load_context_match_clears_stale_event_constraints_and_igno
 
 
 def test_season_bundle_review_readiness_rejects_phantom_event_placeholders() -> None:
-    ok, message = season_bundle_review_readiness(
-        {
-            "event_priority": {},
-            "macrocycle": {},
-            "phase_blueprints": [
-                {
-                    "phase_id": "P01",
-                    "iso_week_range": "2026-21--2026-23",
-                    "scenario_cadence": "2:1",
-                    "event_constraints": ["No target-week event."],
-                }
-            ],
-        }
-    )
+    for placeholder in (
+        "No target-week event.",
+        "No logistics exception.",
+        "No event-driven load exception.",
+    ):
+        ok, message = season_bundle_review_readiness(
+            {
+                "event_priority": {},
+                "macrocycle": {},
+                "phase_blueprints": [
+                    {
+                        "phase_id": "P01",
+                        "iso_week_range": "2026-21--2026-23",
+                        "scenario_cadence": "2:1",
+                        "event_constraints": [placeholder],
+                    }
+                ],
+            }
+        )
 
-    assert ok is False
-    assert "synthetic no-event semantics" in message
+        assert ok is False
+        assert "synthetic no-event semantics" in message
 
 
 def test_phase_bundle_review_readiness_rejects_unready_bundle() -> None:

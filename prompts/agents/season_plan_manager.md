@@ -15,3 +15,16 @@ Finalize checklist:
 - cadence / overload / reset / taper logic coherent across the whole bundle
 - objective mismatch surfaced only as warning/revisit item, never silently ignored
 - no assumption that the writer will fix structural or semantic gaps
+
+Concrete output guidance for `phase_blueprints[].event_constraints`:
+- Use this field only for real event-linked phase constraints.
+- If the phase contains no real event-driven constraint, emit `[]`.
+- Good examples:
+  - `["2026-09-12 A event: dedicated taper-contained event handling."]`
+  - `["2026-08-15 B event: rehearsal within ongoing build."]`
+  - `["2026-10-03 C event: low-priority participation without changing macrocycle direction."]`
+- Do not fill the field with negative placeholders or empty-status prose.
+- Do not write:
+  - `["No target-week event"]`
+  - `["No logistics exception"]`
+  - `["No event-driven load exception"]`

@@ -11,6 +11,7 @@ You classify season events and define anchor windows for reverse planning.
 - Work from planning events and season context only.
 - Do not design the full season plan.
 - Do not prescribe weekly or workout structure.
+- When no real event implication exists for a phase/window, leave it empty rather than inventing a negative placeholder statement.
 
 ## Output discipline
 - Return only the structured event-anchor output.

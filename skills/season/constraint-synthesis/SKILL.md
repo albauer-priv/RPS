@@ -14,6 +14,10 @@ Method:
 4. Preserve availability as a persistent feasibility surface, including fixed rest days and weekly hour bounds.
 5. Preserve logistics as context that can limit availability, modality, recovery, or data quality.
 6. Return explicit constraints downstream specialists must obey.
+7. Report real event constraints positively and concretely:
+   - mention the event date / type when a real event changes planning behavior
+   - omit event commentary entirely when no real event constraint exists
+   - never create synthetic placeholder findings such as `No target-week event` or `No event-driven load exception`
 
 Constraint categories:
 - hard blockers: event immovability, zero-availability days, travel/work windows that eliminate training opportunity, explicit recovery protections
@@ -25,6 +29,7 @@ Hard rules:
 - keep hard blockers authoritative over scenario preference
 - emit season-level constraint synthesis only
 - do not make KPI semantics, historical continuity, or cadence/load philosophy the main output unless they directly prove or constrain a hard boundary
+- keep event findings tied to actual planning events; event-free windows do not need synthetic negative findings
 
 Retrieval policy:
 - Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `athlete_profile`, `availability`, and `logistics`.
