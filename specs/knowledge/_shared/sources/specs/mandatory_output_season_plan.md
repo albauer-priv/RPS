@@ -137,6 +137,10 @@ Each phase MUST include:
   alternate cadence logic.
 - No extra keys at phase level.
 - Events: every Planning Events A/B/C event must appear in exactly one phase’s `events_constraints`.
+- `events_constraints` must contain real planning events only. Do not serialize synthetic placeholders such as “no event”, “no logistics exception”, or “no event-driven load exception”.
+- `RECOVERY` is a legal non-quality execution domain when permitted by the canonical phase intent. It is never a quality obligation and does not replace `REST`.
+- `allowed_load_modalities` are code-owned canonical semantics. Keep `NONE` whenever the phase semantics permit non-K3 execution; omission must not make `K3` appear mandatory.
+- Deterministic role-week load bands must be rendered in existing season-plan text fields as inherited season-level guardrails for auditability. This rendering is not week scheduling or workout prescription.
 
 #### 6) `data.global_constraints`
 Required:
@@ -159,6 +163,10 @@ Required:
 - `assumptions` (array, min 1)
 - `uncertainties` (array, min 1)
 - `revisit_items` (array, min 1)
+
+Warning rule:
+- If the primary season objective materially conflicts with the highest in-horizon A-event anchor, include a visible warning/revisit item in the plan.
+- This warning does not block season-plan finalization; the user/upstream input layer owns the correction.
 
 #### 9) `data.phase_transitions_guardrails`
 Required:

@@ -270,8 +270,14 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
     if not phase_slot_context:
         return (True, mapping)
     blueprints = [_as_map(item) for item in _as_list(mapping.get("phase_blueprints"))]
+    season_phase_load_context = _season_phase_load_context()
+    context_by_phase_id = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(_as_map(season_phase_load_context).get("phases"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
     candidate = {
-        "season_allowed_domains": _season_phase_load_context().get("season_allowed_intensity_domains") if _season_phase_load_context() else [],
+        "season_allowed_domains": season_phase_load_context.get("season_allowed_intensity_domains") if season_phase_load_context else [],
         "season_load_envelope": mapping.get("season_load_envelope"),
         "season_semantic_notes": mapping.get("season_semantic_notes"),
         "data": {
@@ -296,12 +302,29 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
                         "weekly_kj": {
                             "min": item.get("load_corridor_min"),
                             "max": item.get("load_corridor_max"),
+                            "notes": (
+                                "Inherited role-week load guardrails (season-level, not week prescriptions): "
+                                + "; ".join(str(entry) for entry in item.get("role_week_load_bands") or [] if str(entry).strip())
+                                + "."
+                            )
+                            if [str(entry) for entry in item.get("role_week_load_bands") or [] if str(entry).strip()]
+                            else ""
                         }
                     },
                     "allowed_forbidden_semantics": {
                         "allowed_intensity_domains": item.get("allowed_domains") or [],
+                        "allowed_load_modalities": item.get("allowed_load_modalities") or [],
                         "forbidden_intensity_domains": item.get("forbidden_domains") or [],
                     },
+                    "events_constraints": [
+                        {
+                            "window": str(_as_map(event).get("date") or _as_map(event).get("week") or "").strip(),
+                            "type": str(_as_map(event).get("type") or "").strip().upper(),
+                            "constraint": "deterministic contract event",
+                        }
+                        for event in _as_list(_as_map(_as_map(context_by_phase_id.get(str(item.get('phase_id') or ''))).get("event_taper_trace")).get("events"))
+                        if str(_as_map(event).get("date") or _as_map(event).get("week") or "").strip()
+                    ],
                 }
                 for item in blueprints
             ],
@@ -315,7 +338,6 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
     messages = blocking_messages(issues)
     if messages:
         return (False, "; ".join(messages[:5]))
-    season_phase_load_context = _season_phase_load_context()
     if season_phase_load_context:
         issues = validate_season_plan_against_phase_load_context(
             season_plan_payload=candidate,
@@ -386,11 +408,19 @@ def season_writer_bundle_match(result: Any) -> GuardrailResult:
         semantics = _as_map(phase_map.get("allowed_forbidden_semantics"))
         phase_map["allowed_forbidden_semantics"] = semantics
         semantics["allowed_intensity_domains"] = list(approved.get("allowed_domains") or [])
+        approved_modalities = [str(item).strip().upper() for item in approved.get("allowed_load_modalities") or [] if str(item).strip()]
+        if approved_modalities:
+            semantics["allowed_load_modalities"] = approved_modalities
         semantics["forbidden_intensity_domains"] = list(approved.get("forbidden_domains") or [])
         if normalize_intensity_domain_list(semantics.get("allowed_intensity_domains")) != normalize_intensity_domain_list(approved.get("allowed_domains")):
             return (
                 False,
                 f"Season phase {phase_id} allowed_intensity_domains must match the approved bundle exactly.",
+            )
+        if approved_modalities and [str(item).strip().upper() for item in semantics.get("allowed_load_modalities") or [] if str(item).strip()] != approved_modalities:
+            return (
+                False,
+                f"Season phase {phase_id} allowed_load_modalities must match the approved bundle exactly.",
             )
         if normalize_intensity_domain_list(semantics.get("forbidden_intensity_domains")) != normalize_intensity_domain_list(approved.get("forbidden_domains")):
             return (

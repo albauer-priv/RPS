@@ -8,6 +8,7 @@ review instructions.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -18,6 +19,7 @@ from rps.workspace.phase_intents import (
     normalize_phase_type,
     normalize_season_archetype,
     semantic_allowed_intensity_domains,
+    semantic_allowed_load_modalities,
     semantic_forbidden_intensity_domains,
     validate_phase_semantics,
 )
@@ -64,6 +66,16 @@ def _as_float(value: object) -> float | None:
     return None
 
 
+def _as_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    return None
+
+
 def _week_key(value: object) -> str | None:
     week = parse_iso_week(value)
     if week is None:
@@ -84,6 +96,73 @@ def _range_week_count_parsed(range_spec: IsoWeekRange) -> int:
 
 def _phase_data(document: JsonMap) -> list[JsonMap]:
     return [_as_map(item) for item in _as_list(_as_map(document.get("data")).get("phases"))]
+
+
+def _normalize_modalities(values: object) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in _as_list(values):
+        normalized = str(value or "").strip().upper()
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            result.append(normalized)
+    return result
+
+
+def _format_role_week_bands(entries: object) -> list[str]:
+    rendered: list[str] = []
+    for entry in _as_list(entries):
+        entry_map = _as_map(entry)
+        band = _as_map(entry_map.get("band"))
+        week = str(entry_map.get("week") or "").strip()
+        role = str(entry_map.get("role") or "").strip()
+        band_min = _as_int(band.get("min"))
+        band_max = _as_int(band.get("max"))
+        if week and role and band_min is not None and band_max is not None:
+            rendered.append(f"{week}: {role} {band_min}-{band_max}")
+    return rendered
+
+
+def _extract_km_values(text: object) -> list[int]:
+    values: list[int] = []
+    for match in re.finditer(r"(\d{2,4})(?:\s*[-/]\s*(\d{2,4}))?\s*km", str(text or ""), flags=re.IGNORECASE):
+        values.append(int(match.group(1)))
+        if match.group(2) is not None:
+            values.append(int(match.group(2)))
+    return values
+
+
+def _has_positive_forbidden_domain_mention(text: object, domain: str) -> bool:
+    normalized = str(text or "").strip().lower()
+    if not normalized:
+        return False
+    token = str(domain or "").strip().lower()
+    if token not in normalized:
+        return False
+    negative_cues = (
+        f"{token} remains excluded",
+        f"{token} is excluded",
+        f"{token} remains forbidden",
+        f"{token} is forbidden",
+        f"no {token}",
+        f"without {token}",
+        f"{token} suppressed",
+        f"{token} remains suppressed",
+        f"{token} excluded",
+        f"{token} forbidden",
+    )
+    if any(cue in normalized for cue in negative_cues):
+        return False
+    positive_cues = (
+        f"{token} appears",
+        f"{token} support",
+        f"{token} remains secondary",
+        f"{token} kept secondary",
+        f"controlled {token}",
+        f"{token}-led",
+        f"{token} maintenance",
+    )
+    return any(cue in normalized for cue in positive_cues)
 
 
 def _candidate_or_document(mapping: JsonMap) -> JsonMap:
@@ -179,7 +258,7 @@ def validate_season_bundle_semantics(*, season_bundle_payload: JsonMap) -> list[
                     )
                 )
         if season_domains and allowed_domains:
-            outside_season = sorted(set(allowed_domains) - set(season_domains))
+            outside_season = sorted(set(allowed_domains) - (set(season_domains) | {"RECOVERY"}))
             if outside_season:
                 issues.append(
                     PlanningContractIssue(
@@ -189,6 +268,16 @@ def validate_season_bundle_semantics(*, season_bundle_payload: JsonMap) -> list[
                     )
                 )
         forbidden_domains = normalize_intensity_domain_list(phase_map.get("forbidden_domains"))
+        allowed_modalities = _normalize_modalities(phase_map.get("allowed_load_modalities"))
+        expected_modalities = _normalize_modalities(semantic_allowed_load_modalities(phase_map.get("phase_intent")))
+        if allowed_modalities != expected_modalities:
+            issues.append(
+                PlanningContractIssue(
+                    "season_bundle_phase_modalities_mismatch",
+                    f"Phase blueprint allowed_load_modalities {allowed_modalities!r} do not match the canonical semantic profile {expected_modalities!r}.",
+                    path=f"{path}.allowed_load_modalities",
+                )
+            )
         semantic_forbidden = semantic_forbidden_intensity_domains(phase_map.get("phase_intent"))
         if semantic_forbidden:
             missing_forbidden = sorted(set(semantic_forbidden) - set(forbidden_domains))
@@ -361,6 +450,7 @@ def validate_season_plan_against_phase_load_context(
             )
         ]
     body_metadata = _as_map(_as_map(document.get("data")).get("body_metadata"))
+    data = _as_map(document.get("data"))
     if not str(body_metadata.get("phase_taxonomy_version") or "").strip():
         issues.append(
             PlanningContractIssue(
@@ -372,6 +462,9 @@ def validate_season_plan_against_phase_load_context(
     build_max_values: list[float] = []
     peak_max_values: list[tuple[str, float]] = []
     phase_allowed_domain_sets: list[tuple[str, list[str]]] = []
+    expected_events: set[tuple[str, str]] = set()
+    observed_events: set[tuple[str, str]] = set()
+    a_events: list[JsonMap] = []
     season_archetype = normalize_season_archetype(season_phase_load_context.get("season_archetype"))
     for idx, phase in enumerate(phases):
         phase_id = str(phase.get("phase_id") or "")
@@ -428,6 +521,8 @@ def validate_season_plan_against_phase_load_context(
         phase_semantics = _as_map(phase.get("allowed_forbidden_semantics"))
         allowed_domains = normalize_intensity_domain_list(phase_semantics.get("allowed_intensity_domains"))
         forbidden_domains = normalize_intensity_domain_list(phase_semantics.get("forbidden_intensity_domains"))
+        allowed_modalities = _normalize_modalities(phase_semantics.get("allowed_load_modalities"))
+        expected_modalities = _normalize_modalities(semantic_allowed_load_modalities(observed_intent))
         semantic_max = semantic_allowed_intensity_domains(observed_intent)
         if semantic_max and allowed_domains:
             outside_semantic = sorted(set(allowed_domains) - set(semantic_max))
@@ -454,9 +549,17 @@ def validate_season_plan_against_phase_load_context(
                         path=f"{path}.allowed_forbidden_semantics.forbidden_intensity_domains",
                     )
                 )
+        if expected_modalities and allowed_modalities != expected_modalities:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_modalities_mismatch",
+                    f"allowed_load_modalities {allowed_modalities!r} do not match the canonical semantic profile {expected_modalities!r}.",
+                    path=f"{path}.allowed_forbidden_semantics.allowed_load_modalities",
+                )
+            )
         if allowed_domains:
             phase_allowed_domain_sets.append((phase_id or path, allowed_domains))
-            outside = sorted(set(allowed_domains) - set(season_allowed_domains)) if season_allowed_domains else []
+            outside = sorted(set(allowed_domains) - (set(season_allowed_domains) | {"RECOVERY"})) if season_allowed_domains else []
             if outside:
                 issues.append(
                     PlanningContractIssue(
@@ -490,6 +593,32 @@ def validate_season_plan_against_phase_load_context(
                     path=f"{path}.phase_type",
                 )
             )
+        overview = _as_map(phase.get("overview"))
+        structural_emphasis = _as_map(phase.get("structural_emphasis"))
+        justification = {}
+        for entry in _as_list(_as_map(data.get("justification")).get("phase_justifications")):
+            entry_map = _as_map(entry)
+            if str(entry_map.get("phase_id") or "") == phase_id:
+                justification = entry_map
+                break
+        narrative_fields = [
+            phase.get("narrative"),
+            overview.get("metabolic_focus"),
+            structural_emphasis.get("typical_focus"),
+            justification.get("intensity_distribution"),
+            *[str(item) for item in _as_list(overview.get("expected_adaptations"))],
+            *[str(item) for item in _as_list(overview.get("non_negotiables"))],
+        ]
+        for forbidden_domain in forbidden_domains:
+            if any(_has_positive_forbidden_domain_mention(text, forbidden_domain) for text in narrative_fields):
+                issues.append(
+                    PlanningContractIssue(
+                        "season_phase_forbidden_domain_positive_narrative",
+                        f"{forbidden_domain} is forbidden for this phase but is described positively in season-plan narrative text.",
+                        path=path,
+                    )
+                )
+                break
         if observed_intent and "VO2MAX" in forbidden_domains and observed_intent == "vo2_build" and season_archetype == "ceiling_first_durability":
             issues.append(
                 PlanningContractIssue(
@@ -502,6 +631,50 @@ def validate_season_plan_against_phase_load_context(
         if phase_type == "BUILD" and planned_max is not None:
             build_max_values.append(planned_max)
         event_trace = _as_map(ctx.get("event_taper_trace"))
+        expected_role_week_bands = _format_role_week_bands(ctx.get("role_week_load_bands"))
+        expected_role_week_sentence_parts = [item for item in expected_role_week_bands if item]
+        weekly_kj_notes = str(planned.get("notes") or "")
+        if expected_role_week_sentence_parts and not all(item in weekly_kj_notes for item in expected_role_week_sentence_parts):
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_role_week_guardrails_missing",
+                    "weekly_load_corridor.weekly_kj.notes must materialize deterministic role-week guardrails for auditability.",
+                    path=f"{path}.weekly_load_corridor.weekly_kj.notes",
+                )
+            )
+        expected_phase_events: set[tuple[str, str]] = set()
+        for event in _as_list(event_trace.get("events")):
+            event_map = _as_map(event)
+            event_date = str(event_map.get("date") or "").strip()
+            event_type = str(event_map.get("type") or "").strip().upper()
+            if event_date and event_type in {"A", "B", "C"}:
+                expected_phase_events.add((event_date, event_type))
+                expected_events.add((event_date, event_type))
+                if event_type == "A":
+                    a_events.append(event_map)
+        observed_phase_events = [_as_map(item) for item in _as_list(phase.get("events_constraints"))]
+        for event in observed_phase_events:
+            event_date = str(event.get("window") or "").strip()
+            event_type = str(event.get("type") or "").strip().upper()
+            if event_date and event_type in {"A", "B", "C"}:
+                observed_events.add((event_date, event_type))
+        unexpected_events = sorted(
+            (str(event.get("window") or "").strip(), str(event.get("type") or "").strip().upper())
+            for event in observed_phase_events
+            if (
+                str(event.get("window") or "").strip(),
+                str(event.get("type") or "").strip().upper(),
+            )
+            not in expected_phase_events
+        )
+        if unexpected_events:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_unexpected_event_constraints",
+                    "events_constraints contains entries that do not match deterministic planning events for this season phase.",
+                    path=f"{path}.events_constraints",
+                )
+            )
         if (phase_type in {"PEAK", "TAPER"} or event_trace.get("has_a_event")) and planned_max is not None:
             peak_max_values.append((phase_id, planned_max))
         if event_trace.get("has_b_event") and phase_type == "PEAK" and not event_trace.get("has_a_event"):
@@ -546,6 +719,41 @@ def validate_season_plan_against_phase_load_context(
                         path="data.phases",
                     )
                 )
+    missing_events = sorted(expected_events - observed_events)
+    if missing_events:
+        issues.append(
+            PlanningContractIssue(
+                "season_event_constraints_missing",
+                "Season Plan is missing planning events in phase events_constraints: "
+                + ", ".join(f"{date} {event_type}" for date, event_type in missing_events)
+                + ".",
+                path="data.phases[].events_constraints",
+            )
+        )
+    objective = _as_map(data.get("season_intent_principles")).get("season_objective")
+    objective_km = _extract_km_values(objective)
+    if objective_km and a_events:
+        highest_a_event = max(
+            a_events,
+            key=lambda item: (
+                str(item.get("date") or ""),
+                str(item.get("week") or ""),
+                str(item.get("name") or ""),
+            ),
+        )
+        event_label = " ".join(
+            part for part in (highest_a_event.get("name"), highest_a_event.get("date")) if str(part or "").strip()
+        ).strip()
+        event_km = _extract_km_values(event_label)
+        if event_km and not any(abs(event_distance - objective_distance) <= 25 for event_distance in event_km for objective_distance in objective_km):
+            issues.append(
+                PlanningContractIssue(
+                    "season_objective_event_mismatch_warning",
+                    "Primary season objective distance does not align with the highest in-horizon A-event anchor; surface this as a user-visible warning and keep finalization non-blocking.",
+                    severity="warning",
+                    path="data.season_intent_principles.season_objective",
+                )
+            )
     expected_envelope = derive_expected_average_weekly_kj_range(season_plan_payload=season_plan_payload)
     actual_envelope = _as_map(_as_map(document.get("data")).get("season_load_envelope")).get("expected_average_weekly_kj_range")
     actual_envelope_map = _as_map(actual_envelope)

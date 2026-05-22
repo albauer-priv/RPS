@@ -19,6 +19,7 @@ from rps.agents.crewai_backend import (
     _emit_crew_task_prepared_events,
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
+    _normalize_final_season_plan_semantics,
     _run_multicrew_cycle,
     _task_tools_for_blueprint,
     normalize_phase_draft_bundle,
@@ -1751,7 +1752,8 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
     blueprint = normalized["phase_blueprints"][0]
     assert blueprint["phase_type"] == "BASE"
     assert blueprint["phase_intent"] == "shortened_re_entry"
-    assert blueprint["allowed_domains"] == ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
+    assert blueprint["allowed_domains"] == ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"]
+    assert blueprint["allowed_load_modalities"] == ["NONE", "K3"]
     assert "THRESHOLD" in blueprint["forbidden_domains"]
     assert "VO2MAX" in blueprint["forbidden_domains"]
     assert blueprint["phase_taxonomy_version"] == "canonical_phase_taxonomy_v1"
@@ -1961,6 +1963,7 @@ def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None
                 "build_subtype": None,
                 "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
                 "allowed_domains": ["ENDURANCE", "TEMPO"],
+                "allowed_load_modalities": ["NONE", "K3"],
                 "forbidden_domains": ["THRESHOLD", "VO2MAX"],
             }
         ],
@@ -1981,6 +1984,7 @@ def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None
                     "build_subtype": None,
                     "allowed_forbidden_semantics": {
                         "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                        "allowed_load_modalities": ["NONE", "K3"],
                         "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
                     },
                 }
@@ -1997,7 +2001,119 @@ def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None
     assert phase["phase_type"] == "BASE"
     assert phase["phase_intent"] == "shortened_re_entry"
     assert phase["allowed_forbidden_semantics"]["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
+    assert phase["allowed_forbidden_semantics"]["allowed_load_modalities"] == ["NONE", "K3"]
     assert phase["allowed_forbidden_semantics"]["forbidden_intensity_domains"] == ["THRESHOLD", "VO2MAX"]
+
+
+def test_normalize_final_season_plan_semantics_projects_events_guardrails_and_warning() -> None:
+    document = {
+        "meta": {"artifact_type": "SEASON_PLAN"},
+        "data": {
+            "season_intent_principles": {
+                "season_objective": "Stable long-duration performance over 300-400 km."
+            },
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "weekly_load_corridor": {"weekly_kj": {"min": 7800, "max": 9800, "notes": "Base corridor."}},
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["ENDURANCE"],
+                        "allowed_load_modalities": ["K3"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "events_constraints": [{"window": "2026-21--2026-23", "type": "B", "constraint": "stale"}],
+                },
+                {
+                    "phase_id": "P02",
+                    "phase_type": "TAPER",
+                    "phase_intent": "taper_freshening",
+                    "build_subtype": None,
+                    "weekly_load_corridor": {"weekly_kj": {"min": 7000, "max": 8800, "notes": "Taper corridor."}},
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["ENDURANCE"],
+                        "allowed_load_modalities": ["K3"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "events_constraints": [],
+                },
+            ],
+            "justification": {
+                "summary": "Summary.",
+                "citations": [{"source_type": "contract", "source_id": "x", "section": "y", "rationale": "z"}],
+                "phase_justifications": [
+                    {"phase_id": "P01", "intensity_distribution": "x", "overload_pattern": "y", "kJ_first_statement": "P01 corridor.", "citations": ["c1"]},
+                    {"phase_id": "P02", "intensity_distribution": "x", "overload_pattern": "y", "kJ_first_statement": "P02 corridor.", "citations": ["c1"]},
+                ],
+            },
+            "principles_scientific_foundation": {
+                "principle_applications": [{"principle": "Durability-first progression", "influence": "x"}],
+                "scientific_foundation": {
+                    "publications": [{"authors": "Seiler, S.", "year": 2010, "title": "Intensity distribution", "link": "https://example.com"}],
+                    "plan_alignment_check": "Aligned",
+                    "rationale": "x",
+                },
+            },
+            "assumptions_unknowns": {
+                "assumptions": ["a"],
+                "uncertainties": ["u"],
+                "revisit_items": ["r"],
+            },
+        },
+    }
+    with guardrail_runtime_context(
+        approved_planning_bundle={
+            "phase_blueprints": [
+                {"phase_id": "P01", "allowed_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"], "allowed_load_modalities": ["NONE", "K3"], "forbidden_domains": ["THRESHOLD", "VO2MAX"]},
+                {"phase_id": "P02", "allowed_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"], "allowed_load_modalities": ["NONE"], "forbidden_domains": ["THRESHOLD", "VO2MAX"]},
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "role_week_load_bands": [{"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}],
+                    "event_taper_trace": {"events": []},
+                },
+                {
+                    "phase_id": "P02",
+                    "phase_type": "TAPER",
+                    "phase_intent": "taper_freshening",
+                    "build_subtype": None,
+                    "role_week_load_bands": [{"week": "2026-37", "role": "EVENT", "band": {"min": 7000, "max": 8800}}],
+                    "event_taper_trace": {
+                        "events": [{"date": "2026-09-12", "week": "2026-37", "type": "A", "name": "Brevet 200 km"}]
+                    },
+                },
+            ],
+        },
+    ):
+        normalized = _normalize_final_season_plan_semantics(document)
+
+    p01 = normalized["data"]["phases"][0]
+    p02 = normalized["data"]["phases"][1]
+    assert p01["allowed_forbidden_semantics"]["allowed_load_modalities"] == ["NONE", "K3"]
+    assert p02["allowed_forbidden_semantics"]["allowed_load_modalities"] == ["NONE"]
+    assert p01["events_constraints"] == []
+    assert p02["events_constraints"] == [
+        {
+            "window": "2026-09-12",
+            "type": "A",
+            "constraint": "A event receives dedicated taper-contained event handling.",
+        }
+    ]
+    assert "2026-21: LOAD_1 7800-8600" in p01["weekly_load_corridor"]["weekly_kj"]["notes"]
+    assert any("Warning:" in item for item in normalized["data"]["assumptions_unknowns"]["revisit_items"])
+    assert any(
+        "Durability" in publication["title"]
+        for publication in normalized["data"]["principles_scientific_foundation"]["scientific_foundation"]["publications"]
+    )
 
 
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:

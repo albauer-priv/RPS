@@ -3,6 +3,7 @@ from __future__ import annotations
 from rps.workspace.phase_intents import (
     PHASE_TAXONOMY_VERSION,
     normalize_phase_semantics,
+    semantic_allowed_load_modalities,
     validate_phase_semantics,
 )
 
@@ -62,3 +63,12 @@ def test_validate_phase_semantics_requires_build_subtype_for_build() -> None:
 
     assert mismatch_errors
     assert any("build_subtype" in message for message in mismatch_errors)
+
+
+def test_semantic_allowed_load_modalities_follow_canonical_matrix() -> None:
+    assert semantic_allowed_load_modalities("transition_recovery") == ["NONE"]
+    assert semantic_allowed_load_modalities("preparation_re_entry") == ["NONE"]
+    assert semantic_allowed_load_modalities("general_base") == ["NONE", "K3"]
+    assert semantic_allowed_load_modalities("durability_build") == ["NONE", "K3"]
+    assert semantic_allowed_load_modalities("peak_sharpening") == ["NONE"]
+    assert semantic_allowed_load_modalities("taper_freshening") == ["NONE"]

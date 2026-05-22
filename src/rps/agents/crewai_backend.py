@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
@@ -85,6 +86,7 @@ from rps.workspace.phase_intents import (
     phase_type_for_intent,
     season_phase_allowed_domains,
     season_phase_forbidden_domains,
+    semantic_allowed_load_modalities,
     validate_phase_semantics,
 )
 from rps.workspace.schema_registry import SchemaValidationError
@@ -563,6 +565,238 @@ def _normalize_progression_trace(value: object) -> list[str]:
     return []
 
 
+def _append_sentence(base: object, sentence: str) -> str:
+    """Append one sentence to a text field if it is not already present."""
+
+    existing = str(base or "").strip()
+    addition = sentence.strip()
+    if not addition:
+        return existing
+    if addition in existing:
+        return existing
+    if not existing:
+        return addition
+    separator = "" if existing.endswith((" ", "\n")) else " "
+    return f"{existing}{separator}{addition}"
+
+
+def _append_unique_item(items: object, item: str) -> list[str]:
+    """Return a stripped string list with one unique appended item."""
+
+    normalized = [str(entry).strip() for entry in _as_list(items) if str(entry).strip()]
+    if item not in normalized:
+        normalized.append(item)
+    return normalized
+
+
+def _format_role_week_guardrail_sentence(entries: list[object]) -> str:
+    """Render structured role-week bands into one audit sentence."""
+
+    rendered = _format_role_week_load_bands(entries)
+    if not rendered:
+        return ""
+    return (
+        "Inherited role-week load guardrails (season-level, not week prescriptions): "
+        + "; ".join(rendered)
+        + "."
+    )
+
+
+def _season_event_constraint_text(event_type: str) -> str:
+    """Return deterministic season-phase event handling text for one event type."""
+
+    normalized = str(event_type or "").strip().upper()
+    if normalized == "A":
+        return "A event receives dedicated taper-contained event handling."
+    if normalized == "B":
+        return (
+            "B event receives rehearsal/minor-load-adjustment handling only and may replace "
+            "a planned specificity anchor rather than adding a second peak."
+        )
+    return "C event remains inside normal structure without taper."
+
+
+def _extract_km_values(text: object) -> list[int]:
+    """Return kilometer values mentioned in a free-text objective or event label."""
+
+    values: list[int] = []
+    for match in re.finditer(r"(\d{2,4})(?:\s*[-/]\s*(\d{2,4}))?\s*km", str(text or ""), flags=re.IGNORECASE):
+        first = int(match.group(1))
+        second = match.group(2)
+        values.append(first)
+        if second is not None:
+            values.append(int(second))
+    return values
+
+
+def _derive_objective_event_mismatch_warning(*, season_objective: object, a_events: list[JsonMap]) -> str | None:
+    """Return a non-blocking warning when objective distance conflicts with the A event."""
+
+    objective = str(season_objective or "").strip()
+    objective_km = _extract_km_values(objective)
+    if not objective or not objective_km or not a_events:
+        return None
+    highest_a_event = max(
+        a_events,
+        key=lambda item: (
+            str(item.get("date") or ""),
+            str(item.get("week") or ""),
+            str(item.get("name") or ""),
+        ),
+    )
+    event_parts = [
+        str(part).strip()
+        for part in (highest_a_event.get("name"), highest_a_event.get("date"))
+        if str(part or "").strip()
+    ]
+    event_label = " ".join(event_parts).strip()
+    event_km = _extract_km_values(event_label)
+    if not event_km:
+        return None
+    if any(abs(event_distance - objective_distance) <= 25 for event_distance in event_km for objective_distance in objective_km):
+        return None
+    event_distance_label = "/".join(str(value) for value in event_km)
+    objective_distance_label = "/".join(str(value) for value in objective_km)
+    event_name = str(highest_a_event.get("name") or "the highest-priority A event").strip()
+    return (
+        "Warning: primary season objective references "
+        f"{objective_distance_label} km demands while {event_name} targets approximately "
+        f"{event_distance_label} km. Reconcile the objective upstream/input-side if this is intentional."
+    )
+
+
+def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
+    """Apply code-owned season semantics to the final SEASON_PLAN document."""
+
+    if not isinstance(document, dict):
+        return document
+    meta = _as_map(document.get("meta"))
+    if str(meta.get("artifact_type") or "").upper() != "SEASON_PLAN":
+        return document
+    context = current_guardrail_runtime_context()
+    season_phase_load_context = _as_map(context.get("season_phase_load_context"))
+    approved_bundle = _as_map(context.get("approved_planning_bundle"))
+    data = _as_map(document.get("data"))
+    phases = [_as_map(item) for item in _as_list(data.get("phases"))]
+    deterministic_by_phase_id = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(season_phase_load_context.get("phases"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
+    bundle_by_phase_id = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(approved_bundle.get("phase_blueprints"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
+    all_a_events: list[JsonMap] = []
+    phase_justifications = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(_as_map(data.get("justification")).get("phase_justifications"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
+    for phase in phases:
+        phase_id = str(phase.get("phase_id") or "").strip()
+        deterministic = deterministic_by_phase_id.get(phase_id, {})
+        approved = bundle_by_phase_id.get(phase_id, {})
+        phase_intent = deterministic.get("phase_intent") or phase.get("phase_intent")
+        phase_type = deterministic.get("phase_type") or phase.get("phase_type")
+        build_subtype = deterministic.get("build_subtype")
+        if build_subtype is None:
+            build_subtype = phase.get("build_subtype")
+        phase["phase_type"] = phase_type
+        phase["phase_intent"] = phase_intent
+        phase["build_subtype"] = build_subtype
+
+        semantics = _as_map(phase.get("allowed_forbidden_semantics"))
+        phase["allowed_forbidden_semantics"] = semantics
+        semantics["allowed_intensity_domains"] = list(
+            approved.get("allowed_domains")
+            or season_phase_allowed_domains(
+                phase_intent=phase_intent,
+                season_allowed_domains=season_phase_load_context.get("season_allowed_intensity_domains"),
+            )
+        )
+        semantics["forbidden_intensity_domains"] = list(
+            approved.get("forbidden_domains")
+            or season_phase_forbidden_domains(
+                phase_intent=phase_intent,
+                season_allowed_domains=season_phase_load_context.get("season_allowed_intensity_domains"),
+            )
+        )
+        semantics["allowed_load_modalities"] = list(
+            approved.get("allowed_load_modalities") or semantic_allowed_load_modalities(phase_intent)
+        )
+
+        role_week_sentence = _format_role_week_guardrail_sentence(
+            _as_list(deterministic.get("role_week_load_bands"))
+        )
+        weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
+        if weekly_kj:
+            weekly_kj["notes"] = _append_sentence(weekly_kj.get("notes"), role_week_sentence)
+        justification = phase_justifications.get(phase_id)
+        if justification is not None and role_week_sentence:
+            justification["kJ_first_statement"] = _append_sentence(
+                justification.get("kJ_first_statement"),
+                role_week_sentence,
+            )
+
+        trace_events = [
+            _as_map(event)
+            for event in _as_list(_as_map(deterministic.get("event_taper_trace")).get("events"))
+            if str(_as_map(event).get("type") or "").strip().upper() in {"A", "B", "C"}
+        ]
+        phase["events_constraints"] = [
+            {
+                "window": str(event.get("date") or event.get("week") or "").strip(),
+                "type": str(event.get("type") or "").strip().upper(),
+                "constraint": _season_event_constraint_text(str(event.get("type") or "")),
+            }
+            for event in trace_events
+            if str(event.get("date") or event.get("week") or "").strip()
+        ]
+        all_a_events.extend(event for event in trace_events if str(event.get("type") or "").strip().upper() == "A")
+
+    season_objective = _as_map(data.get("season_intent_principles")).get("season_objective")
+    objective_warning = _derive_objective_event_mismatch_warning(
+        season_objective=season_objective,
+        a_events=all_a_events,
+    )
+    assumptions_unknowns = _as_map(data.get("assumptions_unknowns"))
+    data["assumptions_unknowns"] = assumptions_unknowns
+    if objective_warning:
+        assumptions_unknowns["revisit_items"] = _append_unique_item(
+            assumptions_unknowns.get("revisit_items"),
+            objective_warning,
+        )
+
+    scientific_foundation = _as_map(_as_map(data.get("principles_scientific_foundation")).get("scientific_foundation"))
+    publications = [_as_map(item) for item in _as_list(scientific_foundation.get("publications"))]
+    needs_durability_source = any(
+        str(_as_map(phase).get("phase_intent") or "").strip() == "durability_build"
+        for phase in phases
+    ) or any(
+        "durability" in str(_as_map(item).get("principle") or "").lower()
+        for item in _as_list(_as_map(data.get("principles_scientific_foundation")).get("principle_applications"))
+    )
+    has_durability_source = any(
+        "durability" in str(item.get("title") or "").lower() or "maunder" in str(item.get("authors") or "").lower()
+        for item in publications
+    )
+    if needs_durability_source and not has_durability_source:
+        publications.append(
+            {
+                "authors": "Maunder, E., Kilding, A. E. & Plews, D. J.",
+                "year": 2021,
+                "title": "The Importance of 'Durability' in the Physiological Profiling of Endurance Athletes",
+                "link": "https://pubmed.ncbi.nlm.nih.gov/33886100/",
+            }
+        )
+        scientific_foundation["publications"] = publications
+
+    document["data"] = data
+    return document
+
+
 def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     """Convert a raw season planning draft into a deterministic normalized bundle."""
 
@@ -637,6 +871,7 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
                     phase_intent=phase_intent,
                     season_allowed_domains=season_allowed_domains,
                 ),
+                "allowed_load_modalities": semantic_allowed_load_modalities(phase_intent),
                 "forbidden_domains": season_phase_forbidden_domains(
                     phase_intent=phase_intent,
                     season_allowed_domains=season_allowed_domains,
@@ -2370,6 +2605,7 @@ def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, o
     )
     normalized = _normalize_artifact_meta(normalized, spec.artifact_type)
     normalized = _fill_season_plan(normalized)
+    normalized = _normalize_final_season_plan_semantics(normalized)
     normalized = normalize_phase_guardrails_document(
         normalized,
         season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),

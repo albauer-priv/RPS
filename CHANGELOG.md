@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-05-22
+
 ### Added
 - Added a dual bundled schema publication path for structured outputs: the bundler now emits canonical bundled schemas for persisted validation and `bundled_output` schemas for OpenAI/CrewAI structured output.
 - Added a deterministic Season semantic-contract layer: internal Season bundles now carry code-owned phase semantic profiles, explicit forbidden domains, exact season load-envelope handoff, and writer-safe semantic notes instead of leaving methodology-critical Season framing in prose only.
@@ -20,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed deterministic Season/Phase semantic normalization to fail closed on invalid type-intent pairs while canonicalizing recoverable mismatches, so illegal combinations such as `PREPARATION + general_base` no longer pass through load-band context or bundle normalization unchecked.
 - Changed the Season writer guardrail to reapply approved deterministic fields before exact-match validation, so `season_load_envelope`, phase taxonomy fields, and allowed/forbidden domain semantics cannot drift during artifact writing.
 - Changed Season bundle normalization to derive deterministic `season_load_envelope` week-count fields from canonical cadence roles when drafts omit them, so persisted `SEASON_PLAN` artefacts always satisfy the required integer envelope schema.
+- Changed canonical season semantics so `RECOVERY` is a legal non-quality domain across the phase taxonomy unless explicitly overridden, and season authority no longer treats it as an out-of-contract domain drift.
+- Changed season-plan normalization and writer repair to derive `allowed_load_modalities` from canonical phase semantics, preserve `NONE`, serialize only real event constraints, materialize deterministic role-week guardrails in existing season-plan text, and surface objective/A-event mismatches as visible warnings instead of blockers.
+- Changed season contract validation to check canonical load modalities, real event-constraint projection, role-week guardrail rendering, taper/event-week semantics, and warning-only objective/A-event mismatches.
 
 ## [0.16.0] - 2026-05-21
 

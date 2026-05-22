@@ -268,6 +268,65 @@ def test_validate_season_plan_against_phase_load_context_blocks_vo2_in_taper_int
     assert any(issue.code == "season_peak_taper_vo2max_conflict" for issue in issues)
 
 
+def test_validate_season_plan_against_phase_load_context_warns_on_objective_event_mismatch() -> None:
+    season_plan = {
+        "data": {
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
+            "season_intent_principles": {"season_objective": "Strong 300-400 km execution."},
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "TAPER",
+                    "phase_intent": "taper_freshening",
+                    "build_subtype": None,
+                    "weekly_load_corridor": {
+                        "weekly_kj": {
+                            "min": 6000,
+                            "max": 9000,
+                            "notes": "Inherited role-week load guardrails (season-level, not week prescriptions): 2026-37: EVENT 6000-9000.",
+                        }
+                    },
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO"],
+                        "allowed_load_modalities": ["NONE"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "events_constraints": [
+                        {
+                            "window": "2026-09-12",
+                            "type": "A",
+                            "constraint": "A event receives dedicated taper-contained event handling.",
+                        }
+                    ],
+                }
+            ],
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 6000, "max": 9000}},
+        }
+    }
+    load_context = {
+        "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+        "phases": [
+            {
+                "phase_id": "P01",
+                "phase_intent": "taper_freshening",
+                "recommended_phase_corridor": {"min": 6000, "max": 9000},
+                "role_week_load_bands": [{"week": "2026-37", "role": "EVENT", "band": {"min": 6000, "max": 9000}}],
+                "event_taper_trace": {
+                    "has_a_event": True,
+                    "events": [{"date": "2026-09-12", "week": "2026-37", "type": "A", "name": "Brevet 200 km"}],
+                },
+            }
+        ],
+    }
+
+    issues = validate_season_plan_against_phase_load_context(
+        season_plan_payload=season_plan,
+        season_phase_load_context=load_context,
+    )
+
+    assert any(issue.code == "season_objective_event_mismatch_warning" and issue.severity == "warning" for issue in issues)
+
+
 def test_validate_phase_against_execution_context_checks_roles_and_s5() -> None:
     phase_payload = {
         "data": {

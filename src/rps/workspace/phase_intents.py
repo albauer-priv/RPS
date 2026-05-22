@@ -146,6 +146,7 @@ class PhaseSemanticProfile:
     max_allowed_intensity_domains: tuple[str, ...]
     optional_intensity_domains: tuple[str, ...]
     forbidden_intensity_domains: tuple[str, ...]
+    allowed_load_modalities: tuple[str, ...]
     methodology_family: str
     threshold_role: str
     event_load_policy: str
@@ -159,6 +160,7 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
         max_allowed_intensity_domains=("RECOVERY", "ENDURANCE"),
         optional_intensity_domains=(),
         forbidden_intensity_domains=("SWEET_SPOT", "THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE",),
         methodology_family="recovery_first_reset",
         threshold_role="forbidden",
         event_load_policy="no_event_load_exception",
@@ -170,9 +172,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "preparation_re_entry": PhaseSemanticProfile(
         phase_type="PREPARATION",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO"),
         optional_intensity_domains=("TEMPO",),
         forbidden_intensity_domains=("SWEET_SPOT", "THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE",),
         methodology_family="structural_reentry",
         threshold_role="forbidden",
         event_load_policy="no_event_load_exception",
@@ -184,9 +187,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "shortened_re_entry": PhaseSemanticProfile(
         phase_type="BASE",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"),
         optional_intensity_domains=("TEMPO", "SWEET_SPOT"),
         forbidden_intensity_domains=("THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="compressed_reentry",
         threshold_role="forbidden",
         event_load_policy="no_event_load_exception",
@@ -198,9 +202,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "general_base": PhaseSemanticProfile(
         phase_type="BASE",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"),
         optional_intensity_domains=("SWEET_SPOT",),
         forbidden_intensity_domains=("THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="broad_aerobic_base",
         threshold_role="suppressed",
         event_load_policy="no_event_load_exception",
@@ -212,9 +217,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "aerobic_base": PhaseSemanticProfile(
         phase_type="BASE",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO"),
         optional_intensity_domains=("TEMPO",),
         forbidden_intensity_domains=("SWEET_SPOT", "THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="aerobic_groundwork",
         threshold_role="forbidden",
         event_load_policy="no_event_load_exception",
@@ -226,9 +232,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "strength_endurance_base": PhaseSemanticProfile(
         phase_type="BASE",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"),
         optional_intensity_domains=("SWEET_SPOT",),
         forbidden_intensity_domains=("THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="torque_durability_base",
         threshold_role="suppressed",
         event_load_policy="no_event_load_exception",
@@ -240,9 +247,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "sweet_spot_base": PhaseSemanticProfile(
         phase_type="BASE",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"),
         optional_intensity_domains=(),
         forbidden_intensity_domains=("THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="subthreshold_base",
         threshold_role="suppressed",
         event_load_policy="no_event_load_exception",
@@ -254,9 +262,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "vo2_build": PhaseSemanticProfile(
         phase_type="BUILD",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "VO2MAX"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"),
         optional_intensity_domains=("TEMPO",),
         forbidden_intensity_domains=("THRESHOLD",),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="aerobic_ceiling_build",
         threshold_role="suppressed",
         event_load_policy="event_load_support_only",
@@ -268,9 +277,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "threshold_build": PhaseSemanticProfile(
         phase_type="BUILD",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
         optional_intensity_domains=("SWEET_SPOT",),
         forbidden_intensity_domains=("VO2MAX",),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="threshold_build",
         threshold_role="leading",
         event_load_policy="event_load_support_only",
@@ -282,9 +292,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "sst_build": PhaseSemanticProfile(
         phase_type="BUILD",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
         optional_intensity_domains=("THRESHOLD",),
         forbidden_intensity_domains=("VO2MAX",),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="extensive_subthreshold_build",
         threshold_role="secondary",
         event_load_policy="event_load_support_only",
@@ -296,9 +307,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "durability_build": PhaseSemanticProfile(
         phase_type="BUILD",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
         optional_intensity_domains=("THRESHOLD",),
         forbidden_intensity_domains=("VO2MAX",),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="durability_first_build",
         threshold_role="secondary",
         event_load_policy="event_load_support_only",
@@ -310,9 +322,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "specificity_build": PhaseSemanticProfile(
         phase_type="BUILD",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
         optional_intensity_domains=("THRESHOLD",),
         forbidden_intensity_domains=("VO2MAX",),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="event_specific_build",
         threshold_role="secondary",
         event_load_policy="event_load_replaces_anchor_not_adds",
@@ -324,9 +337,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "vlamax_lowering": PhaseSemanticProfile(
         phase_type="BUILD",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"),
         optional_intensity_domains=("THRESHOLD",),
         forbidden_intensity_domains=("VO2MAX",),
+        allowed_load_modalities=("NONE", "K3"),
         methodology_family="efficiency_build",
         threshold_role="secondary",
         event_load_policy="event_load_support_only",
@@ -338,9 +352,10 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
     ),
     "peak_sharpening": PhaseSemanticProfile(
         phase_type="PEAK",
-        max_allowed_intensity_domains=("ENDURANCE", "TEMPO", "SWEET_SPOT"),
+        max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"),
         optional_intensity_domains=("TEMPO", "SWEET_SPOT"),
         forbidden_intensity_domains=("THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE",),
         methodology_family="peak_sharpening",
         threshold_role="suppressed",
         event_load_policy="event_load_support_only",
@@ -355,6 +370,7 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
         max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"),
         optional_intensity_domains=("TEMPO", "SWEET_SPOT"),
         forbidden_intensity_domains=("THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE",),
         methodology_family="freshness_first_taper",
         threshold_role="forbidden",
         event_load_policy="a_event_load_must_be_described_as_event_kj_not_training_reload",
@@ -369,6 +385,7 @@ PHASE_SEMANTIC_PROFILES: dict[str, PhaseSemanticProfile] = {
         max_allowed_intensity_domains=("RECOVERY", "ENDURANCE", "TEMPO"),
         optional_intensity_domains=("TEMPO",),
         forbidden_intensity_domains=("SWEET_SPOT", "THRESHOLD", "VO2MAX"),
+        allowed_load_modalities=("NONE",),
         methodology_family="event_execution",
         threshold_role="forbidden",
         event_load_policy="event_execution_primary",
@@ -584,6 +601,15 @@ def semantic_allowed_intensity_domains(value: object) -> list[str]:
     return list(profile.max_allowed_intensity_domains)
 
 
+def semantic_allowed_load_modalities(value: object) -> list[str]:
+    """Return the canonical allowed load modalities for one phase intent."""
+
+    profile = semantic_profile_for_phase_intent(value)
+    if profile is None:
+        return []
+    return list(profile.allowed_load_modalities)
+
+
 def semantic_forbidden_intensity_domains(value: object) -> list[str]:
     """Return the default forbidden intensity-domain set for one phase intent."""
 
@@ -601,7 +627,10 @@ def season_phase_allowed_domains(*, phase_intent: object, season_allowed_domains
     if profile is None:
         return []
     allowed_set = set(profile.max_allowed_intensity_domains)
-    return [domain for domain in season_domains if domain in allowed_set]
+    result = [domain for domain in season_domains if domain in allowed_set]
+    if "RECOVERY" in allowed_set and "RECOVERY" not in result:
+        result.insert(0, "RECOVERY")
+    return result
 
 
 def season_phase_forbidden_domains(*, phase_intent: object, season_allowed_domains: Iterable[object] | None) -> list[str]:
@@ -638,6 +667,7 @@ def phase_semantic_contract_payload(*, phase_intent: object) -> dict[str, object
         "threshold_role": profile.threshold_role,
         "event_load_policy": profile.event_load_policy,
         "taper_policy": profile.taper_policy,
+        "allowed_load_modalities": list(profile.allowed_load_modalities),
         "writer_semantic_notes": list(profile.writer_semantic_notes),
     }
 

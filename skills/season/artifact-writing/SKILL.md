@@ -12,7 +12,7 @@ Method:
 2. Preserve the approved season bundle exactly and write only the approved planning content.
 3. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
 4. Preserve exact `iso_week`, `iso_week_range`, `temporal_scope`, `trace_upstream`, `trace_data`, and `trace_events` only as non-authoritative context/trace hints when available.
-5. Preserve approved phase blueprint semantics, including inherited `scenario_cadence`, `cadence_week_roles`, A/B event treatment, taper intent, allowed domains, and canonical phase taxonomy, by reflecting them in existing Season Plan fields.
+5. Preserve approved phase blueprint semantics, including inherited `scenario_cadence`, `cadence_week_roles`, A/B event treatment, taper intent, allowed domains, allowed load modalities, and canonical phase taxonomy, by reflecting them in existing Season Plan fields.
    Also preserve `season_phase_role`, availability cap, baseline load, role-week load bands, progression trace, and load feasibility status in existing narrative/notes fields.
    Preserve explicit `phase_type`, `phase_intent`, `build_subtype`, and `phase_taxonomy_version` on every written phase.
 6. Keep season-wide constraints, event windows, phase definitions, and citations complete and schema-valid.
@@ -25,11 +25,13 @@ Writer rules:
 - do not choose, rewrite, or normalize cadence during writing; cadence has already been selected upstream by Scenario Selection
 - when cadence roles exist in the approved bundle, reflect them in `deload_rationale`, `typical_duration_intensity_pattern`, and `weekly_load_corridor.weekly_kj.notes`
 - `weekly_load_corridor.weekly_kj.min/max` must come from the approved phase blueprint's availability-bounded recommended phase corridor
-- `weekly_load_corridor.weekly_kj.notes` must mention phase role, availability cap, baseline, and role-week load semantics when available
+- `weekly_load_corridor.weekly_kj.notes` must mention phase role, availability cap, baseline, and role-week load semantics when available, and must render role-week bands as inherited season-level guardrails rather than week prescriptions
 - `phase_type`, `phase_intent`, `build_subtype`, and `phase_taxonomy_version` must be copied exactly from the approved phase blueprint; do not infer, rename, or backfill legacy labels during writing
 - `season_load_envelope` must be copied exactly from the approved bundle; do not recalculate or widen it during writing
-- approved phase `allowed_domains` / `forbidden_domains` must be copied into the existing phase semantics fields exactly; do not broaden or reinterpret them during writing
+- approved phase `allowed_domains` / `forbidden_domains` / `allowed_load_modalities` must be copied into the existing phase semantics fields exactly; do not broaden or reinterpret them during writing
 - approved bundle `semantic_contract` notes own the method framing for threshold role, B-event handling, and taper/event-kJ explanation; serialize them into existing narrative fields without inventing a new interpretation
+- `events_constraints` must contain real A/B/C planning events only; do not serialize synthetic “no event” placeholders
+- if a primary objective appears materially misaligned with the highest in-horizon A event, preserve the warning in the plan but do not block writing
 - if a required field is missing, unknown, or schema-invalid: stop rather than guess
 
 Hard rules:
