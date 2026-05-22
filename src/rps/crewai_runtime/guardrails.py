@@ -838,6 +838,7 @@ def season_phase_load_context_match(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return (False, "Season output must decode to an object.")
+    mapping = _repair_season_plan_for_contract_validation(mapping)
     context = _season_phase_load_context()
     if not context:
         return (True, mapping)
@@ -1403,6 +1404,81 @@ def _season_phase_slot_context() -> JsonMap:
 def _season_phase_load_context() -> JsonMap:
     context = _GUARDRAIL_CONTEXT.get({})
     return _as_map(context.get("season_phase_load_context"))
+
+
+def _repair_season_plan_for_contract_validation(mapping: JsonMap) -> JsonMap:
+    """Apply minimal code-owned season repairs before final contract validation."""
+
+    repaired = dict(mapping)
+    data = _as_map(repaired.get("data"))
+    repaired["data"] = data
+    phases = [_as_map(item) for item in _as_list(data.get("phases"))]
+    approved_bundle = _as_map(_GUARDRAIL_CONTEXT.get({}).get("approved_planning_bundle"))
+    approved_by_phase = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(approved_bundle.get("phase_blueprints"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
+    season_phase_load_context = _season_phase_load_context()
+    context_by_phase = {
+        str(_as_map(item).get("phase_id") or ""): _as_map(item)
+        for item in _as_list(_as_map(season_phase_load_context).get("phases"))
+        if str(_as_map(item).get("phase_id") or "").strip()
+    }
+    for phase in phases:
+        phase_id = str(phase.get("phase_id") or "").strip()
+        approved = approved_by_phase.get(phase_id, {})
+        context_phase = context_by_phase.get(phase_id, {})
+        semantics = _as_map(phase.get("allowed_forbidden_semantics"))
+        phase["allowed_forbidden_semantics"] = semantics
+        approved_modalities = [
+            str(item).strip().upper()
+            for item in approved.get("allowed_load_modalities") or []
+            if str(item).strip()
+        ]
+        if approved_modalities:
+            semantics["allowed_load_modalities"] = approved_modalities
+        role_week_load_bands = [
+            str(entry).strip()
+            for entry in approved.get("role_week_load_bands") or []
+            if str(entry).strip()
+        ]
+        if not role_week_load_bands:
+            role_week_load_bands = [
+                f"{str(_as_map(entry).get('week') or '').strip()}: "
+                f"{str(_as_map(entry).get('role') or '').strip()} "
+                f"{_as_map(_as_map(entry).get('band')).get('min')}-"
+                f"{_as_map(_as_map(entry).get('band')).get('max')}"
+                for entry in _as_list(context_phase.get("role_week_load_bands"))
+                if str(_as_map(entry).get("week") or "").strip()
+                and str(_as_map(entry).get("role") or "").strip()
+                and _as_map(_as_map(entry).get("band")).get("min") is not None
+                and _as_map(_as_map(entry).get("band")).get("max") is not None
+            ]
+        weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
+        if role_week_load_bands and weekly_kj is not None:
+            note = (
+                "Inherited role-week load guardrails (season-level, not week prescriptions): "
+                + "; ".join(role_week_load_bands)
+                + "."
+            )
+            existing = str(weekly_kj.get("notes") or "").strip()
+            if note not in existing:
+                weekly_kj["notes"] = f"{existing} {note}".strip() if existing else note
+        if context_phase:
+            events = [
+                {
+                    "window": str(_as_map(event).get("date") or _as_map(event).get("week") or "").strip(),
+                    "type": str(_as_map(event).get("type") or "").strip().upper(),
+                    "constraint": "deterministic contract event",
+                }
+                for event in _as_list(_as_map(context_phase.get("event_taper_trace")).get("events"))
+                if str(_as_map(event).get("date") or _as_map(event).get("week") or "").strip()
+            ]
+            if events:
+                phase["events_constraints"] = events
+    data["phases"] = phases
+    return repaired
 
 
 def _target_week_from_context_or_meta(mapping: JsonMap) -> IsoWeek | None:

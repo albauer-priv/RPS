@@ -60,6 +60,7 @@ from rps.crewai_runtime.guardrails import (
     resolve_task_policy,
     season_bundle_integrity,
     season_bundle_matches_contract,
+    season_phase_load_context_match,
     season_phase_load_feasibility,
     season_scenario_selection_shape,
     season_scenarios_profile_quality,
@@ -2114,6 +2115,67 @@ def test_normalize_final_season_plan_semantics_projects_events_guardrails_and_wa
         "Durability" in publication["title"]
         for publication in normalized["data"]["principles_scientific_foundation"]["scientific_foundation"]["publications"]
     )
+
+
+def test_season_phase_load_context_match_repairs_missing_role_week_notes_before_validation() -> None:
+    output = {
+        "data": {
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
+            "season_intent_principles": {"season_objective": "Strong 200 km A-event execution."},
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "weekly_load_corridor": {"weekly_kj": {"min": 7800, "max": 9800, "notes": "Base corridor."}},
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                        "allowed_load_modalities": ["K3"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "events_constraints": [],
+                }
+            ],
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 9800}},
+            "assumptions_unknowns": {"assumptions": ["a"], "uncertainties": ["u"], "revisit_items": ["r"]},
+            "justification": {"phase_justifications": []},
+        }
+    }
+
+    with guardrail_runtime_context(
+        approved_planning_bundle={
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "allowed_load_modalities": ["NONE", "K3"],
+                    "role_week_load_bands": ["2026-21: LOAD_1 7800-8600"],
+                }
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_intent": "shortened_re_entry",
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
+                    ],
+                    "event_taper_trace": {"events": []},
+                }
+            ],
+        },
+    ):
+        ok, repaired = season_phase_load_context_match(output)
+
+    assert ok is True
+    notes = repaired["data"]["phases"][0]["weekly_load_corridor"]["weekly_kj"]["notes"]
+    assert "Inherited role-week load guardrails" in notes
+    assert "2026-21: LOAD_1 7800-8600" in notes
+    assert repaired["data"]["phases"][0]["allowed_forbidden_semantics"]["allowed_load_modalities"] == ["NONE", "K3"]
 
 
 def test_scenario_selection_guardrail_accepts_only_selection_shape() -> None:

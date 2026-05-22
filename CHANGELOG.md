@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed Season writer guardrail ordering so final `SEASON_PLAN` contract validation repairs deterministic role-week guardrail notes, canonical load modalities, and real event constraints before evaluating the writer output, preventing false blocking failures on code-owned fields such as `weekly_load_corridor.weekly_kj.notes`.
+
 ## [0.17.0] - 2026-05-22
 
 ### Added
