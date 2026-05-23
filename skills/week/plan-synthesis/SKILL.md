@@ -3,9 +3,24 @@ name: plan-synthesis
 description: Synthesize week specialist drafts into one bounded internal week plan candidate.
 metadata:
   author: rps
-  version: "2.0"
+  version: "3.0"
 ---
 Synthesize specialist outputs into one internal week bundle.
+
+Definitions:
+- `planned_kj`: mechanical work estimate at workout/day level
+- `planned_weekly_load_kj`: governance week-load metric used for corridor compliance
+- `active_weekly_kj_band`: binding target-week governance band
+- `weekly_load_corridor_kj`: week-summary mirror of the binding governance band
+- `phase_role`: active deterministic phase role
+- `phase_week_role` / `week_role`: inherited deterministic role for the target week
+- `reload`: controlled return near prior build load
+- `re-entry`: baseline-anchored controlled return after deload or unresolved fatigue
+
+Authority / injected sources:
+- `active_weekly_kj_band`, dates, fixed rest days, day availability, and target-week role context come from `workspace_get_week_calendar_context`
+- inherited phase semantics come from `workspace_get_phase_execution_context`
+- this layer synthesizes a week bundle; it must not invent new legality, new cadence families, or new workout-policy exceptions
 
 Method:
 1. Preserve authoritative constraints, the binding active weekly corridor, and the active phase week role from deterministic context.
@@ -13,6 +28,18 @@ Method:
 3. Keep workout authoring subordinate to week role, day role, load distribution, and export syntax.
 4. Emit exactly one coherent candidate that is ready for review, not a list of alternatives.
 5. Review should mostly confirm. Resolve all context-decidable agenda, availability, role, domain, and export-intent contradictions before handoff.
+6. Apply the full week-side policy stack during finalize:
+   - load-estimation semantics
+   - active band authority
+   - inherited progressive-overload role semantics
+   - durability-first repeatability
+   - workout-policy legality and exportability
+
+Progression axes:
+- duration / total governance work
+- frequency when explicitly allowed by week shape
+- density / complexity
+- intensity last
 
 Use only existing upstream authority and injected deterministic context.
 
@@ -34,6 +61,7 @@ Required bundle semantics:
 - Each day blueprint must state fixed-rest status, availability cap, phase role, phase week role, day role, intended domain, duration, kJ, workout reference, and warnings.
 - `workout_blueprints` must exist for every planned workout and state target day role, intensity domain, duration, kJ, required sections, syntax profile, and exportability status.
 - `weekly_load_corridor_kj` must mirror the binding active weekly band; do not invent a separate week corridor.
+- `planned_weekly_load_kj` is governance load, not raw workout/day mechanical work; keep the distinction explicit in reasoning and trace
 - If the active band, availability, fixed rest days, and recovery constraints cannot be reconciled, emit blocking issues or replan instructions instead of hiding the conflict.
 - do not assume the writer will repair structural or semantic defects that are already decidable here
 - week shape must reflect inherited `phase_type`, `phase_intent`, and `build_subtype`
@@ -50,6 +78,18 @@ Required bundle semantics:
   - `peak_sharpening`: sharpening and execution readiness without accumulation drift
   - `taper_freshening`: freshness and primer/openers only
   - `race_execution`: event week, logistics, pacing, recovery protection
+
+Week-policy translation rules:
+- preserve the inherited overload-role meaning:
+  - deload = meaningful load/quality reduction
+  - mini-reset = smaller reduction than full deload
+  - reload = controlled return near prior build load
+  - re-entry = baseline-anchored controlled return after fatigue or true deload
+- if a nominal reload is actually baseline-anchored because readiness is poor, label and reason about it as re-entry
+- duration-first reconciliation comes before intensity escalation
+- if the week is slightly under target after safe reconciliation, preserve safety and explain the miss
+- no catch-up logic on recovery or fixed-rest days
+- workout construction must stay inside workout-policy family rules and export-safe subset rules
 
 Output format:
 - Return the task expected_output as one consolidated planning bundle or synthesis contribution.

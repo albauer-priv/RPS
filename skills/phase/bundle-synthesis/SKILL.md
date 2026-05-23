@@ -3,9 +3,22 @@ name: bundle-synthesis
 description: Synthesize phase specialist drafts into one internal PhaseBundle.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
 Combine phase drafts into one internal bundle.
+
+Definitions:
+- `weekly_kj_bands`: exact-range governance-load bands copied from approved phase guardrails
+- `planned_weekly_load_kj`: governance load metric represented by those bands
+- `week_role`: inherited deterministic cadence role for an exact-range ISO week
+- `phase_role`: deterministic role of the exact phase block
+- `reload`: controlled return near prior build load
+- `re-entry`: baseline-anchored controlled return after deload or unresolved fatigue
+
+Authority / injected sources:
+- `week_role`, `phase_role`, exact range, and contract values come from deterministic phase execution context and slot contract tools
+- `weekly_kj_bands` come from approved phase guardrails
+- this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
 
 Method:
 1. Keep guardrails authoritative over structure.
@@ -22,7 +35,26 @@ Method:
    - S5/load-band logic coherent
    - guardrails / structure / preview agree
    - phase semantics and domain shaping contain no unresolved contradictions
+   - inherited overload policy is visible in exact-range structure
+   - deload / mini-reset / reload / re-entry semantics are explicit where required
+   - Build-entry logic stays conservative after shortened/base/re-entry context
+   - no phase-level drift away from durability-first repeatability logic
    - no assumption that the writer will repair bundle semantics
+
+Operational synthesis rules:
+- preserve load-estimation semantics exactly:
+  - `weekly_kj_bands` = governance load bands
+  - do not reinterpret them as raw mechanical work
+- keep week structure subordinate to:
+  - deterministic week roles
+  - phase guardrails legality
+  - inherited cadence family
+- if a nominal reload is baseline-anchored after fatigue, synthesize it as re-entry
+- if a phase intent depends on a forbidden domain, replan rather than hiding the contradiction in prose
+- preserve durability-first logic:
+  - repeatability over cosmetic load centering
+  - no hidden catch-up
+  - no recovery compression
 
 Retrieval policy:
 - Use deterministic injected runtime contracts first when they are present.

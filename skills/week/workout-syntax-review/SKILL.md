@@ -3,9 +3,21 @@ name: workout-syntax-review
 description: Review workout text against the project subset, grammar restrictions, and export-safe constraints.
 metadata:
   author: rps
-  version: "3.0"
+  version: "4.0"
 ---
 Review candidate workout text as syntax, export policy, and workout-policy semantic compliance.
+
+Definitions:
+- `planned_kj`: mechanical workout work estimate associated with the authored workout
+- `planned_weekly_load_kj`: governance week-load metric; this review must not treat workout text as authority for week corridor compliance
+- `day_role`: active deterministic role for the target day
+- `intensity_domain`: declared or intended workout intensity domain
+- `week_role`: active deterministic week-role meaning that constrains family density and accumulation behavior
+
+Authority / injected sources:
+- legality authority comes from `PHASE_GUARDRAILS`
+- week-role and phase-semantics authority come from active week and phase context
+- this layer reviews syntax and family legality; it must not reinterpret the week corridor itself
 
 Runtime source boundary:
 - This skill is the active runtime method for week workout syntax and semantics review.
@@ -38,6 +50,8 @@ Checklist:
 17. Workout family and target placement remain coherent with inherited canonical phase semantics, not only with day role and domain legality.
 18. The candidate would pass the same strict export subset enforced by the runtime validator; prose serialization is a blocker, not a warning.
 19. Canonical declared workout family/domain and final workout text remain mutually consistent; if they disagree, block approval.
+20. Workout text does not violate active week-role overload semantics by smuggling build-like density into deload, mini-reset, re-entry, taper, or event weeks.
+21. Workout construction remains consistent with durability-first rules: no catch-up workout inflation, no hidden extra intensity just to repair weekly load.
 
 Canonical family checks:
 - `Recovery`: no hidden quality or activation

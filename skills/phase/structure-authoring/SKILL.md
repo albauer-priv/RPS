@@ -3,9 +3,22 @@ name: structure-authoring
 description: Define week roles and structural skeleton for the exact phase range.
 metadata:
   author: rps
-  version: "3.0"
+  version: "4.0"
 ---
 Author the phase structure after guardrails are known.
+
+Definitions:
+- `week_role`: inherited deterministic week-role label for an ISO week in the exact phase range
+- `phase_role`: deterministic role of the exact phase block
+- `weekly_kj_bands`: exact-range governance-load bands copied from phase guardrails
+- `reload`: controlled return near prior build load after a limited reset
+- `re-entry`: baseline-anchored conservative return after true deload or unresolved fatigue
+- `Build-entry`: the first build-oriented step after shortened/base/re-entry context
+
+Authority / injected sources:
+- `week_role`, `phase_role`, and exact phase range come from deterministic phase context
+- `weekly_kj_bands` come from approved phase guardrails
+- this layer shapes week-role structure; it must not invent new cadence families or rewrite guardrail legality
 
 Method:
 1. Translate phase purpose into week roles and structural sequence covering every ISO week in the exact phase range.
@@ -28,6 +41,9 @@ Structural content rules:
 - include allowed role set, mandatory elements, optional elements, and excluded patterns
 - preserve fixed non-training days and long-endurance anchor protection
 - prefer repeatable structure over brittle optimization
+- make inherited cadence operational in the structure: build, deload, mini-reset, reload, and re-entry must be visibly distinguishable where policy requires it
+- keep reload distinct from re-entry; when fallback logic turns a nominal reload into baseline-anchored resumption, say so explicitly
+- preserve conservative Build-entry logic when shortened/base/re-entry context precedes the phase
 - `specificity_build` must push structure toward pacing/fueling/terrain/logistics realism
 - `durability_build` must emphasize B2B, preload, hard-late, and long-ride protection rather than rehearsal semantics
 - `vo2_build` must keep VO2 weeks fresh and bounded rather than broad mixed-density
@@ -36,11 +52,44 @@ Structural content rules:
 - `taper_freshening` must preserve freshness and reduce accumulation patterns
 - `race_execution` must keep event logistics and recovery runway explicit
 
+Progression axes in structure:
+- duration / total governance work
+- density / complexity of key-work placement
+- intensity last
+
+Structure-level progression rule:
+- the structure must never imply simultaneous escalation of duration, density, and intensity unless an explicit bounded exception exists upstream
+
+Operational cadence rules for structure authoring:
+- `3:1` structure should read as:
+  - W1 controlled build entry
+  - W2 progressive build
+  - W3 further build progression
+  - W4 materially reduced deload
+- `2:1` structure should read as:
+  - W1 controlled build entry
+  - W2 progressive build
+  - W3 materially reduced deload
+- `2:1:1` structure should read as:
+  - W1 controlled build entry
+  - W2 progressive build
+  - W3 mini-reset, not full collapse
+  - W4 reload near W2 if readiness is adequate
+- fallback interpretation:
+  - if readiness is poor after W2/W3, W3 may become true deload
+  - then W4 must be written as re-entry, not reload
+
+Build-entry conservatism:
+- after shortened/base/re-entry context, the first Build week should use lower-corridor or otherwise conservative structure
+- avoid writing the first Build week as the densest or most specific week of the phase
+- if the inherited phase intent is `durability_build`, early structure should earn durability load through repeatability before hard-late or heavy preload escalation
+
 Hard rules:
 - keep numeric daily targets in downstream week artifacts
 - keep workouts, intervals, zones, and %FTP in downstream week/workout artifacts
 - provide complete week-role coverage
 - preserve the season objective inside the phase
+- objective mismatch remains warning-only and input-owned; do not rewrite it in phase structure authoring
 - emit `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` explicitly and keep them identical to upstream authority
 - emit `upstream_intent.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority
 

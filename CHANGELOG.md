@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added an upstream-first planning pipeline contract for Season, Phase, and Week flows: finalize agents now own semantic bundle completion, review stages default to formal approval with bounded replan only for true residual defects, and writers are explicitly constrained to serialization plus deterministic final projection.
+- Added full progressive-overload policy guidance to active Season and Phase planner/review layers: task descriptions, planner prompts, and load/structure/review skills now explicitly carry cadence-family selection, ramp classes, deload vs mini-reset, reload vs re-entry, fallback behavior, conservative next-baseline logic, Build-entry readiness gates, and warning-only handling for user-owned objective mismatches.
 
 ### Fixed
 - Fixed Season writer guardrail ordering so final `SEASON_PLAN` contract validation repairs deterministic role-week guardrail notes, canonical load modalities, and real event constraints before evaluating the writer output, preventing false blocking failures on code-owned fields such as `weekly_load_corridor.weekly_kj.notes`.
 - Fixed planning-stage contract enforcement so review-ready bundle checks now run in Season/Phase/Week finalize stages, approved review decisions must carry an explicit writer-ready summary, stale phantom event placeholders are rejected upstream, and Season writer validation no longer blocks on forbidden-domain narrative cleanup that should have been resolved before writing.
+- Fixed deterministic Season slot semantics so generic `BUILD` slots in `src/rps/planning/load_bands.py` no longer fall blindly to `threshold_build`; build-intent default selection now respects season intensity-domain governance and keeps canonical `season_phase_role` aligned with the final normalized phase intent.
 
 ## [0.17.0] - 2026-05-22
 

@@ -19,6 +19,7 @@ from rps.workspace.phase_intents import (
     normalize_phase_semantics,
     normalize_season_archetype,
     phase_type_for_intent,
+    semantic_allowed_intensity_domains,
 )
 from rps.workspace.phase_resolution import date_to_iso_week
 
@@ -57,6 +58,11 @@ RECOVERY_SENSITIVE_PHASE_INTENTS = {
     "preparation_re_entry",
     "shortened_re_entry",
     "taper_freshening",
+}
+PRIMARY_DOMAIN_BY_BUILD_INTENT = {
+    "vo2_build": "VO2MAX",
+    "threshold_build": "THRESHOLD",
+    "sst_build": "SWEET_SPOT",
 }
 
 
@@ -861,6 +867,7 @@ def build_season_phase_load_context(
             idx=idx,
             total=total,
             is_shortened=bool(slot.get("is_shortened")),
+            selected_structure_context=selected_context,
         )
         phase_intent = normalize_phase_intent(
             derived_phase_intents.get(str(slot.get("phase_id") or "")) or season_phase_role
@@ -887,6 +894,7 @@ def build_season_phase_load_context(
             warnings=warnings,
             blocking_issues=blocking_issues,
         )
+        season_phase_role = phase_intent
 
         phase_baseline = _phase_baseline_for_role(
             prior_reference=phase_reference,
@@ -1107,7 +1115,62 @@ def _recommended_cycle_for_slot(*, idx: int, total: int, is_shortened: bool) -> 
     return "BUILD"
 
 
-def _season_phase_role_for_slot(*, phase_type: str, idx: int, total: int, is_shortened: bool) -> str:
+def _intent_is_legal_under_season_governance(
+    *,
+    phase_intent: str,
+    season_allowed_domains: list[str],
+    season_forbidden_domains: list[str],
+) -> bool:
+    """Return whether one canonical phase intent is legal under current season authority."""
+
+    semantic_allowed = set(semantic_allowed_intensity_domains(phase_intent))
+    if not semantic_allowed:
+        return False
+    allowed = set(season_allowed_domains)
+    forbidden = set(season_forbidden_domains)
+    phase_allowed = {domain for domain in allowed if domain in semantic_allowed and domain not in forbidden}
+    if "RECOVERY" in semantic_allowed:
+        phase_allowed.add("RECOVERY")
+    primary_domain = PRIMARY_DOMAIN_BY_BUILD_INTENT.get(phase_intent)
+    if primary_domain and primary_domain not in phase_allowed:
+        return False
+    if phase_intent in {"durability_build", "specificity_build"} and not phase_allowed.intersection(
+        {"ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"}
+    ):
+        return False
+    return bool(phase_allowed)
+
+
+def _default_build_phase_intent_for_context(*, selected_structure_context: JsonMap | None) -> str:
+    """Return the deterministic default build intent for one generic BUILD slot.
+
+    Generic BUILD slots must not fall back blindly to ``threshold_build``.
+    Without an explicit deterministic ceiling-first or event-near signal, the
+    conservative default is the first legal sub-threshold build intent under the
+    current season governance.
+    """
+
+    selected_context = _as_map(selected_structure_context or {})
+    season_allowed_domains = normalize_intensity_domain_list(selected_context.get("allowed_intensity_domains"))
+    season_forbidden_domains = normalize_intensity_domain_list(selected_context.get("forbidden_intensity_domains"))
+    for candidate in ("durability_build", "sst_build", "threshold_build"):
+        if _intent_is_legal_under_season_governance(
+            phase_intent=candidate,
+            season_allowed_domains=season_allowed_domains,
+            season_forbidden_domains=season_forbidden_domains,
+        ):
+            return candidate
+    return "durability_build"
+
+
+def _season_phase_role_for_slot(
+    *,
+    phase_type: str,
+    idx: int,
+    total: int,
+    is_shortened: bool,
+    selected_structure_context: JsonMap | None = None,
+) -> str:
     if is_shortened:
         return "shortened_re_entry" if idx == 1 else "general_base"
     if phase_type == "PEAK":
@@ -1116,7 +1179,7 @@ def _season_phase_role_for_slot(*, phase_type: str, idx: int, total: int, is_sho
         return "aerobic_base"
     if phase_type == "PREPARATION":
         return "preparation_re_entry"
-    return "threshold_build"
+    return _default_build_phase_intent_for_context(selected_structure_context=selected_structure_context)
 
 
 def _canonicalize_phase_slot_semantics(
@@ -1182,6 +1245,7 @@ def _derive_phase_intents_for_slots(
             idx=idx,
             total=total,
             is_shortened=bool(slot.get("is_shortened")),
+            selected_structure_context=selected_structure_context,
         )
 
     archetype = normalize_season_archetype(_as_map(selected_structure_context).get("season_archetype"))

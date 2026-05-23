@@ -3,9 +3,31 @@ name: plan-synthesis
 description: Synthesize season specialist drafts into one internal season bundle.
 metadata:
   author: rps
-  version: "2.0"
+  version: "3.0"
 ---
 Consolidate season drafts into one candidate bundle.
+
+Definitions:
+- `planned_kj`: mechanical work estimate at workout/day level; not the season corridor metric
+- `planned_weekly_load_kj`: governance week-load metric used for season corridor/band semantics
+- `BL_kJ`: baseline weekly governance-load anchor used to interpret overload, deload, and re-entry in season reasoning
+- `prior_week_kJ`: previous comparable build-week governance load
+- `DL_kJ`: deload governance-load target
+- `RE_kJ`: re-entry governance-load target
+- `MR_kJ`: mini-reset governance-load target
+- `W1_kJ`, `W2_kJ`, `W3_kJ`, `W4_kJ`: cadence-step governance-load targets
+- `BL_kJ_next`: conservative next-baseline anchor after a completed cadence sequence
+- `phase_role`: deterministic seasonal role attached to a phase slot
+- `cadence_week_roles`: inherited deterministic week-role sequence for the slot
+- `allowed_domains`: season- or phase-authorized intensity-domain permissions
+- `forbidden_domains`: explicit domains excluded for the phase blueprint
+
+Authority / injected sources:
+- phase-slot geometry and `cadence_week_roles` come from `Deterministic Season Phase Slot Context`
+- phase-role, availability cap, baseline, recommended corridor, and role-week load bands come from `Deterministic Season Phase Load Context`
+- load-estimation math and `IF_ref_load` semantics remain owned by `skills/shared/load-estimation-core/SKILL.md`
+- if `BL_kJ` is not directly surfaced, use the deterministic baseline/progression information already embedded in the phase load context; do not derive it ad hoc from prose
+- this layer must not compute workout-level load math
 
 Method:
 1. Preserve event hierarchy and macrocycle logic.
@@ -32,6 +54,39 @@ Method:
    - `3:1` means three load weeks and a materially reduced deload week.
    - `2:1` means two load weeks and a materially reduced deload week.
    - Shortened slots keep their injected shortened roles and should read as re-entry/consolidation, not as full-length cadence cycles.
+17a. Carry the full progressive overload policy into the season bundle:
+   - choose and explain cadence-family rationale from robustness, recovery, and risk context
+   - keep ramp class explicit (`conservative`, `standard`, or rare `aggressive`)
+   - keep deload, mini-reset, reload, and re-entry semantically distinct
+   - if `2:1:1` mini-reset becomes a true deload, treat the following week as re-entry
+   - if `3:1` shows repeated week-3 collapse risk, push toward a more conservative cadence framing
+   - if `2:1` repeatedly over-recovers or stalls, note that more productive cadence families may need reconsideration
+   - use conservative next-baseline logic rather than anchoring future progression to the single highest visible week
+   - readiness-gate the first Build step after shortened, base, or re-entry context
+
+Progression axes:
+- duration / total governance work
+- frequency where the deterministic slot structure permits it
+- density / complexity of quality placement
+- intensity last
+
+Progression rules:
+- progress only one overload axis per step unless an explicit bounded exception is stated
+- do not use intensity first to repair corridor misses
+- do not hide missed-load compensation inside later phases or later weeks
+
+Operational overload-policy translation into season blueprints:
+- if cadence is `3:1`, make the phase narrative and week-role meaning reflect three progressive load opportunities before the deload
+- if cadence is `2:1`, make the phase narrative and week-role meaning reflect two progressive load opportunities before the deload
+- if cadence is `2:1:1`, make the phase narrative and week-role meaning reflect:
+  - W1 controlled build entry
+  - W2 progressive build
+  - W3 mini-reset
+  - W4 reload near W2
+- if fallback is needed:
+  - W3 may become true deload
+  - W4 must then be treated as re-entry
+- do not leave these semantics implicit; they must be recoverable from phase blueprints, progression traces, and week-role notes
 18. Set strategic phase corridors from phase role + availability + progression context, not by copying availability capacity or inventing desired load.
 19. Keep every emitted `cycle` schema-valid: `Base`, `Build`, `Peak`, or `Transition`.
 20. Emit one review-ready season bundle, not multiple competing variants.
@@ -52,6 +107,8 @@ Method:
    - no positive framing of forbidden domains
    - no unresolved scenario/phase authority drift
    - no unresolved cadence / reset / taper contradictions
+   - no unresolved overload-policy contradictions around ramp class, fallback path, reload vs re-entry, or Build-entry readiness
+   - no Build intent contradicts its legal intensity domains
    - objective mismatch, if present, surfaced only as warning/revisit item
 28. Treat `phase_blueprints[].event_constraints` as a compact real-event trace:
    - emit `[]` when a phase has no real event-linked constraint
@@ -120,6 +177,11 @@ Reading rules:
 - `vo2_build` does not mean `VO2MAX` must dominate every week; it is still recovery-bounded.
 - `specificity_build` is distinct from `durability_build` and `peak_sharpening`; it is event-near specificity without taper semantics.
 - Phase intent may narrow scenario domains, but must not exceed scenario-level allowed domains.
+- A Build intent whose defining domain is not legal must not be emitted.
+- `threshold_build` requires legal `THRESHOLD` plus threshold-led narrative and structure.
+- prefer `durability_build` when the block is driven by long-duration work, preload, hard-late stability, fatigue resistance, B2B structure, or long-ride kJ tolerance
+- prefer `sst_build` only for true extensive sub-threshold capacity work rather than durability-first fatigue structure
+- after shortened/base/re-entry context, early Build semantics should be conservative and readiness-gated rather than immediately maximal
 - Authority flows only downward:
   - `scenario.allowed_domains` = upper seasonal authority
   - `phase.allowed_domains` = narrower phase authority
@@ -147,6 +209,7 @@ Hard rules:
   - `["2026-08-15 B event: rehearsal within ongoing build."]`
   Keep each line factual, short, and tied to a real planning event.
 - if the objective appears materially misaligned with the highest in-horizon A event, surface that as a warning/revisit item; do not block synthesis solely for that mismatch
+- objective mismatch is input-owned; do not rewrite, soften, or reinterpret the user objective during synthesis
 - do not leave review to discover normal semantic cleanup that can be decided here
 - do not assume the writer will improve or reinterpret bundle semantics
 - never guess or alias legacy phase-intent labels during synthesis

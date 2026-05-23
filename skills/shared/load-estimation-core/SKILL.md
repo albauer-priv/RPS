@@ -3,7 +3,7 @@ name: load-estimation-core
 description: Shared load-estimation math and invariants for planning corridors and workout estimates.
 metadata:
   author: rps
-  version: "7.0"
+  version: "8.0"
 ---
 Use one consistent load-estimation method across season, phase, week, and workout export contexts.
 
@@ -82,3 +82,4 @@ Hard rules:
 - zero duration produces zero outputs
 - require non-negative durations and availability, valid FTP, at least one allowed domain, and valid totals for deterministic load derivation
 - if KPI gating is enabled and `body_mass_kg` is missing, STOP with `missing_body_mass_for_kpi_rate`
+- this skill defines load-estimation math only; it does not authorize catch-up logic, intensity escalation, or workout-policy exceptions

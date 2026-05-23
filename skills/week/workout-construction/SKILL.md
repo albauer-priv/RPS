@@ -3,9 +3,23 @@ name: workout-construction
 description: Construct valid workouts for the RPS project subset and execution intent.
 metadata:
   author: rps
-  version: "6.0"
+  version: "7.0"
 ---
 Author workout text only after the governing role, duration, and load intent are already set.
+
+Definitions:
+- `planned_kj`: mechanical workout work estimate for the authored workout
+- `planned_weekly_load_kj`: governance week-load metric; this skill must not treat workout text as the authority for weekly corridor compliance
+- `day_role`: active deterministic role for the target day
+- `intensity_domain`: active legal intensity domain for the workout
+- `load_modality`: active legal modality such as `NONE` or `K3`
+- `week_role`: active deterministic week role, such as load / deload / mini-reset / reload / re-entry / taper / event-week meaning
+
+Authority / injected sources:
+- day role, week role, duration, and load intent come from the approved week bundle and deterministic week context
+- legality comes from `PHASE_GUARDRAILS`
+- export-safe syntax comes from this skill plus the syntax-review layer
+- this layer constructs workouts; it must not repair a bad weekly load distribution by inventing illegal family/intensity choices
 
 Runtime source boundary:
 - This skill is the active runtime method for week workout authoring.
@@ -71,6 +85,11 @@ Intent mapping rules:
 - keep workout text aligned with inherited `phase_type`, `phase_intent`, and `build_subtype`; legal syntax is not sufficient when the workout family contradicts the active phase semantics
 - add-ons may extend aerobic load only when they preserve the workout classification and phase domain allowance
 - `Endurance`, `Recovery`, `Tempo`, `Sweet Spot`, `Threshold`, `VO2max`, and `K3` intents must remain structurally recognizable
+- workout text must also respect week-role semantics:
+  - deload / mini-reset weeks reduce load and quality
+  - reload preserves controlled rebuild
+  - re-entry stays baseline-anchored and conservative
+  - taper/event weeks do not disguise build-style accumulation
 
 Guardrails precedence:
 - `PHASE_GUARDRAILS.allowed_forbidden_semantics` is the binding week legality authority
@@ -150,6 +169,8 @@ Workout-type principles and progression:
 - `Sweet Spot` and `K3`: increase TiZ/duration before intensity
 - `Endurance`: increase duration by `5-10%`; back-to-back days are allowed only when upstream week structure permits
 - `Tempo / Over-Under`: increase oscillations or total time before intensity changes
+- do not use workout construction to compensate for poor upstream week load distribution
+- when week load is tight, prefer safe add-on aerobic volume before changing the core workout family
 
 Canonical workout families:
 - choose from these families unless upstream context explicitly demands a closer variant within the same family

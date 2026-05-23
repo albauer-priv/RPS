@@ -3,9 +3,22 @@ name: review-decision
 description: Integrate week review findings into approve, reject, or bounded replan decisions.
 metadata:
   author: rps
-  version: "1.0"
+  version: "2.0"
 ---
 Combine week review outputs into one explicit decision.
+
+Definitions:
+- `planned_kj`: mechanical workout/day work estimate
+- `planned_weekly_load_kj`: governance week-load metric used for active-band compliance
+- `active_weekly_kj_band`: binding target-week governance band
+- `reload`: controlled return near prior build load
+- `re-entry`: baseline-anchored controlled return after deload or unresolved fatigue
+
+Authority / injected sources:
+- exact target-week authority comes from:
+  - `workspace_get_week_calendar_context`
+  - `workspace_get_phase_execution_context`
+- this layer makes an approval decision only; it does not invent new week math or workout legality
 
 Decision order:
 1. Any syntax, workout-policy semantic, or load-safety blocker can stop approval.
@@ -18,6 +31,21 @@ Decision order:
    - `workspace_get_phase_execution_context`
 6. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive active week role, active band, availability caps, or recovery-day authority during this step.
 7. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, export-safe bundle.
+8. Gate the full week-policy stack explicitly:
+   - governance-load semantics vs mechanical-work semantics
+   - active week-band compliance
+   - duration-first reconciliation
+   - inherited progressive-overload role semantics
+   - durability-first repeatability and no catch-up behavior
+   - workout-policy legality and export-safe syntax
+
+Operational approval rules:
+- approve only when the week is structurally coherent, not merely numerically close
+- require replan when:
+  - recovery/fixed-rest protection was used as hidden catch-up space
+  - intensity was escalated mainly to force corridor compliance
+  - deload / mini-reset / reload / re-entry semantics are inconsistent with the active week role
+  - workout family legality/exportability is still unresolved
 
 Output format:
 - Return the task expected_output with a clear decision status: `approved`, `replan_required`, or `rejected`.

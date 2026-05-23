@@ -548,6 +548,56 @@ def test_season_phase_load_context_emits_only_canonical_phase_semantics_for_shor
         )
 
 
+def test_season_phase_load_context_avoids_threshold_build_when_threshold_is_not_legal() -> None:
+    context = build_season_phase_load_context(
+        phase_slot_context={
+            "selected_scenario_id": "B",
+            "phase_slots": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "is_shortened": True,
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION", "SHORTENED_MINI_RESET"],
+                    "week_keys": ["2026-21", "2026-22", "2026-23"],
+                },
+                {
+                    "phase_id": "P02",
+                    "iso_week_range": "2026-24--2026-27",
+                    "is_shortened": False,
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                    "week_keys": ["2026-24", "2026-25", "2026-26", "2026-27"],
+                },
+                {
+                    "phase_id": "P03",
+                    "iso_week_range": "2026-28--2026-31",
+                    "is_shortened": False,
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                    "week_keys": ["2026-28", "2026-29", "2026-30", "2026-31"],
+                },
+            ],
+        },
+        target_week=IsoWeek(2026, 21),
+        selected_structure_context={
+            "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+        },
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 210, "body_mass_kg": 92}}},
+        availability_payload={"data": {"weekly_hours": {"min": 10.5, "typical": 14.0, "max": 17.5}}},
+        zone_model_payload=_rich_zone_model(300),
+        previous_load_kj=8000,
+    )
+
+    build_phases = [phase for phase in context["phases"] if phase["phase_type"] == "BUILD"]
+
+    assert build_phases
+    assert all(phase["phase_intent"] == "durability_build" for phase in build_phases)
+    assert all(phase["season_phase_role"] == "durability_build" for phase in build_phases)
+    assert all(phase["build_subtype"] == "durability_build" for phase in build_phases)
+
+
 def test_selected_kpi_rate_band_from_selection_requires_kj_range() -> None:
     selected = selected_kpi_rate_band_from_selection(
         {

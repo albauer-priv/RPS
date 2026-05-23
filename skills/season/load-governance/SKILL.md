@@ -3,9 +3,30 @@ name: load-governance
 description: Season-level corridor derivation and progression governance under durability-first rules.
 metadata:
   author: rps
-  version: "7.0"
+  version: "8.0"
 ---
 Author season load governance as sustainable corridor and progression authority.
+
+Definitions:
+- `planned_kj`: mechanical work estimate at workout/day level; never use it directly for season corridor compliance
+- `planned_weekly_load_kj`: governance week-load metric used for season corridor and band compliance
+- `availability_load_capacity_kj`: deterministic season-level governance-load capacity context for a phase or week-role slice
+- `phase_role`: deterministic season role for a slot, such as Base, Build, Peak, or Transition-like re-entry behavior
+- `cadence_week_roles`: inherited cadence-owned role sequence within a slot, such as `LOAD_1`, `LOAD_2`, `MINI_RESET`, `RELOAD`
+- `BL_kJ`: baseline weekly governance-load anchor used for overload, deload, and re-entry decisions in this layer
+- `prior_week_kJ`: immediately preceding comparable build-week governance load used for last-build anchored deload logic
+- `DL_kJ`: governance-load target for a deload week
+- `RE_kJ`: governance-load target for a re-entry week
+- `MR_kJ`: governance-load target for a mini-reset week
+- `W1_kJ`, `W2_kJ`, `W3_kJ`, `W4_kJ`: cadence-step governance-load targets for progressive overload interpretation
+- `BL_kJ_next`: conservative next-baseline anchor after a completed cadence cycle
+- `IF_ref_load`: deterministic normalization reference from the active load-estimation method; do not redefine it here
+
+Authority / injected sources:
+- `availability_load_capacity_kj`, `phase_role`, `cadence_week_roles`, baseline hints, and progression trace come from `Deterministic Season Phase Load Context`
+- load-estimation math and `IF_ref_load` semantics come from `skills/shared/load-estimation-core/SKILL.md`
+- when `BL_kJ` is not directly injected, derive it only from the deterministic baseline/progression context already present in the season load context; do not invent it from prose
+- this layer must not compute workout-level segment math
 
 Method:
 1. Start from athlete robustness, availability pressure, selected KPI guidance, event ambition, and the injected deterministic load-capacity context.
@@ -15,6 +36,28 @@ Method:
 5. Choose progression framing and cadence ownership at season level; lower layers may apply but not reinvent it.
 6. Prefer feasible corridors over aspirational overload and protect `A` event clarity inside schema-valid cycle values.
 7. Treat selected-scenario intensity domains as season authority. Phase Guardrails may narrow them downstream, but must not be used to reconstruct season authority backward.
+
+Operational decision order:
+1. Determine baseline and feasibility from the injected deterministic context.
+2. Choose cadence-family interpretation from robustness, recovery, and risk context.
+3. Choose ramp class:
+   - conservative `+5%` to `+8%`
+   - standard `+8%` to `+12%`
+   - aggressive `+12%` to `+18%` only in rare robust cases
+4. Define how deload, mini-reset, reload, and re-entry work across the season.
+5. Decide whether early Build entry must stay at lower-corridor values because preceding context is shortened/base/re-entry.
+6. Expose fallback behavior when the nominal cadence no longer matches tolerance.
+
+Progression axes:
+- duration / total work (`planned_weekly_load_kj`)
+- frequency only when the surrounding structure explicitly permits it
+- density / complexity of quality distribution
+- intensity last
+
+Progression rules:
+- advance only one overload axis per step unless an explicit bounded exception is stated
+- do not use intensity first to rescue a weak corridor
+- do not combine top-of-range kJ progression with simultaneous density escalation unless recovery margin remains explicit
 
 Deterministic load context:
 - use the injected `availability_load_capacity_kj` min/typical/max directly
@@ -49,6 +92,13 @@ Cadence framing:
 - prefer `3:1` only with stable robustness and clear recovery capacity
 - prefer `2:1:1` when two build weeks are tolerated but a full third build week is too risky
 
+Cadence fallback and adjustment rules:
+- if `2:1:1` mini-reset becomes a true deload because fatigue remains high or readiness is poor, treat the following week as baseline-anchored re-entry rather than normal reload
+- if `3:1` repeatedly collapses in week 3, move to a more conservative cadence such as `2:1` or `2:1:1`
+- if `2:1` repeatedly over-recovers, makes deload unnecessary, or stalls baseline development without clear fatigue pressure, consider whether `3:1` or `2:1:1` is more appropriate
+- if Build-entry follows shortened, base, or re-entry structure, the first Build week must be readiness-gated and may need to start at the lower edge of the available corridor
+- large jumps into Build are exceptions that require explicit robustness/readiness rationale rather than silent acceptance
+
 Deload and re-entry framing:
 - deload should usually reduce meaningfully relative to baseline or last build week
 - baseline-anchored deload target: `DL_kJ = BL_kJ * 0.60 to 0.80`
@@ -66,11 +116,27 @@ Cadence-specific load targets:
 - if `2:1:1` mini-reset becomes a true deload, treat the reload week as re-entry and baseline-anchor it
 - inherited cadence comes from the selected Scenario; Season Plan may interpret and explain the cadence but must not replace it
 
+Baseline update rules:
+- next baseline must be conservative; do not anchor future progression to the single highest visible week
+- after a clean `2:1:1`, `BL_next` may be approximated from `mean(W2, W4)` or a comparable conservative rolling anchor
+- after high fatigue, fallback, or shortened re-entry context, bias the next baseline downward rather than carrying peak build assumptions forward
+
+Season-level overload-policy translation:
+- `3:1` should usually appear in season logic only when the athlete can absorb three progressive build exposures before a clear deload
+- `2:1` should usually appear when recovery risk is high enough that the third build week would be speculative
+- `2:1:1` should usually appear when two build exposures are productive but a full third build week is not
+- do not describe `2:1:1` as generic deload cadence; it is two load weeks, one mini-reset, one reload unless fallback explicitly changes that
+- when fallback changes semantics, the season notes should say so plainly:
+  - mini-reset became true deload
+  - reload became re-entry
+
 Hard rules:
 - keep event ambition inside safe ramp limits
 - set season corridors that remain achievable without repeated catch-up weeks
 - model multiple `A` events with explicit macrocycle or peak-window logic
 - if robustness is doubtful, narrow progression rather than widen intensity
+- keep reload and re-entry semantically distinct whenever the policy treats them differently
+- make cadence, fallback, baseline, and Build-entry readiness logic visible enough that Phase can inherit them deterministically
 - season load governance must remain explicit enough that phase planning can inherit it deterministically
 - final `A` event taper corridors must show meaningful load reduction versus Build unless a documented review rationale proves otherwise
 - `self_check.every_phase_maps_to_cycle_and_deload_intent` may be true only after coverage, cycle, cadence, and deload intent are checked

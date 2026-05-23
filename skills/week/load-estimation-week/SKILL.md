@@ -3,9 +3,29 @@ name: load-estimation-week
 description: Translate the active weekly corridor into day and workout load targets conservatively.
 metadata:
   author: rps
-  version: "8.0"
+  version: "9.0"
 ---
 Translate a weekly corridor into executable week targets.
+
+Definitions:
+- `planned_kj`: mechanical work estimate at workout/day level
+- `planned_weekly_load_kj`: governance week-load metric used for week-corridor compliance
+- `active_weekly_kj_band`: binding target-week governance-load band from deterministic week context
+- `active_s5_band`: fallback/background governance band only when no week-specific band is present
+- `BL_kJ`: baseline weekly governance-load anchor used for overload, deload, and re-entry interpretation
+- `prior_week_kJ`: previous comparable build-week governance load
+- `DL_kJ`: deload governance-load target
+- `RE_kJ`: re-entry governance-load target
+- `MR_kJ`: mini-reset governance-load target
+- `W1_kJ`, `W2_kJ`, `W3_kJ`, `W4_kJ`: cadence-step governance-load targets used to interpret the active week role
+- `phase_role`: active deterministic phase role
+- `week_role`: active deterministic week role
+- `IF_ref_load`: deterministic normalization reference from the shared load-estimation method
+
+Authority / injected sources:
+- `active_weekly_kj_band`, `active_s5_band`, fixed rest days, day availability, events, `phase_role`, and `week_role` come from `Deterministic Week Calendar and Availability Context`
+- load-estimation math and `IF_ref_load` come from `skills/shared/load-estimation-core/SKILL.md`
+- this layer translates weekly governance load into safe day/workout targets; it must not invent new cadence families or break phase/workout legality
 
 Method:
 1. Start from the binding active weekly corridor, capacity context, and phase intent.
@@ -24,6 +44,12 @@ Distribution rules:
 - long endurance load should stay durable rather than becoming disguised quality work
 - slightly under target with explanation is safer than structurally incoherent precision
 
+Progression axes:
+- duration / total governance work
+- frequency when the active week shape supports it
+- density / complexity
+- intensity last
+
 Reconciliation rules:
 - first adjust duration within the day-role intent
 - then use aerobic add-ons where appropriate
@@ -31,6 +57,8 @@ Reconciliation rules:
 - if a week remains slightly low after safe reconciliation, preserve safety and explain the miss
 - if under target, explain the safety decision before increasing intensity
 - keep recovery days and fixed-rest days protected from load compression
+- progress at most one overload axis per step: duration/kJ, frequency, density/complexity, or intensity
+- use intensity as the last overload lever, not the first reconciliation tool
 
 Progressive-overload execution:
 - execute the active phase/week role and preserve cadence selected upstream
@@ -44,6 +72,13 @@ Progressive-overload execution:
 - for `3:1`, apply W1/W2/W3 intent as `BL * 1.00-1.05`, `W1 * 1.08-1.12`, `W2 * 1.06-1.10`
 - for `2:1`, apply W1/W2 intent as `BL * 1.00-1.05`, `W1 * 1.08-1.15`
 - for `2:1:1`, apply W1/W2/MR/W4 intent as `BL * 1.00-1.05`, `W1 * 1.08-1.12`, `W2 * 0.80-0.90`, `W2 * 0.95-1.05`
+- if poor readiness turns a nominal reload into a baseline-anchored week, treat it as re-entry in the week reasoning
+
+Durability-first execution:
+- missed or constrained load is not debt to be repaid later in the week
+- when compressed, remove lower-priority stress before weakening recovery structure
+- choose the week shape the athlete can likely repeat, not the one that cosmetically centers the corridor
+- long endurance load must remain durable rather than mutating into disguised threshold or VO2 work
 
 Load semantics:
 - work from governance load (`planned_weekly_load_kj`) when matching the corridor
@@ -69,6 +104,7 @@ Hard rules:
 - keep recovery days protected from load compression
 - preserve recovery protection and key role logic
 - preserve phase intent even when the corridor is tight
+- keep workout construction subordinate to workout-policy legality and export-safe subset rules
 - a week outside the binding active weekly band must be rejected or sent to replan, not stored silently
 - day dates and fixed-rest-day handling must match the deterministic day matrix
 
