@@ -80,7 +80,7 @@ from rps.planning.week_engine import (
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
 from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
-from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT
+from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT, normalize_trace_reference
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.phase_intents import (
     PHASE_TAXONOMY_VERSION,
@@ -134,6 +134,35 @@ _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning 
 
 JsonMap = dict[str, Any]
 ToolMap = dict[str, Any]
+
+_SEASON_PLAN_REQUIRED_TRACE_DATA_ARTIFACTS: tuple[ArtifactType, ...] = (
+    ArtifactType.ATHLETE_PROFILE,
+    ArtifactType.KPI_PROFILE,
+    ArtifactType.AVAILABILITY,
+    ArtifactType.LOGISTICS,
+    ArtifactType.ZONE_MODEL,
+)
+_SEASON_PLAN_REQUIRED_TRACE_EVENT_ARTIFACTS: tuple[ArtifactType, ...] = (
+    ArtifactType.PLANNING_EVENTS,
+)
+_CANONICAL_PUBLICATION_LINKS: tuple[tuple[str, str], ...] = (
+    (
+        "what is best practice for training intensity and duration distribution in endurance athletes",
+        "https://pubmed.ncbi.nlm.nih.gov/20861519/",
+    ),
+    (
+        "polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training",
+        "https://pubmed.ncbi.nlm.nih.gov/24550842/",
+    ),
+    (
+        "scientific bases for precompetition tapering strategies",
+        "https://pubmed.ncbi.nlm.nih.gov/12840640/",
+    ),
+    (
+        "the importance of 'durability' in the physiological profiling of endurance athletes",
+        "https://pubmed.ncbi.nlm.nih.gov/33886100/",
+    ),
+)
 
 
 def _canonicalize_phase_semantics_for_bundle(
@@ -191,6 +220,71 @@ def _as_map(value: object) -> JsonMap:
 
 def _as_list(value: object) -> list[object]:
     return value if isinstance(value, list) else []
+
+
+def _trace_reference_from_payload(artifact_type: ArtifactType, payload: object) -> JsonMap | None:
+    """Return a normalized trace reference for a loaded artifact payload when possible."""
+
+    if not isinstance(payload, dict):
+        return None
+    meta = _as_map(payload.get("meta"))
+    version_key = str(meta.get("version_key") or "").strip()
+    run_id = str(meta.get("run_id") or "").strip()
+    if not version_key or not run_id:
+        return None
+    reference = normalize_trace_reference(
+        {
+            "artifact": artifact_type.value,
+            "version": meta.get("version"),
+            "schema_version": meta.get("schema_version"),
+            "version_key": version_key,
+            "run_id": run_id,
+        }
+    )
+    return {key: str(value) for key, value in reference.items()} if reference is not None else None
+
+
+def _merge_trace_reference_lists(existing: object, additions: list[JsonMap], *, allowed: set[str]) -> list[JsonMap]:
+    """Merge trace references while preserving order and removing duplicates."""
+
+    normalized: list[JsonMap] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def _append(entry: object) -> None:
+        if not isinstance(entry, dict):
+            return
+        artifact = str(entry.get("artifact") or "").strip().upper()
+        if artifact not in allowed:
+            return
+        reference = normalize_trace_reference(entry)
+        if reference is None:
+            return
+        token = (
+            str(reference.get("artifact") or ""),
+            str(reference.get("version_key") or ""),
+            str(reference.get("run_id") or ""),
+        )
+        if token in seen:
+            return
+        seen.add(token)
+        normalized.append({key: str(value) for key, value in reference.items()})
+
+    if isinstance(existing, list):
+        for item in existing:
+            _append(item)
+    for item in additions:
+        _append(item)
+    return normalized
+
+
+def _normalize_publication_link(title: object, link: object) -> str:
+    """Return the canonical publication link for known season-plan references."""
+
+    title_text = str(title or "").strip().lower()
+    for needle, canonical_link in _CANONICAL_PUBLICATION_LINKS:
+        if needle in title_text:
+            return canonical_link
+    return str(link or "").strip()
 
 _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_SEASON_SCENARIOS: "season_scenarios",
@@ -509,6 +603,9 @@ def _derive_season_semantic_notes(*, planning_bundle: JsonMap) -> list[str]:
     notes.append(
         "When taper weeks include event kJ, describe that load as event work inside taper with reduced pre-event training load, not as a normal reload week."
     )
+    notes.append(
+        "Within taper_freshening, LOAD_1, LOAD_2, and RELOAD are load-band labels only; they do not authorize Build-like workout selection."
+    )
     return notes
 
 
@@ -679,6 +776,29 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
     context = current_guardrail_runtime_context()
     season_phase_load_context = _as_map(context.get("season_phase_load_context"))
     approved_bundle = _as_map(context.get("approved_planning_bundle"))
+    trace_data_additions = [
+        ref
+        for artifact_type in _SEASON_PLAN_REQUIRED_TRACE_DATA_ARTIFACTS
+        for ref in [_trace_reference_from_payload(artifact_type, context.get(f"{artifact_type.value.lower()}_payload"))]
+        if ref is not None
+    ]
+    trace_event_additions = [
+        ref
+        for artifact_type in _SEASON_PLAN_REQUIRED_TRACE_EVENT_ARTIFACTS
+        for ref in [_trace_reference_from_payload(artifact_type, context.get(f"{artifact_type.value.lower()}_payload"))]
+        if ref is not None
+    ]
+    meta["trace_data"] = _merge_trace_reference_lists(
+        meta.get("trace_data"),
+        trace_data_additions,
+        allowed={artifact.value for artifact in _SEASON_PLAN_REQUIRED_TRACE_DATA_ARTIFACTS}
+        | {"ACTIVITIES_ACTUAL", "ACTIVITIES_TREND"},
+    )
+    meta["trace_events"] = _merge_trace_reference_lists(
+        meta.get("trace_events"),
+        trace_event_additions,
+        allowed={artifact.value for artifact in _SEASON_PLAN_REQUIRED_TRACE_EVENT_ARTIFACTS},
+    )
     data = _as_map(document.get("data"))
     phases = [_as_map(item) for item in _as_list(data.get("phases"))]
     deterministic_by_phase_id = {
@@ -759,6 +879,32 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         ]
         all_a_events.extend(event for event in trace_events if str(event.get("type") or "").strip().upper() == "A")
 
+        overview = _as_map(phase.get("overview"))
+        non_negotiables = [str(item).strip() for item in _as_list(overview.get("non_negotiables")) if str(item).strip()]
+        if str(phase_intent).strip() == "durability_build":
+            readiness_line = (
+                "If this is the first Build entry after shortened, base, or re-entry context, start conservatively and "
+                "gate corridor entry by stable recovery and readiness rather than catch-up loading."
+            )
+            if readiness_line not in non_negotiables:
+                non_negotiables.append(readiness_line)
+        if str(phase_intent).strip() == "taper_freshening":
+            taper_lines = (
+                "Treat LOAD_1, LOAD_2, and RELOAD as load-band labels only, not as authority for Build-like workout selection.",
+                "Treat any final-week RELOAD wording as event-containing load inside taper, not as a normal training reload.",
+            )
+            for line in taper_lines:
+                if line not in non_negotiables:
+                    non_negotiables.append(line)
+            if weekly_kj:
+                weekly_kj["notes"] = _append_sentence(
+                    weekly_kj.get("notes"),
+                    "Within taper_freshening, LOAD_1 / LOAD_2 / RELOAD are load-band labels only; final-week RELOAD means event-containing load inside taper.",
+                )
+        if non_negotiables:
+            overview["non_negotiables"] = non_negotiables
+            phase["overview"] = overview
+
     season_objective = _as_map(data.get("season_intent_principles")).get("season_objective")
     objective_warning = _derive_objective_event_mismatch_warning(
         season_objective=season_objective,
@@ -774,6 +920,10 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
 
     scientific_foundation = _as_map(_as_map(data.get("principles_scientific_foundation")).get("scientific_foundation"))
     publications = [_as_map(item) for item in _as_list(scientific_foundation.get("publications"))]
+    for publication in publications:
+        canonical_link = _normalize_publication_link(publication.get("title"), publication.get("link"))
+        if canonical_link:
+            publication["link"] = canonical_link
     needs_durability_source = any(
         str(_as_map(phase).get("phase_intent") or "").strip() == "durability_build"
         for phase in phases
@@ -794,8 +944,35 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
                 "link": "https://pubmed.ncbi.nlm.nih.gov/33886100/",
             }
         )
-        scientific_foundation["publications"] = publications
+    scientific_foundation["publications"] = publications
 
+    transitions = _as_map(data.get("phase_transitions_guardrails"))
+    conservative_triggers = [str(item).strip() for item in _as_list(transitions.get("conservative_triggers")) if str(item).strip()]
+    readiness_trigger = (
+        "Entry into the first Build phase after shortened, base, or re-entry context is conditional on stable recovery; "
+        "if readiness deteriorates, start at the lower corridor edge and keep workout selection base-like without catch-up load."
+    )
+    if readiness_trigger not in conservative_triggers:
+        conservative_triggers.append(readiness_trigger)
+    transitions["conservative_triggers"] = conservative_triggers
+    absolute_no_go_rules = [str(item).strip() for item in _as_list(transitions.get("absolute_no_go_rules")) if str(item).strip()]
+    taper_rule = (
+        "Within taper_freshening, LOAD_1 / LOAD_2 / RELOAD are load-band labels only and must not authorize Build-like workout selection."
+    )
+    if taper_rule not in absolute_no_go_rules:
+        absolute_no_go_rules.append(taper_rule)
+    transitions["absolute_no_go_rules"] = absolute_no_go_rules
+    data["phase_transitions_guardrails"] = transitions
+
+    required_trace_artifacts = {"ATHLETE_PROFILE", "KPI_PROFILE", "AVAILABILITY", "PLANNING_EVENTS"}
+    present_trace_artifacts = {
+        str(_as_map(item).get("artifact") or "").strip().upper()
+        for item in _as_list(meta.get("trace_data")) + _as_list(meta.get("trace_events"))
+    }
+    if required_trace_artifacts - present_trace_artifacts and str(meta.get("data_confidence") or "").strip().upper() == "HIGH":
+        meta["data_confidence"] = "MEDIUM"
+
+    document["meta"] = meta
     document["data"] = data
     return document
 

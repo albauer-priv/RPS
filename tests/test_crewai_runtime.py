@@ -1015,6 +1015,161 @@ def test_coach_recommendation_answer_discipline_is_configured() -> None:
     assert "Use natural coach language and reserve DONE, READY, OUTPUT" in coach_chat_source
 
 
+def test_normalize_final_season_plan_semantics_enriches_trace_and_guardrails() -> None:
+    def _input_payload(artifact: str, version_key: str, run_id: str) -> dict[str, object]:
+        return {
+            "meta": {
+                "artifact_type": artifact,
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": version_key,
+                "run_id": run_id,
+            }
+        }
+
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "data_confidence": "HIGH",
+            "trace_data": [
+                {
+                    "artifact": "ACTIVITIES_ACTUAL",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-21",
+                    "run_id": "run-actual",
+                }
+            ],
+            "trace_events": [],
+        },
+        "data": {
+            "season_intent_principles": {
+                "season_objective": "Strong execution over 200 km with durability reserve for longer brevet demands."
+            },
+            "phases": [
+                {
+                    "phase_id": "P02",
+                    "phase_intent": "durability_build",
+                    "phase_type": "BUILD",
+                    "build_subtype": "durability_build",
+                    "weekly_load_corridor": {"weekly_kj": {"notes": ""}},
+                    "overview": {"non_negotiables": []},
+                },
+                {
+                    "phase_id": "P04",
+                    "phase_intent": "taper_freshening",
+                    "phase_type": "TAPER",
+                    "build_subtype": None,
+                    "weekly_load_corridor": {"weekly_kj": {"notes": ""}},
+                    "overview": {"non_negotiables": []},
+                },
+            ],
+            "assumptions_unknowns": {"revisit_items": []},
+            "justification": {"phase_justifications": []},
+            "principles_scientific_foundation": {
+                "principle_applications": [{"principle": "Durability-first", "influence": "Season remains durability-led."}],
+                "scientific_foundation": {
+                    "publications": [
+                        {
+                            "authors": "Mujika, I., & Padilla, S.",
+                            "year": 2003,
+                            "title": "Scientific bases for precompetition tapering strategies",
+                            "link": "https://pubmed.ncbi.nlm.nih.gov/12495777/",
+                        },
+                        {
+                            "authors": "Stöggl, T. L., & Sperlich, B.",
+                            "year": 2014,
+                            "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training",
+                            "link": "https://pubmed.ncbi.nlm.nih.gov/24549140/",
+                        },
+                    ]
+                },
+            },
+            "phase_transitions_guardrails": {
+                "conservative_triggers": [],
+                "absolute_no_go_rules": [],
+            },
+        },
+    }
+    season_phase_load_context = {
+        "season_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+        "phases": [
+            {
+                "phase_id": "P02",
+                "phase_intent": "durability_build",
+                "phase_type": "BUILD",
+                "build_subtype": "durability_build",
+                "role_week_load_bands": [],
+                "event_taper_trace": {"events": []},
+            },
+            {
+                "phase_id": "P04",
+                "phase_intent": "taper_freshening",
+                "phase_type": "TAPER",
+                "build_subtype": None,
+                "role_week_load_bands": [],
+                "event_taper_trace": {"events": [{"date": "2026-09-12", "type": "A"}]},
+            },
+        ],
+    }
+    approved_planning_bundle = {
+        "phase_blueprints": [
+            {
+                "phase_id": "P02",
+                "allowed_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "forbidden_domains": ["VO2MAX"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+            {
+                "phase_id": "P04",
+                "allowed_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "forbidden_domains": ["THRESHOLD", "VO2MAX"],
+                "allowed_load_modalities": ["NONE"],
+            },
+        ]
+    }
+    with guardrail_runtime_context(
+        season_phase_load_context=season_phase_load_context,
+        approved_planning_bundle=approved_planning_bundle,
+        athlete_profile_payload=_input_payload("ATHLETE_PROFILE", "profile_v1", "run-profile"),
+        kpi_profile_payload=_input_payload("KPI_PROFILE", "kpi_v1", "run-kpi"),
+        availability_payload=_input_payload("AVAILABILITY", "avail_v1", "run-avail"),
+        logistics_payload=_input_payload("LOGISTICS", "log_v1", "run-log"),
+        planning_events_payload=_input_payload("PLANNING_EVENTS", "events_v1", "run-events"),
+        zone_model_payload=_input_payload("ZONE_MODEL", "zone_v1", "run-zone"),
+    ):
+        normalized = _normalize_final_season_plan_semantics(document)
+
+    trace_data_artifacts = {entry["artifact"] for entry in normalized["meta"]["trace_data"]}
+    trace_event_artifacts = {entry["artifact"] for entry in normalized["meta"]["trace_events"]}
+    assert {"ATHLETE_PROFILE", "KPI_PROFILE", "AVAILABILITY", "LOGISTICS", "ZONE_MODEL"}.issubset(trace_data_artifacts)
+    assert "PLANNING_EVENTS" in trace_event_artifacts
+    publications = normalized["data"]["principles_scientific_foundation"]["scientific_foundation"]["publications"]
+    assert any(pub["link"] == "https://pubmed.ncbi.nlm.nih.gov/12840640/" for pub in publications)
+    assert any(pub["link"] == "https://pubmed.ncbi.nlm.nih.gov/24550842/" for pub in publications)
+    durability_non_negotiables = normalized["data"]["phases"][0]["overview"]["non_negotiables"]
+    taper_non_negotiables = normalized["data"]["phases"][1]["overview"]["non_negotiables"]
+    assert any("readiness" in item.lower() for item in durability_non_negotiables)
+    assert any("load-band labels only" in item.lower() for item in taper_non_negotiables)
+    assert any(
+        "first Build phase" in item or "first Build" in item
+        for item in normalized["data"]["phase_transitions_guardrails"]["conservative_triggers"]
+    )
+    assert any(
+        "load-band labels only" in item.lower()
+        for item in normalized["data"]["phase_transitions_guardrails"]["absolute_no_go_rules"]
+    )
+
+
+def test_taper_selection_rules_block_sweet_spot_extensive() -> None:
+    rules_text = Path("config/planning/week_workout_selection_rules.yaml").read_text(encoding="utf-8")
+
+    assert "row_id: TAPER-BLOCK-SST-EXTENSIVE" in rules_text
+    assert "protocol_variant: SWEET_SPOT_EXTENSIVE" in rules_text
+    assert "phase_intent: taper_freshening" in rules_text
+    assert "allowed: false" in rules_text
+
+
 def test_skill_config_validation_rejects_non_operational_crew_skill(tmp_path: Path) -> None:
     root = tmp_path
     crewai_dir = root / "config" / "crewai"

@@ -564,6 +564,12 @@ def create_season_plan(
     with guardrail_runtime_context(
         phase_slot_context=phase_slot_context_payload,
         season_phase_load_context=season_phase_load_context_payload,
+        athlete_profile_payload=athlete_profile_payload or {},
+        kpi_profile_payload=kpi_profile_payload or {},
+        availability_payload=availability_payload or {},
+        planning_events_payload=planning_events_payload or {},
+        logistics_payload=logistics_payload or {},
+        zone_model_payload=zone_model_payload or {},
     ):
         result = run_agent_multi_output(
             runtime_for,

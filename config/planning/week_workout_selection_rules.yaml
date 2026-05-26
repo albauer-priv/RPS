@@ -973,6 +973,39 @@ rules:
     notes: Taper quality should stay narrow and feel-preserving.
     audit_reason_code: TAPER_TEMPO_PRIMER
 
+  - row_id: TAPER-BLOCK-SST-EXTENSIVE
+    protocol_variant: SWEET_SPOT_EXTENSIVE
+    protocol_type: CLASSIC_INTERVALS
+    intensity_domain: SWEET_SPOT
+    load_modality: NONE
+    stimulus_class: sweet_spot_quality
+    monotony_group: sweet_spot_extensive
+    quality_cost: true_quality
+    season_archetype: "*"
+    phase_type: TAPER
+    phase_intent: taper_freshening
+    week_role: "*"
+    day_role: QUALITY
+    review_bucket: SOLL
+    allowed: false
+    base_priority: 99
+    pairing_group: excluded
+    pairing_bonus_code: ""
+    pairing_bonus_points: 0
+    pairing_penalty_code: TAPER_BLOCK_SST_EXTENSIVE
+    pairing_penalty_points: 999
+    duplicate_penalty: 0
+    same_stimulus_penalty: 0
+    same_monotony_penalty: 0
+    same_protocol_penalty: 0
+    preview_alignment_bonus: 0
+    reentry_dampening_flag: false
+    requires_modality: NONE
+    forbidden_with_protocol_variant: ""
+    preferred_after_protocol_variant: ""
+    notes: Extensive sweet spot is not valid inside taper_freshening.
+    audit_reason_code: TAPER_BLOCK_SST_EXTENSIVE
+
   - row_id: RACE-ENDURANCE-SUPPORT
     protocol_variant: ENDURANCE_LOW_STEADY
     protocol_type: LONG_STEADY
