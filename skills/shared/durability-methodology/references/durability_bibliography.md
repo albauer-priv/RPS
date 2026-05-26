@@ -1,4 +1,7 @@
 # Bibliography: Durability, VO₂max, Sweet Spot, VLamax & Brevets
+
+> Archive/seed bibliography only. For active skill lookup, use `durability_reference_table_core.md` first, then `durability_reference_table_applied.md`.
+
 Compiled**: January 12, 2026 | **Language**: English | **Format**: APA-style thematic grouping
 
 ---

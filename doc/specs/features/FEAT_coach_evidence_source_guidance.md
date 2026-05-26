@@ -19,7 +19,7 @@ Owner: Coach Runtime
 **Current behavior**
 
 * The Coach and Week Recommendation Specialist can access `factual_evidence` via CrewAI knowledge configuration.
-* The durability bibliography exists in `specs/knowledge/_shared/sources/evidence/durability_bibliography.md`.
+* The archive durability bibliography exists in `specs/knowledge/_shared/sources/evidence/durability_bibliography.md`, while curated operative lookup tables now live under `skills/shared/durability-methodology/references/`.
 
 **Problem**
 
@@ -38,6 +38,7 @@ Owner: Coach Runtime
 **Goals**
 
 * [x] Copy the durability bibliography into a skill reference location near the active durability methodology.
+* [x] Supersede the copied bibliography as an archive/seed source once curated core/applied tables exist.
 * [x] Add active Coach and Week Recommendation instructions for evidence use.
 * [x] Define preferred authors and domains for source-backed explanations and web verification.
 * [x] Prevent invented citations, thresholds, study claims, DOIs, and URLs.
@@ -73,7 +74,9 @@ Owner: Coach Runtime
 
 **Components / Modules**
 
-* `skills/shared/durability-methodology/references/durability_bibliography.md`: copied bibliography reference.
+* `skills/shared/durability-methodology/references/durability_bibliography.md`: copied bibliography archive/seed reference.
+* `skills/shared/durability-methodology/references/durability_reference_table_core.md`: primary operative scientific lookup.
+* `skills/shared/durability-methodology/references/durability_reference_table_applied.md`: secondary applied/practitioner lookup.
 * `skills/conversation/guarded-operations/SKILL.md`: active Coach source policy.
 * `skills/week/recommendation-and-adjustment/SKILL.md`: recommendation source policy.
 * `prompts/agents/coach.md` and `prompts/agents/week_recommendation_specialist.md`: compact prompt-level reminder.

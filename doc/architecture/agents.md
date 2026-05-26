@@ -188,7 +188,7 @@ These mappings explain what is reused across crews beyond each agent's primary m
 | Bundle | Contents | Used for |
 | --- | --- | --- |
 | `factual_interfaces` | canonical interface specs for athlete profile, planning events, logistics, availability, wellness, season scenarios, scenario selection | artefact contract truth and field semantics |
-| `factual_evidence` | durability bibliography and evidence manifest | evidence-backed planning and review rationale |
+| `factual_evidence` | curated durability core/applied reference tables, archive bibliography, and evidence manifest | evidence-backed planning and review rationale |
 | `factual_week_refs` | workout JSON spec, workout syntax and validation, Intervals workout EBNF | week planning, workout authoring, syntax review, export safety |
 
 ### Crew-to-Knowledge Map

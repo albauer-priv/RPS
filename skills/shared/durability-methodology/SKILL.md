@@ -51,7 +51,12 @@ Required checks before returning:
 - athlete guidance remains consistency-first and fatigue-aware
 
 Evidence-use boundary:
-- `references/evidence_layer_durability.md` and `references/durability_bibliography.md` are justification sources, not decision authority.
+- Reference priority for explanation and lookup:
+  1. `references/durability_reference_table_core.md`
+  2. `references/durability_reference_table_applied.md`
+  3. `references/durability_bibliography.md` as archive/seed source only
+- `references/evidence_layer_durability.md`, `references/durability_reference_table_core.md`, and `references/durability_reference_table_applied.md` are justification sources, not decision authority.
 - Prefer DOI-backed and peer-reviewed sources when explaining durability-first choices.
-- Use practitioner sources to explain implementation while keeping thresholds and active plan governance from authoritative RPS context.
-- If a source-backed answer needs web research, search by exact author/title/DOI from the bibliography and cite only verified results.
+- Use practitioner sources only for implementation/practice translation while keeping thresholds and active plan governance from authoritative RPS context.
+- Do not treat the archive bibliography as the primary operative lookup table.
+- If a source-backed answer needs web research, search by exact author/title/DOI from the curated tables first and cite only verified results.

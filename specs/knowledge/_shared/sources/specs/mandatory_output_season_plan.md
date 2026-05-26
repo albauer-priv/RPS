@@ -422,7 +422,7 @@ All required booleans must be present. Set to `true` only if valid:
             "authors": "Rønnestad et al.",
             "year": 2021,
             "title": "Example endurance training study",
-            "link": "durability_bibliography.md#Ronnestad2021"
+            "link": "skills/shared/durability-methodology/references/durability_reference_table_core.md#dur_core_010"
           }
         ],
         "plan_alignment_check": "Plan aligns with durability‑first evidence.",

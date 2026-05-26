@@ -555,8 +555,8 @@ def run_conversational_turn(
                     "Answer simple why-questions with compact coach prose; use checklists or step plans only when the user explicitly asked for one.",
                     "Use load arithmetic only when the numbers are present in the injected context or specialist payload; state projections as assumptions from the existing plan.",
                     "Mention IF targets, typical IF values, intensity thresholds, and source-backed numbers only when they are present in context or verified evidence.",
-                    "If the answer needs a source-backed rationale, use retrieved durability evidence or available web-search results as justification only.",
-                    "Prefer peer-reviewed/DOI-backed sources from the durability bibliography before practitioner media, and cite only verified sources.",
+                    "If the answer needs a source-backed rationale, use retrieved curated durability evidence or available web-search results as justification only.",
+                    "Reference priority is core table first, applied table second, archive bibliography last. Prefer peer-reviewed/DOI-backed sources before practitioner media, and cite only verified sources.",
                 ]
             ),
             expected_output="A structured coaching recommendation.",

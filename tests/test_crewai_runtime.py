@@ -982,10 +982,16 @@ def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
 def test_coach_evidence_source_guidance_is_in_active_skills() -> None:
     coach_skill = Path("skills/conversation/guarded-operations/SKILL.md").read_text(encoding="utf-8")
     recommendation_skill = Path("skills/week/recommendation-and-adjustment/SKILL.md").read_text(encoding="utf-8")
-    bibliography = Path("skills/conversation/guarded-operations/references/durability_bibliography.md")
+    core_table = Path("skills/shared/durability-methodology/references/durability_reference_table_core.md")
+    applied_table = Path("skills/shared/durability-methodology/references/durability_reference_table_applied.md")
+    archive_bibliography = Path("skills/shared/durability-methodology/references/durability_bibliography.md")
 
-    assert bibliography.exists()
-    assert "references/durability_bibliography.md" in coach_skill
+    assert core_table.exists()
+    assert applied_table.exists()
+    assert archive_bibliography.exists()
+    assert "durability_reference_table_core.md" in coach_skill
+    assert "durability_reference_table_applied.md" in coach_skill
+    assert "archive/seed only" in coach_skill
     assert "doi.org" in coach_skill
     assert "Maunder/Seiler/Kilding/Plews" in coach_skill
     assert "available web-search result" in recommendation_skill
