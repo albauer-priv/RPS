@@ -289,6 +289,93 @@ These rules must be applied when implementing planning flows, pickers, and selec
 * **Plan Week (default):** Plan Hub should prefer a scoped Week Plan run. Preselect **Plan Next Week** when the current week is fully ready; otherwise **Plan Week** (current week).
 * UI pages must not call agents directly; delegate to orchestrator/service helpers (Plan Hub is UI, not controller).
 
+### Active planning-layer rule
+
+For Season, Phase, and Week planning, push decisions and repairs **as early in the chain as possible**.
+
+Use this precedence:
+
+1. Deterministic code-owned authority and normalization
+2. Active planner/finalizer prompts, tasks, and skills
+3. Review as a gate only
+4. Writer/renderer as serialization only
+
+Hard rules:
+
+* Do not leave semantic cleanup for review if it can be resolved in planner/finalizer.
+* Do not leave planner-owned contract repair for writer.
+* Review must not become a second planner.
+* Writer must not become a semantic repair stage.
+* If a contradiction can be resolved in deterministic code, planner/finalizer, or injected contract context, resolve it there first.
+
+### Active skills, prompts, and tasks must be self-contained
+
+Any **active** Season / Phase / Week planning prompt, task description, or skill must be locally executable by the model without forcing it to reconstruct missing rules from scattered references.
+
+Allowed sources of authority are:
+
+1. Rules defined directly in the same file
+2. Rules explicitly mapped to an injected deterministic source
+3. A same-file statement that a value/rule is forbidden from use in that layer
+
+Hard rules:
+
+* Thin wrappers like “use reference X” are not sufficient for active planning logic.
+* References may support active logic, but must not be the only place where the operative rule exists.
+* If a planner/finalizer needs a formula, threshold, fallback, or legality rule, that rule must be available directly in the active file or explicitly mapped to injected context.
+
+### Variable authority rule
+
+For active Season / Phase / Week prompts, tasks, and skills, **every variable-like term** must be one of:
+
+1. **Defined locally**
+2. **Explicitly mapped to an injected deterministic source**
+3. **Explicitly forbidden from use in that layer**
+
+This includes all symbolic abbreviations and pseudo-formula tokens, not only mathematically “non-trivial” variables.
+
+Examples:
+
+* `BL_kJ`, `DL_kJ`, `RE_kJ`, `MR_kJ`
+* `W1_kJ`, `W2_kJ`, `W3_kJ`, `W4_kJ`
+* `prior_week_kJ`, `BL_kJ_next`, `CH_kJ`
+* `planned_kj`, `planned_weekly_load_kj`
+* `active_weekly_kj_band`, `active_s5_band`
+* `availability_load_capacity_kj`
+* `IF_ref_load`, `planned_if`
+* `phase_role`, `week_role`, `cadence_week_roles`
+
+If a term is used in an active file and is not defined, mapped, or forbidden, treat that as a defect.
+
+### Policy migration rule
+
+When `load_estimation_spec`, `progressive_overload_policy`, `durability_first_principles`, or `workout_policy` are used in active planning, they must be **fully operationalized** at the active layer for the relevant scope.
+
+That means:
+
+* **Season** must carry its own active cadence, ramp, fallback, readiness-gate, semantic-intent, and corridor logic.
+* **Phase** must actively calculate overload, deload, mini-reset, reload, re-entry, and fallback conversion according to policy; it must not merely inherit labels.
+* **Week** must actively enforce inherited overload semantics, durability-first constraints, and workout-family legality without using review to rescue a bad plan.
+
+### Progression rule
+
+Progression rules and progression axes must be documented in the active planning layer, not only in passive policy prose.
+
+At minimum, active planning logic must state:
+
+* progression hierarchy
+* one-axis-per-step rule
+* allowed progression axes
+* prohibited multi-axis escalation patterns
+* family-specific workout progression where Week planning depends on it
+
+Default progression hierarchy:
+
+1. kJ / duration / total work
+2. frequency when allowed
+3. density / complexity
+4. intensity last
+
 ### ADR process (automated)
 
 * ADRs are stored as separate files in `doc/adr/` and indexed in `doc/adr/README.md`.
@@ -515,6 +602,9 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 
 * Verify mandatory output docs and tool load orders.
 * Check for duplicate or conflicting rules.
+* For active Season / Phase / Week planning prompts, verify that operative rules are planner-side and not deferred to review/writer.
+* Verify that any variable-like term used in the prompt is locally defined, mapped to injected deterministic authority, or explicitly forbidden in that layer.
+* If a prompt references policy-driven cadence / overload / durability / workout behavior, verify that the operative decision table is present locally rather than only by distant reference.
 
 ### Agent/tool wiring changes
 

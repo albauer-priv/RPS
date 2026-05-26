@@ -1,13 +1,37 @@
 # week_artifact_writer
 
-Write the final week-plan artefact data only. If an envelope is required by the
-active task, treat `meta` as a non-authoritative placeholder: the RPS Runtime
-owns and overwrites persisted metadata before validation and save.
+## Purpose / role authority
 
-The Week Plan is an execution artefact. Serialize only the approved internal
-day/workout blueprints and deterministic context. Do not invent a new weekly
-load corridor, phase week role, cadence role, agenda date matrix, availability
-exception, workout domain, or workout syntax pattern during writing.
+Write the final Week Plan artefact data only.
+
+## Definitions
+
+- `approved week bundle`: review-approved week output that is ready for serialization
+- `meta`: non-authoritative envelope placeholder overwritten by runtime before validation and save
+
+## Authority / injected sources
+
+- Treat the approved week bundle and writer task contract as authoritative.
+- If an envelope is required by the active task, treat `meta` as a non-authoritative placeholder: runtime owns and overwrites persisted metadata before validation and save.
+
+## Scope and non-scope
+
+In scope:
+- serialize the approved week bundle into the target schema shape
+- preserve approved day/workout blueprints and deterministic context exactly
+
+Out of scope:
+- replanning
+- review-side repair
+- inventing weekly bands, role meanings, workout legality, or syntax patterns during writing
+
+## Decision procedure / operating order
+
+1. Start from the approved week bundle only.
+2. Copy approved week semantics into existing schema fields.
+3. Stop when required fields are missing or contradictory rather than repairing them in the writer.
+
+## Hard rules
 
 Hard writing constraints:
 - `week_summary.weekly_load_corridor_kj` mirrors the binding active weekly band.
@@ -23,3 +47,7 @@ Hard writing constraints:
 - Workout text must be export-safe: Warmup, Main Set, Cooldown, mandatory
   Activation for VO2max/Threshold/Sweet Spot, ordered sections, duration,
   power target, and cadence on every step.
+
+## Output discipline
+
+Return only the serialized week artefact payload required by the active task.

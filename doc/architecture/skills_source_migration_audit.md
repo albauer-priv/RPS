@@ -1,6 +1,6 @@
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-16
+Last-Updated: 2026-05-23
 Owner: Planning Runtime
 
 # Skills Source Migration Audit
@@ -78,3 +78,265 @@ Purpose:
 - S5 Level 2/3 wiring is now more complete: selected KPI guidance still comes from `SEASON_SCENARIO_SELECTION`, while alternative escalation bands are derived from the active KPI Profile when available. Complete `availability_table` data can now become the effective S5 availability-hour source; partial tables are still injected for day planning but do not replace `weekly_hours`.
 - Daily availability is now enforced as a context-aware CrewAI guardrail for `week_plan`. `src/rps/planning/week_availability.py` performs the pure validation, and `week_daily_availability_check` receives `AVAILABILITY` plus target week through runtime guardrail context. It hard-blocks fixed-rest-day load, locked zero-availability day load, and planned durations above explicit day `hours_max`.
 - The season cycle enum migration is intentionally conservative: `Base`, `Build`, `Peak`, and `Transition` remain the only valid season cycle values; `Specificity` and `Taper` are retained only as structural/narrative behavior inside existing schema-valid cycles where needed.
+
+## 2026-05-23 Completeness Re-Audit
+
+This re-audit applies a stricter standard than the earlier migration pass.
+
+Current standard:
+- active Season / Phase / Week planning layers must be upstream-first
+- planner/finalizer must carry operative logic as early as possible
+- review is a gate, not a second planner
+- every variable-like term in active planning files must be locally defined, explicitly mapped to injected authority, or explicitly forbidden
+- active planning skills should be locally usable and must not rely on thin "use reference X" wrappers for binding logic
+
+### Status Legend
+- `Complete for active scope`: the source is operationalized in the active runtime layer for the relevant scope
+- `Mostly complete`: operationalized, but with small remaining structure/definition gaps
+- `Partial`: meaningful migration exists, but one or more active files still remain too thin, split, or under-defined for the new standard
+- `N/A by authority`: the source is not supposed to own this layer
+
+### Source-to-Active Matrix
+
+| Source | Season | Phase | Week | Current assessment |
+|---|---|---|---|---|
+| `progressive_overload_policy.md` | `Mostly complete` | `Mostly complete` | `Complete for active scope` | The operative cadence/ramp/deload/re-entry/fallback logic is now present in active planning layers, but residual variable-definition gaps still exist in some files. |
+| `load_estimation_spec.md` | `Partial` | `Partial` | `Mostly complete` | Shared core math is strong and code-owned where appropriate, but Season/Phase wrappers are still thinner than the new self-contained standard. |
+| `principles_durability_first_cycling.md` | `Mostly complete` | `Partial` | `Mostly complete` | Main durability rules are now visible in active planning layers, but the shared durability skill and some phase-facing translations are still less explicit than the new standard requires. |
+| `workout_policy.md` | `N/A by authority` | `N/A by authority` | `Complete for active scope` | The active Week workout path is now the canonical runtime owner and is materially more complete than before. |
+
+### Concrete findings
+
+#### 1. `progressive_overload_policy.md`
+
+What is now clearly migrated:
+- Season:
+  - `skills/season/load-governance/SKILL.md`
+  - `skills/season/plan-synthesis/SKILL.md`
+  - planner prompt/task layers
+- Phase:
+  - `skills/phase/guardrails-authoring/SKILL.md`
+  - `skills/phase/cadence-recovery/SKILL.md`
+  - `skills/phase/load-estimation-phase/SKILL.md`
+  - `skills/phase/bundle-synthesis/SKILL.md`
+- Week:
+  - `skills/week/load-estimation-week/SKILL.md`
+  - `skills/week/review-decision/SKILL.md`
+
+What is still incomplete under the new standard:
+- `skills/season/load-governance/SKILL.md` uses `LR_share` in an operative rule without defining it locally or mapping it to injected authority.
+- `skills/phase/cadence-recovery/SKILL.md` uses `CH_kJ` in baseline-update logic without defining it locally or mapping it to injected authority.
+
+Conclusion:
+- The policy is no longer only "mentioned"; it is active in the planner path.
+- It is not yet fully clean under the stricter explicit-variable rule.
+
+#### 2. `load_estimation_spec.md`
+
+What is strong:
+- `skills/shared/load-estimation-core/SKILL.md` now carries the binding math, invariants, IF handling, governance-vs-mechanical semantics, and rounding rules clearly.
+- `src/rps/planning/load_bands.py` owns deterministic S5 / capacity / progression-band derivation where the runtime should be code-owned.
+- Week-level active handling is substantially operationalized in:
+  - `skills/week/load-estimation-week/SKILL.md`
+
+What remains incomplete:
+- `skills/season/load-estimation-season/SKILL.md` is still thinner than the new self-contained target:
+  - it lacks a proper `Definitions` section
+  - it lacks a proper `Authority / injected sources` section
+  - it still reads more like a guided companion than a fully self-contained active method
+- `skills/phase/load-estimation-phase/SKILL.md` is improved, but still delegates meaningful operative behavior to companion skills instead of carrying the complete decision stack itself.
+
+Conclusion:
+- The source is functionally much better migrated than before.
+- Under the new AGENTS standard, Season/Phase load-estimation wrappers still need one more pass.
+
+#### 3. `principles_durability_first_cycling.md`
+
+What is now operationalized:
+- repeatability over cosmetic target centering
+- recovery before catch-up
+- kJ/work before intensity density
+- one overload axis per step
+- missed load is not debt
+- compression handling by removing lower-priority stress first
+- B-events support the A-event structure
+
+Where this is visible:
+- `skills/shared/durability-methodology/SKILL.md`
+- `skills/season/load-governance/SKILL.md`
+- `skills/season/plan-synthesis/SKILL.md`
+- `skills/phase/guardrails-authoring/SKILL.md`
+- `skills/phase/bundle-synthesis/SKILL.md`
+- `skills/week/load-estimation-week/SKILL.md`
+- `skills/week/workout-construction/SKILL.md`
+- `skills/week/workout-syntax-review/SKILL.md`
+
+What remains incomplete:
+- `skills/shared/durability-methodology/SKILL.md` is still an active runtime skill without the newer self-contained structure (`Definitions`, `Authority / injected sources`, `Output expectation`).
+- Phase-facing durability translation is present, but still more distributed and less explicit than the Season/Week active layers.
+
+Conclusion:
+- Durability-first is no longer just a reference source.
+- It is still not as rigorously operationalized and structured as the load and workout layers.
+
+#### 4. `workout_policy.md`
+
+What is now clearly complete for active Week scope:
+- active authoring:
+  - `skills/week/workout-construction/SKILL.md`
+- active syntax/semantics review:
+  - `skills/week/workout-syntax-review/SKILL.md`
+- active week legality gate:
+  - `skills/week/review-decision/SKILL.md`
+
+What is covered:
+- family legality
+- agenda/domain/modality mapping
+- warmup/activation/cooldown rules
+- export-safe subset restrictions
+- family-specific progression order
+- week-role semantic constraints
+- durability-first anti-catch-up and no hidden accumulation constraints
+
+Conclusion:
+- This is the strongest migrated source among the four audited sources.
+- No major active-scope gap was found in the Week workout path during this pass.
+
+### Correction to earlier audit confidence
+
+The earlier audit text overstated completeness in two places:
+- it treated several active wrappers as "migrated" even when they were still too thin for the new self-contained standard
+- it did not enforce the stricter explicit-variable rule now adopted in `AGENTS.md`
+
+That means the correct current position is:
+- migration quality is materially improved
+- the runtime is much less dependent on legacy prose than before
+- but the migration is still **not uniformly complete** under the stricter 2026-05-23 standard
+
+### Next required cleanup pass
+
+To close the remaining gaps, the next pass should:
+
+1. Fix explicit-variable leftovers
+   - define or map `LR_share`
+   - define or map `CH_kJ`
+   - repeat the audit for similar residual shorthand in active files
+
+2. Upgrade thin active wrappers
+   - `skills/season/load-estimation-season/SKILL.md`
+   - `skills/phase/load-estimation-phase/SKILL.md`
+   - `skills/shared/durability-methodology/SKILL.md`
+
+3. Re-run the same source-to-active audit after that pass and only then treat the migration as complete under the new standard
+
+## 2026-05-26 Prompt Source Migration Audit
+
+This section extends the same audit to legacy prompt sources and all active prompt roles referenced by `config/crewai/agents.yaml`.
+
+### Prompt-layer authority rule
+
+Prompt ownership is now evaluated against this required order:
+
+1. `code-owned`
+2. `skill-owned`
+3. `prompt-owned`
+4. `task-owned`
+5. `review-gate only`
+6. `writer-only`
+
+Prompt-owned content must cover:
+- role authority
+- injected-source precedence
+- scope / non-scope
+- upstream-first behavior
+- no-review / no-writer semantic healing assumptions
+- self-check / finalize-check / review-check behavior where relevant
+
+### Prompt status legend
+
+- `complete`: active prompt follows the new self-contained prompt standard
+- `mostly_complete`: active prompt is strong but still missing one structural block or one explicit boundary
+- `partial`: active prompt works, but is still too thin or too implicit for the new standard
+- `missing`: active prompt does not yet meet the new standard in a meaningful way
+
+### Legacy prompt-source mapping
+
+| Source | Source type | Old responsibility / guidance | Target layer | Active target | Authority type | Variable completeness | Status | Residual gap |
+|---|---|---|---|---|---|---|---|---|
+| `prompts/agents/season_planner.md` | `legacy_prompt` + `active_prompt` | season planning surface, season-scope framing | prompt | `season_planner.md` | `prompt-owned` | `all defined` | `complete` | none after role-authority normalization |
+| `prompts/agents/phase_architect.md` | `legacy_prompt` + `active_prompt` | phase planning surface, phase-scope framing | prompt | `phase_architect.md` | `prompt-owned` | `all defined` | `complete` | none after role-authority normalization |
+| `prompts/agents/week_planner.md` | `legacy_prompt` + `active_prompt` | week planning surface and finalize framing | prompt | `week_planner.md` | `prompt-owned` | `all defined` | `complete` | none after template normalization |
+| `prompts/agents/season_scenario.md` | `legacy_prompt` + `active_prompt` | season scenario generation/selection surface | prompt | `season_scenario.md` | `prompt-owned` | `all defined` | `complete` | none after advisory-authority normalization |
+| `prompts/agents/performance_analysis.md` | `legacy_prompt` + `active_prompt` | completed-week advisory analysis surface | prompt | `performance_analysis.md` | `prompt-owned` | `all defined` | `complete` | none after evidence-boundary normalization |
+
+### Active prompt inventory and status
+
+#### Surface / root prompts
+
+| Active role | Prompt | Authority type | Status | Current residual gap |
+|---|---|---|---|---|
+| `season_planner` | `season_planner.md` | `prompt-owned` | `complete` | none after role-authority normalization |
+| `phase_architect` | `phase_architect.md` | `prompt-owned` | `complete` | none after role-authority normalization |
+| `week_planner` | `week_planner.md` | `prompt-owned` | `complete` | none after template normalization |
+| `season_scenario` | `season_scenario.md` | `prompt-owned` | `complete` | none after advisory-authority normalization |
+| `performance_analysis` | `performance_analysis.md` | `prompt-owned` | `complete` | none after evidence-boundary normalization |
+
+#### Manager / finalizer / review / writer prompts
+
+| Active role | Prompt | Authority type | Status | Residual gap before hardening |
+|---|---|---|---|---|
+| `season_plan_manager` | `season_plan_manager.md` | `prompt-owned` | `complete` | none after template normalization |
+| `season_review_manager` | `season_review_manager.md` | `review-gate only` | `complete` | none after explicit gate normalization |
+| `phase_bundle_manager` | `phase_bundle_manager.md` | `prompt-owned` | `complete` | none after finalize-ownership normalization |
+| `phase_review_manager` | `phase_review_manager.md` | `review-gate only` | `complete` | none after explicit gate normalization |
+| `week_review_manager` | `week_review_manager.md` | `review-gate only` | `complete` | none after explicit gate normalization |
+| `season_artifact_writer` | `season_artifact_writer.md` | `writer-only` | `complete` | none after writer-scope normalization |
+| `phase_artifact_writer` | `phase_artifact_writer.md` | `writer-only` | `complete` | none after writer-scope normalization |
+| `week_artifact_writer` | `week_artifact_writer.md` | `writer-only` | `complete` | none after writer-scope normalization |
+
+#### Planning specialists
+
+| Active role | Prompt | Authority type | Status | Residual gap before hardening |
+|---|---|---|---|---|
+| `load_governance_specialist` | `load_governance_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+| `guardrails_specialist` | `guardrails_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+| `scenario_interpreter` | `scenario_interpreter.md` | `prompt-owned` | `complete` | none after advisory-authority normalization |
+| `macrocycle_architect` | `macrocycle_architect.md` | `prompt-owned` | `complete` | none after template normalization |
+| `constraint_specialist` | `constraint_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+| `historical_context_specialist` | `historical_context_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+| `kpi_guidance_specialist` | `kpi_guidance_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+| `structure_specialist` | `structure_specialist.md` | `prompt-owned` | `complete` | none after structural-authority normalization |
+| `cadence_recovery_integrator` | `cadence_recovery_integrator.md` | `prompt-owned` | `complete` | none after cadence/recovery normalization |
+| `intensity_distribution_specialist` | `intensity_distribution_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+| `preview_synthesizer` | `preview_synthesizer.md` | `prompt-owned` | `complete` | none after preview-boundary normalization |
+| `week_context_specialist` | `week_context_specialist.md` | `prompt-owned` | `complete` | none after context-authority normalization |
+| `week_context_analyst` | `week_context_analyst.md` | `prompt-owned` | `complete` | none after injected-source normalization |
+| `week_revision_specialist` | `week_revision_specialist.md` | `prompt-owned` | `complete` | none after bounded-revision normalization |
+| `week_workout_authoring_specialist` | `week_workout_authoring_specialist.md` | `prompt-owned` | `complete` | none after writer-boundary and authority normalization |
+| `week_recommendation_specialist` | `week_recommendation_specialist.md` | `prompt-owned` | `complete` | none after injected-source and non-scope normalization |
+
+#### Secondary / non-planning or lower-priority roles
+
+| Active role | Prompt | Authority type | Status | Residual gap before hardening |
+|---|---|---|---|---|
+| `performance_analysis_specialist` | `performance_analysis_specialist.md` | `prompt-owned` | `complete` | none after analysis-boundary normalization |
+| `des_review_manager` | `des_review_manager.md` | `review-gate only` | `complete` | none after review-boundary normalization |
+| `workout_editor` | `workout_editor.md` | `prompt-owned` | `complete` | none after bounded-edit normalization |
+| `pending_resolution_specialist` | `pending_resolution_specialist.md` | `prompt-owned` | `complete` | none after injected-authority normalization |
+| `coach` | `coach.md` | `prompt-owned` | `complete` | none after orchestration-boundary normalization |
+| `conversation_manager` | `conversation_manager.md` | `prompt-owned` | `complete` | none after routing/finalization normalization |
+
+### Prompt migration conclusions
+
+- The repo now has a materially better **policy/principle** migration baseline than before.
+- The **prompt layer** is now materially more normalized across active Season/Phase/Week planning roles.
+- The remaining prompt debt after this pass is limited to future style tightening or new roles; the currently active Season/Phase/Week planning prompts audited here have been normalized to the new authority template.
+
+### Required prompt migration order
+
+1. root / surface prompts
+2. manager / finalizer / review prompts
+3. prioritized planning specialists
+4. secondary prompts
+
+This order is required because prompt authority must be fixed upstream before specialist and secondary prompt polishing can be considered complete.
