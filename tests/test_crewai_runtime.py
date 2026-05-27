@@ -1166,6 +1166,59 @@ def test_normalize_final_season_plan_semantics_enriches_trace_and_guardrails() -
     )
 
 
+def test_normalize_final_season_plan_semantics_deduplicates_trace_data_by_artifact_and_version_key() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "trace_data": [
+                {
+                    "artifact": "ATHLETE_PROFILE",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "profile_v1",
+                    "run_id": "raw-run",
+                },
+                {
+                    "artifact": "AVAILABILITY",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "avail_v1",
+                    "run_id": "raw-avail-run",
+                },
+            ],
+            "trace_events": [],
+        },
+        "data": {
+            "season_intent_principles": {"season_objective": "Strong 200 km A-event execution."},
+            "phases": [],
+            "assumptions_unknowns": {"revisit_items": []},
+        },
+    }
+
+    def _input_payload(artifact: str, version_key: str, run_id: str) -> dict[str, object]:
+        return {
+            "meta": {
+                "artifact_type": artifact,
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": version_key,
+                "run_id": run_id,
+            }
+        }
+
+    with guardrail_runtime_context(
+        athlete_profile_payload=_input_payload("ATHLETE_PROFILE", "profile_v1", "resolved-run"),
+        availability_payload=_input_payload("AVAILABILITY", "avail_v1", "resolved-avail-run"),
+    ):
+        normalized = _normalize_final_season_plan_semantics(document)
+
+    trace_data = normalized["meta"]["trace_data"]
+    assert len([entry for entry in trace_data if entry["artifact"] == "ATHLETE_PROFILE"]) == 1
+    assert len([entry for entry in trace_data if entry["artifact"] == "AVAILABILITY"]) == 1
+    assert next(entry for entry in trace_data if entry["artifact"] == "ATHLETE_PROFILE")["run_id"] == "resolved-run"
+    assert next(entry for entry in trace_data if entry["artifact"] == "AVAILABILITY")["run_id"] == "resolved-avail-run"
+
+
 def test_taper_selection_rules_block_sweet_spot_extensive() -> None:
     rules_text = Path("config/planning/week_workout_selection_rules.yaml").read_text(encoding="utf-8")
 

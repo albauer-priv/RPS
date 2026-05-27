@@ -1,15 +1,15 @@
 ---
-Version: 1.0
-Status: Implemented
-Last-Updated: 2026-05-26
+Version: 1.1
+Status: Updated
+Last-Updated: 2026-05-27
 Owner: Planning / Runtime
 ---
 # FEAT: Season Plan Traceability and Guardrail Closure
 
 * **ID:** FEAT_season_plan_traceability_and_guardrail_closure
-* **Status:** Implemented
+* **Status:** Updated
 * **Owner/Area:** Planning / Season runtime
-* **Last-Updated:** 2026-05-26
+* **Last-Updated:** 2026-05-27
 * **Related:** FEAT_active_prompt_policy_migration_completion, FEAT_durability_reference_tables
 
 ---
@@ -68,12 +68,13 @@ Owner: Planning / Runtime
   * `ZONE_MODEL`
   * `PLANNING_EVENTS`
   * while preserving existing historical activity traces when already present
+  * and collapsing duplicate `(artifact, version_key)` entries so the final binding artifact carries one authoritative trace row per input version
 * Season scientific-foundation publication links are corrected deterministically for known canonical references.
 * `SEASON_PLAN` explicitly states:
   * first Build entry after shortened/base/re-entry context is readiness-gated
   * taper `LOAD_1` / `LOAD_2` / `RELOAD` are load-band labels only
   * final taper `RELOAD` means event-contained load, not training reload
-* Week selector contains an explicit no-selection rule for `SWEET_SPOT_EXTENSIVE` in `taper_freshening`.
+* Week selector contains an explicit no-selection rule for `SWEET_SPOT_EXTENSIVE` in `taper_freshening`, and the runtime selector enforces `allowed: false` rows instead of treating them as documentation-only metadata.
 
 **UI impact**
 
@@ -97,8 +98,8 @@ Owner: Planning / Runtime
 **Components / Modules**
 
 * Season flow runtime context now binds the season input payloads alongside deterministic season context.
-* Final season normalization enriches trace references, canonicalizes publication links, and appends explicit guardrail language.
-* Week selector config adds one explicit taper exclusion row.
+* Final season normalization enriches trace references, canonicalizes publication links, appends explicit guardrail language, and deduplicates repeated trace rows by `(artifact, version_key)`.
+* Week selector config adds one explicit taper exclusion row, and selector runtime now turns `allowed: false` rows into hard candidate blocks during scoring.
 
 **Data flow**
 
@@ -110,8 +111,8 @@ Owner: Planning / Runtime
   * append readiness/taper guardrail text
   * hard-block one taper-incompatible protocol variant
 * Outputs:
-  * more auditable `SEASON_PLAN`
-  * stricter taper selector behavior
+  * more auditable `SEASON_PLAN` without duplicate binding-input traces
+  * stricter taper selector behavior at both config and runtime levels
 
 **Schema / Artefacts**
 
@@ -201,7 +202,7 @@ Owner: Planning / Runtime
 * [x] Known wrong season-plan publication links are corrected deterministically.
 * [x] Final `SEASON_PLAN` carries explicit Build-entry readiness and taper label semantics.
 * [x] `SWEET_SPOT_EXTENSIVE` is explicitly blocked in `taper_freshening` selection rules.
-* [x] Targeted tests cover normalization and selector guardrails.
+* [x] Targeted tests cover normalization and selector guardrails, including runtime selector enforcement.
 * [x] Validation passes: syntax, lint, typecheck, smoke, targeted tests.
 
 ---

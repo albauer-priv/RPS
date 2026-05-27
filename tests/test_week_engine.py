@@ -10,6 +10,7 @@ from rps.planning.week_selection_rules import (
     load_week_workout_selection_rule_config,
     matching_rules,
 )
+from rps.planning.week_selector import _select_protocol_for_day
 from rps.workouts.validator import validate_week_plan_exportability
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
@@ -451,6 +452,36 @@ def test_execute_week_engine_specificity_build_keeps_vo2_as_nur_wenn(tmp_path: P
     assert vo2_rows
     assert all(row["review_bucket"] == "NUR_WENN" for row in vo2_rows)
     assert any(row["selected"] is False for row in vo2_rows)
+
+
+def test_select_protocol_for_day_taper_freshening_rejects_sweet_spot_extensive() -> None:
+    protocol_config = load_week_workout_family_config(Path.cwd())
+    selection_rules = load_week_workout_selection_rule_config(Path.cwd())
+
+    with pytest.raises(ValueError, match="TAPER_BLOCK_SST_EXTENSIVE"):
+        _select_protocol_for_day(
+            athlete_id="test_athlete",
+            target_iso_week="2026-37",
+            day="Tue",
+            day_role="QUALITY",
+            protocol_config=protocol_config,
+            selection_rules=selection_rules,
+            progression_history=[],
+            phase_intent="taper_freshening",
+            phase_type="TAPER",
+            week_role="LOAD_1",
+            season_archetype="none",
+            allowed_domains={"RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"},
+            allowed_modalities={"NONE"},
+            is_anchor=False,
+            preview_hint={"intensity_domain": "SWEET_SPOT", "load_modality": "NONE"},
+            forced_quality_family="SWEET_SPOT_EXTENSIVE",
+            remaining_true_quality_budget=1,
+            selected_quality_variants=[],
+            selected_stimulus_classes=[],
+            selected_monotony_groups=[],
+            selected_protocol_types=[],
+        )
 
 
 def test_selection_rule_overlaps_resolve_deterministically() -> None:

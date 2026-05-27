@@ -231,7 +231,7 @@ def _merge_trace_reference_lists(existing: object, additions: list[JsonMap], *, 
     """Merge trace references while preserving order and removing duplicates."""
 
     normalized: list[JsonMap] = []
-    seen: set[tuple[str, str, str]] = set()
+    seen_indices: dict[tuple[str, str], int] = {}
 
     def _append(entry: object) -> None:
         if not isinstance(entry, dict):
@@ -245,11 +245,12 @@ def _merge_trace_reference_lists(existing: object, additions: list[JsonMap], *, 
         token = (
             str(reference.get("artifact") or ""),
             str(reference.get("version_key") or ""),
-            str(reference.get("run_id") or ""),
         )
-        if token in seen:
+        existing_index = seen_indices.get(token)
+        if existing_index is not None:
+            normalized[existing_index] = {key: str(value) for key, value in reference.items()}
             return
-        seen.add(token)
+        seen_indices[token] = len(normalized)
         normalized.append({key: str(value) for key, value in reference.items()})
 
     if isinstance(existing, list):

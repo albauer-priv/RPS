@@ -332,6 +332,9 @@ def _select_protocol_for_day(
         if selected_rule is None:
             legal = False
             filtered_codes.append("NO_SELECTION_RULE")
+        elif not selected_rule.allowed:
+            legal = False
+            filtered_codes.append(selected_rule.audit_reason_code or "SELECTION_RULE_BLOCKED")
         previous_signature = match_progression_signature(
             signatures=progression_history,
             protocol_type=protocol.protocol_type,
