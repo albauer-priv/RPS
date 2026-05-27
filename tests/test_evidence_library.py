@@ -195,3 +195,106 @@ def test_quality_gate_rejects_generic_filler() -> None:
     result = evaluate_curation_quality(entry=entry, curation=payload)
     assert result.ok is False
     assert result.reasons
+
+
+def test_metadata_only_quality_gate_rejects_tag_leakage_and_title_paraphrase_findings() -> None:
+    entry = replace(
+        load_core_studies()[0],
+        title="One-step synthesis of a mechanically robust anti-reflective coating",
+        journal_or_outlet="Nanoscale",
+        source_kind="core",
+    )
+    payload = EvidenceCurationModel(
+        question_or_focus="Mechanically robust coating with durability-adjacent language; metadata only.",
+        population_or_scope="Materials context only; no athlete population is provided.",
+        study_type="other",
+        what_was_examined=[
+            "Verified title, year, and outlet metadata for a materials paper.",
+            "Whether the package contains extractable source text beyond metadata.",
+        ],
+        core_concepts=[
+            "mechanically robust coating",
+            "anti-reflective coating",
+            "cycling_endurance",
+        ],
+        key_takeaways=[
+            "The source package is metadata-only.",
+            "The title suggests a materials durability topic.",
+            "No extractable findings are available from the package.",
+        ],
+        important_findings=[
+            "The title explicitly includes mechanical robustness.",
+            "The source is tagged with durability and cycling_endurance.",
+            "The metadata-only package confirms the title and outlet.",
+        ],
+        practical_implications=[
+            "Background-only mention of durability-adjacent language.",
+            "No RPS training or coaching use is supported.",
+            "No athlete-performance transfer should be inferred.",
+        ],
+        what_this_does_not_justify=[
+            "It does not justify endurance-training prescriptions.",
+            "It does not justify claims about athlete fatigue resistance or fueling.",
+        ],
+        important_limits=[
+            "Metadata-only package; no abstract or full text is provided.",
+            "The source is off-domain for endurance training and coaching.",
+        ],
+        allowed_uses=["background_only"],
+        evidence_posture="metadata_only_not_activatable",
+        relevance_assessment=EvidenceRelevanceAssessmentModel(
+            overall_relevance="low",
+            relevance_rationale="Weak background relevance only.",
+            rps_domains_supported=["durability"],
+            target_audiences_supported=["background_knowledge"],
+            best_use_mode="background_only",
+            activation_recommendation="hold",
+        ),
+        summary_card=EvidenceSummaryCardModel(
+            focus="Materials paper with durability-adjacent title language.",
+            main_takeaway="Verified metadata exist but no extractable findings are available.",
+            main_limit="Metadata-only package with off-domain transfer risk.",
+        ),
+        brief_sections=EvidenceBriefSectionsModel(
+            why_this_source_matters_for_rps="It is at most a weak background durability analogy and not an endurance evidence source.",
+            research_question_or_purpose="Develop a mechanically robust anti-reflective coating.",
+            study_type="peer-reviewed article; metadata only",
+            population_or_context="Materials/coatings research context.",
+            what_was_actually_examined="Only title-level metadata are available in the package.",
+            core_concepts=[
+                "mechanically robust coating",
+                "anti-reflective coating",
+                "cycling_endurance",
+            ],
+            key_takeaways=[
+                "Metadata-only package.",
+                "Title-level topic hints only.",
+                "No extractable findings are available.",
+            ],
+            important_findings=[
+                "The title signals a durability angle.",
+                "The source is tagged with cycling_endurance.",
+                "No results are actually provided in the package.",
+            ],
+            practical_implications_for_rps=[
+                "Background-only mention.",
+                "No training application.",
+                "No performance inference.",
+            ],
+            what_this_source_does_not_justify=[
+                "No endurance-training claims.",
+                "No athlete physiology claims.",
+            ],
+            limits_and_transfer_boundaries=[
+                "Metadata-only package.",
+                "Off-domain materials context.",
+            ],
+            allowed_uses_in_rps=["background_only"],
+            evidence_posture="metadata_only_not_activatable",
+            source_material_basis="Metadata-only package; not activatable without stronger source text.",
+        ),
+    )
+    result = evaluate_curation_quality(entry=entry, curation=payload)
+    assert result.ok is False
+    assert any("treats title/tag metadata as findings" in reason for reason in result.reasons)
+    assert any("unsupported RPS transfer concepts" in reason for reason in result.reasons)

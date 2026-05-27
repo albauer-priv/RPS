@@ -20,6 +20,9 @@ RPS_CURATION_CONTEXT = """RPS evidence-curation context:
 - Core and applied sources both matter; applied sources remain lower-authority but still deserve high-quality summaries.
 - Relevance should be judged specifically for durability, fatigue resistance, pacing, fueling, taper, progression, intensity-distribution framing, masters/recovery, brevet/ultra transfer, and coaching translation.
 - You must explicitly state what the source does not justify.
+- Discovery tags are not evidence and must not be echoed as findings.
+- Title paraphrases are not empirical findings.
+- For metadata-only packages, keep the output narrow: use background-only or reject posture, avoid sport-specific transfer labels unless grounded in the provided title/text, and state clearly when no extractable findings are available.
 """
 
 
@@ -166,6 +169,8 @@ def curate_source_package(
         [
             "Curate the verified evidence source package below for RPS.",
             "Summarize only from the provided material. Never invent locator data or unsupported findings.",
+            "Discovery tags are routing metadata, not evidence. Do not mirror them as findings or relevance proof.",
+            "For metadata-only packages, do not present title paraphrases as findings; use negative-capability statements about missing extractable findings instead.",
             "Return only the structured evidence curation model.",
             "",
             "Source package JSON:",

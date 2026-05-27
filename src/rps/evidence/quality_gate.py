@@ -18,6 +18,28 @@ _FILLER_PHRASES = {
     "relevant for planning",
 }
 
+_METADATA_ONLY_FINDING_LEAKAGE_MARKERS = (
+    "title indicates",
+    "title suggests",
+    "title signals",
+    "title explicitly includes",
+    "source is tagged",
+    "tagged with",
+    "metadata-only package confirms",
+)
+
+_RPS_TRANSFER_MARKERS = (
+    "cycling_endurance",
+    "fueling",
+    "masters",
+    "brevet_ultra",
+    "fatigue_resistance",
+    "intensity_distribution",
+    "progression",
+    "pacing",
+    "taper",
+)
+
 
 @dataclass(frozen=True)
 class EvidenceQualityGateResult:
@@ -40,6 +62,11 @@ def _list_specific_enough(items: list[str], *, minimum: int) -> bool:
     if len(distinct) < minimum:
         return False
     return not all(len(item.split()) <= 2 for item in cleaned)
+
+
+def _contains_any_marker(text: str, markers: tuple[str, ...]) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in markers)
 
 
 def evaluate_curation_quality(*, entry: EvidenceEntry, curation: EvidenceCurationModel) -> EvidenceQualityGateResult:
@@ -110,5 +137,34 @@ def evaluate_curation_quality(*, entry: EvidenceEntry, curation: EvidenceCuratio
         all_text = " ".join(curation.practical_implications).lower()
         if "must" in all_text and "rps" in all_text:
             reasons.append("Conceptual/review source sounds like direct binding prescription.")
+
+    if curation.evidence_posture == "metadata_only_not_activatable":
+        if curation.relevance_assessment.activation_recommendation == "activate":
+            reasons.append("Metadata-only source cannot recommend activation.")
+        if curation.relevance_assessment.best_use_mode not in {"background_only", "reject"}:
+            reasons.append("Metadata-only source must remain background-only or reject.")
+        if curation.allowed_uses != ["background_only"]:
+            reasons.append("Metadata-only source must restrict allowed_uses to background_only.")
+        if any(audience != "background_knowledge" for audience in curation.relevance_assessment.target_audiences_supported):
+            reasons.append("Metadata-only source may only support background_knowledge audiences.")
+        finding_text = " ".join(curation.important_findings + curation.brief_sections.important_findings)
+        if _contains_any_marker(finding_text, _METADATA_ONLY_FINDING_LEAKAGE_MARKERS):
+            reasons.append("Metadata-only source treats title/tag metadata as findings.")
+        if not any(
+            marker in finding_text.lower()
+            for marker in ("no extractable findings", "no methods", "no results", "no quantified outcomes", "metadata-only")
+        ):
+            reasons.append("Metadata-only source must state that no extractable findings are available.")
+        concepts_text = " ".join(curation.core_concepts + curation.brief_sections.core_concepts)
+        title_and_outlet = f"{entry.title} {entry.journal_or_outlet}".lower()
+        unsupported_transfer_markers = [
+            marker for marker in _RPS_TRANSFER_MARKERS if marker in concepts_text.lower() and marker not in title_and_outlet
+        ]
+        if unsupported_transfer_markers:
+            reasons.append(
+                "Metadata-only source imports unsupported RPS transfer concepts: "
+                + ", ".join(sorted(set(unsupported_transfer_markers)))
+                + "."
+            )
 
     return EvidenceQualityGateResult(ok=not reasons, reasons=tuple(reasons))

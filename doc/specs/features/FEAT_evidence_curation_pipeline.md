@@ -1,5 +1,5 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
 Last-Updated: 2026-05-27
 Owner: Planning Runtime
@@ -64,6 +64,7 @@ Use `FEAT_repo_wide_evidence_library_and_refresh` for:
 * [x] Insert deterministic quality gate and activation stages after curation.
 * [x] Keep the curation agent self-contained with explicit RPS goals, relevance logic, and authority boundaries.
 * [x] Preserve the YAML library as the canonical registry while rendering long-form markdown briefs from structured curation output.
+* [x] Prevent metadata-only curation from inflating discovery tags or title paraphrases into pseudo-findings.
 
 **Non-Goals**
 
@@ -81,6 +82,7 @@ Use `FEAT_repo_wide_evidence_library_and_refresh` for:
 * New evidence is only operative after a successful curation pass and deterministic gate.
 * Existing evidence remains visible through `legacy_active` until re-curated into the new model.
 * Long study markdown pages include source-basis provenance, RPS relevance, practical implications, and explicit non-justified inferences.
+* Metadata-only sources are explicitly constrained to identification-level summaries, negative-capability findings, and `background_only` or `reject` relevance postures.
 
 **UI impact**
 
@@ -244,6 +246,7 @@ Use `FEAT_repo_wide_evidence_library_and_refresh` for:
 * run-store `events.jsonl`
 * `discovery_state.json`
 * rendered study briefs under `library/studies/`
+* semantic hardening tests for metadata-only curation rules
 
 ---
 

@@ -50,6 +50,21 @@ Source-material handling:
 - `oa_excerpt`: summarize only what the excerpt supports; do not infer absent sections.
 - `oa_fulltext`: still summarize conservatively and keep transfer limits explicit.
 
+Positive rules for `metadata_only`:
+- Treat the source as an identification card, not as a content-rich study summary.
+- Describe only verified metadata, title-level topic hints, and the absence of extractable evidence.
+- Prefer "no extractable findings are available from the metadata-only package" over paraphrased pseudo-findings.
+- Keep `allowed_uses` at `background_only` unless the provided source text is stronger than metadata.
+- Prefer `overall_relevance = reject` for off-domain or weak-transfer sources; use `low` only when there is a defensible background-level RPS connection.
+- Keep `target_audiences_supported` at `background_knowledge` unless the source text supports more.
+
+Do not do this for `metadata_only`:
+- Do not turn discovery tags into findings, concepts, or relevance proof.
+- Do not mirror injected topic tags such as `cycling_endurance`, `fueling`, or `masters` unless those ideas are present in the provided source title or text.
+- Do not treat title paraphrases as empirical findings.
+- Do not imply athlete, physiology, or coaching transfer that the source package does not support.
+- Do not make the summary look fuller than the evidence basis actually is.
+
 Core vs applied:
 - Core sources: peer-reviewed, review, consensus, or otherwise scientific sources used mainly for conceptual or empirical support.
 - Applied sources: podcasts, coach articles, whitepapers, blogs, and practice-oriented materials used for implementation translation.
@@ -63,6 +78,12 @@ Every output must:
 - state what this source does not justify
 - classify safe allowed uses
 - provide an RPS-specific relevance assessment
+
+Field semantics:
+- `important_findings` is for extractable findings or defensible negative capability statements about the source basis.
+- If the package is `metadata_only`, `important_findings` should usually say that no extractable findings, methods, or quantified outcomes are available.
+- `core_concepts` must stay source-grounded; do not import RPS labels or discovery tags unless the provided source material supports them.
+- `relevance_assessment` must be justified from the source package, not from repository tagging.
 
 Do not use generic filler such as:
 - "important study"
