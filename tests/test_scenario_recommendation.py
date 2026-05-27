@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from rps.planning.scenario_recommendation import build_scenario_recommendation_context
+from rps.planning.scenario_recommendation import (
+    build_scenario_recommendation_context,
+    filter_future_planning_events_payload,
+)
 
 
 def _scenario_payload() -> dict:
@@ -130,3 +133,32 @@ def test_stable_robust_trend_can_recommend_classic_build() -> None:
     assert context["recommended_cadence"] == "3:1"
     assert context["features"]["load_volatility_high"] is False
     assert context["features"]["recent_load_gap"] is False
+
+
+def test_filter_future_planning_events_payload_excludes_pre_horizon_events() -> None:
+    filtered = filter_future_planning_events_payload(
+        _events_payload(),
+        as_of_date="2026-05-18",
+        until_date="2026-09-13",
+    )
+
+    events = filtered["data"]["events"]
+    assert [event["event_name"] for event in events] == ["A", "B"]
+
+
+def test_recommendation_context_counts_future_events_only() -> None:
+    context = build_scenario_recommendation_context(
+        season_scenarios_payload=_scenario_payload(),
+        athlete_profile_payload=_athlete_payload(),
+        availability_payload=_availability_payload(),
+        planning_events_payload=filter_future_planning_events_payload(
+            _events_payload(),
+            as_of_date="2026-05-18",
+            until_date="2026-09-13",
+        ),
+        historical_baseline_payload=_historical_payload(),
+        activities_trend_payload=_trend_payload([1148, 3731, 9752, 8000, 11824, 7559, 7103, 1550]),
+    )
+
+    assert context["evidence"]["future_a_events"] == 1
+    assert context["evidence"]["future_b_events"] == 1

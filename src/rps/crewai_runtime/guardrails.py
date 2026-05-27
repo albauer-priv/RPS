@@ -151,6 +151,64 @@ _DIFFERENTIATION_MARKERS = (
     "intensity permissions",
     "density",
 )
+_SCENARIO_SELECTION_POSITIVE_MARKERS = (
+    "stable recovery",
+    "uncertain recovery",
+    "continuity priority",
+    "continuity",
+    "recoverability",
+    "load tolerance",
+    "fatigue exposure tolerance",
+    "travel",
+    "logistics",
+    "lower recovery margin",
+    "recovery margin",
+)
+_SCENARIO_SELECTION_NEGATIVE_MARKERS = (
+    "fatigue risk",
+    "recovery slip",
+    "continuity break",
+    "travel disruption",
+    "logistics disruption",
+    "insufficient tolerance",
+    "under-deliver",
+    "too conservative",
+    "too aggressive",
+    "overload risk",
+)
+_DOMAIN_ELIGIBILITY_MARKERS = (
+    "eligibility",
+    "eligible",
+    "later assignment",
+    "not every phase",
+    "does not authorize every domain",
+    "not phase-wide authorization",
+)
+_DOMAIN_AUTHORIZATION_MARKERS = (
+    "every phase",
+    "all phases",
+    "blanket legality",
+    "globally authorized",
+    "phase-wide authorization",
+)
+_OBJECTIVE_RESOLUTION_MARKERS = (
+    "objective reconciled",
+    "primary event target now replaced",
+    "final event hierarchy resolved here",
+    "objective mismatch resolved",
+)
+_VO2_RATIONALE_MARKER_GROUPS = (
+    ("sparse", "occasional", "limited"),
+    ("ceiling-support", "fresh-only", "fresh"),
+    ("not primary identity",),
+    ("specificity-under-fatigue", "density", "event simulation", "load posture"),
+)
+_ARCHETYPE_REQUIRED_MARKER_GROUPS = (
+    ("ceiling support", "early ceiling", "early vo2 support"),
+    ("sufficient runway", "enough runway", "adequate runway"),
+    ("later durability", "later specificity", "durability preserved", "specificity preserved"),
+    ("recovery tolerance supports it", "recovery tolerance", "recovery supports it"),
+)
 
 
 def _scenario_rationale_text(guidance: JsonMap) -> str:
@@ -159,6 +217,14 @@ def _scenario_rationale_text(guidance: JsonMap) -> str:
         for field in _CADENCE_RATIONALE_FIELDS
         for part in _string_list(guidance.get(field))
     ).lower()
+
+
+def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
+    return any(marker in text for marker in markers)
+
+
+def _future_event_runtime_context() -> JsonMap:
+    return _as_map(current_guardrail_runtime_context().get("season_scenario_event_context"))
 
 
 def typed_output_present(result: Any) -> GuardrailResult:
@@ -822,13 +888,42 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     by_id: dict[str, JsonMap] = {}
     cadence_by_id: dict[str, str] = {}
     rationale_by_id: dict[str, str] = {}
+    global_notes_text = " ".join(_string_list(data.get("notes"))).lower()
+    if not _contains_any(global_notes_text, _DOMAIN_ELIGIBILITY_MARKERS):
+        return (False, "Season scenarios must state that allowed_domains are eligibility only, not phase-wide authorization.")
+    if _contains_any(global_notes_text, _DOMAIN_AUTHORIZATION_MARKERS) and not _contains_any(global_notes_text, _DOMAIN_ELIGIBILITY_MARKERS):
+        return (False, "Season scenarios must not describe allowed_domains as blanket legality for all phases.")
+    if _contains_any(global_notes_text, _OBJECTIVE_RESOLUTION_MARKERS):
+        return (False, "Scenario layer must not claim that objective mismatch is already resolved.")
+
+    event_context = _future_event_runtime_context()
+    future_events = [event for event in _as_list(event_context.get("future_events")) if isinstance(event, dict)]
+    all_events = [event for event in _as_list(event_context.get("all_events")) if isinstance(event, dict)]
+    future_event_dates = {str(event.get("date") or "").strip().lower() for event in future_events if str(event.get("date") or "").strip()}
+    historical_events = [
+        event
+        for event in all_events
+        if str(event.get("date") or "").strip() and str(event.get("date") or "").strip().lower() not in future_event_dates
+    ]
+    has_event_context = bool(future_events or all_events)
+    future_type_counts = {
+        event_type: sum(1 for event in future_events if str(event.get("type") or "").strip().upper() == event_type)
+        for event_type in ("A", "B", "C")
+    }
+
     for scenario in scenarios:
         scenario_id = str(scenario.get("scenario_id") or "").strip().upper()
         if scenario_id not in {"A", "B", "C"}:
             return (False, "Season scenarios must contain only scenario ids A, B, and C.")
         seen_ids.add(scenario_id)
         by_id[scenario_id] = scenario
+        best_suited_if = str(scenario.get("best_suited_if") or "").strip().lower()
+        if not best_suited_if or not _contains_any(best_suited_if, _SCENARIO_SELECTION_POSITIVE_MARKERS):
+            return (False, f"Scenario {scenario_id} must include a meaningful best_suited_if selection gate.")
         guidance = _as_map(scenario.get("scenario_guidance"))
+        risk_flags_text = " ".join(_string_list(guidance.get("risk_flags"))).lower()
+        if not risk_flags_text or not _contains_any(risk_flags_text, _SCENARIO_SELECTION_NEGATIVE_MARKERS):
+            return (False, f"Scenario {scenario_id} must include concrete caution markers in risk_flags.")
         cadence = str(guidance.get("deload_cadence") or "").strip()
         if cadence not in _SUPPORTED_SCENARIO_CADENCES:
             return (False, f"Scenario {scenario_id} must include supported deload_cadence (`2:1`, `3:1`, or `2:1:1`).")
@@ -837,6 +932,31 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
         rationale_by_id[scenario_id] = rationale_text
         if not any(token in rationale_text for token in _CADENCE_TOKENS) or cadence not in rationale_text:
             return (False, f"Scenario {scenario_id} cadence is present but not explained in decision/risk fields.")
+        event_text = " ".join(
+            [
+                " ".join(_string_list(guidance.get("event_alignment_notes"))),
+                " ".join(_string_list(guidance.get("decision_notes"))),
+                " ".join(_string_list(guidance.get("risk_flags"))),
+                global_notes_text,
+            ]
+        ).lower()
+        if has_event_context:
+            for event in historical_events:
+                event_name = str(event.get("event_name") or "").strip().lower()
+                event_date = str(event.get("date") or "").strip().lower()
+                if ((event_name and event_name in event_text) or (event_date and event_date in event_text)) and _contains_any(
+                    event_text, ("rehearsal", "anchor", "peak", "cluster")
+                ):
+                    return (False, "Season scenarios must not describe pre-horizon events as active rehearsal/anchor/peak logic.")
+            if "b-event cluster" in event_text and future_type_counts["B"] < 2:
+                return (False, "Cluster wording requires multiple relevant in-horizon events.")
+            if "peak cluster" in event_text and future_type_counts["A"] < 2:
+                return (False, "Cluster wording requires multiple relevant in-horizon events.")
+            if (
+                "event cluster" in event_text
+                or (" cluster" in event_text and not any(token in event_text for token in ("historical context", "cluster-member")))
+            ) and sum(future_type_counts.values()) < 2:
+                return (False, "Cluster wording requires multiple relevant in-horizon events.")
         intensity = _as_map(guidance.get("intensity_guidance"))
         allowed_domains = [str(item).strip().upper() for item in _as_list(intensity.get("allowed_domains")) if str(item).strip()]
         if "ENDURANCE" not in allowed_domains:
@@ -866,6 +986,13 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     guidance_c = _as_map(scenario_c.get("scenario_guidance"))
     intensity_c = _as_map(guidance_c.get("intensity_guidance"))
     allowed_c = {str(item).strip().upper() for item in _as_list(intensity_c.get("allowed_domains")) if str(item).strip()}
+    season_archetype = str(guidance_c.get("season_archetype") or "").strip()
+    archetype_rationale = " ".join(_string_list(guidance_c.get("season_archetype_rationale"))).lower()
+    if season_archetype == "ceiling_first_durability":
+        decision_text = " ".join(_string_list(guidance_c.get("decision_notes"))).lower()
+        joined_text = f"{archetype_rationale} {decision_text}"
+        if not all(any(marker in joined_text for marker in group) for group in _ARCHETYPE_REQUIRED_MARKER_GROUPS):
+            return (False, "Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway.")
     if allowed_c == {"ENDURANCE"}:
         return (False, "Scenario C must express ambitious specificity beyond ENDURANCE-only semantics.")
     c_story = " ".join(
@@ -880,8 +1007,9 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     ).lower()
     if not any(marker in c_story for marker in ("back-to-back", "b2b", "hard-late", "event simulation", "specificity", "fatigue")):
         return (False, "Scenario C must describe higher specificity or fatigue exposure, not only a larger kJ envelope.")
-    if "VO2MAX" in allowed_c and not any(marker in c_story for marker in ("vo2", "ceiling", "fresh", "high-intensity", "support")):
-        return (False, "Scenario C may allow VO2MAX only when its ceiling-support role is explained.")
+    if "VO2MAX" in allowed_c:
+        if not all(any(marker in c_story for marker in group) for group in _VO2_RATIONALE_MARKER_GROUPS):
+            return (False, "Scenario C may allow VO2MAX only with explicit sparse ceiling-support rationale.")
     return (True, mapping)
 
 

@@ -4,7 +4,7 @@ Status: Approved
 Last-Updated: 2026-05-27
 Owner: Planning Runtime
 ---
-# FEAT: Cadence-Aware Season Scenario Generation
+# FEAT: Cadence-Aware and Future-Scoped Season Scenario Generation
 
 * **ID:** FEAT_season_scenario_cadence_awareness
 * **Status:** Approved
@@ -22,12 +22,15 @@ Owner: Planning Runtime
 * Downstream season structure correctly consumes the selected scenario cadence.
 * Current scenario generation guidance under-specifies cadence as a scenario differentiator.
 * In the active runtime, all three generated scenarios can collapse to the same cadence, especially when recommendation context prefers one cadence.
+* Scenario generation has also been exposed to historical/pre-horizon events in prompt-facing context, which can confuse event-alignment language and produce invalid rehearsal/cluster semantics.
+* The scenario layer does not yet consistently require selection-gate language, eligibility-not-authorization wording for intensity domains, or strict exception semantics for `season_archetype` and `VO2MAX`.
 
 **Problem**
 
 * Cadence is currently treated too much like copied structure metadata instead of part of scenario identity.
 * Recommendation context can bias the model toward mirroring the recommended cadence across all scenarios without explicit rationale.
-* The existing `season_scenarios_profile_quality` guardrail does not detect unexplained cadence collapse.
+* Historical/pre-horizon event injection can lead to scenario text that treats past events as active rehearsal or cluster logic.
+* The existing `season_scenarios_profile_quality` guardrail does not yet enforce selection-gate semantics, event-horizon discipline, or bounded exception logic for `season_archetype` / `VO2MAX`.
 
 **Constraints**
 
@@ -45,12 +48,18 @@ Owner: Planning Runtime
 * [x] Make cadence a first-class scenario dimension in `season_scenarios`.
 * [x] Keep recommendation context advisory instead of defaulting all scenarios to the recommended cadence.
 * [x] Extend the existing `season_scenarios_profile_quality` guardrail to reject unexplained cadence collapse.
+* [x] Restrict scenario-agent event injection to future / in-horizon events only.
+* [x] Require explicit scenario selection gates in existing schema fields.
+* [x] Treat `allowed_domains` as eligibility-only semantics in the scenario layer.
+* [x] Default `season_archetype` to `none` and `VO2MAX` to exception-only semantics unless explicitly justified.
 * [x] Keep downstream Season planning behavior unchanged.
 
 **Non-Goals**
 
 * [x] Do not redesign deterministic cadence math.
 * [x] Do not force any scenario, including B, to a fixed default cadence.
+* [x] Do not expand the `SEASON_SCENARIOS` schema.
+* [x] Do not move binding phase/kJ/taper authority into the scenario layer.
 
 ---
 
@@ -61,6 +70,11 @@ Owner: Planning Runtime
 * A/B/C scenarios must each emit a coherent cadence recommendation as part of the overall scenario story.
 * Cadence may be shared across scenarios only when the stored scenario rationale clearly explains why differentiation comes from other axes such as load philosophy, specificity-under-fatigue, recovery margin, and risk posture.
 * Recommendation context may support one scenario, but must not silently flatten all scenarios to the recommended cadence.
+* The scenario agent receives only future / in-horizon event context; historical or pre-horizon events are not injected into prompt-facing scenario logic.
+* `best_suited_if` and `risk_flags` become the required positive/negative selection-gate carriers using existing schema fields.
+* `allowed_domains` are explicitly framed as eligibility for later assignment, not phase-wide authorization.
+* `season_archetype = ceiling_first_durability` and Scenario C `VO2MAX` permission become strict exception paths that require explicit stored rationale.
+* Objective/event mismatch remains warning-only and input-owned in the scenario layer.
 
 **UI impact**
 
@@ -68,7 +82,7 @@ Owner: Planning Runtime
 
 **Non-UI behavior (if applicable)**
 
-* Components involved: season scenario task contract, prompt, skill, orchestrator guardrail context, and existing scenario-quality guardrail.
+* Components involved: season scenario task contract, prompt, skill, orchestrator event-context preparation, orchestrator guardrail context, and existing scenario-quality guardrail.
 * Contracts touched: `SEASON_SCENARIOS` generation contract only.
 
 ---
@@ -77,18 +91,20 @@ Owner: Planning Runtime
 
 **Components / Modules**
 
-* `config/crewai/tasks.yaml`: require cadence-aware scenario differentiation.
-* `prompts/agents/season_scenario.md`: make cadence treatment locally operational.
-* `skills/season/scenario-generation/SKILL.md`: make cadence an explicit scenario identity dimension and block recommendation-driven collapse.
+* `config/crewai/tasks.yaml`: require future-only event logic, explicit selection gates, eligibility-only domain wording, and bounded archetype/VO2 semantics.
+* `prompts/agents/season_scenario.md`: make cadence, event-horizon, selection-gate, and exception semantics locally operational.
+* `skills/season/scenario-generation/SKILL.md`: make cadence an explicit scenario identity dimension, preserve future-only event logic, and block recommendation-driven collapse plus unsafe archetype/VO2 drift.
+* `src/rps/orchestrator/season_flow.py`: filter planning events to a future-only scenario-facing payload and bind event context into guardrail runtime context.
+* `src/rps/planning/scenario_recommendation.py`: expose reusable future-only planning-event filtering for deterministic recommendation context.
 * `src/rps/crewai_runtime/guardrails.py`: extend `season_scenarios_profile_quality(...)`.
-* `src/rps/orchestrator/season_flow.py`: bind recommendation context into guardrail runtime context for scenario generation.
 * `tests/test_crewai_runtime.py`: add guardrail regression coverage.
 * `tests/test_season_semantic_hardening.py`: add contract-text regression coverage.
+* `tests/test_scenario_recommendation.py`: add future-only event-filter coverage.
 
 **Data flow**
 
-* Inputs: deterministic cadence options, deterministic recommendation context, athlete/event context, generated `SEASON_SCENARIOS`.
-* Processing: scenario generation emits cadence-aware scenarios; guardrail validates cadence presence, support, rationale, and anti-collapse behavior.
+* Inputs: deterministic cadence options, deterministic recommendation context, future-only scenario-facing event context, athlete/event context, generated `SEASON_SCENARIOS`.
+* Processing: scenario generation emits cadence-aware future-scoped scenarios; guardrail validates cadence presence, selection gates, domain semantics, event-horizon discipline, exception rationale, and anti-collapse behavior.
 * Outputs: unchanged `SEASON_SCENARIOS` schema with stricter semantics.
 
 **Schema / Artefacts**
@@ -104,7 +120,7 @@ Owner: Planning Runtime
 **Compatibility**
 
 * Backward compatible: Yes for schema, stricter for runtime validity.
-* Breaking changes: weak scenario outputs that silently collapse cadence will now fail guardrails.
+* Breaking changes: weak scenario outputs that silently collapse cadence, omit real selection gates, misuse historical events, over-authorize domains, or use weak archetype/VO2 rationale will now fail guardrails.
 * Fallback behavior: scenarios may still share cadence when explicitly justified in existing rationale fields.
 
 **Conflicts with ADRs / Principles**
@@ -124,17 +140,17 @@ Owner: Planning Runtime
 **Required refactoring**
 
 * Reuse the existing `season_scenarios_profile_quality(...)` guardrail instead of adding a second validation path.
-* Bind recommendation context into guardrail runtime context so bias-aware validation can inspect code-owned advisory evidence.
+* Bind recommendation context and future/all-event context into guardrail runtime context so bias-aware and horizon-aware validation can inspect code-owned evidence.
 
 ---
 
 ## 6) Options & Recommendation
 
-### Option A — Tighten generation contract plus existing guardrail
+### Option A — Tighten generation contract plus existing guardrail and future-only event injection
 
 **Summary**
 
-* Update the task, prompt, and skill; extend the existing scenario-quality guardrail; keep schema and downstream structure logic unchanged.
+* Update the task, prompt, and skill; restrict scenario-facing event injection to future-only context; extend the existing scenario-quality guardrail; keep schema and downstream structure logic unchanged.
 
 **Pros**
 
@@ -176,8 +192,11 @@ Owner: Planning Runtime
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [ ] `season_scenarios` task, prompt, and skill explicitly require cadence-aware scenario differentiation.
+* [ ] Scenario-agent event injection is future-only.
 * [ ] Shared cadence across A/B/C is allowed only with explicit stored rationale.
-* [ ] `season_scenarios_profile_quality(...)` rejects unexplained cadence collapse.
+* [ ] `best_suited_if` and `risk_flags` are treated as required selection-gate carriers.
+* [ ] `allowed_domains` are framed as eligibility-only semantics.
+* [ ] `season_scenarios_profile_quality(...)` rejects unexplained cadence collapse, historical-event active logic, weak selection gates, unsafe cluster wording, weak archetype rationale, and unsafe VO2 exception semantics.
 * [ ] Recommendation-default cadence mirrored across all scenarios without rationale fails guardrail.
 * [ ] Existing downstream season structure tests remain unchanged and pass.
 * [ ] Validation passes: `python3 -m py_compile`, targeted pytest, lint, typecheck.

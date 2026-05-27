@@ -1,14 +1,14 @@
 ---
 name: scenario-generation
-description: Generate three advisory season scenarios with coherent cadence, structure pressure, and event emphasis.
+description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and bounded intensity semantics.
 metadata:
   author: rps
-  version: "4.1"
+  version: "4.2"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
 Method:
-1. Respect the injected deterministic horizon context, A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
+1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
@@ -38,6 +38,7 @@ Deterministic horizon context:
 - use `last_event_date`, `last_event_iso_week`, `weeks_until_last_event_from_target_week_start`, `inclusive_planning_horizon_weeks`, and `season_iso_week_range` directly when provided
 - use the deterministic last-event horizon block when present
 - scenario `planning_horizon_weeks` must align with `inclusive_planning_horizon_weeks`
+- only future / in-horizon events are provided to the scenario agent; do not infer active scenario logic from past or completed events
 
 Deterministic cadence options context:
 - use `Deterministic Cadence Options Context` as the source of truth for `2:1`, `3:1`, and `2:1:1` phase math
@@ -49,6 +50,8 @@ Deterministic recommendation context:
 - preserve the recommended cadence and core evidence in `data.notes`
 - reflect recommendation-specific rationale in the matching scenario's `scenario_guidance.decision_notes`
 - keep the recommendation advisory; selection still belongs to the user/selection task
+- preserve recommendation context as advisory evidence only; do not mirror its cadence or posture blindly into all three scenarios
+- use top-level `data.notes` for global scenario-layer clarifications such as eligibility-not-authorization and warning-only objective mismatch handling
 
 Required content per scenario:
 - `scenario_id`, `name`, `core_idea`, `load_philosophy`, `risk_profile`, `key_differences`, `best_suited_if`
@@ -80,18 +83,24 @@ Required A/B/C target profiles:
   - low density
   - minimal intensity allowance
   - high executability under work stress, illness risk, or masters recovery limits
+  - `best_suited_if` must say continuity / recoverability / logistics robustness are priority
+  - `risk_flags` must say the scenario may under-deliver if the athlete can tolerate more load
   - `ENDURANCE` is the core domain; `TEMPO` is optional and sparse only when the scenario still reads completion-first
 - **Scenario B = durability-forward target plan**
   - realistic target kJ-envelope
   - systematic long-ride progression
   - selected `TEMPO` / optional `SWEET_SPOT` economy work
   - balanced recovery risk
+  - `best_suited_if` must say stable recovery supports systematic progression
+  - `risk_flags` must say the scenario is less forgiving than A if continuity degrades
   - default shape for many brevet/ultra seasons when performance should improve without compromising robustness
 - **Scenario C = ambitious performance-forward long build**
   - upper plausible kJ-envelope
   - higher specificity under fatigue
   - more B2B / hard-late / event simulation
   - optional `THRESHOLD` or `VO2MAX` only if explicitly justified
+  - `best_suited_if` must say recovery and load tolerance are demonstrably stable
+  - `risk_flags` must say fatigue/logistics instability makes the scenario risky
   - ambition comes primarily from specificity and fatigue exposure, not from automatic high-intensity escalation
 
 Scenario math rules:
@@ -105,6 +114,7 @@ Scenario math rules:
 
 Intensity-domain semantics:
 - `allowed_domains` are permissions, not obligations.
+- `allowed_domains` define eligibility for later assignment only; they do not authorize every domain in every phase.
 - `ENDURANCE` is the core domain of every scenario.
 - `TEMPO` is in many ultra/brevet contexts the most likely first additional domain because it supports sub-threshold economy and long stable duration, but it is not dogma.
 - `SWEET_SPOT` is optional when time budget limits kJ separation or when economy / sustained sub-threshold work is part of the scenario story.
@@ -112,7 +122,8 @@ Intensity-domain semantics:
 - Scenario C is not defined by `VO2MAX`.
 - Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
 - Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant and explain which other axes carry the differentiation.
-- If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse ceiling-support / fresh high-intensity permission and not the primary scenario identity.
+- Cluster wording (`cluster`, `event cluster`, `B-event cluster`, `peak cluster`) requires multiple relevant in-horizon events; otherwise use singular event wording.
+- If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse / limited / occasional ceiling-support or fresh-only permission, not the primary scenario identity, and that the ambition instead comes from specificity-under-fatigue, density, event simulation, or load posture.
 
 Season archetype semantics:
 - `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
@@ -126,9 +137,15 @@ Season archetype semantics:
 - If `season_archetype = ceiling_first_durability`, `season_archetype_rationale` must state why early ceiling support is permitted and why later durability/specificity work still has enough runway.
 - If the scenario does not clearly justify that sequence, emit `season_archetype = none`.
 
+Objective mismatch semantics:
+- If the scenario layer notices a mismatch between upstream objective language and active event hierarchy, treat it as unresolved upstream input context only.
+- You may name that mismatch in notes, assumptions, unknowns, or caution fields.
+- Do not claim that the scenario layer resolved or replaced the objective/event hierarchy.
+
 Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.
 - Ensure `risk_profile`, `load_philosophy`, `decision_notes`, `deload_cadence`, and `intensity_guidance` tell the same story.
+- Ensure `best_suited_if` is a real positive selection gate and `risk_flags` are real caution markers, not marketing prose.
 - Make cadence rationale visible in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
 - If multiple scenarios share the same cadence, say directly that cadence is intentionally shared and that differentiation comes from other axes such as specificity-under-fatigue, recovery margin, or risk posture.
 - If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
@@ -145,10 +162,13 @@ Hard rules:
 - keep scenarios advisory until selection and season planning
 - use the injected deterministic planning horizon
 - do not define scenarios primarily by domain breadth
+- do not infer active scenario logic from past events
 - do not let recommendation-default cadence silently flatten all scenarios
 - do not emit A/B/C with the same `deload_cadence` unless the stored scenario fields clearly justify why cadence is intentionally held constant
 - do not let Scenario C become "the VO2 scenario" by default
 - do not keep `VO2MAX` in Scenario C without an explicit ceiling-support explanation in `decision_notes` or `kpi_guardrail_notes`
+- do not describe `allowed_domains` as blanket legality for all phases
+- do not claim that objective mismatch is resolved in this layer
 - do not invent fake kJ separation when the actual time budget cannot support it
 
 Positive operating guidance:
@@ -161,6 +181,7 @@ Positive operating guidance:
 Positive execution pattern:
 - Build three distinct scenario options from the injected horizon, cadence options, event priorities, athlete constraints, and kJ-first risk/exposure logic.
 - Describe each scenario with a clear purpose, load philosophy, cadence structure, event alignment, risk profile, and best-fit condition.
+- Keep event alignment future-only: active rehearsal, anchor, and cluster language may refer only to injected in-horizon events.
 - Treat cadence as an explicit scenario dimension: even when two scenarios share cadence, explain why that is intentional and where the real differentiation sits.
 - Add five short user-facing differentiators that make scenario selection easier without reading the whole prose:
   - `typical_week_feel`

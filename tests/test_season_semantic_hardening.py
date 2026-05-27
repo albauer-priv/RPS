@@ -56,14 +56,33 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "`decision_notes` and/or `kpi_guardrail_notes`" in prompt
     assert "omit `VO2MAX` from Scenario C" in prompt
     assert 'Do not let Scenario C become "the VO2 scenario" by default.' in prompt
+    assert "Only future / in-horizon events are provided to this task." in prompt
+    assert "Do not infer active scenario logic from past" in prompt
+    assert "`allowed_domains` means eligibility for later assignment only" in prompt
+    assert "`best_suited_if` must state explicit positive selection conditions" in prompt
+    assert "`risk_flags` must state explicit negative selection conditions" in prompt
+    assert "`season_archetype` defaults to `none`." in prompt
+    assert "Objective mismatch may be named as unresolved upstream input context only." in prompt
     assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in task_config
+    assert "Only future / in-horizon events are provided to this task" in task_config
+    assert "`best_suited_if`" in task_config and "must carry explicit positive selection conditions" in task_config
+    assert "`risk_flags`" in task_config and "negative selection conditions" in task_config
+    assert "mismatch may be named as unresolved input context only" in task_config
+    assert "do not resolve it" in task_config
     assert "If Scenario C includes `VO2MAX`" in scenario_skill
-    assert "`scenario_guidance.deload_cadence` is not decorative phase math" in task_config
-    assert "must emit a coherent cadence recommendation per scenario" in task_config
+    assert "`scenario_guidance.deload_cadence` is not" in task_config
+    assert "decorative phase math" in task_config
+    assert "coherent cadence" in task_config and "per scenario" in task_config
     assert "must not become the default cadence for all scenarios" in prompt
     assert "Do not let recommendation-default cadence become the implicit cadence for all scenarios." in prompt
     assert "Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant" in scenario_skill
     assert "do not mirror the recommendation cadence blindly into all scenarios" in scenario_skill
+    assert "only future / in-horizon events are provided to the scenario agent" in scenario_skill
+    assert "do not infer active scenario logic from past or completed events" in scenario_skill
+    assert "`allowed_domains` define eligibility for later assignment only" in scenario_skill
+    assert "Ensure `best_suited_if` is a real positive selection gate" in scenario_skill
+    assert "Use `none` by default." in scenario_skill
+    assert "Do not claim that the scenario layer resolved or replaced the objective/event hierarchy." in scenario_skill
 
 
 def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:

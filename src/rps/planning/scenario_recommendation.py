@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from datetime import date
 from statistics import mean
 from typing import Any
 
@@ -129,6 +130,48 @@ def _season_start_date(season_scenarios_payload: JsonMap | None) -> str:
         return ""
     value = temporal_scope.get("from")
     return value if isinstance(value, str) else ""
+
+
+def _parse_iso_date(raw: object) -> date | None:
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def filter_future_planning_events_payload(
+    planning_events_payload: JsonMap | None,
+    *,
+    as_of_date: str,
+    until_date: str | None = None,
+) -> JsonMap:
+    """Return a planning-events payload filtered to future events in the active horizon."""
+
+    if not isinstance(planning_events_payload, dict):
+        return {}
+    target_start = _parse_iso_date(as_of_date)
+    target_end = _parse_iso_date(until_date)
+    if target_start is None:
+        return planning_events_payload
+    data = _data(planning_events_payload)
+    events = data.get("events")
+    filtered_events: list[JsonMap] = []
+    for event in events if isinstance(events, list) else []:
+        if not isinstance(event, dict):
+            continue
+        parsed = _parse_iso_date(event.get("date"))
+        if parsed is None or parsed < target_start:
+            continue
+        if target_end is not None and parsed > target_end:
+            continue
+        filtered_events.append(dict(event))
+    filtered_data = dict(data)
+    filtered_data["events"] = filtered_events
+    filtered_payload = dict(planning_events_payload)
+    filtered_payload["data"] = filtered_data
+    return filtered_payload
 
 
 def _event_summary(planning_events_payload: JsonMap | None, *, as_of_date: str = "") -> JsonMap:

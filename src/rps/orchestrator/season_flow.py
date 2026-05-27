@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from datetime import date
 
 from rps.agents.registry import AGENTS
 from rps.agents.runtime import AgentRuntime
@@ -31,6 +32,7 @@ from rps.planning.deterministic_context import (
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.planning.scenario_recommendation import (
     build_scenario_recommendation_context,
+    filter_future_planning_events_payload,
     render_scenario_recommendation_block,
 )
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
@@ -115,6 +117,10 @@ def _expected_source_versions(entries: list[tuple[str, JsonMap | None]]) -> Json
 
 def _as_list(value: object) -> list[object]:
     return value if isinstance(value, list) else []
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
 
 
 def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
@@ -224,14 +230,23 @@ def create_season_scenarios(
         athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(
             athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else {}
         )
+        target_week_start = date.fromisocalendar(target_week.year, target_week.week, 1).isoformat()
+        future_planning_events_payload = filter_future_planning_events_payload(
+            planning_events_payload or {},
+            as_of_date=target_week_start,
+        )
         horizon_context = build_season_scenario_horizon_block(
-            planning_events_payload=planning_events_payload or {},
+            planning_events_payload=future_planning_events_payload,
             target_week=target_week,
         )
         cadence_context = build_cadence_options_block(horizon_context=horizon_context.payload)
         planning_horizon_block = render_context_blocks([horizon_context])
         cadence_options_block = render_context_blocks([cadence_context])
         pseudo_scenarios_payload = {
+            "meta": {
+                "temporal_scope": _as_map(horizon_context.payload.get("temporal_scope"))
+                or {"from": target_week_start, "to": target_week_start}
+            },
             "data": {
                 "scenarios": [
                     {
@@ -249,7 +264,7 @@ def create_season_scenarios(
             athlete_profile_payload=athlete_profile_payload,
             kpi_profile_payload=kpi_profile_payload,
             availability_payload=availability_payload,
-            planning_events_payload=planning_events_payload,
+            planning_events_payload=future_planning_events_payload,
             historical_baseline_payload=historical_baseline_payload,
             activities_trend_payload=activities_trend_payload,
             wellness_payload=wellness_payload,
@@ -277,6 +292,17 @@ def create_season_scenarios(
     logger.info("Creating season scenarios athlete=%s iso_week=%04d-W%02d", athlete_id, year, week)
     with guardrail_runtime_context(
         season_scenario_recommendation_context=recommendation_context if isinstance(recommendation_context, dict) else {},
+        season_scenario_event_context={
+            "target_week_start_date": target_week_start if "target_week_start" in locals() else "",
+            "future_events": _as_list(
+                _as_map(_as_map(future_planning_events_payload if "future_planning_events_payload" in locals() else {}).get("data")).get(
+                    "events"
+                )
+            ),
+            "all_events": _as_list(
+                _as_map(_as_map(planning_events_payload if "planning_events_payload" in locals() else {}).get("data")).get("events")
+            ),
+        },
     ):
         return run_agent_multi_output(
             runtime_for,

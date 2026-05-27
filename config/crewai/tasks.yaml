@@ -113,7 +113,9 @@ tasks:
       - workspace_get_latest
     description: >-
       Create the season-scenarios artifact envelope for the selected planning
-      horizon. Differentiate A/B/C primarily by kJ-envelope,
+      horizon. Only future / in-horizon events are provided to this task; do
+      not infer active scenario logic from past, completed, or pre-horizon
+      events. Differentiate A/B/C primarily by kJ-envelope,
       specificity-under-fatigue, density, recovery tolerance, cadence rhythm,
       and risk contract; treat intensity domains as permissions rather than the
       primary scenario identity. `scenario_guidance.deload_cadence` is not
@@ -127,19 +129,30 @@ tasks:
       explicitly justify why cadence is intentionally held constant and why
       differentiation instead comes from load philosophy,
       specificity-under-fatigue, recovery margin, intensity permissions, and
-      risk posture. Do not emit A/B/C with the same `deload_cadence` unless
-      that shared-cadence rationale is visible in the stored scenario fields.
-      Also make the scenarios easy to choose as user-facing options by
+      risk posture. Cluster wording requires multiple relevant in-horizon
+      events; do not use `cluster`, `event cluster`, `B-event cluster`, or
+      `peak cluster` language for a single future event. Do not emit A/B/C
+      with the same `deload_cadence` unless that shared-cadence rationale is
+      visible in the stored scenario fields. `allowed_domains` are an
+      eligibility layer only; they do not authorize every domain in every
+      phase. Carry those layer clarifications in top-level `data.notes`. Also
+      make the scenarios easy to choose as user-facing options by
       providing `typical_week_feel`, `main_payoff`, `main_cost`,
-      `what_gets_prioritized`, and `what_gets_de_emphasized`. Emit normalized
+      `what_gets_prioritized`, and `what_gets_de_emphasized`. `best_suited_if`
+      must carry explicit positive selection conditions and `risk_flags` must
+      carry explicit negative selection conditions. Emit normalized
       `scenario_guidance.season_archetype` (`none` or
-      `ceiling_first_durability`) plus `season_archetype_rationale`; use
-      `ceiling_first_durability` only when the scenario clearly supports
-      optional early ceiling work followed by durability/specificity runway. If
-      Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in
-      `decision_notes` and/or `kpi_guardrail_notes` that it is only a sparse
-      ceiling-support / fresh high-intensity permission and not the primary
-      scenario identity; otherwise omit `VO2MAX`.
+      `ceiling_first_durability`) plus `season_archetype_rationale`; default
+      to `none` and use `ceiling_first_durability` only when the scenario
+      clearly supports optional early ceiling work, enough runway, preserved
+      later durability/specificity work, and recovery tolerance. Objective
+      mismatch may be named as unresolved input context only; do not resolve it
+      here. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly
+      explain in `decision_notes` and/or `kpi_guardrail_notes` that it is only
+      sparse / limited / occasional ceiling-support or fresh-only permission,
+      not the primary scenario identity, and that the ambition instead comes
+      from specificity-under-fatigue, density, event simulation, or load
+      posture; otherwise omit `VO2MAX`.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario
