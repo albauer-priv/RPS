@@ -7,13 +7,50 @@ metadata:
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
+Field completion contract:
+- `name` = short chooser label
+  - preferred examples: `Durability-first, frequent reset`, `Balanced build, controlled pressure`, `Specificity-under-fatigue, higher ambition`
+- `core_idea` = one-sentence scenario promise
+  - preferred example: `Protect continuity and keep the athlete fresh enough to absorb work reliably across the full horizon.`
+- `load_philosophy` = how load, recovery, and specificity are balanced
+  - preferred example: `Moderate load with frequent recovery rhythm; prioritize repeatable execution, freshness, and consistency over aggressive build pressure.`
+- `risk_profile` = relative risk plus why
+  - preferred example: `Lowest risk option; best when travel volatility, fatigue sensitivity, or durability uncertainty need more protection.`
+- `key_differences` = explicit comparison against the other two scenarios
+  - preferred example: `Compared with B and C, this scenario keeps week-to-week pressure more controlled and asks for less fatigue exposure.`
+- `typical_week_feel` = how a representative week feels
+  - preferred example: `Structured but manageable; the athlete should usually finish the week feeling contained rather than stretched.`
+- `main_payoff` = main gain, singular and concrete
+  - preferred example: `High consistency and low disruption risk across the season.`
+- `main_cost` = main tradeoff, singular and concrete
+  - preferred example: `Less aggressive overload pressure and slower emergence of race-specific hardness.`
+- `what_gets_prioritized` = short phrase naming what gets more emphasis
+  - preferred example: `Aerobic durability, repeatability, recovery quality, and keeping training momentum intact.`
+- `what_gets_de_emphasized` = short phrase naming what gets toned down
+  - preferred example: `High density, deep fatigue exposure, and more ambitious freshness-to-fatigue tradeoffs.`
+- `event_alignment_notes` = future-only active event logic
+  - preferred example: `Matches the target horizon well by supporting a steadier progression toward the September A event.`
+- `constraint_summary` = binding practical constraints
+  - preferred examples: `Fixed rest days are Monday and Friday.`, `Weekly availability remains limited on weekdays and higher on the weekend.`
+- `kpi_guardrail_notes` = pacing / efficiency / metabolic guardrails, not sales prose
+  - preferred example: `Keep long-ride pacing aligned with the brevet-ultra sustainable to fast-competitive boundary rather than chasing intensity for its own sake.`
+- `decision_notes` = why this cadence and posture were chosen
+  - preferred examples: `This is the control scenario: it emphasizes stability and recoverability.`, `Cadence is intentionally held as 2:1 here to maintain frequent resets; differentiation comes from lower load ambition and lower fatigue exposure.`
+- `assumptions` = what must stay true for the scenario to remain valid
+  - preferred example: `Weekend training remains the primary place for longer work.`
+- `unknowns` = what could change scenario choice later
+  - preferred example: `Whether future travel or fatigue will be more disruptive than the recent pattern suggests.`
+- `data.notes` = global scenario-layer clarifications
+  - preferred examples: `Historical or pre-horizon events are out of scope for active scenario event alignment.`, `allowed_domains define eligibility for later assignment only; they do not authorize every domain in every phase.`
+
 Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
 5. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
-6. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
+6. Write `best_suited_if` as a short concrete selection sentence, not generic praise. Use explicit positive markers such as `stable recovery`, `uncertain recovery`, `continuity priority`, `recoverability`, `load tolerance`, `fatigue exposure tolerance`, `travel`, `logistics`, `lower recovery margin`, or `recovery margin`.
+7. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
 
 kJ-first scenario methodology:
 - In ultra/brevet planning, the planned kJ-envelope is the leading steering quantity for scenario identity.
@@ -84,7 +121,8 @@ Required A/B/C target profiles:
   - low density
   - minimal intensity allowance
   - high executability under work stress, illness risk, or masters recovery limits
-  - `best_suited_if` must say continuity / recoverability / logistics robustness are priority
+  - `best_suited_if` must say `continuity priority`, `uncertain recovery`, `recoverability`, or `logistics robustness` are the reason to choose it
+  - preferred example: `Choose when continuity priority and uncertain recovery dominate.`
   - `risk_flags` must say the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load
   - preferred example: `May under-deliver if high load tolerance is available.`
   - `ENDURANCE` is the core domain; `TEMPO` is optional and sparse only when the scenario still reads completion-first
@@ -93,7 +131,8 @@ Required A/B/C target profiles:
   - systematic long-ride progression
   - selected `TEMPO` / optional `SWEET_SPOT` economy work
   - balanced recovery risk
-  - `best_suited_if` must say stable recovery supports systematic progression
+  - `best_suited_if` must say `stable recovery` supports `systematic progression`
+  - preferred example: `Choose when stable recovery supports systematic progression.`
   - `risk_flags` must say the scenario is less forgiving than A if `continuity break` or `recovery slip` appears
   - preferred example: `Less forgiving than A if continuity break or recovery slip appears.`
   - default shape for many brevet/ultra seasons when performance should improve without compromising robustness
@@ -102,7 +141,8 @@ Required A/B/C target profiles:
   - higher specificity under fatigue
   - more B2B / hard-late / event simulation
   - optional `THRESHOLD` or `VO2MAX` only if explicitly justified
-  - `best_suited_if` must say recovery and load tolerance are demonstrably stable
+  - `best_suited_if` must say `stable recovery`, `high load tolerance`, or `fatigue exposure tolerance` are already demonstrably present
+  - preferred example: `Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.`
   - `risk_flags` must say the scenario becomes `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears
   - preferred example: `Too aggressive if fatigue risk or travel disruption appears.`
   - ambition comes primarily from specificity and fatigue exposure, not from automatic high-intensity escalation
@@ -150,6 +190,7 @@ Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.
 - Ensure `risk_profile`, `load_philosophy`, `decision_notes`, `deload_cadence`, and `intensity_guidance` tell the same story.
 - Ensure `best_suited_if` is a real positive selection gate and `risk_flags` are real caution markers, not marketing prose.
+- Ensure `best_suited_if` contains guardrail-visible selection words, not vague phrases like `good default` or `nice option`.
 - Ensure `risk_flags` contain guardrail-visible words, not vague phrases like `general caution` or `watch recovery`.
 - Make cadence rationale visible in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
 - If multiple scenarios share the same cadence, say directly that cadence is intentionally shared and that differentiation comes from other axes such as specificity-under-fatigue, recovery margin, or risk posture.
@@ -186,6 +227,7 @@ Positive operating guidance:
 Positive execution pattern:
 - Build three distinct scenario options from the injected horizon, cadence options, event priorities, athlete constraints, and kJ-first risk/exposure logic.
 - Describe each scenario with a clear purpose, load philosophy, cadence structure, event alignment, risk profile, and best-fit condition.
+- Fill every required narrative field with concrete scenario content; do not leave any field as generic filler that could fit all three scenarios equally.
 - Keep event alignment future-only: active rehearsal, anchor, and cluster language may refer only to injected in-horizon events.
 - Treat cadence as an explicit scenario dimension: even when two scenarios share cadence, explain why that is intentional and where the real differentiation sits.
 - Add five short user-facing differentiators that make scenario selection easier without reading the whole prose:

@@ -72,7 +72,9 @@ Owner: Planning Runtime
 * Recommendation context may support one scenario, but must not silently flatten all scenarios to the recommended cadence.
 * The scenario agent receives only future / in-horizon event context; historical or pre-horizon events are not injected into prompt-facing scenario logic.
 * `best_suited_if` and `risk_flags` become the required positive/negative selection-gate carriers using existing schema fields.
+* `best_suited_if` must use concrete guardrail-visible selection wording rather than generic recommendation prose, with scenario-family-specific examples embedded directly in the active task/prompt/skill contract.
 * `risk_flags` must use concrete guardrail-visible caution wording rather than generic warning labels, with scenario-family-specific examples embedded directly in the active task/prompt/skill contract.
+* The remaining narrative fields must also be filled with concrete scenario-specific content rather than generic filler, with positive examples embedded directly in the active task/prompt/skill contract.
 * `allowed_domains` are explicitly framed as eligibility for later assignment, not phase-wide authorization.
 * `season_archetype = ceiling_first_durability` and Scenario C `VO2MAX` permission become strict exception paths that require explicit stored rationale.
 * Objective/event mismatch remains warning-only and input-owned in the scenario layer.
@@ -93,8 +95,8 @@ Owner: Planning Runtime
 **Components / Modules**
 
 * `config/crewai/tasks.yaml`: require future-only event logic, explicit selection gates, eligibility-only domain wording, and bounded archetype/VO2 semantics.
-* `prompts/agents/season_scenario.md`: make cadence, event-horizon, selection-gate, concrete `risk_flags` wording, and exception semantics locally operational.
-* `skills/season/scenario-generation/SKILL.md`: make cadence an explicit scenario identity dimension, preserve future-only event logic, and block recommendation-driven collapse plus unsafe archetype/VO2 drift, including explicit caution examples for `risk_flags`.
+* `prompts/agents/season_scenario.md`: make cadence, event-horizon, selection-gate, concrete `best_suited_if` / `risk_flags` wording, and the remaining narrative field contract locally operational.
+* `skills/season/scenario-generation/SKILL.md`: make cadence an explicit scenario identity dimension, preserve future-only event logic, and block recommendation-driven collapse plus unsafe archetype/VO2 drift, including explicit field-completion examples for chooser labels, tradeoffs, event alignment, constraints, KPI notes, decisions, assumptions, and unknowns.
 * `src/rps/orchestrator/season_flow.py`: filter planning events to a future-only scenario-facing payload and bind event context into guardrail runtime context.
 * `src/rps/planning/scenario_recommendation.py`: expose reusable future-only planning-event filtering for deterministic recommendation context.
 * `src/rps/crewai_runtime/guardrails.py`: extend `season_scenarios_profile_quality(...)`.
@@ -121,7 +123,7 @@ Owner: Planning Runtime
 **Compatibility**
 
 * Backward compatible: Yes for schema, stricter for runtime validity.
-* Breaking changes: weak scenario outputs that silently collapse cadence, omit real selection gates, use vague `risk_flags`, misuse historical events, over-authorize domains, or use weak archetype/VO2 rationale will now fail guardrails.
+* Breaking changes: weak scenario outputs that silently collapse cadence, omit real selection gates, use vague `best_suited_if` / `risk_flags`, leave the remaining narrative fields generic, misuse historical events, over-authorize domains, or use weak archetype/VO2 rationale will now fail guardrails or require more retries to pass.
 * Fallback behavior: scenarios may still share cadence when explicitly justified in existing rationale fields.
 
 **Conflicts with ADRs / Principles**

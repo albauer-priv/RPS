@@ -60,17 +60,31 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "Do not infer active scenario logic from past" in prompt
     assert "`allowed_domains` means eligibility for later assignment only" in prompt
     assert "`best_suited_if` must state explicit positive selection conditions" in prompt
+    assert "Write `best_suited_if` as a short concrete selection sentence" in prompt
+    assert "`stable recovery`" in prompt and "`continuity priority`" in prompt
     assert "`risk_flags` must state explicit negative selection conditions" in prompt
     assert "Write `risk_flags` as short concrete caution sentences" in prompt
     assert "`under-deliver`" in prompt and "`too aggressive`" in prompt
+    assert "`core_idea` should say the central scenario promise" in prompt
+    assert "`typical_week_feel` should describe how a representative week feels" in prompt
+    assert "`event_alignment_notes` should describe only future active event logic" in prompt
+    assert "`kpi_guardrail_notes` should explain pacing, efficiency, or metabolic guardrails" in prompt
+    assert "`assumptions` should state what must remain true" in prompt
+    assert "`unknowns` should state the uncertainties" in prompt
     assert "`season_archetype` defaults to `none`." in prompt
     assert "Objective mismatch may be named as unresolved upstream input context only." in prompt
     assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in task_config
     assert "Only future / in-horizon events are provided to this task" in task_config
     assert "`best_suited_if`" in task_config and "must carry explicit positive selection conditions" in task_config
+    assert "Write `best_suited_if` as" in task_config
+    assert "`systematic progression`" in task_config
+    assert "`high load" in task_config and "tolerance`" in task_config
     assert "`risk_flags`" in task_config and "negative selection conditions" in task_config
     assert "Write `risk_flags` as" in task_config
     assert "`continuity break`" in task_config and "`recovery slip`" in task_config
+    assert "`core_idea` = one-sentence" in task_config
+    assert "`event_alignment_notes` = future-only active event logic" in task_config
+    assert "`data.notes` = global layer clarifications" in task_config
     assert "mismatch may be named as unresolved input context only" in task_config
     assert "do not resolve it" in task_config
     assert "If Scenario C includes `VO2MAX`" in scenario_skill
@@ -85,9 +99,16 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "do not infer active scenario logic from past or completed events" in scenario_skill
     assert "`allowed_domains` define eligibility for later assignment only" in scenario_skill
     assert "Ensure `best_suited_if` is a real positive selection gate" in scenario_skill
+    assert "preferred example: `Choose when continuity priority and uncertain recovery dominate.`" in scenario_skill
+    assert "preferred example: `Choose when stable recovery supports systematic progression.`" in scenario_skill
+    assert "preferred example: `Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.`" in scenario_skill
     assert "preferred example: `May under-deliver if high load tolerance is available.`" in scenario_skill
     assert "preferred example: `Less forgiving than A if continuity break or recovery slip appears.`" in scenario_skill
     assert "preferred example: `Too aggressive if fatigue risk or travel disruption appears.`" in scenario_skill
+    assert "Field completion contract:" in scenario_skill
+    assert "`core_idea` = one-sentence scenario promise" in scenario_skill
+    assert "`event_alignment_notes` = future-only active event logic" in scenario_skill
+    assert "`data.notes` = global scenario-layer clarifications" in scenario_skill
     assert "Use `none` by default." in scenario_skill
     assert "Do not claim that the scenario layer resolved or replaced the objective/event hierarchy." in scenario_skill
 

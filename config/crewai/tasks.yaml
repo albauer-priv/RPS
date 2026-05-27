@@ -140,7 +140,19 @@ tasks:
       providing `typical_week_feel`, `main_payoff`, `main_cost`,
       `what_gets_prioritized`, and `what_gets_de_emphasized`. `best_suited_if`
       must carry explicit positive selection conditions and `risk_flags` must
-      carry explicit negative selection conditions. Write `risk_flags` as
+      carry explicit negative selection conditions. Write `best_suited_if` as
+      a short concrete selection sentence, not generic praise or marketing
+      prose. Use explicit positive markers such as `stable recovery`,
+      `uncertain recovery`, `continuity priority`, `recoverability`,
+      `load tolerance`, `fatigue exposure tolerance`, `travel`, `logistics`,
+      `lower recovery margin`, or `recovery margin`. For Scenario A, make
+      `best_suited_if` clearly say that `continuity priority`, `uncertain
+      recovery`, `recoverability`, or `logistics robustness` are the reason to
+      choose it. For Scenario B, make `best_suited_if` clearly say that
+      `stable recovery` supports `systematic progression`. For Scenario C,
+      make `best_suited_if` clearly say that `stable recovery`, `high load
+      tolerance`, or `fatigue exposure tolerance` are already demonstrably
+      present. Write `risk_flags` as
       short concrete caution sentences, not generic labels or soft marketing
       prose. Use explicit caution markers such as `under-deliver`,
       `continuity break`, `recovery slip`, `fatigue risk`,
@@ -152,7 +164,22 @@ tasks:
       less forgiving if `continuity break` or `recovery slip` appears. For
       Scenario C, make at least one `risk_flags` line clearly say the scenario
       becomes `too aggressive` when `fatigue risk`, `travel disruption`,
-      `logistics disruption`, or `insufficient tolerance` appears. Emit normalized
+      `logistics disruption`, or `insufficient tolerance` appears. Fill the
+      remaining narrative fields with equally concrete scenario-specific
+      content: `name` = short chooser label; `core_idea` = one-sentence
+      scenario promise; `load_philosophy` = how load/recovery/specificity are
+      balanced; `risk_profile` = relative risk and why; `key_differences` =
+      explicit comparison against the other two scenarios; `typical_week_feel`
+      = how a representative week feels; `main_payoff` and `main_cost` = main
+      gain and tradeoff; `what_gets_prioritized` /
+      `what_gets_de_emphasized` = short emphasis phrases;
+      `event_alignment_notes` = future-only active event logic;
+      `constraint_summary` = binding practical constraints;
+      `kpi_guardrail_notes` = pacing/efficiency/metabolic guardrails;
+      `decision_notes` = why this cadence and posture were chosen;
+      `assumptions` = what must remain true; `unknowns` = what could change
+      scenario choice later; `data.notes` = global layer clarifications such
+      as future-only event logic and eligibility-not-authorization. Emit normalized
       `scenario_guidance.season_archetype` (`none` or
       `ceiling_first_durability`) plus `season_archetype_rationale`; default
       to `none` and use `ceiling_first_durability` only when the scenario
