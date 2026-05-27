@@ -236,7 +236,14 @@ When starting a new chat or agent session, do this in order:
    - Ensure ADR is created/updated if the change touches architecture, persistence, or cross-cutting contracts.
 
 6) **Implementation loop**:
-   - Code changes → tests → docs → changelog → commit/push.
+   - Code changes → tests → docs → changelog → release-impact check → commit/push.
+   - Before every `commit` or `push`, explicitly check whether the change requires a version-number bump under SemVer.
+   - Treat at least these as version-bump triggers unless clearly proven otherwise:
+     - public behavior changes visible to users or operators
+     - schema or contract changes
+     - workflow/deployment/runtime changes that alter operational behavior
+     - breaking removals, renamed interfaces, or changed defaults
+   - If no version bump is made, record that this was checked and deemed unnecessary.
 
 7) **Always record outcomes**:
    - Update `CHANGELOG.md`.
@@ -654,5 +661,6 @@ Rule: Secrets belong in `.streamlit/secrets.toml` locally and must be gitignored
 
 * No new dependencies without approval.
 * No schema changes without changelog/version bump.
+* No commit/push without checking whether a version-number bump is required.
 * No secrets in code or committed files.
 * No web search/external calls without explicit approval (except Coach when explicitly enabled).

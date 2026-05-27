@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed `AGENTS.md` so repository agents must check before every commit/push whether a SemVer version-number bump is required, especially for behavior, schema, contract, and operational workflow changes.
 - Changed the canonical documentation set (`doc/`) to match the new evidence runtime: architecture, flow, workspace, UI, and run-store docs now describe the repo-scoped evidence library, weekly `literature_refresh`, mandatory evidence curation, deterministic gating/activation, and System Status/History visibility for evidence refresh runs.
 - Changed evidence-refresh operations so automatic app-start refresh can be disabled explicitly via `RPS_EVIDENCE_REFRESH_ENABLED=0`, allowing deploy/build cycles to skip paid evidence curation while keeping manual UI refresh and the dedicated GitHub workflow available.
 - Changed the GitHub Actions evidence-refresh publish step to `fetch -> rebase -> retry push`, so workflow-generated evidence commits can survive normal concurrent updates to `main` instead of failing on non-fast-forward pushes.
