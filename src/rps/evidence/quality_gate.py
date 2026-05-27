@@ -40,6 +40,27 @@ _RPS_TRANSFER_MARKERS = (
     "taper",
 )
 
+_ABSTRACT_BOUNDED_MARKERS = (
+    "abstract",
+    "review abstract",
+    "source supports",
+    "abstract reports",
+    "abstract suggests",
+    "abstract describes",
+    "review suggests",
+    "review describes",
+)
+
+_IMPERATIVE_PREFIXES = (
+    "use ",
+    "keep ",
+    "favor ",
+    "treat ",
+    "preserve ",
+    "allow ",
+    "consider ",
+)
+
 
 @dataclass(frozen=True)
 class EvidenceQualityGateResult:
@@ -132,6 +153,15 @@ def evaluate_curation_quality(*, entry: EvidenceEntry, curation: EvidenceCuratio
         ).lower()
         if any(marker in all_text for marker in overclaim_markers):
             reasons.append("Abstract-curated source uses overclaiming language.")
+        if "background_only" in curation.allowed_uses and len(curation.allowed_uses) > 1:
+            reasons.append("Abstract-curated source cannot mix background_only with stronger allowed uses.")
+        if not _contains_any_marker(all_text, _ABSTRACT_BOUNDED_MARKERS):
+            reasons.append("Abstract-curated source must keep findings or implications explicitly abstract-bounded.")
+        imperative_implications = [
+            item for item in curation.practical_implications if item.strip().lower().startswith(_IMPERATIVE_PREFIXES)
+        ]
+        if imperative_implications:
+            reasons.append("Abstract-curated source uses direct imperative coaching language in practical implications.")
 
     if entry.source_kind == "core" and curation.study_type in {"narrative_review", "systematic_review", "meta_analysis"}:
         all_text = " ".join(curation.practical_implications).lower()

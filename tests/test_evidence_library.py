@@ -298,3 +298,101 @@ def test_metadata_only_quality_gate_rejects_tag_leakage_and_title_paraphrase_fin
     assert result.ok is False
     assert any("treats title/tag metadata as findings" in reason for reason in result.reasons)
     assert any("unsupported RPS transfer concepts" in reason for reason in result.reasons)
+
+
+def test_abstract_only_quality_gate_rejects_background_only_mix_and_imperative_language() -> None:
+    entry = load_core_studies()[0]
+    payload = EvidenceCurationModel(
+        question_or_focus="Scientific bases for precompetition tapering strategies.",
+        population_or_scope="Athletes preparing for competition.",
+        study_type="narrative_review",
+        what_was_examined=[
+            "Taper definition and reduction of training load.",
+            "Training intensity, volume, and frequency adjustments during tapering.",
+        ],
+        core_concepts=[
+            "taper",
+            "training load",
+            "training volume",
+        ],
+        key_takeaways=[
+            "The abstract describes tapering as a reduction of training load.",
+            "The abstract reports preserving intensity while reducing load.",
+            "The abstract suggests performance tends to improve during tapering.",
+        ],
+        important_findings=[
+            "The abstract reports that taper structure matters for performance.",
+            "The abstract describes maintained intensity with reduced volume.",
+            "The review abstract suggests taper duration influences outcomes.",
+        ],
+        practical_implications=[
+            "Use a structured taper rather than simply reducing training indiscriminately.",
+            "Keep intensity during the taper while lowering volume substantially.",
+            "Favor progressive nonlinear taper structures when preparing for competition.",
+        ],
+        what_this_does_not_justify=[
+            "It does not justify a one-size-fits-all taper prescription.",
+            "It does not justify athlete-specific protocol claims beyond the abstract.",
+        ],
+        important_limits=[
+            "Abstract-only material; no full-text protocol detail is available.",
+            "The source is a review abstract rather than a single dataset.",
+        ],
+        allowed_uses=[
+            "taper_support",
+            "planning_justification",
+            "background_only",
+        ],
+        evidence_posture="abstract_curated",
+        relevance_assessment=EvidenceRelevanceAssessmentModel(
+            overall_relevance="high",
+            relevance_rationale="High taper relevance for RPS.",
+            rps_domains_supported=["taper"],
+            target_audiences_supported=["phase_planning", "coach_chat"],
+            best_use_mode="core_scientific_support",
+            activation_recommendation="activate",
+        ),
+        summary_card=EvidenceSummaryCardModel(
+            focus="Precompetition tapering strategy.",
+            main_takeaway="The abstract supports tapering with maintained intensity and reduced load.",
+            main_limit="Abstract-only review evidence.",
+        ),
+        brief_sections=EvidenceBriefSectionsModel(
+            why_this_source_matters_for_rps="The abstract directly informs taper planning in late-phase endurance contexts.",
+            research_question_or_purpose="Summarize the scientific bases for tapering strategies.",
+            study_type="review",
+            population_or_context="Athletes in precompetition settings.",
+            what_was_actually_examined="The abstract discusses taper structure and associated performance changes.",
+            core_concepts=["taper", "training load", "training volume"],
+            key_takeaways=[
+                "The abstract describes tapering as a reduction of load.",
+                "The abstract reports maintained intensity during tapering.",
+                "The abstract suggests performance usually improves.",
+            ],
+            important_findings=[
+                "The abstract reports that taper structure matters.",
+                "The abstract describes reduced volume with maintained intensity.",
+                "The abstract suggests duration influences outcomes.",
+            ],
+            practical_implications_for_rps=[
+                "Use a structured taper rather than unstructured load reduction.",
+                "Keep intensity present while lowering volume.",
+                "Favor progressive nonlinear taper structures.",
+            ],
+            what_this_source_does_not_justify=[
+                "No one-size-fits-all taper prescription.",
+                "No athlete-specific protocol claims beyond the abstract.",
+            ],
+            limits_and_transfer_boundaries=[
+                "Abstract-only material.",
+                "No discipline-specific subgroup detail is available.",
+            ],
+            allowed_uses_in_rps=["taper_support", "planning_justification", "background_only"],
+            evidence_posture="abstract_curated",
+            source_material_basis="Curated from abstract-level material.",
+        ),
+    )
+    result = evaluate_curation_quality(entry=entry, curation=payload)
+    assert result.ok is False
+    assert any("cannot mix background_only with stronger allowed uses" in reason for reason in result.reasons)
+    assert any("direct imperative coaching language" in reason for reason in result.reasons)

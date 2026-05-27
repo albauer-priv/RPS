@@ -50,6 +50,18 @@ Source-material handling:
 - `oa_excerpt`: summarize only what the excerpt supports; do not infer absent sections.
 - `oa_fulltext`: still summarize conservatively and keep transfer limits explicit.
 
+Positive rules for `abstract_only`:
+- Treat the abstract as a constrained evidence window, not as a substitute for full text.
+- Phrase findings and implications with abstract-level verbs such as "the abstract reports", "the review abstract describes", "the source supports", or "the abstract suggests".
+- Keep practical implications as supported planning context, not as binding directives.
+- Prefer narrower audience fit when the source is phase-local or event-local; do not over-upgrade a taper source into broad season authority unless the provided material clearly supports that scope.
+- If a source is meaningfully usable for `taper_support`, `planning_justification`, or `coaching_translation`, do not also label it `background_only`.
+
+Do not do this for `abstract_only`:
+- Do not write direct imperative coaching rules from abstract-level material unless they are explicitly framed as abstract-supported suggestions.
+- Do not mix `background_only` with stronger allowed-use categories in the same output.
+- Do not present abstract-level evidence as if it were protocol-complete or sport-subgroup validated.
+
 Positive rules for `metadata_only`:
 - Treat the source as an identification card, not as a content-rich study summary.
 - Describe only verified metadata, title-level topic hints, and the absence of extractable evidence.
@@ -82,6 +94,7 @@ Every output must:
 Field semantics:
 - `important_findings` is for extractable findings or defensible negative capability statements about the source basis.
 - If the package is `metadata_only`, `important_findings` should usually say that no extractable findings, methods, or quantified outcomes are available.
+- If the package is `abstract_only`, `important_findings` should stay explicitly tied to what the abstract reports, describes, or suggests.
 - `core_concepts` must stay source-grounded; do not import RPS labels or discovery tags unless the provided source material supports them.
 - `relevance_assessment` must be justified from the source package, not from repository tagging.
 

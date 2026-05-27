@@ -1,5 +1,5 @@
 ---
-Version: 1.1
+Version: 1.2
 Status: Implemented
 Last-Updated: 2026-05-27
 Owner: Planning Runtime
@@ -65,6 +65,7 @@ Use `FEAT_repo_wide_evidence_library_and_refresh` for:
 * [x] Keep the curation agent self-contained with explicit RPS goals, relevance logic, and authority boundaries.
 * [x] Preserve the YAML library as the canonical registry while rendering long-form markdown briefs from structured curation output.
 * [x] Prevent metadata-only curation from inflating discovery tags or title paraphrases into pseudo-findings.
+* [x] Keep abstract-curated outputs explicitly source-bounded and block mixed `background_only` plus stronger allowed-use semantics.
 
 **Non-Goals**
 
@@ -83,6 +84,7 @@ Use `FEAT_repo_wide_evidence_library_and_refresh` for:
 * Existing evidence remains visible through `legacy_active` until re-curated into the new model.
 * Long study markdown pages include source-basis provenance, RPS relevance, practical implications, and explicit non-justified inferences.
 * Metadata-only sources are explicitly constrained to identification-level summaries, negative-capability findings, and `background_only` or `reject` relevance postures.
+* Abstract-only sources must phrase findings and implications as abstract-supported evidence, not as direct deterministic coaching commands.
 
 **UI impact**
 

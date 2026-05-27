@@ -101,7 +101,7 @@ tasks:
     agent: evidence_curation_specialist
     kind: internal_reasoning
     output: evidence_curation
-    description: Curate one verified evidence source package into an RPS-specific structured brief. Judge relevance through RPS goals, preserve authority boundaries, distinguish what the source supports from what it does not justify, and summarize only from the provided source material basis. Discovery tags are not evidence. For `metadata_only`, keep `important_findings` limited to negative-capability statements about missing extractable findings, methods, or results; do not mirror routing tags or title paraphrases as if they were empirical findings. Off-domain metadata-only sources should normally be `reject` or tightly bounded `background_only`.
+    description: Curate one verified evidence source package into an RPS-specific structured brief. Judge relevance through RPS goals, preserve authority boundaries, distinguish what the source supports from what it does not justify, and summarize only from the provided source material basis. Discovery tags are not evidence. For `metadata_only`, keep `important_findings` limited to negative-capability statements about missing extractable findings, methods, or results; do not mirror routing tags or title paraphrases as if they were empirical findings. Off-domain metadata-only sources should normally be `reject` or tightly bounded `background_only`. For `abstract_only`, keep findings and implications explicitly abstract-bounded, avoid direct imperative coaching language unless framed as abstract-supported guidance, and do not mix `background_only` with stronger allowed uses.
     expected_output: A fully populated structured evidence curation model.
 
   season_scenarios:

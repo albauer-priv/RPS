@@ -23,6 +23,7 @@ RPS_CURATION_CONTEXT = """RPS evidence-curation context:
 - Discovery tags are not evidence and must not be echoed as findings.
 - Title paraphrases are not empirical findings.
 - For metadata-only packages, keep the output narrow: use background-only or reject posture, avoid sport-specific transfer labels unless grounded in the provided title/text, and state clearly when no extractable findings are available.
+- For abstract-only packages, keep the language source-bounded: prefer "the abstract reports", "the abstract suggests", or "the review abstract describes" over direct coaching imperatives, and do not mix background_only with stronger allowed uses.
 """
 
 
@@ -171,6 +172,7 @@ def curate_source_package(
             "Summarize only from the provided material. Never invent locator data or unsupported findings.",
             "Discovery tags are routing metadata, not evidence. Do not mirror them as findings or relevance proof.",
             "For metadata-only packages, do not present title paraphrases as findings; use negative-capability statements about missing extractable findings instead.",
+            "For abstract-only packages, keep findings and implications explicitly abstract-bounded and avoid direct imperative coaching language unless it is framed as abstract-supported guidance.",
             "Return only the structured evidence curation model.",
             "",
             "Source package JSON:",

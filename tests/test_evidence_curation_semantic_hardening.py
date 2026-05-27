@@ -27,3 +27,14 @@ def test_evidence_curation_active_files_define_metadata_only_output_contract() -
     assert "keep `allowed_uses` at `background_only`" in prompt
     assert "`important_findings` should usually say that no extractable findings" in skill
     assert "Off-domain metadata-only sources should normally be `reject` or tightly bounded `background_only`" in tasks
+
+
+def test_evidence_curation_active_files_define_abstract_only_output_contract() -> None:
+    skill = _read("skills/evidence/source-curation/SKILL.md")
+    prompt = _read("prompts/agents/evidence_curation_specialist.md")
+    tasks = _read("config/crewai/tasks.yaml")
+
+    assert "Treat the abstract as a constrained evidence window" in skill
+    assert "prefer phrasing such as `the abstract reports`" in prompt
+    assert "do not mix `background_only` with stronger allowed uses" in prompt
+    assert "avoid direct imperative coaching language unless framed as abstract-supported guidance" in tasks
