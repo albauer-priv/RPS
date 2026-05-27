@@ -1,6 +1,6 @@
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-23
+Last-Updated: 2026-05-27
 Owner: Planning Runtime
 
 # Skills Source Migration Audit
@@ -59,8 +59,9 @@ Purpose:
 | `specs/knowledge/_shared/sources/specs/contract_precedence_spec.md` | Machine Layer | contract resolution remains external to `SKILL.md` |
 | `specs/knowledge/_shared/sources/contracts/*` | Machine Layer | cross-artifact contracts remain canonical outside skills, but workout authoring/runtime method from `contracts/week__workout_export_contract.md` is mirrored into active week workout skills so planning no longer depends on loading the legacy prose file at runtime |
 | `specs/knowledge/_shared/sources/schemas/bundled/*.json` | Machine Layer | canonical machine-readable validation |
-| `specs/knowledge/_shared/sources/evidence/durability_bibliography.md` | Retrieval / Reference | supporting bibliography only |
-| `specs/knowledge/_shared/sources/evidence/evidence_manifest.md` | Retrieval / Reference | evidence lookup only |
+| `skills/shared/durability-methodology/references/library/*` | Retrieval / Reference | canonical operative local evidence library |
+| `specs/knowledge/_shared/sources/evidence/durability_bibliography.md` | Deprecated Legacy | decommissioned compatibility marker only |
+| `specs/knowledge/_shared/sources/evidence/evidence_manifest.md` | Deprecated Legacy | decommissioned compatibility marker only |
 
 ## Validation Notes
 - Skill validation was performed by reading each planning-relevant prose source and checking that its operative rules now appear in the target `SKILL.md` files, not only in `references/`.
@@ -70,6 +71,7 @@ Purpose:
 - LoadEstimationSpec S5 and availability-capacity logic are now split deliberately: operative "when/why" rules live in the Season/Phase/Week `SKILL.md` files, while exact capacity and S5 band derivation is code-owned by `src/rps/planning/load_bands.py`. The calculated min/max bands are still injected into planning context: Season receives availability capacity min/typical/max, and Phase/Week receive deterministic S5 min/max bands once a Season corridor is available. CrewAI guardrails check that agents do not widen or overwrite those injected values.
 - Season scenario horizon and phase math remain informational in the artefacts, but are resolved deterministically by `src/rps/planning/season_structure.py`. Scenario generation receives last-event horizon math and cadence options before writing `SEASON_SCENARIOS`; Season planning receives selected-scenario phase math and a fixed phase-slot skeleton before writing `SEASON_PLAN`.
 - `src/rps/planning/deterministic_context.py` is now the shared injection registry for code-owned runtime facts. It renders Season Scenario Horizon, Cadence Options, Selected Scenario Structure, Season Phase Slot, Phase Execution, Week Calendar/Availability, Report Evidence, and Coach Operation contexts while keeping plan artefact schemas unchanged in this pass.
+- The canonical evidence library is now also gated by a mandatory curation pipeline. Verification-only bibliography candidates are not operative evidence until they pass structured curation, deterministic quality gate, and activation.
 - ProgressiveOverloadPolicy was re-audited after migration. Concrete rules now live directly in active `SKILL.md` bodies and detailed references: deterministic baseline selection (`0.80/1.15` exclusions, `2 of 3` gates), ramp ranges (`+5-8%`, `+8-12%`, rare `+12-18%`, sustained `>15%` warning), deload targets (`BL * 0.60-0.80` or prior week `* 0.55-0.75`), re-entry ranges (`BL * 0.85-1.05` by readiness), cadence-specific `3:1`, `2:1`, `2:1:1` week formulas, and `2:1:1` next-baseline update.
 - DurabilityFirstPrinciples was re-audited after migration. Binding guardrail content is now active in shared crew skills and method skills: principles cannot override governance artefacts, kJ/load-kJ remains primary while CTL/ATL/TSB and IF/intensity distribution are secondary/tertiary, durability claims require energetic preload, event labels and A/B/C conflict hierarchy are explicit, old Specificity/Taper intent is translated into schema-valid `Base | Build | Peak | Transition`, the Kinzlbauer-like ultra/brevet season archetype is available as season architecture only, and polarized/pyramidal intensity distribution is expressed as phase-level policy rather than week-level override authority.
 - LoadEstimationSpec was re-audited after migration. Binding rules now live in active load skills and code: `planned_kj` is mechanical work, `planned_weekly_load_kj` is weekly governance load, `weekly_kj_bands`/`weekly_load_corridor_kj` mirror governance bands, IF is applied exactly once, IF-direct fallback is limited to missing/unparseable/intent-only segment cases, output rounding is final-only, and S5 availability/KPI/progression/fallback logic is code-owned by `src/rps/planning/load_bands.py`.

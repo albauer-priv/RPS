@@ -48,6 +48,9 @@ crews:
   report_writer:
     planning:
       enabled: false
+  evidence_curation:
+    planning:
+      enabled: false
 
 agents:
   coach:
@@ -181,6 +184,10 @@ agents:
     reasoning:
       enabled: false
   season_constraints_reviewer:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
+  evidence_curation_specialist:
     model: gpt-5.4-mini
     reasoning:
       enabled: false

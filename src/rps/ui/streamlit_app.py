@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import threading
+from datetime import UTC, datetime
 from pathlib import Path
 
 import streamlit as st
 
 from rps.core.logging import prune_old_logs
+from rps.evidence import evidence_refresh_due, refresh_evidence_library
 from rps.rendering.auto_render import prune_rendered_sidecars
 from rps.ui.intervals_refresh import ensure_intervals_data
 from rps.ui.run_store import (
@@ -112,6 +114,39 @@ def _cleanup_runs_background(root: Path, retention_days: int) -> None:
             tracker.mark_failed(f"Run cleanup failed: {exc}")
 
 
+def _refresh_evidence_background(root: Path, athlete_id: str, interval_days: int) -> None:
+    """Run a due-only evidence refresh in the background for the current athlete."""
+
+    active = find_active_runs(
+        root,
+        athlete_id,
+        process_type="evidence",
+        process_subtype="literature_refresh",
+    )
+    if active:
+        return
+    if not evidence_refresh_due(now=datetime.now(UTC), interval_days=interval_days):
+        return
+    tracker = start_background_tracker(
+        root,
+        athlete_id,
+        process_type="evidence",
+        process_subtype="literature_refresh",
+        message="Refreshing canonical evidence library from primary sources.",
+        status="RUNNING",
+    )
+    try:
+        result = refresh_evidence_library(
+            refresh_interval_days=interval_days,
+            athlete_id=athlete_id,
+            workspace_root=root,
+            run_id=tracker.run_id,
+        )
+        tracker.mark_done(f"Evidence refresh complete: {result.get('status', 'done')}.")
+    except Exception as exc:  # pragma: no cover - background guard
+        tracker.mark_failed(f"Evidence refresh failed: {exc}")
+
+
 if "index_cleanup_started" not in st.session_state:
     st.session_state["index_cleanup_started"] = True
     cleanup_thread = threading.Thread(
@@ -146,6 +181,20 @@ if "run_cleanup_started" not in st.session_state:
         daemon=True,
     )
     run_cleanup_thread.start()
+
+if "evidence_refresh_started" not in st.session_state:
+    st.session_state["evidence_refresh_started"] = True
+    if os.getenv("RPS_EVIDENCE_REFRESH_ENABLED", "1").strip().lower() not in {"0", "false", "no"}:
+        try:
+            evidence_interval_days = int(os.getenv("RPS_EVIDENCE_REFRESH_INTERVAL_DAYS", "7"))
+        except ValueError:
+            evidence_interval_days = 7
+        evidence_refresh_thread = threading.Thread(
+            target=_refresh_evidence_background,
+            args=(SETTINGS.workspace_root, get_athlete_id(), evidence_interval_days),
+            daemon=True,
+        )
+        evidence_refresh_thread.start()
 
 home = st.Page("pages/home.py", title="Home", icon=":material/home:", default=True)
 coach = st.Page("pages/coach.py", title="Coach", icon=":material/support_agent:")

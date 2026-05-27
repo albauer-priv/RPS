@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-16
+Last-Updated: 2026-05-27
 Owner: Architecture
 ---
 # Agents and Responsibilities
@@ -51,6 +51,7 @@ This table answers the question "which crew takes over which part of planning?"
 | Domain | Crew | Stage | Internal purpose | Main tasks | Main result |
 | --- | --- | --- | --- | --- | --- |
 | Conversation | `coach_conversation` | Route / operate | Route one user turn and execute bounded preview/apply operations | `classify_turn`, `finalize_reply`, `coach_preview_*`, `coach_apply_*`, `resolve_pending_operation` | reply, preview, or confirmed bounded change |
+| Evidence | `evidence_curation` | Curate / gate-ready | Convert one verified source package into an RPS-specific structured brief before activation | `evidence_curate_source` | typed evidence curation payload for deterministic quality gate + activation |
 | Season scenarios | none, single-agent persisted task | Direct write | Generate advisory scenario alternatives | `season_scenarios` | `SEASON_SCENARIOS` |
 | Season | `season_planning` | Planning | Build internal season planning bundle from context, scenario intent, event anchors, constraints, KPI, and load logic | `season_context_read`, `season_scenario_interpretation`, `season_event_priority_review`, `season_peak_window_review`, `season_macrocycle_draft`, `season_constraint_review`, `season_historical_context_review`, `season_kpi_guidance_review`, `season_load_corridor_draft`, `season_progression_review`, `season_plan_finalize` | internal `SeasonPlanBundle` |
 | Season | `season_review` | Review | Audit season planning bundle for authority, governance, and constraint compliance | `season_governance_review`, `season_constraints_review`, `season_plan_audit`, `season_review` | approve / reject / bounded replan |
@@ -188,7 +189,7 @@ These mappings explain what is reused across crews beyond each agent's primary m
 | Bundle | Contents | Used for |
 | --- | --- | --- |
 | `factual_interfaces` | canonical interface specs for athlete profile, planning events, logistics, availability, wellness, season scenarios, scenario selection | artefact contract truth and field semantics |
-| `factual_evidence` | curated durability core/applied reference tables, archive bibliography, and evidence manifest | evidence-backed planning and review rationale |
+| `factual_evidence` | canonical local evidence library manifest plus generated core/applied reference tables | evidence-backed planning and review rationale with fail-closed locator handling |
 | `factual_week_refs` | workout JSON spec, workout syntax and validation, Intervals workout EBNF | week planning, workout authoring, syntax review, export safety |
 
 ### Crew-to-Knowledge Map
@@ -208,6 +209,7 @@ These mappings explain what is reused across crews beyond each agent's primary m
 
 | Topic | Current design note |
 | --- | --- |
+| Evidence curation | Weekly literature refresh now separates bibliographic verification from content readiness: verified sources pass through a dedicated CrewAI evidence-curation task, then deterministic quality-gate and activation logic before they appear in operative evidence surfaces. |
 | Crew definition source | The canonical crew stage groupings are defined in `src/rps/agents/crewai_backend.py` via task tuples such as `_SEASON_PLANNING_TASKS`, `_PHASE_REVIEW_TASKS`, and `_WEEK_PLANNING_TASKS`. |
 | Outer orchestration | Season, Phase, Week, Report, Feed-Forward, and Coach are wrapped by outer flows in `src/rps/crewai_runtime/flows.py`. |
 | Skill attachment model | One primary method skill is attached per agent; crew-level skills are operational and cross-cutting, not domain-method replacements. |

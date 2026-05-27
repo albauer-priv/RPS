@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "last_attempt_at": null,
+  "last_success_at": null,
+  "last_search_date": null,
+  "stats": {
+    "queries_run": 0,
+    "candidates_seen": 0,
+    "activated_new_entries": 0,
+    "duplicates_skipped": 0,
+    "unresolved_skipped": 0
+  }
+}

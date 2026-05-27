@@ -1,0 +1,2515 @@
+version: 2
+library_type: core_studies
+curation_schema_version: '1'
+generated_at: '2026-05-27T07:46:53.390614Z'
+entries:
+- id: dur_core_001
+  source_kind: core
+  authors: Maunder, E., Seiler, S., Mildenhall, M. J., Kilding, A. E., & Plews, D.
+    J.
+  year: 2021
+  title: The Importance of 'Durability' in the Physiological Profiling of Endurance
+    Athletes
+  journal_or_outlet: Sports Medicine
+  source_type: review
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/33886100/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - durability
+  - fatigue_resistance
+  - repeatability
+  question_or_focus: Clarify what durability means in endurance sport and why fresh
+    physiological profiling misses an important performance dimension.
+  population_or_scope: Conceptual Sports Medicine review across endurance sport, used
+    here primarily for cycling and long-duration planning interpretation.
+  what_was_examined: []
+  core_concepts:
+  - Durability is the ability to preserve performance and physiological control as
+    work accumulates over time.
+  - Late-session performance should be interpreted relative to energetic preload,
+    not as if the athlete were fresh.
+  - Fresh peak markers such as VO2max, FTP, or threshold values do not fully describe
+    how well an athlete resists prolonged fatigue.
+  important_findings:
+  - Argues that endurance profiling should include pre-fatigued assessment, not only
+    rested testing.
+  - Explains that the same fresh physiological profile can produce different late-session
+    outcomes once workload accumulates.
+  - Connects durability with pacing stability, drift behavior, and resistance to multi-system
+    decline over long sessions.
+  practical_implications:
+  - Use durability as a season/phase planning lens when the athlete targets long events,
+    not only as a retrospective metric.
+  - Do not infer long-event readiness from fresh FTP/VO2max values alone.
+  - Interpret late-session fade, drift, and execution stability as meaningful planning
+    signals.
+  key_takeaways:
+  - Defines durability as performance preservation under prolonged work.
+  - Separates durability from fresh peak metrics.
+  - Frames durability as a distinct profiling target, not a side-note.
+  what_this_does_not_justify: []
+  important_limits:
+  - Conceptual review; not a direct planning prescription.
+  - Does not provide one universal field test or a fixed numeric durability threshold.
+  allowed_uses:
+  - durability_definition
+  - durability_rationale
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Primary durability framing source for season/phase/week explanations.
+  summary_card:
+    focus: The Importance of 'Durability' in the Physiological Profiling of Endurance
+      Athletes
+    main_takeaway: Defines durability as performance preservation under prolonged
+      work.
+    main_limit: Conceptual review; not a direct planning prescription.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - repeatability
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Primary durability framing source for season/phase/week
+      explanations.
+    research_question_or_purpose: Clarify what durability means in endurance sport
+      and why fresh physiological profiling misses an important performance dimension.
+    study_type: review
+    population_or_context: Conceptual Sports Medicine review across endurance sport,
+      used here primarily for cycling and long-duration planning interpretation.
+    what_was_actually_examined: Clarify what durability means in endurance sport and
+      why fresh physiological profiling misses an important performance dimension.
+    core_concepts:
+    - Durability is the ability to preserve performance and physiological control
+      as work accumulates over time.
+    - Late-session performance should be interpreted relative to energetic preload,
+      not as if the athlete were fresh.
+    - Fresh peak markers such as VO2max, FTP, or threshold values do not fully describe
+      how well an athlete resists prolonged fatigue.
+    key_takeaways:
+    - Defines durability as performance preservation under prolonged work.
+    - Separates durability from fresh peak metrics.
+    - Frames durability as a distinct profiling target, not a side-note.
+    important_findings:
+    - Argues that endurance profiling should include pre-fatigued assessment, not
+      only rested testing.
+    - Explains that the same fresh physiological profile can produce different late-session
+      outcomes once workload accumulates.
+    - Connects durability with pacing stability, drift behavior, and resistance to
+      multi-system decline over long sessions.
+    practical_implications_for_rps:
+    - Use durability as a season/phase planning lens when the athlete targets long
+      events, not only as a retrospective metric.
+    - Do not infer long-event readiness from fresh FTP/VO2max values alone.
+    - Interpret late-session fade, drift, and execution stability as meaningful planning
+      signals.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Conceptual review; not a direct planning prescription.
+    - Does not provide one universal field test or a fixed numeric durability threshold.
+    allowed_uses_in_rps:
+    - durability_definition
+    - durability_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_001.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_001
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_002
+  source_kind: core
+  authors: Valenzuela, P. L., Alejo, L. B., Ozcoidi, L. M., Lucia, A., Santalla, A.,
+    & Barranco-Gil, D.
+  year: 2023
+  title: 'Durability in professional cyclists: a field study'
+  journal_or_outlet: International Journal of Sports Physiology and Performance
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1123/ijspp.2022-0243
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - fatigue_resistance
+  - brevet_ultra
+  question_or_focus: Examine durability in real professional-road-cycling conditions
+    rather than only in laboratory settings.
+  population_or_scope: Field study in professional cyclists; most applicable as high-level
+    performance context, not as a direct magnitude transfer to amateurs or masters.
+  what_was_examined: []
+  core_concepts:
+  - Durability can be studied under race-like accumulated work in the field.
+  - Real-world fatigue resistance matters even among athletes with already high fresh
+    physiological capacity.
+  - Field durability assessment complements laboratory profiling.
+  important_findings:
+  - Shows that late-session performance behavior can separate athletes even in a highly
+    trained cohort.
+  - Supports the idea that durability should be interpreted in the context of accumulated
+    work, not only fresh power values.
+  - Strengthens the case for using event-like or long-ride observations alongside
+    lab testing.
+  practical_implications:
+  - For RPS, prefer durability evidence from long rides, rehearsal events, and pre-fatigued
+    execution over fresh tests alone.
+  - Use the paper as support for field-context reasoning, not as a direct source of
+    week-by-week numeric targets.
+  - Treat professional-cycling magnitudes cautiously when planning brevet/masters
+    athletes.
+  key_takeaways:
+  - Supports field-based durability assessment.
+  - Links real-world fatigue resistance with performance.
+  - Reinforces that durability is visible under actual race workload.
+  what_this_does_not_justify: []
+  important_limits:
+  - Professional cycling context; do not over-transfer specific magnitudes.
+  - Field data improves ecological validity but limits universal prescription detail.
+  allowed_uses:
+  - durability_definition
+  - field_context
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 'Durability in professional cyclists: a field study'
+    main_takeaway: Supports field-based durability assessment.
+    main_limit: Professional cycling context; do not over-transfer specific magnitudes.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - brevet_ultra
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Examine durability in real professional-road-cycling
+      conditions rather than only in laboratory settings.
+    study_type: peer_reviewed
+    population_or_context: Field study in professional cyclists; most applicable as
+      high-level performance context, not as a direct magnitude transfer to amateurs
+      or masters.
+    what_was_actually_examined: Examine durability in real professional-road-cycling
+      conditions rather than only in laboratory settings.
+    core_concepts:
+    - Durability can be studied under race-like accumulated work in the field.
+    - Real-world fatigue resistance matters even among athletes with already high
+      fresh physiological capacity.
+    - Field durability assessment complements laboratory profiling.
+    key_takeaways:
+    - Supports field-based durability assessment.
+    - Links real-world fatigue resistance with performance.
+    - Reinforces that durability is visible under actual race workload.
+    important_findings:
+    - Shows that late-session performance behavior can separate athletes even in a
+      highly trained cohort.
+    - Supports the idea that durability should be interpreted in the context of accumulated
+      work, not only fresh power values.
+    - Strengthens the case for using event-like or long-ride observations alongside
+      lab testing.
+    practical_implications_for_rps:
+    - For RPS, prefer durability evidence from long rides, rehearsal events, and pre-fatigued
+      execution over fresh tests alone.
+    - Use the paper as support for field-context reasoning, not as a direct source
+      of week-by-week numeric targets.
+    - Treat professional-cycling magnitudes cautiously when planning brevet/masters
+      athletes.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Professional cycling context; do not over-transfer specific magnitudes.
+    - Field data improves ecological validity but limits universal prescription detail.
+    allowed_uses_in_rps:
+    - durability_definition
+    - field_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_002.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_002
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_003
+  source_kind: core
+  authors: Leo, P., Giorgi, A., Spragg, J., González, B. M., & Mujika, I.
+  year: 2022
+  title: 'Impact of prior accumulated work and intensity on power output in elite
+    road cyclists: a pilot study'
+  journal_or_outlet: German Journal of Exercise and Sport Research
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1007/s12662-022-00818-x
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - fatigue_resistance
+  - progressive_overload
+  question_or_focus: Assess how prior accumulated work and prior intensity affect
+    subsequent power output in elite road cyclists.
+  population_or_scope: Pilot study in elite road cyclists; useful mainly as preload-aware
+    interpretation evidence.
+  what_was_examined: []
+  core_concepts:
+  - Prior work changes the meaning of later power output.
+  - Durability interpretation must consider both how much work has been done and how
+    hard that work was.
+  - Late-session performance decline is context-sensitive, not an isolated trait.
+  important_findings:
+  - Supports the idea that accumulated workload and intensity history both shape what
+    an athlete can do later.
+  - Provides direct rationale for treating pre-fatigue and finish-quality work as
+    meaningful planning variables.
+  - Suggests that late-session decrements should not be evaluated without context
+    on the work that preceded them.
+  practical_implications:
+  - In RPS, use this as support for durability workouts that place meaningful work
+    after prior load rather than in a fresh state.
+  - Do not compare late-session execution across workouts without considering the
+    accumulated cost before the key block.
+  - Useful as conceptual support for pre-fatigue tolerance and finish-under-load design.
+  key_takeaways:
+  - Prior accumulated work changes later output.
+  - Supports preload-aware interpretation of late-session performance.
+  - Highlights that not all fatigue exposure is interchangeable.
+  what_this_does_not_justify: []
+  important_limits:
+  - Pilot study; use for framing, not strict thresholds.
+  - Small-sample elite context limits precision for broad athlete populations.
+  allowed_uses:
+  - progression_logic
+  - durability_rationale
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 'Impact of prior accumulated work and intensity on power output in elite
+      road cyclists: a pilot study'
+    main_takeaway: Prior accumulated work changes later output.
+    main_limit: Pilot study; use for framing, not strict thresholds.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - progressive_overload
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Assess how prior accumulated work and prior intensity
+      affect subsequent power output in elite road cyclists.
+    study_type: peer_reviewed
+    population_or_context: Pilot study in elite road cyclists; useful mainly as preload-aware
+      interpretation evidence.
+    what_was_actually_examined: Assess how prior accumulated work and prior intensity
+      affect subsequent power output in elite road cyclists.
+    core_concepts:
+    - Prior work changes the meaning of later power output.
+    - Durability interpretation must consider both how much work has been done and
+      how hard that work was.
+    - Late-session performance decline is context-sensitive, not an isolated trait.
+    key_takeaways:
+    - Prior accumulated work changes later output.
+    - Supports preload-aware interpretation of late-session performance.
+    - Highlights that not all fatigue exposure is interchangeable.
+    important_findings:
+    - Supports the idea that accumulated workload and intensity history both shape
+      what an athlete can do later.
+    - Provides direct rationale for treating pre-fatigue and finish-quality work as
+      meaningful planning variables.
+    - Suggests that late-session decrements should not be evaluated without context
+      on the work that preceded them.
+    practical_implications_for_rps:
+    - In RPS, use this as support for durability workouts that place meaningful work
+      after prior load rather than in a fresh state.
+    - Do not compare late-session execution across workouts without considering the
+      accumulated cost before the key block.
+    - Useful as conceptual support for pre-fatigue tolerance and finish-under-load
+      design.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Pilot study; use for framing, not strict thresholds.
+    - Small-sample elite context limits precision for broad athlete populations.
+    allowed_uses_in_rps:
+    - progression_logic
+    - durability_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_003.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_003
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_004
+  source_kind: core
+  authors: Spragg, J., Leo, P., & Swart, J.
+  year: 2023
+  title: The relationship between physiological characteristics and durability in
+    male professional cyclists
+  journal_or_outlet: Medicine & Science in Sports & Exercise
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1249/MSS.0000000000003019
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - repeatability
+  - metabolic_efficiency
+  question_or_focus: Relate durability in professional cyclists to standard physiological
+    characteristics and assess whether fresh markers fully explain fatigue resistance.
+  population_or_scope: Male professional cyclists; best used for concept separation
+    and metric interpretation.
+  what_was_examined: []
+  core_concepts:
+  - Durability relates to but is not identical with fresh physiological capacity.
+  - Athletes can share similar fresh markers while differing meaningfully in late-session
+    resilience.
+  - Performance determinants are multi-dimensional once long-duration fatigue enters
+    the picture.
+  important_findings:
+  - Supports durability as a distinct explanatory dimension in high-level cycling
+    performance.
+  - Shows why planners should be cautious when using threshold or VO2 markers as total
+    proxies for race ability.
+  - Strengthens the profiling case for combining fresh tests with long-duration execution
+    evidence.
+  practical_implications:
+  - In RPS, avoid letting one fresh KPI dominate long-event readiness decisions.
+  - Use this source when explaining why durability-oriented planning remains justified
+    even if fresh metrics improve only modestly.
+  - Supports richer athlete profiling where stable late-session execution matters.
+  key_takeaways:
+  - Durability relates to, but is not reducible to, fresh physiological markers.
+  - Supports separate interpretation of fresh capacity and fatigue resistance.
+  - Pushes against one-metric explanations of endurance success.
+  what_this_does_not_justify: []
+  important_limits:
+  - Professional male cycling population.
+  - Conceptually useful, but not a direct planning algorithm.
+  allowed_uses:
+  - durability_definition
+  - metric_interpretation
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: The relationship between physiological characteristics and durability in
+      male professional cyclists
+    main_takeaway: Durability relates to, but is not reducible to, fresh physiological
+      markers.
+    main_limit: Professional male cycling population.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - repeatability
+    - metabolic_efficiency
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Relate durability in professional cyclists to standard
+      physiological characteristics and assess whether fresh markers fully explain
+      fatigue resistance.
+    study_type: peer_reviewed
+    population_or_context: Male professional cyclists; best used for concept separation
+      and metric interpretation.
+    what_was_actually_examined: Relate durability in professional cyclists to standard
+      physiological characteristics and assess whether fresh markers fully explain
+      fatigue resistance.
+    core_concepts:
+    - Durability relates to but is not identical with fresh physiological capacity.
+    - Athletes can share similar fresh markers while differing meaningfully in late-session
+      resilience.
+    - Performance determinants are multi-dimensional once long-duration fatigue enters
+      the picture.
+    key_takeaways:
+    - Durability relates to, but is not reducible to, fresh physiological markers.
+    - Supports separate interpretation of fresh capacity and fatigue resistance.
+    - Pushes against one-metric explanations of endurance success.
+    important_findings:
+    - Supports durability as a distinct explanatory dimension in high-level cycling
+      performance.
+    - Shows why planners should be cautious when using threshold or VO2 markers as
+      total proxies for race ability.
+    - Strengthens the profiling case for combining fresh tests with long-duration
+      execution evidence.
+    practical_implications_for_rps:
+    - In RPS, avoid letting one fresh KPI dominate long-event readiness decisions.
+    - Use this source when explaining why durability-oriented planning remains justified
+      even if fresh metrics improve only modestly.
+    - Supports richer athlete profiling where stable late-session execution matters.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Professional male cycling population.
+    - Conceptually useful, but not a direct planning algorithm.
+    allowed_uses_in_rps:
+    - durability_definition
+    - metric_interpretation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_004.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_004
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_005
+  source_kind: core
+  authors: Matomäki, J., et al.
+  year: 2023
+  title: Durability is improved by both low and high intensity endurance training
+  journal_or_outlet: Frontiers in Physiology
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.3389/fphys.2023.1138273
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - intensity_distribution
+  - progressive_overload
+  question_or_focus: Test whether both low-intensity and high-intensity endurance
+    training can improve durability.
+  population_or_scope: Endurance-training intervention context; useful for intensity-distribution
+    nuance rather than absolutist method claims.
+  what_was_examined: []
+  core_concepts:
+  - Durability can improve through more than one training route.
+  - Low intensity and high intensity are not mutually exclusive in durability development.
+  - Programming quality depends on dose, context, and recoverability, not slogans.
+  important_findings:
+  - Suggests durability is trainable across different intensity emphases when the
+    program is coherent.
+  - Undercuts simplistic claims that only easy volume or only hard work can build
+    durability.
+  - Supports a programming view where total structure and recovery matter as much
+    as isolated intensity labels.
+  practical_implications:
+  - In RPS, this supports durability-first planning that uses mainly volume/work expansion
+    but does not ban all quality work.
+  - Do not translate the study into permission for uncontrolled intensity density.
+  - Useful when explaining why limited threshold/HIIT support can coexist with a durability-led
+    plan.
+  key_takeaways:
+  - Both low- and high-intensity endurance work can improve durability.
+  - Supports context-dependent programming instead of one-method absolutism.
+  - Reinforces that durability development does not belong to one ideology.
+  what_this_does_not_justify: []
+  important_limits:
+  - Does not justify unrestricted intensity density.
+  - Use for strategic context, not as a universal template for every athlete.
+  allowed_uses:
+  - progression_logic
+  - intensity_context
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Durability is improved by both low and high intensity endurance training
+    main_takeaway: Both low- and high-intensity endurance work can improve durability.
+    main_limit: Does not justify unrestricted intensity density.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - intensity_distribution
+    - progressive_overload
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Test whether both low-intensity and high-intensity
+      endurance training can improve durability.
+    study_type: peer_reviewed
+    population_or_context: Endurance-training intervention context; useful for intensity-distribution
+      nuance rather than absolutist method claims.
+    what_was_actually_examined: Test whether both low-intensity and high-intensity
+      endurance training can improve durability.
+    core_concepts:
+    - Durability can improve through more than one training route.
+    - Low intensity and high intensity are not mutually exclusive in durability development.
+    - Programming quality depends on dose, context, and recoverability, not slogans.
+    key_takeaways:
+    - Both low- and high-intensity endurance work can improve durability.
+    - Supports context-dependent programming instead of one-method absolutism.
+    - Reinforces that durability development does not belong to one ideology.
+    important_findings:
+    - Suggests durability is trainable across different intensity emphases when the
+      program is coherent.
+    - Undercuts simplistic claims that only easy volume or only hard work can build
+      durability.
+    - Supports a programming view where total structure and recovery matter as much
+      as isolated intensity labels.
+    practical_implications_for_rps:
+    - In RPS, this supports durability-first planning that uses mainly volume/work
+      expansion but does not ban all quality work.
+    - Do not translate the study into permission for uncontrolled intensity density.
+    - Useful when explaining why limited threshold/HIIT support can coexist with a
+      durability-led plan.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Does not justify unrestricted intensity density.
+    - Use for strategic context, not as a universal template for every athlete.
+    allowed_uses_in_rps:
+    - progression_logic
+    - intensity_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_005.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_005
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_006
+  source_kind: core
+  authors: Jones, A. M.
+  year: 2024
+  title: 'The fourth dimension: physiological resilience as an independent determinant
+    of endurance exercise performance'
+  journal_or_outlet: The Journal of Physiology
+  source_type: review
+  study_type: review
+  reference_locator: https://doi.org/10.1113/JP284205
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - repeatability
+  - periodization
+  question_or_focus: Argue for physiological resilience as an additional independent
+    determinant of endurance performance.
+  population_or_scope: Conceptual physiology review across endurance exercise; applicable
+    as framing for planning logic.
+  what_was_examined: []
+  core_concepts:
+  - Resilience or durability is a performance dimension in its own right.
+  - Rested-state physiology is incomplete without understanding how it degrades under
+    prolonged strain.
+  - Long-duration performance depends on preserving function, not just starting from
+    a high level.
+  important_findings:
+  - Reinforces that endurance success depends partly on how slowly capabilities decay
+    with accumulated work.
+  - Provides conceptual support for distinguishing fresh fitness from resilience under
+    stress.
+  - Helps justify planning language that treats long-event stability as more than
+    a by-product.
+  practical_implications:
+  - Use this when explaining why RPS evaluates repeatability and execution stability,
+    not only peak test values.
+  - Supports season logic that prioritizes sustainable long-duration function for
+    brevet-style demands.
+  - Useful as a framing source for recovery-protected progression.
+  key_takeaways:
+  - Frames resilience/durability as an independent performance dimension.
+  - Supports profiling beyond fresh performance markers.
+  - Strengthens durability as a planning-relevant construct.
+  what_this_does_not_justify: []
+  important_limits:
+  - Conceptual framing, not a session prescription source.
+  - Does not provide direct load bands, ramp percentages, or taper recipes.
+  allowed_uses:
+  - durability_definition
+  - planning_rationale
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 'The fourth dimension: physiological resilience as an independent determinant
+      of endurance exercise performance'
+    main_takeaway: Frames resilience/durability as an independent performance dimension.
+    main_limit: Conceptual framing, not a session prescription source.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - repeatability
+    - periodization
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Argue for physiological resilience as an additional
+      independent determinant of endurance performance.
+    study_type: review
+    population_or_context: Conceptual physiology review across endurance exercise;
+      applicable as framing for planning logic.
+    what_was_actually_examined: Argue for physiological resilience as an additional
+      independent determinant of endurance performance.
+    core_concepts:
+    - Resilience or durability is a performance dimension in its own right.
+    - Rested-state physiology is incomplete without understanding how it degrades
+      under prolonged strain.
+    - Long-duration performance depends on preserving function, not just starting
+      from a high level.
+    key_takeaways:
+    - Frames resilience/durability as an independent performance dimension.
+    - Supports profiling beyond fresh performance markers.
+    - Strengthens durability as a planning-relevant construct.
+    important_findings:
+    - Reinforces that endurance success depends partly on how slowly capabilities
+      decay with accumulated work.
+    - Provides conceptual support for distinguishing fresh fitness from resilience
+      under stress.
+    - Helps justify planning language that treats long-event stability as more than
+      a by-product.
+    practical_implications_for_rps:
+    - Use this when explaining why RPS evaluates repeatability and execution stability,
+      not only peak test values.
+    - Supports season logic that prioritizes sustainable long-duration function for
+      brevet-style demands.
+    - Useful as a framing source for recovery-protected progression.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Conceptual framing, not a session prescription source.
+    - Does not provide direct load bands, ramp percentages, or taper recipes.
+    allowed_uses_in_rps:
+    - durability_definition
+    - planning_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_006.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_006
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_007
+  source_kind: core
+  authors: Barsumyan, A., Soost, C., Shyla, R., Graw, J. A., Bliemel, C., & Burchard,
+    R.
+  year: 2025
+  title: Durability as an independent parameter of endurance performance in cycling
+  journal_or_outlet: BMC Sports Science, Medicine and Rehabilitation
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1186/s13102-025-01238-8
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - fatigue_resistance
+  - repeatability
+  question_or_focus: Assess durability as an independent parameter of endurance performance
+    in cycling.
+  population_or_scope: Cycling-focused peer-reviewed source; most useful as concept
+    reinforcement and field-performance interpretation.
+  what_was_examined: []
+  core_concepts:
+  - Durability can stand as its own parameter rather than collapsing into threshold
+    or VO2 style markers.
+  - Cycling performance under prolonged load has explanatory dimensions beyond fresh
+    physiology.
+  - Independent-parameter framing strengthens the profiling case for late-session
+    assessment.
+  important_findings:
+  - Adds peer-reviewed support to the argument that durability deserves its own place
+    in performance analysis.
+  - Improves confidence that late-session decline is not merely noise around fresh-performance
+    metrics.
+  - Strengthens the rationale for looking at long-duration execution as a real planning
+    signal.
+  practical_implications:
+  - In RPS, this supports using durability-oriented language and analysis without
+    pretending that FTP or threshold alone is sufficient.
+  - Useful when defending why long aerobic execution and finish quality remain central
+    in ultra/brevet contexts.
+  - Best used as conceptual support, not as a strict numeric source.
+  key_takeaways:
+  - Reinforces durability as separable from other performance dimensions.
+  - Supports independent profiling of fatigue resistance.
+  - Helps justify durability-specific evaluation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Use as support for concept separation, not governance.
+  - Do not infer exact planning dosage from the paper title-level contribution alone.
+  allowed_uses:
+  - durability_rationale
+  - field_context
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Durability as an independent parameter of endurance performance in cycling
+    main_takeaway: Reinforces durability as separable from other performance dimensions.
+    main_limit: Use as support for concept separation, not governance.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - repeatability
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Assess durability as an independent parameter of
+      endurance performance in cycling.
+    study_type: peer_reviewed
+    population_or_context: Cycling-focused peer-reviewed source; most useful as concept
+      reinforcement and field-performance interpretation.
+    what_was_actually_examined: Assess durability as an independent parameter of endurance
+      performance in cycling.
+    core_concepts:
+    - Durability can stand as its own parameter rather than collapsing into threshold
+      or VO2 style markers.
+    - Cycling performance under prolonged load has explanatory dimensions beyond fresh
+      physiology.
+    - Independent-parameter framing strengthens the profiling case for late-session
+      assessment.
+    key_takeaways:
+    - Reinforces durability as separable from other performance dimensions.
+    - Supports independent profiling of fatigue resistance.
+    - Helps justify durability-specific evaluation.
+    important_findings:
+    - Adds peer-reviewed support to the argument that durability deserves its own
+      place in performance analysis.
+    - Improves confidence that late-session decline is not merely noise around fresh-performance
+      metrics.
+    - Strengthens the rationale for looking at long-duration execution as a real planning
+      signal.
+    practical_implications_for_rps:
+    - In RPS, this supports using durability-oriented language and analysis without
+      pretending that FTP or threshold alone is sufficient.
+    - Useful when defending why long aerobic execution and finish quality remain central
+      in ultra/brevet contexts.
+    - Best used as conceptual support, not as a strict numeric source.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Use as support for concept separation, not governance.
+    - Do not infer exact planning dosage from the paper title-level contribution alone.
+    allowed_uses_in_rps:
+    - durability_rationale
+    - field_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_007.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_007
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_008
+  source_kind: core
+  authors: Meixner, B. J., Joyner, M. J., & Sperlich, B.
+  year: 2025
+  title: 'Durability, fatigability, repeatability, and resilience in endurance sports:
+    definitions, distinctions, and implications'
+  journal_or_outlet: Journal of Applied Physiology
+  source_type: review
+  study_type: review
+  reference_locator: https://doi.org/10.1152/japplphysiol.00343.2025
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - repeatability
+  - masters
+  question_or_focus: Clarify the distinctions between durability, fatigability, repeatability,
+    and resilience in endurance sport.
+  population_or_scope: Terminology and conceptual review across endurance sports;
+    useful for language discipline and concept separation.
+  what_was_examined: []
+  core_concepts:
+  - Durability, fatigability, repeatability, and resilience are related but not interchangeable
+    constructs.
+  - Clear terminology matters because sloppy labels create bad planning and bad interpretation.
+  - Different constructs answer different questions about performance decline and
+    recovery.
+  important_findings:
+  - Explains why durability should not be used as a catch-all label for every fatigue-related
+    phenomenon.
+  - Helps separate within-session preservation, between-effort repeatability, and
+    broader resilience concepts.
+  - Improves methodological clarity when discussing testing, profiling, and program
+    design.
+  practical_implications:
+  - Use this source to keep RPS language precise when explaining athlete status or
+    plan intent.
+  - Helpful for avoiding conceptual drift between long-session durability and repeatability
+    of hard intervals.
+  - Supports clean distinctions in audit and review commentary.
+  key_takeaways:
+  - Clarifies terminology between durability and adjacent concepts.
+  - Reduces conceptual slippage in performance discussions.
+  - Supports more precise communication in planning and review.
+  what_this_does_not_justify: []
+  important_limits:
+  - Terminology review; not a direct load-design rule source.
+  - Improves semantic quality more than it dictates concrete session design.
+  allowed_uses:
+  - durability_definition
+  - terminology_guardrail
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 'Durability, fatigability, repeatability, and resilience in endurance sports:
+      definitions, distinctions, and implications'
+    main_takeaway: Clarifies terminology between durability and adjacent concepts.
+    main_limit: Terminology review; not a direct load-design rule source.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - repeatability
+    - masters
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Clarify the distinctions between durability, fatigability,
+      repeatability, and resilience in endurance sport.
+    study_type: review
+    population_or_context: Terminology and conceptual review across endurance sports;
+      useful for language discipline and concept separation.
+    what_was_actually_examined: Clarify the distinctions between durability, fatigability,
+      repeatability, and resilience in endurance sport.
+    core_concepts:
+    - Durability, fatigability, repeatability, and resilience are related but not
+      interchangeable constructs.
+    - Clear terminology matters because sloppy labels create bad planning and bad
+      interpretation.
+    - Different constructs answer different questions about performance decline and
+      recovery.
+    key_takeaways:
+    - Clarifies terminology between durability and adjacent concepts.
+    - Reduces conceptual slippage in performance discussions.
+    - Supports more precise communication in planning and review.
+    important_findings:
+    - Explains why durability should not be used as a catch-all label for every fatigue-related
+      phenomenon.
+    - Helps separate within-session preservation, between-effort repeatability, and
+      broader resilience concepts.
+    - Improves methodological clarity when discussing testing, profiling, and program
+      design.
+    practical_implications_for_rps:
+    - Use this source to keep RPS language precise when explaining athlete status
+      or plan intent.
+    - Helpful for avoiding conceptual drift between long-session durability and repeatability
+      of hard intervals.
+    - Supports clean distinctions in audit and review commentary.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Terminology review; not a direct load-design rule source.
+    - Improves semantic quality more than it dictates concrete session design.
+    allowed_uses_in_rps:
+    - durability_definition
+    - terminology_guardrail
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_008.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_008
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_009
+  source_kind: core
+  authors: Peeters, W. M., Barrett, M., & Podlogar, T.
+  year: 2025
+  title: What is a cycling race simulation anyway? A review on protocols to assess
+    durability in cycling
+  journal_or_outlet: European Journal of Applied Physiology
+  source_type: review
+  study_type: review
+  reference_locator: https://doi.org/10.1007/s00421-025-05725-1
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - fatigue_resistance
+  - brevet_ultra
+  question_or_focus: Review how cycling race simulations and durability-assessment
+    protocols are designed and what they can and cannot tell us.
+  population_or_scope: Review of cycling-specific durability assessment methods and
+    race-simulation logic.
+  what_was_examined: []
+  core_concepts:
+  - Durability assessment depends heavily on protocol design and simulation realism.
+  - Not every race simulation measures the same thing or imposes the same preload.
+  - Method choice influences the interpretation of durability outcomes.
+  important_findings:
+  - Highlights that simulation structure, preload, and measurement timing materially
+    affect durability conclusions.
+  - Explains why protocol drift can make cross-study comparisons messy.
+  - Supports a more critical reading of claims that a given test fully captures race-like
+    durability.
+  practical_implications:
+  - In RPS, use this when choosing or interpreting rehearsal sessions and durability
+    diagnostics.
+  - Do not treat one short protocol as a universal replacement for event-like long-ride
+    evidence.
+  - Helpful for explaining why field context and accumulated-work realism matter.
+  key_takeaways:
+  - Reviews durability assessment protocols and simulation limits.
+  - Shows that protocol design shapes what durability evidence means.
+  - Supports caution when comparing studies or field tests.
+  what_this_does_not_justify: []
+  important_limits:
+  - Protocol review, not direct programming authority.
+  - It informs test interpretation more than it prescribes exact training structure.
+  allowed_uses:
+  - protocol_context
+  - durability_rationale
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: What is a cycling race simulation anyway? A review on protocols to assess
+      durability in cycling
+    main_takeaway: Reviews durability assessment protocols and simulation limits.
+    main_limit: Protocol review, not direct programming authority.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - brevet_ultra
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Review how cycling race simulations and durability-assessment
+      protocols are designed and what they can and cannot tell us.
+    study_type: review
+    population_or_context: Review of cycling-specific durability assessment methods
+      and race-simulation logic.
+    what_was_actually_examined: Review how cycling race simulations and durability-assessment
+      protocols are designed and what they can and cannot tell us.
+    core_concepts:
+    - Durability assessment depends heavily on protocol design and simulation realism.
+    - Not every race simulation measures the same thing or imposes the same preload.
+    - Method choice influences the interpretation of durability outcomes.
+    key_takeaways:
+    - Reviews durability assessment protocols and simulation limits.
+    - Shows that protocol design shapes what durability evidence means.
+    - Supports caution when comparing studies or field tests.
+    important_findings:
+    - Highlights that simulation structure, preload, and measurement timing materially
+      affect durability conclusions.
+    - Explains why protocol drift can make cross-study comparisons messy.
+    - Supports a more critical reading of claims that a given test fully captures
+      race-like durability.
+    practical_implications_for_rps:
+    - In RPS, use this when choosing or interpreting rehearsal sessions and durability
+      diagnostics.
+    - Do not treat one short protocol as a universal replacement for event-like long-ride
+      evidence.
+    - Helpful for explaining why field context and accumulated-work realism matter.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Protocol review, not direct programming authority.
+    - It informs test interpretation more than it prescribes exact training structure.
+    allowed_uses_in_rps:
+    - protocol_context
+    - durability_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_009.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_009
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_010
+  source_kind: core
+  authors: Seiler, S.
+  year: 2010
+  title: What is best practice for training intensity and duration distribution in
+    endurance athletes?
+  journal_or_outlet: International Journal of Sports Physiology and Performance
+  source_type: review
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/20861519/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - intensity_distribution
+  - periodization
+  - endurance
+  question_or_focus: Summarize best-practice thinking on intensity and duration distribution
+    in endurance training.
+  population_or_scope: Broad endurance-sport review; applicable as high-level distribution
+    logic rather than a one-size-fits-all recipe.
+  what_was_examined: []
+  core_concepts:
+  - Endurance performance depends not only on total work but on how intensity is distributed
+    across training.
+  - A disciplined endurance-heavy distribution often supports sustainable development.
+  - Intensity distribution is a structural choice, not a license for simplistic ideology.
+  important_findings:
+  - Provides a widely cited rationale for endurance-heavy and carefully bounded higher-intensity
+    distribution.
+  - Supports the idea that strong endurance outcomes can coexist with limited but
+    purposeful higher-intensity work.
+  - Strengthens the case against threshold-saturated monotony as a default.
+  practical_implications:
+  - In RPS, use this for broad intensity-distribution framing, especially when defending
+    endurance-led macrocycle design.
+  - Do not misuse it as a direct weekly formula for every athlete or event context.
+  - Helpful when explaining why more intensity is not automatically better.
+  key_takeaways:
+  - Supports disciplined endurance intensity distribution.
+  - Frames distribution as a strategic planning choice.
+  - Favors structure over random intensity accumulation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Broad review; not a direct week-level prescription source.
+  - The paper informs strategy more than exact per-phase dosage.
+  allowed_uses:
+  - intensity_context
+  - planning_rationale
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: What is best practice for training intensity and duration distribution
+      in endurance athletes?
+    main_takeaway: Supports disciplined endurance intensity distribution.
+    main_limit: Broad review; not a direct week-level prescription source.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - intensity_distribution
+    - periodization
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Summarize best-practice thinking on intensity and
+      duration distribution in endurance training.
+    study_type: review
+    population_or_context: Broad endurance-sport review; applicable as high-level
+      distribution logic rather than a one-size-fits-all recipe.
+    what_was_actually_examined: Summarize best-practice thinking on intensity and
+      duration distribution in endurance training.
+    core_concepts:
+    - Endurance performance depends not only on total work but on how intensity is
+      distributed across training.
+    - A disciplined endurance-heavy distribution often supports sustainable development.
+    - Intensity distribution is a structural choice, not a license for simplistic
+      ideology.
+    key_takeaways:
+    - Supports disciplined endurance intensity distribution.
+    - Frames distribution as a strategic planning choice.
+    - Favors structure over random intensity accumulation.
+    important_findings:
+    - Provides a widely cited rationale for endurance-heavy and carefully bounded
+      higher-intensity distribution.
+    - Supports the idea that strong endurance outcomes can coexist with limited but
+      purposeful higher-intensity work.
+    - Strengthens the case against threshold-saturated monotony as a default.
+    practical_implications_for_rps:
+    - In RPS, use this for broad intensity-distribution framing, especially when defending
+      endurance-led macrocycle design.
+    - Do not misuse it as a direct weekly formula for every athlete or event context.
+    - Helpful when explaining why more intensity is not automatically better.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Broad review; not a direct week-level prescription source.
+    - The paper informs strategy more than exact per-phase dosage.
+    allowed_uses_in_rps:
+    - intensity_context
+    - planning_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_010.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_010
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_011
+  source_kind: core
+  authors: Stöggl, T. L., & Sperlich, B.
+  year: 2014
+  title: Polarized training has greater impact on key endurance variables than threshold,
+    high intensity, or high volume training
+  journal_or_outlet: Frontiers in Physiology
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/24550842/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - intensity_distribution
+  - threshold
+  - vo2max
+  question_or_focus: Compare polarized, threshold, high-intensity, and high-volume
+    training effects on key endurance variables.
+  population_or_scope: Comparative peer-reviewed training study; useful as intensity-distribution
+    context rather than a universal override rule.
+  what_was_examined: []
+  core_concepts:
+  - Different intensity-distribution models can lead to different adaptation profiles.
+  - Polarized distribution is often discussed as an alternative to threshold-heavy
+    loading.
+  - Method comparisons should not be flattened into “more VO2 is always better.”
+  important_findings:
+  - Supports the idea that how intensity is organized matters as much as the presence
+    of hard training itself.
+  - Provides comparative context for why threshold-heavy accumulation is not automatically
+    the strongest default.
+  - Useful when discussing why high-intensity work needs bounded purpose and context.
+  practical_implications:
+  - In RPS, this can support conservative Scenario C reasoning without turning VO2
+    work into a global permission slip.
+  - Use it to explain distribution choices, not to authorize hard-intensity density
+    in every build.
+  - Helpful for contrasting durability-led programming with threshold-led overreach.
+  key_takeaways:
+  - Supports disciplined intensity distribution comparisons.
+  - Warns against threshold-heavy default thinking.
+  - Does not justify indiscriminate high-intensity escalation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Does not license arbitrary VO2MAX escalation in planning.
+  - Comparative training studies do not eliminate the need for athlete-specific recovery
+    logic.
+  allowed_uses:
+  - intensity_context
+  - vo2max_context
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Polarized training has greater impact on key endurance variables than threshold,
+      high intensity, or high volume training
+    main_takeaway: Supports disciplined intensity distribution comparisons.
+    main_limit: Does not license arbitrary VO2MAX escalation in planning.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - intensity_distribution
+    - threshold
+    - vo2max
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Compare polarized, threshold, high-intensity, and
+      high-volume training effects on key endurance variables.
+    study_type: peer_reviewed
+    population_or_context: Comparative peer-reviewed training study; useful as intensity-distribution
+      context rather than a universal override rule.
+    what_was_actually_examined: Compare polarized, threshold, high-intensity, and
+      high-volume training effects on key endurance variables.
+    core_concepts:
+    - Different intensity-distribution models can lead to different adaptation profiles.
+    - Polarized distribution is often discussed as an alternative to threshold-heavy
+      loading.
+    - Method comparisons should not be flattened into “more VO2 is always better.”
+    key_takeaways:
+    - Supports disciplined intensity distribution comparisons.
+    - Warns against threshold-heavy default thinking.
+    - Does not justify indiscriminate high-intensity escalation.
+    important_findings:
+    - Supports the idea that how intensity is organized matters as much as the presence
+      of hard training itself.
+    - Provides comparative context for why threshold-heavy accumulation is not automatically
+      the strongest default.
+    - Useful when discussing why high-intensity work needs bounded purpose and context.
+    practical_implications_for_rps:
+    - In RPS, this can support conservative Scenario C reasoning without turning VO2
+      work into a global permission slip.
+    - Use it to explain distribution choices, not to authorize hard-intensity density
+      in every build.
+    - Helpful for contrasting durability-led programming with threshold-led overreach.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Does not license arbitrary VO2MAX escalation in planning.
+    - Comparative training studies do not eliminate the need for athlete-specific
+      recovery logic.
+    allowed_uses_in_rps:
+    - intensity_context
+    - vo2max_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_011.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_011
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_012
+  source_kind: core
+  authors: Mujika, I., & Padilla, S.
+  year: 2003
+  title: Scientific bases for precompetition tapering strategies
+  journal_or_outlet: Medicine & Science in Sports & Exercise
+  source_type: review
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/12840640/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - taper
+  - periodization
+  - endurance
+  question_or_focus: Summarize the scientific basis of tapering before competition.
+  population_or_scope: General endurance taper review; applicable as a strategic framework,
+    not as a rigid event-week template.
+  what_was_examined: []
+  core_concepts:
+  - Effective tapering typically reduces training volume while preserving useful readiness
+    and specificity.
+  - Freshening is not equivalent to simply doing less of everything at random.
+  - Taper quality depends on fatigue removal without flattening the athlete.
+  important_findings:
+  - Provides the classic evidence base for reduced-volume, quality-preserving taper
+    logic.
+  - Explains why late-phase load reduction should be structured rather than interpreted
+    as normal build progression.
+  - Supports the idea that event-contained work can coexist with reduced training
+    load.
+  practical_implications:
+  - In RPS, this supports taper/freshening semantics where load bands early in taper
+    are labels, not build permission.
+  - Useful for explaining why final taper weeks should remove accumulated fatigue
+    without losing event sharpness.
+  - Supports blocking heavy K3/threshold/VO2 style fatigue late in taper.
+  key_takeaways:
+  - Supports reduced-volume taper logic with maintained readiness.
+  - Frames tapering as fatigue removal with preserved race readiness.
+  - Helps distinguish tapering from simple undertraining.
+  what_this_does_not_justify: []
+  important_limits:
+  - General taper review; event-specific implementation still needs local constraints.
+  - Does not prescribe one exact taper shape for every endurance event.
+  allowed_uses:
+  - taper_support
+  - planning_rationale
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Scientific bases for precompetition tapering strategies
+    main_takeaway: Supports reduced-volume taper logic with maintained readiness.
+    main_limit: General taper review; event-specific implementation still needs local
+      constraints.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - taper
+    - periodization
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Summarize the scientific basis of tapering before
+      competition.
+    study_type: review
+    population_or_context: General endurance taper review; applicable as a strategic
+      framework, not as a rigid event-week template.
+    what_was_actually_examined: Summarize the scientific basis of tapering before
+      competition.
+    core_concepts:
+    - Effective tapering typically reduces training volume while preserving useful
+      readiness and specificity.
+    - Freshening is not equivalent to simply doing less of everything at random.
+    - Taper quality depends on fatigue removal without flattening the athlete.
+    key_takeaways:
+    - Supports reduced-volume taper logic with maintained readiness.
+    - Frames tapering as fatigue removal with preserved race readiness.
+    - Helps distinguish tapering from simple undertraining.
+    important_findings:
+    - Provides the classic evidence base for reduced-volume, quality-preserving taper
+      logic.
+    - Explains why late-phase load reduction should be structured rather than interpreted
+      as normal build progression.
+    - Supports the idea that event-contained work can coexist with reduced training
+      load.
+    practical_implications_for_rps:
+    - In RPS, this supports taper/freshening semantics where load bands early in taper
+      are labels, not build permission.
+    - Useful for explaining why final taper weeks should remove accumulated fatigue
+      without losing event sharpness.
+    - Supports blocking heavy K3/threshold/VO2 style fatigue late in taper.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - General taper review; event-specific implementation still needs local constraints.
+    - Does not prescribe one exact taper shape for every endurance event.
+    allowed_uses_in_rps:
+    - taper_support
+    - planning_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_012.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_012
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_013
+  source_kind: core
+  authors: Buchheit, M., & Laursen, P. B.
+  year: 2013
+  title: High-intensity interval training, solutions to the programming puzzle
+  journal_or_outlet: Sports Medicine
+  source_type: review
+  study_type: review
+  reference_locator: https://doi.org/10.1007/s40279-013-0029-x
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - vo2max
+  - intensity_distribution
+  - progressive_overload
+  question_or_focus: Organize HIIT programming decisions and explain how interval
+    structure affects adaptation and fatigue cost.
+  population_or_scope: Programming review for high-intensity interval training across
+    endurance contexts.
+  what_was_examined: []
+  core_concepts:
+  - HIIT programming is a dose-and-structure problem, not just an intensity label.
+  - Interval format, density, and recovery design materially change the training signal.
+  - Hard work has to be programmed with constraint awareness, not enthusiasm alone.
+  important_findings:
+  - Explains why superficially similar HIIT sessions can differ greatly in cost and
+    intent.
+  - Helps planners think in terms of interval architecture, density, and adaptation
+    tradeoffs.
+  - Supports bounded, purpose-specific use of hard work inside a broader program.
+  practical_implications:
+  - In RPS, use this when explaining why VO2 work needs explicit purpose, spacing,
+    and density control.
+  - Helpful for rejecting “more hard reps” as a default progression axis.
+  - Supports the one-axis-at-a-time and recovery-first overload rules.
+  key_takeaways:
+  - Provides a structured lens for HIIT programming.
+  - Supports restrained intensity use rather than uncontrolled density stacking.
+  - Frames HIIT as a programmable tool, not an identity.
+  what_this_does_not_justify: []
+  important_limits:
+  - Context source for HIIT structure, not default justification for Scenario C intensity
+    escalation.
+  - Does not override durability-led or taper-led planning authority.
+  allowed_uses:
+  - vo2max_context
+  - progression_logic
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: High-intensity interval training, solutions to the programming puzzle
+    main_takeaway: Provides a structured lens for HIIT programming.
+    main_limit: Context source for HIIT structure, not default justification for Scenario
+      C intensity escalation.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - vo2max
+    - intensity_distribution
+    - progressive_overload
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Organize HIIT programming decisions and explain
+      how interval structure affects adaptation and fatigue cost.
+    study_type: review
+    population_or_context: Programming review for high-intensity interval training
+      across endurance contexts.
+    what_was_actually_examined: Organize HIIT programming decisions and explain how
+      interval structure affects adaptation and fatigue cost.
+    core_concepts:
+    - HIIT programming is a dose-and-structure problem, not just an intensity label.
+    - Interval format, density, and recovery design materially change the training
+      signal.
+    - Hard work has to be programmed with constraint awareness, not enthusiasm alone.
+    key_takeaways:
+    - Provides a structured lens for HIIT programming.
+    - Supports restrained intensity use rather than uncontrolled density stacking.
+    - Frames HIIT as a programmable tool, not an identity.
+    important_findings:
+    - Explains why superficially similar HIIT sessions can differ greatly in cost
+      and intent.
+    - Helps planners think in terms of interval architecture, density, and adaptation
+      tradeoffs.
+    - Supports bounded, purpose-specific use of hard work inside a broader program.
+    practical_implications_for_rps:
+    - In RPS, use this when explaining why VO2 work needs explicit purpose, spacing,
+      and density control.
+    - Helpful for rejecting “more hard reps” as a default progression axis.
+    - Supports the one-axis-at-a-time and recovery-first overload rules.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Context source for HIIT structure, not default justification for Scenario C
+      intensity escalation.
+    - Does not override durability-led or taper-led planning authority.
+    allowed_uses_in_rps:
+    - vo2max_context
+    - progression_logic
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_013.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_013
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_014
+  source_kind: core
+  authors: Padilla, S., et al.
+  year: 2000
+  title: Low cadence high resistance enhances TT/uphill performance
+  journal_or_outlet: Medicine & Science in Sports & Exercise
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - k3
+  - periodization
+  - threshold
+  question_or_focus: Provide background support for low-cadence high-resistance work
+    as a specific endurance-training tool.
+  population_or_scope: Legacy K3-style support source; used as historical/contextual
+    evidence rather than a hard-governance paper.
+  what_was_examined: []
+  core_concepts:
+  - Low-cadence high-resistance work is a modality choice, not an intensity domain
+    by itself.
+  - Force-oriented cycling work may have context-specific value when used purposefully.
+  - Modality choice should remain subordinate to phase intent and recovery coherence.
+  important_findings:
+  - Offers historical support for the idea that low-cadence resistance work can be
+    deliberately targeted.
+  - Useful mainly for modality explanation rather than for broad program architecture.
+  - Reinforces that such work should be interpreted through context rather than hype.
+  practical_implications:
+  - In RPS, keep K3 optional and phase-limited rather than universally prescribed.
+  - Use this as background when explaining why K3 can appear in base/build but should
+    be removed in taper.
+  - Do not treat this source as license for routine musculoskeletal cost escalation.
+  key_takeaways:
+  - Legacy support for purposeful low-cadence high-resistance work.
+  - Helps frame K3 as a tool rather than a default requirement.
+  - Supports cautious contextual use of force-oriented cycling work.
+  what_this_does_not_justify: []
+  important_limits:
+  - Legacy source; use as background explanation, not hard planning authority.
+  - Locator intentionally omitted until re-verified through primary sources.
+  allowed_uses:
+  - k3_context
+  - force_support
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Locator intentionally omitted until re-verified through primary sources.
+  summary_card:
+    focus: Low cadence high resistance enhances TT/uphill performance
+    main_takeaway: Legacy support for purposeful low-cadence high-resistance work.
+    main_limit: Legacy source; use as background explanation, not hard planning authority.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - k3
+    - periodization
+    - threshold
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Locator intentionally omitted until re-verified
+      through primary sources.
+    research_question_or_purpose: Provide background support for low-cadence high-resistance
+      work as a specific endurance-training tool.
+    study_type: peer_reviewed
+    population_or_context: Legacy K3-style support source; used as historical/contextual
+      evidence rather than a hard-governance paper.
+    what_was_actually_examined: Provide background support for low-cadence high-resistance
+      work as a specific endurance-training tool.
+    core_concepts:
+    - Low-cadence high-resistance work is a modality choice, not an intensity domain
+      by itself.
+    - Force-oriented cycling work may have context-specific value when used purposefully.
+    - Modality choice should remain subordinate to phase intent and recovery coherence.
+    key_takeaways:
+    - Legacy support for purposeful low-cadence high-resistance work.
+    - Helps frame K3 as a tool rather than a default requirement.
+    - Supports cautious contextual use of force-oriented cycling work.
+    important_findings:
+    - Offers historical support for the idea that low-cadence resistance work can
+      be deliberately targeted.
+    - Useful mainly for modality explanation rather than for broad program architecture.
+    - Reinforces that such work should be interpreted through context rather than
+      hype.
+    practical_implications_for_rps:
+    - In RPS, keep K3 optional and phase-limited rather than universally prescribed.
+    - Use this as background when explaining why K3 can appear in base/build but should
+      be removed in taper.
+    - Do not treat this source as license for routine musculoskeletal cost escalation.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Legacy source; use as background explanation, not hard planning authority.
+    - Locator intentionally omitted until re-verified through primary sources.
+    allowed_uses_in_rps:
+    - k3_context
+    - force_support
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_014.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_014
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_015
+  source_kind: core
+  authors: San Millán, I., & Brooks, G. A.
+  year: 2018
+  title: Assessment and interpretation of aerobic fitness in endurance sports
+  journal_or_outlet: Journal of Applied Physiology
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - metabolic_efficiency
+  - fueling
+  - endurance
+  question_or_focus: Support interpretation of aerobic fitness, substrate use, and
+    metabolic efficiency in endurance sport.
+  population_or_scope: Aerobic-fitness interpretation source; useful for metabolic
+    framing behind endurance-heavy planning.
+  what_was_examined: []
+  core_concepts:
+  - Aerobic fitness interpretation should account for substrate dynamics and whole-system
+    endurance function.
+  - Metabolic efficiency is relevant to long-duration pacing and fatigue resistance.
+  - Endurance planning benefits from understanding the oxidative side of performance,
+    not only top-end power.
+  important_findings:
+  - Provides background for explaining why long-event performance depends on more
+    than threshold labels.
+  - Supports the use of endurance-heavy work to improve the oxidative platform behind
+    stable long-duration execution.
+  - Useful in discussions of metabolic economy and late-session sustainability.
+  practical_implications:
+  - In RPS, use this for metabolic context behind endurance-first and fueling-aware
+    recommendations.
+  - Helpful for explaining why sub-threshold volume can still be central even when
+    intensity support exists.
+  - Do not use it to assert exact athlete-specific fuel-oxidation or lactate metrics
+    unless separately measured.
+  key_takeaways:
+  - Supports aerobic/metabolic interpretation that underpins durability-first volume
+    framing.
+  - Connects aerobic profiling with long-duration execution logic.
+  - Helps explain why oxidative support matters in brevet-style planning.
+  what_this_does_not_justify: []
+  important_limits:
+  - Locator intentionally omitted until re-verified through primary sources.
+  - Interpretive context source, not a direct training-governance specification.
+  allowed_uses:
+  - fueling_context
+  - metabolic_efficiency
+  authority_limit: justification_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Assessment and interpretation of aerobic fitness in endurance sports
+    main_takeaway: Supports aerobic/metabolic interpretation that underpins durability-first
+      volume framing.
+    main_limit: Locator intentionally omitted until re-verified through primary sources.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - metabolic_efficiency
+    - fueling
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Support interpretation of aerobic fitness, substrate
+      use, and metabolic efficiency in endurance sport.
+    study_type: peer_reviewed
+    population_or_context: Aerobic-fitness interpretation source; useful for metabolic
+      framing behind endurance-heavy planning.
+    what_was_actually_examined: Support interpretation of aerobic fitness, substrate
+      use, and metabolic efficiency in endurance sport.
+    core_concepts:
+    - Aerobic fitness interpretation should account for substrate dynamics and whole-system
+      endurance function.
+    - Metabolic efficiency is relevant to long-duration pacing and fatigue resistance.
+    - Endurance planning benefits from understanding the oxidative side of performance,
+      not only top-end power.
+    key_takeaways:
+    - Supports aerobic/metabolic interpretation that underpins durability-first volume
+      framing.
+    - Connects aerobic profiling with long-duration execution logic.
+    - Helps explain why oxidative support matters in brevet-style planning.
+    important_findings:
+    - Provides background for explaining why long-event performance depends on more
+      than threshold labels.
+    - Supports the use of endurance-heavy work to improve the oxidative platform behind
+      stable long-duration execution.
+    - Useful in discussions of metabolic economy and late-session sustainability.
+    practical_implications_for_rps:
+    - In RPS, use this for metabolic context behind endurance-first and fueling-aware
+      recommendations.
+    - Helpful for explaining why sub-threshold volume can still be central even when
+      intensity support exists.
+    - Do not use it to assert exact athlete-specific fuel-oxidation or lactate metrics
+      unless separately measured.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Locator intentionally omitted until re-verified through primary sources.
+    - Interpretive context source, not a direct training-governance specification.
+    allowed_uses_in_rps:
+    - fueling_context
+    - metabolic_efficiency
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_015.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_015
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_016
+  source_kind: core
+  authors: Coggan, A. R., & Allen, H.
+  year: 2019
+  title: Training and Racing with a Power Meter (3rd ed.)
+  journal_or_outlet: VeloPress
+  source_type: book
+  study_type: book
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - sweet_spot
+  - threshold
+  - periodization
+  question_or_focus: Provide canonical power-based training context for cyclists using
+    threshold, sweet spot, and power-duration ideas.
+  population_or_scope: Applied book-level cycling reference with broad influence on
+    power-based training language and heuristics.
+  what_was_examined: []
+  core_concepts:
+  - Power-based training organizes work through intensity zones and load concepts
+    that shape modern cycling practice.
+  - Sweet spot and threshold framing are practical tools, not universal rules.
+  - Training language matters because it strongly influences session selection and
+    athlete expectations.
+  important_findings:
+  - Provides influential applied framing for zone-based and power-based cycling training.
+  - Useful for understanding why sweet spot occupies a strong practical niche in cycling
+    planning conversations.
+  - Helps contextualize athlete expectations around FTP-centered training systems.
+  practical_implications:
+  - In RPS, use this as context when translating plans into familiar athlete language
+    around power zones.
+  - Do not use it as sole scientific authority for active governance decisions.
+  - Helpful for explaining why sweet spot can be useful but must stay subordinate
+    to event context and recovery.
+  key_takeaways:
+  - Canonical power-based training context for sweet spot and threshold framing.
+  - Useful as common coaching vocabulary support.
+  - Helps explain how sub-threshold work is typically discussed in cycling practice.
+  what_this_does_not_justify: []
+  important_limits:
+  - Book reference; use as context, not sole scientific proof.
+  - Book locator intentionally omitted.
+  allowed_uses:
+  - sweet_spot_context
+  - power_training_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Book locator intentionally omitted.
+  summary_card:
+    focus: Training and Racing with a Power Meter (3rd ed.)
+    main_takeaway: Canonical power-based training context for sweet spot and threshold
+      framing.
+    main_limit: Book reference; use as context, not sole scientific proof.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - sweet_spot
+    - threshold
+    - periodization
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Book locator intentionally omitted.
+    research_question_or_purpose: Provide canonical power-based training context for
+      cyclists using threshold, sweet spot, and power-duration ideas.
+    study_type: book
+    population_or_context: Applied book-level cycling reference with broad influence
+      on power-based training language and heuristics.
+    what_was_actually_examined: Provide canonical power-based training context for
+      cyclists using threshold, sweet spot, and power-duration ideas.
+    core_concepts:
+    - Power-based training organizes work through intensity zones and load concepts
+      that shape modern cycling practice.
+    - Sweet spot and threshold framing are practical tools, not universal rules.
+    - Training language matters because it strongly influences session selection and
+      athlete expectations.
+    key_takeaways:
+    - Canonical power-based training context for sweet spot and threshold framing.
+    - Useful as common coaching vocabulary support.
+    - Helps explain how sub-threshold work is typically discussed in cycling practice.
+    important_findings:
+    - Provides influential applied framing for zone-based and power-based cycling
+      training.
+    - Useful for understanding why sweet spot occupies a strong practical niche in
+      cycling planning conversations.
+    - Helps contextualize athlete expectations around FTP-centered training systems.
+    practical_implications_for_rps:
+    - In RPS, use this as context when translating plans into familiar athlete language
+      around power zones.
+    - Do not use it as sole scientific authority for active governance decisions.
+    - Helpful for explaining why sweet spot can be useful but must stay subordinate
+      to event context and recovery.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Book reference; use as context, not sole scientific proof.
+    - Book locator intentionally omitted.
+    allowed_uses_in_rps:
+    - sweet_spot_context
+    - power_training_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_016.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_016
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_017
+  source_kind: core
+  authors: Friel, J.
+  year: 2016
+  title: The Cyclist's Training Bible (5th ed.)
+  journal_or_outlet: VeloPress
+  source_type: book
+  study_type: book
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - periodization
+  - masters
+  - taper
+  question_or_focus: Provide practical season-structure and taper context for cyclists
+    through a long-standing coaching framework.
+  population_or_scope: Applied coaching book with wide practical influence across
+    amateur and masters cycling populations.
+  what_was_examined: []
+  core_concepts:
+  - Season planning requires structured progression, event anchoring, and coherent
+    taper/freshening.
+  - Training guidance should be understandable and practically operational for real
+    athletes.
+  - Long-term coaching heuristics can be useful when kept below stronger evidence
+    and active contracts.
+  important_findings:
+  - Provides a widely recognized practical framework for annual planning, event targeting,
+    and taper behavior.
+  - Useful as practitioner context when explaining plan structure to cyclists familiar
+    with traditional periodization language.
+  - Can support coach-facing translation of more formal planning logic.
+  practical_implications:
+  - In RPS, use this as communication support for periodization and taper explanations,
+    especially with masters/amateur athletes.
+  - Do not let book heuristics override deterministic load governance or evidence-backed
+    constraints.
+  - Useful for phrasing, not for binding corridors or intensities.
+  key_takeaways:
+  - Practical season-structure and taper framing reference.
+  - Useful for common coaching heuristics and communication.
+  - Helps connect formal planning to athlete-facing practice.
+  what_this_does_not_justify: []
+  important_limits:
+  - Book reference; not a sole scientific authority.
+  - Book locator intentionally omitted.
+  allowed_uses:
+  - periodization_context
+  - masters_context
+  - taper_support
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Book locator intentionally omitted.
+  summary_card:
+    focus: The Cyclist's Training Bible (5th ed.)
+    main_takeaway: Practical season-structure and taper framing reference.
+    main_limit: Book reference; not a sole scientific authority.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - periodization
+    - masters
+    - taper
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Book locator intentionally omitted.
+    research_question_or_purpose: Provide practical season-structure and taper context
+      for cyclists through a long-standing coaching framework.
+    study_type: book
+    population_or_context: Applied coaching book with wide practical influence across
+      amateur and masters cycling populations.
+    what_was_actually_examined: Provide practical season-structure and taper context
+      for cyclists through a long-standing coaching framework.
+    core_concepts:
+    - Season planning requires structured progression, event anchoring, and coherent
+      taper/freshening.
+    - Training guidance should be understandable and practically operational for real
+      athletes.
+    - Long-term coaching heuristics can be useful when kept below stronger evidence
+      and active contracts.
+    key_takeaways:
+    - Practical season-structure and taper framing reference.
+    - Useful for common coaching heuristics and communication.
+    - Helps connect formal planning to athlete-facing practice.
+    important_findings:
+    - Provides a widely recognized practical framework for annual planning, event
+      targeting, and taper behavior.
+    - Useful as practitioner context when explaining plan structure to cyclists familiar
+      with traditional periodization language.
+    - Can support coach-facing translation of more formal planning logic.
+    practical_implications_for_rps:
+    - In RPS, use this as communication support for periodization and taper explanations,
+      especially with masters/amateur athletes.
+    - Do not let book heuristics override deterministic load governance or evidence-backed
+      constraints.
+    - Useful for phrasing, not for binding corridors or intensities.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Book reference; not a sole scientific authority.
+    - Book locator intentionally omitted.
+    allowed_uses_in_rps:
+    - periodization_context
+    - masters_context
+    - taper_support
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_017.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_017
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_018
+  source_kind: core
+  authors: Rønnestad, B. R., & Mujika, I.
+  year: 2014
+  title: Optimizing strength training for running and cycling endurance performance
+  journal_or_outlet: Scandinavian Journal of Medicine & Science in Sports
+  source_type: review
+  study_type: review
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - periodization
+  - k3
+  - endurance
+  question_or_focus: Review how strength training can support cycling and running
+    endurance performance.
+  population_or_scope: Strength-support review for endurance performance; relevant
+    as supporting context around force-oriented work.
+  what_was_examined: []
+  core_concepts:
+  - Strength work can support endurance performance under certain conditions.
+  - Support work should be integrated without breaking endurance-specific recovery
+    or technical quality.
+  - Force development and endurance performance interact, but not all force-oriented
+    cycling work is equivalent.
+  important_findings:
+  - Supports the general idea that strength development can contribute to endurance
+    outcomes when integrated sensibly.
+  - Useful for arguing that force-support elements have a place but should not displace
+    core endurance logic.
+  - Helps distinguish supportive strength rationale from indiscriminate muscular-cost
+    loading.
+  practical_implications:
+  - In RPS, use this to explain why force-support work may appear selectively, especially
+    outside taper and outside peak specificity windows.
+  - Do not convert general strength-support evidence into universal K3 prescriptions.
+  - Supports keeping muscular-cost work bounded by phase and recovery state.
+  key_takeaways:
+  - Context for strength support in endurance planning.
+  - Helps frame force-support work as supportive rather than dominant.
+  - Useful background for K3/strength-related interpretation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Locator intentionally omitted until re-verified through primary sources.
+  - Supportive context source, not a direct weekly cycling-session template.
+  allowed_uses:
+  - force_support
+  - periodization_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Optimizing strength training for running and cycling endurance performance
+    main_takeaway: Context for strength support in endurance planning.
+    main_limit: Locator intentionally omitted until re-verified through primary sources.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - periodization
+    - k3
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Review how strength training can support cycling
+      and running endurance performance.
+    study_type: review
+    population_or_context: Strength-support review for endurance performance; relevant
+      as supporting context around force-oriented work.
+    what_was_actually_examined: Review how strength training can support cycling and
+      running endurance performance.
+    core_concepts:
+    - Strength work can support endurance performance under certain conditions.
+    - Support work should be integrated without breaking endurance-specific recovery
+      or technical quality.
+    - Force development and endurance performance interact, but not all force-oriented
+      cycling work is equivalent.
+    key_takeaways:
+    - Context for strength support in endurance planning.
+    - Helps frame force-support work as supportive rather than dominant.
+    - Useful background for K3/strength-related interpretation.
+    important_findings:
+    - Supports the general idea that strength development can contribute to endurance
+      outcomes when integrated sensibly.
+    - Useful for arguing that force-support elements have a place but should not displace
+      core endurance logic.
+    - Helps distinguish supportive strength rationale from indiscriminate muscular-cost
+      loading.
+    practical_implications_for_rps:
+    - In RPS, use this to explain why force-support work may appear selectively, especially
+      outside taper and outside peak specificity windows.
+    - Do not convert general strength-support evidence into universal K3 prescriptions.
+    - Supports keeping muscular-cost work bounded by phase and recovery state.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Locator intentionally omitted until re-verified through primary sources.
+    - Supportive context source, not a direct weekly cycling-session template.
+    allowed_uses_in_rps:
+    - force_support
+    - periodization_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_018.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_018
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_019
+  source_kind: core
+  authors: Rønnestad, B. R., et al.
+  year: 2021
+  title: Periodization for polarized training in endurance athletes
+  journal_or_outlet: Scandinavian Journal of Medicine & Science in Sports
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - periodization
+  - intensity_distribution
+  - endurance
+  question_or_focus: Provide periodization context for polarized training in endurance
+    athletes.
+  population_or_scope: Endurance periodization context source; useful for macro-structure
+    reasoning more than micro-prescription.
+  what_was_examined: []
+  core_concepts:
+  - Intensity distribution should be embedded in periodized structure, not treated
+    as isolated session choice.
+  - Polarized methods are about structure and sequencing, not just doing some easy
+    and some hard work.
+  - How distribution evolves across phases matters.
+  important_findings:
+  - Useful for connecting distribution choices to broader periodized season structure.
+  - Supports the idea that intensity models need context from phase goals and training
+    stage.
+  - Helps resist flattening polarization into a weekly slogan.
+  practical_implications:
+  - In RPS, use this when explaining why intensity distribution belongs inside season
+    and phase architecture.
+  - Helpful for contrasting durability-led phases with later, more specific or sharpened
+    structures.
+  - Do not use it as a direct override of event-specific or athlete-specific constraints.
+  key_takeaways:
+  - Context for periodization structure in endurance training.
+  - Links intensity distribution with macrocycle design.
+  - Supports phase-aware rather than session-only reasoning.
+  what_this_does_not_justify: []
+  important_limits:
+  - Locator intentionally omitted until re-verified through primary sources.
+  - Context source for structure, not a standalone planning contract.
+  allowed_uses:
+  - periodization_context
+  - intensity_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Periodization for polarized training in endurance athletes
+    main_takeaway: Context for periodization structure in endurance training.
+    main_limit: Locator intentionally omitted until re-verified through primary sources.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - periodization
+    - intensity_distribution
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Provide periodization context for polarized training
+      in endurance athletes.
+    study_type: peer_reviewed
+    population_or_context: Endurance periodization context source; useful for macro-structure
+      reasoning more than micro-prescription.
+    what_was_actually_examined: Provide periodization context for polarized training
+      in endurance athletes.
+    core_concepts:
+    - Intensity distribution should be embedded in periodized structure, not treated
+      as isolated session choice.
+    - Polarized methods are about structure and sequencing, not just doing some easy
+      and some hard work.
+    - How distribution evolves across phases matters.
+    key_takeaways:
+    - Context for periodization structure in endurance training.
+    - Links intensity distribution with macrocycle design.
+    - Supports phase-aware rather than session-only reasoning.
+    important_findings:
+    - Useful for connecting distribution choices to broader periodized season structure.
+    - Supports the idea that intensity models need context from phase goals and training
+      stage.
+    - Helps resist flattening polarization into a weekly slogan.
+    practical_implications_for_rps:
+    - In RPS, use this when explaining why intensity distribution belongs inside season
+      and phase architecture.
+    - Helpful for contrasting durability-led phases with later, more specific or sharpened
+      structures.
+    - Do not use it as a direct override of event-specific or athlete-specific constraints.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Locator intentionally omitted until re-verified through primary sources.
+    - Context source for structure, not a standalone planning contract.
+    allowed_uses_in_rps:
+    - periodization_context
+    - intensity_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_019.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_019
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_020
+  source_kind: core
+  authors: Olbrecht, J.
+  year: 2000
+  title: 'The Science of Winning: Lactate Dynamics'
+  journal_or_outlet: Book
+  source_type: book
+  study_type: book
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - metabolic_efficiency
+  - threshold
+  - periodization
+  question_or_focus: Provide background on lactate dynamics and how they inform training
+    interpretation.
+  population_or_scope: Book-level conceptual reference on lactate dynamics with practical
+    coaching influence.
+  what_was_examined: []
+  core_concepts:
+  - Lactate behavior reflects broader metabolic dynamics that matter for endurance
+    interpretation.
+  - Threshold and metabolic markers need careful conceptual framing rather than simplistic
+    hero numbers.
+  - Understanding metabolic behavior can improve how athletes interpret endurance
+    and sub-threshold work.
+  important_findings:
+  - Provides a durable conceptual backdrop for discussions of threshold, metabolic
+    strain, and training interpretation.
+  - Useful as explanatory support when athletes ask how metabolic behavior interacts
+    with training design.
+  - Helps keep threshold talk grounded in broader physiology rather than one-number
+    simplification.
+  practical_implications:
+  - In RPS, use this for conceptual explanation around threshold and metabolic framing
+    when stronger directly relevant papers are absent.
+  - Do not promote it above more specific cycling- or event-relevant evidence.
+  - Best used as background context in coach-facing explanations.
+  key_takeaways:
+  - Background reference for lactate dynamics and training interpretation.
+  - Useful for metabolic and threshold language discipline.
+  - Supports more nuanced metabolic explanation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Book reference; use as explanatory context only.
+  - Book locator intentionally omitted.
+  allowed_uses:
+  - metabolic_efficiency
+  - terminology_guardrail
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Book locator intentionally omitted.
+  summary_card:
+    focus: 'The Science of Winning: Lactate Dynamics'
+    main_takeaway: Background reference for lactate dynamics and training interpretation.
+    main_limit: Book reference; use as explanatory context only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - metabolic_efficiency
+    - threshold
+    - periodization
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Book locator intentionally omitted.
+    research_question_or_purpose: Provide background on lactate dynamics and how they
+      inform training interpretation.
+    study_type: book
+    population_or_context: Book-level conceptual reference on lactate dynamics with
+      practical coaching influence.
+    what_was_actually_examined: Provide background on lactate dynamics and how they
+      inform training interpretation.
+    core_concepts:
+    - Lactate behavior reflects broader metabolic dynamics that matter for endurance
+      interpretation.
+    - Threshold and metabolic markers need careful conceptual framing rather than
+      simplistic hero numbers.
+    - Understanding metabolic behavior can improve how athletes interpret endurance
+      and sub-threshold work.
+    key_takeaways:
+    - Background reference for lactate dynamics and training interpretation.
+    - Useful for metabolic and threshold language discipline.
+    - Supports more nuanced metabolic explanation.
+    important_findings:
+    - Provides a durable conceptual backdrop for discussions of threshold, metabolic
+      strain, and training interpretation.
+    - Useful as explanatory support when athletes ask how metabolic behavior interacts
+      with training design.
+    - Helps keep threshold talk grounded in broader physiology rather than one-number
+      simplification.
+    practical_implications_for_rps:
+    - In RPS, use this for conceptual explanation around threshold and metabolic framing
+      when stronger directly relevant papers are absent.
+    - Do not promote it above more specific cycling- or event-relevant evidence.
+    - Best used as background context in coach-facing explanations.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Book reference; use as explanatory context only.
+    - Book locator intentionally omitted.
+    allowed_uses_in_rps:
+    - metabolic_efficiency
+    - terminology_guardrail
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_020.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_020
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a mandatory evidence-curation runtime stage: new `evidence_curation_specialist` agent/task/skill, native Pydantic `EvidenceCurationModel`, deterministic trusted-source matching, quality-gate/activation pipeline, and provenance-aware study briefs rendered from structured curation output.
+- Added a canonical repo-wide evidence library under `skills/shared/durability-methodology/references/library/`, including structured core/applied source registries, generated markdown lookup tables, per-study detail pages, and decommission markers for legacy bibliography/manifest files.
+- Added a weekly evidence refresh path with fail-closed primary-source discovery from PubMed plus background run-store integration and a manual System Status trigger for evidence refresh runs.
+- Added higher-fidelity evidence detail summaries across the canonical library: core and applied sources now carry structured focus/scope, concepts, findings, and practical RPS implications instead of thin lookup-only study cards.
 - Added curated durability reference tables for shared planning/coaching skills, split into a higher-authority core table and a separate applied/practitioner table.
 - Added repo-wide prompt/skill evidence-priority alignment for durability-first explanations: active coach/week-facing prompts and skills now use `core -> applied -> archive`, and CrewAI `factual_evidence` injects the curated tables ahead of the legacy bibliography.
 - Added final durability reference cleanup across runtime/test/spec surfaces: coach runtime guidance, evidence tests, and season-plan example citations now point to the curated reference hierarchy instead of treating the legacy bibliography as the operative default.
@@ -16,7 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added full progressive-overload policy guidance to active Season and Phase planner/review layers: task descriptions, planner prompts, and load/structure/review skills now explicitly carry cadence-family selection, ramp classes, deload vs mini-reset, reload vs re-entry, fallback behavior, conservative next-baseline logic, Build-entry readiness gates, and warning-only handling for user-owned objective mismatches.
 - Added a combined policy/principle/prompt migration hardening pass: the central migration audit now covers legacy prompt sources plus all active prompt roles, and active Season/Phase/Week prompt authority is being normalized toward self-contained role boundaries with explicit injected deterministic authority.
 
+### Changed
+- Changed the canonical documentation set (`doc/`) to match the new evidence runtime: architecture, flow, workspace, UI, and run-store docs now describe the repo-scoped evidence library, weekly `literature_refresh`, mandatory evidence curation, deterministic gating/activation, and System Status/History visibility for evidence refresh runs.
+- Changed older evidence feature docs to explicit historical-step positioning, while `FEAT_repo_wide_evidence_library_and_refresh` and `FEAT_evidence_curation_pipeline` now serve as the current canonical evidence-system feature specs.
+
 ### Fixed
+- Fixed literature/reference handling to fail closed: active skills/prompts/runtime guidance now treat the canonical local evidence library as the only operative source, require `omit instead of invent` behavior for uncertain locators, and drop unverifiable publication links from persisted outputs instead of preserving model-supplied guesses.
 - Fixed `season_scenarios` active-prompt drift against the already stricter task/skill/guardrail contract: `prompts/agents/season_scenario.md` now locally carries the Scenario C `VO2MAX` ceiling-support explanation rule, and a regression test protects the prompt/task/skill alignment that prevents repeated guardrail retry failures.
 - Fixed Season writer guardrail ordering so final `SEASON_PLAN` contract validation repairs deterministic role-week guardrail notes, canonical load modalities, and real event constraints before evaluating the writer output, preventing false blocking failures on code-owned fields such as `weekly_load_corridor.weekly_kj.notes`.
 - Fixed planning-stage contract enforcement so review-ready bundle checks now run in Season/Phase/Week finalize stages, approved review decisions must carry an explicit writer-ready summary, stale phantom event placeholders are rejected upstream, and Season writer validation no longer blocks on forbidden-domain narrative cleanup that should have been resolved before writing.

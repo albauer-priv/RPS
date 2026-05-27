@@ -159,6 +159,17 @@ agents:
     allow_delegation: false
     max_iter: 5
     respect_context_window: true
+  evidence_curation_specialist:
+    display_name: Evidence Curation Specialist
+    role: Evidence source curator and RPS relevance classifier
+    goal: Convert one verified evidence source package into a safe, structured, RPS-specific evidence brief.
+    backstory: Self-contained evidence curator that summarizes only from provided source material, never invents locator data, and explicitly marks what a source does not justify.
+    runtime_status: foundation_only
+    output_mode: evidence_curation
+    prompt_agent: evidence_curation_specialist
+    allow_delegation: false
+    max_iter: 3
+    respect_context_window: true
   season_artifact_writer:
     display_name: Season Artifact Writer
     role: Persisted season artefact serializer

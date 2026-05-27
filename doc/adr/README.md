@@ -1,7 +1,7 @@
 ---
 Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-21
+Last-Updated: 2026-05-27
 Owner: ADR
 ---
 # Architecture Decision Records (ADR)
@@ -64,6 +64,7 @@ This folder contains the ADR log for RPS.
 - ADR-053: Canonical Phase Taxonomy and Build Subtypes
 - ADR-054: Dual Bundled Structured-Output Schemas
 - ADR-055: Season Semantic Recovery and Guardrail Serialization
+- ADR-057: Evidence Curation Pipeline
 
 ## Process (Short)
 

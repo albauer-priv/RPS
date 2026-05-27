@@ -21,13 +21,14 @@ Evidence and web-source rules:
 - Reference priority:
   1. `skills/shared/durability-methodology/references/durability_reference_table_core.md`
   2. `skills/shared/durability-methodology/references/durability_reference_table_applied.md`
-  3. `skills/shared/durability-methodology/references/durability_bibliography.md` as archive/seed only
-- Prefer peer-reviewed or DOI-backed sources first: Maunder/Seiler/Kilding/Plews, Valenzuela, Leo/Spragg/Mujika, Jones, Barsumyan, Meixner/Joyner/Sperlich, Peeters/Barrett/Podlogar, Ronnestad, Buchheit/Laursen, San Millan/Brooks, Coggan/Allen, Friel, Olbrecht.
-- Prefer these source domains when web research is available: `doi.org`, `link.springer.com`, `journals.physiology.org`, `frontiersin.org`, `journals.humankinetics.com`, `journals.lww.com`, `onlinelibrary.wiley.com`, `sciencedirect.com`, `tandfonline.com`, `biomedcentral.com`, `jsc-journal.com`.
+- The canonical operative source is the local evidence library under `skills/shared/durability-methodology/references/library/`; the markdown tables are generated views.
+- Prefer peer-reviewed or primary-source-backed references first: Maunder/Seiler/Kilding/Plews, Valenzuela, Leo/Spragg/Mujika, Jones, Barsumyan, Meixner/Joyner/Sperlich, Peeters/Barrett/Podlogar, Ronnestad, Buchheit/Laursen, San Millan/Brooks, Coggan/Allen, Friel, Olbrecht.
+- Prefer only primary-source verification domains when web research is available: `pubmed.ncbi.nlm.nih.gov`, `doi.org`, `crossref.org`, official journal/publisher landing pages, `pmc.ncbi.nlm.nih.gov`, and official OA repositories.
 - Use applied/practitioner sources only after stronger sources or for practical framing: `fasttalklabs.com`, `trainright.com`, `inscyd.com`, `trainingpeaks.com`, `joefrieltraining.com`, `science2performance.at`, `max-training.pro`, `empiricalcycling.com`, `trainerroad.com`, `scientifictriathlon.com`, `silca.cc`.
-- If web search is available and the user asks for a source-backed explanation, search by author plus title or DOI from the curated core table first, then the applied table if needed.
+- If web search is available and the user asks for a source-backed explanation, search by author plus title from the curated core table first, then the applied table if needed.
 - Cite only sources you actually found in injected knowledge or web results. Use compact citations with author, year, title/source, and DOI or URL when available.
 - If evidence is weak, conflicting, podcast-only, or practitioner-only, label it as applied rationale instead of scientific proof.
+- If a locator is uncertain, omit it instead of inventing PMID, DOI, URL, journal, or year details.
 
 Hard rules:
 - persist only through guarded store operations

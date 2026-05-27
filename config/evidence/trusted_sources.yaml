@@ -1,0 +1,47 @@
+trusted_authors:
+  - stephen seiler
+  - stephen s seiler
+  - inigo mujika
+  - echo maunder
+  - daniel j plews
+  - paul l valenzuela
+trusted_outlets:
+  - sports medicine
+  - international journal of sports physiology and performance
+  - medicine and science in sports and exercise
+  - frontiers in physiology
+  - journal of applied physiology
+  - european journal of applied physiology
+trusted_author_outlet_pairs:
+  - author: stephen seiler
+    outlet: sports medicine
+  - author: inigo mujika
+    outlet: sports medicine
+  - author: echo maunder
+    outlet: sports medicine
+  - author: paul l valenzuela
+    outlet: international journal of sports physiology and performance
+author_aliases:
+  stephen seiler:
+    - seiler s.
+    - seiler, s.
+    - stephen s. seiler
+  inigo mujika:
+    - mujika i.
+    - mujika, i.
+  echo maunder:
+    - maunder e.
+    - maunder, e.
+  daniel j plews:
+    - plews d. j.
+    - plews, d. j.
+  paul l valenzuela:
+    - valenzuela p. l.
+    - valenzuela, p. l.
+outlet_aliases:
+  sports medicine:
+    - sports med
+  medicine and science in sports and exercise:
+    - medicine & science in sports & exercise
+    - msse
+denylist_pairs: []

@@ -1,0 +1,1715 @@
+version: 2
+library_type: applied_sources
+curation_schema_version: '1'
+generated_at: '2026-05-27T07:46:53.675612Z'
+entries:
+- id: dur_app_001
+  source_kind: applied
+  authors: CTS / Time-Crunched Cyclist
+  year: 2024
+  title: The Science of Training Your Durability and Fatigue Resistance
+  journal_or_outlet: CTS Podcast Ep. 201
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 201
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - durability
+  - fatigue_resistance
+  - brevet_ultra
+  question_or_focus: Translate durability and fatigue-resistance training into concrete
+    workout and testing ideas for time-crunched cyclists.
+  population_or_scope: Practitioner podcast for cyclists; strongest as coaching translation
+    and example generation.
+  what_was_examined: []
+  core_concepts:
+  - Durability can be trained practically through long-load exposure, finish quality,
+    and context-aware progression.
+  - Testing ideas need to be realistic for athletes who do not live in a laboratory
+    or race team environment.
+  - Practical durability work should connect to the athlete’s real available training
+    time.
+  important_findings:
+  - Offers concrete examples of how coaches discuss durability in day-to-day training
+    practice.
+  - Helps connect long aerobic work, fatigue exposure, and testing ideas in a usable
+    way.
+  - Shows what applied durability coaching sounds like when stripped of lab jargon.
+  practical_implications:
+  - Use this as a practice-layer bridge once the scientific framing is already established
+    from stronger sources.
+  - Helpful for athlete-facing examples, especially when discussing long rides and
+    finish-under-fatigue work.
+  - Do not elevate podcast heuristics above active RPS governance or stronger research.
+  key_takeaways:
+  - Practical durability workout and testing ideas after stronger evidence is established.
+  - Useful for converting theory into athlete-usable sessions.
+  - Good bridge from evidence to implementation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Practitioner podcast; not binding scientific authority.
+  - Advice quality depends on context and is not a substitute for verified study claims.
+  allowed_uses:
+  - applied_examples
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: The Science of Training Your Durability and Fatigue Resistance
+    main_takeaway: Practical durability workout and testing ideas after stronger evidence
+      is established.
+    main_limit: Practitioner podcast; not binding scientific authority.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - brevet_ultra
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Translate durability and fatigue-resistance training
+      into concrete workout and testing ideas for time-crunched cyclists.
+    study_type: podcast
+    population_or_context: Practitioner podcast for cyclists; strongest as coaching
+      translation and example generation.
+    what_was_actually_examined: Translate durability and fatigue-resistance training
+      into concrete workout and testing ideas for time-crunched cyclists.
+    core_concepts:
+    - Durability can be trained practically through long-load exposure, finish quality,
+      and context-aware progression.
+    - Testing ideas need to be realistic for athletes who do not live in a laboratory
+      or race team environment.
+    - Practical durability work should connect to the athlete’s real available training
+      time.
+    key_takeaways:
+    - Practical durability workout and testing ideas after stronger evidence is established.
+    - Useful for converting theory into athlete-usable sessions.
+    - Good bridge from evidence to implementation.
+    important_findings:
+    - Offers concrete examples of how coaches discuss durability in day-to-day training
+      practice.
+    - Helps connect long aerobic work, fatigue exposure, and testing ideas in a usable
+      way.
+    - Shows what applied durability coaching sounds like when stripped of lab jargon.
+    practical_implications_for_rps:
+    - Use this as a practice-layer bridge once the scientific framing is already established
+      from stronger sources.
+    - Helpful for athlete-facing examples, especially when discussing long rides and
+      finish-under-fatigue work.
+    - Do not elevate podcast heuristics above active RPS governance or stronger research.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Practitioner podcast; not binding scientific authority.
+    - Advice quality depends on context and is not a substitute for verified study
+      claims.
+    allowed_uses_in_rps:
+    - applied_examples
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_001.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_001
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_002
+  source_kind: applied
+  authors: CTS / Time-Crunched Cyclist
+  year: 2024
+  title: BulletProof Your Fatigue Resistance
+  journal_or_outlet: CTS Podcast Ep. 207
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 207
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - durability
+  - repeatability
+  - progressive_overload
+  question_or_focus: Discuss how cyclists can build fatigue resistance through practical
+    sequencing of stress and recovery.
+  population_or_scope: Practitioner durability/fatigue-resistance discussion for cyclists.
+  what_was_examined: []
+  core_concepts:
+  - Fatigue resistance is built through repeatable stress, not isolated hero sessions.
+  - Back-to-back load and cumulative stress require structure rather than improvisation.
+  - Recovery behavior is part of the fatigue-resistance conversation, not a separate
+    afterthought.
+  important_findings:
+  - Provides concrete coaching-language examples for why repeated sustainable stress
+    matters.
+  - Supports the view that fatigue resistance emerges from well-managed consistency
+    rather than random overload.
+  - Helps bridge formal durability concepts to athlete-understandable coaching practice.
+  practical_implications:
+  - Use for practical explanation of consistency-first progression and back-to-back
+    load management.
+  - Helpful when explaining why missed sessions should not trigger reckless catch-up
+    behavior.
+  - Keep it clearly below stronger evidence and deterministic constraints.
+  key_takeaways:
+  - Practice-oriented discussion of back-to-back stress and fatigue resistance.
+  - Translates durability ideas into real training rhythm.
+  - Useful for athlete-facing framing of consistency.
+  what_this_does_not_justify: []
+  important_limits:
+  - Practitioner source only.
+  - Does not provide validated quantitative thresholds or universal prescriptions.
+  allowed_uses:
+  - coaching_translation
+  - applied_examples
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: BulletProof Your Fatigue Resistance
+    main_takeaway: Practice-oriented discussion of back-to-back stress and fatigue
+      resistance.
+    main_limit: Practitioner source only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - repeatability
+    - progressive_overload
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Discuss how cyclists can build fatigue resistance
+      through practical sequencing of stress and recovery.
+    study_type: podcast
+    population_or_context: Practitioner durability/fatigue-resistance discussion for
+      cyclists.
+    what_was_actually_examined: Discuss how cyclists can build fatigue resistance
+      through practical sequencing of stress and recovery.
+    core_concepts:
+    - Fatigue resistance is built through repeatable stress, not isolated hero sessions.
+    - Back-to-back load and cumulative stress require structure rather than improvisation.
+    - Recovery behavior is part of the fatigue-resistance conversation, not a separate
+      afterthought.
+    key_takeaways:
+    - Practice-oriented discussion of back-to-back stress and fatigue resistance.
+    - Translates durability ideas into real training rhythm.
+    - Useful for athlete-facing framing of consistency.
+    important_findings:
+    - Provides concrete coaching-language examples for why repeated sustainable stress
+      matters.
+    - Supports the view that fatigue resistance emerges from well-managed consistency
+      rather than random overload.
+    - Helps bridge formal durability concepts to athlete-understandable coaching practice.
+    practical_implications_for_rps:
+    - Use for practical explanation of consistency-first progression and back-to-back
+      load management.
+    - Helpful when explaining why missed sessions should not trigger reckless catch-up
+      behavior.
+    - Keep it clearly below stronger evidence and deterministic constraints.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Practitioner source only.
+    - Does not provide validated quantitative thresholds or universal prescriptions.
+    allowed_uses_in_rps:
+    - coaching_translation
+    - applied_examples
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_002.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_002
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_003
+  source_kind: applied
+  authors: CTS / Gallo
+  year: 2024
+  title: How Carbohydrate Fueling Affects Durability in Long Workouts
+  journal_or_outlet: CTS Podcast Ep. 208
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 208
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - fueling
+  - durability
+  - brevet_ultra
+  question_or_focus: Explain how carbohydrate fueling strategy affects durability
+    in long workouts.
+  population_or_scope: Applied fueling discussion for long workouts and long-event
+    preparation.
+  what_was_examined: []
+  core_concepts:
+  - Fueling quality materially affects late-session durability and execution quality.
+  - Durability is not only muscular or cardiovascular; substrate support matters too.
+  - Practical nutrition decisions can change what the athlete can preserve late in
+    the session.
+  important_findings:
+  - Provides accessible practice translation for why carbohydrate intake influences
+    late-work quality.
+  - Helps athletes understand that fade is often partly nutritional, not purely motivational
+    or fitness-related.
+  - Useful in connecting fueling plans to long-session outcomes.
+  practical_implications:
+  - Use when explaining practical fueling support behind durability-first long-ride
+    design.
+  - Helpful for athlete guidance on why a “test” ride without fueling may misrepresent
+    real event capability.
+  - Do not treat it as sole evidence authority for exact CHO targets.
+  key_takeaways:
+  - Connects fueling strategy with late-session durability.
+  - Highlights nutrition as part of fatigue resistance.
+  - Useful for practical long-ride fueling discussion.
+  what_this_does_not_justify: []
+  important_limits:
+  - Practitioner source only.
+  - Specific intake recommendations still need stronger source support where possible.
+  allowed_uses:
+  - fueling_context
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: How Carbohydrate Fueling Affects Durability in Long Workouts
+    main_takeaway: Connects fueling strategy with late-session durability.
+    main_limit: Practitioner source only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - durability
+    - brevet_ultra
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Explain how carbohydrate fueling strategy affects
+      durability in long workouts.
+    study_type: podcast
+    population_or_context: Applied fueling discussion for long workouts and long-event
+      preparation.
+    what_was_actually_examined: Explain how carbohydrate fueling strategy affects
+      durability in long workouts.
+    core_concepts:
+    - Fueling quality materially affects late-session durability and execution quality.
+    - Durability is not only muscular or cardiovascular; substrate support matters
+      too.
+    - Practical nutrition decisions can change what the athlete can preserve late
+      in the session.
+    key_takeaways:
+    - Connects fueling strategy with late-session durability.
+    - Highlights nutrition as part of fatigue resistance.
+    - Useful for practical long-ride fueling discussion.
+    important_findings:
+    - Provides accessible practice translation for why carbohydrate intake influences
+      late-work quality.
+    - Helps athletes understand that fade is often partly nutritional, not purely
+      motivational or fitness-related.
+    - Useful in connecting fueling plans to long-session outcomes.
+    practical_implications_for_rps:
+    - Use when explaining practical fueling support behind durability-first long-ride
+      design.
+    - Helpful for athlete guidance on why a “test” ride without fueling may misrepresent
+      real event capability.
+    - Do not treat it as sole evidence authority for exact CHO targets.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Practitioner source only.
+    - Specific intake recommendations still need stronger source support where possible.
+    allowed_uses_in_rps:
+    - fueling_context
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_003.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_003
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_004
+  source_kind: applied
+  authors: CTS / Seiler
+  year: 2024
+  title: How To Build Durable Athletic Performance
+  journal_or_outlet: CTS / TrainRight
+  source_type: podcast
+  study_type: podcast
+  reference_locator: omitted
+  verification_status: omitted
+  locator_source: none
+  topic_tags:
+  - durability
+  - repeatability
+  - masters
+  question_or_focus: Discuss durability-first thinking with a strong conceptual coach/practitioner
+    lens.
+  population_or_scope: Applied conversation-level framing with Seiler/CTS style interpretation.
+  what_was_examined: []
+  core_concepts:
+  - Durability should be built through repeatable, sustainable structure rather than
+    glamour sessions.
+  - Coach communication matters in how athletes understand the tradeoff between fitness
+    and freshness.
+  - Long-term durability thinking often resists short-term intensity temptation.
+  important_findings:
+  - Provides a strong practice-layer narrative around durability as a training priority.
+  - Reinforces the coaching value of repeatability, structure, and restrained ambition.
+  - Useful when explaining why long-event preparation is not built from constant maximality.
+  practical_implications:
+  - Use as coaching-translation support after stronger evidence already frames the
+    decision.
+  - Helpful when athlete communication needs a more human, practice-grounded explanation.
+  - Do not overclaim scientific strength from this source.
+  key_takeaways:
+  - High-level practitioner discussion of durability-first thinking.
+  - Useful for broad framing and coach translation.
+  - Helps connect academic concepts to athlete language.
+  what_this_does_not_justify: []
+  important_limits:
+  - Applied interpretation only.
+  - Locator omitted; cite only at outlet/title level unless re-verified.
+  allowed_uses:
+  - coaching_translation
+  - durability_rationale
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: How To Build Durable Athletic Performance
+    main_takeaway: High-level practitioner discussion of durability-first thinking.
+    main_limit: Applied interpretation only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - repeatability
+    - masters
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Discuss durability-first thinking with a strong
+      conceptual coach/practitioner lens.
+    study_type: podcast
+    population_or_context: Applied conversation-level framing with Seiler/CTS style
+      interpretation.
+    what_was_actually_examined: Discuss durability-first thinking with a strong conceptual
+      coach/practitioner lens.
+    core_concepts:
+    - Durability should be built through repeatable, sustainable structure rather
+      than glamour sessions.
+    - Coach communication matters in how athletes understand the tradeoff between
+      fitness and freshness.
+    - Long-term durability thinking often resists short-term intensity temptation.
+    key_takeaways:
+    - High-level practitioner discussion of durability-first thinking.
+    - Useful for broad framing and coach translation.
+    - Helps connect academic concepts to athlete language.
+    important_findings:
+    - Provides a strong practice-layer narrative around durability as a training priority.
+    - Reinforces the coaching value of repeatability, structure, and restrained ambition.
+    - Useful when explaining why long-event preparation is not built from constant
+      maximality.
+    practical_implications_for_rps:
+    - Use as coaching-translation support after stronger evidence already frames the
+      decision.
+    - Helpful when athlete communication needs a more human, practice-grounded explanation.
+    - Do not overclaim scientific strength from this source.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Applied interpretation only.
+    - Locator omitted; cite only at outlet/title level unless re-verified.
+    allowed_uses_in_rps:
+    - coaching_translation
+    - durability_rationale
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_004.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_004
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_005
+  source_kind: applied
+  authors: FastTalk Labs
+  year: 2024
+  title: Durability – The Fourth Pillar of Aerobic Fitness
+  journal_or_outlet: FastTalk Labs Ep. 380
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 380
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - durability
+  - repeatability
+  - periodization
+  question_or_focus: Explain durability as a major pillar of aerobic performance in
+    an accessible practitioner format.
+  population_or_scope: Applied conceptual discussion for endurance coaches and self-coached
+    athletes.
+  what_was_examined: []
+  core_concepts:
+  - Durability belongs alongside other aerobic-performance pillars in practical coaching
+    language.
+  - Athletes often understand the idea faster when it is tied to pacing, fade, and
+    session finish quality.
+  - Applied communication can make abstract physiology useful.
+  important_findings:
+  - Provides a practical narrative around durability as something coaches can actively
+    build and monitor.
+  - Helps connect formal resilience concepts to pacing, long-ride behavior, and repeatability.
+  - Useful for explanation even when not used as evidence authority.
+  practical_implications:
+  - Use for athlete-friendly explanation after stronger scientific framing is already
+    established.
+  - Helpful when discussing why durable execution matters as much as fresh test performance.
+  - Keep the source in a secondary explanatory role.
+  key_takeaways:
+  - Conceptual explanation of durability as a planning lens.
+  - Useful bridge between science and coaching language.
+  - Makes durability easier to explain operationally.
+  what_this_does_not_justify: []
+  important_limits:
+  - Not a replacement for peer-reviewed sources.
+  - Podcast framing can simplify nuance that matters in actual plan governance.
+  allowed_uses:
+  - coaching_translation
+  - conceptual_explanation
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Durability – The Fourth Pillar of Aerobic Fitness
+    main_takeaway: Conceptual explanation of durability as a planning lens.
+    main_limit: Not a replacement for peer-reviewed sources.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - repeatability
+    - periodization
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Explain durability as a major pillar of aerobic
+      performance in an accessible practitioner format.
+    study_type: podcast
+    population_or_context: Applied conceptual discussion for endurance coaches and
+      self-coached athletes.
+    what_was_actually_examined: Explain durability as a major pillar of aerobic performance
+      in an accessible practitioner format.
+    core_concepts:
+    - Durability belongs alongside other aerobic-performance pillars in practical
+      coaching language.
+    - Athletes often understand the idea faster when it is tied to pacing, fade, and
+      session finish quality.
+    - Applied communication can make abstract physiology useful.
+    key_takeaways:
+    - Conceptual explanation of durability as a planning lens.
+    - Useful bridge between science and coaching language.
+    - Makes durability easier to explain operationally.
+    important_findings:
+    - Provides a practical narrative around durability as something coaches can actively
+      build and monitor.
+    - Helps connect formal resilience concepts to pacing, long-ride behavior, and
+      repeatability.
+    - Useful for explanation even when not used as evidence authority.
+    practical_implications_for_rps:
+    - Use for athlete-friendly explanation after stronger scientific framing is already
+      established.
+    - Helpful when discussing why durable execution matters as much as fresh test
+      performance.
+    - Keep the source in a secondary explanatory role.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Not a replacement for peer-reviewed sources.
+    - Podcast framing can simplify nuance that matters in actual plan governance.
+    allowed_uses_in_rps:
+    - coaching_translation
+    - conceptual_explanation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_005.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_005
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_006
+  source_kind: applied
+  authors: Empirical Cycling
+  year: 2024
+  title: 'Watts Doc 23: Training Your VO₂max & why not Rønnestad 30/15'
+  journal_or_outlet: Empirical Cycling
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Watts Doc 23
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - vo2max
+  - progressive_overload
+  - intensity_distribution
+  question_or_focus: Critically discuss VO2max interval design and why some popular
+    interval formats may be oversold.
+  population_or_scope: Practitioner-critical interval-programming discussion for cyclists.
+  what_was_examined: []
+  core_concepts:
+  - Not every popular VO2 format is equally useful in every context.
+  - Interval density and recovery cost need more scrutiny than catchy set names suggest.
+  - Critical practitioner commentary can help prevent formula-following.
+  important_findings:
+  - Offers applied skepticism about interval formats that are often copied without
+    enough context.
+  - Useful for explaining why a hard session’s architecture matters, not just its
+    label.
+  - Helps keep VO2 programming practical rather than trendy.
+  practical_implications:
+  - Use when translating why RPS does not automatically escalate into dense VO2 work
+    just because it is fashionable.
+  - Helpful as a coaching-language companion to stronger HIIT structure evidence.
+  - Do not use it as sole authority for rejecting or selecting interval families.
+  key_takeaways:
+  - Useful critical appraisal of interval density tradeoffs.
+  - Helps challenge automatic adoption of popular VO2 formats.
+  - Supports context-sensitive interval design discussion.
+  what_this_does_not_justify: []
+  important_limits:
+  - Applied interpretation only.
+  - Critical practitioner views are valuable but remain non-binding.
+  allowed_uses:
+  - vo2max_context
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 'Watts Doc 23: Training Your VO₂max & why not Rønnestad 30/15'
+    main_takeaway: Useful critical appraisal of interval density tradeoffs.
+    main_limit: Applied interpretation only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - vo2max
+    - progressive_overload
+    - intensity_distribution
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Critically discuss VO2max interval design and why
+      some popular interval formats may be oversold.
+    study_type: podcast
+    population_or_context: Practitioner-critical interval-programming discussion for
+      cyclists.
+    what_was_actually_examined: Critically discuss VO2max interval design and why
+      some popular interval formats may be oversold.
+    core_concepts:
+    - Not every popular VO2 format is equally useful in every context.
+    - Interval density and recovery cost need more scrutiny than catchy set names
+      suggest.
+    - Critical practitioner commentary can help prevent formula-following.
+    key_takeaways:
+    - Useful critical appraisal of interval density tradeoffs.
+    - Helps challenge automatic adoption of popular VO2 formats.
+    - Supports context-sensitive interval design discussion.
+    important_findings:
+    - Offers applied skepticism about interval formats that are often copied without
+      enough context.
+    - Useful for explaining why a hard session’s architecture matters, not just its
+      label.
+    - Helps keep VO2 programming practical rather than trendy.
+    practical_implications_for_rps:
+    - Use when translating why RPS does not automatically escalate into dense VO2
+      work just because it is fashionable.
+    - Helpful as a coaching-language companion to stronger HIIT structure evidence.
+    - Do not use it as sole authority for rejecting or selecting interval families.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Applied interpretation only.
+    - Critical practitioner views are valuable but remain non-binding.
+    allowed_uses_in_rps:
+    - vo2max_context
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_006.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_006
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_007
+  source_kind: applied
+  authors: Ask a Cycling Coach
+  year: 2024
+  title: Tempo, Sweet Spot, and Recovery Weeks
+  journal_or_outlet: TrainerRoad / Ask a Cycling Coach Ep. 553
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 553
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - sweet_spot
+  - repeatability
+  - durability
+  question_or_focus: Discuss tempo, sweet spot, and recovery-week decisions in a practical
+    coaching format.
+  population_or_scope: Practitioner discussion for sub-threshold work and recovery-week
+    interpretation.
+  what_was_examined: []
+  core_concepts:
+  - Sub-threshold work can be productive but must remain embedded in overall recoverability.
+  - Recovery weeks are active design elements, not moral failure weeks.
+  - Sweet spot and tempo are context tools, not universal defaults.
+  important_findings:
+  - Provides practical examples of how coaches talk about balancing productive work
+    and recovery.
+  - Useful when explaining that reduced-load weeks can still contain structure without
+    becoming build weeks.
+  - Helps athletes understand why sub-threshold work is useful but not infinitely
+    stackable.
+  practical_implications:
+  - Use as practice translation after stronger evidence and active governance set
+    the boundaries.
+  - Helpful in conversations about recovery coherence, mini-reset logic, and restrained
+    sweet-spot use.
+  - Do not promote it above active taper/build rules.
+  key_takeaways:
+  - Applied discussion of recovery weeks and sub-threshold loading.
+  - Useful for athlete-facing explanation of tempo/sweet-spot use.
+  - Helps contextualize reduced-load weeks.
+  what_this_does_not_justify: []
+  important_limits:
+  - Practitioner source only.
+  - Not sufficient authority for precise load or intensity rules.
+  allowed_uses:
+  - sweet_spot_context
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Tempo, Sweet Spot, and Recovery Weeks
+    main_takeaway: Applied discussion of recovery weeks and sub-threshold loading.
+    main_limit: Practitioner source only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - sweet_spot
+    - repeatability
+    - durability
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Discuss tempo, sweet spot, and recovery-week decisions
+      in a practical coaching format.
+    study_type: podcast
+    population_or_context: Practitioner discussion for sub-threshold work and recovery-week
+      interpretation.
+    what_was_actually_examined: Discuss tempo, sweet spot, and recovery-week decisions
+      in a practical coaching format.
+    core_concepts:
+    - Sub-threshold work can be productive but must remain embedded in overall recoverability.
+    - Recovery weeks are active design elements, not moral failure weeks.
+    - Sweet spot and tempo are context tools, not universal defaults.
+    key_takeaways:
+    - Applied discussion of recovery weeks and sub-threshold loading.
+    - Useful for athlete-facing explanation of tempo/sweet-spot use.
+    - Helps contextualize reduced-load weeks.
+    important_findings:
+    - Provides practical examples of how coaches talk about balancing productive work
+      and recovery.
+    - Useful when explaining that reduced-load weeks can still contain structure without
+      becoming build weeks.
+    - Helps athletes understand why sub-threshold work is useful but not infinitely
+      stackable.
+    practical_implications_for_rps:
+    - Use as practice translation after stronger evidence and active governance set
+      the boundaries.
+    - Helpful in conversations about recovery coherence, mini-reset logic, and restrained
+      sweet-spot use.
+    - Do not promote it above active taper/build rules.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Practitioner source only.
+    - Not sufficient authority for precise load or intensity rules.
+    allowed_uses_in_rps:
+    - sweet_spot_context
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_007.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_007
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_008
+  source_kind: applied
+  authors: Ask a Cycling Coach
+  year: 2024
+  title: Low Cadence Training – Myth or Science Backed?
+  journal_or_outlet: TrainerRoad / Ask a Cycling Coach Ep. 565
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 565
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - k3
+  - periodization
+  - masters
+  question_or_focus: Discuss low-cadence training and separate myth from evidence
+    in a coach-facing format.
+  population_or_scope: Applied low-cadence/K3 discussion for cyclists.
+  what_was_examined: []
+  core_concepts:
+  - Low-cadence work needs contextual justification rather than folklore.
+  - K3-style work should be treated as a modality decision with specific costs.
+  - Myth-checking is useful because low-cadence work is often overgeneralized.
+  important_findings:
+  - Provides a practical lens on when low-cadence work is discussed as useful and
+    when it becomes mythology.
+  - Useful for explaining why low-cadence sessions are optional and context-sensitive.
+  - Can help athletes understand why RPS may include or exclude K3 depending on phase
+    and recovery state.
+  practical_implications:
+  - Use this for coach translation when explaining K3 choices to athletes.
+  - Helpful as a secondary source when clarifying that K3 is not universally required.
+  - Do not use it as a substitute for stronger evidence or active modality rules.
+  key_takeaways:
+  - Applied perspective on low-cadence work and evidence interpretation.
+  - Useful for practical K3 communication.
+  - Helps keep force-oriented work grounded.
+  what_this_does_not_justify: []
+  important_limits:
+  - Practitioner source only.
+  - Good for explanation, not for binding load or modality governance.
+  allowed_uses:
+  - k3_context
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Low Cadence Training – Myth or Science Backed?
+    main_takeaway: Applied perspective on low-cadence work and evidence interpretation.
+    main_limit: Practitioner source only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - k3
+    - periodization
+    - masters
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Discuss low-cadence training and separate myth from
+      evidence in a coach-facing format.
+    study_type: podcast
+    population_or_context: Applied low-cadence/K3 discussion for cyclists.
+    what_was_actually_examined: Discuss low-cadence training and separate myth from
+      evidence in a coach-facing format.
+    core_concepts:
+    - Low-cadence work needs contextual justification rather than folklore.
+    - K3-style work should be treated as a modality decision with specific costs.
+    - Myth-checking is useful because low-cadence work is often overgeneralized.
+    key_takeaways:
+    - Applied perspective on low-cadence work and evidence interpretation.
+    - Useful for practical K3 communication.
+    - Helps keep force-oriented work grounded.
+    important_findings:
+    - Provides a practical lens on when low-cadence work is discussed as useful and
+      when it becomes mythology.
+    - Useful for explaining why low-cadence sessions are optional and context-sensitive.
+    - Can help athletes understand why RPS may include or exclude K3 depending on
+      phase and recovery state.
+    practical_implications_for_rps:
+    - Use this for coach translation when explaining K3 choices to athletes.
+    - Helpful as a secondary source when clarifying that K3 is not universally required.
+    - Do not use it as a substitute for stronger evidence or active modality rules.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Practitioner source only.
+    - Good for explanation, not for binding load or modality governance.
+    allowed_uses_in_rps:
+    - k3_context
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_008.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_008
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_009
+  source_kind: applied
+  authors: INSCYD Team
+  year: 2024
+  title: 5 training tips to decrease VLamax
+  journal_or_outlet: INSCYD
+  source_type: blog
+  study_type: blog
+  reference_locator: Article reference only
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - metabolic_efficiency
+  - sweet_spot
+  - fueling
+  question_or_focus: Give practical VLamax-reduction heuristics in a coaching/performance-lab
+    style.
+  population_or_scope: Applied metabolic-interpretation source with strong practitioner
+    flavor.
+  what_was_examined: []
+  core_concepts:
+  - VLamax is used in practice as a lens for glycolytic contribution and substrate
+    tradeoffs.
+  - Metabolic interpretation can shape how coaches talk about steady work, fueling,
+    and event demands.
+  - Applied metabolic models need careful translation into planning decisions.
+  important_findings:
+  - Provides a practitioner-facing way to discuss why reducing glycolytic dominance
+    may support long-duration steadiness.
+  - Useful when athletes ask about “engine type” or why some work seems metabolically
+    expensive.
+  - Supports metabolic explanation but not hard governance.
+  practical_implications:
+  - Use for metabolic coaching translation after stronger evidence already defines
+    the decision boundary.
+  - Helpful in athlete conversations around steady endurance work and fueling economy.
+  - Do not treat VLamax blog heuristics as direct plan-setting authority.
+  key_takeaways:
+  - Practical VLamax-oriented suggestions for interpretation only.
+  - Useful for metabolic-language translation.
+  - Helps frame glycolytic versus oxidative tradeoffs.
+  what_this_does_not_justify: []
+  important_limits:
+  - Not planning authority.
+  - Applied metabolic interpretation can oversimplify individual physiology.
+  allowed_uses:
+  - metabolic_efficiency
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 5 training tips to decrease VLamax
+    main_takeaway: Practical VLamax-oriented suggestions for interpretation only.
+    main_limit: Not planning authority.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - metabolic_efficiency
+    - sweet_spot
+    - fueling
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Give practical VLamax-reduction heuristics in a
+      coaching/performance-lab style.
+    study_type: blog
+    population_or_context: Applied metabolic-interpretation source with strong practitioner
+      flavor.
+    what_was_actually_examined: Give practical VLamax-reduction heuristics in a coaching/performance-lab
+      style.
+    core_concepts:
+    - VLamax is used in practice as a lens for glycolytic contribution and substrate
+      tradeoffs.
+    - Metabolic interpretation can shape how coaches talk about steady work, fueling,
+      and event demands.
+    - Applied metabolic models need careful translation into planning decisions.
+    key_takeaways:
+    - Practical VLamax-oriented suggestions for interpretation only.
+    - Useful for metabolic-language translation.
+    - Helps frame glycolytic versus oxidative tradeoffs.
+    important_findings:
+    - Provides a practitioner-facing way to discuss why reducing glycolytic dominance
+      may support long-duration steadiness.
+    - Useful when athletes ask about “engine type” or why some work seems metabolically
+      expensive.
+    - Supports metabolic explanation but not hard governance.
+    practical_implications_for_rps:
+    - Use for metabolic coaching translation after stronger evidence already defines
+      the decision boundary.
+    - Helpful in athlete conversations around steady endurance work and fueling economy.
+    - Do not treat VLamax blog heuristics as direct plan-setting authority.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Not planning authority.
+    - Applied metabolic interpretation can oversimplify individual physiology.
+    allowed_uses_in_rps:
+    - metabolic_efficiency
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_009.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_009
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_010
+  source_kind: applied
+  authors: Science of Getting Faster / Podlogar
+  year: 2024
+  title: Can We Go Beyond 90g of Carbohydrates?
+  journal_or_outlet: TrainerRoad / Science of Getting Faster Ep. 5
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 5
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - fueling
+  - brevet_ultra
+  - metabolic_efficiency
+  question_or_focus: Discuss whether athletes can go beyond 90 g/h of carbohydrate
+    and what gut training means in practice.
+  population_or_scope: Applied fueling discussion relevant to long events, high-CHO
+    strategies, and gut-training practice.
+  what_was_examined: []
+  core_concepts:
+  - High carbohydrate intake can be a trainable skill, not only a race-day choice.
+  - Gut tolerance and fueling execution are part of durable performance in long events.
+  - Practical fueling ceilings depend on context, tolerance, and repeated practice.
+  important_findings:
+  - Provides practical translation of high-CHO fueling discussion into athlete-facing
+    guidance.
+  - Helps explain that fueling capacity itself can be trained and matters for late-session
+    performance.
+  - Useful in long-event contexts where energy availability strongly shapes durability.
+  practical_implications:
+  - Use when explaining practical fueling rehearsal and gut-training concepts for
+    brevet/ultra athletes.
+  - Helpful as a practice-layer bridge after stronger evidence or verified expert
+    references frame the decision.
+  - Do not elevate the episode above stronger primary or review sources for exact
+    intake rules.
+  key_takeaways:
+  - Useful for high-CHO fueling implementation and gut-training discussion.
+  - Connects fueling tolerance with long-event execution.
+  - Supports applied long-duration nutrition planning.
+  what_this_does_not_justify: []
+  important_limits:
+  - Applied source only.
+  - Podcast discussion should not be treated as standalone authority for exact carbohydrate
+    targets.
+  allowed_uses:
+  - fueling_context
+  - coaching_translation
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Can We Go Beyond 90g of Carbohydrates?
+    main_takeaway: Useful for high-CHO fueling implementation and gut-training discussion.
+    main_limit: Applied source only.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - brevet_ultra
+    - metabolic_efficiency
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Discuss whether athletes can go beyond 90 g/h of
+      carbohydrate and what gut training means in practice.
+    study_type: podcast
+    population_or_context: Applied fueling discussion relevant to long events, high-CHO
+      strategies, and gut-training practice.
+    what_was_actually_examined: Discuss whether athletes can go beyond 90 g/h of carbohydrate
+      and what gut training means in practice.
+    core_concepts:
+    - High carbohydrate intake can be a trainable skill, not only a race-day choice.
+    - Gut tolerance and fueling execution are part of durable performance in long
+      events.
+    - Practical fueling ceilings depend on context, tolerance, and repeated practice.
+    key_takeaways:
+    - Useful for high-CHO fueling implementation and gut-training discussion.
+    - Connects fueling tolerance with long-event execution.
+    - Supports applied long-duration nutrition planning.
+    important_findings:
+    - Provides practical translation of high-CHO fueling discussion into athlete-facing
+      guidance.
+    - Helps explain that fueling capacity itself can be trained and matters for late-session
+      performance.
+    - Useful in long-event contexts where energy availability strongly shapes durability.
+    practical_implications_for_rps:
+    - Use when explaining practical fueling rehearsal and gut-training concepts for
+      brevet/ultra athletes.
+    - Helpful as a practice-layer bridge after stronger evidence or verified expert
+      references frame the decision.
+    - Do not elevate the episode above stronger primary or review sources for exact
+      intake rules.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Applied source only.
+    - Podcast discussion should not be treated as standalone authority for exact carbohydrate
+      targets.
+    allowed_uses_in_rps:
+    - fueling_context
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_010.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_010
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_011
+  source_kind: applied
+  authors: Sitzfleisch / Kinzlbauer
+  year: 2024
+  title: Ultracycling-Training mit Coach Max Kinzlbauer
+  journal_or_outlet: Sitzfleisch Ep. 154
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 154
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - brevet_ultra
+  - durability
+  - fueling
+  question_or_focus: Share ultracycling practice experience around volume, intensity,
+    sleep, and fueling from a coach perspective.
+  population_or_scope: Applied ultra/brevet-like practice context with strong event-specific
+    lived-experience value.
+  what_was_examined: []
+  core_concepts:
+  - 'Ultra and brevet preparation involves more than fitness: pacing, sleep, fueling,
+    and resilience matter.'
+  - Practice knowledge is especially valuable when events stress systems not captured
+    well in standard racing models.
+  - Long-event coaching often prioritizes durability reserve over top-end sharpness.
+  important_findings:
+  - Provides athlete-relevant insight into what actually breaks down in ultra-style
+    events besides pure power.
+  - Supports the practical importance of pacing discipline, fueling robustness, and
+    fatigue-resistant decision-making.
+  - Useful for contextualizing why brevet planning can differ from short-race optimization.
+  practical_implications:
+  - Use this as a valuable practice layer for brevet/ultra context after the core
+    scientific frame is established.
+  - Helpful when explaining why the plan emphasizes execution stability and low metabolic
+    strain.
+  - Keep it explicitly below stronger evidence and deterministic governance.
+  key_takeaways:
+  - Applied ultracycling perspective on volume, intensity, sleep, and fueling.
+  - Very useful for practical long-event context.
+  - Brings lived event demands into planning interpretation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Background-only practitioner source.
+  - Rich practical value does not make it a binding scientific authority.
+  allowed_uses:
+  - brevet_context
+  - coaching_translation
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Ultracycling-Training mit Coach Max Kinzlbauer
+    main_takeaway: Applied ultracycling perspective on volume, intensity, sleep, and
+      fueling.
+    main_limit: Background-only practitioner source.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - brevet_ultra
+    - durability
+    - fueling
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Share ultracycling practice experience around volume,
+      intensity, sleep, and fueling from a coach perspective.
+    study_type: podcast
+    population_or_context: Applied ultra/brevet-like practice context with strong
+      event-specific lived-experience value.
+    what_was_actually_examined: Share ultracycling practice experience around volume,
+      intensity, sleep, and fueling from a coach perspective.
+    core_concepts:
+    - 'Ultra and brevet preparation involves more than fitness: pacing, sleep, fueling,
+      and resilience matter.'
+    - Practice knowledge is especially valuable when events stress systems not captured
+      well in standard racing models.
+    - Long-event coaching often prioritizes durability reserve over top-end sharpness.
+    key_takeaways:
+    - Applied ultracycling perspective on volume, intensity, sleep, and fueling.
+    - Very useful for practical long-event context.
+    - Brings lived event demands into planning interpretation.
+    important_findings:
+    - Provides athlete-relevant insight into what actually breaks down in ultra-style
+      events besides pure power.
+    - Supports the practical importance of pacing discipline, fueling robustness,
+      and fatigue-resistant decision-making.
+    - Useful for contextualizing why brevet planning can differ from short-race optimization.
+    practical_implications_for_rps:
+    - Use this as a valuable practice layer for brevet/ultra context after the core
+      scientific frame is established.
+    - Helpful when explaining why the plan emphasizes execution stability and low
+      metabolic strain.
+    - Keep it explicitly below stronger evidence and deterministic governance.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Background-only practitioner source.
+    - Rich practical value does not make it a binding scientific authority.
+    allowed_uses_in_rps:
+    - brevet_context
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_011.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_011
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_012
+  source_kind: applied
+  authors: TrainingPeaks
+  year: 2024
+  title: Break Through Your Performance Plateau by Increasing Training Density
+  journal_or_outlet: TrainingPeaks Blog
+  source_type: blog
+  study_type: blog
+  reference_locator: Article reference only
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - progressive_overload
+  - intensity_distribution
+  - threshold
+  question_or_focus: Discuss training density as a practical progression lever when
+    athletes plateau.
+  population_or_scope: Applied progression-context article aimed at endurance athletes
+    and coaches.
+  what_was_examined: []
+  core_concepts:
+  - Density is one legitimate overload axis, but it is also one of the easiest to
+    misuse.
+  - Plateau-breaking advice often becomes dangerous when it ignores recoverability.
+  - Progression needs sequence and guardrails.
+  important_findings:
+  - Provides an accessible way to discuss density changes without making them sound
+    like magic.
+  - Useful when explaining why density is often a later rather than earlier progression
+    lever.
+  - Supports practical overload discussion while still requiring stronger governance.
+  practical_implications:
+  - Use this to translate progression logic once RPS has already determined density
+    is appropriate.
+  - Helpful for explaining why density increases are constrained and not the first
+    tool after missed work.
+  - Do not use it as binding overload policy.
+  key_takeaways:
+  - Useful for discussing density as a progression axis.
+  - Practical support for one overload lever among several.
+  - Helps explain progression choices in athlete language.
+  what_this_does_not_justify: []
+  important_limits:
+  - Not sufficient as a binding planning rule.
+  - Applied content may understate the recovery cost of density changes in masters
+    or compressed weeks.
+  allowed_uses:
+  - progression_logic
+  - coaching_translation
+  authority_limit: practice_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: Break Through Your Performance Plateau by Increasing Training Density
+    main_takeaway: Useful for discussing density as a progression axis.
+    main_limit: Not sufficient as a binding planning rule.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - progressive_overload
+    - intensity_distribution
+    - threshold
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Discuss training density as a practical progression
+      lever when athletes plateau.
+    study_type: blog
+    population_or_context: Applied progression-context article aimed at endurance
+      athletes and coaches.
+    what_was_actually_examined: Discuss training density as a practical progression
+      lever when athletes plateau.
+    core_concepts:
+    - Density is one legitimate overload axis, but it is also one of the easiest to
+      misuse.
+    - Plateau-breaking advice often becomes dangerous when it ignores recoverability.
+    - Progression needs sequence and guardrails.
+    key_takeaways:
+    - Useful for discussing density as a progression axis.
+    - Practical support for one overload lever among several.
+    - Helps explain progression choices in athlete language.
+    important_findings:
+    - Provides an accessible way to discuss density changes without making them sound
+      like magic.
+    - Useful when explaining why density is often a later rather than earlier progression
+      lever.
+    - Supports practical overload discussion while still requiring stronger governance.
+    practical_implications_for_rps:
+    - Use this to translate progression logic once RPS has already determined density
+      is appropriate.
+    - Helpful for explaining why density increases are constrained and not the first
+      tool after missed work.
+    - Do not use it as binding overload policy.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Not sufficient as a binding planning rule.
+    - Applied content may understate the recovery cost of density changes in masters
+      or compressed weeks.
+    allowed_uses_in_rps:
+    - progression_logic
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_012.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_012
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_013
+  source_kind: applied
+  authors: SCYENCE
+  year: 2024
+  title: 'Zone 2 Training: San Millán / LIT / FATmax'
+  journal_or_outlet: SCYENCE Ep. 49
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 49
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - metabolic_efficiency
+  - fueling
+  - brevet_ultra
+  question_or_focus: Explain zone-2, FATmax, and related low-intensity metabolic ideas
+    in practical language.
+  population_or_scope: Applied metabolic/endurance discussion for athletes interested
+    in low-intensity training concepts.
+  what_was_examined: []
+  core_concepts:
+  - Low-intensity work is often discussed through metabolic-efficiency and substrate-use
+    frames.
+  - Zone-2 style language can help athletes understand why easy work matters, but
+    it can also oversimplify.
+  - Metabolic concepts are useful when they remain tied to practical training decisions.
+  important_findings:
+  - Provides accessible explanation of why athletes and coaches value low-intensity
+    work metabolically.
+  - Useful when athletes ask why so much training remains apparently “easy.”
+  - Supports communication around oxidative-support logic in long-event training.
+  practical_implications:
+  - Use this as background coaching translation when explaining endurance-heavy base
+    and durability work.
+  - Helpful for practical language, but keep exact physiological claims tied to stronger
+    evidence where possible.
+  - Do not let zone-2 rhetoric override actual event, corridor, and recovery constraints.
+  key_takeaways:
+  - Practical interpretation of zone-2 and FATmax style thinking.
+  - Useful for athlete-facing explanation of easy training value.
+  - Helps connect low-intensity work with metabolic rationale.
+  what_this_does_not_justify: []
+  important_limits:
+  - Background-only practitioner source.
+  - Concept language can become fashionable shorthand if not grounded in stronger
+    evidence.
+  allowed_uses:
+  - metabolic_efficiency
+  - coaching_translation
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: 'Zone 2 Training: San Millán / LIT / FATmax'
+    main_takeaway: Practical interpretation of zone-2 and FATmax style thinking.
+    main_limit: Background-only practitioner source.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - metabolic_efficiency
+    - fueling
+    - brevet_ultra
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Explain zone-2, FATmax, and related low-intensity
+      metabolic ideas in practical language.
+    study_type: podcast
+    population_or_context: Applied metabolic/endurance discussion for athletes interested
+      in low-intensity training concepts.
+    what_was_actually_examined: Explain zone-2, FATmax, and related low-intensity
+      metabolic ideas in practical language.
+    core_concepts:
+    - Low-intensity work is often discussed through metabolic-efficiency and substrate-use
+      frames.
+    - Zone-2 style language can help athletes understand why easy work matters, but
+      it can also oversimplify.
+    - Metabolic concepts are useful when they remain tied to practical training decisions.
+    key_takeaways:
+    - Practical interpretation of zone-2 and FATmax style thinking.
+    - Useful for athlete-facing explanation of easy training value.
+    - Helps connect low-intensity work with metabolic rationale.
+    important_findings:
+    - Provides accessible explanation of why athletes and coaches value low-intensity
+      work metabolically.
+    - Useful when athletes ask why so much training remains apparently “easy.”
+    - Supports communication around oxidative-support logic in long-event training.
+    practical_implications_for_rps:
+    - Use this as background coaching translation when explaining endurance-heavy
+      base and durability work.
+    - Helpful for practical language, but keep exact physiological claims tied to
+      stronger evidence where possible.
+    - Do not let zone-2 rhetoric override actual event, corridor, and recovery constraints.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Background-only practitioner source.
+    - Concept language can become fashionable shorthand if not grounded in stronger
+      evidence.
+    allowed_uses_in_rps:
+    - metabolic_efficiency
+    - coaching_translation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_013.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_013
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_app_014
+  source_kind: applied
+  authors: JunkMiles
+  year: 2024
+  title: VLamax – Der Gegenspieler
+  journal_or_outlet: JunkMiles Ep. 10
+  source_type: podcast
+  study_type: podcast
+  reference_locator: Episode 10
+  verification_status: verified
+  locator_source: outlet
+  topic_tags:
+  - metabolic_efficiency
+  - sweet_spot
+  - threshold
+  question_or_focus: Explain VLamax and the tradeoff between glycolytic power and
+    durable aerobic metabolism in a practical format.
+  population_or_scope: Applied practitioner source for metabolic tradeoff explanation.
+  what_was_examined: []
+  core_concepts:
+  - Glycolytic rate is often discussed as a counterweight to steady long-duration
+    efficiency.
+  - Athletes benefit from understandable metaphors for metabolic tradeoffs, even when
+    the underlying science is complex.
+  - Practical metabolic language can shape how athletes view threshold, sweet spot,
+    and fueling.
+  important_findings:
+  - Provides a practical explanation of why certain athlete profiles may struggle
+    with long, low-strain durability goals.
+  - Helps connect glycolytic dominance language with pacing and substrate-use discussion.
+  - Useful in athlete conversations where formal lab vocabulary would be too opaque.
+  practical_implications:
+  - Use as background explanation when translating metabolic tradeoffs into coach
+    language.
+  - Helpful when explaining why a long-event athlete may not want every training decision
+    to bias toward glycolytic sharpness.
+  - Do not use it as standalone authority for designing energy-system training policy.
+  key_takeaways:
+  - Practitioner explanation of glycolytic rate and fat-metabolism tradeoffs.
+  - Useful for metabolic coaching language.
+  - Helps explain why “more punch” can conflict with long steady performance.
+  what_this_does_not_justify: []
+  important_limits:
+  - Background-only practitioner source.
+  - Useful explanatory value does not equal validated planning authority.
+  allowed_uses:
+  - metabolic_efficiency
+  - conceptual_explanation
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: not_present
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: ''
+  summary_card:
+    focus: VLamax – Der Gegenspieler
+    main_takeaway: Practitioner explanation of glycolytic rate and fat-metabolism
+      tradeoffs.
+    main_limit: Background-only practitioner source.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - metabolic_efficiency
+    - sweet_spot
+    - threshold
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: applied_translation
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
+      curation.
+    research_question_or_purpose: Explain VLamax and the tradeoff between glycolytic
+      power and durable aerobic metabolism in a practical format.
+    study_type: podcast
+    population_or_context: Applied practitioner source for metabolic tradeoff explanation.
+    what_was_actually_examined: Explain VLamax and the tradeoff between glycolytic
+      power and durable aerobic metabolism in a practical format.
+    core_concepts:
+    - Glycolytic rate is often discussed as a counterweight to steady long-duration
+      efficiency.
+    - Athletes benefit from understandable metaphors for metabolic tradeoffs, even
+      when the underlying science is complex.
+    - Practical metabolic language can shape how athletes view threshold, sweet spot,
+      and fueling.
+    key_takeaways:
+    - Practitioner explanation of glycolytic rate and fat-metabolism tradeoffs.
+    - Useful for metabolic coaching language.
+    - Helps explain why “more punch” can conflict with long steady performance.
+    important_findings:
+    - Provides a practical explanation of why certain athlete profiles may struggle
+      with long, low-strain durability goals.
+    - Helps connect glycolytic dominance language with pacing and substrate-use discussion.
+    - Useful in athlete conversations where formal lab vocabulary would be too opaque.
+    practical_implications_for_rps:
+    - Use as background explanation when translating metabolic tradeoffs into coach
+      language.
+    - Helpful when explaining why a long-event athlete may not want every training
+      decision to bias toward glycolytic sharpness.
+    - Do not use it as standalone authority for designing energy-system training policy.
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Background-only practitioner source.
+    - Useful explanatory value does not equal validated planning authority.
+    allowed_uses_in_rps:
+    - metabolic_efficiency
+    - conceptual_explanation
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_app_014.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_app_014
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''

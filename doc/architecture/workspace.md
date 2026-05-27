@@ -1,16 +1,10 @@
 ---
-Version: 1.1
+Version: 1.2
 Status: Updated
-Last-Updated: 2026-05-19
+Last-Updated: 2026-05-27
 Owner: Architecture
 ---
 # Workspace
-
-Version: 2.1
-Status: Updated
-Last-Updated: 2026-05-19
-
----
 
 ## Purpose
 
@@ -97,6 +91,28 @@ derived workspace `version_key`, not on agent-invented metadata.
 | `logs/` | System | Single `rps.log` (rotated) + log sidecars |
 | `runs/` | System | Run records (`run.json`, `steps.json`, `events.jsonl`) + queue state |
 | `rendered/` | renderer | Markdown sidecars derived from JSON artefacts |
+
+### Repo-Scoped Evidence Library
+
+The evidence registry is intentionally **not** athlete-scoped workspace state.
+It lives under:
+
+- `skills/shared/durability-methodology/references/library/`
+
+This registry stores the canonical evidence entries, generated study briefs, and
+derived reference tables used by Coach / Season / Phase / Week evidence
+surfaces.
+
+Rules:
+
+- The registry is repo-scoped and shared across athletes.
+- `literature_refresh` writes status and stage events into the active athlete
+  run store, but does not persist the registry under `runtime/athletes/`.
+- Only `activation_status == active` evidence may surface in operative
+  knowledge injection.
+- During migration/backfill, `legacy_active` may remain visible in the library
+  until re-curation completes, but it is transitional state rather than a new
+  permanent workspace layer.
 
 ### Feed-Forward Keying Rules
 

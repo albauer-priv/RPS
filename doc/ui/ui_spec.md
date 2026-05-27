@@ -80,7 +80,7 @@ See [doc/architecture/system_architecture.md](../architecture/system_architectur
 - See [doc/ui/pages/athlete_profile.md](pages/athlete_profile.md).
 
 ### System
-- Status (running processes + latest artefacts)
+- Status (running processes, evidence-library refresh state, latest artefacts)
 - History, Log
 - See [doc/ui/pages/system_status.md](pages/system_status.md), [doc/ui/pages/system_history.md](pages/system_history.md), [doc/ui/pages/system_log.md](pages/system_log.md).
 

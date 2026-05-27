@@ -23,6 +23,7 @@ from .models import (
     CoachPreviewSummaryModel,
     ConstraintAuditModel,
     DESAnalysisBundleModel,
+    EvidenceCurationModel,
     LoadGovernanceAuditModel,
     PendingResolutionResultModel,
     PhaseBundleModel,
@@ -278,6 +279,7 @@ def output_model_for_kind(output_kind: str) -> type[Any]:
         "des_analysis_bundle": DESAnalysisBundleModel,
         "report_review_decision": ReportReviewDecisionModel,
         "replan_instruction": ReplanInstructionModel,
+        "evidence_curation": EvidenceCurationModel,
     }
     if output_kind not in registry:
         raise ValueError(f"Unsupported CrewAI output kind: {output_kind}")

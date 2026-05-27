@@ -154,7 +154,7 @@ def _minimal_season_plan_document() -> dict[str, object]:
                             "authors": "Mujika and Padilla",
                             "year": 2003,
                             "title": "Scientific bases for precompetition tapering strategies",
-                            "link": "https://pubmed.ncbi.nlm.nih.gov/12744717/",
+                            "link": "https://pubmed.ncbi.nlm.nih.gov/12840640/",
                         }
                     ],
                     "plan_alignment_check": "Aligned.",

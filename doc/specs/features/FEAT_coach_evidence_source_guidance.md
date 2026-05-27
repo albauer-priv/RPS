@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
-Last-Updated: 2026-05-17
+Last-Updated: 2026-05-27
 Owner: Coach Runtime
 ---
 # FEAT: Coach Evidence Source Guidance
@@ -9,7 +9,7 @@ Owner: Coach Runtime
 * **ID:** FEAT_coach_evidence_source_guidance
 * **Status:** Implemented
 * **Owner/Area:** Coach Runtime
-* **Last-Updated:** 2026-05-17
+* **Last-Updated:** 2026-05-27
 * **Related:** `skills/conversation/guarded-operations`, `skills/week/recommendation-and-adjustment`, `skills/shared/durability-methodology`
 
 ---
@@ -19,7 +19,7 @@ Owner: Coach Runtime
 **Current behavior**
 
 * The Coach and Week Recommendation Specialist can access `factual_evidence` via CrewAI knowledge configuration.
-* The archive durability bibliography exists in `specs/knowledge/_shared/sources/evidence/durability_bibliography.md`, while curated operative lookup tables now live under `skills/shared/durability-methodology/references/`.
+* The repository now uses a canonical local evidence library under `skills/shared/durability-methodology/references/library/`, with generated operative lookup tables under `skills/shared/durability-methodology/references/`.
 
 **Problem**
 
@@ -37,8 +37,8 @@ Owner: Coach Runtime
 
 **Goals**
 
-* [x] Copy the durability bibliography into a skill reference location near the active durability methodology.
-* [x] Supersede the copied bibliography as an archive/seed source once curated core/applied tables exist.
+* [x] Move active lookup to the canonical local evidence library plus generated tables.
+* [x] Decommission legacy bibliography files as operative lookup sources.
 * [x] Add active Coach and Week Recommendation instructions for evidence use.
 * [x] Define preferred authors and domains for source-backed explanations and web verification.
 * [x] Prevent invented citations, thresholds, study claims, DOIs, and URLs.
@@ -55,8 +55,8 @@ Owner: Coach Runtime
 
 **User/System behavior**
 
-* When a user asks why a durability-first decision is appropriate, Coach uses injected evidence knowledge and available web-search results as explanatory support.
-* Coach prefers peer-reviewed or DOI-backed sources before practitioner material.
+* When a user asks why a durability-first decision is appropriate, Coach uses injected evidence knowledge and primary-source verification as explanatory support.
+* Coach prefers peer-reviewed and verified primary-source-backed references before practitioner material.
 * Practitioner media can frame implementation, but not establish new governance rules.
 
 **UI impact**
@@ -74,7 +74,8 @@ Owner: Coach Runtime
 
 **Components / Modules**
 
-* `skills/shared/durability-methodology/references/durability_bibliography.md`: copied bibliography archive/seed reference.
+* `skills/shared/durability-methodology/references/library/core_studies.yaml`: canonical operative core library.
+* `skills/shared/durability-methodology/references/library/applied_sources.yaml`: canonical operative applied library.
 * `skills/shared/durability-methodology/references/durability_reference_table_core.md`: primary operative scientific lookup.
 * `skills/shared/durability-methodology/references/durability_reference_table_applied.md`: secondary applied/practitioner lookup.
 * `skills/conversation/guarded-operations/SKILL.md`: active Coach source policy.
@@ -84,9 +85,9 @@ Owner: Coach Runtime
 
 **Data flow**
 
-* Inputs: user question, injected evidence knowledge, optional web-search result if exposed by runtime.
+* Inputs: user question, injected evidence knowledge, optional primary-source verification result if exposed by runtime.
 * Processing: Coach forms a bounded answer and uses evidence only as justification.
-* Outputs: Coach response or coaching recommendation with compact verified citations when available.
+* Outputs: Coach response or coaching recommendation with compact verified citations when available, or omitted locators when verification is uncertain.
 
 **Schema / Artefacts**
 
@@ -101,8 +102,8 @@ Owner: Coach Runtime
 **Compatibility**
 
 * Backward compatible: Yes.
-* Breaking changes: none.
-* Fallback behavior: if web research is unavailable, Coach uses retrieved knowledge and avoids unverified citations.
+* Breaking changes: legacy bibliography files are no longer operative evidence inputs.
+* Fallback behavior: if verification is unavailable, Coach uses retrieved knowledge and omits uncertain locators.
 
 **Conflicts with ADRs / Principles**
 
@@ -130,7 +131,7 @@ Owner: Coach Runtime
 
 **Summary**
 
-* Keep bibliography in skill references and put the source rules into active Coach/Recommendation skill bodies.
+* Keep the canonical local evidence library in skill references and put the source rules into active Coach/Recommendation skill bodies.
 
 **Pros**
 
@@ -149,7 +150,7 @@ Owner: Coach Runtime
 
 **Summary**
 
-* Rely on `knowledge_sources.yaml` and the bibliography as retrieval material.
+* Rely on `knowledge_sources.yaml` and the generated evidence-library surfaces as retrieval material.
 
 **Pros**
 
@@ -168,7 +169,7 @@ Owner: Coach Runtime
 
 ## 7) Acceptance Criteria
 
-* [x] Bibliography is present under shared durability skill references.
+* [x] Canonical local evidence library is present under shared durability skill references.
 * [x] Coach active skill names preferred domains and authors.
 * [x] Week recommendation skill names preferred domains and authors.
 * [x] Prompts and Coach recommendation task warn against invented citations.
@@ -193,7 +194,7 @@ Owner: Coach Runtime
 
 * Failure mode: Coach cites a source not actually retrieved or verified.
   * Detection: prompt regression and review of Coach responses.
-  * Safe behavior: answer without citation or label evidence as unverified.
+  * Safe behavior: answer without locator or label evidence as unverified/applied.
   * Recovery: add a stricter citation validator if needed.
 
 * Failure mode: Coach treats a practitioner source as binding training authority.
@@ -224,7 +225,9 @@ Owner: Coach Runtime
 
 ## 12) Link Map
 
-* `specs/knowledge/_shared/sources/evidence/durability_bibliography.md`
+* `skills/shared/durability-methodology/references/evidence_library_manifest.md`
+* `skills/shared/durability-methodology/references/library/core_studies.yaml`
+* `skills/shared/durability-methodology/references/library/applied_sources.yaml`
 * `specs/knowledge/_shared/sources/principles/evidence_layer_durability.md`
 * `config/crewai/knowledge_sources.yaml`
 * `skills/conversation/guarded-operations/SKILL.md`

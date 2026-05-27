@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
-Last-Updated: 2026-05-26
+Last-Updated: 2026-05-27
 Owner: Skills
 ---
 # FEAT: Curated Durability Reference Tables
@@ -9,8 +9,25 @@ Owner: Skills
 * **ID:** FEAT_durability_reference_tables
 * **Status:** Implemented
 * **Owner/Area:** Skills / Shared durability-methodology
-* **Last-Updated:** 2026-05-26
+* **Last-Updated:** 2026-05-27
 * **Related:** FEAT_active_prompt_policy_migration_completion, FEAT_workout_policy_skill_completion
+
+---
+
+## Historical Position
+
+This document remains useful as the **initial table/library migration step**, but
+it is no longer the sole canonical description of the evidence runtime.
+
+Read the following as the current canonical follow-on docs:
+
+- `doc/specs/features/FEAT_repo_wide_evidence_library_and_refresh.md`
+- `doc/specs/features/FEAT_evidence_curation_pipeline.md`
+
+This file should now be interpreted as:
+- the step that separated `core` and `applied` evidence tables
+- the step that decommissioned mixed bibliography files as operative inputs
+- not the final description of evidence discovery, curation, gating, or activation
 
 ---
 
@@ -18,20 +35,20 @@ Owner: Skills
 
 **Current behavior**
 
-* The repo already contains broad durability bibliographies under `specs/knowledge/_shared/sources/evidence/` and `skills/shared/durability-methodology/references/`.
-* Those bibliographies mix peer-reviewed studies, books, podcasts, blogs, and practitioner media in one long thematic list.
+* The repo now carries a canonical local evidence library plus generated reference tables, while older bibliography files remain only as decommission markers.
+* Earlier broad bibliographies mixed peer-reviewed studies, books, podcasts, blogs, and practitioner media in one long thematic list.
 
 **Problem**
 
 * Active skills do not get a clean distinction between high-authority research references and practice/media references.
 * Agents can over-read mixed bibliography entries as if they were equally authoritative.
-* The existing bibliography is a good seed source but not a strong operational lookup table.
+* The existing bibliography is a useful historical seed but not an acceptable operational lookup table.
 
 **Constraints**
 
 * No web-dependent rebuild for this pass.
 * Use existing local bibliography sources as the primary seed.
-* Keep the old bibliography as archive/seed rather than deleting it.
+* Fully decommission old bibliography files as operative inputs while preserving compatibility markers where needed.
 
 ---
 
@@ -42,8 +59,8 @@ Owner: Skills
 * [x] Add a curated core reference table for peer-reviewed / DOI / PubMed-near sources.
 * [x] Add a separate applied reference table for practitioner/media sources.
 * [x] Give both tables one consistent schema for agent lookup.
-* [x] Repoint the shared durability skill to the new tables as primary references.
-* [x] Keep the old bibliography as archive/seed only.
+* [x] Repoint the shared durability skill to the canonical local evidence library and generated tables as primary references.
+* [x] Decommission the old bibliography as an operative source.
 
 **Non-Goals**
 
@@ -58,7 +75,7 @@ Owner: Skills
 
 * Shared durability/planning skills should consult a compact core reference table first.
 * If the skill needs implementation/practice framing, it should consult a separate applied table.
-* The old bibliography remains available for expansion, but is no longer the primary operative reference.
+* Decommissioned bibliography files remain only as compatibility/history markers and are no longer operative references.
 
 **UI impact**
 
@@ -69,7 +86,7 @@ Owner: Skills
 * Components involved:
   * `skills/shared/durability-methodology/SKILL.md`
   * `skills/shared/durability-methodology/references/*`
-  * `specs/knowledge/_shared/sources/evidence/durability_bibliography.md`
+* `skills/shared/durability-methodology/references/evidence_library_manifest.md`
 
 * Contracts touched:
   * local skill reference conventions only
@@ -81,23 +98,25 @@ Owner: Skills
 **Components / Modules**
 
 * Shared durability skill: update evidence-use boundary and reference priority.
-* Shared references: add two new markdown tables with a fixed schema.
-* Legacy bibliography: add a short archival/seed note.
+* Shared references: add a structured local library plus generated markdown tables.
+* Legacy bibliography: replace with a decommission note.
 
 **Data flow**
 
-* Inputs: existing local durability bibliography entries
-* Processing: curate into core vs applied tables with authority limits
-* Outputs: two new agent-usable reference tables
+* Inputs: existing local durability bibliography entries and curated verified locator data
+* Processing: normalize into canonical core/applied library data with authority limits and generated views
+* Outputs: canonical library plus agent-usable generated reference tables
 
 **Schema / Artefacts**
 
 * New artefacts:
-  * `durability_reference_table_core.md`
-  * `durability_reference_table_applied.md`
+* `library/core_studies.yaml`
+* `library/applied_sources.yaml`
+* `durability_reference_table_core.md`
+* `durability_reference_table_applied.md`
 * Changed artefacts:
   * `skills/shared/durability-methodology/SKILL.md`
-  * old bibliography headers
+* decommissioned bibliography/manifest markers
 
 ---
 
@@ -107,7 +126,7 @@ Owner: Skills
 
 * Backward compatible: Yes
 * Breaking changes: None in runtime contracts
-* Fallback behavior: old bibliography remains available as archive/seed
+* Fallback behavior: decommissioned files remain as compatibility markers, but not active lookup inputs
 
 **Conflicts with ADRs / Principles**
 
@@ -140,7 +159,7 @@ Owner: Skills
 
 * Clearer agent authority boundaries
 * Better reuse in planning/coaching skills
-* Keeps the old bibliography as a seed source
+* Keeps historical context while removing it from the operative path
 
 **Cons**
 
@@ -174,12 +193,12 @@ Owner: Skills
 * [x] A core reference table exists under `skills/shared/durability-methodology/references/`
 * [x] An applied reference table exists under the same folder
 * [x] Both tables use the same fixed columns
-* [x] The shared durability skill explicitly prioritizes core -> applied -> old bibliography
+* [x] The shared durability skill explicitly prioritizes the canonical local evidence library and generated tables
 * [x] Active prompts and adjacent skills that explain durability-first decisions use the same reference priority
-* [x] `factual_evidence` injects the curated tables ahead of the archive bibliography
+* [x] `factual_evidence` injects the evidence manifest and generated tables only
 * [x] Runtime coach guidance and runtime tests align with the curated reference priority
-* [x] Direct operative spec examples no longer point at the archive bibliography when a curated lookup table is available
-* [x] The old bibliography is marked as archive/seed rather than primary operative lookup
+* [x] Direct operative spec examples no longer point at decommissioned bibliography files
+* [x] The old bibliography is marked as decommissioned rather than primary operative lookup
 * [x] Validation passes: syntax, lint, typecheck, relevant smoke run
 
 ---
@@ -189,7 +208,7 @@ Owner: Skills
 **Migration strategy**
 
 * No schema migration required
-* Reference-first rollout; old bibliography remains in place
+* Reference-first rollout; legacy bibliography files remain only as decommission markers
 
 **Rollout / gating**
 
@@ -201,8 +220,8 @@ Owner: Skills
 ## 9) Risks & Failure Modes
 
 * Failure mode: mixed-authority sources still used as if equal
-  * Detection: skill text still points to old bibliography first
-  * Safe behavior: core table remains the first declared authority
+  * Detection: skill text still points to decommissioned bibliography files or free-web lookup
+  * Safe behavior: canonical library remains the first declared authority
   * Recovery: tighten skill guidance further
 
 * Failure mode: missing locator values in table rows
@@ -236,8 +255,7 @@ Owner: Skills
 * [x] `tests/test_crewai_runtime.py` — evidence reference tests aligned
 * [x] `specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md` — example citation target moved off archive bibliography
 * [x] `doc/architecture/agents.md` — factual evidence bundle description updated
-* [x] `skills/shared/durability-methodology/references/durability_bibliography.md` — archive/seed note
-* [x] `specs/knowledge/_shared/sources/evidence/durability_bibliography.md` — archive/seed note
+* [x] decommissioned bibliography/manifest markers updated
 * [x] `CHANGELOG.md` — note the new curated reference tables
 
 ---

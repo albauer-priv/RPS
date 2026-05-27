@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-14
+Last-Updated: 2026-05-27
 Owner: Architecture
 ---
 # CrewAI Flows and Specialist Crews
@@ -28,6 +28,7 @@ The CrewAI runtime is split into explicit policy/config layers:
 - `config/crewai/task_policies.yaml`
 - `config/crewai/runtime_profiles.yaml`
 - `config/crewai/flow_persistence.yaml`
+- `config/evidence/trusted_sources.yaml`
 
 Boundary rules:
 - validated workspace artifacts remain authoritative truth
@@ -48,6 +49,7 @@ Boundary rules:
 | Report Flow | `run_report_flow(...)` | multi-stage planning/review/writer path around advisory report execution | `DES_ANALYSIS_REPORT` |
 | Feed Forward Flow | `run_feed_forward_flow(...)` | ordered advisory chain: report -> season feed-forward -> phase feed-forward | `DES_ANALYSIS_REPORT`, `SEASON_PHASE_FEED_FORWARD`, `PHASE_FEED_FORWARD` |
 | Coach Flow | `run_coach_flow(...)` | one conversational turn wrapper for routing, telemetry, and bounded operations | final reply plus optional pending/apply side effects |
+| Evidence Refresh Flow | `refresh_evidence_library(...)` | weekly discovery/verification plus per-entry curation, quality gate, activation, and render path | refreshed evidence registry, generated study briefs/tables |
 
 ## Planning Runtime Pattern
 
@@ -284,6 +286,38 @@ Rules:
 - conversational flows can reuse week methodology but do not bypass writer or
   store guardrails for normal plan generation
 
+## Evidence Refresh Runtime
+
+### Evidence Runtime Shape
+
+```mermaid
+flowchart TD
+  INPUT["Primary-source discovery window + canonical registry"] --> OUTER["refresh_evidence_library"]
+  OUTER --> DISCOVER["Discover + verify + dedup"]
+  DISCOVER --> CURATE["evidence_curation crew"]
+  CURATE --> GATE["Deterministic quality gate"]
+  GATE --> ACTIVATE["Activation decision"]
+  ACTIVATE --> RENDER["Sync library outputs"]
+  RENDER --> OUTPUT["Updated registry + briefs + tables"]
+```
+
+### Evidence Curation Crew
+
+- `evidence_curation_specialist`
+
+Purpose:
+- convert one verified source package into a self-contained RPS-specific structured curation model
+- distinguish `metadata_only`, `abstract_only`, `oa_excerpt`, and `oa_fulltext` evidence posture
+- classify relevance and allowed uses before activation is considered
+
+### Evidence Runtime Boundaries
+
+- bibliographic discovery and verification remain code-owned in `src/rps/evidence/refresh.py`
+- agent output is strict Pydantic structured output via `EvidenceCurationModel`
+- activation remains deterministic and must pass the quality gate
+- trusted fast-lane still requires curation and gate pass; it only removes manual review
+- only `active` entries may enter operative knowledge surfaces, while `legacy_active` remains transitional backfill state
+
 ## Skills, Knowledge, and Memory
 
 ### Skills
@@ -346,3 +380,4 @@ Examples:
 - Runtime policy: `config/crewai/runtime_profiles.yaml`
 - Knowledge sources: `config/crewai/knowledge_sources.yaml`
 - Memory policy: `config/crewai/memory_policy.yaml`
+- Trusted-source policy: `config/evidence/trusted_sources.yaml`

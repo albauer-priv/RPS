@@ -45,6 +45,118 @@ class CoachingRecommendationModel(StrictOutputModel):
     preview_recommended: bool = False
 
 
+class EvidenceSummaryCardModel(StrictOutputModel):
+    """Compact registry-safe summary card for one evidence source."""
+
+    focus: str
+    main_takeaway: str
+    main_limit: str
+
+
+class EvidenceRelevanceAssessmentModel(StrictOutputModel):
+    """Structured RPS-specific relevance classification for one source."""
+
+    overall_relevance: Literal["high", "medium", "low", "reject"]
+    relevance_rationale: str
+    rps_domains_supported: list[
+        Literal[
+            "durability",
+            "fatigue_resistance",
+            "pacing",
+            "fueling",
+            "taper",
+            "progression",
+            "intensity_distribution",
+            "masters",
+            "brevet_ultra",
+            "coaching_translation",
+        ]
+    ] = Field(default_factory=list)
+    target_audiences_supported: list[
+        Literal[
+            "season_planning",
+            "phase_planning",
+            "week_planning",
+            "coach_chat",
+            "athlete_education",
+            "background_knowledge",
+        ]
+    ] = Field(default_factory=list)
+    best_use_mode: Literal["core_scientific_support", "applied_translation", "background_only", "reject"]
+    activation_recommendation: Literal["activate", "hold", "reject"]
+
+
+class EvidenceBriefSectionsModel(StrictOutputModel):
+    """Rendered markdown-brief sections emitted by the evidence curation agent."""
+
+    why_this_source_matters_for_rps: str
+    research_question_or_purpose: str
+    study_type: str
+    population_or_context: str
+    what_was_actually_examined: str
+    core_concepts: list[str] = Field(default_factory=list)
+    key_takeaways: list[str] = Field(default_factory=list)
+    important_findings: list[str] = Field(default_factory=list)
+    practical_implications_for_rps: list[str] = Field(default_factory=list)
+    what_this_source_does_not_justify: list[str] = Field(default_factory=list)
+    limits_and_transfer_boundaries: list[str] = Field(default_factory=list)
+    allowed_uses_in_rps: list[str] = Field(default_factory=list)
+    evidence_posture: str
+    source_material_basis: str
+
+
+class EvidenceCurationModel(StrictOutputModel):
+    """Structured curation payload for the evidence library pipeline."""
+
+    question_or_focus: str
+    population_or_scope: str
+    study_type: Literal[
+        "systematic_review",
+        "narrative_review",
+        "meta_analysis",
+        "rct",
+        "cohort",
+        "cross_sectional",
+        "case_study",
+        "methods_paper",
+        "consensus_statement",
+        "book",
+        "podcast",
+        "blog",
+        "whitepaper",
+        "practitioner_article",
+        "other",
+    ]
+    what_was_examined: list[str] = Field(default_factory=list)
+    core_concepts: list[str] = Field(default_factory=list)
+    key_takeaways: list[str] = Field(default_factory=list)
+    important_findings: list[str] = Field(default_factory=list)
+    practical_implications: list[str] = Field(default_factory=list)
+    what_this_does_not_justify: list[str] = Field(default_factory=list)
+    important_limits: list[str] = Field(default_factory=list)
+    allowed_uses: list[
+        Literal[
+            "durability_definition",
+            "durability_rationale",
+            "planning_justification",
+            "taper_support",
+            "fueling_guidance",
+            "intensity_distribution_context",
+            "coaching_translation",
+            "background_only",
+        ]
+    ] = Field(default_factory=list)
+    evidence_posture: Literal[
+        "fulltext_curated",
+        "oa_excerpt_curated",
+        "abstract_curated",
+        "metadata_only_not_activatable",
+    ]
+    relevance_assessment: EvidenceRelevanceAssessmentModel
+    summary_card: EvidenceSummaryCardModel
+    brief_sections: EvidenceBriefSectionsModel
+
+
 class AdjustmentIntentModel(StrictOutputModel):
     """Structured change intent before preview creation."""
 

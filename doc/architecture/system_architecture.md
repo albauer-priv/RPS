@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-14
+Last-Updated: 2026-05-27
 Owner: Architecture
 ---
 # System Architecture
@@ -98,7 +98,12 @@ flowchart TD
    - Background jobs (data pipeline, housekeeping, agent reports) also write run records with `process_type`/`process_subtype`.
    - Use the background run tracker helper to standardize status updates.
    - Scheduling guards block concurrent runs sharing the same type/subtype and prevent lower-priority planning runs while higher-priority ones are active.
-8. **Streamlit UI (optional)**
+8. **Evidence Library and Curation Pipeline**
+   - Canonical evidence registry under `skills/shared/durability-methodology/references/library/`.
+   - Weekly `literature_refresh` runs `discover -> verify -> curate -> quality_gate -> activate -> render`.
+   - New sources must pass bibliographic verification, mandatory structured curation, deterministic quality gate, and activation before they appear in operative evidence surfaces.
+   - Generated study briefs and compact reference tables are derived from the canonical registry; non-active candidates must not leak into runtime knowledge injection.
+9. **Streamlit UI (optional)**
    - Browser control surface: `PYTHONPATH=src streamlit run src/rps/ui/streamlit_app.py`.
    - Multi-page UI with Plan Hub, Plan subpages, Analyse, Athlete Profile, and System tooling.
    - Performance readiness (DES analysis / performance report) is surfaced on Performance pages (Feed Forward + Report), not in Plan Hub planning readiness.
@@ -118,6 +123,7 @@ flowchart TB
   ORCH --> STORE["Run Store + Workspace"]
   ORCH --> OPENAI["OpenAI / LiteLLM Runtime"]
   ORCH --> KNOW["CrewAI Knowledge Sources"]
+  ORCH --> EVID["Evidence Library"]
   PIPE["Data Pipeline"] --> STORE
   UI --> STORE
 ```
@@ -233,6 +239,17 @@ Tools available to agents:
   - `workspace_get_phase_context`
   - `workspace_get_input`
 - Strict store tools, one per output artefact and schema-bound
+
+#### 4.1.3 Evidence Knowledge Contract
+
+- Operative evidence surfaces come from the canonical local evidence library and
+  its generated tables/briefs, not from deprecated bibliography files.
+- Weekly discovery uses primary sources only and separates bibliographic
+  verification from content readiness.
+- A source becomes operative only after mandatory structured curation,
+  deterministic quality gating, and activation.
+- `legacy_active` may remain temporarily visible during backfill/re-curation,
+  but non-active candidates must not appear in runtime knowledge injection.
 
 ### 4.2 Runtime Skills, Knowledge, and Contracts
 

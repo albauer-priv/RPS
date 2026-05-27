@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -8,10 +9,17 @@ import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
 from rps.core.config import load_env_file
+from rps.evidence import get_discovery_state, refresh_evidence_library
 from rps.orchestrator.plan_hub_worker import get_planning_run_status
 from rps.orchestrator.queue_scheduler import ensure_queue_dirs, start_queue_scheduler
 from rps.prompts.loader import PromptLoader
-from rps.ui.run_store import load_runs, release_athlete_lock, update_run
+from rps.ui.run_store import (
+    find_active_runs,
+    load_runs,
+    release_athlete_lock,
+    start_background_tracker,
+    update_run,
+)
 from rps.ui.shared import (
     SETTINGS,
     announce_log_file,
@@ -51,6 +59,71 @@ announce_log_file(athlete_id)
 st.caption(f"Athlete: {athlete_id}")
 set_status(status_state="done", title="System", message="Status loaded.")
 render_status_panel()
+
+
+def _run_manual_evidence_refresh() -> None:
+    """Trigger one evidence-library refresh in a background thread."""
+
+    active = find_active_runs(
+        SETTINGS.workspace_root,
+        athlete_id,
+        process_type="evidence",
+        process_subtype="literature_refresh",
+    )
+    if active:
+        return
+    tracker = start_background_tracker(
+        SETTINGS.workspace_root,
+        athlete_id,
+        process_type="evidence",
+        process_subtype="literature_refresh",
+        message="Refreshing canonical evidence library from primary sources.",
+        status="RUNNING",
+    )
+
+    def _worker() -> None:
+        try:
+            result = refresh_evidence_library(
+                refresh_interval_days=0,
+                athlete_id=athlete_id,
+                workspace_root=SETTINGS.workspace_root,
+                run_id=tracker.run_id,
+            )
+            tracker.mark_done(f"Evidence refresh complete: {result.get('status', 'done')}.")
+        except Exception as exc:  # pragma: no cover - UI-triggered guard
+            tracker.mark_failed(f"Evidence refresh failed: {exc}")
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+discovery_state = get_discovery_state()
+stats = discovery_state.get("stats") if isinstance(discovery_state.get("stats"), dict) else {}
+st.subheader("Evidence Library")
+st.table(
+    [
+        {
+            "Last Attempt": discovery_state.get("last_attempt_at") or "—",
+            "Last Success": discovery_state.get("last_success_at") or "—",
+            "Last Search Date": discovery_state.get("last_search_date") or "—",
+            "New Candidates": stats.get("new_candidates_added", 0),
+            "Activated": stats.get("activated_entries", 0),
+            "Curated Hold": stats.get("curated_hold_entries", 0),
+            "Rejected": stats.get("rejected_entries", 0),
+            "Legacy Backfilled": stats.get("legacy_backfilled", 0),
+            "Duplicates Skipped": stats.get("duplicates_skipped", 0),
+            "Unresolved Skipped": stats.get("unresolved_skipped", 0),
+        }
+    ]
+)
+evidence_active = find_active_runs(
+    SETTINGS.workspace_root,
+    athlete_id,
+    process_type="evidence",
+    process_subtype="literature_refresh",
+)
+if st.button("Refresh evidence library now", disabled=bool(evidence_active)):
+    _run_manual_evidence_refresh()
+    st.info("Evidence refresh started in the background.")
 
 runs_status = get_planning_run_status(SETTINGS.workspace_root, athlete_id)
 if runs_status:

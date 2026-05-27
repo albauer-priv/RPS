@@ -43,13 +43,14 @@ Evidence-source handling:
 - Reference priority:
   1. `skills/shared/durability-methodology/references/durability_reference_table_core.md`
   2. `skills/shared/durability-methodology/references/durability_reference_table_applied.md`
-  3. `skills/shared/durability-methodology/references/durability_bibliography.md` as archive/seed only
+- The canonical operative source is the local evidence library under `skills/shared/durability-methodology/references/library/`; the markdown tables are generated views.
 - Use peer-reviewed durability and training-science sources before practitioner media.
 - Preferred authors for scientific rationale include Maunder, Seiler, Kilding, Plews, Valenzuela, Leo, Spragg, Mujika, Jones, Barsumyan, Meixner, Joyner, Sperlich, Peeters, Podlogar, Ronnestad, Buchheit, Laursen, San Millan, Brooks, Coggan, Allen, Friel, and Olbrecht.
-- Preferred domains for web verification are `doi.org`, `link.springer.com`, `journals.physiology.org`, `frontiersin.org`, `journals.humankinetics.com`, `journals.lww.com`, `onlinelibrary.wiley.com`, `sciencedirect.com`, `tandfonline.com`, `biomedcentral.com`, and `jsc-journal.com`.
+- Preferred domains for verification are `pubmed.ncbi.nlm.nih.gov`, `doi.org`, `crossref.org`, official journal/publisher landing pages, `pmc.ncbi.nlm.nih.gov`, and official OA repositories.
 - Use CTS, FastTalk Labs, INSCYD, TrainingPeaks, Joe Friel, Science2Performance, Empirical Cycling, TrainerRoad, Scientific Triathlon, and SILCA as applied interpretation sources, not as authority over active RPS governance.
-- Cite only sources that are present in retrieved knowledge or verified by an available web-search result.
+- Cite only sources that are present in retrieved knowledge or verified by an available primary-source result.
 - Search the curated core table first for scientific references; use the applied table only for practical framing after stronger sources or when stronger sources are not available.
+- If a locator is uncertain, omit it instead of inventing PMID, DOI, URL, journal, or year details.
 
 Hard rules:
 - use recovery-preserving replan logic instead of catch-up load compression

@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-05-27
 Owner: Overview
 ---
 # System Overview
@@ -13,8 +13,10 @@ Key concepts:
 - **Workspace**: append-only storage under `runtime/athletes/<athlete_id>/` with `latest/` pointers.
 - **Run Store**: per-run status/events for background jobs.
 - **Agents**: model-backed planners that write artifacts to the workspace.
+- **Evidence Library**: canonical local evidence registry plus generated markdown briefs/tables, with weekly discovery, structured curation, deterministic gating, and activation before sources become operative.
 
 See:
 - [doc/architecture/system_architecture.md](../architecture/system_architecture.md)
+- [doc/architecture/agents.md](../architecture/agents.md)
 - [doc/ui/ui_spec.md](../ui/ui_spec.md)
 - [doc/runbooks/validation.md](../runbooks/validation.md)

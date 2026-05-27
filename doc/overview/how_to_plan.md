@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-14
+Last-Updated: 2026-05-27
 Owner: Overview
 ---
 # How to Plan
@@ -24,6 +24,7 @@ Owner: Overview
 8) Use **Plan → Workouts** for targeted current-week changes after planning when you only need to move or adjust specific workouts instead of replanning the full week.
 9) Optional: **Post to Intervals** from **Plan → Workouts** (commit step) after Export.
 10) Optional: **Performance Report** on Performance pages once activities are available.
+11) Optional: **System → Status** can trigger a manual evidence-library refresh when you want the local evidence surface re-curated before planning or review work.
 
 Plan Hub is the default orchestration surface. Season/Phase/Week pages remain
 available for manual, step-by-step runs.
@@ -67,8 +68,8 @@ available for manual, step-by-step runs.
 - History grouped by month → week → workouts.
 
 ### System
-- Status (running processes + latest artefacts).
-- History (artefacts grouped by time with validity).
+- Status (running processes, evidence-library refresh state, latest artefacts).
+- History (artefacts grouped by time with validity, plus background run history including evidence refresh).
 - Log (log output).
 
 ---
@@ -116,6 +117,11 @@ flowchart TD
   DP --> AT["activities_trend"]
   DP --> ZM["zone_model"]
   DP --> WL["wellness"]
+  ER["Evidence Refresh Runtime"] --> EVID["Active Evidence Library"]
+  EVID -. rationale .-> SEASON
+  EVID -. rationale .-> PHASE
+  EVID -. rationale .-> WEEK
+  EVID -. rationale .-> REPORT
   AA --> REPORT["Report Planning Runtime"]
   AT --> REPORT
   REPORT --> RPC["Report Planning Crew"]
@@ -143,3 +149,4 @@ Readiness rules, run execution details, and commit-step behavior are defined in:
 - Skills are now the canonical planning-method source.
 - Prompts are runtime-local only; they no longer carry the primary planning logic.
 - Season, Phase, Week, and Report all use explicit planning/review/writer staging under the CrewAI runtime.
+- Evidence-backed rationale comes only from the canonical active evidence library surface; bibliographic verification alone is not enough for operative use.

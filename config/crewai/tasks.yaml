@@ -97,6 +97,12 @@ tasks:
     output: coach_apply
     description: Run the confirmed report and feed-forward chain for the selected ISO week.
     expected_output: A structured apply result for the advisory chain.
+  evidence_curate_source:
+    agent: evidence_curation_specialist
+    kind: internal_reasoning
+    output: evidence_curation
+    description: Curate one verified evidence source package into an RPS-specific structured brief. Judge relevance through RPS goals, preserve authority boundaries, distinguish what the source supports from what it does not justify, and summarize only from the provided source material basis.
+    expected_output: A fully populated structured evidence curation model.
 
   season_scenarios:
     agent: season_scenario

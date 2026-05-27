@@ -54,9 +54,11 @@ Evidence-use boundary:
 - Reference priority for explanation and lookup:
   1. `references/durability_reference_table_core.md`
   2. `references/durability_reference_table_applied.md`
-  3. `references/durability_bibliography.md` as archive/seed source only
-- `references/evidence_layer_durability.md`, `references/durability_reference_table_core.md`, and `references/durability_reference_table_applied.md` are justification sources, not decision authority.
-- Prefer DOI-backed and peer-reviewed sources when explaining durability-first choices.
+- `references/library/core_studies.yaml` and `references/library/applied_sources.yaml` are the canonical local evidence library. The markdown tables are generated from that library.
+- `references/evidence_library_manifest.md`, `references/durability_reference_table_core.md`, and `references/durability_reference_table_applied.md` are justification sources, not decision authority.
+- Prefer verified peer-reviewed and primary-source-backed references when explaining durability-first choices.
 - Use practitioner sources only for implementation/practice translation while keeping thresholds and active plan governance from authoritative RPS context.
-- Do not treat the archive bibliography as the primary operative lookup table.
-- If a source-backed answer needs web research, search by exact author/title/DOI from the curated tables first and cite only verified results.
+- Decommissioned bibliography files are not operative lookup inputs.
+- If a source-backed answer needs web research, search by exact author/title from the canonical library first.
+- Verify only against primary sources: PubMed, DOI/Crossref, official publisher/journal landing pages, NIH/PMC, or official OA repositories.
+- If a locator is uncertain, omit it instead of inventing PMID, DOI, URL, journal, or year details.

@@ -89,6 +89,10 @@ crews:
     skills:
       - skills/shared/runtime-boundaries
       - skills/shared/traceability-and-naming
+  evidence_curation:
+    skills:
+      - skills/shared/runtime-boundaries
+      - skills/shared/traceability-and-naming
 
 agents:
   coach:
@@ -163,6 +167,8 @@ agents:
     skill: skills/season/artifact-writing
   season_feed_forward_manager:
     skill: skills/season/feed-forward
+  evidence_curation_specialist:
+    skill: skills/evidence/source-curation
 
   phase_architect:
     skill: skills/phase/context-analysis

@@ -10,10 +10,9 @@ bundles:
       - path: specs/knowledge/_shared/sources/specs/season_scenario_selection_interface_spec.md
   factual_evidence:
     sources:
+      - path: skills/shared/durability-methodology/references/evidence_library_manifest.md
       - path: skills/shared/durability-methodology/references/durability_reference_table_core.md
       - path: skills/shared/durability-methodology/references/durability_reference_table_applied.md
-      - path: specs/knowledge/_shared/sources/evidence/durability_bibliography.md
-      - path: specs/knowledge/_shared/sources/evidence/evidence_manifest.md
   factual_week_refs:
     sources:
       - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md

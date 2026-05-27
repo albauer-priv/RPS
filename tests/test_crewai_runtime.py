@@ -20,6 +20,7 @@ from rps.agents.crewai_backend import (
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
     _normalize_final_season_plan_semantics,
+    _normalize_publication_link,
     _run_multicrew_cycle,
     _task_tools_for_blueprint,
     normalize_phase_draft_bundle,
@@ -99,6 +100,7 @@ from rps.crewai_runtime.models import (
     CoachOperationPreviewModel,
     ConstraintAuditModel,
     DESAnalysisBundleModel,
+    EvidenceCurationModel,
     LoadGovernanceAuditModel,
     PendingResolutionResultModel,
     PhaseBundleModel,
@@ -982,19 +984,22 @@ def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
 def test_coach_evidence_source_guidance_is_in_active_skills() -> None:
     coach_skill = Path("skills/conversation/guarded-operations/SKILL.md").read_text(encoding="utf-8")
     recommendation_skill = Path("skills/week/recommendation-and-adjustment/SKILL.md").read_text(encoding="utf-8")
+    manifest = Path("skills/shared/durability-methodology/references/evidence_library_manifest.md")
     core_table = Path("skills/shared/durability-methodology/references/durability_reference_table_core.md")
     applied_table = Path("skills/shared/durability-methodology/references/durability_reference_table_applied.md")
-    archive_bibliography = Path("skills/shared/durability-methodology/references/durability_bibliography.md")
 
+    assert manifest.exists()
     assert core_table.exists()
     assert applied_table.exists()
-    assert archive_bibliography.exists()
+    assert "references/library/" in coach_skill
+    assert "evidence_library_manifest.md" in manifest.read_text(encoding="utf-8") or "canonical local evidence library" in manifest.read_text(encoding="utf-8")
     assert "durability_reference_table_core.md" in coach_skill
     assert "durability_reference_table_applied.md" in coach_skill
-    assert "archive/seed only" in coach_skill
-    assert "doi.org" in coach_skill
+    assert "omit it instead of inventing" in coach_skill
+    assert "pubmed.ncbi.nlm.nih.gov" in coach_skill
     assert "Maunder/Seiler/Kilding/Plews" in coach_skill
-    assert "available web-search result" in recommendation_skill
+    assert "available primary-source result" in recommendation_skill
+    assert "omit it instead of inventing PMID, DOI, URL, journal, or year details" in recommendation_skill
     assert "use only verified study conclusions" in recommendation_skill
 
 
@@ -1168,6 +1173,10 @@ def test_taper_selection_rules_block_sweet_spot_extensive() -> None:
     assert "protocol_variant: SWEET_SPOT_EXTENSIVE" in rules_text
     assert "phase_intent: taper_freshening" in rules_text
     assert "allowed: false" in rules_text
+
+
+def test_unknown_publication_links_fail_closed() -> None:
+    assert _normalize_publication_link("Unverified study title", "https://example.com/paper") == ""
 
 
 def test_skill_config_validation_rejects_non_operational_crew_skill(tmp_path: Path) -> None:
@@ -3189,6 +3198,7 @@ def test_output_model_registry_resolves_known_output_kinds() -> None:
     assert output_model_for_kind("load_governance_audit") is LoadGovernanceAuditModel
     assert output_model_for_kind("phase_bundle_draft") is PhaseDraftBundleModel
     assert output_model_for_kind("phase_bundle") is PhaseBundleModel
+    assert output_model_for_kind("evidence_curation") is EvidenceCurationModel
 
 
 def test_crewai_runtime_status_reports_python_compatibility() -> None:

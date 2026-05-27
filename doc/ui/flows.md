@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-02-11
+Last-Updated: 2026-05-27
 Owner: UI
 ---
 # UI Action & Flow Catalog
@@ -87,6 +87,13 @@ Handled by **Plan Hub — Orchestrated Run** (or Scoped: Week Plan). The Week pa
 - **Orchestrator call:** none (local restore)
 - **Writes/side-effects:** writes files into `runtime/athletes/<athlete_id>/` per selected restore scope
 - **UI feedback:** success/error banner + count of restored files
+
+### System → Status — Refresh Evidence Library
+- **Preconditions:** no active `process_type=evidence` / `process_subtype=literature_refresh` run
+- **Orchestrator call:** background evidence refresh via `refresh_evidence_library(...)`
+- **Writes/side-effects:** run-store events/status updates plus refreshed repo-scoped evidence registry outputs
+- **UI feedback:** info banner on start, status table updates, run-history visibility
+- **Agents/Workers:** primary-source discovery, `evidence_curation_specialist`, deterministic quality gate/activation, render sync
 
 #### Flow: Data Operations (Backup & Restore)
 

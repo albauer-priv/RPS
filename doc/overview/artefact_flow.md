@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-05-14
+Last-Updated: 2026-05-27
 Owner: Overview
 ---
 # Artefact Flow
@@ -18,6 +18,7 @@ flowchart TD
   MI["Week Planning Runtime"]:::agent
   WB["Local Workout Export"]:::component
   PA["Performance Report Runtime"]:::agent
+  ER["Evidence Refresh Runtime"]:::component
   I["Intervals.icu"]:::external
   EXP["intervals_data.py"]:::script
   VAL["validate_outputs.py"]:::script
@@ -46,6 +47,9 @@ flowchart TD
   AT["activities_trend_yyyy-ww.json"]:::artefact
   WL["wellness_yyyy-ww.json"]:::artefact
   DR["des_analysis_report_yyyy-ww.json"]:::artefact
+  ECS["core_studies.yaml"]:::artefact
+  EAS["applied_sources.yaml"]:::artefact
+  EBR["Study Briefs + Reference Tables"]:::artefact
 
   %% Planning chain
   U --> AP
@@ -96,6 +100,14 @@ flowchart TD
   WL -. info .-> MA
   WL -. info .-> ME
   PA --> DR --> MA
+
+  ER --> ECS
+  ER --> EAS
+  ER --> EBR
+  EBR -. rationale .-> MA
+  EBR -. rationale .-> ME
+  EBR -. rationale .-> MI
+  EBR -. rationale .-> PA
 
   %% Events can be used by multiple agents(informational)
   PE -. info .-> MA
@@ -170,6 +182,7 @@ flowchart LR
 **Processing (Conceptual)**
 - Determine season intent, priorities, and constraints (8-32 weeks horizon).
 - Define phase structure and load corridors.
+- Evidence rationale may be cited only from the canonical active evidence library surface after curation, gating, and activation.
 - Run the internal planning/review/writer chain:
   1) Season planning crew drafts an internal season bundle
   2) Season review crew approves, rejects, or requests bounded replan
@@ -230,6 +243,7 @@ flowchart LR
 **Processing (Conceptual)**
 - Convert season phase intent into one exact-range phase bundle.
 - Phase range is derived from season phase boundaries.
+- Evidence references remain explanatory only and must come from the active evidence library surface.
 - Run the internal planning/review/writer chain before persistence.
 - Consumes the latest `ZONE_MODEL` when IF defaults are needed.
 
@@ -258,6 +272,46 @@ flowchart LR
 
   classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
   classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+```
+
+---
+
+### 2.3a Evidence Library Refresh Flow
+
+**Inputs**
+- primary-source discovery results (PubMed / DOI / publisher / OA repositories)
+- current canonical evidence registry
+- trusted-source allowlist / denylist policy
+- available abstract / OA excerpt / OA fulltext material
+
+**Processing (Conceptual)**
+- Discover candidate sources on a weekly `literature_refresh` run.
+- Verify bibliographic identity and deduplicate against the canonical registry.
+- Build a deterministic source package with explicit `source_material_level`.
+- Run mandatory structured curation through `evidence_curation_specialist`.
+- Apply deterministic quality gate and activation logic.
+- Render updated study briefs and compact reference tables from active entries only.
+
+**Outputs (Artefacts)**
+- `core_studies.yaml`
+- `applied_sources.yaml`
+- generated study briefs under `references/library/studies/`
+- derived evidence tables / manifest
+
+```mermaid
+flowchart LR
+  DISC["Primary-Source Discovery"]:::script --> VER["Verification + Dedup"]:::component
+  VER --> CUR["Evidence Curation Agent"]:::agent
+  CUR --> GATE["Quality Gate"]:::component
+  GATE --> ACT["Activation"]:::component
+  ACT --> ECS["core_studies.yaml"]:::artefact
+  ACT --> EAS["applied_sources.yaml"]:::artefact
+  ACT --> EBR["Study Briefs + Tables"]:::artefact
+
+  classDef agent fill:#e8f2ff,stroke:#1f4b99,stroke-width:1px;
+  classDef component fill:#eef8ee,stroke:#2f6b2f,stroke-width:1px;
+  classDef artefact fill:#ffffff,stroke:#555,stroke-dasharray: 4 3,stroke-width:1px;
+  classDef script fill:#f3f0ff,stroke:#5b4db8,stroke-width:1px,stroke-dasharray: 2 2;
 ```
 
 ---

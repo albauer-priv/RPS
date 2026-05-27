@@ -71,6 +71,7 @@ from rps.crewai_runtime.telemetry import (
     register_runtime_metadata,
     runtime_event_scope,
 )
+from rps.evidence.library import canonical_reference_locator
 from rps.planning.contracts import derive_expected_average_weekly_kj_range
 from rps.planning.week_engine import (
     execute_week_engine,
@@ -144,24 +145,6 @@ _SEASON_PLAN_REQUIRED_TRACE_DATA_ARTIFACTS: tuple[ArtifactType, ...] = (
 )
 _SEASON_PLAN_REQUIRED_TRACE_EVENT_ARTIFACTS: tuple[ArtifactType, ...] = (
     ArtifactType.PLANNING_EVENTS,
-)
-_CANONICAL_PUBLICATION_LINKS: tuple[tuple[str, str], ...] = (
-    (
-        "what is best practice for training intensity and duration distribution in endurance athletes",
-        "https://pubmed.ncbi.nlm.nih.gov/20861519/",
-    ),
-    (
-        "polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training",
-        "https://pubmed.ncbi.nlm.nih.gov/24550842/",
-    ),
-    (
-        "scientific bases for precompetition tapering strategies",
-        "https://pubmed.ncbi.nlm.nih.gov/12840640/",
-    ),
-    (
-        "the importance of 'durability' in the physiological profiling of endurance athletes",
-        "https://pubmed.ncbi.nlm.nih.gov/33886100/",
-    ),
 )
 
 
@@ -278,13 +261,12 @@ def _merge_trace_reference_lists(existing: object, additions: list[JsonMap], *, 
 
 
 def _normalize_publication_link(title: object, link: object) -> str:
-    """Return the canonical publication link for known season-plan references."""
+    """Return a verified canonical publication link when the local library knows it."""
 
-    title_text = str(title or "").strip().lower()
-    for needle, canonical_link in _CANONICAL_PUBLICATION_LINKS:
-        if needle in title_text:
-            return canonical_link
-    return str(link or "").strip()
+    canonical_link = canonical_reference_locator(title)
+    if canonical_link:
+        return canonical_link
+    return ""
 
 _TASK_BLUEPRINT_BY_AGENT_TASK = {
     AgentTask.CREATE_SEASON_SCENARIOS: "season_scenarios",
@@ -2021,6 +2003,52 @@ def _execute_crewai_task(
             + (f" Raw output: {raw}" if raw else "")
         )
     return pydantic_output
+
+
+def execute_structured_internal_task_crewai(
+    runtime: AgentRuntime,
+    *,
+    crew_name: str,
+    task_name: str,
+    description: str,
+    athlete_id: str,
+    run_id: str,
+    model_override: str | None = None,
+    temperature_override: float | None = None,
+) -> Any:
+    """Execute one configured internal CrewAI task and return its typed output."""
+
+    crewai = import_module("crewai")
+    Agent = getattr(crewai, "Agent")
+    Task = getattr(crewai, "Task")
+    Crew = getattr(crewai, "Crew")
+    Process = getattr(crewai, "Process")
+    LLM = getattr(crewai, "LLM")
+
+    bundle = load_crewai_config_bundle(root=ROOT)
+    agent_blueprints = build_agent_blueprints(bundle)
+    task_blueprints = build_task_blueprints(bundle)
+    task_blueprint = task_blueprints[task_name]
+    agent_blueprint = agent_blueprints[task_blueprint.agent]
+
+    return _execute_crewai_task(
+        agent_cls=Agent,
+        crewai_llm_cls=LLM,
+        crew_cls=Crew,
+        task_cls=Task,
+        process_cls=Process,
+        runtime=runtime,
+        bundle=bundle,
+        agent_blueprint=agent_blueprint,
+        task_blueprint=task_blueprint,
+        tools=[],
+        description=description,
+        crew_name=crew_name,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        model_override=model_override,
+        temperature_override=temperature_override,
+    )
 
 
 def _build_crewai_task(

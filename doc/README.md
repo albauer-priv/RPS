@@ -1,7 +1,7 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-05-27
 Owner: Documentation
 ---
 # System Documentation
@@ -56,6 +56,8 @@ This directory contains the canonical documentation for the platform. It is a na
 ### Specs (normative contracts)
 - [Logging Policy](specs/contracts/logging_policy.md)
 - [Validation Contracts](specs/contracts/validation/) (artifact validation references)
+- [Feature: Repo-Wide Evidence Library & Refresh](specs/features/FEAT_repo_wide_evidence_library_and_refresh.md)
+- [Feature: Evidence Curation Pipeline](specs/features/FEAT_evidence_curation_pipeline.md)
 
 ### Runbooks (ops)
 - [Validation Runbook](runbooks/validation.md)
