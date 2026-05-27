@@ -89,6 +89,10 @@ Common failures:
 
 Current mitigation:
 
+- the refresh retries PubMed abstract fetches with short backoff on HTTP 429
+- if rate limiting persists, the affected entry is skipped for that run rather than degraded into metadata-only curation
+- refresh now processes only entries that are new, uncurated, schema-stale, or selected for limited legacy backfill
+- refresh now enforces a hard per-run processing cap
 - the workflow retries the refresh command up to 3 times
 - no git commit is created if the refresh fails
 

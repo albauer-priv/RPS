@@ -6,13 +6,16 @@ import json
 import logging
 import os
 import re
+import time
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha1
 from typing import Any
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from .library import (
+    CURATION_SCHEMA_VERSION,
     DISCOVERY_LOCK_PATH,
     EvidenceEntry,
     get_discovery_state,
@@ -33,6 +36,8 @@ _PUBMED_FETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 _DEFAULT_QUERY_RETMAX = 10
 _DEFAULT_REFRESH_INTERVAL_DAYS = 7
 _DEFAULT_LEGACY_BACKFILL_LIMIT = 1
+_DEFAULT_MAX_ENTRIES_PER_REFRESH = 5
+_DEFAULT_ABSTRACT_FETCH_RETRIES = 2
 DISCOVERY_TOPICS: tuple[tuple[str, str], ...] = (
     ("durability", "\"durability\" AND cycling"),
     ("fatigue_resistance", "\"fatigue resistance\" AND cycling"),
@@ -91,6 +96,29 @@ def _fetch_pubmed_abstract(pmid: str) -> str:
     text = _text_get(f"{_PUBMED_FETCH_URL}?{urlencode(params)}")
     cleaned = text.strip()
     return cleaned if len(cleaned) > 40 else ""
+
+
+def _fetch_pubmed_abstract_with_backoff(
+    pmid: str,
+    *,
+    retries: int = _DEFAULT_ABSTRACT_FETCH_RETRIES,
+    base_sleep_seconds: float = 1.0,
+) -> tuple[str, bool]:
+    """Return abstract text plus a flag indicating rate-limit exhaustion."""
+
+    attempt = 0
+    while True:
+        try:
+            return _fetch_pubmed_abstract(pmid), False
+        except HTTPError as exc:
+            if exc.code != 429 or attempt >= retries:
+                if exc.code == 429:
+                    return "", True
+                raise
+            sleep_seconds = base_sleep_seconds * (2**attempt)
+            logger.warning("Evidence abstract fetch rate-limited for pmid=%s; retrying in %.1fs", pmid, sleep_seconds)
+            time.sleep(sleep_seconds)
+            attempt += 1
 
 
 def _normalized_title(value: str) -> str:
@@ -194,6 +222,21 @@ def evidence_refresh_due(*, now: datetime | None = None, interval_days: int = _D
     return (now or _utc_now()) >= last_dt + timedelta(days=interval_days)
 
 
+def _entry_requires_processing(entry: EvidenceEntry) -> bool:
+    """Return whether one entry should enter the curation pipeline in this run."""
+
+    if entry.activation_status == "candidate":
+        return True
+    if entry.activation_status == "verified":
+        if not entry.curated_at:
+            return True
+        if entry.curation_schema_version != CURATION_SCHEMA_VERSION:
+            return True
+        if entry.brief_status in {"", "pending_curation"}:
+            return True
+    return False
+
+
 def _curate_candidates(
     entries: list[EvidenceEntry],
     *,
@@ -202,20 +245,33 @@ def _curate_candidates(
     workspace_root,
     stats: dict[str, int],
     legacy_backfill_limit: int,
+    max_entries_per_refresh: int,
 ) -> list[EvidenceEntry]:
     refreshed: list[EvidenceEntry] = []
     legacy_backfilled = 0
+    processed_entries = 0
     for entry in entries:
+        should_process_by_state = _entry_requires_processing(entry)
         abstract_text = ""
         pmid = _pmid_from_locator(entry.reference_locator)
-        if pmid:
+        rate_limited = False
+        if pmid and should_process_by_state:
             try:
-                abstract_text = _fetch_pubmed_abstract(pmid)
+                abstract_text, rate_limited = _fetch_pubmed_abstract_with_backoff(pmid)
             except Exception as exc:  # pragma: no cover - network/runtime guard
                 logger.warning("Evidence abstract fetch failed for %s: %s", entry.id, exc)
         should_backfill_legacy = entry.legacy_active and legacy_backfilled < legacy_backfill_limit and bool(abstract_text)
-        should_process = entry.activation_status in {"verified", "candidate"} or should_backfill_legacy
+        should_process = should_process_by_state or should_backfill_legacy
         if not should_process:
+            stats["skipped_unchanged"] += 1
+            refreshed.append(entry)
+            continue
+        if processed_entries >= max_entries_per_refresh:
+            stats["skipped_due_to_cap"] += 1
+            refreshed.append(entry)
+            continue
+        if rate_limited and should_process_by_state and not abstract_text:
+            stats["rate_limited_skipped"] += 1
             refreshed.append(entry)
             continue
         result_entry, result = run_entry_pipeline(
@@ -225,6 +281,8 @@ def _curate_candidates(
             workspace_root=workspace_root,
             abstract_text=abstract_text,
         )
+        processed_entries += 1
+        stats["processed_entries"] += 1
         if should_backfill_legacy:
             legacy_backfilled += 1
             stats["legacy_backfilled"] += 1
@@ -250,6 +308,7 @@ def refresh_evidence_library(
     workspace_root=None,
     run_id: str = "",
     legacy_backfill_limit: int = _DEFAULT_LEGACY_BACKFILL_LIMIT,
+    max_entries_per_refresh: int = _DEFAULT_MAX_ENTRIES_PER_REFRESH,
 ) -> dict[str, Any]:
     """Refresh the canonical evidence library from primary-source discovery and curation."""
 
@@ -293,6 +352,10 @@ def refresh_evidence_library(
             "rejected_entries": 0,
             "quality_gate_failed": 0,
             "legacy_backfilled": 0,
+            "processed_entries": 0,
+            "skipped_unchanged": 0,
+            "skipped_due_to_cap": 0,
+            "rate_limited_skipped": 0,
         }
         discovered_at = current_now.date().isoformat()
 
@@ -319,6 +382,8 @@ def refresh_evidence_library(
                 stats["new_candidates_added"] += 1
 
         core_entries.sort(key=lambda item: (item.year, item.title.lower()))
+        original_core_entries = core_entries.copy()
+        original_applied_entries = applied_entries.copy()
         core_entries = _curate_candidates(
             core_entries,
             athlete_id=athlete_id,
@@ -326,11 +391,14 @@ def refresh_evidence_library(
             workspace_root=workspace_root,
             stats=stats,
             legacy_backfill_limit=legacy_backfill_limit,
+            max_entries_per_refresh=max_entries_per_refresh,
         )
 
-        save_core_studies(core_entries)
-        save_applied_sources(applied_entries)
-        sync_reference_library_outputs()
+        library_changed = core_entries != original_core_entries or applied_entries != original_applied_entries
+        if library_changed:
+            save_core_studies(core_entries)
+            save_applied_sources(applied_entries)
+            sync_reference_library_outputs(rewrite_yaml=False)
 
         state["last_success_at"] = current_now.isoformat().replace("+00:00", "Z")
         state["last_search_date"] = end_date.isoformat()
@@ -340,6 +408,7 @@ def refresh_evidence_library(
             "status": "done",
             "at": current_now.isoformat(),
             "stats": stats,
+            "library_changed": library_changed,
         }
     finally:
         try:

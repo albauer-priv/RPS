@@ -136,8 +136,13 @@ def _refresh_evidence_background(root: Path, athlete_id: str, interval_days: int
         status="RUNNING",
     )
     try:
+        try:
+            max_entries_per_refresh = int(os.getenv("RPS_EVIDENCE_REFRESH_MAX_ENTRIES", "5"))
+        except ValueError:
+            max_entries_per_refresh = 5
         result = refresh_evidence_library(
             refresh_interval_days=interval_days,
+            max_entries_per_refresh=max_entries_per_refresh,
             athlete_id=athlete_id,
             workspace_root=root,
             run_id=tracker.run_id,

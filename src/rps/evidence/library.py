@@ -544,10 +544,11 @@ def _render_decommission_notice(title: str) -> str:
     ) + "\n"
 
 
-def sync_reference_library_outputs() -> None:
+def sync_reference_library_outputs(*, rewrite_yaml: bool = True) -> None:
     """Regenerate markdown views and decommission notices from the canonical library."""
 
-    canonicalize_library_files()
+    if rewrite_yaml:
+        canonicalize_library_files()
     core_entries = load_core_studies()
     applied_entries = load_applied_sources()
 

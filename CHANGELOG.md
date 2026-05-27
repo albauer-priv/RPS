@@ -1190,3 +1190,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Hardened evidence curation semantics for `metadata_only` sources: active skill/prompt/task/runtime context now explicitly forbids discovery-tag leakage and title-paraphrase pseudo-findings, and the quality gate rejects unsupported RPS transfer concepts for metadata-only summaries.
 - Tightened `abstract_curated` evidence semantics: active curation instructions now require abstract-bounded wording, disallow mixing `background_only` with stronger allowed uses, and the quality gate rejects imperative coaching language derived too directly from abstract-only material.
+- Tightened evidence refresh runtime behavior: PubMed abstract fetches now use bounded 429 backoff, already-curated verified entries are skipped instead of being reprocessed every due run, each refresh enforces a hard per-run processing cap, and the library is only rewritten when entries actually change.

@@ -1,5 +1,5 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
 Last-Updated: 2026-05-27
 Owner: Planning Runtime
@@ -65,6 +65,7 @@ Use `FEAT_evidence_curation_pipeline` for:
 * [x] Route active evidence usage through the canonical library and generated tables.
 * [x] Add a weekly background literature refresh with automatic activation of verified new sources.
 * [x] Keep agent-facing citation behavior fail-closed: omit uncertain locators rather than invent them.
+* [x] Make weekly refresh incremental, rate-limit-aware, and bounded per run.
 
 **Non-Goals**
 
@@ -81,6 +82,9 @@ Use `FEAT_evidence_curation_pipeline` for:
 * Active prompts/skills/runtime use one evidence library as the operative source of truth.
 * Evidence locators are only emitted when verified.
 * Weekly background refresh searches primary sources for new relevant literature, verifies it, and activates only high-confidence additions.
+* Weekly refresh only reprocesses entries that are new, uncurated, schema-stale, or explicitly selected for limited legacy backfill.
+* PubMed abstract fetches retry briefly on HTTP 429 and skip the affected entry instead of degrading it into weaker metadata-only curation for that run.
+* Each refresh run applies a hard per-run processing cap.
 * Open-access fulltext support is optional and only used when legal and directly available.
 
 **UI impact**
@@ -108,7 +112,7 @@ Use `FEAT_evidence_curation_pipeline` for:
 **Data flow**
 
 * Inputs: structured YAML library files, primary-source discovery results, existing curated reference data
-* Processing: load library -> verify/dedupe -> update YAML -> regenerate markdown views -> expose through knowledge sources and runtime lookups
+* Processing: load library -> verify/dedupe -> select only refresh-due entries -> bounded abstract fetch with 429 backoff -> update YAML only when entries changed -> regenerate markdown views -> expose through knowledge sources and runtime lookups
 * Outputs: synced markdown tables, study detail sheets, refreshed discovery state, visible background run status
 
 **Schema / Artefacts**
@@ -244,6 +248,7 @@ Use `FEAT_evidence_curation_pipeline` for:
 
 * background run: `process_type=evidence`, `process_subtype=literature_refresh`
 * discovery-state timestamps and counters in library state
+* refresh counters for processed entries, unchanged skips, cap skips, and rate-limited skips
 
 **Diagnostics**
 

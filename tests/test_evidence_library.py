@@ -15,7 +15,9 @@ from rps.evidence.library import (
     DISCOVERY_STATE_PATH,
     LIBRARY_MANIFEST_PATH,
     ROOT,
+    load_applied_sources,
     load_core_studies,
+    save_applied_sources,
     save_core_studies,
     save_discovery_state,
     sync_reference_library_outputs,
@@ -396,3 +398,140 @@ def test_abstract_only_quality_gate_rejects_background_only_mix_and_imperative_l
     assert result.ok is False
     assert any("cannot mix background_only with stronger allowed uses" in reason for reason in result.reasons)
     assert any("direct imperative coaching language" in reason for reason in result.reasons)
+
+
+def test_refresh_evidence_library_skips_already_curated_verified_entries(monkeypatch) -> None:
+    original_entries = load_core_studies()
+    original_applied = load_applied_sources()
+    try:
+        curated_verified = replace(
+            original_entries[0],
+            activation_status="verified",
+            curated_at="2026-05-20T10:00:00Z",
+            brief_status="generated",
+            curation_schema_version="1",
+            legacy_active=False,
+        )
+        save_core_studies([curated_verified])
+        save_applied_sources([])
+        monkeypatch.setattr("rps.evidence.refresh._search_pubmed", lambda *args, **kwargs: [])
+        monkeypatch.setattr("rps.evidence.refresh._summaries_pubmed", lambda ids: [])
+        monkeypatch.setattr(
+            "rps.evidence.refresh.run_entry_pipeline",
+            lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("run_entry_pipeline should not be called")),
+        )
+        result = refresh_evidence_library(
+            now=datetime(2026, 5, 27, 12, 0, tzinfo=UTC),
+            refresh_interval_days=0,
+            athlete_id="system",
+            workspace_root=ROOT / "runtime" / "athletes",
+            run_id="",
+        )
+        assert result["status"] == "done"
+        assert result["stats"]["processed_entries"] == 0
+        assert result["stats"]["skipped_unchanged"] == 1
+        assert result["library_changed"] is False
+    finally:
+        save_core_studies(original_entries)
+        save_applied_sources(original_applied)
+        sync_reference_library_outputs()
+
+
+def test_refresh_evidence_library_skips_processing_when_abstract_fetch_is_rate_limited(monkeypatch) -> None:
+    original_entries = load_core_studies()
+    original_applied = load_applied_sources()
+    try:
+        needs_abstract = replace(
+            original_entries[0],
+            activation_status="verified",
+            curated_at="",
+            brief_status="pending_curation",
+            reference_locator="https://pubmed.ncbi.nlm.nih.gov/12840640/",
+            legacy_active=False,
+        )
+        save_core_studies([needs_abstract])
+        save_applied_sources([])
+        monkeypatch.setattr("rps.evidence.refresh._search_pubmed", lambda *args, **kwargs: [])
+        monkeypatch.setattr("rps.evidence.refresh._summaries_pubmed", lambda ids: [])
+        monkeypatch.setattr(
+            "rps.evidence.refresh._fetch_pubmed_abstract_with_backoff",
+            lambda pmid: ("", True),
+        )
+        monkeypatch.setattr(
+            "rps.evidence.refresh.run_entry_pipeline",
+            lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("run_entry_pipeline should not be called")),
+        )
+        result = refresh_evidence_library(
+            now=datetime(2026, 5, 27, 12, 0, tzinfo=UTC),
+            refresh_interval_days=0,
+            athlete_id="system",
+            workspace_root=ROOT / "runtime" / "athletes",
+            run_id="",
+        )
+        refreshed = load_core_studies()
+        assert result["stats"]["processed_entries"] == 0
+        assert result["stats"]["rate_limited_skipped"] == 1
+        assert refreshed[0].activation_status == "verified"
+        assert refreshed[0].curated_at == ""
+        assert result["library_changed"] is False
+    finally:
+        save_core_studies(original_entries)
+        save_applied_sources(original_applied)
+        sync_reference_library_outputs()
+
+
+def test_refresh_evidence_library_caps_processed_entries_per_run(monkeypatch) -> None:
+    original_entries = load_core_studies()
+    original_applied = load_applied_sources()
+    try:
+        first = replace(
+            original_entries[0],
+            id="cap_one",
+            activation_status="verified",
+            curated_at="",
+            brief_status="pending_curation",
+            reference_locator="https://pubmed.ncbi.nlm.nih.gov/12840640/",
+            legacy_active=False,
+        )
+        second = replace(
+            original_entries[1],
+            id="cap_two",
+            activation_status="verified",
+            curated_at="",
+            brief_status="pending_curation",
+            reference_locator="https://pubmed.ncbi.nlm.nih.gov/33886100/",
+            legacy_active=False,
+        )
+        save_core_studies([first, second])
+        save_applied_sources([])
+        monkeypatch.setattr("rps.evidence.refresh._search_pubmed", lambda *args, **kwargs: [])
+        monkeypatch.setattr("rps.evidence.refresh._summaries_pubmed", lambda ids: [])
+        monkeypatch.setattr(
+            "rps.evidence.refresh._fetch_pubmed_abstract_with_backoff",
+            lambda pmid: ("Abstract text for testing.", False),
+        )
+        monkeypatch.setattr(
+            "rps.evidence.refresh.run_entry_pipeline",
+            lambda entry, athlete_id, run_id, workspace_root, abstract_text="", oa_excerpt_text="", oa_fulltext_text="": (
+                replace(entry, activation_status="active", curated_at="2026-05-27T12:00:00Z"),
+                {"status": "active"},
+            ),
+        )
+        result = refresh_evidence_library(
+            now=datetime(2026, 5, 27, 12, 0, tzinfo=UTC),
+            refresh_interval_days=0,
+            athlete_id="system",
+            workspace_root=ROOT / "runtime" / "athletes",
+            run_id="",
+            max_entries_per_refresh=1,
+        )
+        refreshed = load_core_studies()
+        by_id = {entry.id: entry for entry in refreshed}
+        assert result["stats"]["processed_entries"] == 1
+        assert result["stats"]["skipped_due_to_cap"] == 1
+        assert by_id["cap_one"].activation_status == "active"
+        assert by_id["cap_two"].activation_status == "verified"
+    finally:
+        save_core_studies(original_entries)
+        save_applied_sources(original_applied)
+        sync_reference_library_outputs()

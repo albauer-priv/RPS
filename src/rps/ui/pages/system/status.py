@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import threading
 from datetime import datetime
@@ -83,8 +84,13 @@ def _run_manual_evidence_refresh() -> None:
 
     def _worker() -> None:
         try:
+            try:
+                max_entries_per_refresh = int(os.getenv("RPS_EVIDENCE_REFRESH_MAX_ENTRIES", "5"))
+            except ValueError:
+                max_entries_per_refresh = 5
             result = refresh_evidence_library(
                 refresh_interval_days=0,
+                max_entries_per_refresh=max_entries_per_refresh,
                 athlete_id=athlete_id,
                 workspace_root=SETTINGS.workspace_root,
                 run_id=tracker.run_id,
@@ -110,6 +116,10 @@ st.table(
             "Curated Hold": stats.get("curated_hold_entries", 0),
             "Rejected": stats.get("rejected_entries", 0),
             "Legacy Backfilled": stats.get("legacy_backfilled", 0),
+            "Processed": stats.get("processed_entries", 0),
+            "Skipped Unchanged": stats.get("skipped_unchanged", 0),
+            "Skipped by Cap": stats.get("skipped_due_to_cap", 0),
+            "Rate Limited": stats.get("rate_limited_skipped", 0),
             "Duplicates Skipped": stats.get("duplicates_skipped", 0),
             "Unresolved Skipped": stats.get("unresolved_skipped", 0),
         }
