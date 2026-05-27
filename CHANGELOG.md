@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Changed the canonical documentation set (`doc/`) to match the new evidence runtime: architecture, flow, workspace, UI, and run-store docs now describe the repo-scoped evidence library, weekly `literature_refresh`, mandatory evidence curation, deterministic gating/activation, and System Status/History visibility for evidence refresh runs.
+- Changed evidence-refresh operations so automatic app-start refresh can be disabled explicitly via `RPS_EVIDENCE_REFRESH_ENABLED=0`, allowing deploy/build cycles to skip paid evidence curation while keeping manual UI refresh and the dedicated GitHub workflow available.
 - Changed older evidence feature docs to explicit historical-step positioning, while `FEAT_repo_wide_evidence_library_and_refresh` and `FEAT_evidence_curation_pipeline` now serve as the current canonical evidence-system feature specs.
 - Changed evidence-curation instructions and validation so `metadata_only` outputs stay identification-level, while `abstract_curated` outputs remain explicitly abstract-bounded instead of reading like final deterministic coaching policy.
 
