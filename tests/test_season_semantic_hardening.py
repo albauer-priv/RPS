@@ -58,6 +58,12 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert 'Do not let Scenario C become "the VO2 scenario" by default.' in prompt
     assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in task_config
     assert "If Scenario C includes `VO2MAX`" in scenario_skill
+    assert "`scenario_guidance.deload_cadence` is not decorative phase math" in task_config
+    assert "must emit a coherent cadence recommendation per scenario" in task_config
+    assert "must not become the default cadence for all scenarios" in prompt
+    assert "Do not let recommendation-default cadence become the implicit cadence for all scenarios." in prompt
+    assert "Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant" in scenario_skill
+    assert "do not mirror the recommendation cadence blindly into all scenarios" in scenario_skill
 
 
 def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:

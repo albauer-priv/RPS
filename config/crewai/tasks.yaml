@@ -111,7 +111,35 @@ tasks:
     tools:
       - workspace_get_input
       - workspace_get_latest
-    description: Create the season-scenarios artifact envelope for the selected planning horizon. Differentiate A/B/C primarily by kJ-envelope, specificity-under-fatigue, density, recovery tolerance, and risk contract; treat intensity domains as permissions rather than the primary scenario identity. Also make the scenarios easy to choose as user-facing options by providing `typical_week_feel`, `main_payoff`, `main_cost`, `what_gets_prioritized`, and `what_gets_de_emphasized`. Emit normalized `scenario_guidance.season_archetype` (`none` or `ceiling_first_durability`) plus `season_archetype_rationale`; use `ceiling_first_durability` only when the scenario clearly supports optional early ceiling work followed by durability/specificity runway. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in `decision_notes` and/or `kpi_guardrail_notes` that it is only a sparse ceiling-support / fresh high-intensity permission and not the primary scenario identity; otherwise omit `VO2MAX`.
+    description: >-
+      Create the season-scenarios artifact envelope for the selected planning
+      horizon. Differentiate A/B/C primarily by kJ-envelope,
+      specificity-under-fatigue, density, recovery tolerance, cadence rhythm,
+      and risk contract; treat intensity domains as permissions rather than the
+      primary scenario identity. `scenario_guidance.deload_cadence` is not
+      decorative phase math: it is part of each scenario's planning logic and
+      must be explained in stored scenario fields (`decision_notes`,
+      `risk_flags`, `event_alignment_notes`, and/or `kpi_guardrail_notes`).
+      Scenario generation remains advisory, but it must emit a coherent cadence
+      recommendation per scenario. The deterministic recommendation context may
+      inform one scenario, but it must not be mirrored blindly into all
+      scenarios. If multiple scenarios share the same `deload_cadence`,
+      explicitly justify why cadence is intentionally held constant and why
+      differentiation instead comes from load philosophy,
+      specificity-under-fatigue, recovery margin, intensity permissions, and
+      risk posture. Do not emit A/B/C with the same `deload_cadence` unless
+      that shared-cadence rationale is visible in the stored scenario fields.
+      Also make the scenarios easy to choose as user-facing options by
+      providing `typical_week_feel`, `main_payoff`, `main_cost`,
+      `what_gets_prioritized`, and `what_gets_de_emphasized`. Emit normalized
+      `scenario_guidance.season_archetype` (`none` or
+      `ceiling_first_durability`) plus `season_archetype_rationale`; use
+      `ceiling_first_durability` only when the scenario clearly supports
+      optional early ceiling work followed by durability/specificity runway. If
+      Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in
+      `decision_notes` and/or `kpi_guardrail_notes` that it is only a sparse
+      ceiling-support / fresh high-intensity permission and not the primary
+      scenario identity; otherwise omit `VO2MAX`.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario

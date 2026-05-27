@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added cadence-aware `season_scenarios` generation hardening: the scenario task/prompt/skill now treat `deload_cadence` as an explicit scenario dimension, the existing scenario-quality guardrail rejects unexplained cadence collapse, and recommendation-default cadence can no longer silently flatten all three scenarios.
 - Added a mandatory evidence-curation runtime stage: new `evidence_curation_specialist` agent/task/skill, native Pydantic `EvidenceCurationModel`, deterministic trusted-source matching, quality-gate/activation pipeline, and provenance-aware study briefs rendered from structured curation output.
 - Added a canonical repo-wide evidence library under `skills/shared/durability-methodology/references/library/`, including structured core/applied source registries, generated markdown lookup tables, per-study detail pages, and decommission markers for legacy bibliography/manifest files.
 - Added a weekly evidence refresh path with fail-closed primary-source discovery from PubMed plus background run-store integration and a manual System Status trigger for evidence refresh runs.

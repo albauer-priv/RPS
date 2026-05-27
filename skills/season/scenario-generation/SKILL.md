@@ -10,7 +10,7 @@ Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 Method:
 1. Respect the injected deterministic horizon context, A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
-3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
+3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
 5. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
 
@@ -98,6 +98,7 @@ Scenario math rules:
 - `planning_horizon_weeks` must match the inclusive week span of `meta.iso_week_range`.
 - if deterministic horizon context is present, it is the source of truth for scenario horizon math
 - `phase_count_expected`, `shortening_budget_weeks`, `phase_plan_summary`, and `max_shortened_phases` must stay consistent with horizon length and declared phase length.
+- `deload_cadence` is part of the scenario identity, not decorative structure metadata.
 - If `shortening_budget_weeks = 0`, then `max_shortened_phases = 0`.
 - `intensity_guidance` must use canonical agenda intensity domains only: `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`, `VO2MAX`.
 - Keep `avoid_domains` to trainable intensity domains; use `NONE` and `RECOVERY` only for availability/recovery semantics.
@@ -110,6 +111,7 @@ Intensity-domain semantics:
 - `THRESHOLD` and `VO2MAX` are special-case permissions, not default markers of ambition.
 - Scenario C is not defined by `VO2MAX`.
 - Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
+- Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant and explain which other axes carry the differentiation.
 - If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse ceiling-support / fresh high-intensity permission and not the primary scenario identity.
 
 Season archetype semantics:
@@ -126,7 +128,9 @@ Season archetype semantics:
 
 Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.
-- Ensure `risk_profile`, `load_philosophy`, `decision_notes`, and `intensity_guidance` tell the same story.
+- Ensure `risk_profile`, `load_philosophy`, `decision_notes`, `deload_cadence`, and `intensity_guidance` tell the same story.
+- Make cadence rationale visible in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
+- If multiple scenarios share the same cadence, say directly that cadence is intentionally shared and that differentiation comes from other axes such as specificity-under-fatigue, recovery margin, or risk posture.
 - If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
 - Use explicit wording such as `ceiling-support`, `fresh`, `high-intensity`, `support`, or `VO2` so the rationale is unambiguous.
 - Put the explanation in the actual stored scenario fields, not only in surrounding prose.
@@ -141,6 +145,8 @@ Hard rules:
 - keep scenarios advisory until selection and season planning
 - use the injected deterministic planning horizon
 - do not define scenarios primarily by domain breadth
+- do not let recommendation-default cadence silently flatten all scenarios
+- do not emit A/B/C with the same `deload_cadence` unless the stored scenario fields clearly justify why cadence is intentionally held constant
 - do not let Scenario C become "the VO2 scenario" by default
 - do not keep `VO2MAX` in Scenario C without an explicit ceiling-support explanation in `decision_notes` or `kpi_guardrail_notes`
 - do not invent fake kJ separation when the actual time budget cannot support it
@@ -155,6 +161,7 @@ Positive operating guidance:
 Positive execution pattern:
 - Build three distinct scenario options from the injected horizon, cadence options, event priorities, athlete constraints, and kJ-first risk/exposure logic.
 - Describe each scenario with a clear purpose, load philosophy, cadence structure, event alignment, risk profile, and best-fit condition.
+- Treat cadence as an explicit scenario dimension: even when two scenarios share cadence, explain why that is intentional and where the real differentiation sits.
 - Add five short user-facing differentiators that make scenario selection easier without reading the whole prose:
   - `typical_week_feel`
   - `main_payoff`
@@ -165,7 +172,7 @@ Positive execution pattern:
 - Produce scenario guidance that helps Season Planning choose a coherent direction while preserving informational authority.
 - Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.
 - Explain the tradeoff between robust, balanced, and ambitious choices in terms of exposure, recovery margin, specificity, and failure tolerance.
-- Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored.
+- Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored, but do not mirror the recommendation cadence blindly into all scenarios.
 - Return scenarios that are complete, differentiated, traceable, and ready for direct selection.
 
 Output format:

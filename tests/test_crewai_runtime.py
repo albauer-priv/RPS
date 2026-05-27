@@ -2569,8 +2569,9 @@ def test_season_scenarios_profile_quality_accepts_same_domains_with_distinct_pro
                         "risk_profile": "Highest executability and lowest density.",
                         "key_differences": "Completion-first with minimal fatigue exposure.",
                         "scenario_guidance": {
+                            "deload_cadence": "2:1",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
-                            "decision_notes": ["Protect recovery margin."],
+                            "decision_notes": ["Use 2:1 cadence to protect recovery margin."],
                             "constraint_summary": ["Low density."],
                         },
                     },
@@ -2580,8 +2581,9 @@ def test_season_scenarios_profile_quality_accepts_same_domains_with_distinct_pro
                         "risk_profile": "Balanced recovery risk.",
                         "key_differences": "Durability-forward target plan.",
                         "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
-                            "decision_notes": ["Use selected tempo economy work."],
+                            "decision_notes": ["Use 2:1:1 cadence to absorb tempo economy work and long-ride progression."],
                             "constraint_summary": ["Long-ride progression."],
                         },
                     },
@@ -2591,8 +2593,9 @@ def test_season_scenarios_profile_quality_accepts_same_domains_with_distinct_pro
                         "risk_profile": "Ambitious performance-forward long build with higher specificity under fatigue.",
                         "key_differences": "More back-to-back and hard-late specificity.",
                         "scenario_guidance": {
+                            "deload_cadence": "3:1",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
-                            "decision_notes": ["Use back-to-back and hard-late specificity under fatigue."],
+                            "decision_notes": ["Use 3:1 cadence for a longer build with back-to-back and hard-late specificity under fatigue."],
                             "constraint_summary": ["Event simulation and fatigue exposure."],
                         },
                     },
@@ -2617,8 +2620,9 @@ def test_season_scenarios_profile_quality_accepts_vo2_rationale_from_kpi_guardra
                         "risk_profile": "Highest executability and lowest density.",
                         "key_differences": "Completion-first with minimal fatigue exposure.",
                         "scenario_guidance": {
+                            "deload_cadence": "2:1",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
-                            "decision_notes": ["Protect recovery margin."],
+                            "decision_notes": ["Use 2:1 cadence to protect recovery margin."],
                             "constraint_summary": ["Low density."],
                         },
                     },
@@ -2628,8 +2632,9 @@ def test_season_scenarios_profile_quality_accepts_vo2_rationale_from_kpi_guardra
                         "risk_profile": "Balanced recovery risk.",
                         "key_differences": "Durability-forward target plan.",
                         "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
-                            "decision_notes": ["Use selected tempo economy work."],
+                            "decision_notes": ["Use 2:1:1 cadence to absorb tempo economy work."],
                             "constraint_summary": ["Long-ride progression."],
                         },
                     },
@@ -2639,11 +2644,12 @@ def test_season_scenarios_profile_quality_accepts_vo2_rationale_from_kpi_guardra
                         "risk_profile": "Ambitious performance-forward long build with higher specificity under fatigue.",
                         "key_differences": "More back-to-back and hard-late specificity.",
                         "scenario_guidance": {
+                            "deload_cadence": "3:1",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "VO2MAX"]},
-                            "decision_notes": ["Use back-to-back and hard-late specificity under fatigue."],
+                            "decision_notes": ["Use 3:1 cadence for back-to-back and hard-late specificity under fatigue."],
                             "constraint_summary": ["Event simulation and fatigue exposure."],
                             "kpi_guardrail_notes": [
-                                "VO2MAX is allowed only as sparse ceiling-support work when fresh, not as the primary scenario identity."
+                                "3:1 cadence supports the longer build, and VO2MAX is allowed only as sparse ceiling-support work when fresh, not as the primary scenario identity."
                             ],
                         },
                     },
@@ -2667,21 +2673,33 @@ def test_season_scenarios_profile_quality_rejects_weak_scenario_c() -> None:
                         "load_philosophy": "Lower feasible kJ-envelope.",
                         "risk_profile": "Low risk.",
                         "key_differences": "Conservative.",
-                        "scenario_guidance": {"intensity_guidance": {"allowed_domains": ["ENDURANCE"]}},
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                            "decision_notes": ["Use 2:1 cadence to protect recovery margin."],
+                        },
                     },
                     {
                         "scenario_id": "B",
                         "load_philosophy": "Realistic target kJ-envelope.",
                         "risk_profile": "Balanced risk.",
                         "key_differences": "Default.",
-                        "scenario_guidance": {"intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]}},
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]},
+                            "decision_notes": ["Use 2:1:1 cadence for balanced durability progression."],
+                        },
                     },
                     {
                         "scenario_id": "C",
                         "load_philosophy": "Higher weekly kJ only.",
                         "risk_profile": "Higher risk.",
                         "key_differences": "More kJ.",
-                        "scenario_guidance": {"intensity_guidance": {"allowed_domains": ["ENDURANCE"]}},
+                        "scenario_guidance": {
+                            "deload_cadence": "3:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                            "decision_notes": ["Use 3:1 cadence for a bigger build."],
+                        },
                     },
                 ]
             },
@@ -2690,6 +2708,210 @@ def test_season_scenarios_profile_quality_rejects_weak_scenario_c() -> None:
 
     assert failed is False
     assert "Scenario C must express ambitious specificity" in message
+
+
+def test_season_scenarios_profile_quality_rejects_shared_cadence_without_explicit_justification() -> None:
+    failed, message = season_scenarios_profile_quality(
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIOS", "schema_id": "SeasonScenariosInterface"},
+            "data": {
+                "scenarios": [
+                    {
+                        "scenario_id": "A",
+                        "load_philosophy": "Lower feasible kJ-envelope with high recovery margin.",
+                        "risk_profile": "Lowest risk profile.",
+                        "key_differences": "Completion-first with sparse tempo.",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                            "decision_notes": ["Use 2:1:1 cadence for high recovery margin."],
+                        },
+                    },
+                    {
+                        "scenario_id": "B",
+                        "load_philosophy": "Realistic target kJ-envelope with long-ride progression.",
+                        "risk_profile": "Balanced recovery risk.",
+                        "key_differences": "Durability-forward target plan.",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]},
+                            "decision_notes": ["Use 2:1:1 cadence for balanced durability progression."],
+                        },
+                    },
+                    {
+                        "scenario_id": "C",
+                        "load_philosophy": "Upper plausible kJ-envelope with more event simulation.",
+                        "risk_profile": "Higher specificity and fatigue exposure.",
+                        "key_differences": "More back-to-back and hard-late specificity.",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
+                            "decision_notes": ["Use 2:1:1 cadence for harder event-simulation weeks and back-to-back specificity under fatigue."],
+                            "constraint_summary": ["Fatigue exposure and event simulation."],
+                        },
+                    },
+                ]
+            },
+        }
+    )
+
+    assert failed is False
+    assert message == "Season scenarios collapse cadence across A/B/C without explicit justification."
+
+
+def test_season_scenarios_profile_quality_accepts_shared_cadence_with_explicit_justification() -> None:
+    ok, payload = season_scenarios_profile_quality(
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIOS", "schema_id": "SeasonScenariosInterface"},
+            "data": {
+                "scenarios": [
+                    {
+                        "scenario_id": "A",
+                        "load_philosophy": "Lower feasible kJ-envelope with high recovery margin.",
+                        "risk_profile": "Lowest risk profile.",
+                        "key_differences": "Completion-first with sparse tempo.",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                            "decision_notes": [
+                                "Use 2:1:1 cadence and keep cadence constant across scenarios because differentiation comes from recovery margin and load philosophy."
+                            ],
+                        },
+                    },
+                    {
+                        "scenario_id": "B",
+                        "load_philosophy": "Realistic target kJ-envelope with long-ride progression.",
+                        "risk_profile": "Balanced recovery risk.",
+                        "key_differences": "Durability-forward target plan.",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]},
+                            "decision_notes": [
+                                "Use 2:1:1 cadence and keep cadence constant while differentiation comes from specificity-under-fatigue and balanced risk posture."
+                            ],
+                        },
+                    },
+                    {
+                        "scenario_id": "C",
+                        "load_philosophy": "Upper plausible kJ-envelope with more event simulation.",
+                        "risk_profile": "Higher specificity and fatigue exposure.",
+                        "key_differences": "More back-to-back and hard-late specificity.",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1:1",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
+                            "decision_notes": [
+                                "Use 2:1:1 cadence and keep cadence constant while differentiation comes from event simulation, fatigue exposure, and risk profile."
+                            ],
+                            "constraint_summary": ["Fatigue exposure and event simulation."],
+                        },
+                    },
+                ]
+            },
+        }
+    )
+
+    assert ok is True
+    assert payload["data"]["scenarios"][0]["scenario_guidance"]["deload_cadence"] == "2:1:1"
+
+
+def test_season_scenarios_profile_quality_rejects_recommendation_mirrored_cadence_without_rationale() -> None:
+    with guardrail_runtime_context(season_scenario_recommendation_context={"recommended_cadence": "2:1:1"}):
+        failed, message = season_scenarios_profile_quality(
+            {
+                "meta": {"artifact_type": "SEASON_SCENARIOS", "schema_id": "SeasonScenariosInterface"},
+                "data": {
+                    "scenarios": [
+                        {
+                            "scenario_id": "A",
+                            "load_philosophy": "Lower feasible kJ-envelope with high recovery margin.",
+                            "risk_profile": "Lowest risk profile.",
+                            "key_differences": "Completion-first with sparse tempo.",
+                            "scenario_guidance": {
+                                "deload_cadence": "2:1:1",
+                                "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                                "decision_notes": ["Use 2:1:1 cadence for high recovery margin."],
+                            },
+                        },
+                        {
+                            "scenario_id": "B",
+                            "load_philosophy": "Realistic target kJ-envelope with long-ride progression.",
+                            "risk_profile": "Balanced recovery risk.",
+                            "key_differences": "Durability-forward target plan.",
+                            "scenario_guidance": {
+                                "deload_cadence": "2:1:1",
+                                "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]},
+                                "decision_notes": ["Use 2:1:1 cadence for balanced durability progression."],
+                            },
+                        },
+                        {
+                            "scenario_id": "C",
+                            "load_philosophy": "Upper plausible kJ-envelope with more event simulation.",
+                            "risk_profile": "Higher specificity and fatigue exposure.",
+                            "key_differences": "More back-to-back and hard-late specificity.",
+                            "scenario_guidance": {
+                                "deload_cadence": "2:1:1",
+                                "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
+                                "decision_notes": ["Use 2:1:1 cadence for harder event-simulation weeks and back-to-back specificity under fatigue."],
+                                "constraint_summary": ["Fatigue exposure and event simulation."],
+                            },
+                        },
+                    ]
+                },
+            }
+        )
+
+    assert failed is False
+    assert message == "Recommendation-default cadence was mirrored across all scenarios without scenario differentiation."
+
+
+def test_season_scenarios_profile_quality_accepts_mixed_cadence_with_advisory_recommendation_context() -> None:
+    with guardrail_runtime_context(season_scenario_recommendation_context={"recommended_cadence": "2:1:1"}):
+        ok, payload = season_scenarios_profile_quality(
+            {
+                "meta": {"artifact_type": "SEASON_SCENARIOS", "schema_id": "SeasonScenariosInterface"},
+                "data": {
+                    "scenarios": [
+                        {
+                            "scenario_id": "A",
+                            "load_philosophy": "Lower feasible kJ-envelope with high recovery margin.",
+                            "risk_profile": "Lowest risk profile.",
+                            "key_differences": "Completion-first with sparse tempo.",
+                            "scenario_guidance": {
+                                "deload_cadence": "2:1",
+                                "intensity_guidance": {"allowed_domains": ["ENDURANCE"]},
+                                "decision_notes": ["Use 2:1 cadence for the most recovery-protective option despite the advisory recommendation."],
+                            },
+                        },
+                        {
+                            "scenario_id": "B",
+                            "load_philosophy": "Realistic target kJ-envelope with long-ride progression.",
+                            "risk_profile": "Balanced recovery risk.",
+                            "key_differences": "Durability-forward target plan.",
+                            "scenario_guidance": {
+                                "deload_cadence": "2:1:1",
+                                "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]},
+                                "decision_notes": ["Use 2:1:1 cadence because the advisory recommendation fits the balanced durability profile."],
+                            },
+                        },
+                        {
+                            "scenario_id": "C",
+                            "load_philosophy": "Upper plausible kJ-envelope with more event simulation.",
+                            "risk_profile": "Higher specificity and fatigue exposure.",
+                            "key_differences": "More back-to-back and hard-late specificity.",
+                            "scenario_guidance": {
+                                "deload_cadence": "3:1",
+                                "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"]},
+                                "decision_notes": ["Use 3:1 cadence for a longer build with event simulation and back-to-back specificity under fatigue."],
+                                "constraint_summary": ["Fatigue exposure and event simulation."],
+                            },
+                        },
+                    ]
+                },
+            }
+        )
+
+    assert ok is True
+    assert payload["data"]["scenarios"][1]["scenario_guidance"]["deload_cadence"] == "2:1:1"
 
 
 def test_season_scenarios_task_policy_uses_profile_quality_guardrail() -> None:

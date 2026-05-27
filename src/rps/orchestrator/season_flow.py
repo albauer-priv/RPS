@@ -193,6 +193,7 @@ def create_season_scenarios(
     planning_horizon_block = ""
     cadence_options_block = ""
     scenario_recommendation_block = ""
+    recommendation_context: JsonMap | None = None
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         target_week = IsoWeek(year=year, week=week)
@@ -274,17 +275,20 @@ def create_season_scenarios(
         "Return only the final schema-compliant SEASON_SCENARIOS artifact envelope."
     )
     logger.info("Creating season scenarios athlete=%s iso_week=%04d-W%02d", athlete_id, year, week)
-    return run_agent_multi_output(
-        runtime_for,
-        agent_name=spec.name,
-        athlete_id=athlete_id,
-        task=AgentTask.CREATE_SEASON_SCENARIOS,
-        user_input=user_input,
-        run_id=run_id,
-        model_override=model_resolver(spec.name) if model_resolver else None,
-        temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-        workspace_root=runtime_for(spec.name).workspace_root,
-    )
+    with guardrail_runtime_context(
+        season_scenario_recommendation_context=recommendation_context if isinstance(recommendation_context, dict) else {},
+    ):
+        return run_agent_multi_output(
+            runtime_for,
+            agent_name=spec.name,
+            athlete_id=athlete_id,
+            task=AgentTask.CREATE_SEASON_SCENARIOS,
+            user_input=user_input,
+            run_id=run_id,
+            model_override=model_resolver(spec.name) if model_resolver else None,
+            temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            workspace_root=runtime_for(spec.name).workspace_root,
+        )
 
 
 def select_season_scenario(

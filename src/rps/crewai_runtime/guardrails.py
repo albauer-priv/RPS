@@ -117,6 +117,50 @@ def _as_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
+def _string_list(value: Any) -> list[str]:
+    return [str(item).strip() for item in _as_list(value) if str(item).strip()]
+
+
+_SUPPORTED_SCENARIO_CADENCES = {"2:1", "3:1", "2:1:1"}
+_CADENCE_RATIONALE_FIELDS = (
+    "decision_notes",
+    "risk_flags",
+    "event_alignment_notes",
+    "kpi_guardrail_notes",
+)
+_CADENCE_TOKENS = ("2:1", "3:1", "2:1:1", "cadence")
+_SHARED_CADENCE_MARKERS = (
+    "shared cadence",
+    "same cadence",
+    "cadence held constant",
+    "keep cadence constant",
+    "cadence remains constant",
+    "cadence is intentionally held constant",
+    "cadence is intentionally shared",
+    "intentionally held constant",
+    "intentionally shared",
+)
+_DIFFERENTIATION_MARKERS = (
+    "load philosophy",
+    "specificity",
+    "fatigue",
+    "recovery margin",
+    "recovery tolerance",
+    "risk posture",
+    "risk profile",
+    "intensity permissions",
+    "density",
+)
+
+
+def _scenario_rationale_text(guidance: JsonMap) -> str:
+    return " ".join(
+        part
+        for field in _CADENCE_RATIONALE_FIELDS
+        for part in _string_list(guidance.get(field))
+    ).lower()
+
+
 def typed_output_present(result: Any) -> GuardrailResult:
     payload = _coerce_payload(result)
     if payload is None:
@@ -776,6 +820,8 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     seen_ids: set[str] = set()
     signatures: set[tuple[str, str, str, tuple[str, ...]]] = set()
     by_id: dict[str, JsonMap] = {}
+    cadence_by_id: dict[str, str] = {}
+    rationale_by_id: dict[str, str] = {}
     for scenario in scenarios:
         scenario_id = str(scenario.get("scenario_id") or "").strip().upper()
         if scenario_id not in {"A", "B", "C"}:
@@ -783,6 +829,14 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
         seen_ids.add(scenario_id)
         by_id[scenario_id] = scenario
         guidance = _as_map(scenario.get("scenario_guidance"))
+        cadence = str(guidance.get("deload_cadence") or "").strip()
+        if cadence not in _SUPPORTED_SCENARIO_CADENCES:
+            return (False, f"Scenario {scenario_id} must include supported deload_cadence (`2:1`, `3:1`, or `2:1:1`).")
+        cadence_by_id[scenario_id] = cadence
+        rationale_text = _scenario_rationale_text(guidance)
+        rationale_by_id[scenario_id] = rationale_text
+        if not any(token in rationale_text for token in _CADENCE_TOKENS) or cadence not in rationale_text:
+            return (False, f"Scenario {scenario_id} cadence is present but not explained in decision/risk fields.")
         intensity = _as_map(guidance.get("intensity_guidance"))
         allowed_domains = [str(item).strip().upper() for item in _as_list(intensity.get("allowed_domains")) if str(item).strip()]
         if "ENDURANCE" not in allowed_domains:
@@ -795,6 +849,18 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
         return (False, "Season scenarios must include scenario ids A, B, and C exactly once.")
     if len(signatures) < 3:
         return (False, "Season scenarios must differ materially in load/risk/specificity profile; cosmetic low/mid/high variants are not enough.")
+    unique_cadences = set(cadence_by_id.values())
+    if len(unique_cadences) == 1:
+        shared_rationale = " ".join(rationale_by_id.values())
+        has_shared_cadence_rationale = any(marker in shared_rationale for marker in _SHARED_CADENCE_MARKERS) and any(
+            marker in shared_rationale for marker in _DIFFERENTIATION_MARKERS
+        )
+        recommendation_context = _as_map(current_guardrail_runtime_context().get("season_scenario_recommendation_context"))
+        recommended_cadence = str(recommendation_context.get("recommended_cadence") or "").strip()
+        if not has_shared_cadence_rationale and recommended_cadence and next(iter(unique_cadences)) == recommended_cadence:
+            return (False, "Recommendation-default cadence was mirrored across all scenarios without scenario differentiation.")
+        if not has_shared_cadence_rationale:
+            return (False, "Season scenarios collapse cadence across A/B/C without explicit justification.")
 
     scenario_c = by_id["C"]
     guidance_c = _as_map(scenario_c.get("scenario_guidance"))
