@@ -58,10 +58,12 @@ This directory contains the canonical documentation for the platform. It is a na
 - [Validation Contracts](specs/contracts/validation/) (artifact validation references)
 - [Feature: Repo-Wide Evidence Library & Refresh](specs/features/FEAT_repo_wide_evidence_library_and_refresh.md)
 - [Feature: Evidence Curation Pipeline](specs/features/FEAT_evidence_curation_pipeline.md)
+- [Feature: Evidence Refresh GitHub Action](specs/features/FEAT_evidence_refresh_github_action.md)
 
 ### Runbooks (ops)
 - [Validation Runbook](runbooks/validation.md)
 - [Data Ops Runbook](runbooks/data_ops.md)
+- [Evidence Refresh Runbook](runbooks/evidence_refresh.md)
 
 ### ADRs
 - [ADR Index](adr/README.md)
