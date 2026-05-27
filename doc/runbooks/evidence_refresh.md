@@ -36,7 +36,8 @@ The workflow:
 python3 scripts/refresh_evidence_library.py --discover
 ```
 
-5. commits and pushes updated evidence-library files to `main` only if files changed
+5. commits updated evidence-library files only if files changed
+6. fetches `origin/main`, rebases the refresh commit, and retries the push up to 3 times
 
 The existing GHCR image workflow then rebuilds from the refreshed repo state on
 push to `main`.
@@ -95,6 +96,7 @@ Current mitigation:
 - refresh now enforces a hard per-run processing cap
 - the workflow retries the refresh command up to 3 times
 - no git commit is created if the refresh fails
+- if `main` advances during the workflow run, the workflow rebases the refresh commit and retries the push before failing
 
 ---
 

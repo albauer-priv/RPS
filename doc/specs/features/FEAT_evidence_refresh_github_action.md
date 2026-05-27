@@ -60,7 +60,7 @@ Owner: Planning Runtime
 * A dedicated GitHub Actions workflow runs weekly and can also be triggered manually.
 * The workflow installs Python 3.13, project requirements, and executes:
   * `PYTHONPATH=src python3 scripts/refresh_evidence_library.py --discover`
-* If the refresh modifies the canonical evidence registry or generated outputs, the workflow commits and pushes those changes to `main`.
+* If the refresh modifies the canonical evidence registry or generated outputs, the workflow commits those changes locally, rebases once per attempt onto the latest `origin/main`, and retries the push before failing.
 * The existing GHCR image workflow then rebuilds from the updated repo state on push.
 
 **UI impact**
@@ -85,7 +85,7 @@ Owner: Planning Runtime
 **Data flow**
 
 * Inputs: repo checkout, GitHub Actions secrets, primary-source discovery, LLM runtime env
-* Processing: install deps -> run evidence refresh -> detect git diff -> commit/push if changed
+* Processing: install deps -> run evidence refresh -> detect git diff -> commit -> fetch/rebase/retry-push if changed
 * Outputs: updated YAML registry, study briefs, tables, manifest, git commit to `main`
 
 **Schema / Artefacts**
@@ -102,7 +102,7 @@ Owner: Planning Runtime
 
 * Backward compatible: Yes
 * Breaking changes: none
-* Fallback behavior: if refresh fails, no commit/push occurs and the existing library state remains unchanged
+* Fallback behavior: if refresh fails or the rebase/push retry loop exhausts, no remote state change occurs and the existing library state remains unchanged
 
 **Conflicts with ADRs / Principles**
 
@@ -115,12 +115,12 @@ Owner: Planning Runtime
 * Pipeline/data: evidence refresh can now be run by CI in the supported environment
 * Renderer: refreshed outputs may regenerate markdown surfaces
 * Workspace/run-store: none in GitHub Actions context
-* Validation/tooling: workflow YAML and operator runbook
+* Validation/tooling: workflow YAML, git push conflict handling, and operator runbook
 * Deployment/config: GitHub Actions secrets/env for LLM runtime
 
 **Required refactoring**
 
-* none beyond adding workflow/runbook/docs
+* Add a rebase/retry push path so evidence refresh commits survive normal concurrent pushes to `main`.
 
 ---
 
@@ -146,6 +146,7 @@ Owner: Planning Runtime
 **Risk**
 
 * A bad refresh could commit undesired library changes without PR review
+* A conflicting rebase could still fail if remote changes touch the same evidence files during the workflow window
 
 ### Option B — Manual refresh only outside GitHub Actions
 
@@ -205,6 +206,11 @@ Owner: Planning Runtime
   * Safe behavior: skip commit/push
   * Recovery: none needed
 
+* Failure mode: workflow refresh commit becomes non-fast-forward because `main` advanced during the run
+  * Detection: push rejection in workflow logs
+  * Safe behavior: fetch `origin/main`, rebase the local refresh commit, and retry push up to 3 times
+  * Recovery: rerun the workflow if a true rebase conflict remains after retries
+
 * Failure mode: missing secrets break curation stage
   * Detection: workflow failure at runtime bootstrap
   * Safe behavior: no state change
@@ -217,19 +223,21 @@ Owner: Planning Runtime
 **New/changed events**
 
 * GitHub Actions run logs for evidence refresh
+* GitHub Actions push-retry attempts for post-refresh commit publication
 
 **Diagnostics**
 
 * GitHub Actions workflow logs
 * resulting git commit on `main`
+* fetch/rebase/push retry lines in the workflow log
 
 ---
 
 ## 11) Documentation Updates
 
 * [x] `doc/README.md` — add the feature doc to specs index
-* [x] `doc/runbooks/evidence_refresh.md` — document CI/manual refresh execution
-* [x] `CHANGELOG.md` — note CI refresh automation
+* [x] `doc/runbooks/evidence_refresh.md` — document CI/manual refresh execution and push-conflict recovery behavior
+* [x] `CHANGELOG.md` — note CI refresh automation and resilient publish behavior
 
 ---
 
