@@ -33,7 +33,10 @@ Out of scope:
 1. Start from the active planning horizon and injected deterministic horizon context.
 2. Distinguish scenarios primarily by load philosophy, exposure under fatigue, specificity, and recovery/risk tradeoffs.
 3. Keep intensity domains as training semantics, not the whole scenario identity.
-4. Leave binding structural decisions to Season planning.
+4. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
+5. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in stored `decision_notes` and/or `kpi_guardrail_notes` that it is only sparse `ceiling-support` / fresh high-intensity permission and not the primary scenario identity.
+6. If that explanation cannot be stated cleanly in the stored scenario fields, omit `VO2MAX` from Scenario C.
+7. Leave binding structural decisions to Season planning.
 
 ## Hard rules
 
@@ -41,12 +44,14 @@ Out of scope:
 - Do not make binding cadence, macrocycle, or corridor decisions.
 - Do not redesign season governance.
 - Do not assume the later season planner will reinterpret a vague scenario safely.
+- Do not let Scenario C become "the VO2 scenario" by default.
 
 ## Self-check
 
 - scenario output remains advisory
 - no binding season-plan logic leaked into the scenario
 - tradeoffs and assumptions are explicit
+- if Scenario C includes `VO2MAX`, the stored scenario fields explicitly explain ceiling-support / fresh high-intensity permission
 
 ## Output discipline
 

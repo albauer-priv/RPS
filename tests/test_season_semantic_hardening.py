@@ -47,6 +47,19 @@ def test_season_skills_preserve_durability_without_intensity_free_collapse() -> 
     assert "ceiling_first_durability" in scenario
 
 
+def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
+    prompt = _read("prompts/agents/season_scenario.md")
+    task_config = _read("config/crewai/tasks.yaml")
+    scenario_skill = _read("skills/season/scenario-generation/SKILL.md")
+
+    assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in prompt
+    assert "`decision_notes` and/or `kpi_guardrail_notes`" in prompt
+    assert "omit `VO2MAX` from Scenario C" in prompt
+    assert 'Do not let Scenario C become "the VO2 scenario" by default.' in prompt
+    assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in task_config
+    assert "If Scenario C includes `VO2MAX`" in scenario_skill
+
+
 def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:
     macrocycle = _read("skills/season/macrocycle-architecture/SKILL.md")
     audit = _read("skills/season/audit/SKILL.md")
