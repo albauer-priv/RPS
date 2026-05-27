@@ -140,7 +140,19 @@ tasks:
       providing `typical_week_feel`, `main_payoff`, `main_cost`,
       `what_gets_prioritized`, and `what_gets_de_emphasized`. `best_suited_if`
       must carry explicit positive selection conditions and `risk_flags` must
-      carry explicit negative selection conditions. Emit normalized
+      carry explicit negative selection conditions. Write `risk_flags` as
+      short concrete caution sentences, not generic labels or soft marketing
+      prose. Use explicit caution markers such as `under-deliver`,
+      `continuity break`, `recovery slip`, `fatigue risk`,
+      `travel disruption`, `logistics disruption`, `insufficient tolerance`,
+      `too conservative`, or `too aggressive`. For Scenario A, make at least
+      one `risk_flags` line clearly say the scenario may `under-deliver` or be
+      `too conservative` if the athlete can tolerate more load. For Scenario
+      B, make at least one `risk_flags` line clearly say the scenario becomes
+      less forgiving if `continuity break` or `recovery slip` appears. For
+      Scenario C, make at least one `risk_flags` line clearly say the scenario
+      becomes `too aggressive` when `fatigue risk`, `travel disruption`,
+      `logistics disruption`, or `insufficient tolerance` appears. Emit normalized
       `scenario_guidance.season_archetype` (`none` or
       `ceiling_first_durability`) plus `season_archetype_rationale`; default
       to `none` and use `ceiling_first_durability` only when the scenario

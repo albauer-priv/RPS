@@ -37,15 +37,19 @@ Out of scope:
 5. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
 6. Emit a coherent advisory `deload_cadence` per scenario and explain its role in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
 7. `best_suited_if` must state explicit positive selection conditions; `risk_flags` must state explicit negative selection conditions.
-8. The deterministic recommendation context may support one scenario, but it must not become the default cadence for all scenarios.
-9. If multiple scenarios share the same `deload_cadence`, explicitly state that cadence is intentionally held constant and that differentiation instead comes from load philosophy, specificity-under-fatigue, recovery margin, intensity permissions, or risk posture.
-10. Cluster wording requires multiple relevant in-horizon events. Do not use `cluster`, `event cluster`, `B-event cluster`, or `peak cluster` language for a single future event.
-11. `season_archetype` defaults to `none`. Use `ceiling_first_durability` only when the stored scenario fields explicitly justify early ceiling support, enough runway, preserved later durability/specificity work, and recovery tolerance.
-12. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in stored `decision_notes` and/or `kpi_guardrail_notes` that it is only sparse / limited / occasional `ceiling-support` or `fresh-only` permission, not primary identity, and that the ambition instead comes from specificity-under-fatigue, density, event simulation, or load posture.
-13. If that explanation cannot be stated cleanly in the stored scenario fields, omit `VO2MAX` from Scenario C.
-14. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
-15. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
-16. Leave binding structural decisions to Season planning.
+8. Write `risk_flags` as short concrete caution sentences, not generic labels or marketing prose. Use explicit risk markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
+9. For Scenario A, make at least one `risk_flags` line clearly say that the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load.
+10. For Scenario B, make at least one `risk_flags` line clearly say that the scenario becomes less forgiving if `continuity break` or `recovery slip` appears.
+11. For Scenario C, make at least one `risk_flags` line clearly say that the scenario becomes `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears.
+12. The deterministic recommendation context may support one scenario, but it must not become the default cadence for all scenarios.
+13. If multiple scenarios share the same `deload_cadence`, explicitly state that cadence is intentionally held constant and that differentiation instead comes from load philosophy, specificity-under-fatigue, recovery margin, intensity permissions, or risk posture.
+14. Cluster wording requires multiple relevant in-horizon events. Do not use `cluster`, `event cluster`, `B-event cluster`, or `peak cluster` language for a single future event.
+15. `season_archetype` defaults to `none`. Use `ceiling_first_durability` only when the stored scenario fields explicitly justify early ceiling support, enough runway, preserved later durability/specificity work, and recovery tolerance.
+16. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in stored `decision_notes` and/or `kpi_guardrail_notes` that it is only sparse / limited / occasional `ceiling-support` or `fresh-only` permission, not primary identity, and that the ambition instead comes from specificity-under-fatigue, density, event simulation, or load posture.
+17. If that explanation cannot be stated cleanly in the stored scenario fields, omit `VO2MAX` from Scenario C.
+18. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
+19. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
+20. Leave binding structural decisions to Season planning.
 
 ## Hard rules
 
@@ -66,7 +70,7 @@ Out of scope:
 - future-only event logic is respected
 - cadence is part of each scenario story and is explained in stored fields
 - `best_suited_if` explains when to choose the scenario
-- `risk_flags` explain when the scenario becomes risky or inappropriate
+- `risk_flags` explain when the scenario becomes risky or inappropriate with concrete caution wording such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`
 - `allowed_domains` are framed as eligibility, not phase-wide authorization
 - no binding season-plan logic leaked into the scenario
 - tradeoffs and assumptions are explicit

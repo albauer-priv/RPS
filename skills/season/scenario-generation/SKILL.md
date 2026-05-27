@@ -13,6 +13,7 @@ Method:
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
 5. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
+6. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
 
 kJ-first scenario methodology:
 - In ultra/brevet planning, the planned kJ-envelope is the leading steering quantity for scenario identity.
@@ -84,7 +85,8 @@ Required A/B/C target profiles:
   - minimal intensity allowance
   - high executability under work stress, illness risk, or masters recovery limits
   - `best_suited_if` must say continuity / recoverability / logistics robustness are priority
-  - `risk_flags` must say the scenario may under-deliver if the athlete can tolerate more load
+  - `risk_flags` must say the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load
+  - preferred example: `May under-deliver if high load tolerance is available.`
   - `ENDURANCE` is the core domain; `TEMPO` is optional and sparse only when the scenario still reads completion-first
 - **Scenario B = durability-forward target plan**
   - realistic target kJ-envelope
@@ -92,7 +94,8 @@ Required A/B/C target profiles:
   - selected `TEMPO` / optional `SWEET_SPOT` economy work
   - balanced recovery risk
   - `best_suited_if` must say stable recovery supports systematic progression
-  - `risk_flags` must say the scenario is less forgiving than A if continuity degrades
+  - `risk_flags` must say the scenario is less forgiving than A if `continuity break` or `recovery slip` appears
+  - preferred example: `Less forgiving than A if continuity break or recovery slip appears.`
   - default shape for many brevet/ultra seasons when performance should improve without compromising robustness
 - **Scenario C = ambitious performance-forward long build**
   - upper plausible kJ-envelope
@@ -100,7 +103,8 @@ Required A/B/C target profiles:
   - more B2B / hard-late / event simulation
   - optional `THRESHOLD` or `VO2MAX` only if explicitly justified
   - `best_suited_if` must say recovery and load tolerance are demonstrably stable
-  - `risk_flags` must say fatigue/logistics instability makes the scenario risky
+  - `risk_flags` must say the scenario becomes `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears
+  - preferred example: `Too aggressive if fatigue risk or travel disruption appears.`
   - ambition comes primarily from specificity and fatigue exposure, not from automatic high-intensity escalation
 
 Scenario math rules:
@@ -146,6 +150,7 @@ Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.
 - Ensure `risk_profile`, `load_philosophy`, `decision_notes`, `deload_cadence`, and `intensity_guidance` tell the same story.
 - Ensure `best_suited_if` is a real positive selection gate and `risk_flags` are real caution markers, not marketing prose.
+- Ensure `risk_flags` contain guardrail-visible words, not vague phrases like `general caution` or `watch recovery`.
 - Make cadence rationale visible in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
 - If multiple scenarios share the same cadence, say directly that cadence is intentionally shared and that differentiation comes from other axes such as specificity-under-fatigue, recovery margin, or risk posture.
 - If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
