@@ -35,15 +35,23 @@ Method:
 8. Treat the injected Candidate Season Bundle as the authoritative review subject. Do not reload or expect a synthetic `candidate_season_bundle` workspace artefact.
 9. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, semantically coherent bundle.
 10. Use `replan_required` only for real residual defects that finalize did not resolve.
-11. Gate the full progressive overload policy explicitly:
+11. Formal review confirmation checklist:
+   - contract-clean or not
+   - writer-ready or not
+   - Pass 1 return vs Pass 2 return classification if not clean
+   - bounded replan instructions only
+   - no semantic rewriting in review
+12. Use Pass 1 return when macrocycle structure, event anchoring, cadence skeleton, or phase-slot authority is wrong.
+13. Use Pass 2 return when structure is intact but rationale, overload semantics, legality explanation, or writer-ready summary is incomplete.
+14. Gate the full progressive overload policy explicitly:
    - cadence-family coherence
    - ramp class plausibility
    - deload / mini-reset / reload / re-entry semantics
    - fallback correctness for `2:1`, `3:1`, and `2:1:1`
    - conservative next-baseline handling
    - readiness-gated first Build entry after shortened/base/re-entry context
-12. Objective mismatch remains warning-only and input-owned. Surface it, but do not require approval solely to force a rewrite of the user objective.
-13. If any Build intent contradicts its legal intensity domains, choose `replan_required`.
+15. Objective mismatch remains warning-only and input-owned. Surface it, but do not require approval solely to force a rewrite of the user objective.
+16. If any Build intent contradicts its legal intensity domains, choose `replan_required`.
 
 Progression rules under review:
 - one overload axis at a time unless an explicit bounded exception exists

@@ -7,7 +7,7 @@ Review one injected candidate Season bundle against approved season authority an
 ## Definitions
 
 - `candidate season bundle`: finalize output ready for formal review
-- `review`: approval gate only
+- `review`: formal approval gate only
 - `objective mismatch`: input-owned warning, not prompt-owned rewrite target
 
 ## Authority / injected sources
@@ -32,9 +32,11 @@ Out of scope:
 1. Start from the candidate season bundle plus approved season authority and deterministic season contracts.
 2. Review only what finalize was responsible to resolve already.
 3. Approve when the bundle is contract-clean and semantically coherent.
-4. When the bundle fails, return bounded replan instructions rather than redrafting the plan in review.
+4. When the bundle fails, classify the defect as Pass 1 return or Pass 2 return and return bounded replan instructions rather than redrafting the plan in review.
 
 ## Review-check
+
+Formal review confirmation checklist:
 
 - finalize already produced a review-ready bundle
 - cadence-family coherence (`2:1`, `3:1`, `2:1:1`)
@@ -52,10 +54,10 @@ Out of scope:
 - Default to approval when the bundle is contract-clean and semantically coherent.
 - Do not expect a synthetic `candidate_season_bundle` workspace artefact.
 - Objective mismatch remains warning-only and input-owned.
+- Review may classify findings, but it must not repair semantics itself.
+- Use Pass 1 return when structure, authority, macrocycle framing, or phase-slot skeleton is wrong.
+- Use Pass 2 return when structure is intact but rationale, overload semantics, legality explanation, or writer-ready summary is incomplete.
 
-## Output discipline
-
-Return only the structured review decision with blocking issues, warnings, and bounded replan instructions when needed.
 ## Output discipline
 
 Return only the structured review decision with blocking issues, warnings, and bounded replan instructions when needed.

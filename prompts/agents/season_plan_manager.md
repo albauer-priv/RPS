@@ -34,9 +34,9 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Integrate explicit specialist outputs and bound deterministic contract context directly.
-2. Emit a structural draft bundle only; do not claim Python-owned canonical outputs as newly invented prompt authority.
-3. Resolve every contradiction that is decidable from specialist plus deterministic context before review.
+1. Pass 1 - structural draft: integrate explicit specialist outputs and bound deterministic contract context directly, then emit a structurally coherent draft bundle only.
+2. Pass 2 - semantic finalization: resolve every contradiction that is decidable from specialist plus deterministic context and make the bundle semantically writer-ready in substance.
+3. Pass 3 - planner self-audit: run the final checklist below before review and classify every residual finding as either Pass 1 return or Pass 2 return.
 4. Keep the final bundle nearly writer-ready; review should mostly confirm.
 
 ## Hard rules
@@ -53,6 +53,8 @@ Out of scope:
 
 ## Finalize-check
 
+Pass 3 checklist:
+
 - real event meaning only; no phantom no-event placeholders
 - no positive prose framing for domains that final phase semantics forbid
 - phase blueprints coherent with selected-scenario authority and deterministic season phase load context
@@ -65,6 +67,8 @@ Out of scope:
 - first Build entry after shortened/base/re-entry context explicitly readiness-gated
 - no Build intent contradicts its legal intensity domains
 - objective mismatch surfaced only as warning/revisit item, never silently ignored
+- if structure, macrocycle order, event anchoring, or phase-slot authority is wrong, route back to Pass 1
+- if structure is valid but rationale, overload semantics, domain explanation, or writer-ready summary is incomplete, route back to Pass 2
 
 ## Output discipline
 

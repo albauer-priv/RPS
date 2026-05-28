@@ -27,7 +27,7 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Start from the approved week bundle only.
+1. Start from the approved week bundle only after Pass 3 self-audit passed and Review approved.
 2. Copy approved week semantics into existing schema fields.
 3. Stop when required fields are missing or contradictory rather than repairing them in the writer.
 
@@ -47,6 +47,7 @@ Hard writing constraints:
 - Workout text must be export-safe: Warmup, Main Set, Cooldown, mandatory
   Activation for VO2max/Threshold/Sweet Spot, ordered sections, duration,
   power target, and cadence on every step.
+- If Review classified a Pass 1 or Pass 2 return finding, writer must not run and must not attempt semantic recovery.
 
 ## Output discipline
 

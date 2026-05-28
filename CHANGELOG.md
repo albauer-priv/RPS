@@ -1200,6 +1200,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix: deterministic workout duration derived from `workout_text` now overrides drifting stored `duration` / `planned_duration` values instead of only repairing sentinel durations
 # Unreleased
 
+- Season, Phase, and Week active planner/review/writer guidance now follow an explicit source-first 3-pass model with Pass 3 self-audit checklists, explicit Pass 1 vs Pass 2 loopback classification, formal review confirmation language, and writer preconditions that keep semantic repair upstream.
 - `season_scenarios` active prompt/task/skill guidance now frontloads preferred positive field formulations for A/B/C selection gates, caution markers, and Scenario C `VO2MAX` rationale instead of relying mainly on downstream guardrail repair.
 - Added a reusable planner-frontloading feature spec and backlog follow-up so the source-first / guardrail-second pattern can be rolled out to other planner families later without reopening the acceptance contract now.
 - Completed the missing runtime migration of `workout_policy.md` into the active week workout skills. `skills/week/workout-construction/SKILL.md` now carries QUALITY intent target-band lookup, canonical workout-family semantics, parameter ranges, and progression constraints; `skills/week/workout-syntax-review/SKILL.md` now reviews policy-semantic compliance in addition to syntax/export safety.

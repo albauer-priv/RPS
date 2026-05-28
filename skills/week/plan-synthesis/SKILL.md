@@ -23,8 +23,8 @@ Authority / injected sources:
 - this layer synthesizes a week bundle; it must not invent new legality, new cadence families, or new workout-policy exceptions
 
 Method:
-1. Preserve authoritative constraints, the binding active weekly corridor, and the active phase week role from deterministic context.
-2. Resolve conflicts in favor of recovery protection, canonical phase semantics, availability, and event/taper semantics.
+1. Pass 1 - structural draft: preserve authoritative constraints, the binding active weekly corridor, and the active phase week role from deterministic context.
+2. Pass 2 - semantic finalization: resolve conflicts in favor of recovery protection, canonical phase semantics, availability, and event/taper semantics.
 3. Keep workout authoring subordinate to week role, day role, load distribution, and export syntax.
 4. Emit exactly one coherent candidate that is ready for review, not a list of alternatives.
 5. Review should mostly confirm. Resolve all context-decidable agenda, availability, role, domain, and export-intent contradictions before handoff.
@@ -34,6 +34,16 @@ Method:
    - inherited progressive-overload role semantics
    - durability-first repeatability
    - workout-policy legality and exportability
+7. Pass 3 - planner self-audit: before handoff, confirm that:
+   - Mon..Sun agenda structure is complete
+   - active-band vs mechanical-work semantics are explicit
+   - duration-first reconciliation is explicit
+   - overload-role meaning is explicit
+   - durability-first tradeoffs are explicit
+   - workout legality and export-safe readiness are explicit
+   - writer-ready week summary is complete
+   - if agenda/day/workout blueprint structure or deterministic week authority alignment is wrong, return to Pass 1
+   - if structure is valid but load semantics, reconciliation, legality framing, or writer-ready summary is incomplete, return to Pass 2
 
 Progression axes:
 - duration / total governance work

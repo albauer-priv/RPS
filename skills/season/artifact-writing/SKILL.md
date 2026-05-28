@@ -9,14 +9,15 @@ Write the approved `SEASON_PLAN` data only.
 
 Method:
 1. Prefer emitting the approved `data` payload. If the active task still requires an envelope, emit one top-level object with exactly `meta` and `data`.
-2. Preserve the approved season bundle exactly and write only the approved planning content.
-3. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
-4. Preserve exact `iso_week`, `iso_week_range`, `temporal_scope`, `trace_upstream`, `trace_data`, and `trace_events` only as non-authoritative context/trace hints when available.
-5. Preserve approved phase blueprint semantics, including inherited `scenario_cadence`, `cadence_week_roles`, A/B event treatment, taper intent, allowed domains, allowed load modalities, and canonical phase taxonomy, by reflecting them in existing Season Plan fields.
+2. Writer runs only after Pass 3 self-audit passed and Review approved. If Review classified a Pass 1 or Pass 2 return finding, writer must not run.
+3. Preserve the approved season bundle exactly and write only the approved planning content.
+4. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
+5. Preserve exact `iso_week`, `iso_week_range`, `temporal_scope`, `trace_upstream`, `trace_data`, and `trace_events` only as non-authoritative context/trace hints when available.
+6. Preserve approved phase blueprint semantics, including inherited `scenario_cadence`, `cadence_week_roles`, A/B event treatment, taper intent, allowed domains, allowed load modalities, and canonical phase taxonomy, by reflecting them in existing Season Plan fields.
    Also preserve `season_phase_role`, availability cap, baseline load, role-week load bands, progression trace, and load feasibility status in existing narrative/notes fields.
    Preserve explicit `phase_type`, `phase_intent`, `build_subtype`, and `phase_taxonomy_version` on every written phase.
-6. Keep season-wide constraints, event windows, phase definitions, and citations complete and schema-valid.
-7. Validate locally against `season_plan.schema.json` before any store call.
+7. Keep season-wide constraints, event windows, phase definitions, and citations complete and schema-valid.
+8. Validate locally against `season_plan.schema.json` before any store call.
 
 Writer rules:
 - season output is binding; scenario artifacts remain informational

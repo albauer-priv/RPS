@@ -7,7 +7,7 @@ Review one candidate Phase bundle against active phase authority and decide appr
 ## Definitions
 
 - `candidate phase bundle`: finalize output ready for formal review
-- `review`: approval gate only
+- `review`: formal approval gate only
 - `objective mismatch`: input-owned warning, not prompt-owned rewrite target
 
 ## Authority / injected sources
@@ -32,9 +32,11 @@ Out of scope:
 1. Start from the candidate phase bundle plus active phase authority and deterministic phase contracts.
 2. Confirm that finalize already operationalized inherited overload and exact-range semantics.
 3. Approve when the phase bundle is contract-clean and semantically coherent.
-4. When the bundle fails, return bounded replan instructions rather than reconstructing the phase in review.
+4. When the bundle fails, classify the defect as Pass 1 return or Pass 2 return and return bounded replan instructions rather than reconstructing the phase in review.
 
 ## Review-check
+
+Formal review confirmation checklist:
 
 - inherited cadence family is visible in structure
 - deload, mini-reset, reload, and re-entry semantics are correct and distinct
@@ -49,6 +51,9 @@ Out of scope:
 - Assume finalize should already have produced a review-ready bundle.
 - Default to approval when the bundle is contract-clean and semantically coherent.
 - Do not expect a synthetic `candidate_phase_bundle` workspace artefact.
+- Review may classify findings, but it must not repair semantics itself.
+- Use Pass 1 return when exact-range structure, week-role skeleton, or phase-slot execution alignment is wrong.
+- Use Pass 2 return when structure is intact but reload/re-entry semantics, domain framing, preview meaning, or writer-ready summary is incomplete.
 
 ## Output discipline
 

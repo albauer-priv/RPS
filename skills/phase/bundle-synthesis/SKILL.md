@@ -21,8 +21,8 @@ Authority / injected sources:
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
 
 Method:
-1. Keep guardrails authoritative over structure.
-2. Apply cadence/recovery as a constraint on structure, not as a separate plan.
+1. Pass 1 - structural draft: keep guardrails authoritative over structure.
+2. Pass 2 - semantic finalization: apply cadence/recovery as a constraint on structure, not as a separate plan.
 3. Preserve event integration only where it does not violate season authority.
 4. Use deterministic contract tools directly when exact phase-slot or phase-execution values are needed:
    - `workspace_get_phase_execution_context`
@@ -30,7 +30,7 @@ Method:
 5. Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive deterministic week roles, exact phase range, or S5 bands during this step.
 6. Emit one review-ready phase bundle.
 7. Review should mostly confirm. Resolve all context-decidable role/load/structure/event contradictions before handoff.
-8. Before handoff, explicitly self-check:
+8. Pass 3 - planner self-audit: before handoff, explicitly self-check:
    - week roles complete and coherent
    - S5/load-band logic coherent
    - guardrails / structure / preview agree
@@ -40,6 +40,8 @@ Method:
    - Build-entry logic stays conservative after shortened/base/re-entry context
    - no phase-level drift away from durability-first repeatability logic
    - no assumption that the writer will repair bundle semantics
+   - if exact-range structure, week-role skeleton, or phase-slot alignment is wrong, return to Pass 1
+   - if structure is valid but reload/re-entry semantics, legality framing, preview meaning, or writer-ready summary is incomplete, return to Pass 2
 
 Operational synthesis rules:
 - preserve load-estimation semantics exactly:

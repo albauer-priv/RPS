@@ -9,9 +9,10 @@ Write the final approved `WEEK_PLAN` data only.
 
 Method:
 1. Prefer emitting the approved `data` payload. If the active task still requires an envelope, emit exactly one top-level `{meta,data}` object.
-2. Preserve approved day/workout blueprints exactly and write only the approved week interpretation.
-3. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
-4. Validate against `week_plan.schema.json` before storing.
+2. Writer runs only after Pass 3 self-audit passed and Review approved. If Review classified a Pass 1 or Pass 2 return finding, writer must not run.
+3. Preserve approved day/workout blueprints exactly and write only the approved week interpretation.
+4. Do not invent persisted `meta`. Runtime owns `artifact_type`, `schema_id`, `schema_version`, `authority`, `owner_agent`, `run_id`, and `created_at`.
+5. Validate against `week_plan.schema.json` before storing.
 
 Required content:
 - `data.week_summary.week_objective`

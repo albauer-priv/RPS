@@ -31,7 +31,15 @@ Decision order:
    - `workspace_get_phase_execution_context`
 6. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive active week role, active band, availability caps, or recovery-day authority during this step.
 7. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, export-safe bundle.
-8. Gate the full week-policy stack explicitly:
+8. Formal review confirmation checklist:
+   - contract-clean or not
+   - writer-ready or not
+   - Pass 1 return vs Pass 2 return classification if not clean
+   - bounded replan instructions only
+   - no semantic rewriting in review
+9. Use Pass 1 return when agenda/day/workout blueprint structure or deterministic week authority alignment is wrong.
+10. Use Pass 2 return when structure is intact but load semantics, reconciliation, durability-first tradeoffs, legality framing, or writer-ready summary is incomplete.
+11. Gate the full week-policy stack explicitly:
    - governance-load semantics vs mechanical-work semantics
    - active week-band compliance
    - duration-first reconciliation

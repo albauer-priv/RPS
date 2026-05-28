@@ -30,7 +30,7 @@ Authority / injected sources:
 - this layer must not compute workout-level load math
 
 Method:
-1. Preserve event hierarchy and macrocycle logic.
+1. Pass 1 - structural draft: preserve event hierarchy and macrocycle logic while assembling a structurally coherent candidate bundle.
 2. A season may contain one or more target macrocycles backplanned from distinct `A`-event anchors when spacing allows.
 3. If multiple `A` events are present, classify each one in season justification as `primary A-event`, `secondary A-event`, `equal-priority A-event`, or `cluster-member`.
 4. If `A` events are too close for recovery, re-entry, build, and taper, group them into one A-event peak cluster instead of forcing separate macrocycles.
@@ -101,8 +101,8 @@ Operational overload-policy translation into season blueprints:
    - explicit `semantic_contract`
 24. Keep `phase_type`, `phase_intent`, and `build_subtype` coherent with cycle, event position, phase role, and allowed-domain narrowing.
 25. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_build` only when explicitly justified, then preserve `durability_build` / `specificity_build` runway only when the deterministic context permits it.
-26. Finalize must leave review with a nearly writer-ready bundle. Do not rely on the writer to repair semantic contradictions that are already decidable here.
-27. Before handoff, explicitly self-check:
+26. Pass 2 - semantic finalization: finalize must leave review with a nearly writer-ready bundle. Do not rely on the writer to repair semantic contradictions that are already decidable here.
+27. Pass 3 - planner self-audit: before handoff, explicitly self-check:
    - no phantom event placeholders
    - no positive framing of forbidden domains
    - no unresolved scenario/phase authority drift
@@ -110,6 +110,8 @@ Operational overload-policy translation into season blueprints:
    - no unresolved overload-policy contradictions around ramp class, fallback path, reload vs re-entry, or Build-entry readiness
    - no Build intent contradicts its legal intensity domains
    - objective mismatch, if present, surfaced only as warning/revisit item
+   - if structure, macrocycle order, event anchoring, or phase-slot authority is wrong, return to Pass 1
+   - if structure is valid but overload semantics, legality explanation, or writer-ready summary is incomplete, return to Pass 2
 28. Treat `phase_blueprints[].event_constraints` as a compact real-event trace:
    - emit `[]` when a phase has no real event-linked constraint
    - emit short positive real-event lines when a phase does have one

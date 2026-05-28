@@ -29,7 +29,7 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Start from the approved phase bundle only.
+1. Start from the approved phase bundle only after Pass 3 self-audit passed and Review approved.
 2. Copy exact-range structure, guardrails, and preview semantics into existing phase fields.
 3. Stop when required approved fields are missing rather than inventing replacements.
 
@@ -38,6 +38,7 @@ Out of scope:
 - Copy approved phase semantics and structure only.
 - Preserve approved phase role, inherited week role, role-aware S5 band, role progression band, event implication, overload/reset meaning, and availability trace in existing Phase Guardrails/Structure fields.
 - Stop rather than guess if required approved fields are missing.
+- If Review classified a Pass 1 or Pass 2 return finding, writer must not run and must not attempt semantic recovery.
 
 ## Output discipline
 

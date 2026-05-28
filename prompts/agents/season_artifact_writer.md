@@ -29,7 +29,7 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Start from the approved season bundle only.
+1. Start from the approved season bundle only after Pass 3 self-audit passed and Review approved.
 2. Copy approved planning semantics into existing schema fields.
 3. Stop when required fields are missing rather than inferring replacements.
 
@@ -47,6 +47,7 @@ Copy, do not infer:
   taper/event-kJ explanation, and season-level role-week guardrail rendering
 
 If the approved bundle is missing any of those fields, stop rather than guess.
+If Review classified a Pass 1 or Pass 2 return finding, writer must not run and must not attempt semantic recovery.
 
 ## Output discipline
 

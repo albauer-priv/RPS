@@ -31,14 +31,22 @@ Method:
    - `workspace_get_phase_slot_contract`
 5. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive phase-range, week-role, or S5 contract authority during this step.
 6. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, semantically coherent bundle.
-7. Gate inherited overload-policy execution explicitly:
+7. Formal review confirmation checklist:
+   - contract-clean or not
+   - writer-ready or not
+   - Pass 1 return vs Pass 2 return classification if not clean
+   - bounded replan instructions only
+   - no semantic rewriting in review
+8. Use Pass 1 return when exact-range structure, week-role skeleton, or phase-slot execution alignment is wrong.
+9. Use Pass 2 return when structure is intact but reload/re-entry semantics, domain framing, preview meaning, or writer-ready summary is incomplete.
+10. Gate inherited overload-policy execution explicitly:
    - cadence family is visible in structure
    - deload / mini-reset / reload / re-entry semantics are correct and distinct
    - fallback behavior is applied when readiness/fatigue makes the nominal pattern unsafe
    - Build-entry logic remains conservative after shortened/base/re-entry context
    - week-role/load-shape does not violate inherited season overload policy
-8. If phase intent contradicts legal allowed/forbidden domain authority, choose `replan_required`.
-9. Objective mismatch remains warning-only and input-owned. Surface it, but do not require approval solely to force a rewrite.
+11. If phase intent contradicts legal allowed/forbidden domain authority, choose `replan_required`.
+12. Objective mismatch remains warning-only and input-owned. Surface it, but do not require approval solely to force a rewrite.
 
 Progression rules under review:
 - one overload axis at a time unless an explicit bounded exception exists

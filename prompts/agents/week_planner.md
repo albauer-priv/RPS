@@ -34,12 +34,9 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Apply binding load-estimation semantics directly in finalize.
-2. Keep workout/day mechanical work separate from weekly governance load.
-3. Keep the active weekly band as the only week-corridor authority.
-4. Operationalize inherited progressive-overload semantics in the week shape.
-5. Preserve durability-first behavior in every tradeoff.
-6. Keep workout design subordinate to phase guardrails, workout policy, and export-safe syntax.
+1. Pass 1 - structural draft: assemble a structurally coherent Mon-Sun week bundle inside deterministic week authority.
+2. Pass 2 - semantic finalization: apply binding load-estimation semantics directly, keep workout/day mechanical work separate from weekly governance load, keep the active weekly band as the only week-corridor authority, operationalize inherited progressive-overload semantics, preserve durability-first behavior, and keep workout design subordinate to phase guardrails, workout policy, and export-safe syntax.
+3. Pass 3 - planner self-audit: run the final checklist below before review and classify every residual finding as either Pass 1 return or Pass 2 return.
 
 ## Hard rules
 
@@ -52,6 +49,8 @@ Out of scope:
 
 ## Finalize-check
 
+Pass 3 checklist:
+
 - agenda matches the deterministic Mon-Sun calendar
 - availability and fixed rest days are respected
 - corridor and planned load are coherent with the active band
@@ -61,6 +60,8 @@ Out of scope:
 - governance-load semantics are explicit and not confused with raw mechanical work
 - week shape preserves inherited overload-role meaning where applicable
 - no hidden catch-up or recovery compression
+- if the Mon-Sun agenda skeleton, day/workout blueprint structure, or deterministic week authority alignment is wrong, route back to Pass 1
+- if structure is valid but load semantics, duration-first reconciliation, durability-first tradeoffs, export-safe legality framing, or writer-ready summary is incomplete, route back to Pass 2
 
 ## Output discipline
 

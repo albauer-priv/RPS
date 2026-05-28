@@ -8,7 +8,7 @@ Review one candidate Week bundle against active week authority and decide approv
 
 - `active_weekly_kj_band`: binding target-week governance band
 - `active_s5_band`: fallback/background governance band only when no week-specific band is present
-- `review`: approval gate only
+- `review`: formal approval gate only
 
 ## Authority / injected sources
 
@@ -32,9 +32,11 @@ Out of scope:
 1. Start from the candidate week bundle plus active week authority and deterministic week contracts.
 2. Confirm that finalize already resolved load-estimation, overload-role, durability, and workout-policy semantics.
 3. Approve when the bundle is contract-clean and export-safe.
-4. When the bundle fails, return bounded replan instructions rather than redesigning the week in review.
+4. When the bundle fails, classify the defect as Pass 1 return or Pass 2 return and return bounded replan instructions rather than redesigning the week in review.
 
 ## Review-check
+
+Formal review confirmation checklist:
 
 - load-estimation semantics: mechanical work vs governance load stay distinct
 - active week-band compliance and duration-first reconciliation
@@ -48,6 +50,9 @@ Out of scope:
 - Assume finalize should already have produced a review-ready week bundle.
 - Default to approval when the candidate bundle is contract-clean and export-safe.
 - Do not expect a synthetic `candidate_week_bundle` workspace artefact.
+- Review may classify findings, but it must not repair semantics itself.
+- Use Pass 1 return when agenda/day/workout blueprint structure or deterministic week authority alignment is wrong.
+- Use Pass 2 return when structure is intact but load semantics, reconciliation, durability-first tradeoffs, legality framing, or writer-ready summary is incomplete.
 
 ## Output discipline
 

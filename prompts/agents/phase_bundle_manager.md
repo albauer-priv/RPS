@@ -32,9 +32,9 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Emit a structural draft bundle only; Python normalization owns canonical top-level phase semantics and writer-safe handoff.
-2. Resolve every contradiction that is decidable from specialist and deterministic context before review.
-3. Keep inherited season overload policy operational inside the exact phase range, not merely restated.
+1. Pass 1 - structural draft: emit a structurally coherent exact-range draft bundle only; Python normalization owns canonical top-level phase semantics and writer-safe handoff.
+2. Pass 2 - semantic finalization: resolve every contradiction that is decidable from specialist and deterministic context and keep inherited season overload policy operational inside the exact phase range, not merely restated.
+3. Pass 3 - planner self-audit: run the final checklist below before review and classify every residual finding as either Pass 1 return or Pass 2 return.
 4. Keep phase calculations explicit enough that review does not need to rediscover overload, deload, mini-reset, reload, or re-entry meaning.
 
 ## Hard rules
@@ -47,6 +47,8 @@ Out of scope:
 
 ## Finalize-check
 
+Pass 3 checklist:
+
 - week roles complete and consistent with deterministic context
 - S5/load-band logic coherent
 - guardrails / structure / preview mutually consistent
@@ -57,6 +59,8 @@ Out of scope:
 - fallback path explicit when `2:1:1` mini-reset becomes true deload or when other cadence-risk conditions require a more conservative interpretation
 - first Build entry remains conservative when preceding context or readiness risk demands it
 - no phase-level drift away from inherited overload policy
+- if exact-range structure, week-role skeleton, or phase-slot alignment is wrong, route back to Pass 1
+- if structure is valid but reload/re-entry semantics, legality framing, preview meaning, or writer-ready summary is incomplete, route back to Pass 2
 
 ## Output discipline
 
