@@ -76,6 +76,43 @@ def _as_int(value: object) -> int | None:
     return None
 
 
+def _shared_contract_fields(candidate: JsonMap, authority: JsonMap) -> list[str]:
+    """Return shared keys between candidate and authority sorted for stable checks."""
+
+    return sorted(set(candidate) & set(authority))
+
+
+def _compare_contract_subset(
+    *,
+    candidate: JsonMap,
+    authority: JsonMap,
+    path: str,
+    code: str,
+    label: str,
+) -> list[PlanningContractIssue]:
+    """Return mismatch issues for a shared candidate/authority contract subset."""
+
+    issues: list[PlanningContractIssue] = []
+    if authority and not candidate:
+        return [
+            PlanningContractIssue(
+                f"{code}_missing",
+                f"{label} is missing.",
+                path=path,
+            )
+        ]
+    for field in _shared_contract_fields(candidate, authority):
+        if candidate.get(field) != authority.get(field):
+            issues.append(
+                PlanningContractIssue(
+                    code,
+                    f"{label}.{field} is {candidate.get(field)!r}, expected {authority.get(field)!r}.",
+                    path=f"{path}.{field}",
+                )
+            )
+    return issues
+
+
 def _week_key(value: object) -> str | None:
     week = parse_iso_week(value)
     if week is None:
@@ -592,6 +629,8 @@ def validate_season_plan_against_phase_load_context(
 
     document = _candidate_or_document(season_plan_payload)
     phases = _phase_data(document)
+    selected_scenario_contract = _as_map(_as_map(document.get("data")).get("selected_scenario_contract"))
+    authority_selected_contract = _as_map(season_phase_load_context.get("selected_scenario_contract"))
     context_by_phase = {
         str(_as_map(item).get("phase_id") or ""): _as_map(item)
         for item in _as_list(season_phase_load_context.get("phases"))
@@ -607,6 +646,16 @@ def validate_season_plan_against_phase_load_context(
                 "Deterministic season phase load context is missing; Season Plan cannot be checked.",
             )
         ]
+    if authority_selected_contract:
+        issues.extend(
+            _compare_contract_subset(
+                candidate=selected_scenario_contract,
+                authority=authority_selected_contract,
+                path="data.selected_scenario_contract",
+                code="season_selected_scenario_contract_mismatch",
+                label="selected_scenario_contract",
+            )
+        )
     body_metadata = _as_map(_as_map(document.get("data")).get("body_metadata"))
     data = _as_map(document.get("data"))
     if not str(body_metadata.get("phase_taxonomy_version") or "").strip():
@@ -1012,6 +1061,16 @@ def validate_phase_against_execution_context(
         for key, value in _as_map(phase_execution_context.get("week_role_by_iso_week")).items()
     }
     issues: list[PlanningContractIssue] = []
+    data = _as_map(phase_payload.get("data"))
+    issues.extend(
+        _compare_contract_subset(
+            candidate=_as_map(data.get("inherited_scenario_contract")),
+            authority=_as_map(phase_execution_context.get("inherited_scenario_contract")),
+            path="data.inherited_scenario_contract",
+            code="phase_inherited_scenario_contract_mismatch",
+            label="inherited_scenario_contract",
+        )
+    )
     if not expected_roles:
         issues.append(
             PlanningContractIssue(
@@ -1021,7 +1080,6 @@ def validate_phase_against_execution_context(
             )
         )
         return issues
-    data = _as_map(phase_payload.get("data"))
     skeleton = _as_map(data.get("week_skeleton_logic"))
     roles_map = _as_map(skeleton.get("week_roles"))
     observed_entries = [_as_map(item) for item in _as_list(roles_map.get("week_roles"))]
@@ -1066,6 +1124,15 @@ def validate_week_plan_against_week_context(
     summary = _as_map(data.get("week_summary"))
     agenda = [_as_map(item) for item in _as_list(data.get("agenda"))]
     issues: list[PlanningContractIssue] = []
+    issues.extend(
+        _compare_contract_subset(
+            candidate=_as_map(week_calendar_context.get("inherited_planning_posture")),
+            authority=_as_map(week_calendar_context.get("inherited_planning_posture")),
+            path="week_calendar_context.inherited_planning_posture",
+            code="week_inherited_planning_posture_mismatch",
+            label="inherited_planning_posture",
+        )
+    )
     active_band = _as_map(
         week_calendar_context.get("active_weekly_kj_band")
         or week_calendar_context.get("phase_weekly_kj_band")

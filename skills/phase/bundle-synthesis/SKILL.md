@@ -18,6 +18,7 @@ Definitions:
 Authority / injected sources:
 - `week_role`, `phase_role`, exact range, and contract values come from deterministic phase execution context and slot contract tools
 - `weekly_kj_bands` come from approved phase guardrails
+- inherited scenario posture comes from `inherited_scenario_contract`; operationalize it rather than reopening scenario choice
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
 
 Method:

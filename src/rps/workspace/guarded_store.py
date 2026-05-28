@@ -28,6 +28,7 @@ from rps.planning.deterministic_context import (
     build_phase_execution_context,
     build_season_phase_load_block,
     build_season_phase_slot_block,
+    build_selected_scenario_contract_block,
     build_selected_scenario_structure_block,
     build_week_calendar_context,
 )
@@ -394,6 +395,15 @@ class GuardedValidatedStore:
             errors.append(
                 f"phase_guardrails.body_metadata.build_subtype must match season plan build_subtype {expected_build_subtype!r}."
             )
+        expected_contract = self._as_map(self._as_map(season_plan.get("data")).get("selected_scenario_contract"))
+        observed_contract = self._as_map(data.get("inherited_scenario_contract"))
+        if expected_contract and not observed_contract:
+            errors.append("phase_guardrails.data.inherited_scenario_contract must be present and inherited from season plan.")
+        for field, expected in expected_contract.items():
+            if field in observed_contract and observed_contract.get(field) != expected:
+                errors.append(
+                    f"phase_guardrails.data.inherited_scenario_contract.{field} must match season plan selected_scenario_contract."
+                )
 
         errors.extend(
             f"Season plan availability_assumptions missing in phase_guardrails: {item}"
@@ -499,6 +509,15 @@ class GuardedValidatedStore:
             errors.append(
                 f"upstream_intent.build_subtype must match season plan build_subtype {expected_build_subtype!r}."
             )
+        expected_contract = self._as_map(self._as_map(season_plan.get("data")).get("selected_scenario_contract"))
+        observed_contract = self._as_map(data.get("inherited_scenario_contract"))
+        if expected_contract and not observed_contract:
+            errors.append("phase_structure.data.inherited_scenario_contract must be present and inherited from season plan.")
+        for field, expected in expected_contract.items():
+            if field in observed_contract and observed_contract.get(field) != expected:
+                errors.append(
+                    f"phase_structure.data.inherited_scenario_contract.{field} must match season plan selected_scenario_contract."
+                )
 
         errors.extend(
             f"Season plan availability_assumptions missing in upstream_intent.constraints: {item}"
@@ -745,6 +764,13 @@ class GuardedValidatedStore:
         ).payload
         if not selected:
             return {}, {}
+        selected_contract = build_selected_scenario_contract_block(
+            season_scenarios_payload=scenarios,
+            selection_payload=selection,
+            selected_scenario_id=None,
+        ).payload
+        if not selected_contract:
+            return {}, {}
         phase_slots = build_season_phase_slot_block(
             selected_structure_context=selected,
             target_week=target_week,
@@ -760,6 +786,7 @@ class GuardedValidatedStore:
             planning_events_payload=self._load_latest_optional(ArtifactType.PLANNING_EVENTS),
             zone_model_payload=self._load_latest_optional(ArtifactType.ZONE_MODEL),
             selected_structure_context=selected,
+            selected_scenario_contract=selected_contract,
             wellness_payload=self._load_latest_optional(ArtifactType.WELLNESS),
             kpi_profile_payload=self._load_latest_optional(ArtifactType.KPI_PROFILE),
             kpi_rate_band=selected_kpi_rate_band_from_selection(selection),

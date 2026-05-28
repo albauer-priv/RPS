@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a code-owned selected-scenario contract chain across Season, Phase, and Week planning: the chosen scenario is now derived once from `SEASON_SCENARIOS + SEASON_SCENARIO_SELECTION`, serialized into `SEASON_PLAN`, inherited into `PHASE_GUARDRAILS` / `PHASE_STRUCTURE`, injected into deterministic Phase/Week contexts, surfaced in planner snapshots, and summarized non-authoritatively in advisory memory.
+- Added deterministic contract checks and active-file hardening for scenario-posture preservation: Season/Phase/Week planner prompts, review prompts, writer prompts, task descriptions, and synthesis skills now frontload selected/inherited posture handling, while new tests cover contract propagation through snapshots, workspace tools, runtime normalization, and planning validation.
 - Added three verified metadata-level core evidence entries for personalized and broad carbohydrate-intake review literature: Li et al. 2025, Jeukendrup 2014, and Noakes 2026, each with canonical PubMed/DOI locators and `pending_curation` status so the evidence-refresh action can upgrade them on the next pass.
 - Added five verified metadata-level core evidence entries for carbohydrate-feeding and gut-training literature: Jentjens & Jeukendrup 2005, Jeukendrup 2008, Rowlands et al. 2015, Viribay et al. 2020, and Martinez et al. 2023, each with canonical PubMed/DOI locators and `pending_curation` status so the evidence-refresh action can upgrade them on the next pass.
 - Added four verified metadata-level core evidence entries for detraining and training-cessation literature: Coyle et al. 1986, Mujika & Padilla 2000 Part I, Mujika & Padilla 2000 Part II, and Maldonado-Martín et al. 2017, each with canonical PubMed/DOI locators and `pending_curation` status so the evidence-refresh action can upgrade them on the next pass.
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed project package version to `0.19.4` to capture the selected-scenario contract authority-chain rollout and downstream planning-behavior change.
 - Changed project package version to `0.19.1` to capture the evidence-refresh manual-seed upgrade path and GitHub Action processing behavior change.
 - Changed `AGENTS.md` so repository agents must check before every commit/push whether a SemVer version-number bump is required, especially for behavior, schema, contract, and operational workflow changes.
 - Changed the active `season_scenarios` task/prompt/skill contract to require concrete guardrail-visible `risk_flags` wording, with explicit negative-marker examples for Scenario A/B/C so advisory scenario generation no longer drifts into vague warning prose that fails the selection-gate guardrail.

@@ -807,6 +807,7 @@ def build_season_phase_load_context(
     planning_events_payload: JsonMap | None = None,
     zone_model_payload: JsonMap | None = None,
     selected_structure_context: JsonMap | None = None,
+    selected_scenario_contract: JsonMap | None = None,
     wellness_payload: JsonMap | None = None,
     kpi_profile_payload: JsonMap | None = None,
     kpi_rate_band: JsonMap | None = None,
@@ -974,6 +975,7 @@ def build_season_phase_load_context(
     return {
         "unit_semantics": "planned_weekly_load_kj",
         "selected_scenario_id": phase_slot_context.get("selected_scenario_id"),
+        "selected_scenario_contract": _as_map(selected_scenario_contract or {}),
         "availability_load_capacity_kj": capacity,
         "baseline_load_kj": None if baseline is None else int(round(baseline)),
         "season_archetype": normalize_season_archetype(selected_context.get("season_archetype")),
@@ -1065,6 +1067,16 @@ def render_season_phase_load_context_block(context: JsonMap) -> str:
         "season_forbidden_intensity_domains: "
         + ", ".join(str(item) for item in _as_list(context.get("season_forbidden_intensity_domains"))),
     ]
+    selected_contract = _as_map(context.get("selected_scenario_contract"))
+    if selected_contract:
+        lines.extend(
+            [
+                f"selected_scenario_contract.load_posture: {selected_contract.get('load_posture')}",
+                f"selected_scenario_contract.recovery_margin: {selected_contract.get('recovery_margin')}",
+                f"selected_scenario_contract.fatigue_exposure: {selected_contract.get('fatigue_exposure')}",
+                f"selected_scenario_contract.specificity_density: {selected_contract.get('specificity_density')}",
+            ]
+        )
     capacity = _as_map(context.get("availability_load_capacity_kj"))
     if capacity:
         lines.append(

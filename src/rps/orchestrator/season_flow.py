@@ -26,6 +26,7 @@ from rps.planning.deterministic_context import (
     build_season_phase_load_block,
     build_season_phase_slot_block,
     build_season_scenario_horizon_block,
+    build_selected_scenario_contract_block,
     build_selected_scenario_structure_block,
     render_context_blocks,
 )
@@ -495,10 +496,20 @@ def create_season_plan(
             selection_payload=selection_payload or {},
             selected_scenario_id=selected,
         )
+        selected_scenario_contract = build_selected_scenario_contract_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=selected,
+        )
         if not selected_structure_context.payload:
             return {
                 "ok": False,
                 "error": "Season deterministic selected scenario structure context is missing.",
+            }
+        if not selected_scenario_contract.payload:
+            return {
+                "ok": False,
+                "error": "Season deterministic selected scenario contract context is missing.",
             }
         load_capacity_block = render_context_blocks(
             [
@@ -547,6 +558,7 @@ def create_season_plan(
             planning_events_payload=planning_events_payload or {},
             zone_model_payload=zone_model_payload or {},
             selected_structure_context=selected_structure_context.payload,
+            selected_scenario_contract=selected_scenario_contract.payload,
             wellness_payload=wellness_payload or {},
             kpi_profile_payload=kpi_profile_payload or {},
             kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),
@@ -562,7 +574,7 @@ def create_season_plan(
                 "ok": False,
                 "error": "Season deterministic phase load context is invalid: " + "; ".join(load_issues or ["missing"]),
             }
-        selected_scenario_structure_block = render_context_blocks([selected_structure_context])
+        selected_scenario_structure_block = render_context_blocks([selected_structure_context, selected_scenario_contract])
         phase_slot_block = render_context_blocks([phase_slot_context])
         season_phase_load_block = render_context_blocks([season_phase_load_context])
     except Exception as exc:
@@ -594,6 +606,7 @@ def create_season_plan(
     with guardrail_runtime_context(
         phase_slot_context=phase_slot_context_payload,
         season_phase_load_context=season_phase_load_context_payload,
+        selected_scenario_contract=selected_scenario_contract.payload,
         athlete_profile_payload=athlete_profile_payload or {},
         kpi_profile_payload=kpi_profile_payload or {},
         availability_payload=availability_payload or {},

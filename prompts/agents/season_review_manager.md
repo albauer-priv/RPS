@@ -13,6 +13,7 @@ Review one injected candidate Season bundle against approved season authority an
 ## Authority / injected sources
 
 - Treat approved season authority and deterministic season contracts as authoritative.
+- Confirm adherence to the selected scenario contract; do not recommend a different scenario in review.
 - Do not reopen deterministic contract values through coworkers or broad rediscovery.
 
 ## Scope and non-scope

@@ -172,6 +172,7 @@ def build_season_plan_context(doc):
 
     body = data.get("body_metadata", {})
     season_intent = data.get("season_intent_principles", {})
+    selected_contract = data.get("selected_scenario_contract", {})
 
     phases = []
     for phase in data.get("phases", []):
@@ -258,6 +259,19 @@ def build_season_plan_context(doc):
         "season_archetype": season_archetype_label(
             (((data.get("scenario_guidance") or {}).get("season_archetype")) if isinstance(data.get("scenario_guidance"), dict) else "")
         ),
+        "selected_scenario_contract": {
+            "selected_scenario_id": selected_contract.get("selected_scenario_id"),
+            "scenario_name": selected_contract.get("scenario_name"),
+            "selection_rationale": selected_contract.get("selection_rationale"),
+            "load_posture": selected_contract.get("load_posture"),
+            "recovery_margin": selected_contract.get("recovery_margin"),
+            "fatigue_exposure": selected_contract.get("fatigue_exposure"),
+            "specificity_density": selected_contract.get("specificity_density"),
+            "allowed_intensity_domains": selected_contract.get("allowed_intensity_domains", []),
+            "forbidden_intensity_domains": selected_contract.get("forbidden_intensity_domains", []),
+            "event_alignment_notes": selected_contract.get("event_alignment_notes", []),
+            "risk_flags": selected_contract.get("risk_flags", []),
+        },
         "phases": phases,
         "global_constraints": {
             "availability_assumptions": data.get("global_constraints", {}).get(
@@ -322,6 +336,7 @@ def build_phase_guardrails_context(doc):
     escalation_change_control = data.get("escalation_change_control", {})
     required_response = escalation_change_control.get("required_response", {})
     self_check = data.get("self_check", {})
+    inherited_contract = data.get("inherited_scenario_contract", {})
 
     def weekly_band_rows(entries):
         """Normalize weekly load band entries into row-friendly data."""
@@ -368,6 +383,18 @@ def build_phase_guardrails_context(doc):
             "secondary_objectives": phase_summary.get("secondary_objectives", []),
             "key_risks_warnings": phase_summary.get("key_risks_warnings", []),
             "non_negotiables": phase_summary.get("non_negotiables", []),
+        },
+        "inherited_scenario_contract": {
+            "selected_scenario_id": inherited_contract.get("selected_scenario_id"),
+            "scenario_name": inherited_contract.get("scenario_name"),
+            "selection_rationale": inherited_contract.get("selection_rationale"),
+            "load_posture": inherited_contract.get("load_posture"),
+            "recovery_margin": inherited_contract.get("recovery_margin"),
+            "fatigue_exposure": inherited_contract.get("fatigue_exposure"),
+            "specificity_density": inherited_contract.get("specificity_density"),
+            "allowed_intensity_domains": inherited_contract.get("allowed_intensity_domains", []),
+            "forbidden_intensity_domains": inherited_contract.get("forbidden_intensity_domains", []),
+            "risk_flags": inherited_contract.get("risk_flags", []),
         },
         "weekly_kj_bands": weekly_band_rows(
             load_guardrails.get("weekly_kj_bands", [])
@@ -497,6 +524,7 @@ def build_phase_structure_context(doc):
     data = doc.get("data", {})
 
     upstream_intent = data.get("upstream_intent", {})
+    inherited_contract = data.get("inherited_scenario_contract", {})
     execution_principles = data.get("execution_principles", {})
     load_intensity = execution_principles.get("load_intensity_handling", {})
     recovery_protection = execution_principles.get("recovery_protection", {})
@@ -525,6 +553,18 @@ def build_phase_structure_context(doc):
             "non_negotiables": upstream_intent.get("non_negotiables", []),
             "constraints": upstream_intent.get("constraints", []),
             "key_risks_warnings": upstream_intent.get("key_risks_warnings", []),
+        },
+        "inherited_scenario_contract": {
+            "selected_scenario_id": inherited_contract.get("selected_scenario_id"),
+            "scenario_name": inherited_contract.get("scenario_name"),
+            "selection_rationale": inherited_contract.get("selection_rationale"),
+            "load_posture": inherited_contract.get("load_posture"),
+            "recovery_margin": inherited_contract.get("recovery_margin"),
+            "fatigue_exposure": inherited_contract.get("fatigue_exposure"),
+            "specificity_density": inherited_contract.get("specificity_density"),
+            "allowed_intensity_domains": inherited_contract.get("allowed_intensity_domains", []),
+            "forbidden_intensity_domains": inherited_contract.get("forbidden_intensity_domains", []),
+            "risk_flags": inherited_contract.get("risk_flags", []),
         },
         "execution_principles": {
             "load_intensity_handling": {

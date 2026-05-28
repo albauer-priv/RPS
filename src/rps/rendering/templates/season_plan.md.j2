@@ -53,6 +53,21 @@ Trace-Upstream:
 - kJ corridor design notes:
 {{ bullet_list(season_intent.kj_corridor_design_notes) }}
 
+## 1a) Selected Scenario Contract
+
+- Selected scenario: {{ selected_scenario_contract.selected_scenario_id or "N/A" }}{% if selected_scenario_contract.scenario_name %} - {{ selected_scenario_contract.scenario_name }}{% endif %}
+- Selection rationale: {{ selected_scenario_contract.selection_rationale or "N/A" }}
+- Load posture: {{ selected_scenario_contract.load_posture or "N/A" }}
+- Recovery margin: {{ selected_scenario_contract.recovery_margin or "N/A" }}
+- Fatigue exposure: {{ selected_scenario_contract.fatigue_exposure or "N/A" }}
+- Specificity density: {{ selected_scenario_contract.specificity_density or "N/A" }}
+- Allowed domains: {{ selected_scenario_contract.allowed_intensity_domains | join_or_na }}
+- Forbidden domains: {{ selected_scenario_contract.forbidden_intensity_domains | join_or_na }}
+- Event-alignment notes:
+{{ bullet_list(selected_scenario_contract.event_alignment_notes) }}
+- Risk flags:
+{{ bullet_list(selected_scenario_contract.risk_flags) }}
+
 ## 2) Phases
 
 {% for phase in phases %}

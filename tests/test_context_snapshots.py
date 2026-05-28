@@ -1,7 +1,9 @@
 from rps.orchestrator.context_snapshots import (
     build_advisory_memory_document,
     build_advisory_memory_prompt_block,
+    build_athlete_state_snapshot_document,
     build_current_week_status_snapshot_document,
+    build_planning_context_snapshot_document,
     ensure_current_week_status_snapshot,
 )
 from rps.workspace.iso_helpers import IsoWeek
@@ -17,6 +19,11 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
             "data": {
                 "season_objective": "Peak for the A-event.",
                 "phases": [{"phase_type": "peak_bridge", "label": "P01"}],
+                "selected_scenario_contract": {
+                    "load_posture": "balanced_progressive",
+                    "recovery_margin": "medium",
+                    "specificity_density": "controlled",
+                },
             },
         },
         week_plan_payload={
@@ -54,7 +61,13 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
         },
         phase_feed_forward_payload={
             "meta": {"artifact_type": "PHASE_FEED_FORWARD", "version_key": "2026-18__20260427_092000", "run_id": "pff"},
-            "data": {"reason_context": {"intent_of_adjustment": "Protect recovery early week."}},
+            "data": {
+                "reason_context": {"intent_of_adjustment": "Protect recovery early week."},
+                "inherited_scenario_contract": {
+                    "specificity_density": "controlled",
+                    "recovery_margin": "medium",
+                },
+            },
         },
     )
     prompt_blocks = snapshot["data"]["prompt_blocks"]
@@ -64,7 +77,126 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
     assert "des_report" in prompt_blocks
     assert "season_phase_feed_forward" in prompt_blocks
     assert "phase_feed_forward" in prompt_blocks
+    assert "selected_scenario_posture" in prompt_blocks
+    assert "inherited_posture" in prompt_blocks
     assert "Tempo Session" in prompt_blocks["current_week_plan"]
+
+
+def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    store.save_document(
+        athlete_id=athlete_id,
+        artifact_type=ArtifactType.SEASON_SCENARIOS,
+        version_key="2026-22__20260528_064757",
+        document={
+            "meta": {"artifact_type": "SEASON_SCENARIOS"},
+            "data": {
+                "planning_horizon_weeks": 16,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced build",
+                        "load_philosophy": "balanced_progressive",
+                        "best_suited_if": ["stable recovery"],
+                        "key_differences": ["balanced pressure"],
+                        "main_payoff": "repeatable progression",
+                        "main_cost": "less conservative than A",
+                        "risk_profile": "medium",
+                        "scenario_guidance": {
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": ["preserve continuity"],
+                            "event_alignment_notes": ["B event rehearsal"],
+                            "risk_flags": ["needs stable recovery"],
+                            "kpi_guardrail_notes": ["stay repeatable"],
+                            "decision_notes": ["athlete selected B"],
+                            "season_archetype": "none",
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 4,
+                            "phase_plan_summary": {"full_phases": 4, "shortened_phases": []},
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                        },
+                    }
+                ]
+            },
+        },
+        producer_agent="test",
+        run_id="test",
+    )
+    snapshot = build_athlete_state_snapshot_document(
+        store,
+        athlete_id,
+        target_week=IsoWeek(year=2026, week=22),
+        selection_payload={
+            "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "version_key": "2026-22__sel", "run_id": "sel"},
+            "data": {"selected_scenario_id": "B", "selection_source": "athlete", "selection_rationale": "Controlled progression"},
+        },
+    )
+    assert "selected_scenario_contract" in snapshot["data"]["prompt_blocks"]
+    assert "load_posture: balanced_progressive" in snapshot["data"]["prompt_blocks"]["selected_scenario_contract"]
+
+
+def test_planning_snapshot_includes_inherited_posture_blocks(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    snapshot = build_planning_context_snapshot_document(
+        store,
+        "i150546",
+        target_week=IsoWeek(year=2026, week=22),
+        phase_info=type(
+            "PhaseInfo",
+            (),
+                {
+                    "phase_id": "P01",
+                    "phase_name": "Base",
+                    "phase_type": "BASE",
+                    "phase_intent": "general_base",
+                    "phase_range": type(
+                        "InnerPhaseRange",
+                        (),
+                        {"start": IsoWeek(2026, 21), "end": IsoWeek(2026, 24), "key": "2026-21--2026-24"},
+                    )(),
+                    "raw": {},
+                },
+        )(),
+        season_plan_payload={
+            "meta": {"artifact_type": "SEASON_PLAN", "version_key": "sp", "run_id": "sp"},
+            "data": {
+                "selected_scenario_contract": {
+                    "selected_scenario_id": "B",
+                    "load_posture": "balanced_progressive",
+                    "recovery_margin": "medium",
+                    "fatigue_exposure": "moderate",
+                    "specificity_density": "controlled",
+                }
+            },
+        },
+        phase_range=type(
+            "PhaseRange",
+            (),
+            {"start": IsoWeek(2026, 21), "end": IsoWeek(2026, 24), "key": "2026-21--2026-24"},
+        )(),
+        phase_guardrails_payload={
+            "meta": {"artifact_type": "PHASE_GUARDRAILS", "version_key": "pg", "run_id": "pg"},
+            "data": {
+                "inherited_scenario_contract": {
+                    "selected_scenario_id": "B",
+                    "load_posture": "balanced_progressive",
+                    "recovery_margin": "medium",
+                    "fatigue_exposure": "moderate",
+                    "specificity_density": "controlled",
+                }
+            },
+        },
+    )
+    blocks = snapshot["data"]["prompt_blocks"]
+    assert "selected_scenario_contract" in blocks
+    assert "inherited_scenario_contract" in blocks
+    assert "inherited_planning_posture" in blocks
 
 
 def test_build_advisory_memory_prompt_block_marks_memory_as_non_binding():

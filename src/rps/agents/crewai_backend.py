@@ -758,6 +758,7 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         return document
     context = current_guardrail_runtime_context()
     season_phase_load_context = _as_map(context.get("season_phase_load_context"))
+    selected_scenario_contract = _as_map(context.get("selected_scenario_contract"))
     approved_bundle = _as_map(context.get("approved_planning_bundle"))
     trace_data_additions = [
         ref
@@ -783,6 +784,8 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         allowed={artifact.value for artifact in _SEASON_PLAN_REQUIRED_TRACE_EVENT_ARTIFACTS},
     )
     data = _as_map(document.get("data"))
+    if selected_scenario_contract:
+        data["selected_scenario_contract"] = selected_scenario_contract
     phases = [_as_map(item) for item in _as_list(data.get("phases"))]
     deterministic_by_phase_id = {
         str(_as_map(item).get("phase_id") or ""): _as_map(item)
@@ -967,6 +970,7 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
         return planning_bundle
     context = current_guardrail_runtime_context()
     season_phase_load_context = _as_map(context.get("season_phase_load_context"))
+    selected_scenario_contract = _as_map(context.get("selected_scenario_contract"))
     phase_context_by_id = {
         str(_as_map(item).get("phase_id") or ""): _as_map(item)
         for item in _as_list(season_phase_load_context.get("phases"))
@@ -980,6 +984,8 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     season_allowed_domains = list(season_phase_load_context.get("season_allowed_intensity_domains") or [])
     normalized_bundle = dict(planning_bundle)
     normalized_bundle["season_allowed_domains"] = list(season_allowed_domains)
+    if selected_scenario_contract:
+        normalized_bundle["selected_scenario_contract"] = selected_scenario_contract
     normalized_blueprints: list[JsonMap] = []
     for blueprint in [_as_map(item) for item in _as_list(planning_bundle.get("phase_blueprints"))]:
         phase_id = str(blueprint.get("phase_id") or "").strip()
@@ -1094,6 +1100,7 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
         return planning_bundle
     context = current_guardrail_runtime_context()
     phase_execution_context = _as_map(context.get("phase_execution_context"))
+    inherited_scenario_contract = _as_map(phase_execution_context.get("inherited_scenario_contract"))
     normalized_bundle = dict(planning_bundle)
     normalized_bundle["phase_id"] = phase_execution_context.get("phase_id", planning_bundle.get("phase_id"))
     normalized_bundle["phase_range"] = phase_execution_context.get("phase_iso_week_range", planning_bundle.get("phase_range"))
@@ -1105,6 +1112,8 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     normalized_bundle["phase_type"] = phase_type
     normalized_bundle["phase_intent"] = phase_intent
     normalized_bundle["build_subtype"] = build_subtype
+    if inherited_scenario_contract:
+        normalized_bundle["inherited_scenario_contract"] = inherited_scenario_contract
     week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
     s5_band_by_week = {
         str(_as_map(entry).get("week") or ""): _as_map(_as_map(entry).get("band"))

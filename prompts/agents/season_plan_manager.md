@@ -15,6 +15,8 @@ Preserve season-level authority boundaries and leave artifact serialization to t
 ## Authority / injected sources
 
 - Treat deterministic season contracts as code-owned authority.
+- Treat the injected `selected_scenario_contract` as binding Season planning posture.
+- Good Season output preserves selected `load_posture`, `recovery_margin`, `fatigue_exposure`, `specificity_density`, and legal domain ceiling in season intent and phase blueprint shaping.
 - When phase-slot or phase-load numbers are required, consume injected contract context or dedicated contract tools.
 - Do not search for synthetic recommendation artifacts or ask coworkers to rediscover deterministic contract values.
 

@@ -357,6 +357,9 @@ def normalize_phase_structure_document(
     if isinstance(phase_guardrails_document, dict):
         guardrails_data = phase_guardrails_document.get("data")
         if isinstance(guardrails_data, dict):
+            inherited_contract = guardrails_data.get("inherited_scenario_contract")
+            if isinstance(inherited_contract, dict):
+                data["inherited_scenario_contract"] = inherited_contract
             load_guardrails = guardrails_data.get("load_guardrails")
             if isinstance(load_guardrails, dict):
                 weekly_kj_bands = load_guardrails.get("weekly_kj_bands")
@@ -693,6 +696,12 @@ def normalize_phase_guardrails_document(
         for entry in rows:
             if isinstance(entry, dict):
                 _widen_band(entry)
+
+    season_data = season_plan_document.get("data") if isinstance(season_plan_document, dict) else None
+    if isinstance(season_data, dict):
+        inherited_contract = season_data.get("selected_scenario_contract")
+        if isinstance(inherited_contract, dict):
+            data["inherited_scenario_contract"] = inherited_contract
 
     document["data"] = data
     return _project_phase_guardrails_season_constraints(

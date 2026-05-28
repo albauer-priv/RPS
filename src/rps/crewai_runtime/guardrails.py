@@ -482,6 +482,7 @@ def season_writer_bundle_match(result: Any) -> GuardrailResult:
     if not isinstance(mapping, dict):
         return (False, "Season output must decode to an object.")
     approved_bundle = _as_map(_GUARDRAIL_CONTEXT.get({}).get("approved_planning_bundle"))
+    selected_scenario_contract = _as_map(_GUARDRAIL_CONTEXT.get({}).get("selected_scenario_contract"))
     if not approved_bundle:
         return (True, mapping)
     data = _as_map(mapping.get("data"))
@@ -513,6 +514,10 @@ def season_writer_bundle_match(result: Any) -> GuardrailResult:
         data["season_load_envelope"] = approved_envelope
     if _as_map(data.get("season_load_envelope")) != approved_envelope:
         return (False, "Season output season_load_envelope must match the approved bundle exactly.")
+    if selected_scenario_contract:
+        data["selected_scenario_contract"] = selected_scenario_contract
+    if selected_scenario_contract and _as_map(data.get("selected_scenario_contract")) != selected_scenario_contract:
+        return (False, "Season output selected_scenario_contract must match the derived selected scenario contract exactly.")
     approved_by_phase = {
         str(_as_map(item).get("phase_id") or ""): _as_map(item)
         for item in _as_list(approved_bundle.get("phase_blueprints"))

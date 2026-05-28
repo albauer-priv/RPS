@@ -52,6 +52,19 @@ Trace-Upstream:
 - Non-Negotiables:
 {{ bullet_list(phase_summary.non_negotiables) }}
 
+## 1a) Inherited Scenario Contract
+
+- Selected scenario: {{ inherited_scenario_contract.selected_scenario_id or "N/A" }}{% if inherited_scenario_contract.scenario_name %} - {{ inherited_scenario_contract.scenario_name }}{% endif %}
+- Selection rationale: {{ inherited_scenario_contract.selection_rationale or "N/A" }}
+- Load posture: {{ inherited_scenario_contract.load_posture or "N/A" }}
+- Recovery margin: {{ inherited_scenario_contract.recovery_margin or "N/A" }}
+- Fatigue exposure: {{ inherited_scenario_contract.fatigue_exposure or "N/A" }}
+- Specificity density: {{ inherited_scenario_contract.specificity_density or "N/A" }}
+- Allowed domains: {{ inherited_scenario_contract.allowed_intensity_domains | join_or_na }}
+- Forbidden domains: {{ inherited_scenario_contract.forbidden_intensity_domains | join_or_na }}
+- Risk flags:
+{{ bullet_list(inherited_scenario_contract.risk_flags) }}
+
 ## 2) Load Guardrails (kJ-first, REQUIRED)
 
 ### 2.1 Weekly kJ Band (REQUIRED)

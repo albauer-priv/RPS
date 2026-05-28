@@ -20,6 +20,7 @@ Definitions:
 Authority / injected sources:
 - `active_weekly_kj_band`, dates, fixed rest days, day availability, and target-week role context come from `workspace_get_week_calendar_context`
 - inherited phase semantics come from `workspace_get_phase_execution_context`
+- inherited week-shaping posture comes from `inherited_planning_posture`; use recovery margin, pressure stance, specificity density, and legal domain ceiling directly
 - this layer synthesizes a week bundle; it must not invent new legality, new cadence families, or new workout-policy exceptions
 
 Method:

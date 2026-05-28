@@ -37,6 +37,7 @@ Out of scope:
 
 Copy, do not infer:
 
+- `selected_scenario_contract`
 - `season_load_envelope`
 - `phase_type`
 - `phase_intent`

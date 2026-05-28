@@ -21,10 +21,12 @@ from rps.planning.season_structure import (
     build_cadence_options_context,
     build_phase_slot_context,
     build_planning_horizon_context,
+    build_selected_scenario_contract_context,
     build_selected_scenario_structure_context,
     render_cadence_options_block,
     render_phase_slot_context_block,
     render_planning_horizon_context_block,
+    render_selected_scenario_contract_block,
     render_selected_scenario_structure_block,
 )
 from rps.planning.workout_load import (
@@ -113,6 +115,27 @@ def build_selected_scenario_structure_block(
         title="Deterministic Selected Scenario Structure Context",
         payload=payload,
         markdown=render_selected_scenario_structure_block(payload),
+    )
+
+
+def build_selected_scenario_contract_block(
+    *,
+    season_scenarios_payload: JsonMap | None,
+    selection_payload: JsonMap | None,
+    selected_scenario_id: str | None,
+) -> DeterministicContextBlock:
+    """Build deterministic selected-scenario posture contract."""
+
+    payload = build_selected_scenario_contract_context(
+        season_scenarios_payload=season_scenarios_payload or {},
+        selection_payload=selection_payload or {},
+        selected_scenario_id=selected_scenario_id,
+    )
+    return DeterministicContextBlock(
+        name="selected_scenario_contract",
+        title="Deterministic Selected Scenario Contract Context",
+        payload=payload,
+        markdown=render_selected_scenario_contract_block(payload),
     )
 
 
@@ -243,6 +266,8 @@ def build_phase_execution_context(
         for idx, week in enumerate(weeks)
         if idx < len(cadence_week_roles)
     }
+    season_data = _as_map((season_plan_payload or {}).get("data"))
+    selected_scenario_contract = _as_map(season_data.get("selected_scenario_contract"))
     return {
         "target_iso_week": target_key,
         "phase_id": getattr(phase_info, "phase_id", ""),
@@ -256,6 +281,8 @@ def build_phase_execution_context(
         "phase_intent": phase_raw.get("phase_intent") or "",
         "build_subtype": phase_raw.get("build_subtype"),
         "scenario_cadence": scenario_cadence,
+        "selected_scenario_contract": selected_scenario_contract,
+        "inherited_scenario_contract": selected_scenario_contract,
         "phase_cadence_week_roles": cadence_week_roles,
         "week_role_by_iso_week": week_role_by_iso_week,
         "season_phase_slot_source": "Deterministic Season Phase Slot Context",
@@ -302,6 +329,16 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
         f"deload_rationale: {context.get('deload_rationale')}",
         "required_phase_weeks: " + ", ".join(str(item) for item in _as_list(context.get("week_keys"))),
     ]
+    inherited = _as_map(context.get("inherited_scenario_contract"))
+    if inherited:
+        lines.extend(
+            [
+                f"inherited_scenario_contract.load_posture: {inherited.get('load_posture')}",
+                f"inherited_scenario_contract.recovery_margin: {inherited.get('recovery_margin')}",
+                f"inherited_scenario_contract.fatigue_exposure: {inherited.get('fatigue_exposure')}",
+                f"inherited_scenario_contract.specificity_density: {inherited.get('specificity_density')}",
+            ]
+        )
     role_map = _as_map(context.get("week_role_by_iso_week"))
     if role_map:
         lines.append("week_role_by_iso_week:")
@@ -350,9 +387,25 @@ def build_week_calendar_context(
     phase_role = _phase_role_from_structure(phase_structure_payload or {}, phase_info)
     phase_intent = _phase_intent_from_structure(phase_structure_payload or {}, phase_info)
     phase_week_role = _phase_week_role_from_structure(phase_structure_payload or {}, target_key)
+    inherited_from_structure = _as_map(_as_map(phase_structure_payload or {}).get("data")).get("inherited_scenario_contract")
+    inherited_from_guardrails = _as_map(_as_map(phase_guardrails_payload or {}).get("data")).get("inherited_scenario_contract")
+    inherited_contract = _as_map(inherited_from_structure or inherited_from_guardrails)
     week_role_source = "PHASE_STRUCTURE.week_skeleton_logic.week_roles" if phase_week_role else "phase_position_fallback"
     if not phase_week_role:
         phase_week_role = _phase_role_for_week(phase_info, target_week, phase_range)
+    inherited_planning_posture = {
+        "selected_scenario_id": inherited_contract.get("selected_scenario_id"),
+        "load_posture": inherited_contract.get("load_posture"),
+        "recovery_margin": inherited_contract.get("recovery_margin"),
+        "fatigue_exposure": inherited_contract.get("fatigue_exposure"),
+        "specificity_density": inherited_contract.get("specificity_density"),
+        "season_archetype": inherited_contract.get("season_archetype"),
+        "allowed_intensity_domains": list(inherited_contract.get("allowed_intensity_domains") or []),
+        "forbidden_intensity_domains": list(inherited_contract.get("forbidden_intensity_domains") or []),
+        "risk_flags": list(inherited_contract.get("risk_flags") or []),
+        "phase_intent": phase_intent,
+        "phase_week_role": phase_week_role,
+    }
     return {
         "target_iso_week": target_key,
         "week_start_date": week_start.isoformat(),
@@ -363,6 +416,7 @@ def build_week_calendar_context(
         "phase_role": phase_role,
         "phase_intent": phase_intent,
         "phase_week_role": phase_week_role,
+        "inherited_planning_posture": inherited_planning_posture,
         "phase_role_for_week": phase_week_role,
         "phase_week_role_source": week_role_source,
         "day_matrix": [
@@ -414,6 +468,16 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
         "allowed_load_modalities: " + ", ".join(str(item) for item in _as_list(context.get("allowed_load_modalities"))),
         f"quality_day_cap: {context.get('quality_day_cap')}",
     ]
+    inherited = _as_map(context.get("inherited_planning_posture"))
+    if inherited:
+        lines.extend(
+            [
+                f"inherited_planning_posture.load_posture: {inherited.get('load_posture')}",
+                f"inherited_planning_posture.recovery_margin: {inherited.get('recovery_margin')}",
+                f"inherited_planning_posture.fatigue_exposure: {inherited.get('fatigue_exposure')}",
+                f"inherited_planning_posture.specificity_density: {inherited.get('specificity_density')}",
+            ]
+        )
     active_band = _as_map(context.get("active_weekly_kj_band"))
     if active_band:
         lines.append(

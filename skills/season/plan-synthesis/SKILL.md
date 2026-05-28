@@ -25,6 +25,7 @@ Definitions:
 Authority / injected sources:
 - phase-slot geometry and `cadence_week_roles` come from `Deterministic Season Phase Slot Context`
 - phase-role, availability cap, baseline, recommended corridor, and role-week load bands come from `Deterministic Season Phase Load Context`
+- selected scenario posture comes from `selected_scenario_contract`; preserve chosen `load_posture`, `recovery_margin`, `fatigue_exposure`, `specificity_density`, and legal domain ceiling explicitly in the bundle
 - load-estimation math and `IF_ref_load` semantics remain owned by `skills/shared/load-estimation-core/SKILL.md`
 - if `BL_kJ` is not directly surfaced, use the deterministic baseline/progression information already embedded in the phase load context; do not derive it ad hoc from prose
 - this layer must not compute workout-level load math

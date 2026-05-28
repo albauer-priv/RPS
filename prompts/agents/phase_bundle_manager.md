@@ -15,6 +15,8 @@ Keep season authority intact and leave final envelope serialization to the write
 ## Authority / injected sources
 
 - Treat deterministic phase contracts as code-owned authority.
+- Treat the inherited scenario contract from Season artifacts and deterministic context as binding posture input.
+- Good Phase output operationalizes inherited recovery margin, fatigue exposure, specificity density, and legality ceiling without reopening scenario choice.
 - When week roles, exact phase range, or S5-band values are required, consume injected contract context or dedicated tools.
 - Do not rediscover them from prose or coworker delegation.
 

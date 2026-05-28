@@ -44,6 +44,14 @@ def _as_int(value: object) -> int | None:
     return None
 
 
+def _as_str(value: object) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _as_str_list(value: object) -> list[str]:
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+
+
 def _scenario_intensity_domains(scenario_payload: JsonMap) -> tuple[list[str], list[str]]:
     """Return normalized season-authority intensity domains for the selected scenario."""
 
@@ -60,6 +68,26 @@ def _scenario_intensity_domains(scenario_payload: JsonMap) -> tuple[list[str], l
     if avoid:
         forbidden = list(dict.fromkeys([*forbidden, *[domain for domain in avoid if domain not in {"NONE", "RECOVERY"}]]))
     return allowed, forbidden
+
+
+def _selected_scenario(
+    *,
+    season_scenarios_payload: JsonMap | None,
+    selection_payload: JsonMap | None = None,
+    selected_scenario_id: str | None = None,
+) -> tuple[JsonMap, JsonMap, str]:
+    """Return the selected scenario payload plus scenarios/selection data."""
+
+    scenarios_data = _as_map((season_scenarios_payload or {}).get("data"))
+    selection_data = _as_map((selection_payload or {}).get("data"))
+    selected_id = str(selected_scenario_id or selection_data.get("selected_scenario_id") or "").strip().upper()
+    if selected_id not in {"A", "B", "C"}:
+        return {}, scenarios_data, selected_id
+    for scenario in _as_list(scenarios_data.get("scenarios")):
+        scenario_map = _as_map(scenario)
+        if str(scenario_map.get("scenario_id") or "").strip().upper() == selected_id:
+            return scenario_map, scenarios_data, selected_id
+    return {}, scenarios_data, selected_id
 
 
 def _scenario_archetype_context(
@@ -208,18 +236,11 @@ def build_selected_scenario_structure_context(
 ) -> JsonMap:
     """Return phase-count/cadence planning math for the selected scenario."""
 
-    scenarios_data = _as_map((season_scenarios_payload or {}).get("data"))
-    selection_data = _as_map((selection_payload or {}).get("data"))
-    selected_id = str(selected_scenario_id or selection_data.get("selected_scenario_id") or "").strip().upper()
-    if selected_id not in {"A", "B", "C"}:
-        return {}
-
-    selected_scenario: JsonMap | None = None
-    for scenario in _as_list(scenarios_data.get("scenarios")):
-        scenario_map = _as_map(scenario)
-        if str(scenario_map.get("scenario_id") or "").strip().upper() == selected_id:
-            selected_scenario = scenario_map
-            break
+    selected_scenario, scenarios_data, selected_id = _selected_scenario(
+        season_scenarios_payload=season_scenarios_payload,
+        selection_payload=selection_payload,
+        selected_scenario_id=selected_scenario_id,
+    )
     if not selected_scenario:
         return {}
 
@@ -263,6 +284,61 @@ def build_selected_scenario_structure_context(
         **archetype_context,
         "event_alignment_notes": guidance.get("event_alignment_notes") or [],
         "risk_flags": guidance.get("risk_flags") or [],
+    }
+
+
+def build_selected_scenario_contract_context(
+    *,
+    season_scenarios_payload: JsonMap | None,
+    selection_payload: JsonMap | None = None,
+    selected_scenario_id: str | None = None,
+) -> JsonMap:
+    """Return the full selected-scenario posture contract for planning propagation."""
+
+    selected_scenario, _scenarios_data, selected_id = _selected_scenario(
+        season_scenarios_payload=season_scenarios_payload,
+        selection_payload=selection_payload,
+        selected_scenario_id=selected_scenario_id,
+    )
+    if not selected_scenario:
+        return {}
+    selection_data = _as_map((selection_payload or {}).get("data"))
+    guidance = _as_map(selected_scenario.get("scenario_guidance"))
+    structure = build_selected_scenario_structure_context(
+        season_scenarios_payload=season_scenarios_payload,
+        selection_payload=selection_payload,
+        selected_scenario_id=selected_scenario_id,
+    )
+    return {
+        "selected_scenario_id": selected_id,
+        "scenario_name": _as_str(selected_scenario.get("name")),
+        "selection_source": _as_str(selection_data.get("selection_source")) or "user",
+        "selection_rationale": _as_str(selection_data.get("selection_rationale")),
+        "load_posture": _as_str(selected_scenario.get("load_philosophy")),
+        "recovery_margin": _as_str(guidance.get("recovery_margin")),
+        "fatigue_exposure": _as_str(guidance.get("fatigue_exposure")),
+        "specificity_density": _as_str(guidance.get("specificity_density")),
+        "load_philosophy": _as_str(selected_scenario.get("load_philosophy")),
+        "risk_profile": _as_str(selected_scenario.get("risk_profile")),
+        "best_suited_if": _as_str(selected_scenario.get("best_suited_if")),
+        "key_differences": _as_str(selected_scenario.get("key_differences")),
+        "main_payoff": _as_str(selected_scenario.get("main_payoff")),
+        "main_cost": _as_str(selected_scenario.get("main_cost")),
+        "constraint_summary": _as_str(guidance.get("constraint_summary")),
+        "event_alignment_notes": _as_str_list(guidance.get("event_alignment_notes")),
+        "risk_flags": _as_str_list(guidance.get("risk_flags")),
+        "kpi_guardrail_notes": _as_str(guidance.get("kpi_guardrail_notes")),
+        "decision_notes": _as_str(guidance.get("decision_notes")),
+        "season_archetype": _as_str(structure.get("season_archetype")),
+        "allowed_intensity_domains": list(structure.get("allowed_intensity_domains") or []),
+        "forbidden_intensity_domains": list(structure.get("forbidden_intensity_domains") or []),
+        "deload_cadence": _as_str(structure.get("deload_cadence")),
+        "phase_length_weeks": structure.get("phase_length_weeks"),
+        "phase_count_expected": structure.get("phase_count_expected"),
+        "full_phases": structure.get("full_phases"),
+        "shortened_phases": list(structure.get("shortened_phases") or []),
+        "max_shortened_phases": structure.get("max_shortened_phases"),
+        "shortening_budget_weeks": structure.get("shortening_budget_weeks"),
     }
 
 
@@ -310,6 +386,44 @@ def render_selected_scenario_structure_block(context: JsonMap) -> str:
     if blocking:
         lines.append("archetype_blocking_reasons:")
         lines.extend(f"- {value}" for value in blocking)
+    return "\n".join(lines) + "\n"
+
+
+def render_selected_scenario_contract_block(context: JsonMap) -> str:
+    """Render the selected scenario posture contract for planning prompts."""
+
+    if not context:
+        return ""
+    lines = [
+        "**Deterministic Selected Scenario Contract Context**",
+        "These values are the code-owned selected planning posture derived from the user-selected scenario. Preserve this posture directly; do not soften it into generic cadence or domain prose.",
+        f"selected_scenario_id: {context.get('selected_scenario_id')}",
+        f"scenario_name: {context.get('scenario_name')}",
+        f"selection_source: {context.get('selection_source')}",
+        f"selection_rationale: {context.get('selection_rationale')}",
+        f"load_posture: {context.get('load_posture')}",
+        f"recovery_margin: {context.get('recovery_margin')}",
+        f"fatigue_exposure: {context.get('fatigue_exposure')}",
+        f"specificity_density: {context.get('specificity_density')}",
+        f"load_philosophy: {context.get('load_philosophy')}",
+        f"risk_profile: {context.get('risk_profile')}",
+        f"best_suited_if: {context.get('best_suited_if')}",
+        f"key_differences: {context.get('key_differences')}",
+        f"main_payoff: {context.get('main_payoff')}",
+        f"main_cost: {context.get('main_cost')}",
+        f"constraint_summary: {context.get('constraint_summary')}",
+        f"kpi_guardrail_notes: {context.get('kpi_guardrail_notes')}",
+        f"decision_notes: {context.get('decision_notes')}",
+        f"season_archetype: {context.get('season_archetype')}",
+        "allowed_intensity_domains: " + ", ".join(str(item) for item in _as_list(context.get("allowed_intensity_domains"))),
+        "forbidden_intensity_domains: " + ", ".join(str(item) for item in _as_list(context.get("forbidden_intensity_domains"))),
+        f"deload_cadence: {context.get('deload_cadence')}",
+    ]
+    for label in ("event_alignment_notes", "risk_flags"):
+        values = [str(item) for item in _as_list(context.get(label)) if str(item).strip()]
+        if values:
+            lines.append(f"{label}:")
+            lines.extend(f"- {value}" for value in values)
     return "\n".join(lines) + "\n"
 
 

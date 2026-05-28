@@ -16,6 +16,8 @@ Keep workout roles, duration, and kJ coherent, and finalize the week bundle so r
 ## Authority / injected sources
 
 - Treat deterministic week and phase execution contracts as code-owned authority.
+- Treat `inherited_planning_posture` as binding week-shaping input.
+- Good Week output uses inherited recovery margin, pressure stance, specificity density, and legality ceiling directly rather than reconstructing season logic from labels.
 - When active week role, active weekly band, availability caps, fixed rest days, or allowed domains are required, consume injected contract context or dedicated contract tools.
 - Do not rediscover them from prose or coworker delegation.
 

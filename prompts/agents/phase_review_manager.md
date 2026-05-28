@@ -13,6 +13,7 @@ Review one candidate Phase bundle against active phase authority and decide appr
 ## Authority / injected sources
 
 - Treat active phase authority, deterministic week-role context, and deterministic S5/load context as authoritative.
+- Confirm adherence to the inherited scenario contract from Season; do not reinterpret scenario choice in review.
 - Do not rediscover week-role or S5-band authority through prose or coworker delegation.
 
 ## Scope and non-scope

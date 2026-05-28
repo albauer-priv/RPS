@@ -118,6 +118,27 @@ def test_validate_season_plan_against_phase_load_context_requires_taper_reductio
     assert any(issue.code == "a_event_peak_taper_not_reduced" for issue in issues)
 
 
+def test_validate_season_plan_against_phase_load_context_checks_selected_scenario_contract() -> None:
+    season_plan = {
+        "data": {
+            "selected_scenario_contract": {"selected_scenario_id": "A", "load_posture": "conservative"},
+            "phases": [],
+            "body_metadata": {"phase_taxonomy_version": "canonical_phase_taxonomy_v1"},
+        }
+    }
+    load_context = {
+        "selected_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+        "phases": [{"phase_id": "P01", "phase_intent": "general_base", "recommended_phase_corridor": {"min": 1, "max": 2}, "event_taper_trace": {}}],
+    }
+
+    issues = validate_season_plan_against_phase_load_context(
+        season_plan_payload=season_plan,
+        season_phase_load_context=load_context,
+    )
+
+    assert any(issue.code == "season_selected_scenario_contract_mismatch" for issue in issues)
+
+
 def test_validate_season_plan_against_phase_load_context_blocks_endurance_only_collapse() -> None:
     season_plan = {
         "data": {
@@ -351,6 +372,28 @@ def test_validate_phase_against_execution_context_checks_roles_and_s5() -> None:
     )
 
     assert any(issue.code == "phase_week_role_mismatch" for issue in issues)
+
+
+def test_validate_phase_against_execution_context_checks_inherited_scenario_contract() -> None:
+    phase_payload = {
+        "data": {
+            "inherited_scenario_contract": {"selected_scenario_id": "A", "load_posture": "conservative"},
+            "load_ranges": {"weekly_kj_bands": [{"week": "2026-21", "band": {"min": 1000, "max": 2000}}]},
+            "week_skeleton_logic": {"week_roles": {"week_roles": [{"week": "2026-21", "role": "LOAD_1"}]}},
+        }
+    }
+    context = {
+        "inherited_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+        "week_role_by_iso_week": {"2026-21": "LOAD_1"},
+        "phase_s5_bands": [{"week": "2026-21", "band": {"min": 1000, "max": 2000}}],
+    }
+
+    issues = validate_phase_against_execution_context(
+        phase_payload=phase_payload,
+        phase_execution_context=context,
+    )
+
+    assert any(issue.code == "phase_inherited_scenario_contract_mismatch" for issue in issues)
 
 
 def test_validate_week_plan_against_week_context_checks_active_band() -> None:

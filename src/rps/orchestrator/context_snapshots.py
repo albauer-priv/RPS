@@ -21,6 +21,7 @@ from rps.orchestrator.resolved_context import (
     build_resolved_zone_model_context_block,
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts
+from rps.planning.deterministic_context import build_selected_scenario_contract_block
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
@@ -106,6 +107,10 @@ def _as_data(payload: JsonMap | None) -> JsonMap:
     return data if isinstance(data, dict) else {}
 
 
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
+
+
 def _as_str(value: object) -> str:
     return value.strip() if isinstance(value, str) else ""
 
@@ -120,10 +125,15 @@ def _build_advisory_season_block(season_plan_payload: JsonMap | None) -> str:
     if not isinstance(phases, list) or not phases:
         return ""
     first = phases[0] if isinstance(phases[0], dict) else {}
+    selected_contract = data.get("selected_scenario_contract")
+    selected_map = selected_contract if isinstance(selected_contract, dict) else {}
     return (
         "**Season Advisory Summary**\n"
         f"season_objective: {_as_str(data.get('season_objective')) or 'n/a'}\n"
         f"current_phase_seed: {_as_str(first.get('phase_type')) or _as_str(first.get('label')) or 'n/a'}\n"
+        f"selected_scenario_posture_summary: {_as_str(selected_map.get('load_posture')) or 'n/a'}; "
+        f"recovery_margin {_as_str(selected_map.get('recovery_margin')) or 'n/a'}; "
+        f"specificity_density {_as_str(selected_map.get('specificity_density')) or 'n/a'}\n"
     )
 
 
@@ -299,6 +309,35 @@ def _build_advisory_phase_ff_block(phase_feed_forward_payload: JsonMap | None) -
     )
 
 
+def _build_advisory_inherited_posture_block(phase_feed_forward_payload: JsonMap | None) -> str:
+    """Return a compact non-binding inherited posture summary."""
+
+    data = _as_data(phase_feed_forward_payload)
+    contract = data.get("inherited_scenario_contract")
+    contract_map = contract if isinstance(contract, dict) else {}
+    if not contract_map:
+        return ""
+    return (
+        "**Inherited Posture Summary**\n"
+        f"inherited_specificity_stance: {_as_str(contract_map.get('specificity_density'))}\n"
+        f"inherited_recovery_margin_summary: {_as_str(contract_map.get('recovery_margin'))}\n"
+    )
+
+
+def _build_advisory_selected_contract_block(season_plan_payload: JsonMap | None) -> str:
+    """Return a compact non-binding selected scenario posture summary."""
+
+    contract_map = _as_map(_as_data(season_plan_payload).get("selected_scenario_contract"))
+    if not contract_map:
+        return ""
+    return (
+        "**Selected Scenario Posture Summary**\n"
+        f"selected_scenario_posture_summary: {_as_str(contract_map.get('load_posture')) or 'n/a'}\n"
+        f"inherited_specificity_stance: {_as_str(contract_map.get('specificity_density')) or 'n/a'}\n"
+        f"inherited_recovery_margin_summary: {_as_str(contract_map.get('recovery_margin')) or 'n/a'}\n"
+    )
+
+
 def _load_latest_snapshot(
     store: LocalArtifactStore, athlete_id: str, artifact_type: ArtifactType
 ) -> JsonMap:
@@ -306,6 +345,18 @@ def _load_latest_snapshot(
     if not isinstance(payload, dict):
         raise TypeError(f"Latest {artifact_type.value} payload is not a JSON object.")
     return payload
+
+
+def _try_load_latest(
+    store: LocalArtifactStore, athlete_id: str, artifact_type: ArtifactType
+) -> JsonMap | None:
+    """Return the latest payload for `artifact_type`, or `None` when unavailable."""
+
+    try:
+        payload = store.load_latest(athlete_id, artifact_type)
+    except FileNotFoundError:
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def _completed_sessions(current_week_actual_payload: JsonMap | None, target_week: IsoWeek) -> list[dict[str, object]]:
@@ -539,6 +590,12 @@ def build_athlete_state_snapshot_document(
     planning_events_block = build_resolved_planning_events_context_block(store, athlete_id, target_week)
     zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
     wellness_block = _build_wellness_prompt_block(wellness_payload)
+    selected_scenarios_payload = _try_load_latest(store, athlete_id, ArtifactType.SEASON_SCENARIOS) or {}
+    selected_scenario_contract_block = build_selected_scenario_contract_block(
+        season_scenarios_payload=selected_scenarios_payload,
+        selection_payload=selection_payload or {},
+        selected_scenario_id=None,
+    ).markdown
 
     prompt_blocks = _non_empty_prompt_blocks(
         {
@@ -549,6 +606,7 @@ def build_athlete_state_snapshot_document(
             "planning_events": planning_events_block,
             "zone_model": zone_model_block,
             "wellness": wellness_block,
+            "selected_scenario_contract": selected_scenario_contract_block,
         }
     )
 
@@ -671,6 +729,37 @@ def build_planning_context_snapshot_document(
             activities_actual_version=activities_actual_version,
             activities_trend_version=activities_trend_version,
         )
+    season_contract = _as_map(_as_data(season_plan_payload).get("selected_scenario_contract"))
+    phase_contract = _as_map(_as_data(phase_guardrails_payload).get("inherited_scenario_contract"))
+    selected_contract_block = ""
+    if season_contract:
+        selected_contract_block = (
+            "**Selected Scenario Contract**\n"
+            f"selected_scenario_id: {_as_str(season_contract.get('selected_scenario_id'))}\n"
+            f"load_posture: {_as_str(season_contract.get('load_posture'))}\n"
+            f"recovery_margin: {_as_str(season_contract.get('recovery_margin'))}\n"
+            f"fatigue_exposure: {_as_str(season_contract.get('fatigue_exposure'))}\n"
+            f"specificity_density: {_as_str(season_contract.get('specificity_density'))}\n"
+        )
+    inherited_contract_block = ""
+    inherited_planning_posture_block = ""
+    if phase_contract:
+        inherited_contract_block = (
+            "**Inherited Scenario Contract**\n"
+            f"selected_scenario_id: {_as_str(phase_contract.get('selected_scenario_id'))}\n"
+            f"load_posture: {_as_str(phase_contract.get('load_posture'))}\n"
+            f"recovery_margin: {_as_str(phase_contract.get('recovery_margin'))}\n"
+            f"fatigue_exposure: {_as_str(phase_contract.get('fatigue_exposure'))}\n"
+            f"specificity_density: {_as_str(phase_contract.get('specificity_density'))}\n"
+        )
+        inherited_planning_posture_block = (
+            "**Inherited Planning Posture**\n"
+            f"selected_scenario_id: {_as_str(phase_contract.get('selected_scenario_id'))}\n"
+            f"load_posture: {_as_str(phase_contract.get('load_posture'))}\n"
+            f"recovery_margin: {_as_str(phase_contract.get('recovery_margin'))}\n"
+            f"fatigue_exposure: {_as_str(phase_contract.get('fatigue_exposure'))}\n"
+            f"specificity_density: {_as_str(phase_contract.get('specificity_density'))}\n"
+        )
 
     prompt_blocks = _non_empty_prompt_blocks(
         {
@@ -681,6 +770,9 @@ def build_planning_context_snapshot_document(
             "season_feed_forward": season_ff_block,
             "phase_feed_forward": phase_ff_block,
             "activity": activity_block,
+            "selected_scenario_contract": selected_contract_block,
+            "inherited_scenario_contract": inherited_contract_block,
+            "inherited_planning_posture": inherited_planning_posture_block,
         }
     )
 
@@ -1011,11 +1103,13 @@ def build_advisory_memory_document(
     prompt_blocks = _non_empty_prompt_blocks(
         {
             "season": _build_advisory_season_block(season_plan_payload),
+            "selected_scenario_posture": _build_advisory_selected_contract_block(season_plan_payload),
             "week": _build_advisory_week_block(week_plan_payload),
             "current_week_plan": _build_current_week_plan_block(week_plan_payload),
             "des_report": _build_advisory_report_block(des_analysis_payload),
             "season_phase_feed_forward": _build_advisory_season_ff_block(season_phase_feed_forward_payload),
             "phase_feed_forward": _build_advisory_phase_ff_block(phase_feed_forward_payload),
+            "inherited_posture": _build_advisory_inherited_posture_block(phase_feed_forward_payload),
         }
     )
     target_label = f"{target_week.year:04d}-{target_week.week:02d}"

@@ -36,6 +36,7 @@ from rps.planning.deterministic_context import (
     build_phase_execution_context,
     build_report_evidence_context,
     build_season_phase_slot_block,
+    build_selected_scenario_contract_block,
     build_selected_scenario_structure_block,
     build_week_calendar_context,
     build_workout_load_method_block,
@@ -989,6 +990,11 @@ def plan_week(
             selection_payload=selection_payload or {},
             selected_scenario_id=None,
         )
+        selected_scenario_contract = build_selected_scenario_contract_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=None,
+        )
         phase_slot_context = build_season_phase_slot_block(
             selected_structure_context=selected_structure_context.payload,
             target_week=phase_range.start,
@@ -1051,7 +1057,9 @@ def plan_week(
                 load_capacity_context=load_capacity_context.payload,
             )
         )
-        injected_block = render_context_blocks([selected_structure_context, phase_slot_context, load_capacity_context]) + phase_execution_block
+        injected_block = render_context_blocks(
+            [selected_structure_context, selected_scenario_contract, phase_slot_context, load_capacity_context]
+        ) + phase_execution_block
         message = (
             f"Running Phase-Architect Flow for phase range {phase_range_label} "
             f"covering tasks: {phase_task_labels}."

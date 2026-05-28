@@ -4,6 +4,57 @@
   "title": "PhaseStructure",
   "type": "object",
   "$defs": {
+    "inherited_scenario_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_scenario_id",
+        "scenario_name",
+        "selection_rationale",
+        "load_posture",
+        "recovery_margin",
+        "fatigue_exposure",
+        "specificity_density",
+        "load_philosophy",
+        "risk_profile",
+        "event_alignment_notes",
+        "risk_flags",
+        "season_archetype",
+        "allowed_intensity_domains",
+        "forbidden_intensity_domains",
+        "deload_cadence"
+      ],
+      "properties": {
+        "selected_scenario_id": {"type": "string", "enum": ["A", "B", "C"]},
+        "scenario_name": {"type": "string", "minLength": 1},
+        "selection_rationale": {"type": "string"},
+        "load_posture": {"type": "string", "minLength": 1},
+        "recovery_margin": {"type": "string", "minLength": 1},
+        "fatigue_exposure": {"type": "string", "minLength": 1},
+        "specificity_density": {"type": "string", "minLength": 1},
+        "load_philosophy": {"type": "string", "minLength": 1},
+        "risk_profile": {"type": "string", "minLength": 1},
+        "event_alignment_notes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "risk_flags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "season_archetype": {"type": "string", "minLength": 1},
+        "allowed_intensity_domains": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+        },
+        "forbidden_intensity_domains": {
+          "type": "array",
+          "items": {"$ref": "agenda_enum.schema.json#/$defs/intensity_domain"}
+        },
+        "deload_cadence": {"type": "string", "minLength": 1}
+      }
+    },
     "weekday": {
       "type": "string",
       "enum": [
@@ -37,6 +88,7 @@
       "additionalProperties": false,
       "required": [
         "upstream_intent",
+        "inherited_scenario_contract",
         "load_ranges",
         "execution_principles",
         "structural_phase_elements",
@@ -191,6 +243,9 @@
               }
             }
           ]
+        },
+        "inherited_scenario_contract": {
+          "$ref": "#/$defs/inherited_scenario_contract"
         },
         "load_ranges": {
           "type": "object",

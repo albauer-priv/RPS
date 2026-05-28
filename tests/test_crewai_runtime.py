@@ -1135,6 +1135,13 @@ def test_normalize_final_season_plan_semantics_enriches_trace_and_guardrails() -
     }
     with guardrail_runtime_context(
         season_phase_load_context=season_phase_load_context,
+        selected_scenario_contract={
+            "selected_scenario_id": "B",
+            "load_posture": "balanced_progressive",
+            "recovery_margin": "medium",
+            "fatigue_exposure": "moderate",
+            "specificity_density": "controlled",
+        },
         approved_planning_bundle=approved_planning_bundle,
         athlete_profile_payload=_input_payload("ATHLETE_PROFILE", "profile_v1", "run-profile"),
         kpi_profile_payload=_input_payload("KPI_PROFILE", "kpi_v1", "run-kpi"),
@@ -1164,6 +1171,7 @@ def test_normalize_final_season_plan_semantics_enriches_trace_and_guardrails() -
         "load-band labels only" in item.lower()
         for item in normalized["data"]["phase_transitions_guardrails"]["absolute_no_go_rules"]
     )
+    assert normalized["data"]["selected_scenario_contract"]["selected_scenario_id"] == "B"
 
 
 def test_normalize_final_season_plan_semantics_deduplicates_trace_data_by_artifact_and_version_key() -> None:
@@ -1947,6 +1955,27 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
         ],
     }
     with guardrail_runtime_context(
+        selected_scenario_contract={
+            "selected_scenario_id": "B",
+            "scenario_name": "Balanced build",
+            "selection_source": "athlete",
+            "selection_rationale": "Controlled progression",
+            "load_posture": "balanced_progressive",
+            "recovery_margin": "medium",
+            "fatigue_exposure": "moderate",
+            "specificity_density": "controlled",
+            "load_philosophy": "balanced_progressive",
+            "risk_profile": "medium",
+            "constraint_summary": ["preserve continuity"],
+            "event_alignment_notes": ["B rehearsal"],
+            "risk_flags": ["stable recovery required"],
+            "kpi_guardrail_notes": ["repeatable load"],
+            "decision_notes": ["athlete selected B"],
+            "season_archetype": "none",
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "forbidden_intensity_domains": ["VO2MAX"],
+            "deload_cadence": "2:1:1",
+        },
         phase_slot_context={
             "phase_slots": [
                 {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "shortened_re_entry"}
@@ -1988,6 +2017,7 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
     assert blueprint["phase_taxonomy_version"] == "canonical_phase_taxonomy_v1"
     assert blueprint["role_week_load_bands"] == ["2026-21: LOAD_1 7800-8600"]
     assert normalized["season_load_envelope"]["expected_average_weekly_kj_range"] == {"min": 7800, "max": 9800}
+    assert normalized["selected_scenario_contract"]["selected_scenario_id"] == "B"
     assert ok is True
 
 
@@ -2163,6 +2193,7 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
             "phase_role": "BASE",
             "phase_intent": "shortened_re_entry",
             "build_subtype": None,
+            "inherited_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
             "week_role_by_iso_week": {"2026-21": "LOAD_1"},
             "phase_s5_bands": [{"week": "2026-21", "band": {"min": 7800, "max": 8600}}],
         }
@@ -2172,6 +2203,7 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
     assert normalized["phase_id"] == "P01"
     assert normalized["phase_type"] == "BASE"
     assert normalized["phase_intent"] == "shortened_re_entry"
+    assert normalized["inherited_scenario_contract"]["selected_scenario_id"] == "B"
     assert normalized["week_blueprints"][0]["week_role"] == "LOAD_1"
     assert normalized["week_blueprints"][0]["s5_band_min"] == 7800
     assert normalized["week_blueprints"][0]["s5_band_max"] == 8600

@@ -444,6 +444,7 @@ class WorkspaceReadToolTests(unittest.TestCase):
                 ]
             }
             season_phase_load_context = {
+                "selected_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
                 "phases": [
                     {
                         "phase_id": "P01",
@@ -463,6 +464,7 @@ class WorkspaceReadToolTests(unittest.TestCase):
             self.assertEqual(slot_result["contract"], phase_slot_context)
             self.assertTrue(load_result["ok"])
             self.assertEqual(load_result["contract"], season_phase_load_context)
+            self.assertEqual(load_result["contract"]["selected_scenario_contract"]["selected_scenario_id"], "B")
 
     def test_workspace_phase_and_week_contract_tools_return_bound_context(self) -> None:
         """Verify phase/week deterministic contract tools read the currently bound runtime payloads."""
@@ -476,8 +478,17 @@ class WorkspaceReadToolTests(unittest.TestCase):
                     agent_name="week_plan_manager",
                 )
             )
-            phase_execution_context = {"phase_id": "P03", "week_role_by_iso_week": {"2026-26": "LOAD_1"}}
-            week_calendar_context = {"target_iso_week": "2026-26", "phase_week_role": "LOAD_1"}
+            phase_execution_context = {
+                "phase_id": "P03",
+                "week_role_by_iso_week": {"2026-26": "LOAD_1"},
+                "selected_scenario_contract": {"selected_scenario_id": "B"},
+                "inherited_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+            }
+            week_calendar_context = {
+                "target_iso_week": "2026-26",
+                "phase_week_role": "LOAD_1",
+                "inherited_planning_posture": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+            }
 
             with guardrail_runtime_context(
                 phase_execution_context=phase_execution_context,
@@ -488,8 +499,11 @@ class WorkspaceReadToolTests(unittest.TestCase):
 
             self.assertTrue(phase_result["ok"])
             self.assertEqual(phase_result["contract"], phase_execution_context)
+            self.assertIn("selected_scenario_contract", phase_result["contract"])
+            self.assertIn("inherited_scenario_contract", phase_result["contract"])
             self.assertTrue(week_result["ok"])
             self.assertEqual(week_result["contract"], week_calendar_context)
+            self.assertIn("inherited_planning_posture", week_result["contract"])
 
     def test_workspace_get_phase_context_includes_phase_info(self) -> None:
         """Verify phase context includes derived phase week and focus."""
