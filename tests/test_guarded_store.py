@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import pytest
 
 from rps.planning.deterministic_context import build_load_capacity_block
 from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.iso_helpers import parse_iso_week, parse_iso_week_range
-from rps.workspace.schema_registry import SchemaValidationError
+from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
 from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
@@ -14,6 +16,65 @@ def _store(tmp_path):
         schema_dir=tmp_path,
         workspace_root=tmp_path,
     )
+
+
+def _full_selected_scenario_contract() -> dict[str, object]:
+    return {
+        "selected_scenario_id": "B",
+        "scenario_name": "Balanced build, controlled pressure",
+        "selection_source": "user",
+        "selection_rationale": "",
+        "load_posture": "Moderate-to-progressive load with planned resets.",
+        "recovery_margin": "Moderate recovery margin.",
+        "fatigue_exposure": "Moderate fatigue exposure.",
+        "specificity_density": "Moderate-to-high specificity density.",
+        "load_philosophy": "Moderate-to-progressive load with planned resets.",
+        "risk_profile": "Moderate risk option.",
+        "best_suited_if": "Stable recovery supports systematic progression.",
+        "key_differences": "More progression than A, more control than C.",
+        "main_payoff": "Best balance of adaptation and control.",
+        "main_cost": "More accumulated fatigue than A.",
+        "constraint_summary": [
+            "Fixed rest days are Monday and Friday.",
+            "Weekly availability is typical 14.0 h."
+        ],
+        "event_alignment_notes": [
+            "Matches the horizon well.",
+            "B events remain rehearsal markers."
+        ],
+        "risk_flags": [
+            "Becomes less forgiving if continuity breaks.",
+            "Can under-deliver if resets are ignored."
+        ],
+        "kpi_guardrail_notes": [
+            "Keep progression inside KPI limits."
+        ],
+        "decision_notes": [
+            "This is the middle path."
+        ],
+        "season_archetype": "none",
+        "allowed_intensity_domains": [
+            "NONE",
+            "RECOVERY",
+            "ENDURANCE",
+            "TEMPO",
+            "SWEET_SPOT",
+            "THRESHOLD",
+            "VO2MAX",
+        ],
+        "forbidden_intensity_domains": [],
+        "deload_cadence": "2:1:1",
+        "phase_length_weeks": 4,
+        "phase_count_expected": 4,
+        "full_phases": 4,
+        "shortened_phases": [],
+        "max_shortened_phases": 0,
+        "shortening_budget_weeks": 0,
+    }
+
+
+def _schema_registry() -> SchemaRegistry:
+    return SchemaRegistry(Path("specs/schemas"))
 
 
 def test_season_contract_contexts_build_selected_structure_from_latest_payloads(tmp_path):
@@ -832,3 +893,284 @@ def test_phase_preview_rejects_phase_intent_mismatch(tmp_path):
         store._enforce_phase_preview_constraints(document)
 
     assert any("phase_intent" in err for err in exc.value.errors)
+
+
+def test_phase_guardrails_schema_accepts_full_inherited_contract() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "PHASE_GUARDRAILS",
+            "schema_id": "PhaseGuardrailsInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Phase-Artifact-Writer",
+            "run_id": "phase_guardrails_run",
+            "created_at": "2026-05-28T13:00:00Z",
+            "scope": "Phase",
+            "iso_week": "2026-26",
+            "iso_week_range": "2026-26--2026-29",
+            "temporal_scope": {"from": "2026-06-22", "to": "2026-07-19"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "HIGH",
+            "notes": "",
+        },
+        "data": {
+            "body_metadata": {
+                "phase_id": "P02",
+                "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
+                "phase_type": "BUILD",
+                "phase_intent": "durability_build",
+                "build_subtype": "durability_build",
+                "phase_status": "Green",
+                "change_type": "NEW",
+                "derived_from": "SEASON_PLAN",
+                "upstream_inputs": ["season_plan"],
+            },
+            "inherited_scenario_contract": _full_selected_scenario_contract(),
+            "phase_summary": {
+                "primary_objective": "Increase durability under controlled load.",
+                "secondary_objectives": ["Preserve continuity."],
+                "key_risks_warnings": ["Travel disruption may reduce execution quality."],
+                "non_negotiables": ["Protect fixed rest days."],
+            },
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-26", "band": {"min": 12000, "max": 13000, "notes": "Band"}}
+                ],
+                "confidence_assumptions": {
+                    "kj_estimation_method": "Mixed",
+                    "confidence": {"kj": "HIGH"},
+                    "ftp_watts_used": 300,
+                    "zone_model_version": "2026-22",
+                },
+            },
+            "allowed_forbidden_semantics": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+                "quality_density": {
+                    "max_quality_days_per_week": 2,
+                    "quality_intent": "Build",
+                    "forbidden_patterns": ["No adjacent quality stacking."],
+                },
+                "forbidden_day_roles": [],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "forbidden_load_modalities": [],
+            },
+            "events_constraints": {
+                "events": [],
+                "logistics_time_constraints": {
+                    "travel_days": "No special travel-day restriction.",
+                    "work_constraints": "No exceptional work constraint.",
+                    "weather_or_indoor_constraints": "Indoor trainer preserves continuity.",
+                },
+            },
+            "execution_non_negotiables": {
+                "recovery_protection_rules": "Protect Monday and Friday.",
+                "long_endurance_anchor_protection": "Preserve long-ride anchor quality.",
+                "minimum_recovery_opportunities": "At least two recovery opportunities per week.",
+                "no_catch_up_rule": "Do not catch up missed load.",
+            },
+            "escalation_change_control": {
+                "warning_signals": ["Persistent fatigue."],
+                "required_response": {
+                    "week_planner_must": ["Reduce ambition before reducing recovery protection."],
+                    "week_planner_must_not": ["Add catch-up load."],
+                    "phase_architect_decides": "Whether the phase needs a broader reset.",
+                },
+            },
+            "explicit_forbidden_content": [
+                "day-by-day plans",
+                "workouts or interval prescriptions",
+                "durations, zones (Z1-Z7), %FTP",
+                "daily kJ targets",
+                "numeric progression rules",
+                "recommendations that effectively plan the week level",
+            ],
+            "self_check": {
+                "weekly_kj_bands_present": True,
+                "max_quality_days_specified": True,
+                "allowed_forbidden_enums_specified": True,
+                "no_week_planning_content": True,
+                "header_includes_implements_iso_week_range_trace": True,
+            },
+        },
+    }
+
+    validate_or_raise(_schema_registry().validator_for("phase_guardrails.schema.json"), document)
+
+
+def test_phase_structure_schema_accepts_full_inherited_contract() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "schema_id": "PhaseStructureInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Phase-Artifact-Writer",
+            "run_id": "phase_structure_run",
+            "created_at": "2026-05-28T13:00:00Z",
+            "scope": "Phase",
+            "iso_week": "2026-26",
+            "iso_week_range": "2026-26--2026-29",
+            "temporal_scope": {"from": "2026-06-22", "to": "2026-07-19"},
+            "trace_upstream": [],
+            "trace_data": [],
+            "trace_events": [],
+            "data_confidence": "HIGH",
+            "notes": "",
+        },
+        "data": {
+            "upstream_intent": {
+                "phase_intent": "durability_build",
+                "phase_type": "BUILD",
+                "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
+                "build_subtype": "durability_build",
+                "primary_objective": "Increase durability under controlled load.",
+                "phase_status": "Green",
+                "non_negotiables": ["Protect fixed rest days."],
+                "constraints": ["Travel disruption may reduce execution quality."],
+                "key_risks_warnings": ["Persistent fatigue."],
+            },
+            "inherited_scenario_contract": _full_selected_scenario_contract(),
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {"week": "2026-26", "band": {"min": 12000, "max": 13000, "notes": "Band"}}
+                ],
+                "source": "phase_guardrails_2026-26--2026-29__20260528_130000.json",
+            },
+            "execution_principles": {
+                "load_intensity_handling": {
+                    "max_quality_days_per_week": 2,
+                    "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                    "forbidden_intensity_domains": ["VO2MAX"],
+                    "load_modality_constraints": ["NONE", "K3"],
+                    "quality_intent": "Build",
+                },
+                "recovery_protection": {
+                    "fixed_non_training_days": ["Mon", "Fri"],
+                    "mandatory_recovery_spacing_rules": [
+                        "Keep at least one recovery opportunity between quality anchors when possible."
+                    ],
+                    "forbidden_sequences": [
+                        "Do not place quality on both fixed non-training days."
+                    ],
+                    "long_endurance_anchor_protection": "Preserve the long endurance anchor on the most suitable weekend day.",
+                },
+                "consistency_over_optimization": {
+                    "statements": ["Preserve continuity over catch-up loading."],
+                },
+            },
+            "structural_phase_elements": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [
+                            {"week": "2026-26", "role": "LOAD_1"},
+                            {"week": "2026-27", "role": "LOAD_2"},
+                            {"week": "2026-28", "role": "MINI_RESET"},
+                            {"week": "2026-29", "role": "RELOAD"},
+                        ],
+                        "allowed_role_set": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                    },
+                "mandatory_elements": {
+                    "recovery_opportunities_min": 2,
+                    "endurance_anchor_required": True,
+                },
+                "optional_elements": {
+                    "quality_days": {
+                        "capped_by_upstream_limits": True,
+                        "never_adjacent_unless_allowed": True,
+                    },
+                    "optional_flex_days": {
+                        "removable_without_compensation": True,
+                    },
+                },
+                "forbidden_patterns": ["No VO2MAX focus."],
+            },
+            "adaptation_rules": [
+                "Progress through sustainable load growth.",
+                "Use visible resets.",
+                "Resume conservatively after disruption.",
+            ],
+            "relationships": {
+                "guides": ["WEEK_PLAN"],
+                "does_not_replace": ["PHASE_GUARDRAILS"],
+            },
+            "self_check": {
+                "phase_status_respected": True,
+                "phase_range_covered": True,
+                "week_roles_defined_for_phase_range": True,
+                "no_new_decision_introduced": True,
+                "no_numeric_target_introduced": True,
+                "no_kpi_gate_inferred": True,
+            },
+        },
+    }
+
+    validate_or_raise(_schema_registry().validator_for("phase_structure.schema.json"), document)
+
+
+def test_week_plan_schema_rejects_full_contract_only_fields_in_inherited_planning_posture() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "WEEK_PLAN",
+            "schema_id": "WeekPlanInterface",
+            "schema_version": "1.2",
+            "authority": "Binding",
+            "owner_agent": "Week-Artifact-Writer",
+            "run_id": "week_plan_run",
+            "created_at": "2026-05-28T13:00:00Z",
+            "scope": "Week",
+            "iso_week": "2026-26",
+            "data_confidence": "HIGH",
+            "notes": "",
+        },
+        "data": {
+            "inherited_planning_posture": {
+                "selected_scenario_id": "B",
+                "load_posture": "Moderate-to-progressive load with planned resets.",
+                "recovery_margin": "Moderate recovery margin.",
+                "fatigue_exposure": "Moderate fatigue exposure.",
+                "specificity_density": "Moderate-to-high specificity density.",
+                "season_archetype": "none",
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                "forbidden_intensity_domains": [],
+                "risk_flags": ["Persistent fatigue risk."],
+                "phase_intent": "durability_build",
+                "phase_week_role": "LOAD_1",
+                "best_suited_if": "Should be rejected here."
+            },
+            "week_summary": {
+                "week_objective": "Durability-led load week.",
+                "weekly_load_corridor_kj": {"min": 9000, "max": 11000, "notes": "Band"},
+                "planned_weekly_load_kj": 10000,
+                "notes": "Stay inside the corridor.",
+            },
+            "agenda": [
+                {"day": "Mon", "date": "2026-06-22", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Tue", "date": "2026-06-23", "day_role": "ENDURANCE", "planned_duration": "01:30", "planned_kj": 1200, "workout_id": "W1"},
+                {"day": "Wed", "date": "2026-06-24", "day_role": "QUALITY", "planned_duration": "01:30", "planned_kj": 1500, "workout_id": "W2"},
+                {"day": "Thu", "date": "2026-06-25", "day_role": "ENDURANCE", "planned_duration": "01:30", "planned_kj": 1300, "workout_id": "W3"},
+                {"day": "Fri", "date": "2026-06-26", "day_role": "REST", "planned_duration": "00:00", "planned_kj": 0, "workout_id": None},
+                {"day": "Sat", "date": "2026-06-27", "day_role": "ENDURANCE", "planned_duration": "04:00", "planned_kj": 4200, "workout_id": "W4"},
+                {"day": "Sun", "date": "2026-06-28", "day_role": "RECOVERY", "planned_duration": "01:00", "planned_kj": 800, "workout_id": "W5"}
+            ],
+            "workouts": [
+                {"workout_id": "W1", "title": "Endurance", "date": "2026-06-23", "start": "08:00", "duration": "01:30:00", "workout_text": "ENDURANCE", "notes": ""},
+                {"workout_id": "W2", "title": "Quality", "date": "2026-06-24", "start": "08:00", "duration": "01:30:00", "workout_text": "TEMPO", "notes": ""},
+                {"workout_id": "W3", "title": "Endurance", "date": "2026-06-25", "start": "08:00", "duration": "01:30:00", "workout_text": "ENDURANCE", "notes": ""},
+                {"workout_id": "W4", "title": "Long", "date": "2026-06-27", "start": "08:00", "duration": "04:00:00", "workout_text": "ENDURANCE", "notes": ""},
+                {"workout_id": "W5", "title": "Recovery", "date": "2026-06-28", "start": "08:00", "duration": "01:00:00", "workout_text": "RECOVERY", "notes": ""}
+            ],
+        },
+    }
+
+    with pytest.raises(SchemaValidationError):
+        validate_or_raise(_schema_registry().validator_for("week_plan.schema.json"), document)

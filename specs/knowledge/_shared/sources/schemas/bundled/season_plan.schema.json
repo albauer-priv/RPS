@@ -88,6 +88,8 @@
       }
     },
     "selected_scenario_contract": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "SelectedScenarioContract",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -101,6 +103,10 @@
         "specificity_density",
         "load_philosophy",
         "risk_profile",
+        "best_suited_if",
+        "key_differences",
+        "main_payoff",
+        "main_cost",
         "constraint_summary",
         "event_alignment_notes",
         "risk_flags",
@@ -109,7 +115,13 @@
         "season_archetype",
         "allowed_intensity_domains",
         "forbidden_intensity_domains",
-        "deload_cadence"
+        "deload_cadence",
+        "phase_length_weeks",
+        "phase_count_expected",
+        "full_phases",
+        "shortened_phases",
+        "max_shortened_phases",
+        "shortening_budget_weeks"
       ],
       "properties": {
         "selected_scenario_id": {
@@ -158,9 +170,29 @@
           "type": "string",
           "minLength": 1
         },
-        "constraint_summary": {
+        "best_suited_if": {
           "type": "string",
           "minLength": 1
+        },
+        "key_differences": {
+          "type": "string",
+          "minLength": 1
+        },
+        "main_payoff": {
+          "type": "string",
+          "minLength": 1
+        },
+        "main_cost": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraint_summary": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "event_alignment_notes": {
           "type": "array",
@@ -177,12 +209,18 @@
           }
         },
         "kpi_guardrail_notes": {
-          "type": "string",
-          "minLength": 1
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "decision_notes": {
-          "type": "string",
-          "minLength": 1
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "season_archetype": {
           "type": "string",
@@ -222,6 +260,47 @@
         "deload_cadence": {
           "type": "string",
           "minLength": 1
+        },
+        "phase_length_weeks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "phase_count_expected": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "full_phases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shortened_phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "len",
+              "count"
+            ],
+            "properties": {
+              "len": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "max_shortened_phases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shortening_budget_weeks": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -337,6 +416,8 @@
           }
         },
         "selected_scenario_contract": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "SelectedScenarioContract",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -350,6 +431,10 @@
             "specificity_density",
             "load_philosophy",
             "risk_profile",
+            "best_suited_if",
+            "key_differences",
+            "main_payoff",
+            "main_cost",
             "constraint_summary",
             "event_alignment_notes",
             "risk_flags",
@@ -358,7 +443,13 @@
             "season_archetype",
             "allowed_intensity_domains",
             "forbidden_intensity_domains",
-            "deload_cadence"
+            "deload_cadence",
+            "phase_length_weeks",
+            "phase_count_expected",
+            "full_phases",
+            "shortened_phases",
+            "max_shortened_phases",
+            "shortening_budget_weeks"
           ],
           "properties": {
             "selected_scenario_id": {
@@ -407,9 +498,29 @@
               "type": "string",
               "minLength": 1
             },
-            "constraint_summary": {
+            "best_suited_if": {
               "type": "string",
               "minLength": 1
+            },
+            "key_differences": {
+              "type": "string",
+              "minLength": 1
+            },
+            "main_payoff": {
+              "type": "string",
+              "minLength": 1
+            },
+            "main_cost": {
+              "type": "string",
+              "minLength": 1
+            },
+            "constraint_summary": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "event_alignment_notes": {
               "type": "array",
@@ -426,12 +537,18 @@
               }
             },
             "kpi_guardrail_notes": {
-              "type": "string",
-              "minLength": 1
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "decision_notes": {
-              "type": "string",
-              "minLength": 1
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "season_archetype": {
               "type": "string",
@@ -471,6 +588,47 @@
             "deload_cadence": {
               "type": "string",
               "minLength": 1
+            },
+            "phase_length_weeks": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "phase_count_expected": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "full_phases": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "shortened_phases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "len",
+                  "count"
+                ],
+                "properties": {
+                  "len": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            "max_shortened_phases": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "shortening_budget_weeks": {
+              "type": "integer",
+              "minimum": 0
             }
           }
         },
@@ -2076,6 +2234,8 @@
           }
         },
         "selected_scenario_contract": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "SelectedScenarioContract",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -2089,6 +2249,10 @@
             "specificity_density",
             "load_philosophy",
             "risk_profile",
+            "best_suited_if",
+            "key_differences",
+            "main_payoff",
+            "main_cost",
             "constraint_summary",
             "event_alignment_notes",
             "risk_flags",
@@ -2097,7 +2261,13 @@
             "season_archetype",
             "allowed_intensity_domains",
             "forbidden_intensity_domains",
-            "deload_cadence"
+            "deload_cadence",
+            "phase_length_weeks",
+            "phase_count_expected",
+            "full_phases",
+            "shortened_phases",
+            "max_shortened_phases",
+            "shortening_budget_weeks"
           ],
           "properties": {
             "selected_scenario_id": {
@@ -2146,9 +2316,29 @@
               "type": "string",
               "minLength": 1
             },
-            "constraint_summary": {
+            "best_suited_if": {
               "type": "string",
               "minLength": 1
+            },
+            "key_differences": {
+              "type": "string",
+              "minLength": 1
+            },
+            "main_payoff": {
+              "type": "string",
+              "minLength": 1
+            },
+            "main_cost": {
+              "type": "string",
+              "minLength": 1
+            },
+            "constraint_summary": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "event_alignment_notes": {
               "type": "array",
@@ -2165,12 +2355,18 @@
               }
             },
             "kpi_guardrail_notes": {
-              "type": "string",
-              "minLength": 1
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "decision_notes": {
-              "type": "string",
-              "minLength": 1
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "season_archetype": {
               "type": "string",
@@ -2210,6 +2406,47 @@
             "deload_cadence": {
               "type": "string",
               "minLength": 1
+            },
+            "phase_length_weeks": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "phase_count_expected": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "full_phases": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "shortened_phases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "len",
+                  "count"
+                ],
+                "properties": {
+                  "len": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            "max_shortened_phases": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "shortening_budget_weeks": {
+              "type": "integer",
+              "minimum": 0
             }
           }
         },

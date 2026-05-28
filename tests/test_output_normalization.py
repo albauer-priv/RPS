@@ -231,6 +231,7 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
     assert days[4]["load_modality"] == "NONE"
     assert days[5]["day_role"] == "ENDURANCE"
     assert days[5]["intensity_domain"] == "ENDURANCE"
+    assert "inherited_scenario_contract" not in normalized["data"]
 
 
 def test_extract_planning_events_document_parses_workspace_payload() -> None:

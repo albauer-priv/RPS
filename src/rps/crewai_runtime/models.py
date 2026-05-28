@@ -256,6 +256,47 @@ class SeasonPhaseSemanticContractModel(StrictOutputModel):
     writer_semantic_notes: list[str] = Field(default_factory=list)
 
 
+class ShortenedPhaseEntryModel(StrictOutputModel):
+    """One shortened-phase summary entry carried in the selected scenario contract."""
+
+    len: int = Field(ge=1)
+    count: int = Field(ge=1)
+
+
+class SelectedScenarioContractModel(StrictOutputModel):
+    """Canonical full selected-scenario contract carried by Season and Phase runtime."""
+
+    selected_scenario_id: Literal["A", "B", "C"]
+    scenario_name: str
+    selection_source: Literal["user", "system"]
+    selection_rationale: str = ""
+    load_posture: str
+    recovery_margin: str
+    fatigue_exposure: str
+    specificity_density: str
+    load_philosophy: str
+    risk_profile: str
+    best_suited_if: str
+    key_differences: str
+    main_payoff: str
+    main_cost: str
+    constraint_summary: list[str] = Field(default_factory=list)
+    event_alignment_notes: list[str] = Field(default_factory=list)
+    risk_flags: list[str] = Field(default_factory=list)
+    kpi_guardrail_notes: list[str] = Field(default_factory=list)
+    decision_notes: list[str] = Field(default_factory=list)
+    season_archetype: str
+    allowed_intensity_domains: list[str] = Field(default_factory=list)
+    forbidden_intensity_domains: list[str] = Field(default_factory=list)
+    deload_cadence: str
+    phase_length_weeks: int = Field(ge=1)
+    phase_count_expected: int = Field(ge=1)
+    full_phases: int = Field(ge=0)
+    shortened_phases: list[ShortenedPhaseEntryModel] = Field(default_factory=list)
+    max_shortened_phases: int = Field(ge=0)
+    shortening_budget_weeks: int = Field(ge=0)
+
+
 class SeasonLoadEnvelopeRangeModel(StrictOutputModel):
     """Weighted expected weekly kJ range for the season bundle."""
 
@@ -338,6 +379,7 @@ class ReplanInstructionModel(StrictOutputModel):
 class SeasonPlanBundleModel(StrictOutputModel):
     """Internal season planning bundle before review and writing."""
 
+    selected_scenario_contract: SelectedScenarioContractModel | None = None
     context_summary: list[str] = Field(default_factory=list)
     scenario_interpretation: list[str] = Field(default_factory=list)
     event_priority: SeasonEventAnchorModel
@@ -357,6 +399,7 @@ class SeasonPlanBundleModel(StrictOutputModel):
 class SeasonPlanDraftBundleModel(StrictOutputModel):
     """Raw LLM-authored season plan bundle before deterministic normalization."""
 
+    selected_scenario_contract: SelectedScenarioContractModel | None = None
     context_summary: list[str] = Field(default_factory=list)
     scenario_interpretation: list[str] = Field(default_factory=list)
     event_priority: SeasonEventAnchorModel
@@ -405,6 +448,7 @@ class LoadGovernanceAuditModel(StrictOutputModel):
 class PhaseGuardrailsPayloadModel(StrictOutputModel):
     """Internal phase draft for guardrails payload content."""
 
+    inherited_scenario_contract: SelectedScenarioContractModel | None = None
     phase_summary: list[str] = Field(default_factory=list)
     phase_intent: str | None = None
     load_guardrails: list[str] = Field(default_factory=list)
@@ -416,6 +460,7 @@ class PhaseGuardrailsPayloadModel(StrictOutputModel):
 class PhaseStructurePayloadModel(StrictOutputModel):
     """Internal phase draft for structural execution guidance."""
 
+    inherited_scenario_contract: SelectedScenarioContractModel | None = None
     upstream_intent: list[str] = Field(default_factory=list)
     phase_intent: str | None = None
     load_ranges: list[str] = Field(default_factory=list)

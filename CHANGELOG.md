@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a canonical shared `selected_scenario_contract.schema.json` and aligned Season/Phase persisted contract validation to the full runtime-selected scenario contract already produced by deterministic planning context.
 - Added complete Season Scenario selection-contract hardening: `SEASON_SCENARIOS.scenario_guidance` now requires explicit operational posture (`recovery_margin`, `fatigue_exposure`, `specificity_density`) plus structured contract-note arrays, active scenario-generation prompt/task/skill guidance now frontloads those fields locally, and a new runtime guardrail rejects scenario outputs that are not selection-contract complete before they become planning-ready.
 - Added strict Season scenario-selection binding before `SEASON_PLAN`: a new central resolver now requires `SEASON_SCENARIO_SELECTION` to bind to the exact latest `SEASON_SCENARIOS` version, derives the canonical selected-scenario contract/structure once, and exposes consistent `selection_missing` / `selection_stale_vs_scenarios` / `selected_scenario_unresolved` / `selected_scenario_contract_incomplete` failure reasons.
 - Added a code-owned selected-scenario contract chain across Season, Phase, and Week planning: the chosen scenario is now derived once from `SEASON_SCENARIOS + SEASON_SCENARIO_SELECTION`, serialized into `SEASON_PLAN`, inherited into `PHASE_GUARDRAILS` / `PHASE_STRUCTURE`, injected into deterministic Phase/Week contexts, surfaced in planner snapshots, and summarized non-authoritatively in advisory memory.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed project package version to `0.19.7` to capture selected-scenario contract schema alignment across `SEASON_PLAN`, `PHASE_GUARDRAILS`, and `PHASE_STRUCTURE`, while explicitly keeping `WEEK_PLAN` reduced and `PHASE_PREVIEW` derivation-only.
 - Changed project package version to `0.19.6` to capture the Season/Week contract-validation assembly fix, including deterministic Season selected-scenario contract injection in the final Season guardrail path and canonical `WEEK_PLAN.data.inherited_planning_posture` validation.
 - Changed selected-scenario contract extraction and rendering to preserve canonical field types: `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` now remain structured string arrays end-to-end instead of collapsing through scalar-only extraction.
 - Changed project package version to `0.19.5` to capture the complete Season Scenario selection-contract rollout, including schema tightening, producer-side completeness enforcement, and canonical typed contract extraction.
@@ -52,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed evidence-curation instructions and validation so `metadata_only` outputs stay identification-level, while `abstract_curated` outputs remain explicitly abstract-bounded instead of reading like final deterministic coaching policy.
 
 ### Fixed
+- Fixed Season store-time schema drift so `SEASON_PLAN.data.selected_scenario_contract` now accepts the full canonical contract shape, and fixed the same latent schema drift in `PHASE_GUARDRAILS.data.inherited_scenario_contract` and `PHASE_STRUCTURE.data.inherited_scenario_contract` before those Phase artifacts could fail next.
 - Fixed Season normalized-contract validation so the synthetic candidate used by `season_bundle_matches_contract` now carries `data.selected_scenario_contract` from deterministic runtime authority instead of failing late with a code-owned missing-contract mismatch.
 - Fixed Week planning contract validation so `validate_week_plan_against_week_context` now compares `WEEK_PLAN.data.inherited_planning_posture` against deterministic week authority, and deterministic week-plan generation now emits that payload field explicitly.
 - Fixed the UI/runtime mismatch where `Selected Scenario` could appear ready while `SEASON_PLAN` later failed inside CrewAI normalization; Season planning now aborts before any planning task starts when selection binding is stale or incomplete.

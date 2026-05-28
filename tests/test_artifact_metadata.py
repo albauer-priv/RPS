@@ -48,6 +48,58 @@ def _minimal_season_plan_document() -> dict[str, object]:
                 },
                 "body_mass_kg": 92.0,
             },
+            "selected_scenario_contract": {
+                "selected_scenario_id": "B",
+                "scenario_name": "Balanced build, controlled pressure",
+                "selection_source": "user",
+                "selection_rationale": "",
+                "load_posture": "Moderate-to-progressive load with planned resets.",
+                "recovery_margin": "Moderate recovery margin.",
+                "fatigue_exposure": "Moderate fatigue exposure.",
+                "specificity_density": "Moderate-to-high specificity density.",
+                "load_philosophy": "Moderate-to-progressive load with planned resets.",
+                "risk_profile": "Moderate risk option.",
+                "best_suited_if": "Stable recovery supports systematic progression.",
+                "key_differences": "More progression than A, more control than C.",
+                "main_payoff": "Best balance of adaptation and control.",
+                "main_cost": "More accumulated fatigue than A.",
+                "constraint_summary": [
+                    "Fixed rest days are Monday and Friday.",
+                    "Weekly availability is typical 14.0 h."
+                ],
+                "event_alignment_notes": [
+                    "Matches the horizon well.",
+                    "B events remain rehearsal markers."
+                ],
+                "risk_flags": [
+                    "Becomes less forgiving if continuity breaks.",
+                    "Can under-deliver if resets are ignored."
+                ],
+                "kpi_guardrail_notes": [
+                    "Keep progression inside KPI limits."
+                ],
+                "decision_notes": [
+                    "This is the middle path."
+                ],
+                "season_archetype": "none",
+                "allowed_intensity_domains": [
+                    "NONE",
+                    "RECOVERY",
+                    "ENDURANCE",
+                    "TEMPO",
+                    "SWEET_SPOT",
+                    "THRESHOLD",
+                    "VO2MAX"
+                ],
+                "forbidden_intensity_domains": [],
+                "deload_cadence": "2:1:1",
+                "phase_length_weeks": 4,
+                "phase_count_expected": 4,
+                "full_phases": 4,
+                "shortened_phases": [],
+                "max_shortened_phases": 0,
+                "shortening_budget_weeks": 0
+            },
             "season_intent_principles": {
                 "season_objective": "Build durable endurance for the A event.",
                 "success_definition": "event-focused",
@@ -230,6 +282,22 @@ def test_meta_builder_wraps_data_only_payload_for_envelope_schema() -> None:
     assert set(normalized) == {"meta", "data"}
     assert normalized["meta"]["schema_id"] == "SeasonPlanInterface"
     assert normalized["data"] == document["data"]
+
+
+def test_minimal_season_plan_document_validates_against_current_schema() -> None:
+    registry = SchemaRegistry(Path("specs/schemas"))
+    schema = GuardedValidatedStore(
+        athlete_id="i150546",
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime"),
+    ).schemas.get_schema("season_plan.schema.json")
+    normalized = canonicalize_artifact_envelope_meta(
+        _minimal_season_plan_document(),
+        artifact_type=ArtifactType.SEASON_PLAN,
+        schema=schema,
+        run_id="ui_season_plan_2026W21_20260518_190440",
+    )
+    validate_or_raise(registry.validator_for("season_plan.schema.json"), normalized)
 
 
 def test_guarded_store_persists_season_plan_with_agent_owned_bad_meta(tmp_path) -> None:
