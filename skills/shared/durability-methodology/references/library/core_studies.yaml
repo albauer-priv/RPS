@@ -1,7 +1,7 @@
 version: 2
 library_type: core_studies
 curation_schema_version: '1'
-generated_at: '2026-05-27T17:45:56.914926Z'
+generated_at: '2026-05-28T06:11:26.761009Z'
 entries:
 - id: dur_core_001
   source_kind: core
@@ -3023,5 +3023,1237 @@ entries:
   record_fingerprint: dur_core_025
   last_verified_at: '2026-05-27'
   discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_026
+  source_kind: core
+  authors: Coyle, E. F., Hemmert, M. K., & Coggan, A. R.
+  year: 1986
+  title: 'Effects of detraining on cardiovascular responses to exercise: role of blood
+    volume'
+  journal_or_outlet: Journal of Applied Physiology
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/3944049/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - detraining
+  - blood_volume
+  - cardiovascular_response
+  - endurance
+  question_or_focus: Examine how detraining changes cardiovascular responses to exercise,
+    with specific attention to the role of blood volume.
+  population_or_scope: Endurance physiology detraining context; useful for blood-volume
+    and deconditioning framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a detraining and blood-volume exercise-response study.
+  - Candidate core source for deconditioning and cardiovascular-response context pending
+    fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not turn the title-level blood-volume framing into exact re-entry prescriptions
+    without deeper curation.
+  allowed_uses:
+  - detraining_context
+  - recovery_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: 'Effects of detraining on cardiovascular responses to exercise: role of
+      blood volume'
+    main_takeaway: Verified PubMed locator for a detraining and blood-volume exercise-response
+      study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - detraining
+    - blood_volume
+    - cardiovascular_response
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Examine how detraining changes cardiovascular responses
+      to exercise, with specific attention to the role of blood volume.
+    study_type: peer_reviewed
+    population_or_context: Endurance physiology detraining context; useful for blood-volume
+      and deconditioning framing pending fuller local curation.
+    what_was_actually_examined: Examine how detraining changes cardiovascular responses
+      to exercise, with specific attention to the role of blood volume.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a detraining and blood-volume exercise-response
+      study.
+    - Candidate core source for deconditioning and cardiovascular-response context
+      pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not turn the title-level blood-volume framing into exact re-entry prescriptions
+      without deeper curation.
+    allowed_uses_in_rps:
+    - detraining_context
+    - recovery_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_026.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_026
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_027
+  source_kind: core
+  authors: Mujika, I., & Padilla, S.
+  year: 2000
+  title: 'Detraining: loss of training-induced physiological and performance adaptations.
+    Part I: short term insufficient training stimulus'
+  journal_or_outlet: Sports Medicine
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/10966148/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - detraining
+  - recovery
+  - performance_decay
+  - endurance
+  question_or_focus: Review the short-term physiological and performance consequences
+    of insufficient training stimulus and detraining.
+  population_or_scope: Short-term detraining review context; useful for deconditioning
+    and re-entry framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a short-term detraining review.
+  - Candidate core source for short-term deconditioning and insufficient-stimulus
+    context pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not infer exact short-term recovery-loss timelines from title-level metadata
+    alone.
+  allowed_uses:
+  - detraining_context
+  - recovery_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: 'Detraining: loss of training-induced physiological and performance adaptations.
+      Part I: short term insufficient training stimulus'
+    main_takeaway: Verified PubMed locator for a short-term detraining review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - detraining
+    - recovery
+    - performance_decay
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Review the short-term physiological and performance
+      consequences of insufficient training stimulus and detraining.
+    study_type: review
+    population_or_context: Short-term detraining review context; useful for deconditioning
+      and re-entry framing pending fuller local curation.
+    what_was_actually_examined: Review the short-term physiological and performance
+      consequences of insufficient training stimulus and detraining.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a short-term detraining review.
+    - Candidate core source for short-term deconditioning and insufficient-stimulus
+      context pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not infer exact short-term recovery-loss timelines from title-level metadata
+      alone.
+    allowed_uses_in_rps:
+    - detraining_context
+    - recovery_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_027.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_027
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_028
+  source_kind: core
+  authors: Mujika, I., & Padilla, S.
+  year: 2000
+  title: 'Detraining: loss of training-induced physiological and performance adaptations.
+    Part II: long term insufficient training stimulus'
+  journal_or_outlet: Sports Medicine
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/10999420/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - detraining
+  - recovery
+  - performance_decay
+  - long_term_adaptation
+  question_or_focus: Review the long-term physiological and performance consequences
+    of insufficient training stimulus and detraining.
+  population_or_scope: Long-term detraining review context; useful for prolonged deconditioning
+    and rebuild framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a long-term detraining review.
+  - Candidate core source for prolonged deconditioning and rebuild context pending
+    fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not infer exact long-term performance-loss or rebuild timelines from title-level
+    metadata alone.
+  allowed_uses:
+  - detraining_context
+  - rebuild_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: 'Detraining: loss of training-induced physiological and performance adaptations.
+      Part II: long term insufficient training stimulus'
+    main_takeaway: Verified PubMed locator for a long-term detraining review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - detraining
+    - recovery
+    - performance_decay
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Review the long-term physiological and performance
+      consequences of insufficient training stimulus and detraining.
+    study_type: review
+    population_or_context: Long-term detraining review context; useful for prolonged
+      deconditioning and rebuild framing pending fuller local curation.
+    what_was_actually_examined: Review the long-term physiological and performance
+      consequences of insufficient training stimulus and detraining.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a long-term detraining review.
+    - Candidate core source for prolonged deconditioning and rebuild context pending
+      fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not infer exact long-term performance-loss or rebuild timelines from title-level
+      metadata alone.
+    allowed_uses_in_rps:
+    - detraining_context
+    - rebuild_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_028.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_028
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_029
+  source_kind: core
+  authors: Maldonado-Martín, S., Cámara, J., James, D. V. B., et al.
+  year: 2017
+  title: Effects of long-term training cessation in young top-level road cyclists
+  journal_or_outlet: Journal of Sports Sciences
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1080/02640414.2016.1215502
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - detraining
+  - cyclists
+  - training_cessation
+  - performance_decay
+  question_or_focus: Examine the effects of long-term training cessation in young
+    top-level road cyclists.
+  population_or_scope: Young top-level road cyclists; useful as cyclist-specific long-term
+    cessation context pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified primary locator for a cyclist-specific long-term training-cessation study.
+  - Candidate core source for cyclist-specific detraining context pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Top-level road-cyclist context may not transfer directly to all RPS athletes without
+    stronger triangulation.
+  allowed_uses:
+  - detraining_context
+  - cyclists_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified DOI citation; pending deeper curation.
+  summary_card:
+    focus: Effects of long-term training cessation in young top-level road cyclists
+    main_takeaway: Verified primary locator for a cyclist-specific long-term training-cessation
+      study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - detraining
+    - cyclists
+    - training_cessation
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified DOI citation;
+      pending deeper curation.
+    research_question_or_purpose: Examine the effects of long-term training cessation
+      in young top-level road cyclists.
+    study_type: peer_reviewed
+    population_or_context: Young top-level road cyclists; useful as cyclist-specific
+      long-term cessation context pending fuller local curation.
+    what_was_actually_examined: Examine the effects of long-term training cessation
+      in young top-level road cyclists.
+    core_concepts: []
+    key_takeaways:
+    - Verified primary locator for a cyclist-specific long-term training-cessation
+      study.
+    - Candidate core source for cyclist-specific detraining context pending fuller
+      curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Top-level road-cyclist context may not transfer directly to all RPS athletes
+      without stronger triangulation.
+    allowed_uses_in_rps:
+    - detraining_context
+    - cyclists_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_029.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_029
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_030
+  source_kind: core
+  authors: Jentjens, R. L. P. G., & Jeukendrup, A. E.
+  year: 2005
+  title: High rates of exogenous carbohydrate oxidation from a mixture of glucose
+    and fructose ingested during prolonged cycling exercise
+  journal_or_outlet: British Journal of Nutrition
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/15946410/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - fueling
+  - carbohydrate
+  - fructose_glucose
+  - cyclists
+  question_or_focus: Examine exogenous carbohydrate oxidation during prolonged cycling
+    when ingesting a glucose-fructose mixture.
+  population_or_scope: Prolonged cycling fueling context; useful for multiple-transportable-carbohydrate
+    framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a glucose-fructose exogenous-oxidation cycling study.
+  - Candidate core source for multiple-transportable-carbohydrate and fueling-rate
+    context pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not turn title-level glucose-fructose oxidation framing into exact hourly-intake
+    prescriptions without deeper curation.
+  allowed_uses:
+  - fueling_context
+  - carbohydrate_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: High rates of exogenous carbohydrate oxidation from a mixture of glucose
+      and fructose ingested during prolonged cycling exercise
+    main_takeaway: Verified PubMed locator for a glucose-fructose exogenous-oxidation
+      cycling study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - carbohydrate
+    - fructose_glucose
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Examine exogenous carbohydrate oxidation during
+      prolonged cycling when ingesting a glucose-fructose mixture.
+    study_type: peer_reviewed
+    population_or_context: Prolonged cycling fueling context; useful for multiple-transportable-carbohydrate
+      framing pending fuller local curation.
+    what_was_actually_examined: Examine exogenous carbohydrate oxidation during prolonged
+      cycling when ingesting a glucose-fructose mixture.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a glucose-fructose exogenous-oxidation cycling study.
+    - Candidate core source for multiple-transportable-carbohydrate and fueling-rate
+      context pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not turn title-level glucose-fructose oxidation framing into exact hourly-intake
+      prescriptions without deeper curation.
+    allowed_uses_in_rps:
+    - fueling_context
+    - carbohydrate_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_030.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_030
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_031
+  source_kind: core
+  authors: Jeukendrup, A. E.
+  year: 2008
+  title: Carbohydrate feeding during exercise
+  journal_or_outlet: European Journal of Sport Science
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://doi.org/10.1080/17461390801918971
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - fueling
+  - carbohydrate
+  - endurance
+  - exercise_nutrition
+  question_or_focus: Review carbohydrate feeding during exercise and its implications
+    for endurance performance and exercise metabolism.
+  population_or_scope: Endurance exercise nutrition review context; useful for broad
+    carbohydrate-feeding framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified DOI locator for a broad carbohydrate-feeding-during-exercise review.
+  - Candidate core source for exercise carbohydrate-feeding context pending fuller
+    curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not infer exact in-race dosing rules from title-level review framing alone.
+  allowed_uses:
+  - fueling_context
+  - carbohydrate_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified DOI citation; pending deeper curation.
+  summary_card:
+    focus: Carbohydrate feeding during exercise
+    main_takeaway: Verified DOI locator for a broad carbohydrate-feeding-during-exercise
+      review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - carbohydrate
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified DOI citation;
+      pending deeper curation.
+    research_question_or_purpose: Review carbohydrate feeding during exercise and
+      its implications for endurance performance and exercise metabolism.
+    study_type: review
+    population_or_context: Endurance exercise nutrition review context; useful for
+      broad carbohydrate-feeding framing pending fuller local curation.
+    what_was_actually_examined: Review carbohydrate feeding during exercise and its
+      implications for endurance performance and exercise metabolism.
+    core_concepts: []
+    key_takeaways:
+    - Verified DOI locator for a broad carbohydrate-feeding-during-exercise review.
+    - Candidate core source for exercise carbohydrate-feeding context pending fuller
+      curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not infer exact in-race dosing rules from title-level review framing alone.
+    allowed_uses_in_rps:
+    - fueling_context
+    - carbohydrate_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_031.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_031
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_032
+  source_kind: core
+  authors: Rowlands, D. S., Houltham, S., Musa-Veloso, K., Brown, F., Paulionis, L.,
+    & Bailey, D.
+  year: 2015
+  title: 'Fructose-glucose composite carbohydrates and endurance performance: critical
+    review and future perspectives'
+  journal_or_outlet: Sports Medicine
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/26373645/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - fueling
+  - fructose_glucose
+  - endurance
+  - carbohydrate
+  question_or_focus: Critically review fructose-glucose composite carbohydrate use
+    and future perspectives for endurance performance.
+  population_or_scope: Endurance fueling review context; useful for composite-carbohydrate
+    framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a fructose-glucose composite-carbohydrate review.
+  - Candidate core source for composite-carbohydrate endurance-fueling context pending
+    fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not convert title-level composite-carbohydrate framing into precise product
+    formulation rules without deeper curation.
+  allowed_uses:
+  - fueling_context
+  - fructose_glucose_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: 'Fructose-glucose composite carbohydrates and endurance performance: critical
+      review and future perspectives'
+    main_takeaway: Verified PubMed locator for a fructose-glucose composite-carbohydrate
+      review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - fructose_glucose
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Critically review fructose-glucose composite carbohydrate
+      use and future perspectives for endurance performance.
+    study_type: review
+    population_or_context: Endurance fueling review context; useful for composite-carbohydrate
+      framing pending fuller local curation.
+    what_was_actually_examined: Critically review fructose-glucose composite carbohydrate
+      use and future perspectives for endurance performance.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a fructose-glucose composite-carbohydrate review.
+    - Candidate core source for composite-carbohydrate endurance-fueling context pending
+      fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not convert title-level composite-carbohydrate framing into precise product
+      formulation rules without deeper curation.
+    allowed_uses_in_rps:
+    - fueling_context
+    - fructose_glucose_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_032.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_032
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_033
+  source_kind: core
+  authors: Viribay, A., Arribalzaga, S., Mielgo-Ayuso, J., Castañeda-Babarro, A.,
+    Seco-Calvo, J., & Urdampilleta, A.
+  year: 2020
+  title: Effects of 120 g/h of Carbohydrates Intake during a Mountain Marathon on
+    Exercise-Induced Muscle Damage in Elite Runners
+  journal_or_outlet: Nutrients
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/32403259/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - fueling
+  - carbohydrate
+  - gut_training
+  - endurance
+  question_or_focus: Examine the effects of 120 g/h carbohydrate intake during a mountain
+    marathon on exercise-induced muscle damage in elite runners.
+  population_or_scope: Elite-runner high-carbohydrate race-fueling context; useful
+    for high-intake endurance-fueling framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a 120 g/h mountain-marathon carbohydrate study.
+  - Candidate core source for high-intake race-fueling context pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Elite-runner and mountain-marathon context may not transfer directly to all RPS
+    athletes without stronger triangulation.
+  allowed_uses:
+  - fueling_context
+  - high_carb_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: Effects of 120 g/h of Carbohydrates Intake during a Mountain Marathon on
+      Exercise-Induced Muscle Damage in Elite Runners
+    main_takeaway: Verified PubMed locator for a 120 g/h mountain-marathon carbohydrate
+      study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - carbohydrate
+    - gut_training
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Examine the effects of 120 g/h carbohydrate intake
+      during a mountain marathon on exercise-induced muscle damage in elite runners.
+    study_type: peer_reviewed
+    population_or_context: Elite-runner high-carbohydrate race-fueling context; useful
+      for high-intake endurance-fueling framing pending fuller local curation.
+    what_was_actually_examined: Examine the effects of 120 g/h carbohydrate intake
+      during a mountain marathon on exercise-induced muscle damage in elite runners.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a 120 g/h mountain-marathon carbohydrate study.
+    - Candidate core source for high-intake race-fueling context pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Elite-runner and mountain-marathon context may not transfer directly to all
+      RPS athletes without stronger triangulation.
+    allowed_uses_in_rps:
+    - fueling_context
+    - high_carb_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_033.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_033
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_034
+  source_kind: core
+  authors: Martinez, I. G., Mika, A. S., Biesiekierski, J. R., & Costa, R. J. S.
+  year: 2023
+  title: 'The Effect of Gut-Training and Feeding-Challenge on Markers of Gastrointestinal
+    Status in Response to Endurance Exercise: A Systematic Literature Review'
+  journal_or_outlet: Sports Medicine
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/37061651/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - gut_training
+  - fueling
+  - gastrointestinal_tolerance
+  - endurance
+  question_or_focus: Systematically review gut-training and feeding-challenge effects
+    on gastrointestinal status markers during endurance exercise.
+  population_or_scope: Endurance gut-training and gastrointestinal-tolerance review
+    context; useful for feeding-tolerance framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a gut-training and feeding-challenge systematic review.
+  - Candidate core source for gastrointestinal-tolerance and feeding-challenge context
+    pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not convert title-level gut-training review framing into exact gut-training
+    protocols without deeper curation.
+  allowed_uses:
+  - gut_training_context
+  - fueling_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: 'The Effect of Gut-Training and Feeding-Challenge on Markers of Gastrointestinal
+      Status in Response to Endurance Exercise: A Systematic Literature Review'
+    main_takeaway: Verified PubMed locator for a gut-training and feeding-challenge
+      systematic review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - gut_training
+    - fueling
+    - gastrointestinal_tolerance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Systematically review gut-training and feeding-challenge
+      effects on gastrointestinal status markers during endurance exercise.
+    study_type: review
+    population_or_context: Endurance gut-training and gastrointestinal-tolerance review
+      context; useful for feeding-tolerance framing pending fuller local curation.
+    what_was_actually_examined: Systematically review gut-training and feeding-challenge
+      effects on gastrointestinal status markers during endurance exercise.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a gut-training and feeding-challenge systematic
+      review.
+    - Candidate core source for gastrointestinal-tolerance and feeding-challenge context
+      pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not convert title-level gut-training review framing into exact gut-training
+      protocols without deeper curation.
+    allowed_uses_in_rps:
+    - gut_training_context
+    - fueling_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_034.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_034
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_035
+  source_kind: core
+  authors: Li, X., et al.
+  year: 2025
+  title: A Review of Carbohydrate Supplementation Approaches and Strategies for Optimizing
+    Performance in Elite Long-Distance Endurance
+  journal_or_outlet: Nutrients
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/40077786/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - fueling
+  - carbohydrate
+  - endurance
+  - elite_endurance
+  question_or_focus: Review carbohydrate supplementation approaches and strategies
+    for optimizing performance in elite long-distance endurance sport.
+  population_or_scope: Elite long-distance endurance fueling review context; useful
+    for modern carbohydrate-strategy framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a 2025 elite-endurance carbohydrate-supplementation
+    review.
+  - Candidate core source for modern elite endurance fueling context pending fuller
+    curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not convert title-level review framing into exact elite fueling prescriptions
+    without deeper curation.
+  allowed_uses:
+  - fueling_context
+  - carbohydrate_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified citation/locator; pending deeper curation.
+  summary_card:
+    focus: A Review of Carbohydrate Supplementation Approaches and Strategies for
+      Optimizing Performance in Elite Long-Distance Endurance
+    main_takeaway: Verified PubMed locator for a 2025 elite-endurance carbohydrate-supplementation
+      review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - carbohydrate
+    - endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified citation/locator;
+      pending deeper curation.
+    research_question_or_purpose: Review carbohydrate supplementation approaches and
+      strategies for optimizing performance in elite long-distance endurance sport.
+    study_type: review
+    population_or_context: Elite long-distance endurance fueling review context; useful
+      for modern carbohydrate-strategy framing pending fuller local curation.
+    what_was_actually_examined: Review carbohydrate supplementation approaches and
+      strategies for optimizing performance in elite long-distance endurance sport.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a 2025 elite-endurance carbohydrate-supplementation
+      review.
+    - Candidate core source for modern elite endurance fueling context pending fuller
+      curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not convert title-level review framing into exact elite fueling prescriptions
+      without deeper curation.
+    allowed_uses_in_rps:
+    - fueling_context
+    - carbohydrate_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_035.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_035
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_036
+  source_kind: core
+  authors: Jeukendrup, A. E.
+  year: 2014
+  title: 'A Step Towards Personalized Sports Nutrition: Carbohydrate Intake During
+    Exercise'
+  journal_or_outlet: Sports Medicine
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/24791914/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - fueling
+  - carbohydrate
+  - personalized_nutrition
+  - endurance
+  question_or_focus: Review carbohydrate intake during exercise as a step toward personalized
+    sports nutrition.
+  population_or_scope: Personalized endurance-fueling review context; useful for individualized
+    carbohydrate-intake framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a personalized carbohydrate-intake-during-exercise
+    review.
+  - Candidate core source for personalized endurance-fueling context pending fuller
+    curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not convert title-level personalized-nutrition framing into exact individualized
+    dosing rules without deeper curation.
+  allowed_uses:
+  - fueling_context
+  - personalized_nutrition_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: open_access
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified citation/locator; pending deeper curation.
+  summary_card:
+    focus: 'A Step Towards Personalized Sports Nutrition: Carbohydrate Intake During
+      Exercise'
+    main_takeaway: Verified PubMed locator for a personalized carbohydrate-intake-during-exercise
+      review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - carbohydrate
+    - personalized_nutrition
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified citation/locator;
+      pending deeper curation.
+    research_question_or_purpose: Review carbohydrate intake during exercise as a
+      step toward personalized sports nutrition.
+    study_type: review
+    population_or_context: Personalized endurance-fueling review context; useful for
+      individualized carbohydrate-intake framing pending fuller local curation.
+    what_was_actually_examined: Review carbohydrate intake during exercise as a step
+      toward personalized sports nutrition.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a personalized carbohydrate-intake-during-exercise
+      review.
+    - Candidate core source for personalized endurance-fueling context pending fuller
+      curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not convert title-level personalized-nutrition framing into exact individualized
+      dosing rules without deeper curation.
+    allowed_uses_in_rps:
+    - fueling_context
+    - personalized_nutrition_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_036.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_036
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_037
+  source_kind: core
+  authors: Noakes, T. D.
+  year: 2026
+  title: Carbohydrate Ingestion on Exercise Metabolism and Physical Performance
+  journal_or_outlet: Endocrine Reviews
+  source_type: peer_reviewed
+  study_type: review
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/41562187/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - fueling
+  - carbohydrate
+  - exercise_metabolism
+  - performance
+  question_or_focus: Review carbohydrate ingestion effects on exercise metabolism
+    and physical performance.
+  population_or_scope: Exercise-metabolism and performance review context; useful
+    for broad carbohydrate-performance framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a 2026 carbohydrate-ingestion and performance review.
+  - Candidate core source for broad carbohydrate-metabolism and performance context
+    pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not convert title-level metabolism-and-performance framing into exact fueling
+    rules without deeper curation.
+  allowed_uses:
+  - fueling_context
+  - exercise_metabolism_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified citation/locator; pending deeper curation.
+  summary_card:
+    focus: Carbohydrate Ingestion on Exercise Metabolism and Physical Performance
+    main_takeaway: Verified PubMed locator for a 2026 carbohydrate-ingestion and performance
+      review.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - fueling
+    - carbohydrate
+    - exercise_metabolism
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified citation/locator;
+      pending deeper curation.
+    research_question_or_purpose: Review carbohydrate ingestion effects on exercise
+      metabolism and physical performance.
+    study_type: review
+    population_or_context: Exercise-metabolism and performance review context; useful
+      for broad carbohydrate-performance framing pending fuller local curation.
+    what_was_actually_examined: Review carbohydrate ingestion effects on exercise
+      metabolism and physical performance.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a 2026 carbohydrate-ingestion and performance review.
+    - Candidate core source for broad carbohydrate-metabolism and performance context
+      pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not convert title-level metabolism-and-performance framing into exact fueling
+      rules without deeper curation.
+    allowed_uses_in_rps:
+    - fueling_context
+    - exercise_metabolism_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_037.md
+  brief_status: pending_curation
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_037
+  last_verified_at: '2026-05-28'
+  discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
