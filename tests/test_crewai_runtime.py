@@ -2100,6 +2100,27 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
             ]
         },
         season_phase_load_context={
+            "selected_scenario_contract": {
+                "selected_scenario_id": "B",
+                "scenario_name": "Balanced build",
+                "selection_source": "athlete",
+                "selection_rationale": "Controlled progression",
+                "load_posture": "balanced_progressive",
+                "recovery_margin": "medium",
+                "fatigue_exposure": "moderate",
+                "specificity_density": "controlled",
+                "load_philosophy": "balanced_progressive",
+                "risk_profile": "medium",
+                "constraint_summary": ["preserve continuity"],
+                "event_alignment_notes": ["B rehearsal"],
+                "risk_flags": ["stable recovery required"],
+                "kpi_guardrail_notes": ["repeatable load"],
+                "decision_notes": ["athlete selected B"],
+                "season_archetype": "none",
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "deload_cadence": "2:1:1",
+            },
             "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
             "phases": [
                 {
@@ -2137,6 +2158,95 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
     assert normalized["season_load_envelope"]["expected_average_weekly_kj_range"] == {"min": 7800, "max": 9800}
     assert normalized["selected_scenario_contract"]["selected_scenario_id"] == "B"
     assert ok is True
+
+
+def test_season_bundle_matches_contract_accepts_selected_scenario_contract_in_synthetic_candidate() -> None:
+    normalized = {
+        "event_priority": {"primary_a_events": ["A Event"]},
+        "macrocycle": {"deload_cadence": "2:1:1"},
+        "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 9800}},
+        "season_semantic_notes": ["Frame the objective against the A event."],
+        "phase_blueprints": [
+            {
+                "phase_id": "P01",
+                "iso_week_range": "2026-21--2026-23",
+                "scenario_cadence": "2:1:1",
+                "phase_type": "BASE",
+                "phase_intent": "shortened_re_entry",
+                "build_subtype": None,
+                "phase_taxonomy_version": "canonical_phase_taxonomy_v1",
+                "load_corridor_min": 7800,
+                "load_corridor_max": 9800,
+                "allowed_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE", "K3"],
+                "forbidden_domains": ["THRESHOLD", "VO2MAX"],
+                "role_week_load_bands": ["2026-21: LOAD_1 7800-8600"],
+                "semantic_contract": {
+                    "methodology_family": "compressed_reentry",
+                    "threshold_role": "forbidden",
+                    "event_load_policy": "no_event_load_exception",
+                    "taper_policy": "not_applicable",
+                    "writer_semantic_notes": ["Keep the phase recovery-protective."],
+                },
+            }
+        ],
+        "selected_scenario_contract": {
+            "selected_scenario_id": "B",
+            "scenario_name": "Balanced build",
+            "selection_source": "athlete",
+            "selection_rationale": "Controlled progression",
+            "load_posture": "balanced_progressive",
+            "recovery_margin": "medium",
+            "fatigue_exposure": "moderate",
+            "specificity_density": "controlled",
+            "load_philosophy": "balanced_progressive",
+            "risk_profile": "medium",
+            "constraint_summary": ["preserve continuity"],
+            "event_alignment_notes": ["B rehearsal"],
+            "risk_flags": ["stable recovery required"],
+            "kpi_guardrail_notes": ["repeatable load"],
+            "decision_notes": ["athlete selected B"],
+            "season_archetype": "none",
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "forbidden_intensity_domains": ["VO2MAX"],
+            "deload_cadence": "2:1:1",
+        },
+    }
+    with guardrail_runtime_context(
+        phase_slot_context={
+            "phase_slots": [
+                {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "length_weeks": 3, "phase_intent": "shortened_re_entry"}
+            ]
+        },
+        selected_scenario_contract=normalized["selected_scenario_contract"],
+        season_phase_load_context={
+            "selected_scenario_contract": normalized["selected_scenario_contract"],
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "season_phase_role": "shortened_re_entry",
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "MINI_RESET"],
+                    "availability_cap_kj": {"typical": 10000, "max": 11000},
+                    "baseline_load_kj": 8200,
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}},
+                    ],
+                    "progression_trace": {"source": "deterministic"},
+                    "event_taper_trace": {},
+                }
+            ],
+        },
+    ):
+        ok, message = season_bundle_matches_contract(normalized)
+
+    assert ok is True, message
 
 
 def test_normalize_season_plan_draft_bundle_supports_variable_phase_counts() -> None:

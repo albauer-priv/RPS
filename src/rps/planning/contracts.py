@@ -1126,9 +1126,9 @@ def validate_week_plan_against_week_context(
     issues: list[PlanningContractIssue] = []
     issues.extend(
         _compare_contract_subset(
-            candidate=_as_map(week_calendar_context.get("inherited_planning_posture")),
+            candidate=_as_map(data.get("inherited_planning_posture")),
             authority=_as_map(week_calendar_context.get("inherited_planning_posture")),
-            path="week_calendar_context.inherited_planning_posture",
+            path="data.inherited_planning_posture",
             code="week_inherited_planning_posture_mismatch",
             label="inherited_planning_posture",
         )

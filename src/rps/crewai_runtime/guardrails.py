@@ -444,6 +444,13 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
             "season_load_envelope": mapping.get("season_load_envelope"),
         }
     }
+    selected_contract = _as_map(season_phase_load_context.get("selected_scenario_contract"))
+    if selected_contract:
+        candidate_data = _as_map(candidate.get("data"))
+        candidate_data["selected_scenario_contract"] = selected_contract
+        candidate["data"] = candidate_data
+        if _as_map(candidate_data.get("selected_scenario_contract")) != selected_contract:
+            return (False, "Synthetic Season candidate missing deterministic selected_scenario_contract.")
     issues = validate_season_plan_against_phase_slots(
         season_plan_payload=candidate,
         phase_slot_context=phase_slot_context,

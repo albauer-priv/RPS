@@ -44,7 +44,13 @@ Required:
 - `planned_weekly_load_kj` (number)
 - `notes` (string)
 
-#### 4) `data.agenda`
+#### 4) `data.inherited_planning_posture`
+Required:
+- object carrying the deterministic inherited planning posture supplied by code-owned week context
+- must be copied through exactly when deterministic week context provides it
+- must not be reconstructed from prose in the writer stage
+
+#### 5) `data.agenda`
 - Array of **exactly 7** entries (Mon..Sun). Each entry:
   - `day` (Mon..Sun)
   - `date` (YYYY-MM-DD)
@@ -53,7 +59,7 @@ Required:
   - `planned_kj` (number >= 0)
   - `workout_id` (string or null)
 
-#### 5) `data.workouts`
+#### 6) `data.workouts`
 - Array of workout objects (can be empty if all days are rest)
 - Each workout requires:
   - `workout_id` (string)
@@ -65,7 +71,7 @@ Required:
   - `notes` (string)
 - Any `workout_id` referenced in `agenda` MUST appear in `workouts`.
 
-#### 6) Validation & Stop (Binding)
+#### 7) Validation & Stop (Binding)
 - Use the store tool with a top-level `{ "meta": ..., "data": ... }` envelope only.
 - Do NOT output raw JSON in chat; only the store tool call is allowed.
 - Tool call arguments MUST be valid JSON only (no markdown, no comments, no trailing commas, no control tokens).

@@ -363,11 +363,97 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "inherited_planning_posture",
         "week_summary",
         "agenda",
         "workouts"
       ],
       "properties": {
+        "inherited_planning_posture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "selected_scenario_id",
+            "load_posture",
+            "recovery_margin",
+            "fatigue_exposure",
+            "specificity_density",
+            "season_archetype",
+            "allowed_intensity_domains",
+            "forbidden_intensity_domains",
+            "risk_flags",
+            "phase_intent",
+            "phase_week_role"
+          ],
+          "properties": {
+            "selected_scenario_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "load_posture": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "recovery_margin": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fatigue_exposure": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "specificity_density": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "season_archetype": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "allowed_intensity_domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "forbidden_intensity_domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "risk_flags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "phase_intent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "phase_week_role": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
         "week_summary": {
           "type": "object",
           "additionalProperties": false,

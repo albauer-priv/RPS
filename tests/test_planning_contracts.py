@@ -420,3 +420,59 @@ def test_validate_week_plan_against_week_context_checks_active_band() -> None:
     )
 
     assert any(issue.code == "week_planned_load_outside_active_band" for issue in issues)
+
+
+def test_validate_week_plan_against_week_context_checks_inherited_planning_posture() -> None:
+    week_plan = {
+        "data": {
+            "inherited_planning_posture": {"selected_scenario_id": "A", "load_posture": "conservative"},
+            "week_summary": {
+                "weekly_load_corridor_kj": {"min": 1000, "max": 2000},
+                "planned_weekly_load_kj": 1500,
+            },
+            "agenda": [
+                {"day": "Mon", "date": "2026-05-18", "day_role": "ENDURANCE"},
+            ],
+        }
+    }
+    context = {
+        "inherited_planning_posture": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+        "active_weekly_kj_band": {"min": 1000, "max": 2000},
+        "day_matrix": [{"day": "Mon", "date": "2026-05-18"}],
+        "phase_week_role": "LOAD_1",
+    }
+
+    issues = validate_week_plan_against_week_context(
+        week_plan_payload=week_plan,
+        week_calendar_context=context,
+    )
+
+    assert any(issue.code == "week_inherited_planning_posture_mismatch" for issue in issues)
+
+
+def test_validate_week_plan_against_week_context_accepts_matching_inherited_planning_posture() -> None:
+    week_plan = {
+        "data": {
+            "inherited_planning_posture": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+            "week_summary": {
+                "weekly_load_corridor_kj": {"min": 1000, "max": 2000},
+                "planned_weekly_load_kj": 1500,
+            },
+            "agenda": [
+                {"day": "Mon", "date": "2026-05-18", "day_role": "ENDURANCE"},
+            ],
+        }
+    }
+    context = {
+        "inherited_planning_posture": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+        "active_weekly_kj_band": {"min": 1000, "max": 2000},
+        "day_matrix": [{"day": "Mon", "date": "2026-05-18"}],
+        "phase_week_role": "LOAD_1",
+    }
+
+    issues = validate_week_plan_against_week_context(
+        week_plan_payload=week_plan,
+        week_calendar_context=context,
+    )
+
+    assert not any(issue.code == "week_inherited_planning_posture_mismatch" for issue in issues)

@@ -81,6 +81,11 @@ def build_week_plan_document_from_bundle(
             "notes": "Deterministic protocol-driven week-plan workout generation applied.",
         },
         "data": {
+            "inherited_planning_posture": (
+                dict(context.get("inherited_planning_posture"))
+                if isinstance(context.get("inherited_planning_posture"), dict)
+                else {}
+            ),
             "week_summary": {
                 "week_objective": week_objective,
                 "weekly_load_corridor_kj": corridor,
