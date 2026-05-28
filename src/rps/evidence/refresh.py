@@ -98,6 +98,36 @@ def _fetch_pubmed_abstract(pmid: str) -> str:
     return cleaned if len(cleaned) > 40 else ""
 
 
+def _doi_from_locator(locator: str) -> str | None:
+    match = re.search(r"doi\.org/(.+)$", locator.strip(), flags=re.IGNORECASE)
+    if not match:
+        return None
+    return match.group(1).strip() or None
+
+
+def _resolve_pubmed_id_from_doi(doi: str) -> str | None:
+    """Resolve one DOI to a PubMed identifier when PubMed has the paper indexed."""
+
+    normalized = doi.strip()
+    if not normalized:
+        return None
+    query_variants = (
+        f'"{normalized}"[AID]',
+        f'"{normalized}"[doi]',
+        normalized,
+    )
+    for query in query_variants:
+        try:
+            ids = _search_pubmed(query, start_date=date(1900, 1, 1), end_date=_utc_now().date(), retmax=1)
+        except Exception as exc:  # pragma: no cover - network/runtime guard
+            logger.warning("Evidence DOI->PubMed resolution failed for doi=%s query=%s: %s", normalized, query, exc)
+            return None
+        if ids:
+            return ids[0]
+    logger.warning("Evidence DOI->PubMed resolution returned no match for doi=%s", normalized)
+    return None
+
+
 def _fetch_pubmed_abstract_with_backoff(
     pmid: str,
     *,
@@ -208,6 +238,18 @@ def _pmid_from_locator(locator: str) -> str | None:
     return match.group(1) if match else None
 
 
+def _resolve_pubmed_id_for_entry(entry: EvidenceEntry) -> str | None:
+    """Return a PubMed ID for one entry when resolvable from its stored locator."""
+
+    direct_pmid = _pmid_from_locator(entry.reference_locator)
+    if direct_pmid:
+        return direct_pmid
+    doi = _doi_from_locator(entry.reference_locator)
+    if not doi:
+        return None
+    return _resolve_pubmed_id_from_doi(doi)
+
+
 def evidence_refresh_due(*, now: datetime | None = None, interval_days: int = _DEFAULT_REFRESH_INTERVAL_DAYS) -> bool:
     """Return True when the evidence refresh is due."""
 
@@ -226,6 +268,13 @@ def _entry_requires_processing(entry: EvidenceEntry) -> bool:
     """Return whether one entry should enter the curation pipeline in this run."""
 
     if entry.activation_status == "candidate":
+        return True
+    if (
+        entry.legacy_active
+        and entry.verification_status == "verified"
+        and not entry.curated_at
+        and entry.brief_status == "pending_curation"
+    ):
         return True
     if entry.activation_status == "verified":
         if not entry.curated_at:
@@ -253,7 +302,7 @@ def _curate_candidates(
     for entry in entries:
         should_process_by_state = _entry_requires_processing(entry)
         abstract_text = ""
-        pmid = _pmid_from_locator(entry.reference_locator)
+        pmid = _resolve_pubmed_id_for_entry(entry) if should_process_by_state or entry.legacy_active else None
         rate_limited = False
         if pmid and should_process_by_state:
             try:

@@ -61,6 +61,7 @@ Owner: Planning Runtime
 * The workflow installs Python 3.13, project requirements, and executes:
   * `PYTHONPATH=src python3 scripts/refresh_evidence_library.py --discover`
 * If the refresh modifies the canonical evidence registry or generated outputs, the workflow commits those changes locally, rebases once per attempt onto the latest `origin/main`, and retries the push before failing.
+* The workflow also upgrades explicitly pending manual evidence seeds (`brief_status: pending_curation`) through the same refresh path, including DOI-to-PubMed abstract resolution when possible.
 * The existing GHCR image workflow then rebuilds from the updated repo state on push.
 
 **UI impact**

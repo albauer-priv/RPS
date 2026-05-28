@@ -1,7 +1,7 @@
 version: 2
 library_type: core_studies
 curation_schema_version: '1'
-generated_at: '2026-05-27T07:46:53.390614Z'
+generated_at: '2026-05-27T17:45:56.914926Z'
 entries:
 - id: dur_core_001
   source_kind: core
@@ -124,7 +124,7 @@ entries:
     evidence_posture: metadata_only_not_activatable
     source_material_basis: metadata_only
   brief_path: studies/dur_core_001.md
-  brief_status: legacy_generated
+  brief_status: pending_curation
   activation_status: legacy_active
   trusted_source_match: false
   trusted_match_reason: ''
@@ -252,7 +252,7 @@ entries:
     evidence_posture: metadata_only_not_activatable
     source_material_basis: metadata_only
   brief_path: studies/dur_core_002.md
-  brief_status: legacy_generated
+  brief_status: pending_curation
   activation_status: legacy_active
   trusted_source_match: false
   trusted_match_reason: ''
@@ -379,7 +379,7 @@ entries:
     evidence_posture: metadata_only_not_activatable
     source_material_basis: metadata_only
   brief_path: studies/dur_core_003.md
-  brief_status: legacy_generated
+  brief_status: pending_curation
   activation_status: legacy_active
   trusted_source_match: false
   trusted_match_reason: ''
@@ -508,7 +508,7 @@ entries:
     evidence_posture: metadata_only_not_activatable
     source_material_basis: metadata_only
   brief_path: studies/dur_core_004.md
-  brief_status: legacy_generated
+  brief_status: pending_curation
   activation_status: legacy_active
   trusted_source_match: false
   trusted_match_reason: ''
@@ -630,7 +630,7 @@ entries:
     evidence_posture: metadata_only_not_activatable
     source_material_basis: metadata_only
   brief_path: studies/dur_core_005.md
-  brief_status: legacy_generated
+  brief_status: pending_curation
   activation_status: legacy_active
   trusted_source_match: false
   trusted_match_reason: ''
@@ -2509,6 +2509,518 @@ entries:
   legacy_active: true
   curation_schema_version: '1'
   record_fingerprint: dur_core_020
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_021
+  source_kind: core
+  authors: Rønnestad, B. R., Hansen, J., & Ellefsen, S.
+  year: 2014
+  title: Block periodization of high-intensity aerobic intervals provides superior
+    training effects in trained cyclists
+  journal_or_outlet: Scandinavian Journal of Medicine & Science in Sports
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1111/j.1600-0838.2012.01485.x
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - periodization
+  - vo2max
+  - cyclists
+  - interval_programming
+  question_or_focus: Compare block-periodized high-intensity aerobic interval organization
+    with alternative organization in trained cyclists.
+  population_or_scope: Trained cyclists; useful as periodization and interval-organization
+    context, but not yet abstract/full-text curated in the local library.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified primary locator for a trained-cyclist block-periodization interval study.
+  - Candidate core source for periodization and interval-organization context pending
+    fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not overstate superiority claims beyond title/citation until deeper curation
+    is completed.
+  allowed_uses:
+  - periodization_context
+  - interval_programming
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified DOI citation; pending deeper curation.
+  summary_card:
+    focus: Block periodization of high-intensity aerobic intervals provides superior
+      training effects in trained cyclists
+    main_takeaway: Verified primary locator for a trained-cyclist block-periodization
+      interval study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - periodization
+    - vo2max
+    - cyclists
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified DOI citation;
+      pending deeper curation.
+    research_question_or_purpose: Compare block-periodized high-intensity aerobic
+      interval organization with alternative organization in trained cyclists.
+    study_type: peer_reviewed
+    population_or_context: Trained cyclists; useful as periodization and interval-organization
+      context, but not yet abstract/full-text curated in the local library.
+    what_was_actually_examined: Compare block-periodized high-intensity aerobic interval
+      organization with alternative organization in trained cyclists.
+    core_concepts: []
+    key_takeaways:
+    - Verified primary locator for a trained-cyclist block-periodization interval
+      study.
+    - Candidate core source for periodization and interval-organization context pending
+      fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not overstate superiority claims beyond title/citation until deeper curation
+      is completed.
+    allowed_uses_in_rps:
+    - periodization_context
+    - interval_programming
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_021.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_021
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_022
+  source_kind: core
+  authors: Rønnestad, B. R., Hansen, J., Vegge, G., Tønnessen, E., & Slettaløkken,
+    G.
+  year: 2015
+  title: Short intervals induce superior training adaptations compared with long intervals
+    in cyclists - an effort-matched approach
+  journal_or_outlet: Scandinavian Journal of Medicine & Science in Sports
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1111/sms.12165
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - vo2max
+  - interval_programming
+  - cyclists
+  - intensity_distribution
+  question_or_focus: Compare short versus long interval formats in cyclists under
+    effort-matched conditions.
+  population_or_scope: Cyclists; useful as interval-format context pending fuller
+    local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified primary locator for a cyclist interval-format comparison study.
+  - Candidate core source for interval-density and format discussions pending fuller
+    curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not turn the title-level short-vs-long superiority framing into direct prescriptions
+    without deeper curation.
+  allowed_uses:
+  - interval_programming
+  - vo2max_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified DOI citation; pending deeper curation.
+  summary_card:
+    focus: Short intervals induce superior training adaptations compared with long
+      intervals in cyclists - an effort-matched approach
+    main_takeaway: Verified primary locator for a cyclist interval-format comparison
+      study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - vo2max
+    - interval_programming
+    - cyclists
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified DOI citation;
+      pending deeper curation.
+    research_question_or_purpose: Compare short versus long interval formats in cyclists
+      under effort-matched conditions.
+    study_type: peer_reviewed
+    population_or_context: Cyclists; useful as interval-format context pending fuller
+      local curation.
+    what_was_actually_examined: Compare short versus long interval formats in cyclists
+      under effort-matched conditions.
+    core_concepts: []
+    key_takeaways:
+    - Verified primary locator for a cyclist interval-format comparison study.
+    - Candidate core source for interval-density and format discussions pending fuller
+      curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not turn the title-level short-vs-long superiority framing into direct prescriptions
+      without deeper curation.
+    allowed_uses_in_rps:
+    - interval_programming
+    - vo2max_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_022.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_022
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_023
+  source_kind: core
+  authors: Seiler, S., Joranson, K., Olesen, B. V., & Hetlelid, K. J.
+  year: 2013
+  title: Adaptations to aerobic interval training - interactive effects of exercise
+    intensity and total work duration
+  journal_or_outlet: Scandinavian Journal of Medicine & Science in Sports
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1111/j.1600-0838.2011.01351.x
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - interval_programming
+  - intensity_distribution
+  - vo2max
+  - endurance
+  question_or_focus: Examine how interval intensity and total work duration interact
+    when driving aerobic training adaptation.
+  population_or_scope: Endurance interval-training context; useful as intensity-work-duration
+    framing pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified primary locator for a Seiler interval-adaptation paper on intensity and
+    work duration.
+  - Candidate core source for interval dose framing pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not infer exact RPS programming hierarchies from title-level framing alone.
+  allowed_uses:
+  - interval_programming
+  - intensity_distribution
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified DOI citation; pending deeper curation.
+  summary_card:
+    focus: Adaptations to aerobic interval training - interactive effects of exercise
+      intensity and total work duration
+    main_takeaway: Verified primary locator for a Seiler interval-adaptation paper
+      on intensity and work duration.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - interval_programming
+    - intensity_distribution
+    - vo2max
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified DOI citation;
+      pending deeper curation.
+    research_question_or_purpose: Examine how interval intensity and total work duration
+      interact when driving aerobic training adaptation.
+    study_type: peer_reviewed
+    population_or_context: Endurance interval-training context; useful as intensity-work-duration
+      framing pending fuller local curation.
+    what_was_actually_examined: Examine how interval intensity and total work duration
+      interact when driving aerobic training adaptation.
+    core_concepts: []
+    key_takeaways:
+    - Verified primary locator for a Seiler interval-adaptation paper on intensity
+      and work duration.
+    - Candidate core source for interval dose framing pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not infer exact RPS programming hierarchies from title-level framing alone.
+    allowed_uses_in_rps:
+    - interval_programming
+    - intensity_distribution
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_023.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_023
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_024
+  source_kind: core
+  authors: Rønnestad, B. R., Ellefsen, S., Nygaard, H., Zacharoff, E. E., Vikmoen,
+    O., Hansen, J., & Hallén, J.
+  year: 2012
+  title: Effects of 12 weeks of block periodization on performance and performance
+    indices in well-trained cyclists
+  journal_or_outlet: Scandinavian Journal of Medicine & Science in Sports
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://pubmed.ncbi.nlm.nih.gov/23134196/
+  verification_status: verified
+  locator_source: pubmed
+  topic_tags:
+  - periodization
+  - cyclists
+  - performance_testing
+  - interval_programming
+  question_or_focus: Examine the effects of a 12-week block-periodized intervention
+    on performance and performance indices in well-trained cyclists.
+  population_or_scope: Well-trained cyclists; useful as block-periodization performance
+    context pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified PubMed locator for a well-trained-cyclist block-periodization study.
+  - Candidate core source for performance-index and block-periodization context pending
+    fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Do not claim exact effect sizes or programming superiority from title-level metadata
+    alone.
+  allowed_uses:
+  - periodization_context
+  - cyclists_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified PubMed citation; pending deeper curation.
+  summary_card:
+    focus: Effects of 12 weeks of block periodization on performance and performance
+      indices in well-trained cyclists
+    main_takeaway: Verified PubMed locator for a well-trained-cyclist block-periodization
+      study.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - periodization
+    - cyclists
+    - performance_testing
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
+      pending deeper curation.
+    research_question_or_purpose: Examine the effects of a 12-week block-periodized
+      intervention on performance and performance indices in well-trained cyclists.
+    study_type: peer_reviewed
+    population_or_context: Well-trained cyclists; useful as block-periodization performance
+      context pending fuller local curation.
+    what_was_actually_examined: Examine the effects of a 12-week block-periodized
+      intervention on performance and performance indices in well-trained cyclists.
+    core_concepts: []
+    key_takeaways:
+    - Verified PubMed locator for a well-trained-cyclist block-periodization study.
+    - Candidate core source for performance-index and block-periodization context
+      pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Do not claim exact effect sizes or programming superiority from title-level
+      metadata alone.
+    allowed_uses_in_rps:
+    - periodization_context
+    - cyclists_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_024.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_024
+  last_verified_at: '2026-05-27'
+  discovered_at: '2026-05-27'
+  curated_at: ''
+  activated_at: ''
+- id: dur_core_025
+  source_kind: core
+  authors: Rønnestad, B. R., & Hansen, J.
+  year: 2018
+  title: A Scientific Approach to Improve Physiological Capacity of an Elite Cyclist
+  journal_or_outlet: International Journal of Sports Physiology and Performance
+  source_type: peer_reviewed
+  study_type: peer_reviewed
+  reference_locator: https://doi.org/10.1123/ijspp.2017-0228
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - cyclists
+  - vo2max
+  - interval_programming
+  - performance_context
+  question_or_focus: Provide a scientific case-style approach to improving the physiological
+    capacity of an elite cyclist.
+  population_or_scope: Elite-cyclist case-style performance context; useful as high-performance
+    translation context pending fuller local curation.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways:
+  - Verified primary locator for an elite-cyclist physiological-capacity case paper.
+  - Candidate core source for elite-cyclist translation context pending fuller curation.
+  what_this_does_not_justify: []
+  important_limits:
+  - Metadata-only entry added from verified citation/locator; abstract and full-text
+    findings are not yet curated here.
+  - Elite single-case or elite-focused context may transfer poorly to general RPS
+    users without stronger triangulation.
+  allowed_uses:
+  - cyclists_context
+  - vo2max_context
+  authority_limit: acceptable_for_explanation
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: restricted
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: metadata_only
+  notes: Added from user-supplied verified DOI citation; pending deeper curation.
+  summary_card:
+    focus: A Scientific Approach to Improve Physiological Capacity of an Elite Cyclist
+    main_takeaway: Verified primary locator for an elite-cyclist physiological-capacity
+      case paper.
+    main_limit: Metadata-only entry added from verified citation/locator; abstract
+      and full-text findings are not yet curated here.
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - cyclists
+    - vo2max
+    - interval_programming
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added from user-supplied verified DOI citation;
+      pending deeper curation.
+    research_question_or_purpose: Provide a scientific case-style approach to improving
+      the physiological capacity of an elite cyclist.
+    study_type: peer_reviewed
+    population_or_context: Elite-cyclist case-style performance context; useful as
+      high-performance translation context pending fuller local curation.
+    what_was_actually_examined: Provide a scientific case-style approach to improving
+      the physiological capacity of an elite cyclist.
+    core_concepts: []
+    key_takeaways:
+    - Verified primary locator for an elite-cyclist physiological-capacity case paper.
+    - Candidate core source for elite-cyclist translation context pending fuller curation.
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries:
+    - Metadata-only entry added from verified citation/locator; abstract and full-text
+      findings are not yet curated here.
+    - Elite single-case or elite-focused context may transfer poorly to general RPS
+      users without stronger triangulation.
+    allowed_uses_in_rps:
+    - cyclists_context
+    - vo2max_context
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: metadata_only
+  brief_path: studies/dur_core_025.md
+  brief_status: legacy_generated
+  activation_status: legacy_active
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: true
+  curation_schema_version: '1'
+  record_fingerprint: dur_core_025
   last_verified_at: '2026-05-27'
   discovered_at: '2026-05-27'
   curated_at: ''

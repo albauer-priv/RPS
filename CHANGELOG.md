@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added five verified metadata-level core evidence entries for cyclist interval and block-periodization literature: Rønnestad 2014, Rønnestad 2015, Seiler 2013, Rønnestad et al. 2012, and Rønnestad & Hansen 2018, each with canonical DOI/PubMed locators and conservative metadata-only authority until deeper curation is completed.
+- Added a narrow evidence manual-seed upgrade path: verified legacy-visible studies can now be marked `brief_status: pending_curation` so the GitHub evidence-refresh action picks them up for structured curation, including deterministic DOI-to-PubMed abstract resolution when PubMed indexing exists.
 - Added cadence-aware `season_scenarios` generation hardening: the scenario task/prompt/skill now treat `deload_cadence` as an explicit scenario dimension, the existing scenario-quality guardrail rejects unexplained cadence collapse, and recommendation-default cadence can no longer silently flatten all three scenarios.
 - Added generic `season_scenarios` semantic hardening: scenario generation now receives future-only event context, requires explicit `best_suited_if` / `risk_flags` selection gates, frames `allowed_domains` as eligibility-only semantics, and treats `season_archetype` plus Scenario C `VO2MAX` as strict exception paths with stored rationale.
 - Added a mandatory evidence-curation runtime stage: new `evidence_curation_specialist` agent/task/skill, native Pydantic `EvidenceCurationModel`, deterministic trusted-source matching, quality-gate/activation pipeline, and provenance-aware study briefs rendered from structured curation output.
@@ -24,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed project package version to `0.19.1` to capture the evidence-refresh manual-seed upgrade path and GitHub Action processing behavior change.
 - Changed `AGENTS.md` so repository agents must check before every commit/push whether a SemVer version-number bump is required, especially for behavior, schema, contract, and operational workflow changes.
 - Changed the active `season_scenarios` task/prompt/skill contract to require concrete guardrail-visible `risk_flags` wording, with explicit negative-marker examples for Scenario A/B/C so advisory scenario generation no longer drifts into vague warning prose that fails the selection-gate guardrail.
 - Changed the active `season_scenarios` task/prompt/skill contract to require concrete guardrail-visible `best_suited_if` wording, with explicit positive-marker examples for Scenario A/B/C so advisory scenario generation no longer drifts into vague recommendation prose that fails the selection-gate guardrail.
@@ -31,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed the canonical documentation set (`doc/`) to match the new evidence runtime: architecture, flow, workspace, UI, and run-store docs now describe the repo-scoped evidence library, weekly `literature_refresh`, mandatory evidence curation, deterministic gating/activation, and System Status/History visibility for evidence refresh runs.
 - Changed evidence-refresh operations so automatic app-start refresh can be disabled explicitly via `RPS_EVIDENCE_REFRESH_ENABLED=0`, allowing deploy/build cycles to skip paid evidence curation while keeping manual UI refresh and the dedicated GitHub workflow available.
 - Changed the GitHub Actions evidence-refresh publish step to `fetch -> rebase -> retry push`, so workflow-generated evidence commits can survive normal concurrent updates to `main` instead of failing on non-fast-forward pushes.
+- Changed manually seeded cyclist interval/block-periodization core entries to `pending_curation` so the weekly GitHub refresh can move them from metadata-only placeholders into fully curated outputs instead of leaving them indefinitely in legacy-visible state.
 - Changed older evidence feature docs to explicit historical-step positioning, while `FEAT_repo_wide_evidence_library_and_refresh` and `FEAT_evidence_curation_pipeline` now serve as the current canonical evidence-system feature specs.
 - Changed evidence-curation instructions and validation so `metadata_only` outputs stay identification-level, while `abstract_curated` outputs remain explicitly abstract-bounded instead of reading like final deterministic coaching policy.
 

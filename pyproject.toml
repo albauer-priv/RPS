@@ -1,6 +1,6 @@
 [project]
 name = "rps"
-version = "0.19.0"
+version = "0.19.1"
 description = "Randonneur Performance System (RPS) for endurance planning and feedback."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"

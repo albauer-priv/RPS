@@ -64,9 +64,12 @@ def test_sync_reference_library_outputs_updates_generated_views() -> None:
 
 def test_refresh_evidence_library_activates_verified_primary_source_candidates(monkeypatch) -> None:
     original_entries = load_core_studies()
+    original_applied = load_applied_sources()
     original_state = DISCOVERY_STATE_PATH.read_text(encoding="utf-8") if DISCOVERY_STATE_PATH.exists() else None
     now = datetime(2026, 5, 27, 10, 0, tzinfo=UTC)
     try:
+        save_core_studies([])
+        save_applied_sources([])
         save_discovery_state(
             {
                 "version": 1,
@@ -131,6 +134,7 @@ def test_refresh_evidence_library_activates_verified_primary_source_candidates(m
         assert added[0].activation_status == "active"
     finally:
         save_core_studies(original_entries)
+        save_applied_sources(original_applied)
         if original_state is None:
             DISCOVERY_STATE_PATH.unlink(missing_ok=True)
         else:
@@ -431,6 +435,95 @@ def test_refresh_evidence_library_skips_already_curated_verified_entries(monkeyp
         assert result["stats"]["processed_entries"] == 0
         assert result["stats"]["skipped_unchanged"] == 1
         assert result["library_changed"] is False
+    finally:
+        save_core_studies(original_entries)
+        save_applied_sources(original_applied)
+        sync_reference_library_outputs()
+
+
+def test_refresh_evidence_library_processes_pending_legacy_verified_seeds(monkeypatch) -> None:
+    original_entries = load_core_studies()
+    original_applied = load_applied_sources()
+    try:
+        pending_seed = replace(
+            original_entries[0],
+            activation_status="legacy_active",
+            legacy_active=True,
+            verification_status="verified",
+            curated_at="",
+            brief_status="pending_curation",
+            reference_locator="https://pubmed.ncbi.nlm.nih.gov/12840640/",
+        )
+        save_core_studies([pending_seed])
+        save_applied_sources([])
+        monkeypatch.setattr("rps.evidence.refresh._search_pubmed", lambda *args, **kwargs: [])
+        monkeypatch.setattr("rps.evidence.refresh._summaries_pubmed", lambda ids: [])
+        monkeypatch.setattr(
+            "rps.evidence.refresh._fetch_pubmed_abstract_with_backoff",
+            lambda pmid: ("Abstract text for one pending manual seed.", False),
+        )
+        monkeypatch.setattr(
+            "rps.evidence.refresh.run_entry_pipeline",
+            lambda entry, athlete_id, run_id, workspace_root, abstract_text="", oa_excerpt_text="", oa_fulltext_text="": (
+                replace(entry, activation_status="active", legacy_active=False, curated_at="2026-05-27T12:00:00Z"),
+                {"status": "active"},
+            ),
+        )
+        result = refresh_evidence_library(
+            now=datetime(2026, 5, 27, 12, 0, tzinfo=UTC),
+            refresh_interval_days=0,
+            athlete_id="system",
+            workspace_root=ROOT / "runtime" / "athletes",
+            run_id="",
+        )
+        refreshed = load_core_studies()
+        assert result["status"] == "done"
+        assert result["stats"]["processed_entries"] == 1
+        assert refreshed[0].activation_status == "active"
+        assert refreshed[0].legacy_active is False
+    finally:
+        save_core_studies(original_entries)
+        save_applied_sources(original_applied)
+        sync_reference_library_outputs()
+
+
+def test_refresh_evidence_library_resolves_doi_only_pending_seed_to_pubmed(monkeypatch) -> None:
+    original_entries = load_core_studies()
+    original_applied = load_applied_sources()
+    try:
+        pending_seed = replace(
+            original_entries[0],
+            activation_status="legacy_active",
+            legacy_active=True,
+            verification_status="verified",
+            curated_at="",
+            brief_status="pending_curation",
+            reference_locator="https://doi.org/10.1111/sms.12016",
+        )
+        save_core_studies([pending_seed])
+        save_applied_sources([])
+        monkeypatch.setattr("rps.evidence.refresh._search_pubmed", lambda query, **kwargs: ["23134196"] if "10.1111/sms.12016" in query else [])
+        monkeypatch.setattr("rps.evidence.refresh._summaries_pubmed", lambda ids: [])
+        monkeypatch.setattr(
+            "rps.evidence.refresh._fetch_pubmed_abstract_with_backoff",
+            lambda pmid: ("Resolved abstract text.", False),
+        )
+        captured: dict[str, str] = {}
+
+        def _pipeline(entry, athlete_id, run_id, workspace_root, abstract_text="", oa_excerpt_text="", oa_fulltext_text=""):
+            captured["abstract_text"] = abstract_text
+            return replace(entry, activation_status="active", legacy_active=False, curated_at="2026-05-27T12:00:00Z"), {"status": "active"}
+
+        monkeypatch.setattr("rps.evidence.refresh.run_entry_pipeline", _pipeline)
+        result = refresh_evidence_library(
+            now=datetime(2026, 5, 27, 12, 0, tzinfo=UTC),
+            refresh_interval_days=0,
+            athlete_id="system",
+            workspace_root=ROOT / "runtime" / "athletes",
+            run_id="",
+        )
+        assert result["stats"]["processed_entries"] == 1
+        assert captured["abstract_text"] == "Resolved abstract text."
     finally:
         save_core_studies(original_entries)
         save_applied_sources(original_applied)

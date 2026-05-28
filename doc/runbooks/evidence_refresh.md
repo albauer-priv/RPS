@@ -39,6 +39,12 @@ python3 scripts/refresh_evidence_library.py --discover
 5. commits updated evidence-library files only if files changed
 6. fetches `origin/main`, rebases the refresh commit, and retries the push up to 3 times
 
+Manually seeded verified studies can also be upgraded by this workflow when they
+stay visible as `legacy_active` but are explicitly marked
+`brief_status: pending_curation`. For DOI-only seeds, the refresh attempts a
+deterministic PubMed DOI lookup first so abstract-backed curation can still run
+inside the GitHub Action.
+
 The existing GHCR image workflow then rebuilds from the refreshed repo state on
 push to `main`.
 
@@ -87,6 +93,7 @@ Common failures:
 - PubMed throttling / HTTP 429
 - provider / API auth failure
 - model/runtime failure during evidence curation
+- DOI locator is valid but PubMed has no matching indexed record for abstract fetch
 
 Current mitigation:
 
@@ -97,6 +104,7 @@ Current mitigation:
 - the workflow retries the refresh command up to 3 times
 - no git commit is created if the refresh fails
 - if `main` advances during the workflow run, the workflow rebases the refresh commit and retries the push before failing
+- if a pending manual seed has no PubMed match, it remains visible as legacy metadata and is not falsely activated
 
 ---
 
