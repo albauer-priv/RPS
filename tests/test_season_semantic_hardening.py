@@ -78,6 +78,11 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in task_config
     assert "Preferred copyable wording:" in task_config
     assert "not primary identity" in task_config
+    assert "front-loaded, self-contained source of" in task_config
+    assert "operational posture for scenario selection" in task_config
+    assert "`scenario_guidance.recovery_margin`" in task_config
+    assert "`scenario_guidance.fatigue_exposure`" in task_config
+    assert "`scenario_guidance.specificity_density`" in task_config
     assert "Only future / in-horizon events are provided to this task" in task_config
     assert "`best_suited_if`" in task_config and "must carry explicit positive selection conditions" in task_config
     assert "Write `best_suited_if` as" in task_config
@@ -112,11 +117,19 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "preferred example: `Less forgiving than A if continuity break or recovery slip appears.`" in scenario_skill
     assert "preferred example: `Too aggressive if fatigue risk or travel disruption appears.`" in scenario_skill
     assert "Field completion contract:" in scenario_skill
+    assert "`scenario_guidance.recovery_margin` = explicit recovery stance as a non-empty string" in scenario_skill
+    assert "`scenario_guidance.fatigue_exposure` = explicit fatigue posture as a non-empty string" in scenario_skill
+    assert "`scenario_guidance.specificity_density` = explicit specificity posture as a non-empty string" in scenario_skill
     assert "`core_idea` = one-sentence scenario promise" in scenario_skill
     assert "`event_alignment_notes` = future-only active event logic" in scenario_skill
     assert "`data.notes` = global scenario-layer clarifications" in scenario_skill
     assert "Use `none` by default." in scenario_skill
     assert "Do not claim that the scenario layer resolved or replaced the objective/event hierarchy." in scenario_skill
+    assert "front-loaded source of operational posture" in scenario_skill
+    assert "self-contained for operational posture" in scenario_skill
+    assert "Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`" in scenario_skill
+    assert "The active scenario-generation layer is the front-loaded source of operational posture." in prompt
+    assert "The active scenario-generation layer must be self-contained for operational posture" in prompt
 
 
 def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:

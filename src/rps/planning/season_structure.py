@@ -324,11 +324,11 @@ def build_selected_scenario_contract_context(
         "key_differences": _as_str(selected_scenario.get("key_differences")),
         "main_payoff": _as_str(selected_scenario.get("main_payoff")),
         "main_cost": _as_str(selected_scenario.get("main_cost")),
-        "constraint_summary": _as_str(guidance.get("constraint_summary")),
+        "constraint_summary": _as_str_list(guidance.get("constraint_summary")),
         "event_alignment_notes": _as_str_list(guidance.get("event_alignment_notes")),
         "risk_flags": _as_str_list(guidance.get("risk_flags")),
-        "kpi_guardrail_notes": _as_str(guidance.get("kpi_guardrail_notes")),
-        "decision_notes": _as_str(guidance.get("decision_notes")),
+        "kpi_guardrail_notes": _as_str_list(guidance.get("kpi_guardrail_notes")),
+        "decision_notes": _as_str_list(guidance.get("decision_notes")),
         "season_archetype": _as_str(structure.get("season_archetype")),
         "allowed_intensity_domains": list(structure.get("allowed_intensity_domains") or []),
         "forbidden_intensity_domains": list(structure.get("forbidden_intensity_domains") or []),
@@ -411,15 +411,18 @@ def render_selected_scenario_contract_block(context: JsonMap) -> str:
         f"key_differences: {context.get('key_differences')}",
         f"main_payoff: {context.get('main_payoff')}",
         f"main_cost: {context.get('main_cost')}",
-        f"constraint_summary: {context.get('constraint_summary')}",
-        f"kpi_guardrail_notes: {context.get('kpi_guardrail_notes')}",
-        f"decision_notes: {context.get('decision_notes')}",
         f"season_archetype: {context.get('season_archetype')}",
         "allowed_intensity_domains: " + ", ".join(str(item) for item in _as_list(context.get("allowed_intensity_domains"))),
         "forbidden_intensity_domains: " + ", ".join(str(item) for item in _as_list(context.get("forbidden_intensity_domains"))),
         f"deload_cadence: {context.get('deload_cadence')}",
     ]
-    for label in ("event_alignment_notes", "risk_flags"):
+    for label in (
+        "constraint_summary",
+        "kpi_guardrail_notes",
+        "decision_notes",
+        "event_alignment_notes",
+        "risk_flags",
+    ):
         values = [str(item) for item in _as_list(context.get(label)) if str(item).strip()]
         if values:
             lines.append(f"{label}:")

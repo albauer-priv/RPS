@@ -1018,6 +1018,44 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def season_scenarios_selection_contract_complete(result: Any) -> GuardrailResult:
+    """Require each scenario to emit complete operational posture for selection binding."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season scenarios output must decode to an object.")
+    meta = _as_map(mapping.get("meta"))
+    data = _as_map(mapping.get("data"))
+    if meta.get("artifact_type") != "SEASON_SCENARIOS":
+        return (False, "Season scenarios meta.artifact_type must be SEASON_SCENARIOS.")
+    scenarios = [_as_map(item) for item in _as_list(data.get("scenarios"))]
+    if len(scenarios) != 3:
+        return (False, "Season scenarios must include exactly three scenarios.")
+
+    required_string_fields = ("recovery_margin", "fatigue_exposure", "specificity_density")
+    required_list_fields = (
+        "constraint_summary",
+        "event_alignment_notes",
+        "risk_flags",
+        "kpi_guardrail_notes",
+        "decision_notes",
+    )
+    for scenario in scenarios:
+        scenario_id = str(scenario.get("scenario_id") or "").strip().upper() or "?"
+        guidance = _as_map(scenario.get("scenario_guidance"))
+        for field in required_string_fields:
+            if not str(guidance.get(field) or "").strip():
+                return (False, f"Scenario {scenario_id} must include non-empty scenario_guidance.{field}.")
+        for field in required_list_fields:
+            value = guidance.get(field)
+            if not isinstance(value, list):
+                return (False, f"Scenario {scenario_id} must include scenario_guidance.{field} as a string array.")
+            items = _string_list(value)
+            if field == "constraint_summary" and not items:
+                return (False, f"Scenario {scenario_id} must include non-empty scenario_guidance.constraint_summary.")
+    return (True, mapping)
+
+
 def season_phase_coverage_and_cadence(result: Any) -> GuardrailResult:
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
@@ -1862,6 +1900,7 @@ REGISTRY: dict[str, GuardrailFn] = {
     "artifact_meta_data_present": artifact_meta_data_present,
     "artifact_schema_valid": artifact_schema_valid,
     "season_scenarios_profile_quality": season_scenarios_profile_quality,
+    "season_scenarios_selection_contract_complete": season_scenarios_selection_contract_complete,
     "season_scenario_selection_shape": season_scenario_selection_shape,
     "season_phase_coverage_and_cadence": season_phase_coverage_and_cadence,
     "season_phase_load_context_match": season_phase_load_context_match,

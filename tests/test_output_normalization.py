@@ -279,6 +279,9 @@ def test_normalize_season_scenarios_repairs_agent_payload_for_schema() -> None:
             "what_gets_prioritized": "Consistency and durability.",
             "what_gets_de_emphasized": "Unnecessary high-intensity escalation.",
             "scenario_guidance": {
+                "recovery_margin": "medium",
+                "fatigue_exposure": "moderate",
+                "specificity_density": "controlled",
                 "deload_cadence": cadence,
                 "phase_length_weeks": 99,
                 "event_alignment_notes": "Aligns to the target event.",

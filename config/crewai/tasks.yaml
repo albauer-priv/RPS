@@ -179,7 +179,16 @@ tasks:
       `decision_notes` = why this cadence and posture were chosen;
       `assumptions` = what must remain true; `unknowns` = what could change
       scenario choice later; `data.notes` = global layer clarifications such
-      as future-only event logic and eligibility-not-authorization. Emit normalized
+      as future-only event logic and eligibility-not-authorization. The active
+      scenario-generation layer is the front-loaded, self-contained source of
+      operational posture for scenario selection: emit
+      `scenario_guidance.recovery_margin`,
+      `scenario_guidance.fatigue_exposure`, and
+      `scenario_guidance.specificity_density` directly as non-empty strings,
+      and keep `constraint_summary`, `event_alignment_notes`, `risk_flags`,
+      `kpi_guardrail_notes`, and `decision_notes` as structured string arrays.
+      Do not expect Selection, Season planning, review, writer, or renderer to
+      infer those fields from narrative prose. Emit normalized
       `scenario_guidance.season_archetype` (`none` or
       `ceiling_first_durability`) plus `season_archetype_rationale`; default
       to `none` and use `ceiling_first_durability` only when the scenario

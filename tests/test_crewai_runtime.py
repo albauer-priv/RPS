@@ -68,6 +68,7 @@ from rps.crewai_runtime.guardrails import (
     season_phase_load_feasibility,
     season_scenario_selection_shape,
     season_scenarios_profile_quality,
+    season_scenarios_selection_contract_complete,
     season_writer_bundle_match,
     week_active_corridor_match,
     week_agenda_shape_and_calendar_check,
@@ -596,11 +597,11 @@ def test_create_season_plan_aborts_before_crew_when_selection_binding_fails(
                             "recovery_margin": "medium",
                             "fatigue_exposure": "moderate",
                             "specificity_density": "controlled",
-                            "constraint_summary": "Preserve continuity.",
+                            "constraint_summary": ["Preserve continuity."],
                             "event_alignment_notes": ["B-event rehearsal"],
                             "risk_flags": [],
-                            "kpi_guardrail_notes": "Stay repeatable.",
-                            "decision_notes": "Selected for test.",
+                            "kpi_guardrail_notes": ["Stay repeatable."],
+                            "decision_notes": ["Selected for test."],
                             "deload_cadence": "2:1:1",
                             "phase_length_weeks": 4,
                             "phase_count_expected": 4,
@@ -2722,6 +2723,9 @@ def _season_scenario_item(
     kpi_guardrail_notes: list[str] | None = None,
     season_archetype: str = "none",
     season_archetype_rationale: list[str] | None = None,
+    recovery_margin: str = "medium",
+    fatigue_exposure: str = "moderate",
+    specificity_density: str = "controlled",
 ) -> dict:
     return {
         "scenario_id": scenario_id,
@@ -2732,6 +2736,9 @@ def _season_scenario_item(
         "key_differences": key_differences,
         "best_suited_if": best_suited_if,
         "scenario_guidance": {
+            "recovery_margin": recovery_margin,
+            "fatigue_exposure": fatigue_exposure,
+            "specificity_density": specificity_density,
             "deload_cadence": cadence,
             "risk_flags": risk_flags,
             "event_alignment_notes": event_alignment_notes or [],
@@ -2803,6 +2810,53 @@ def test_season_scenarios_profile_quality_accepts_same_domains_with_distinct_pro
 
     assert ok is True
     assert payload["data"]["scenarios"][2]["scenario_id"] == "C"
+
+
+def test_season_scenarios_selection_contract_complete_rejects_missing_operational_posture() -> None:
+    failed, message = season_scenarios_selection_contract_complete(
+        _season_scenarios_payload(
+            _season_scenario_item(
+                scenario_id="A",
+                load_philosophy="Lower feasible kJ-envelope with high recovery margin.",
+                risk_profile="Highest executability and lowest density.",
+                key_differences="Completion-first with minimal fatigue exposure.",
+                cadence="2:1",
+                allowed_domains=["ENDURANCE"],
+                decision_notes=["Use 2:1 cadence to protect recovery margin."],
+                best_suited_if="Choose when continuity priority and uncertain recovery dominate.",
+                risk_flags=["May under-deliver if high load tolerance is available."],
+                constraint_summary=["Low density."],
+            ),
+            _season_scenario_item(
+                scenario_id="B",
+                load_philosophy="Realistic target kJ-envelope with systematic long-ride progression.",
+                risk_profile="Balanced recovery risk.",
+                key_differences="Durability-forward target plan.",
+                cadence="2:1:1",
+                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                decision_notes=["Use 2:1:1 cadence to absorb tempo economy work and long-ride progression."],
+                best_suited_if="Choose when stable recovery supports systematic progression.",
+                risk_flags=["Less forgiving than A if continuity break appears."],
+                constraint_summary=["Long-ride progression."],
+                recovery_margin="",
+            ),
+            _season_scenario_item(
+                scenario_id="C",
+                load_philosophy="Upper plausible kJ-envelope with more event simulation.",
+                risk_profile="Ambitious performance-forward long build with higher specificity under fatigue.",
+                key_differences="More back-to-back and hard-late specificity.",
+                cadence="3:1",
+                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                decision_notes=["Use 3:1 cadence for a longer build with back-to-back and hard-late specificity under fatigue."],
+                best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
+                risk_flags=["Fatigue risk rises quickly if travel disruption appears."],
+                constraint_summary=["Event simulation and fatigue exposure."],
+            ),
+        )
+    )
+
+    assert failed is False
+    assert "scenario_guidance.recovery_margin" in message
 
 
 def test_season_scenarios_profile_quality_accepts_vo2_rationale_from_kpi_guardrail_notes() -> None:
@@ -3569,6 +3623,7 @@ def test_season_scenarios_task_policy_uses_profile_quality_guardrail() -> None:
     policy = resolve_task_policy(blueprints["season_scenarios"], bundle.task_policies)
 
     assert "season_scenarios_profile_quality" in policy.guardrails
+    assert "season_scenarios_selection_contract_complete" in policy.guardrails
 
 
 def test_season_scenarios_task_uses_narrow_workspace_tools() -> None:

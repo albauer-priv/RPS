@@ -4,10 +4,12 @@ from rps.planning.season_structure import (
     build_cadence_options_context,
     build_phase_slot_context,
     build_planning_horizon_context,
+    build_selected_scenario_contract_context,
     build_selected_scenario_structure_context,
     render_cadence_options_block,
     render_phase_slot_context_block,
     render_planning_horizon_context_block,
+    render_selected_scenario_contract_block,
     render_selected_scenario_structure_block,
 )
 from rps.workspace.iso_helpers import IsoWeek
@@ -124,6 +126,86 @@ def test_selected_scenario_structure_context_includes_ceiling_first_archetype_fl
     assert context["season_archetype"] == "ceiling_first_durability"
     assert context["ceiling_first_permitted"] is True
     assert context["early_vo2_permitted"] is True
+
+
+def test_selected_scenario_contract_context_preserves_string_and_list_shapes() -> None:
+    context = build_selected_scenario_contract_context(
+        season_scenarios_payload={
+            "data": {
+                "planning_horizon_weeks": 16,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced build",
+                        "load_philosophy": "balanced_progressive",
+                        "risk_profile": "medium",
+                        "best_suited_if": "stable recovery",
+                        "key_differences": "balanced pressure",
+                        "main_payoff": "repeatable progression",
+                        "main_cost": "less conservative than A",
+                        "scenario_guidance": {
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": ["Preserve continuity."],
+                            "event_alignment_notes": ["B-event rehearsal."],
+                            "risk_flags": ["Needs stable recovery."],
+                            "kpi_guardrail_notes": ["Stay repeatable."],
+                            "decision_notes": ["Chosen for balanced progression."],
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 4,
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                            "phase_plan_summary": {"full_phases": 4, "shortened_phases": []},
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
+                        },
+                    }
+                ],
+            }
+        },
+        selection_payload={"data": {"selected_scenario_id": "B", "selection_source": "user", "selection_rationale": "Balanced choice"}},
+    )
+
+    assert context["recovery_margin"] == "medium"
+    assert context["constraint_summary"] == ["Preserve continuity."]
+    assert context["kpi_guardrail_notes"] == ["Stay repeatable."]
+    assert context["decision_notes"] == ["Chosen for balanced progression."]
+
+
+def test_selected_scenario_contract_block_renders_structured_lists() -> None:
+    block = render_selected_scenario_contract_block(
+        {
+            "selected_scenario_id": "B",
+            "scenario_name": "Balanced build",
+            "selection_source": "user",
+            "selection_rationale": "Balanced choice",
+            "load_posture": "balanced_progressive",
+            "recovery_margin": "medium",
+            "fatigue_exposure": "moderate",
+            "specificity_density": "controlled",
+            "load_philosophy": "balanced_progressive",
+            "risk_profile": "medium",
+            "best_suited_if": "stable recovery",
+            "key_differences": "balanced pressure",
+            "main_payoff": "repeatable progression",
+            "main_cost": "less conservative than A",
+            "constraint_summary": ["Preserve continuity."],
+            "kpi_guardrail_notes": ["Stay repeatable."],
+            "decision_notes": ["Chosen for balanced progression."],
+            "event_alignment_notes": ["B-event rehearsal."],
+            "risk_flags": ["Needs stable recovery."],
+            "season_archetype": "none",
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+            "forbidden_intensity_domains": ["SWEET_SPOT", "THRESHOLD", "VO2MAX"],
+            "deload_cadence": "2:1:1",
+        }
+    )
+
+    assert "constraint_summary:" in block
+    assert "- Preserve continuity." in block
+    assert "kpi_guardrail_notes:" in block
+    assert "decision_notes:" in block
 
 
 def test_planning_horizon_context_uses_latest_abc_event() -> None:

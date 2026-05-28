@@ -66,6 +66,9 @@ Each scenario MUST include:
 - `key_differences`: string
 - `best_suited_if`: string
 - `scenario_guidance` (object; all fields required):
+  - `recovery_margin` (non-empty string; explicit recovery stance such as guarded / medium / high margin)
+  - `fatigue_exposure` (non-empty string; explicit fatigue posture such as low / moderate / high exposure)
+  - `specificity_density` (non-empty string; explicit specificity posture such as sparse / controlled / dense)
   - `deload_cadence` (string, e.g., `"3:1"`)
   - `phase_length_weeks` (int)
   - `phase_count_expected` (int)
@@ -79,9 +82,9 @@ Each scenario MUST include:
   - `season_archetype_rationale` (array of strings; may be empty when `season_archetype = none`)
   - `risk_flags` (array of strings; may be empty)
   - `fixed_rest_days` (array of strings; may be empty)
-  - `constraint_summary` (array of strings; may be empty)
-  - `kpi_guardrail_notes` (array of strings; may be empty)
-  - `decision_notes` (array of strings; may be empty)
+  - `constraint_summary` (non-empty array of strings)
+  - `kpi_guardrail_notes` (array of strings; structured guardrails, may be empty only when schema/guardrail policy explicitly allows it)
+  - `decision_notes` (array of strings; structured posture rationale, may be empty only when schema/guardrail policy explicitly allows it)
   - `intensity_guidance`:
     - `allowed_domains` (array, min 1)
     - `avoid_domains` (array; may be empty)
@@ -96,6 +99,10 @@ Notes:
   agenda intensity domains only:
   `NONE`, `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT`, `THRESHOLD`,
   `VO2MAX`.
+- `recovery_margin`, `fatigue_exposure`, and `specificity_density` are part of
+  the operational selected-scenario posture. They must be emitted directly in
+  `scenario_guidance`; later Season planning must not infer them from prose like
+  `more forgiving`, `higher pressure`, or `more specific`.
 - Proxy labels like `HIGH_INTENSITY_DENSITY`, `LIMITED_VO2MAX`, or
   `EXTRA_BUILD_OVERLAY` are invalid in intensity guidance and belong in
   `risk_flags` or `decision_notes` instead.
@@ -160,6 +167,9 @@ Notes:
         "key_differences": "Lower peak load, conservative intensity.",
         "best_suited_if": "Athlete prioritises completion and low risk.",
         "scenario_guidance": {
+          "recovery_margin": "high",
+          "fatigue_exposure": "low",
+          "specificity_density": "sparse",
           "deload_cadence": "3:1",
           "phase_length_weeks": 4,
           "phase_count_expected": 4,
@@ -192,6 +202,9 @@ Notes:
         "key_differences": "More tempo exposure than A.",
         "best_suited_if": "Athlete seeks performance gains with guardrails.",
         "scenario_guidance": {
+          "recovery_margin": "medium",
+          "fatigue_exposure": "moderate",
+          "specificity_density": "controlled",
           "deload_cadence": "2:1",
           "phase_length_weeks": 3,
           "phase_count_expected": 6,
@@ -224,6 +237,9 @@ Notes:
         "key_differences": "More intensity than A/B.",
         "best_suited_if": "Athlete accepts higher fatigue risk.",
         "scenario_guidance": {
+          "recovery_margin": "lower",
+          "fatigue_exposure": "high",
+          "specificity_density": "dense",
           "deload_cadence": "2:1:1",
           "phase_length_weeks": 4,
           "phase_count_expected": 4,

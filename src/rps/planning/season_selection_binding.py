@@ -34,6 +34,8 @@ CONTRACT_REQUIRED_FIELDS = (
     "constraint_summary",
     "event_alignment_notes",
     "risk_flags",
+    "kpi_guardrail_notes",
+    "decision_notes",
     "season_archetype",
     "allowed_intensity_domains",
     "forbidden_intensity_domains",
@@ -50,7 +52,6 @@ CONTRACT_NONEMPTY_FIELDS = (
     "specificity_density",
     "load_philosophy",
     "risk_profile",
-    "constraint_summary",
     "season_archetype",
     "deload_cadence",
 )
@@ -122,6 +123,15 @@ def _selection_binds_to_scenarios(selection_payload: JsonMap | None, scenarios_p
 
 def _contract_missing_fields(contract: JsonMap) -> list[str]:
     missing: list[str] = []
+    list_fields = {
+        "constraint_summary",
+        "event_alignment_notes",
+        "risk_flags",
+        "kpi_guardrail_notes",
+        "decision_notes",
+        "allowed_intensity_domains",
+        "forbidden_intensity_domains",
+    }
     for field in CONTRACT_REQUIRED_FIELDS:
         if field not in contract:
             missing.append(field)
@@ -132,8 +142,11 @@ def _contract_missing_fields(contract: JsonMap) -> list[str]:
                 missing.append(field)
             elif value is None:
                 missing.append(field)
-        elif field in {"allowed_intensity_domains", "forbidden_intensity_domains", "event_alignment_notes", "risk_flags"}:
+        elif field in list_fields:
             if not isinstance(value, list):
+                missing.append(field)
+                continue
+            if field == "constraint_summary" and not [item for item in value if isinstance(item, str) and item.strip()]:
                 missing.append(field)
     return missing
 

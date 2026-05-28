@@ -28,6 +28,10 @@ Season-Planner retains binding decision authority.
 - Use the AVAILABILITY artefact (user-managed input) and fixed rest days.
   in scenario guidance (constraints summary and phase shaping).
 - Provide three scenarios (A/B/C) with clear trade-offs.
+- Emit the canonical operational scenario posture directly in
+  `scenario_guidance`, including `recovery_margin`, `fatigue_exposure`,
+  `specificity_density`, structured constraint summaries, and structured
+  decision / KPI notes.
 - Do not create season plans or governance decisions.
 
 ### Season-Planner
@@ -53,6 +57,10 @@ The `SEASON_SCENARIOS` artefact MUST include:
   - `scenario_id` in {A, B, C}
   - `name`, `core_idea`, `load_philosophy`, `risk_profile`,
     `key_differences`, `best_suited_if`, `scenario_guidance`
+  - canonical operational posture fields in `scenario_guidance`:
+    `recovery_margin`, `fatigue_exposure`, `specificity_density`,
+    `constraint_summary`, `event_alignment_notes`, `risk_flags`,
+    `kpi_guardrail_notes`, `decision_notes`
   - Scenario guidance planning math (advisory only):
     `phase_count_expected`, `max_shortened_phases`, `shortening_budget_weeks`
 - `data.planning_horizon_weeks` must match the weeks implied by `meta.iso_week_range`.
@@ -70,6 +78,9 @@ The `SEASON_SCENARIO_SELECTION` artefact MUST include:
   scenario generation rules.
 - Scenario guidance (phase suggestions, deload cadence) is advisory and may be
   adjusted by Season-Planner.
+- Scenario guidance posture fields are not optional narrative hints once
+  emitted; they form the canonical selected-scenario posture consumed by later
+  binding/runtime steps.
 - If scenario guidance includes planning math fields, Season-Planner must
   compute its own phase count from the selected calendar range and cross-check.
 - Risk flags, event alignment, and intensity guidance are advisory and may be

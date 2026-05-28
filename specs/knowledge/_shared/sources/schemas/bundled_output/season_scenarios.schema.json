@@ -91,6 +91,9 @@
             "shortening_budget_weeks",
             "phase_plan_summary",
             "season_archetype",
+            "recovery_margin",
+            "fatigue_exposure",
+            "specificity_density",
             "event_alignment_notes",
             "risk_flags",
             "fixed_rest_days",
@@ -165,6 +168,18 @@
                 "ceiling_first_durability"
               ]
             },
+            "recovery_margin": {
+              "type": "string",
+              "minLength": 1
+            },
+            "fatigue_exposure": {
+              "type": "string",
+              "minLength": 1
+            },
+            "specificity_density": {
+              "type": "string",
+              "minLength": 1
+            },
             "season_archetype_rationale": {
               "type": "array",
               "items": {
@@ -195,6 +210,7 @@
             },
             "constraint_summary": {
               "type": "array",
+              "minItems": 1,
               "items": {
                 "type": "string",
                 "minLength": 1
@@ -382,6 +398,9 @@
                   "shortening_budget_weeks",
                   "phase_plan_summary",
                   "season_archetype",
+                  "recovery_margin",
+                  "fatigue_exposure",
+                  "specificity_density",
                   "event_alignment_notes",
                   "risk_flags",
                   "fixed_rest_days",
@@ -456,6 +475,18 @@
                       "ceiling_first_durability"
                     ]
                   },
+                  "recovery_margin": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "fatigue_exposure": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "specificity_density": {
+                    "type": "string",
+                    "minLength": 1
+                  },
                   "season_archetype_rationale": {
                     "type": "array",
                     "items": {
@@ -486,6 +517,7 @@
                   },
                   "constraint_summary": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
                       "type": "string",
                       "minLength": 1
@@ -933,6 +965,9 @@
                   "shortening_budget_weeks",
                   "phase_plan_summary",
                   "season_archetype",
+                  "recovery_margin",
+                  "fatigue_exposure",
+                  "specificity_density",
                   "event_alignment_notes",
                   "risk_flags",
                   "fixed_rest_days",
@@ -1007,6 +1042,18 @@
                       "ceiling_first_durability"
                     ]
                   },
+                  "recovery_margin": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "fatigue_exposure": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "specificity_density": {
+                    "type": "string",
+                    "minLength": 1
+                  },
                   "season_archetype_rationale": {
                     "type": "array",
                     "items": {
@@ -1037,6 +1084,7 @@
                   },
                   "constraint_summary": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
                       "type": "string",
                       "minLength": 1

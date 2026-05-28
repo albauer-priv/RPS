@@ -8,6 +8,15 @@ metadata:
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
 Field completion contract:
+- `scenario_guidance.recovery_margin` = explicit recovery stance as a non-empty string
+  - define it locally as how much schedule, fatigue, and continuity disruption the scenario can absorb before it should downshift
+  - preferred examples: `high`, `medium`, `lower but usable`
+- `scenario_guidance.fatigue_exposure` = explicit fatigue posture as a non-empty string
+  - define it locally as how much accumulated fatigue the scenario intentionally tolerates while still remaining coherent
+  - preferred examples: `low`, `moderate`, `high but conditional`
+- `scenario_guidance.specificity_density` = explicit specificity posture as a non-empty string
+  - define it locally as how dense and how fatigue-coupled the scenario's event-specific work becomes
+  - preferred examples: `sparse`, `controlled`, `dense`
 - `name` = short chooser label
   - preferred examples: `Durability-first, frequent reset`, `Balanced build, controlled pressure`, `Specificity-under-fatigue, higher ambition`
 - `core_idea` = one-sentence scenario promise
@@ -31,10 +40,13 @@ Field completion contract:
 - `event_alignment_notes` = future-only active event logic
   - preferred example: `Matches the target horizon well by supporting a steadier progression toward the September A event.`
 - `constraint_summary` = binding practical constraints
+  - keep it as a structured string array, not one joined paragraph
   - preferred examples: `Fixed rest days are Monday and Friday.`, `Weekly availability remains limited on weekdays and higher on the weekend.`
 - `kpi_guardrail_notes` = pacing / efficiency / metabolic guardrails, not sales prose
+  - keep it as a structured string array
   - preferred example: `Keep long-ride pacing aligned with the brevet-ultra sustainable to fast-competitive boundary rather than chasing intensity for its own sake.`
 - `decision_notes` = why this cadence and posture were chosen
+  - keep it as a structured string array
   - preferred examples: `This is the control scenario: it emphasizes stability and recoverability.`, `Cadence is intentionally held as 2:1 here to maintain frequent resets; differentiation comes from lower load ambition and lower fatigue exposure.`
 - `assumptions` = what must stay true for the scenario to remain valid
   - preferred example: `Weekend training remains the primary place for longer work.`
@@ -47,10 +59,11 @@ Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
-4. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
-5. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
-6. Write `best_suited_if` as a short concrete selection sentence, not generic praise. Use explicit positive markers such as `stable recovery`, `uncertain recovery`, `continuity priority`, `recoverability`, `load tolerance`, `fatigue exposure tolerance`, `travel`, `logistics`, `lower recovery margin`, or `recovery margin`.
-7. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
+4. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
+5. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
+6. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
+7. Write `best_suited_if` as a short concrete selection sentence, not generic praise. Use explicit positive markers such as `stable recovery`, `uncertain recovery`, `continuity priority`, `recoverability`, `load tolerance`, `fatigue exposure tolerance`, `travel`, `logistics`, `lower recovery margin`, or `recovery margin`.
+8. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
 
 kJ-first scenario methodology:
 - In ultra/brevet planning, the planned kJ-envelope is the leading steering quantity for scenario identity.
@@ -95,6 +108,9 @@ Required content per scenario:
 - `scenario_id`, `name`, `core_idea`, `load_philosophy`, `risk_profile`, `key_differences`, `best_suited_if`
 - `typical_week_feel`, `main_payoff`, `main_cost`, `what_gets_prioritized`, `what_gets_de_emphasized`
 - `scenario_guidance` with:
+  - `recovery_margin`
+  - `fatigue_exposure`
+  - `specificity_density`
   - `deload_cadence`
   - `phase_length_weeks`
   - `phase_count_expected`
@@ -203,6 +219,8 @@ Internal consistency checks:
 - If Scenario C uses no additional domains beyond `ENDURANCE` or `TEMPO`, make the ambition visible through B2B, hard-late, pre-load, event simulation, or other specificity-under-fatigue markers.
 
 Hard rules:
+- the active scenario-generation layer is the front-loaded source of operational posture; do not defer recovery, fatigue, or specificity stance to Selection, Season planning, review, writer, or renderer
+- the active scenario-generation layer must be self-contained for operational posture: define `recovery_margin`, `fatigue_exposure`, and `specificity_density` locally here and serialize them directly
 - output exactly three scenarios
 - keep numeric weekly kJ targets for season/phase planning tasks
 - use canonical intensity domains
@@ -239,6 +257,8 @@ Positive execution pattern:
   - `what_gets_de_emphasized`
 - Include assumptions and unknowns so selection can happen without recomputing dates or phase counts.
 - Produce scenario guidance that helps Season Planning choose a coherent direction while preserving informational authority.
+- Serialize operational posture directly in `scenario_guidance`: emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` as explicit non-empty strings.
+- Keep `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` as structured string arrays.
 - Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.
 - Explain the tradeoff between robust, balanced, and ambitious choices in terms of exposure, recovery margin, specificity, and failure tolerance.
 - Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored, but do not mirror the recommendation cadence blindly into all scenarios.

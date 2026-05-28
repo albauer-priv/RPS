@@ -71,6 +71,7 @@ tasks:
       - artifact_envelope_basic
       - artifact_meta_data_present
       - artifact_schema_valid
+      - season_scenarios_selection_contract_complete
       - season_scenarios_profile_quality
   season_plan:
     guardrails:

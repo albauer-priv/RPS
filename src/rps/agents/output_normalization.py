@@ -876,6 +876,9 @@ def normalize_season_scenarios_document(
             if not isinstance(guidance, dict):
                 guidance = {}
             allowed_guidance_keys = {
+                "recovery_margin",
+                "fatigue_exposure",
+                "specificity_density",
                 "deload_cadence",
                 "phase_length_weeks",
                 "phase_count_expected",
@@ -895,6 +898,9 @@ def normalize_season_scenarios_document(
                 "unknowns",
             }
             guidance = {key: value for key, value in guidance.items() if key in allowed_guidance_keys}
+            guidance["recovery_margin"] = _text_value(guidance.get("recovery_margin"))
+            guidance["fatigue_exposure"] = _text_value(guidance.get("fatigue_exposure"))
+            guidance["specificity_density"] = _text_value(guidance.get("specificity_density"))
             cadence = str(guidance.get("deload_cadence") or "").strip()
             if cadence not in _CADENCE_PHASE_LENGTHS:
                 cadence = "3:1"

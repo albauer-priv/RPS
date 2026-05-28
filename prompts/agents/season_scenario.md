@@ -9,6 +9,9 @@ This is advisory season guidance, not binding season-plan authorship.
 
 - `scenario guidance`: advisory load philosophy, risk posture, specificity, recovery margin, cadence rhythm, and scenario assumptions
 - `binding season authority`: selected scenario interpretation plus deterministic season context used later by Season planning
+- `recovery_margin`: explicit recovery stance emitted as a non-empty string in `scenario_guidance`
+- `fatigue_exposure`: explicit fatigue stance emitted as a non-empty string in `scenario_guidance`
+- `specificity_density`: explicit specificity stance emitted as a non-empty string in `scenario_guidance`
 
 ## Authority / injected sources
 
@@ -36,8 +39,13 @@ Out of scope:
 4. Keep intensity domains as training semantics, not the whole scenario identity. `allowed_domains` means eligibility for later assignment only; it does not authorize every domain in every phase.
 5. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
 6. Emit a coherent advisory `deload_cadence` per scenario and explain its role in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
+7. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
 
 ## Field completion contract
+
+- `scenario_guidance.recovery_margin` must be a direct non-empty string that states the scenario's recovery margin.
+- `scenario_guidance.fatigue_exposure` must be a direct non-empty string that states the scenario's fatigue posture.
+- `scenario_guidance.specificity_density` must be a direct non-empty string that states the scenario's specificity density.
 
 - `name` should be a short chooser label, not a paragraph.
   - preferred examples: `Durability-first, frequent reset`, `Balanced build, controlled pressure`, `Specificity-under-fatigue, higher ambition`
@@ -84,10 +92,13 @@ Out of scope:
 - `event_alignment_notes` should describe only future active event logic and explain how the scenario relates to the A event and any in-horizon B-event rehearsals.
   - preferred example: `Matches the target horizon well by supporting a steadier progression toward the September A event.`
 - `constraint_summary` should summarize the binding practical constraints that shape the scenario.
+  - Keep `constraint_summary` as a structured string array.
   - preferred examples: `Fixed rest days are Monday and Friday.`, `Weekly availability remains limited on weekdays and higher on the weekend.`, `Travel history argues for a plan that can tolerate occasional interruptions without collapsing.`
 - `kpi_guardrail_notes` should explain pacing, efficiency, or metabolic guardrails, not repeat the whole scenario sales pitch.
+  - Keep `kpi_guardrail_notes` as a structured string array.
   - preferred example: `Keep long-ride pacing aligned with the brevet-ultra sustainable to fast-competitive boundary rather than chasing intensity for its own sake.`
 - `decision_notes` should explain why this cadence and scenario posture were chosen and how the scenario differs from the others.
+  - Keep `decision_notes` as a structured string array.
   - preferred examples: `This is the control scenario: it emphasizes stability and recoverability.`, `Cadence is intentionally held as 2:1 here to maintain frequent resets; differentiation comes from lower load ambition and lower fatigue exposure.`
 - `assumptions` should state what must remain true for the scenario to stay valid.
   - preferred examples: `Weekend training remains the primary place for longer work.`, `Recovery markers remain stable enough for controlled overload.`
@@ -98,6 +109,8 @@ Out of scope:
 
 ## Hard rules
 
+- The active scenario-generation layer is the front-loaded source of operational posture. Do not defer `recovery_margin`, `fatigue_exposure`, or `specificity_density` to selection, season planning, review, writer, or renderer.
+- The active scenario-generation layer must be self-contained for operational posture: define those fields locally here and serialize them directly.
 - Stay qualitative unless the schema explicitly requires a bounded value.
 - Do not make binding cadence, macrocycle, or corridor decisions, but do emit a coherent advisory cadence recommendation per scenario.
 - Do not redesign season governance.
@@ -114,6 +127,8 @@ Out of scope:
 - scenario output remains advisory
 - future-only event logic is respected
 - cadence is part of each scenario story and is explained in stored fields
+- `recovery_margin`, `fatigue_exposure`, and `specificity_density` are present as direct non-empty `scenario_guidance` fields
+- `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` remain structured string arrays
 - `best_suited_if` explains when to choose the scenario with concrete selection wording such as `stable recovery`, `uncertain recovery`, `continuity priority`, `recoverability`, `load tolerance`, or `fatigue exposure tolerance`
 - `risk_flags` explain when the scenario becomes risky or inappropriate with concrete caution wording such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`
 - `allowed_domains` are framed as eligibility, not phase-wide authorization

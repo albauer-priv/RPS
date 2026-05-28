@@ -32,11 +32,11 @@ def _scenario_payload(*, version_key: str = "2026-22__20260528_084859") -> dict[
                         "recovery_margin": "medium",
                         "fatigue_exposure": "moderate",
                         "specificity_density": "controlled",
-                        "constraint_summary": "Preserve continuity and legal domains.",
+                        "constraint_summary": ["Preserve continuity and legal domains."],
                         "event_alignment_notes": ["B-event rehearsal stays inside build."],
                         "risk_flags": ["Needs stable recovery."],
-                        "kpi_guardrail_notes": "Stay repeatable.",
-                        "decision_notes": "Chosen for balanced progression.",
+                        "kpi_guardrail_notes": ["Stay repeatable."],
+                        "decision_notes": ["Chosen for balanced progression."],
                         "deload_cadence": "2:1:1",
                         "phase_length_weeks": 4,
                         "phase_count_expected": 4,
@@ -93,6 +93,7 @@ def test_resolve_bound_season_selection_success() -> None:
     assert result["reason_code"] == "ready"
     assert result["selected_scenario_id"] == "B"
     assert result["selected_scenario_contract"]["load_posture"] == "balanced_progressive"
+    assert result["selected_scenario_contract"]["constraint_summary"] == ["Preserve continuity and legal domains."]
 
 
 def test_resolve_bound_season_selection_missing_selection() -> None:

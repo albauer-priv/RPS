@@ -61,6 +61,9 @@ Each scenario MUST include:
 
 #### Scenario guidance (required)
 Each scenario MUST include `scenario_guidance` with:
+- `recovery_margin` (non-empty string; canonical recovery posture)
+- `fatigue_exposure` (non-empty string; canonical fatigue posture)
+- `specificity_density` (non-empty string; canonical specificity posture)
 - `deload_cadence` (e.g., `3:1`, `2:1`, `2:1:1`)
 - `phase_length_weeks` (integer)
 - Planning math (advisory only):
@@ -73,7 +76,7 @@ Each scenario MUST include `scenario_guidance` with:
 - `event_alignment_notes` (array)
 - `risk_flags` (array)
 - `fixed_rest_days` (array)
-- `constraint_summary` (array)
+- `constraint_summary` (non-empty array)
 - `kpi_guardrail_notes` (array)
 - `decision_notes` (array)
 - `season_archetype` (`none` or `ceiling_first_durability`)
@@ -93,6 +96,11 @@ Runtime canonicalizes deterministic season-scenario fields before store:
   `phase_length_weeks`
 - `max_shortened_phases = 0` when `shortening_budget_weeks = 0`
 - `trace_data` / `trace_events` into data-vs-event artefact buckets
+
+The operational selected-scenario posture is authored here, not inferred later.
+Downstream Season planning may bind the selected scenario, but it must not
+invent `recovery_margin`, `fatigue_exposure`, or `specificity_density` from
+narrative prose after this artefact is produced.
 
 ## Authority Notes
 `SEASON_SCENARIOS` is **informational**; Season-Planner must treat it as advisory

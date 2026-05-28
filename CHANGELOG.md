@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added complete Season Scenario selection-contract hardening: `SEASON_SCENARIOS.scenario_guidance` now requires explicit operational posture (`recovery_margin`, `fatigue_exposure`, `specificity_density`) plus structured contract-note arrays, active scenario-generation prompt/task/skill guidance now frontloads those fields locally, and a new runtime guardrail rejects scenario outputs that are not selection-contract complete before they become planning-ready.
 - Added strict Season scenario-selection binding before `SEASON_PLAN`: a new central resolver now requires `SEASON_SCENARIO_SELECTION` to bind to the exact latest `SEASON_SCENARIOS` version, derives the canonical selected-scenario contract/structure once, and exposes consistent `selection_missing` / `selection_stale_vs_scenarios` / `selected_scenario_unresolved` / `selected_scenario_contract_incomplete` failure reasons.
 - Added a code-owned selected-scenario contract chain across Season, Phase, and Week planning: the chosen scenario is now derived once from `SEASON_SCENARIOS + SEASON_SCENARIO_SELECTION`, serialized into `SEASON_PLAN`, inherited into `PHASE_GUARDRAILS` / `PHASE_STRUCTURE`, injected into deterministic Phase/Week contexts, surfaced in planner snapshots, and summarized non-authoritatively in advisory memory.
 - Added deterministic contract checks and active-file hardening for scenario-posture preservation: Season/Phase/Week planner prompts, review prompts, writer prompts, task descriptions, and synthesis skills now frontload selected/inherited posture handling, while new tests cover contract propagation through snapshots, workspace tools, runtime normalization, and planning validation.
@@ -32,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed selected-scenario contract extraction and rendering to preserve canonical field types: `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` now remain structured string arrays end-to-end instead of collapsing through scalar-only extraction.
+- Changed project package version to `0.19.5` to capture the complete Season Scenario selection-contract rollout, including schema tightening, producer-side completeness enforcement, and canonical typed contract extraction.
 - Changed Plan Hub readiness, Plan -> Season selection status, athlete-state snapshots, and Season planning runtime entrypoints to use the same strict selection-binding verdict instead of separate artifact-existence heuristics.
 - Changed Season active files so scenario interpretation treats the chosen scenario as binding Season posture, Season finalize/review require complete `selected_scenario_contract` carry-through, and the Season writer now fails closed on missing contract posture fields.
 - Changed project package version to `0.19.4` to capture the selected-scenario contract authority-chain rollout and downstream planning-behavior change.
