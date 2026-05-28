@@ -189,9 +189,12 @@ tasks:
       here. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly
       explain in `decision_notes` and/or `kpi_guardrail_notes` that it is only
       sparse / limited / occasional ceiling-support or fresh-only permission,
-      not the primary scenario identity, and that the ambition instead comes
-      from specificity-under-fatigue, density, event simulation, or load
-      posture; otherwise omit `VO2MAX`.
+      include the exact phrase `not primary identity`, and say that the
+      ambition instead comes from `specificity-under-fatigue`, `density`,
+      `event simulation`, or `load posture`; otherwise omit `VO2MAX`. Preferred copyable wording:
+      `VO2MAX remains sparse ceiling-support only when
+      fresh-only, not primary identity; the scenario ambition comes from
+      specificity-under-fatigue, density, and event simulation.`
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario

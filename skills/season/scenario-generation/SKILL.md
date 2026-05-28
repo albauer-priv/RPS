@@ -167,7 +167,7 @@ Intensity-domain semantics:
 - Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
 - Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant and explain which other axes carry the differentiation.
 - Cluster wording (`cluster`, `event cluster`, `B-event cluster`, `peak cluster`) requires multiple relevant in-horizon events; otherwise use singular event wording.
-- If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse / limited / occasional ceiling-support or fresh-only permission, not the primary scenario identity, and that the ambition instead comes from specificity-under-fatigue, density, event simulation, or load posture.
+- If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse / limited / occasional ceiling-support or fresh-only permission, include the exact phrase `not primary identity`, and say that the ambition instead comes from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
 
 Season archetype semantics:
 - `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
@@ -196,6 +196,7 @@ Internal consistency checks:
 - If multiple scenarios share the same cadence, say directly that cadence is intentionally shared and that differentiation comes from other axes such as specificity-under-fatigue, recovery margin, or risk posture.
 - If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
 - Use explicit wording such as `ceiling-support`, `fresh`, `high-intensity`, `support`, or `VO2` so the rationale is unambiguous.
+- Preferred copyable sentence when Scenario C allows `VO2MAX`: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
 - Put the explanation in the actual stored scenario fields, not only in surrounding prose.
 - If you cannot write that explanation cleanly, remove `VO2MAX` from `allowed_domains`.
 - If Scenario B is the performance-default option, make economy/sub-threshold logic plausible in the scenario story.

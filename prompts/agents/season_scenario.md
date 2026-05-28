@@ -62,11 +62,12 @@ Out of scope:
 17. If multiple scenarios share the same `deload_cadence`, explicitly state that cadence is intentionally held constant and that differentiation instead comes from load philosophy, specificity-under-fatigue, recovery margin, intensity permissions, or risk posture.
 18. Cluster wording requires multiple relevant in-horizon events. Do not use `cluster`, `event cluster`, `B-event cluster`, or `peak cluster` language for a single future event.
 19. `season_archetype` defaults to `none`. Use `ceiling_first_durability` only when the stored scenario fields explicitly justify early ceiling support, enough runway, preserved later durability/specificity work, and recovery tolerance.
-20. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in stored `decision_notes` and/or `kpi_guardrail_notes` that it is only sparse / limited / occasional `ceiling-support` or `fresh-only` permission, not primary identity, and that the ambition instead comes from specificity-under-fatigue, density, event simulation, or load posture.
+20. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in stored `decision_notes` and/or `kpi_guardrail_notes` that it is only sparse / limited / occasional `ceiling-support` or `fresh-only` permission, `not primary identity`, and that the ambition instead comes from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
 21. If that explanation cannot be stated cleanly in the stored scenario fields, omit `VO2MAX` from Scenario C.
-22. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
-23. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
-24. Leave binding structural decisions to Season planning.
+22. Preferred copyable wording for Scenario C when `VO2MAX` is allowed: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
+23. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
+24. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
+25. Leave binding structural decisions to Season planning.
 
 ## Remaining field rules
 
@@ -119,7 +120,7 @@ Out of scope:
 - no binding season-plan logic leaked into the scenario
 - tradeoffs and assumptions are explicit
 - if scenarios share cadence, the shared-cadence rationale is explicit
-- if Scenario C includes `VO2MAX`, the stored scenario fields explicitly explain sparse ceiling-support / fresh-only permission and non-primary identity
+- if Scenario C includes `VO2MAX`, the stored scenario fields explicitly explain sparse ceiling-support / fresh-only permission, include the phrase `not primary identity`, and make the ambition come from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`
 
 ## Output discipline
 

@@ -55,6 +55,8 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in prompt
     assert "`decision_notes` and/or `kpi_guardrail_notes`" in prompt
     assert "omit `VO2MAX` from Scenario C" in prompt
+    assert "not primary identity" in prompt
+    assert "Preferred copyable wording for Scenario C when `VO2MAX` is allowed" in prompt
     assert 'Do not let Scenario C become "the VO2 scenario" by default.' in prompt
     assert "Only future / in-horizon events are provided to this task." in prompt
     assert "Do not infer active scenario logic from past" in prompt
@@ -74,6 +76,8 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "`season_archetype` defaults to `none`." in prompt
     assert "Objective mismatch may be named as unresolved upstream input context only." in prompt
     assert "If Scenario C includes `VO2MAX` in `allowed_domains`" in task_config
+    assert "Preferred copyable wording:" in task_config
+    assert "not primary identity" in task_config
     assert "Only future / in-horizon events are provided to this task" in task_config
     assert "`best_suited_if`" in task_config and "must carry explicit positive selection conditions" in task_config
     assert "Write `best_suited_if` as" in task_config
@@ -88,6 +92,8 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "mismatch may be named as unresolved input context only" in task_config
     assert "do not resolve it" in task_config
     assert "If Scenario C includes `VO2MAX`" in scenario_skill
+    assert "Preferred copyable sentence when Scenario C allows `VO2MAX`" in scenario_skill
+    assert "not primary identity" in scenario_skill
     assert "`scenario_guidance.deload_cadence` is not" in task_config
     assert "decorative phase math" in task_config
     assert "coherent cadence" in task_config and "per scenario" in task_config

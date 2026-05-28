@@ -101,6 +101,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_planning_done_notification — optional banner/email/push when planning completes.
 - [ ] FEAT_auto_retry_transient — auto-retry transient failures with clear logs.
 - [ ] FEAT_season_scenarios_tool_read_dedup — reduce redundant `workspace_get_input` / `workspace_get_latest` calls in `season_scenarios`, enforce consistent artifact/input type casing, and prefer one-pass minimal context reads per task run so guardrail retries do not amplify log noise and token/tool cost.
+- [ ] FEAT_planner_positive_frontloading_rollout — apply the documented positive-frontloading template from `FEAT_season_scenario_positive_frontloading` to other planner families (Season/Phase/Week) where repeated wording drift appears, while keeping review/writer out of semantic repair duty.
 - [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
 - [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
 - [ ] FEAT_crewai_planning_profile_tuning — refine where CrewAI planning is enabled, keeping deterministic Load/S5/Cadence outside planning LLM authority.
