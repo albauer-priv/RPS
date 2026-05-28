@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed project package version to `0.19.6` to capture the Season/Week contract-validation assembly fix, including deterministic Season selected-scenario contract injection in the final Season guardrail path and canonical `WEEK_PLAN.data.inherited_planning_posture` validation.
 - Changed selected-scenario contract extraction and rendering to preserve canonical field types: `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` now remain structured string arrays end-to-end instead of collapsing through scalar-only extraction.
 - Changed project package version to `0.19.5` to capture the complete Season Scenario selection-contract rollout, including schema tightening, producer-side completeness enforcement, and canonical typed contract extraction.
 - Changed Plan Hub readiness, Plan -> Season selection status, athlete-state snapshots, and Season planning runtime entrypoints to use the same strict selection-binding verdict instead of separate artifact-existence heuristics.
