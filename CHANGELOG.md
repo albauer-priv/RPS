@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added strict Season scenario-selection binding before `SEASON_PLAN`: a new central resolver now requires `SEASON_SCENARIO_SELECTION` to bind to the exact latest `SEASON_SCENARIOS` version, derives the canonical selected-scenario contract/structure once, and exposes consistent `selection_missing` / `selection_stale_vs_scenarios` / `selected_scenario_unresolved` / `selected_scenario_contract_incomplete` failure reasons.
 - Added a code-owned selected-scenario contract chain across Season, Phase, and Week planning: the chosen scenario is now derived once from `SEASON_SCENARIOS + SEASON_SCENARIO_SELECTION`, serialized into `SEASON_PLAN`, inherited into `PHASE_GUARDRAILS` / `PHASE_STRUCTURE`, injected into deterministic Phase/Week contexts, surfaced in planner snapshots, and summarized non-authoritatively in advisory memory.
 - Added deterministic contract checks and active-file hardening for scenario-posture preservation: Season/Phase/Week planner prompts, review prompts, writer prompts, task descriptions, and synthesis skills now frontload selected/inherited posture handling, while new tests cover contract propagation through snapshots, workspace tools, runtime normalization, and planning validation.
 - Added three verified metadata-level core evidence entries for personalized and broad carbohydrate-intake review literature: Li et al. 2025, Jeukendrup 2014, and Noakes 2026, each with canonical PubMed/DOI locators and `pending_curation` status so the evidence-refresh action can upgrade them on the next pass.
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed Plan Hub readiness, Plan -> Season selection status, athlete-state snapshots, and Season planning runtime entrypoints to use the same strict selection-binding verdict instead of separate artifact-existence heuristics.
+- Changed Season active files so scenario interpretation treats the chosen scenario as binding Season posture, Season finalize/review require complete `selected_scenario_contract` carry-through, and the Season writer now fails closed on missing contract posture fields.
 - Changed project package version to `0.19.4` to capture the selected-scenario contract authority-chain rollout and downstream planning-behavior change.
 - Changed project package version to `0.19.1` to capture the evidence-refresh manual-seed upgrade path and GitHub Action processing behavior change.
 - Changed `AGENTS.md` so repository agents must check before every commit/push whether a SemVer version-number bump is required, especially for behavior, schema, contract, and operational workflow changes.
@@ -45,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed evidence-curation instructions and validation so `metadata_only` outputs stay identification-level, while `abstract_curated` outputs remain explicitly abstract-bounded instead of reading like final deterministic coaching policy.
 
 ### Fixed
+- Fixed the UI/runtime mismatch where `Selected Scenario` could appear ready while `SEASON_PLAN` later failed inside CrewAI normalization; Season planning now aborts before any planning task starts when selection binding is stale or incomplete.
 - Fixed literature/reference handling to fail closed: active skills/prompts/runtime guidance now treat the canonical local evidence library as the only operative source, require `omit instead of invent` behavior for uncertain locators, and drop unverifiable publication links from persisted outputs instead of preserving model-supplied guesses.
 - Fixed evidence-curation semantic leakage for weak source bases: discovery tags and title paraphrases no longer count as findings for `metadata_only` sources, `background_only` can no longer be mixed with stronger allowed-use categories for `abstract_curated` sources, and the quality gate now rejects direct imperative coaching language derived too aggressively from abstract-only material.
 - Fixed remaining season-plan audit gaps around traceability and taper enforcement: final `SEASON_PLAN` trace merges now collapse duplicate `(artifact, version_key)` references to one authoritative row, and the week selector now enforces `allowed: false` taper rules at runtime so `SWEET_SPOT_EXTENSIVE` is actually blocked during `taper_freshening`.

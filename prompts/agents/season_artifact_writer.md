@@ -13,6 +13,7 @@ Write the final season artefact data only.
 
 - Preserve the approved Season Plan bundle rather than replanning it.
 - Treat the approved bundle and writer task contract as authoritative.
+- Treat `selected_scenario_contract` as exact-copy / fail-closed content from the approved bundle.
 - If an envelope is required by the active task, treat `meta` as a non-authoritative placeholder: runtime owns and overwrites persisted metadata before validation and save.
 
 ## Scope and non-scope
@@ -48,6 +49,7 @@ Copy, do not infer:
   taper/event-kJ explanation, and season-level role-week guardrail rendering
 
 If the approved bundle is missing any of those fields, stop rather than guess.
+If `selected_scenario_contract` is incomplete, stop rather than inferring missing posture fields.
 If Review classified a Pass 1 or Pass 2 return finding, writer must not run and must not attempt semantic recovery.
 
 ## Output discipline

@@ -14,6 +14,7 @@ import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
 from rps.orchestrator.queue_scheduler import enqueue_run, ensure_queue_dirs, start_queue_scheduler
+from rps.planning.season_selection_binding import resolve_bound_season_selection
 from rps.prompts.loader import PromptLoader
 from rps.ui.run_store import (
     RunRecord,
@@ -693,6 +694,75 @@ def _artifact_readiness_status(
     return "ready", "Latest artifact is current."
 
 
+def _scenario_selection_readiness_step(
+    *,
+    store: LocalArtifactStore,
+    athlete_id: str,
+    status_map: dict[str, ReadinessStep],
+    spec: ArtifactReadinessSpec,
+) -> ReadinessStep:
+    """Return readiness for Selected Scenario using strict binding to latest scenarios."""
+
+    upstream = status_map.get("season_scenarios")
+    if upstream and upstream.status in {"missing", "blocked"}:
+        return ReadinessStep(
+            key=spec["key"],
+            label=spec["label"],
+            status="blocked",
+            summary="Blocked",
+            reason="Required upstream artifacts are missing.",
+            fix_label=spec["fix_label"],
+        )
+
+    scenarios_payload = (
+        store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+        if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIOS)
+        else None
+    )
+    selection_payload = (
+        store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        if store.latest_exists(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        else None
+    )
+    binding = resolve_bound_season_selection(
+        season_scenarios_payload=scenarios_payload if isinstance(scenarios_payload, dict) else {},
+        selection_payload=selection_payload if isinstance(selection_payload, dict) else {},
+    )
+    status = "ready"
+    summary = "Ready"
+    reason = str(binding.get("reason_message") or "Selected Scenario is valid and bound to the latest Season Scenarios.")
+    if not bool(binding.get("ok")):
+        reason_code = str(binding.get("reason_code") or "")
+        if reason_code == "selection_missing":
+            status = "missing"
+            summary = "Missing selection"
+        elif reason_code == "scenarios_missing":
+            status = "missing"
+            summary = "Missing scenarios"
+        elif reason_code == "selection_stale_vs_scenarios":
+            status = "stale"
+            summary = "Selection stale; reselect required"
+        elif reason_code == "selected_scenario_unresolved":
+            status = "blocked"
+            summary = "Selection unresolved"
+        else:
+            status = "blocked"
+            summary = "Selection contract incomplete"
+    selection_meta = _as_map(_as_map(selection_payload).get("meta"))
+    return ReadinessStep(
+        key=spec["key"],
+        label=spec["label"],
+        status=status,
+        summary=summary,
+        reason=reason,
+        latest=_as_str(binding.get("selection_version_key")),
+        run_id=_as_str(selection_meta.get("run_id")),
+        created_at=_as_str(selection_meta.get("created_at")),
+        optional=spec["optional"],
+        fix_label=spec["fix_label"],
+    )
+
+
 def _artifact_readiness_step(
     *,
     index: JsonMap,
@@ -703,6 +773,27 @@ def _artifact_readiness_step(
     spec: ArtifactReadinessSpec,
 ) -> ReadinessStep:
     """Build readiness state for a single planning artefact."""
+    if spec["key"] == "scenario_selection":
+        return _scenario_selection_readiness_step(
+            store=store,
+            athlete_id=athlete_id,
+            status_map=status_map,
+            spec=spec,
+        )
+
+    if spec["key"] == "season_plan":
+        selection_step = status_map.get("scenario_selection")
+        if selection_step and selection_step.status != "ready":
+            return ReadinessStep(
+                key=spec["key"],
+                label=spec["label"],
+                status="blocked",
+                summary="Blocked",
+                reason=selection_step.reason or "Selected Scenario is not ready.",
+                optional=spec["optional"],
+                fix_label=spec["fix_label"],
+            )
+
     record = _latest_record(index, spec["artifact_type"])
     if not store.latest_exists(athlete_id, spec["artifact_type"]):
         record = None

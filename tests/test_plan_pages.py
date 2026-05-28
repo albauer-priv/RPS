@@ -39,12 +39,23 @@ def _write_minimal_scenario_chain(
         ArtifactType.SEASON_SCENARIOS,
         version_key,
         {
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version_key": version_key,
+                "run_id": f"store_scenarios_{version_key}",
+            },
             "data": {
                 "planning_horizon_weeks": horizon_weeks,
                 "scenarios": [
                     {
                         "scenario_id": selected_scenario_id,
                         "name": "Minimal contract scenario",
+                        "load_philosophy": "balanced_progressive",
+                        "risk_profile": "medium",
+                        "best_suited_if": "stable recovery",
+                        "key_differences": "Balances continuity and progression.",
+                        "main_payoff": "Repeatable load progression.",
+                        "main_cost": "Less conservative than scenario A.",
                         "scenario_guidance": {
                             "deload_cadence": cadence,
                             "phase_length_weeks": phase_length,
@@ -55,8 +66,18 @@ def _write_minimal_scenario_chain(
                                 "full_phases": full_phases,
                                 "shortened_phases": shortened,
                             },
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": "Preserve continuity and legal intensity domains.",
+                            "intensity_guidance": {
+                                "allowed_domains": ["ENDURANCE", "TEMPO"],
+                                "avoid_domains": ["VO2MAX"],
+                            },
                             "event_alignment_notes": ["Test scenario anchor."],
                             "risk_flags": [],
+                            "kpi_guardrail_notes": "Stay repeatable.",
+                            "decision_notes": "Selected for testing.",
                         },
                     }
                 ],
@@ -66,6 +87,10 @@ def _write_minimal_scenario_chain(
         run_id=f"store_scenarios_{version_key}",
         update_latest=True,
     )
+    scenarios_doc = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIOS)
+    scenarios_meta = scenarios_doc.get("meta", {}) if isinstance(scenarios_doc, dict) else {}
+    actual_scenarios_version = scenarios_meta.get("version_key", version_key)
+    actual_scenarios_run_id = scenarios_meta.get("run_id", f"store_scenarios_{version_key}")
     existing_selection: dict[str, object] = {}
     try:
         loaded = store.load_latest(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
@@ -77,12 +102,31 @@ def _write_minimal_scenario_chain(
     if not isinstance(selection_data, dict):
         selection_data = {}
     selection_data["selected_scenario_id"] = selected_scenario_id
-    selection_data.setdefault("season_scenarios_ref", "season_scenarios/latest.json")
+    selection_data["season_scenarios_ref"] = actual_scenarios_version
+    selection_data.setdefault("selection_source", "user")
+    selection_data.setdefault("selection_rationale", "Test selection")
+    selection_data.setdefault("notes", ["Selected in test helper."])
+    selection_data.setdefault("kpi_moving_time_rate_guidance_selection", None)
     store.save_document(
         athlete_id,
         ArtifactType.SEASON_SCENARIO_SELECTION,
         version_key,
-        {"data": selection_data},
+        {
+            "meta": {
+                "artifact_type": "SEASON_SCENARIO_SELECTION",
+                "version_key": version_key,
+                "run_id": f"store_selection_{version_key}",
+                "trace_upstream": [
+                    {
+                        "artifact": "SEASON_SCENARIOS",
+                        "version": actual_scenarios_version,
+                        "version_key": actual_scenarios_version,
+                        "run_id": actual_scenarios_run_id,
+                    }
+                ],
+            },
+            "data": selection_data,
+        },
         producer_agent="test",
         run_id=f"store_selection_{version_key}",
         update_latest=True,
@@ -457,92 +501,118 @@ def test_plan_hub_reset_delete_latest(tmp_path):
 
 def test_plan_hub_readiness_requires_latest_files(tmp_path):
     from rps.ui.pages.plan import hub as plan_hub
-    from rps.workspace.index_manager import WorkspaceIndexManager
 
+    object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace("test_athlete")
-
-    inputs_dir = tmp_path / "test_athlete" / "inputs"
-    inputs_dir.mkdir(parents=True, exist_ok=True)
-    (inputs_dir / "season_brief_2026.md").write_text("test", encoding="utf-8")
-    (inputs_dir / "events_2026.md").write_text("test", encoding="utf-8")
-
-    for artifact_type in (
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.LOGISTICS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+    _write_minimal_availability(store, "test_athlete")
+    store.save_document(
+        "test_athlete",
         ArtifactType.KPI_PROFILE,
-        ArtifactType.AVAILABILITY,
-        ArtifactType.ZONE_MODEL,
+        "2026-05",
+        {"data": {}},
+        producer_agent="test",
+        run_id="store_kpi",
+        update_latest=True,
+    )
+    store.save_document(
+        "test_athlete",
         ArtifactType.WELLNESS,
-        ArtifactType.SEASON_SCENARIOS,
-        ArtifactType.SEASON_SCENARIO_SELECTION,
-    ):
-        path = store.latest_path("test_athlete", artifact_type)
-        path.write_text("{}", encoding="utf-8")
-
-    scenarios_key = "2026-05"
-    scenarios_path = store.versioned_path("test_athlete", ArtifactType.SEASON_SCENARIOS, scenarios_key)
-    scenarios_path.write_text("{}", encoding="utf-8")
-    selection_key = "2026-05"
-    selection_path = store.versioned_path("test_athlete", ArtifactType.SEASON_SCENARIO_SELECTION, selection_key)
-    selection_path.write_text("{}", encoding="utf-8")
-
-    version_key = "2026-05"
-    version_path = store.versioned_path("test_athlete", ArtifactType.SEASON_PLAN, version_key)
-    version_path.write_text("{}", encoding="utf-8")
-
-    manager = WorkspaceIndexManager(root=tmp_path, athlete_id="test_athlete")
-    index = {
-        "athlete_id": "test_athlete",
-        "updated_at": "2026-02-01T00:00:00Z",
-        "artefacts": {
-            ArtifactType.SEASON_SCENARIOS.value: {
-                "latest": {
-                    "version_key": scenarios_key,
-                    "path": str(scenarios_path.relative_to(tmp_path / "test_athlete")),
-                    "created_at": "2026-02-01T00:00:00Z",
-                },
-                "versions": {
-                    scenarios_key: {
-                        "version_key": scenarios_key,
-                        "path": str(scenarios_path.relative_to(tmp_path / "test_athlete")),
-                        "created_at": "2026-02-01T00:00:00Z",
-                    }
-                },
-            },
-            ArtifactType.SEASON_SCENARIO_SELECTION.value: {
-                "latest": {
-                    "version_key": selection_key,
-                    "path": str(selection_path.relative_to(tmp_path / "test_athlete")),
-                    "created_at": "2026-02-01T00:00:00Z",
-                },
-                "versions": {
-                    selection_key: {
-                        "version_key": selection_key,
-                        "path": str(selection_path.relative_to(tmp_path / "test_athlete")),
-                        "created_at": "2026-02-01T00:00:00Z",
-                    }
-                },
-            },
-            ArtifactType.SEASON_PLAN.value: {
-                "latest": {
-                    "version_key": version_key,
-                    "path": str(version_path.relative_to(tmp_path / "test_athlete")),
-                    "created_at": "2026-02-01T00:00:00Z",
-                },
-                "versions": {
-                    version_key: {
-                        "version_key": version_key,
-                        "path": str(version_path.relative_to(tmp_path / "test_athlete")),
-                        "created_at": "2026-02-01T00:00:00Z",
-                    }
-                },
-            }
-        },
-    }
-    manager.save(index)
+        "2026-05",
+        {"data": {}},
+        producer_agent="test",
+        run_id="store_wellness",
+        update_latest=True,
+    )
+    _write_minimal_scenario_chain(store, "test_athlete", version_key="2026-05", selected_scenario_id="A")
 
     readiness = plan_hub._compute_readiness("test_athlete", 2026, 5)
     readiness_map = {step.key: step for step in readiness}
+    assert readiness_map["scenario_selection"].status == "ready"
     assert readiness_map["season_plan"].status in {"missing", "blocked"}
+
+
+def test_plan_hub_marks_selection_stale_after_new_scenarios(tmp_path):
+    from rps.ui.pages.plan import hub as plan_hub
+
+    object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+    store.latest_path("test_athlete", ArtifactType.LOGISTICS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
+    _write_minimal_availability(store, "test_athlete")
+    store.save_document(
+        "test_athlete",
+        ArtifactType.KPI_PROFILE,
+        "2026-05",
+        {"data": {}},
+        producer_agent="test",
+        run_id="store_kpi",
+        update_latest=True,
+    )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.WELLNESS,
+        "2026-05",
+        {"data": {}},
+        producer_agent="test",
+        run_id="store_wellness",
+        update_latest=True,
+    )
+    _write_minimal_scenario_chain(store, "test_athlete", version_key="2026-05", selected_scenario_id="A")
+    store.save_document(
+        "test_athlete",
+        ArtifactType.SEASON_SCENARIOS,
+        "2026-06",
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIOS", "version_key": "2026-06", "run_id": "store_scenarios_2026-06"},
+            "data": {
+                "planning_horizon_weeks": 3,
+                "scenarios": [
+                    {
+                        "scenario_id": "A",
+                        "name": "Fresh scenarios",
+                        "load_philosophy": "balanced_progressive",
+                        "risk_profile": "medium",
+                        "best_suited_if": "Stable recovery",
+                        "key_differences": "New scenario set",
+                        "main_payoff": "Updated options",
+                        "main_cost": "Requires reselection",
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1",
+                            "phase_length_weeks": 3,
+                            "phase_count_expected": 1,
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                            "phase_plan_summary": {"full_phases": 1, "shortened_phases": []},
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": "Updated scenario set.",
+                            "event_alignment_notes": ["Needs fresh confirmation."],
+                            "risk_flags": [],
+                            "kpi_guardrail_notes": "Stay repeatable.",
+                            "decision_notes": "New scenarios invalidated the old selection.",
+                        },
+                    }
+                ],
+            },
+        },
+        producer_agent="test",
+        run_id="store_scenarios_2026-06",
+        update_latest=True,
+    )
+
+    readiness = plan_hub._compute_readiness("test_athlete", 2026, 6)
+    readiness_map = {step.key: step for step in readiness}
+
+    assert readiness_map["scenario_selection"].status == "stale"
+    assert readiness_map["scenario_selection"].summary == "Selection stale; reselect required"
+    assert readiness_map["season_plan"].status == "blocked"
 
 
 def test_plan_hub_scoped_week_run_forces_rerun_when_ready():
@@ -1204,12 +1274,23 @@ def test_create_season_plan_injects_selected_scenario_phase_math(
         ArtifactType.SEASON_SCENARIOS,
         "2026-12",
         {
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version_key": "2026-12",
+                "run_id": "test_scenarios",
+            },
             "data": {
                 "planning_horizon_weeks": 17,
                 "scenarios": [
                     {
                         "scenario_id": "B",
                         "name": "Compact resilient build",
+                        "load_philosophy": "balanced_progressive",
+                        "risk_profile": "medium",
+                        "best_suited_if": "Compressed horizon with stable recovery.",
+                        "key_differences": "Uses shorter phases with bounded compression.",
+                        "main_payoff": "Preserves continuity in a compressed horizon.",
+                        "main_cost": "Less room for recovery drift.",
                         "scenario_guidance": {
                             "deload_cadence": "2:1",
                             "phase_length_weeks": 3,
@@ -1220,8 +1301,18 @@ def test_create_season_plan_injects_selected_scenario_phase_math(
                                 "full_phases": 5,
                                 "shortened_phases": [{"len": 2, "count": 1}],
                             },
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": "Keep compression bounded and repeatable.",
+                            "intensity_guidance": {
+                                "allowed_domains": ["ENDURANCE", "TEMPO"],
+                                "avoid_domains": ["VO2MAX"],
+                            },
                             "event_alignment_notes": ["A-event backplanned."],
                             "risk_flags": ["Compressed horizon."],
+                            "kpi_guardrail_notes": "Do not over-compress early load.",
+                            "decision_notes": "Chosen for compact progression test.",
                         },
                     }
                 ],
@@ -1231,11 +1322,36 @@ def test_create_season_plan_injects_selected_scenario_phase_math(
         run_id="test_scenarios",
         update_latest=True,
     )
+    scenarios_doc = store.load_latest("test_athlete", ArtifactType.SEASON_SCENARIOS)
+    scenarios_meta = scenarios_doc.get("meta", {}) if isinstance(scenarios_doc, dict) else {}
+    scenarios_version_key = scenarios_meta.get("version_key", "2026-12")
     store.save_document(
         "test_athlete",
         ArtifactType.SEASON_SCENARIO_SELECTION,
         "2026-12",
-        {"data": {"selected_scenario_id": "B", "season_scenarios_ref": "season_scenarios/latest.json"}},
+        {
+            "meta": {
+                "artifact_type": "SEASON_SCENARIO_SELECTION",
+                "version_key": "2026-12",
+                "run_id": "test_selection",
+                "trace_upstream": [
+                    {
+                        "artifact": "SEASON_SCENARIOS",
+                        "version": scenarios_version_key,
+                        "version_key": scenarios_version_key,
+                        "run_id": "test_scenarios",
+                    }
+                ],
+            },
+            "data": {
+                "selected_scenario_id": "B",
+                "season_scenarios_ref": scenarios_version_key,
+                "selection_source": "user",
+                "selection_rationale": "Compact resilient build.",
+                "notes": ["Test selection."],
+                "kpi_moving_time_rate_guidance_selection": None,
+            },
+        },
         producer_agent="test",
         run_id="test_selection",
         update_latest=True,

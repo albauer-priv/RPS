@@ -3,14 +3,18 @@ from pathlib import Path
 
 def test_active_files_frontload_selected_and_inherited_posture() -> None:
     season_prompt = Path("prompts/agents/season_plan_manager.md").read_text(encoding="utf-8")
+    scenario_prompt = Path("prompts/agents/scenario_interpreter.md").read_text(encoding="utf-8")
     phase_prompt = Path("prompts/agents/phase_bundle_manager.md").read_text(encoding="utf-8")
     week_prompt = Path("prompts/agents/week_planner.md").read_text(encoding="utf-8")
     season_skill = Path("skills/season/plan-synthesis/SKILL.md").read_text(encoding="utf-8")
+    scenario_skill = Path("skills/season/scenario-interpretation/SKILL.md").read_text(encoding="utf-8")
     phase_skill = Path("skills/phase/bundle-synthesis/SKILL.md").read_text(encoding="utf-8")
     week_skill = Path("skills/week/plan-synthesis/SKILL.md").read_text(encoding="utf-8")
 
     assert "selected_scenario_contract" in season_prompt
     assert "selected_scenario_contract" in season_skill
+    assert "binding Season-operational posture" in scenario_prompt
+    assert "binding once chosen" in scenario_skill
     assert "inherited scenario contract" in phase_prompt.lower()
     assert "inherited_scenario_contract" in phase_skill
     assert "inherited_planning_posture" in week_prompt

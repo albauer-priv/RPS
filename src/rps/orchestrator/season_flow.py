@@ -26,8 +26,6 @@ from rps.planning.deterministic_context import (
     build_season_phase_load_block,
     build_season_phase_slot_block,
     build_season_scenario_horizon_block,
-    build_selected_scenario_contract_block,
-    build_selected_scenario_structure_block,
     render_context_blocks,
 )
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
@@ -36,6 +34,7 @@ from rps.planning.scenario_recommendation import (
     filter_future_planning_events_payload,
     render_scenario_recommendation_block,
 )
+from rps.planning.season_selection_binding import resolve_bound_season_selection
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -122,6 +121,26 @@ def _as_list(value: object) -> list[object]:
 
 def _as_map(value: object) -> JsonMap:
     return value if isinstance(value, dict) else {}
+
+
+def _binding_failure_result(result: JsonMap) -> OrchestratorResult:
+    """Return a consistent early-abort result for season selection binding failures."""
+
+    reason_code = str(result.get("reason_code") or "selected_scenario_binding_failed")
+    reason_message = str(result.get("reason_message") or "Selected scenario binding failed.")
+    logger.warning(
+        "selected_scenario_binding_failed reason_code=%s selection=%s scenarios=%s",
+        reason_code,
+        result.get("selection_version_key") or "missing",
+        result.get("scenarios_version_key") or "missing",
+    )
+    return {
+        "ok": False,
+        "reason_code": reason_code,
+        "error": reason_message,
+        "selection_version_key": result.get("selection_version_key"),
+        "scenarios_version_key": result.get("scenarios_version_key"),
+    }
 
 
 def _extract_profile_user_data(profile_payload: JsonMap | None) -> JsonMap:
@@ -453,6 +472,7 @@ def create_season_plan(
                 [
                     ("athlete_profile", athlete_profile_payload),
                     ("kpi_profile", kpi_profile_payload),
+                    ("season_scenarios", season_scenarios_payload),
                     ("season_scenario_selection", selection_payload),
                     ("availability", availability_payload),
                     ("planning_events", planning_events_payload),
@@ -491,26 +511,20 @@ def create_season_plan(
                 f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
                 "activity artefacts. "
             )
-        selected_structure_context = build_selected_scenario_structure_block(
+        binding = resolve_bound_season_selection(
             season_scenarios_payload=season_scenarios_payload or {},
             selection_payload=selection_payload or {},
             selected_scenario_id=selected,
         )
-        selected_scenario_contract = build_selected_scenario_contract_block(
-            season_scenarios_payload=season_scenarios_payload or {},
-            selection_payload=selection_payload or {},
-            selected_scenario_id=selected,
-        )
-        if not selected_structure_context.payload:
-            return {
-                "ok": False,
-                "error": "Season deterministic selected scenario structure context is missing.",
-            }
-        if not selected_scenario_contract.payload:
-            return {
-                "ok": False,
-                "error": "Season deterministic selected scenario contract context is missing.",
-            }
+        if not bool(binding.get("ok")):
+            return _binding_failure_result(binding)
+        selected_structure_payload = _as_map(binding.get("selected_scenario_structure_context"))
+        selected_scenario_contract_payload = _as_map(binding.get("selected_scenario_contract"))
+        season_allowed_intensity_domains = [
+            str(item)
+            for item in _as_list(selected_structure_payload.get("allowed_intensity_domains"))
+            if str(item).strip()
+        ]
         load_capacity_block = render_context_blocks(
             [
                 build_load_capacity_block(
@@ -520,9 +534,7 @@ def create_season_plan(
                     logistics_payload=logistics_payload or {},
                     zone_model_payload=zone_model_payload or {},
                     season_plan_payload={},
-                    season_allowed_intensity_domains=list(
-                        selected_structure_context.payload.get("allowed_intensity_domains") or []
-                    ),
+                    season_allowed_intensity_domains=season_allowed_intensity_domains,
                     wellness_payload=wellness_payload or {},
                     kpi_profile_payload=kpi_profile_payload or {},
                     kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),
@@ -535,7 +547,7 @@ def create_season_plan(
                 "error": "Season deterministic load capacity context is missing availability_load_capacity_kj.",
             }
         phase_slot_context = build_season_phase_slot_block(
-            selected_structure_context=selected_structure_context.payload,
+            selected_structure_context=selected_structure_payload,
             target_week=target_week,
         )
         phase_slot_context_payload = phase_slot_context.payload
@@ -557,8 +569,8 @@ def create_season_plan(
             logistics_payload=logistics_payload or {},
             planning_events_payload=planning_events_payload or {},
             zone_model_payload=zone_model_payload or {},
-            selected_structure_context=selected_structure_context.payload,
-            selected_scenario_contract=selected_scenario_contract.payload,
+            selected_structure_context=selected_structure_payload,
+            selected_scenario_contract=selected_scenario_contract_payload,
             wellness_payload=wellness_payload or {},
             kpi_profile_payload=kpi_profile_payload or {},
             kpi_rate_band=selected_kpi_rate_band_from_selection(selection_payload or {}),
@@ -574,7 +586,10 @@ def create_season_plan(
                 "ok": False,
                 "error": "Season deterministic phase load context is invalid: " + "; ".join(load_issues or ["missing"]),
             }
-        selected_scenario_structure_block = render_context_blocks([selected_structure_context, selected_scenario_contract])
+        selected_scenario_structure_block = (
+            str(binding.get("selected_scenario_structure_markdown") or "")
+            + str(binding.get("selected_scenario_contract_markdown") or "")
+        )
         phase_slot_block = render_context_blocks([phase_slot_context])
         season_phase_load_block = render_context_blocks([season_phase_load_context])
     except Exception as exc:
@@ -606,7 +621,7 @@ def create_season_plan(
     with guardrail_runtime_context(
         phase_slot_context=phase_slot_context_payload,
         season_phase_load_context=season_phase_load_context_payload,
-        selected_scenario_contract=selected_scenario_contract.payload,
+        selected_scenario_contract=selected_scenario_contract_payload,
         athlete_profile_payload=athlete_profile_payload or {},
         kpi_profile_payload=kpi_profile_payload or {},
         availability_payload=availability_payload or {},

@@ -8,6 +8,7 @@ from jinja2 import BaseLoader, Environment
 
 from rps.orchestrator.season_flow import create_season_plan, create_season_scenarios
 from rps.planning.scenario_recommendation import build_scenario_recommendation_context
+from rps.planning.season_selection_binding import resolve_bound_season_selection
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -221,6 +222,7 @@ def _action_select_scenario(selected: str, rationale: str | None, kpi_selection:
             {
                 "artifact": "SEASON_SCENARIOS",
                 "version": scenarios_meta.get("version_key"),
+                "version_key": scenarios_meta.get("version_key"),
                 "run_id": scenarios_meta.get("run_id"),
             },
             {
@@ -239,7 +241,7 @@ def _action_select_scenario(selected: str, rationale: str | None, kpi_selection:
         "notes": "Scenario selection recorded from UI inputs.",
     }
     data = {
-        "season_scenarios_ref": scenarios_meta.get("run_id") or scenarios_meta.get("version_key") or ISO_WEEK_RANGE_FALLBACK,
+        "season_scenarios_ref": scenarios_meta.get("version_key") or ISO_WEEK_RANGE_FALLBACK,
         "selected_scenario_id": selected.upper(),
         "selection_source": selection_source,
         "selection_rationale": selection_rationale,
@@ -287,13 +289,22 @@ def _action_season_plan(selected: str) -> str:
         ),
         loggers=CAPTURE_LOGGERS,
     )
-    set_status(
-        status_state="done",
-        title="Season",
-        message="Season plan created.",
-        last_action="Create Season Plan",
-        last_run_id=run_id,
-    )
+    if isinstance(result, dict) and not result.get("ok", True):
+        set_status(
+            status_state="error",
+            title="Season",
+            message=str(result.get("error") or "Season plan creation failed."),
+            last_action="Create Season Plan",
+            last_run_id=run_id,
+        )
+    else:
+        set_status(
+            status_state="done",
+            title="Season",
+            message="Season plan created.",
+            last_action="Create Season Plan",
+            last_run_id=run_id,
+        )
     return output or _format_agent_result(result, f"Season plan created: {run_id}")
 
 
@@ -302,34 +313,6 @@ def _load_latest_payload(store: LocalArtifactStore, artifact_type: ArtifactType)
         return None
     payload = store.load_latest(athlete_id, artifact_type)
     return payload if isinstance(payload, dict) else None
-
-
-def _selection_references_scenarios(selection: dict | None, scenarios: dict | None) -> bool:
-    if not isinstance(selection, dict) or not isinstance(scenarios, dict):
-        return False
-    selection_meta = selection.get("meta")
-    scenarios_meta = scenarios.get("meta")
-    if not isinstance(selection_meta, dict) or not isinstance(scenarios_meta, dict):
-        return False
-    scenario_run_id = scenarios_meta.get("run_id")
-    scenario_version = scenarios_meta.get("version_key")
-    for entry in selection_meta.get("trace_upstream") or []:
-        if not isinstance(entry, dict) or entry.get("artifact") != "SEASON_SCENARIOS":
-            continue
-        if scenario_run_id and entry.get("run_id") == scenario_run_id:
-            return True
-        if scenario_version and entry.get("version") == scenario_version:
-            return True
-        if scenario_version and entry.get("version_key") == scenario_version:
-            return True
-    selection_data = selection.get("data")
-    if isinstance(selection_data, dict):
-        ref = selection_data.get("season_scenarios_ref")
-        if scenario_run_id and ref == scenario_run_id:
-            return True
-        if scenario_version and ref == scenario_version:
-            return True
-    return False
 
 
 def _render_scenario_recommendation(context: dict | None) -> None:
@@ -429,7 +412,11 @@ selected_default = None
 if selection_payload:
     selected_default = selection_payload.get("data", {}).get("selected_scenario_id")
 
-selection_matches_latest_scenarios = _selection_references_scenarios(selection_payload, scenarios_payload)
+selection_binding = resolve_bound_season_selection(
+    season_scenarios_payload=scenarios_payload or {},
+    selection_payload=selection_payload or {},
+)
+selection_matches_latest_scenarios = bool(selection_binding.get("ok"))
 
 recommendation_context = None
 if scenarios_payload:
@@ -491,8 +478,10 @@ with st.expander("Actions", expanded=False):
         if scenario_options:
             if selection_payload and not selection_matches_latest_scenarios:
                 st.warning(
-                    "The saved scenario selection references an older Season Scenarios artifact. "
-                    "Scenario letters may have changed; confirm a fresh selection before creating a Season Plan."
+                    str(
+                        selection_binding.get("reason_message")
+                        or "The saved scenario selection no longer binds to the latest Season Scenarios. Confirm a fresh selection."
+                    )
                 )
             with st.form("season_scenario_selection"):
                 selected = st.radio(
@@ -570,8 +559,10 @@ st.subheader("Scenario Recommendation")
 _render_scenario_recommendation(recommendation_context)
 if selection_payload and not selection_matches_latest_scenarios:
     st.warning(
-        "The saved scenario selection references an older Season Scenarios artifact. "
-        "Confirm a fresh scenario selection before creating a Season Plan."
+        str(
+            selection_binding.get("reason_message")
+            or "The saved scenario selection no longer binds to the latest Season Scenarios. Confirm a fresh selection."
+        )
     )
 
 st.subheader("Season Scenarios")

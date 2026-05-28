@@ -134,6 +134,7 @@ from rps.crewai_runtime.provider import (
     resolve_crewai_provider_config,
 )
 from rps.crewai_runtime.skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
+from rps.orchestrator import season_flow
 from rps.orchestrator.coach_operations import (
     preview_feed_forward_operation,
     preview_report_operation,
@@ -538,6 +539,122 @@ def test_guardrail_failure_emits_runtime_event(monkeypatch) -> None:
     assert any(ok is False for ok, _payload in failed)
     assert any(event["event_type"] == "CREW_TASK_GUARDRAIL_FAILED" for event in emitted)
     assert any(event["guardrail"] == "season_scenario_selection_shape" for event in emitted)
+
+
+def test_create_season_plan_aborts_before_crew_when_selection_binding_fails(
+    monkeypatch, tmp_path: Path
+) -> None:
+    invoked = False
+
+    def _fake_run_agent_multi_output(*args, **kwargs):
+        nonlocal invoked
+        invoked = True
+        return {"ok": True}
+
+    monkeypatch.setattr(season_flow, "run_agent_multi_output", _fake_run_agent_multi_output)
+
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    store.ensure_workspace(athlete_id)
+    store.save_document(
+        athlete_id,
+        ArtifactType.ATHLETE_PROFILE,
+        "2026-22",
+        {"data": {}},
+        producer_agent="test",
+        run_id="profile",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.AVAILABILITY,
+        "2026-22",
+        {"data": {"weekly_hours": {"typical": 12.0}, "fixed_rest_days": ["Mon", "Fri"]}},
+        producer_agent="test",
+        run_id="availability",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIOS,
+        "2026-22__new",
+        {
+            "meta": {"version_key": "2026-22__new", "run_id": "scenarios-new"},
+            "data": {
+                "planning_horizon_weeks": 16,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced build",
+                        "load_philosophy": "balanced_progressive",
+                        "risk_profile": "medium",
+                        "best_suited_if": "Stable recovery",
+                        "key_differences": "Balanced pressure",
+                        "main_payoff": "Repeatable progression",
+                        "main_cost": "Less conservative than A",
+                        "scenario_guidance": {
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": "Preserve continuity.",
+                            "event_alignment_notes": ["B-event rehearsal"],
+                            "risk_flags": [],
+                            "kpi_guardrail_notes": "Stay repeatable.",
+                            "decision_notes": "Selected for test.",
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 4,
+                            "phase_plan_summary": {"full_phases": 4, "shortened_phases": []},
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
+                        },
+                    }
+                ],
+            },
+        },
+        producer_agent="test",
+        run_id="scenarios-new",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_SCENARIO_SELECTION,
+        "2026-22__sel",
+        {
+            "meta": {
+                "version_key": "2026-22__sel",
+                "run_id": "selection",
+                "trace_upstream": [
+                    {"artifact": "SEASON_SCENARIOS", "version": "2026-22__old", "version_key": "2026-22__old", "run_id": "scenarios-old"}
+                ],
+            },
+            "data": {
+                "season_scenarios_ref": "2026-22__old",
+                "selected_scenario_id": "B",
+                "selection_source": "user",
+                "selection_rationale": "Balanced choice",
+                "notes": ["stale selection"],
+                "kpi_moving_time_rate_guidance_selection": None,
+            },
+        },
+        producer_agent="test",
+        run_id="selection",
+        update_latest=True,
+    )
+
+    result = season_flow.create_season_plan(
+        lambda _agent_name: SimpleNamespace(workspace_root=tmp_path),
+        athlete_id=athlete_id,
+        year=2026,
+        week=22,
+        run_id="season-plan",
+        selected=None,
+    )
+
+    assert result["ok"] is False
+    assert result["reason_code"] == "selection_stale_vs_scenarios"
+    assert invoked is False
 
 
 def test_emit_runtime_exception_event_records_structured_llm_failure(tmp_path: Path) -> None:

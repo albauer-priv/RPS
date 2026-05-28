@@ -21,7 +21,7 @@ from rps.orchestrator.resolved_context import (
     build_resolved_zone_model_context_block,
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts
-from rps.planning.deterministic_context import build_selected_scenario_contract_block
+from rps.planning.season_selection_binding import resolve_bound_season_selection
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
@@ -591,11 +591,23 @@ def build_athlete_state_snapshot_document(
     zone_model_block = build_resolved_zone_model_context_block(store, athlete_id)
     wellness_block = _build_wellness_prompt_block(wellness_payload)
     selected_scenarios_payload = _try_load_latest(store, athlete_id, ArtifactType.SEASON_SCENARIOS) or {}
-    selected_scenario_contract_block = build_selected_scenario_contract_block(
+    selection_binding = resolve_bound_season_selection(
         season_scenarios_payload=selected_scenarios_payload,
         selection_payload=selection_payload or {},
         selected_scenario_id=None,
-    ).markdown
+    )
+    selected_scenario_contract_block = (
+        str(selection_binding.get("selected_scenario_contract_markdown") or "")
+        if bool(selection_binding.get("ok"))
+        else ""
+    )
+    selected_scenario_binding_status = ""
+    if not bool(selection_binding.get("ok")):
+        selected_scenario_binding_status = (
+            "**Selected Scenario Binding Status**\n"
+            f"binding_status: {selection_binding.get('reason_code') or 'unknown'}\n"
+            f"binding_reason: {selection_binding.get('reason_message') or 'Selected scenario binding failed.'}\n"
+        )
 
     prompt_blocks = _non_empty_prompt_blocks(
         {
@@ -606,6 +618,7 @@ def build_athlete_state_snapshot_document(
             "planning_events": planning_events_block,
             "zone_model": zone_model_block,
             "wellness": wellness_block,
+            "selected_scenario_binding_status": selected_scenario_binding_status,
             "selected_scenario_contract": selected_scenario_contract_block,
         }
     )
@@ -614,6 +627,7 @@ def build_athlete_state_snapshot_document(
         [
             ("athlete_profile", ArtifactType.ATHLETE_PROFILE, athlete_profile_payload or {}),
             ("kpi_profile", ArtifactType.KPI_PROFILE, kpi_profile_payload or {}),
+            ("season_scenarios", ArtifactType.SEASON_SCENARIOS, selected_scenarios_payload or {}),
             ("season_scenario_selection", ArtifactType.SEASON_SCENARIO_SELECTION, selection_payload or {}),
             ("availability", ArtifactType.AVAILABILITY, availability_payload or {}),
             ("planning_events", ArtifactType.PLANNING_EVENTS, planning_events_payload or {}),

@@ -90,7 +90,11 @@ def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
         artifact_type=ArtifactType.SEASON_SCENARIOS,
         version_key="2026-22__20260528_064757",
         document={
-            "meta": {"artifact_type": "SEASON_SCENARIOS"},
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version_key": "2026-22__20260528_064757",
+                "run_id": "scenarios",
+            },
             "data": {
                 "planning_horizon_weeks": 16,
                 "scenarios": [
@@ -98,8 +102,8 @@ def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
                         "scenario_id": "B",
                         "name": "Balanced build",
                         "load_philosophy": "balanced_progressive",
-                        "best_suited_if": ["stable recovery"],
-                        "key_differences": ["balanced pressure"],
+                        "best_suited_if": "stable recovery",
+                        "key_differences": "balanced pressure",
                         "main_payoff": "repeatable progression",
                         "main_cost": "less conservative than A",
                         "risk_profile": "medium",
@@ -107,12 +111,11 @@ def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
                             "recovery_margin": "medium",
                             "fatigue_exposure": "moderate",
                             "specificity_density": "controlled",
-                            "constraint_summary": ["preserve continuity"],
+                            "constraint_summary": "preserve continuity",
                             "event_alignment_notes": ["B event rehearsal"],
                             "risk_flags": ["needs stable recovery"],
-                            "kpi_guardrail_notes": ["stay repeatable"],
-                            "decision_notes": ["athlete selected B"],
-                            "season_archetype": "none",
+                            "kpi_guardrail_notes": "stay repeatable",
+                            "decision_notes": "athlete selected B",
                             "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
                             "deload_cadence": "2:1:1",
                             "phase_length_weeks": 4,
@@ -133,12 +136,71 @@ def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
         athlete_id,
         target_week=IsoWeek(year=2026, week=22),
         selection_payload={
-            "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "version_key": "2026-22__sel", "run_id": "sel"},
-            "data": {"selected_scenario_id": "B", "selection_source": "athlete", "selection_rationale": "Controlled progression"},
+            "meta": {
+                "artifact_type": "SEASON_SCENARIO_SELECTION",
+                "version_key": "2026-22__sel",
+                "run_id": "sel",
+                "trace_upstream": [
+                    {
+                        "artifact": "SEASON_SCENARIOS",
+                        "version": "2026-22__20260528_064757",
+                        "version_key": "2026-22__20260528_064757",
+                        "run_id": "scenarios",
+                    }
+                ],
+            },
+            "data": {
+                "selected_scenario_id": "B",
+                "season_scenarios_ref": "2026-22__20260528_064757",
+                "selection_source": "athlete",
+                "selection_rationale": "Controlled progression",
+                "notes": ["Test selection."],
+                "kpi_moving_time_rate_guidance_selection": None,
+            },
         },
     )
     assert "selected_scenario_contract" in snapshot["data"]["prompt_blocks"]
     assert "load_posture: balanced_progressive" in snapshot["data"]["prompt_blocks"]["selected_scenario_contract"]
+
+
+def test_athlete_snapshot_omits_selected_scenario_contract_when_selection_is_stale(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    store.save_document(
+        athlete_id=athlete_id,
+        artifact_type=ArtifactType.SEASON_SCENARIOS,
+        version_key="2026-22__20260528_064757",
+        document={
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version_key": "2026-22__20260528_064757",
+                "run_id": "scenarios",
+            },
+            "data": {"planning_horizon_weeks": 16, "scenarios": []},
+        },
+        producer_agent="test",
+        run_id="test",
+    )
+    snapshot = build_athlete_state_snapshot_document(
+        store,
+        athlete_id,
+        target_week=IsoWeek(year=2026, week=22),
+        selection_payload={
+            "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "version_key": "2026-22__sel", "run_id": "sel"},
+            "data": {
+                "selected_scenario_id": "B",
+                "season_scenarios_ref": "older-version",
+                "selection_source": "athlete",
+                "selection_rationale": "Controlled progression",
+                "notes": ["Test selection."],
+                "kpi_moving_time_rate_guidance_selection": None,
+            },
+        },
+    )
+    blocks = snapshot["data"]["prompt_blocks"]
+    assert "selected_scenario_contract" not in blocks
+    assert "selected_scenario_binding_status" in blocks
+    assert "selection_stale_vs_scenarios" in blocks["selected_scenario_binding_status"]
 
 
 def test_planning_snapshot_includes_inherited_posture_blocks(tmp_path):

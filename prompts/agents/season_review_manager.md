@@ -40,6 +40,7 @@ Out of scope:
 Formal review confirmation checklist:
 
 - finalize already produced a review-ready bundle
+- selected_scenario_contract present, complete, and preserved without posture drift
 - cadence-family coherence (`2:1`, `3:1`, `2:1:1`)
 - ramp class plausibility and sustained overload realism
 - deload, mini-reset, reload, and re-entry semantics
@@ -56,6 +57,8 @@ Formal review confirmation checklist:
 - Do not expect a synthetic `candidate_season_bundle` workspace artefact.
 - Objective mismatch remains warning-only and input-owned.
 - Review may classify findings, but it must not repair semantics itself.
+- If `selected_scenario_contract` is missing, incomplete, or drifted, choose `replan_required`.
+- If planner-owned `blocking_issues` remain in the candidate bundle, choose `replan_required`.
 - Use Pass 1 return when structure, authority, macrocycle framing, or phase-slot skeleton is wrong.
 - Use Pass 2 return when structure is intact but rationale, overload semantics, legality explanation, or writer-ready summary is incomplete.
 

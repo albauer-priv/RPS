@@ -61,6 +61,7 @@ Pass 3 checklist:
 - no positive prose framing for domains that final phase semantics forbid
 - phase blueprints coherent with selected-scenario authority and deterministic season phase load context
 - cadence / overload / reset / taper logic coherent across the whole bundle
+- selected_scenario_contract complete and preserved without posture drift
 - cadence-family choice (`2:1`, `3:1`, `2:1:1`) justified from robustness, recovery, and risk context
 - ramp class explicit and consistent with cadence and robustness assumptions
 - deload, mini-reset, reload, and re-entry semantics kept distinct where policy requires it
@@ -68,6 +69,9 @@ Pass 3 checklist:
 - next-baseline logic conservative rather than anchored blindly to the single highest visible week
 - first Build entry after shortened/base/re-entry context explicitly readiness-gated
 - no Build intent contradicts its legal intensity domains
+- no unresolved `blocking_issues` remain in the writer-ready bundle
+- season-level summary explicitly carries selected scenario rationale, recovery margin, fatigue exposure, and specificity density
+- writer-ready handoff includes a complete `selected_scenario_contract` block
 - objective mismatch surfaced only as warning/revisit item, never silently ignored
 - if structure, macrocycle order, event anchoring, or phase-slot authority is wrong, route back to Pass 1
 - if structure is valid but rationale, overload semantics, domain explanation, or writer-ready summary is incomplete, route back to Pass 2
