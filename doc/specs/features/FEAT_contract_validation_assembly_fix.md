@@ -19,11 +19,13 @@ Owner: Planning Runtime
 **Current behavior**
 
 * Season planning derives a deterministic selected-scenario contract and uses guardrail validation before writing `SEASON_PLAN`.
+* Phase planning derives an inherited selected-scenario contract and validates normalized internal bundles before writing `PHASE_GUARDRAILS` / `PHASE_STRUCTURE` / `PHASE_PREVIEW`.
 * Week planning carries inherited planning posture in deterministic week context.
 
 **Problem**
 
 * `season_bundle_matches_contract(...)` assembled a synthetic Season candidate without `data.selected_scenario_contract`, then validated it against a deterministic authority that required the field.
+* `phase_bundle_matches_context(...)` assembled a synthetic Phase candidate without `data.inherited_scenario_contract`, then validated it against deterministic phase authority that required the field.
 * `validate_week_plan_against_week_context(...)` compared `week_calendar_context.inherited_planning_posture` against itself, so inherited-posture drift in a `WEEK_PLAN` payload could not be detected.
 
 **Constraints**
@@ -39,6 +41,7 @@ Owner: Planning Runtime
 **Goals**
 
 * [x] Fix the synthetic Season candidate assembly so deterministic selected-scenario contract validation works.
+* [x] Fix the synthetic Phase candidate assembly so deterministic inherited-scenario-contract validation works.
 * [x] Fix the Week inherited-planning-posture comparison so payload-vs-authority drift is detectable.
 * [x] Add regression tests that hit the real guardrail and contract-validation paths.
 
@@ -54,6 +57,7 @@ Owner: Planning Runtime
 **User/System behavior**
 
 * Valid Season planning runs no longer fail at final normalized contract validation because a code-built synthetic candidate forgot to carry `data.selected_scenario_contract`.
+* Valid Phase planning runs no longer fail at normalized bundle contract validation because a code-built synthetic candidate forgot to carry `data.inherited_scenario_contract`.
 * Week validation now checks `data.inherited_planning_posture` in the `WEEK_PLAN` payload against deterministic week authority instead of comparing context to itself.
 
 **UI impact**
@@ -72,7 +76,7 @@ Owner: Planning Runtime
 
 **Components / Modules**
 
-* `src/rps/crewai_runtime/guardrails.py`: fix Season synthetic-candidate assembly and add a narrow defensive check.
+* `src/rps/crewai_runtime/guardrails.py`: fix Season and Phase synthetic-candidate assembly and add narrow defensive checks.
 * `src/rps/planning/contracts.py`: correct Week payload-vs-authority comparison.
 * `src/rps/workouts/generator.py`: inject canonical `data.inherited_planning_posture` into deterministic `WEEK_PLAN` output.
 
@@ -80,7 +84,7 @@ Owner: Planning Runtime
 
 * Inputs: runtime guardrail context, deterministic season/phase/week contract blocks
 * Processing: synthetic candidate assembly and contract comparison
-* Outputs: valid Season/Week artifacts or deterministic contract failures only when payloads actually drift
+* Outputs: valid Season/Phase/Week artifacts or deterministic contract failures only when payloads actually drift
 
 **Schema / Artefacts**
 
@@ -95,7 +99,7 @@ Owner: Planning Runtime
 **Compatibility**
 
 * Backward compatible: Yes, with stricter correctness for Week payload validation
-* Breaking changes: Week plans that omit `data.inherited_planning_posture` would fail once validated against real authority, so the deterministic week writer now injects the field
+* Breaking changes: Week plans that omit `data.inherited_planning_posture` would fail once validated against real authority, so the deterministic week writer now injects the field; Phase bundles that omit inherited scenario contract no longer escape guardrail assembly bugs
 * Fallback behavior: none; deterministic authority remains required when present
 
 **Conflicts with ADRs / Principles**
@@ -114,7 +118,7 @@ Owner: Planning Runtime
 
 **Required refactoring**
 
-* Fix synthetic guardrail candidate construction
+* Fix synthetic guardrail candidate construction for Season and Phase
 * Fix one tautological contract comparison
 
 ---
@@ -125,7 +129,7 @@ Owner: Planning Runtime
 
 **Summary**
 
-* Patch the Season guardrail candidate, patch the Week validator, and ensure the deterministic Week writer emits the checked field.
+* Patch the Season and Phase guardrail candidates, patch the Week validator, and ensure the deterministic Week writer emits the checked field.
 
 **Pros**
 
@@ -165,6 +169,7 @@ Owner: Planning Runtime
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [x] Valid normalized Season bundle no longer fails because `data.selected_scenario_contract` is missing from the synthetic candidate.
+* [x] Valid normalized Phase bundle no longer fails because `data.inherited_scenario_contract` is missing from the synthetic candidate.
 * [x] Week contract validation compares `data.inherited_planning_posture` against deterministic authority.
 * [x] Deterministic `WEEK_PLAN` generation emits `data.inherited_planning_posture`.
 * [x] Validation passes: `python3 -m py_compile`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`

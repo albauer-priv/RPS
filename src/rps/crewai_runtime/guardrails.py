@@ -315,6 +315,7 @@ def phase_bundle_matches_context(result: Any) -> GuardrailResult:
     blueprints = [_as_map(item) for item in _as_list(mapping.get("week_blueprints"))]
     if not blueprints:
         return (False, "Phase bundle must include week_blueprints for contract validation.")
+    inherited_contract = _as_map(context.get("inherited_scenario_contract"))
     phase_payload = {
         "data": {
             "load_ranges": {
@@ -336,6 +337,10 @@ def phase_bundle_matches_context(result: Any) -> GuardrailResult:
             },
         }
     }
+    if inherited_contract:
+        phase_payload["data"]["inherited_scenario_contract"] = inherited_contract
+        if _as_map(_as_map(phase_payload.get("data")).get("inherited_scenario_contract")) != inherited_contract:
+            return (False, "Synthetic Phase candidate missing deterministic inherited_scenario_contract.")
     issues = validate_phase_against_execution_context(
         phase_payload=phase_payload,
         phase_execution_context=context,

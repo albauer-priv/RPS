@@ -55,6 +55,7 @@ from rps.crewai_runtime.guardrails import (
     build_task_guardrail_kwargs,
     des_diagnostic_only,
     guardrail_runtime_context,
+    phase_bundle_matches_context,
     phase_bundle_review_readiness,
     phase_s5_band_match,
     phase_week_role_load_coherence,
@@ -2435,6 +2436,58 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
     assert normalized["week_blueprints"][0]["week_role"] == "LOAD_1"
     assert normalized["week_blueprints"][0]["s5_band_min"] == 7800
     assert normalized["week_blueprints"][0]["s5_band_max"] == 8600
+
+
+def test_phase_bundle_matches_context_accepts_inherited_scenario_contract_in_synthetic_candidate() -> None:
+    draft_bundle = {
+        "phase_range": "2026-21--2026-23",
+        "phase_type": "PREPARATION",
+        "phase_intent": "base_preparation",
+        "week_blueprints": [
+            {"week": "2026-21", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
+        ],
+        "guardrails": {"phase_summary": []},
+        "structure": {"upstream_intent": []},
+        "preview": {"phase_intent_summary": []},
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-21--2026-23",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": None,
+            "inherited_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+            "week_role_by_iso_week": {"2026-21": "LOAD_1"},
+            "phase_s5_bands": [{"week": "2026-21", "band": {"min": 7800, "max": 8600}}],
+        }
+    ):
+        normalized = normalize_phase_draft_bundle(draft_bundle)
+        ok, message = phase_bundle_matches_context(normalized)
+
+    assert normalized["inherited_scenario_contract"]["selected_scenario_id"] == "B"
+    assert ok is True, message
+
+
+def test_phase_bundle_matches_context_does_not_require_missing_authority_contract() -> None:
+    mapping = {
+        "week_blueprints": [
+            {"week": "2026-21", "week_role": "LOAD_1", "s5_band_min": 7800, "s5_band_max": 8600},
+        ]
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "week_role_by_iso_week": {"2026-21": "LOAD_1"},
+            "phase_s5_bands": [{"week": "2026-21", "band": {"min": 7800, "max": 8600}}],
+        }
+    ):
+        ok, message = phase_bundle_matches_context(mapping)
+
+    assert ok is True, message
 
 
 def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None:

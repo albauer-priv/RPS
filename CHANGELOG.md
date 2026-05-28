@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a dedicated GitHub Actions evidence-refresh workflow that runs the canonical library refresh on Linux/Python 3.13, retries transient failures, and commits refreshed evidence outputs back to `main` only when files actually change.
 
 ### Changed
+- Changed project package version to `0.19.8` to capture the Phase normalized-bundle contract-assembly fix, preventing synthetic guardrail payloads from dropping deterministic inherited scenario contract authority before Phase artifact persistence.
 - Changed project package version to `0.19.7` to capture selected-scenario contract schema alignment across `SEASON_PLAN`, `PHASE_GUARDRAILS`, and `PHASE_STRUCTURE`, while explicitly keeping `WEEK_PLAN` reduced and `PHASE_PREVIEW` derivation-only.
 - Changed project package version to `0.19.6` to capture the Season/Week contract-validation assembly fix, including deterministic Season selected-scenario contract injection in the final Season guardrail path and canonical `WEEK_PLAN.data.inherited_planning_posture` validation.
 - Changed selected-scenario contract extraction and rendering to preserve canonical field types: `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` now remain structured string arrays end-to-end instead of collapsing through scalar-only extraction.
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed evidence-curation instructions and validation so `metadata_only` outputs stay identification-level, while `abstract_curated` outputs remain explicitly abstract-bounded instead of reading like final deterministic coaching policy.
 
 ### Fixed
+- Fixed Phase normalized-contract validation so the synthetic candidate used by `phase_bundle_matches_context` now carries `data.inherited_scenario_contract` from deterministic phase execution authority instead of failing early with a code-owned missing-contract mismatch.
 - Fixed Season store-time schema drift so `SEASON_PLAN.data.selected_scenario_contract` now accepts the full canonical contract shape, and fixed the same latent schema drift in `PHASE_GUARDRAILS.data.inherited_scenario_contract` and `PHASE_STRUCTURE.data.inherited_scenario_contract` before those Phase artifacts could fail next.
 - Fixed Season normalized-contract validation so the synthetic candidate used by `season_bundle_matches_contract` now carries `data.selected_scenario_contract` from deterministic runtime authority instead of failing late with a code-owned missing-contract mismatch.
 - Fixed Week planning contract validation so `validate_week_plan_against_week_context` now compares `WEEK_PLAN.data.inherited_planning_posture` against deterministic week authority, and deterministic week-plan generation now emits that payload field explicitly.
