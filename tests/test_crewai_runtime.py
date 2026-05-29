@@ -2155,7 +2155,9 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
     assert "THRESHOLD" in blueprint["forbidden_domains"]
     assert "VO2MAX" in blueprint["forbidden_domains"]
     assert blueprint["phase_taxonomy_version"] == "canonical_phase_taxonomy_v1"
-    assert blueprint["role_week_load_bands"] == ["2026-21: LOAD_1 7800-8600"]
+    assert blueprint["role_week_load_bands"] == [
+        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
+    ]
     assert normalized["season_load_envelope"]["expected_average_weekly_kj_range"] == {"min": 7800, "max": 9800}
     assert normalized["selected_scenario_contract"]["selected_scenario_id"] == "B"
     assert ok is True
@@ -2181,7 +2183,9 @@ def test_season_bundle_matches_contract_accepts_selected_scenario_contract_in_sy
                 "allowed_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
                 "allowed_load_modalities": ["NONE", "K3"],
                 "forbidden_domains": ["THRESHOLD", "VO2MAX"],
-                "role_week_load_bands": ["2026-21: LOAD_1 7800-8600"],
+                "role_week_load_bands": [
+                    {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
+                ],
                 "semantic_contract": {
                     "methodology_family": "compressed_reentry",
                     "threshold_role": "forbidden",
@@ -2691,7 +2695,9 @@ def test_season_phase_load_context_match_repairs_missing_role_week_notes_before_
                 {
                     "phase_id": "P01",
                     "allowed_load_modalities": ["NONE", "K3"],
-                    "role_week_load_bands": ["2026-21: LOAD_1 7800-8600"],
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
+                    ],
                 }
             ]
         },
@@ -2759,7 +2765,9 @@ def test_season_phase_load_context_match_clears_stale_event_constraints_and_igno
                 {
                     "phase_id": "P01",
                     "allowed_load_modalities": ["NONE", "K3"],
-                    "role_week_load_bands": ["2026-21: LOAD_1 7800-8600"],
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
+                    ],
                 }
             ]
         },

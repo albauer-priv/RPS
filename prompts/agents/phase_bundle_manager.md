@@ -7,7 +7,7 @@ Keep season authority intact and leave final envelope serialization to the write
 
 ## Definitions
 
-- `deterministic phase contracts`: exact phase range, week roles, S5/load context, and canonical semantic authority
+- `deterministic phase contracts`: exact phase range, exact phase legality, exact role-week load bands, phase-local objective, shared preview/week skeleton constraints, feasibility context, and canonical semantic authority
 - `structural draft bundle`: review-ready internal phase bundle before writer serialization
 - `review`: approval gate only
 - `writer`: serialization only
@@ -15,10 +15,11 @@ Keep season authority intact and leave final envelope serialization to the write
 ## Authority / injected sources
 
 - Treat deterministic phase contracts as code-owned authority.
-- Treat the inherited scenario contract from Season artifacts and deterministic context as binding posture input.
+- Treat the inherited scenario contract from Season artifacts and deterministic context as binding posture ceiling input, not as direct authorization for exact phase legality.
 - Good Phase output operationalizes inherited recovery margin, fatigue exposure, specificity density, and legality ceiling without reopening scenario choice.
-- When week roles, exact phase range, or S5-band values are required, consume injected contract context or dedicated tools.
-- Do not rediscover them from prose or coworker delegation.
+- When week roles, exact phase range, exact role-week load bands, or phase-local objective are required, consume injected contract context or dedicated tools.
+- Treat S5/load context as feasibility/reference input only unless the injected contract explicitly marks it as the active fallback.
+- Do not rediscover authority from prose or coworker delegation.
 
 ## Scope and non-scope
 
@@ -44,6 +45,10 @@ Out of scope:
 - Keep reload and re-entry semantically distinct.
 - Preserve Build-entry conservatism when shortened/base/re-entry context precedes the phase.
 - Do not let a threshold-shaped block survive when inherited phase or season authority suppresses `THRESHOLD`.
+- Do not widen exact phase legality from scenario-level eligibility.
+- Do not rewrite exact persisted role-week load bands from S5 context.
+- Do not substitute the global season objective when injected phase-local objective exists.
+- Phase preview must remain inside the shared deterministic week-skeleton semantics and must add no new day-role/domain freedom.
 - Objective mismatch is input-owned; surface it as warning/revisit context only.
 - Do not assume the writer will fix structure or semantics later.
 
@@ -52,10 +57,12 @@ Out of scope:
 Pass 3 checklist:
 
 - week roles complete and consistent with deterministic context
-- S5/load-band logic coherent
+- exact role-week load bands preserved from deterministic phase authority
+- S5/load-band logic coherent and clearly subordinate to exact persisted phase authority
 - guardrails / structure / preview mutually consistent
 - event integration consistent with season authority
 - phase semantics and domain shaping free of unresolved contradictions
+- preview remains aligned with the shared deterministic week skeleton
 - inherited cadence family (`2:1`, `3:1`, `2:1:1`) visible in structure rather than hidden in notes
 - deload / mini-reset / reload / re-entry semantics explicitly distinguishable where policy requires it
 - fallback path explicit when `2:1:1` mini-reset becomes true deload or when other cadence-risk conditions require a more conservative interpretation

@@ -7,6 +7,7 @@ operation boundaries are computed in code and rendered as prompt context.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
@@ -16,6 +17,11 @@ from rps.planning.load_bands import (
     build_season_phase_load_context,
     render_load_capacity_context_block,
     render_season_phase_load_context_block,
+)
+from rps.planning.phase_authority import (
+    build_week_skeleton_for_phase,
+    normalize_role_week_load_bands,
+    normalize_role_week_load_bands_from_text,
 )
 from rps.planning.season_structure import (
     build_cadence_options_context,
@@ -42,6 +48,44 @@ CADENCE_WEEK_ROLE_PATTERNS = {
     "3:1": ["LOAD_1", "LOAD_2", "LOAD_3", "DELOAD"],
     "2:1:1": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
 }
+
+
+def _extract_km_values(text: object) -> list[int]:
+    values: list[int] = []
+    for match in re.finditer(r"(\d{2,4})(?:\s*[-/]\s*(\d{2,4}))?\s*km", str(text or ""), flags=re.IGNORECASE):
+        values.append(int(match.group(1)))
+        if match.group(2) is not None:
+            values.append(int(match.group(2)))
+    return values
+
+
+def _derive_objective_event_mismatch_warning(*, season_objective: object, a_events: list[JsonMap]) -> str | None:
+    objective = str(season_objective or "").strip()
+    objective_km = _extract_km_values(objective)
+    if not objective or not objective_km or not a_events:
+        return None
+    highest_a_event = max(
+        a_events,
+        key=lambda item: (
+            str(item.get("date") or ""),
+            str(item.get("week") or ""),
+            str(item.get("name") or ""),
+        ),
+    )
+    event_label = " ".join(
+        str(part).strip()
+        for part in (highest_a_event.get("name"), highest_a_event.get("date"))
+        if str(part or "").strip()
+    ).strip()
+    event_km = _extract_km_values(event_label)
+    if not event_km:
+        return None
+    if any(abs(event_distance - objective_distance) <= 25 for event_distance in event_km for objective_distance in objective_km):
+        return None
+    return (
+        "Warning: primary season objective distance does not align with the active A-event anchor. "
+        "Keep this user-visible and non-blocking."
+    )
 SHORTENED_WEEK_ROLE_PATTERN = [
     "SHORTENED_RE_ENTRY",
     "SHORTENED_CONSOLIDATION",
@@ -268,6 +312,32 @@ def build_phase_execution_context(
     }
     season_data = _as_map((season_plan_payload or {}).get("data"))
     selected_scenario_contract = _as_map(season_data.get("selected_scenario_contract"))
+    phase_semantics = _as_map(phase_raw.get("allowed_forbidden_semantics"))
+    structured_role_week_bands = normalize_role_week_load_bands(phase_raw.get("role_week_load_bands"))
+    if not structured_role_week_bands:
+        structured_role_week_bands = normalize_role_week_load_bands_from_text(
+            _as_map(_as_map(phase_raw.get("weekly_load_corridor")).get("weekly_kj")).get("notes")
+        )
+    overview = _as_map(phase_raw.get("overview"))
+    phase_goals = _as_map(overview.get("phase_goals"))
+    phase_primary_objective = str(phase_goals.get("primary") or "").strip()
+    objective_warning = _derive_objective_event_mismatch_warning(
+        season_objective=_as_map(season_data.get("season_intent_principles")).get("season_objective"),
+        a_events=[item for item in _dated_items_in_range(planning_events_payload or {}, phase_range, field="events") if str(_as_map(item).get("type") or "").strip().upper() == "A"],
+    )
+    allowed_day_roles = ["REST", "RECOVERY", "ENDURANCE", "QUALITY"]
+    phase_allowed_intensity_domains = list(phase_semantics.get("allowed_intensity_domains") or [])
+    phase_allowed_load_modalities = list(phase_semantics.get("allowed_load_modalities") or [])
+    phase_week_skeleton = build_week_skeleton_for_phase(
+        week_keys=[_week_key(week) for week in weeks],
+        week_role_by_iso_week=week_role_by_iso_week,
+        fixed_rest_days=_fixed_rest_days(availability_payload or {}),
+        allowed_day_roles=allowed_day_roles,
+        allowed_intensity_domains=phase_allowed_intensity_domains,
+        allowed_load_modalities=phase_allowed_load_modalities or ["NONE"],
+        quality_cap=2,
+        phase_intent=str(phase_raw.get("phase_intent") or ""),
+    )
     return {
         "target_iso_week": target_key,
         "phase_id": getattr(phase_info, "phase_id", ""),
@@ -280,6 +350,12 @@ def build_phase_execution_context(
         "phase_role": phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
         "phase_intent": phase_raw.get("phase_intent") or "",
         "build_subtype": phase_raw.get("build_subtype"),
+        "phase_allowed_intensity_domains": phase_allowed_intensity_domains,
+        "phase_forbidden_intensity_domains": list(phase_semantics.get("forbidden_intensity_domains") or []),
+        "phase_allowed_load_modalities": phase_allowed_load_modalities,
+        "phase_role_week_load_bands": structured_role_week_bands,
+        "phase_primary_objective": phase_primary_objective,
+        "objective_mismatch_warning": objective_warning,
         "scenario_cadence": scenario_cadence,
         "selected_scenario_contract": selected_scenario_contract,
         "inherited_scenario_contract": selected_scenario_contract,
@@ -293,6 +369,7 @@ def build_phase_execution_context(
         "target_week_s5_band": active_s5.get("band"),
         "target_week_s5_trace": active_s5.get("trace"),
         "phase_s5_bands": _s5_bands_for_weeks(load_capacity_context or {}, weeks),
+        "phase_week_skeleton": phase_week_skeleton,
         "fixed_rest_days": _fixed_rest_days(availability_payload or {}),
         "logistics_in_phase": _dated_items_in_range(logistics_payload or {}, phase_range, field="events"),
         "events_in_phase": _dated_items_in_range(planning_events_payload or {}, phase_range, field="events"),
@@ -322,6 +399,7 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
         f"phase_role: {context.get('phase_role')}",
         f"phase_intent: {context.get('phase_intent')}",
         f"build_subtype: {context.get('build_subtype')}",
+        f"phase_primary_objective: {context.get('phase_primary_objective')}",
         f"scenario_cadence: {context.get('scenario_cadence')}",
         "phase_cadence_week_roles: "
         + ", ".join(str(item) for item in _as_list(context.get("phase_cadence_week_roles"))),
@@ -339,6 +417,18 @@ def render_phase_execution_context_block(context: JsonMap) -> str:
                 f"inherited_scenario_contract.specificity_density: {inherited.get('specificity_density')}",
             ]
         )
+    _append_list(lines, "phase_allowed_intensity_domains", context.get("phase_allowed_intensity_domains"))
+    _append_list(lines, "phase_forbidden_intensity_domains", context.get("phase_forbidden_intensity_domains"))
+    _append_list(lines, "phase_allowed_load_modalities", context.get("phase_allowed_load_modalities"))
+    role_bands = _as_list(context.get("phase_role_week_load_bands"))
+    if role_bands:
+        lines.append("phase_role_week_load_bands:")
+        for entry in role_bands:
+            entry_map = _as_map(entry)
+            band = _as_map(entry_map.get("band"))
+            lines.append(f"- {entry_map.get('week')}: {entry_map.get('role')} {band.get('min')}-{band.get('max')}")
+    if context.get("objective_mismatch_warning"):
+        lines.append(f"objective_mismatch_warning: {context.get('objective_mismatch_warning')}")
     role_map = _as_map(context.get("week_role_by_iso_week"))
     if role_map:
         lines.append("week_role_by_iso_week:")
@@ -393,6 +483,20 @@ def build_week_calendar_context(
     week_role_source = "PHASE_STRUCTURE.week_skeleton_logic.week_roles" if phase_week_role else "phase_position_fallback"
     if not phase_week_role:
         phase_week_role = _phase_role_for_week(phase_info, target_week, phase_range)
+    allowed_day_roles = _allowed_day_roles(phase_guardrails_payload or {})
+    allowed_intensity_domains = _allowed_intensity_domains(phase_guardrails_payload or {})
+    allowed_load_modalities = _allowed_load_modalities(phase_guardrails_payload or {})
+    quality_day_cap = _quality_day_cap(phase_guardrails_payload or {})
+    target_week_skeleton = build_week_skeleton_for_phase(
+        week_keys=[target_key],
+        week_role_by_iso_week={target_key: phase_week_role},
+        fixed_rest_days=fixed_rest,
+        allowed_day_roles=allowed_day_roles,
+        allowed_intensity_domains=allowed_intensity_domains,
+        allowed_load_modalities=allowed_load_modalities or ["NONE"],
+        quality_cap=quality_day_cap,
+        phase_intent=phase_intent,
+    )
     inherited_planning_posture = {
         "selected_scenario_id": inherited_contract.get("selected_scenario_id"),
         "load_posture": inherited_contract.get("load_posture"),
@@ -428,12 +532,13 @@ def build_week_calendar_context(
         "active_s5_trace": active_s5.get("trace"),
         "phase_weekly_kj_band": phase_band,
         "active_weekly_kj_band": phase_band or active_s5.get("band"),
-        "allowed_day_roles": _allowed_day_roles(phase_guardrails_payload or {}),
+        "allowed_day_roles": allowed_day_roles,
         "forbidden_day_roles": _forbidden_day_roles(phase_guardrails_payload or {}),
-        "allowed_intensity_domains": _allowed_intensity_domains(phase_guardrails_payload or {}),
+        "allowed_intensity_domains": allowed_intensity_domains,
         "forbidden_intensity_domains": _forbidden_intensity_domains(phase_guardrails_payload or {}),
-        "allowed_load_modalities": _allowed_load_modalities(phase_guardrails_payload or {}),
-        "quality_day_cap": _quality_day_cap(phase_guardrails_payload or {}),
+        "allowed_load_modalities": allowed_load_modalities,
+        "quality_day_cap": quality_day_cap,
+        "target_week_skeleton": target_week_skeleton[0] if target_week_skeleton else {},
         "week_skeleton_mandatory_elements": _week_skeleton_mandatory_elements(phase_structure_payload or {}),
         "event_proximity": build_event_proximity_context(
             target_week=target_week,
@@ -496,6 +601,15 @@ def render_week_calendar_context_block(context: JsonMap) -> str:
             f"recovery_opportunities_min {mandatory.get('recovery_opportunities_min')}, "
             f"endurance_anchor_required {mandatory.get('endurance_anchor_required')}"
         )
+    target_skeleton = _as_map(context.get("target_week_skeleton"))
+    if target_skeleton:
+        lines.append("target_week_skeleton:")
+        for day in _as_list(target_skeleton.get("days")):
+            day_map = _as_map(day)
+            lines.append(
+                f"- {day_map.get('day_of_week')}: role {day_map.get('day_role')}, "
+                f"domain {day_map.get('intensity_domain')}, modality {day_map.get('load_modality')}"
+            )
     _append_list(lines, "fixed_rest_days", context.get("fixed_rest_days"))
     lines.append("day_matrix:")
     for row in _as_list(context.get("day_matrix")):

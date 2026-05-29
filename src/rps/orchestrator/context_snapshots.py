@@ -111,6 +111,10 @@ def _as_map(value: object) -> JsonMap:
     return value if isinstance(value, dict) else {}
 
 
+def _as_list(value: object) -> list[object]:
+    return value if isinstance(value, list) else []
+
+
 def _as_str(value: object) -> str:
     return value.strip() if isinstance(value, str) else ""
 
@@ -744,7 +748,9 @@ def build_planning_context_snapshot_document(
             activities_trend_version=activities_trend_version,
         )
     season_contract = _as_map(_as_data(season_plan_payload).get("selected_scenario_contract"))
-    phase_contract = _as_map(_as_data(phase_guardrails_payload).get("inherited_scenario_contract"))
+    phase_guardrails_data = _as_data(phase_guardrails_payload)
+    phase_structure_data = _as_data(phase_structure_payload)
+    phase_contract = _as_map(phase_guardrails_data.get("inherited_scenario_contract"))
     selected_contract_block = ""
     if season_contract:
         selected_contract_block = (
@@ -759,7 +765,7 @@ def build_planning_context_snapshot_document(
     inherited_planning_posture_block = ""
     if phase_contract:
         inherited_contract_block = (
-            "**Inherited Scenario Contract**\n"
+            "**Inherited Scenario Contract (Posture Ceiling)**\n"
             f"selected_scenario_id: {_as_str(phase_contract.get('selected_scenario_id'))}\n"
             f"load_posture: {_as_str(phase_contract.get('load_posture'))}\n"
             f"recovery_margin: {_as_str(phase_contract.get('recovery_margin'))}\n"
@@ -774,6 +780,41 @@ def build_planning_context_snapshot_document(
             f"fatigue_exposure: {_as_str(phase_contract.get('fatigue_exposure'))}\n"
             f"specificity_density: {_as_str(phase_contract.get('specificity_density'))}\n"
         )
+    phase_authority_block = ""
+    if phase_guardrails_data or phase_structure_data:
+        semantics = _as_map(phase_guardrails_data.get("allowed_forbidden_semantics"))
+        structure_elements = _as_map(phase_structure_data.get("structural_phase_elements"))
+        load_guardrails = _as_map(phase_guardrails_data.get("load_guardrails"))
+        upstream_intent = _as_map(phase_structure_data.get("upstream_intent"))
+        phase_summary = _as_map(phase_guardrails_data.get("phase_summary"))
+        target_week_key = f"{target_week.year:04d}-{target_week.week:02d}"
+        exact_band_line = "target_week_band: N/A"
+        for entry in _as_list(load_guardrails.get("weekly_kj_bands")):
+            entry_map = _as_map(entry)
+            if _as_str(entry_map.get("week")) != target_week_key:
+                continue
+            band = _as_map(entry_map.get("band"))
+            exact_band_line = (
+                f"target_week_band: {_as_str(entry_map.get('week'))} "
+                f"{_as_str(band.get('min'))}-{_as_str(band.get('max'))}"
+            )
+            break
+        allowed_domains = _as_list(structure_elements.get("allowed_intensity_domains")) or _as_list(
+            semantics.get("allowed_intensity_domains")
+        )
+        allowed_modalities = _as_list(structure_elements.get("allowed_load_modalities")) or _as_list(
+            semantics.get("allowed_load_modalities")
+        )
+        phase_authority_block = (
+            "**Exact Phase Authority**\n"
+            f"phase_intent: {_as_str(upstream_intent.get('phase_intent') or phase_summary.get('phase_intent'))}\n"
+            f"phase_primary_objective: {_as_str(upstream_intent.get('primary_objective') or phase_summary.get('primary_objective'))}\n"
+            f"allowed_intensity_domains: {', '.join(str(item) for item in allowed_domains)}\n"
+            f"forbidden_intensity_domains: {', '.join(str(item) for item in _as_list(semantics.get('forbidden_intensity_domains')))}\n"
+            f"allowed_load_modalities: {', '.join(str(item) for item in allowed_modalities)}\n"
+            f"{exact_band_line}\n"
+            "s5_authority: feasibility_only\n"
+        )
 
     prompt_blocks = _non_empty_prompt_blocks(
         {
@@ -787,6 +828,7 @@ def build_planning_context_snapshot_document(
             "selected_scenario_contract": selected_contract_block,
             "inherited_scenario_contract": inherited_contract_block,
             "inherited_planning_posture": inherited_planning_posture_block,
+            "phase_authority": phase_authority_block,
         }
     )
 

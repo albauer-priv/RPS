@@ -11,8 +11,13 @@ from pathlib import Path
 from typing import Any
 
 from rps.agents.tasks import AgentTask
+from rps.planning.phase_authority import (
+    build_week_skeleton_for_phase,
+    normalize_role_week_load_bands,
+)
 from rps.workspace.artifact_metadata import normalize_trace_reference
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
+from rps.workspace.iso_helpers import parse_iso_week_range
 
 logger = logging.getLogger(__name__)
 _KNOWLEDGE_SOURCE_ROOT = Path(__file__).resolve().parents[3] / "specs" / "knowledge" / "_shared" / "sources"
@@ -38,6 +43,14 @@ _DISALLOWED_AVOID_DOMAINS = {"NONE", "RECOVERY"}
 _SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(?:\.[0-9]+)?$")
 _META_SCOPES = {"Shared", "Season", "Phase", "Week", "Context"}
 _SCENARIO_IDS = ("A", "B", "C")
+
+
+def _as_map(value: object) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: object) -> list[object]:
+    return value if isinstance(value, list) else []
 _INLINE_LOOP_STEP_RE = re.compile(
     r"^(?P<indent>\s*)-\s*(?P<count>\d+)[xX]\s+(?P<step>(?:\d+(?:\.\d+)?(?:s|m|h)|\d+m\d+|\d+h\d+m).*)$"
 )
@@ -371,6 +384,36 @@ def normalize_phase_structure_document(
                 if phase_guardrails_version_key:
                     load_ranges["source"] = f"phase_guardrails_{phase_guardrails_version_key}.json"
                 data["load_ranges"] = load_ranges
+    season_phase = _season_phase_for_range(season_plan_document, meta.get("iso_week_range"))
+    if season_phase:
+        semantics = _as_map(season_phase.get("allowed_forbidden_semantics"))
+        if semantics:
+            structural_phase_elements = data.get("structural_phase_elements")
+            if not isinstance(structural_phase_elements, dict):
+                structural_phase_elements = {}
+            structural_phase_elements["allowed_intensity_domains"] = list(
+                semantics.get("allowed_intensity_domains") or []
+            )
+            structural_phase_elements["allowed_load_modalities"] = list(
+                semantics.get("allowed_load_modalities") or []
+            )
+            data["structural_phase_elements"] = structural_phase_elements
+            execution_principles = data.get("execution_principles")
+            if not isinstance(execution_principles, dict):
+                execution_principles = {}
+            load_intensity_handling = execution_principles.get("load_intensity_handling")
+            if not isinstance(load_intensity_handling, dict):
+                load_intensity_handling = {}
+            load_intensity_handling["forbidden_intensity_domains"] = list(
+                semantics.get("forbidden_intensity_domains") or []
+            )
+            execution_principles["load_intensity_handling"] = load_intensity_handling
+            data["execution_principles"] = execution_principles
+        overview = _as_map(season_phase.get("overview"))
+        phase_goals = _as_map(overview.get("phase_goals"))
+        primary_objective = str(phase_goals.get("primary") or "").strip()
+        if primary_objective:
+            upstream_intent["primary_objective"] = primary_objective
 
     structural_phase_elements = data.get("structural_phase_elements")
     if isinstance(structural_phase_elements, dict):
@@ -392,6 +435,79 @@ def normalize_phase_structure_document(
 
     document["data"] = data
     return document
+
+
+def _season_phase_for_range(
+    season_plan_document: dict[str, Any] | None,
+    range_key: object,
+) -> dict[str, Any]:
+    """Return the matching persisted Season phase for one phase-range key."""
+
+    if not isinstance(season_plan_document, dict):
+        return {}
+    data = season_plan_document.get("data")
+    if not isinstance(data, dict):
+        return {}
+    expected = str(range_key or "").strip()
+    for phase in data.get("phases") or []:
+        phase_map = phase if isinstance(phase, dict) else {}
+        if str(phase_map.get("iso_week_range") or "").strip() == expected:
+            return phase_map
+    return {}
+
+
+def _season_phase_role_week_load_bands(phase_map: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return exact structured week bands from persisted phase or legacy notes."""
+
+    entries = normalize_role_week_load_bands(phase_map.get("role_week_load_bands"))
+    if entries:
+        return entries
+    weekly_kj = _as_map(_as_map(phase_map.get("weekly_load_corridor")).get("weekly_kj"))
+    return normalize_role_week_load_bands(weekly_kj.get("notes"))
+
+
+def _phase_preview_shared_skeleton(
+    *,
+    expected_range: object,
+    structure_data: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Build deterministic shared preview/week skeleton from stored phase structure."""
+
+    week_roles_map = _as_map(_as_map(structure_data.get("week_skeleton_logic")).get("week_roles"))
+    week_role_by_iso_week = {
+        str(_as_map(entry).get("week") or "").strip(): str(_as_map(entry).get("role") or "").strip()
+        for entry in _as_list(week_roles_map.get("week_roles"))
+        if str(_as_map(entry).get("week") or "").strip() and str(_as_map(entry).get("role") or "").strip()
+    }
+    week_keys = list(week_role_by_iso_week)
+    if not week_keys:
+        parsed = parse_iso_week_range(expected_range)
+        if parsed is not None:
+            week_keys = []
+            cursor = parsed.start
+            while True:
+                week_keys.append(f"{cursor.year:04d}-{cursor.week:02d}")
+                if cursor == parsed.end:
+                    break
+                if cursor.week == 52:
+                    cursor = type(cursor)(cursor.year + 1, 1)
+                else:
+                    cursor = type(cursor)(cursor.year, cursor.week + 1)
+    structural_phase_elements = _as_map(structure_data.get("structural_phase_elements"))
+    execution_principles = _as_map(structure_data.get("execution_principles"))
+    load_intensity = _as_map(execution_principles.get("load_intensity_handling"))
+    recovery_protection = _as_map(execution_principles.get("recovery_protection"))
+    upstream_intent = _as_map(structure_data.get("upstream_intent"))
+    return build_week_skeleton_for_phase(
+        week_keys=week_keys,
+        week_role_by_iso_week=week_role_by_iso_week,
+        fixed_rest_days=_text_list(recovery_protection.get("fixed_non_training_days")),
+        allowed_day_roles=_text_list(structural_phase_elements.get("allowed_day_roles")),
+        allowed_intensity_domains=_text_list(structural_phase_elements.get("allowed_intensity_domains")),
+        allowed_load_modalities=_text_list(structural_phase_elements.get("allowed_load_modalities")),
+        quality_cap=load_intensity.get("max_quality_days_per_week") if isinstance(load_intensity.get("max_quality_days_per_week"), int) else None,
+        phase_intent=str(upstream_intent.get("phase_intent") or "").strip(),
+    )
 
 
 def normalize_phase_preview_document(
@@ -436,10 +552,13 @@ def normalize_phase_preview_document(
 
     structural_phase_elements = structure_data.get("structural_phase_elements")
     execution_principles = structure_data.get("execution_principles")
+    upstream_intent = structure_data.get("upstream_intent")
     if not isinstance(structural_phase_elements, dict):
         structural_phase_elements = {}
     if not isinstance(execution_principles, dict):
         execution_principles = {}
+    if not isinstance(upstream_intent, dict):
+        upstream_intent = {}
     load_intensity = execution_principles.get("load_intensity_handling")
     recovery_protection = execution_principles.get("recovery_protection")
     if not isinstance(load_intensity, dict):
@@ -464,21 +583,55 @@ def normalize_phase_preview_document(
         document["data"] = data
         return document
 
+    phase_intent_summary = data.get("phase_intent_summary")
+    if not isinstance(phase_intent_summary, dict):
+        phase_intent_summary = {}
+    primary_objective = str(upstream_intent.get("primary_objective") or "").strip()
+    if primary_objective:
+        phase_intent_summary["primary_objective"] = primary_objective
+    data["phase_intent_summary"] = phase_intent_summary
+
+    shared_skeleton = _phase_preview_shared_skeleton(
+        expected_range=meta.get("iso_week_range"),
+        structure_data=structure_data,
+    )
+    shared_by_week = {
+        str(_as_map(entry).get("week") or "").strip(): _as_map(entry)
+        for entry in shared_skeleton
+        if str(_as_map(entry).get("week") or "").strip()
+    }
+
     for week_entry in weekly_agenda_preview:
         if not isinstance(week_entry, dict):
             continue
+        week_key = str(week_entry.get("week") or "").strip()
         days = week_entry.get("days")
         if not isinstance(days, list):
             continue
+        skeleton_days = {
+            str(_as_map(day).get("day_of_week") or "").strip(): _as_map(day)
+            for day in _as_list(_as_map(shared_by_week.get(week_key)).get("days"))
+            if str(_as_map(day).get("day_of_week") or "").strip()
+        }
         quality_days_seen = 0
         for day in days:
             if not isinstance(day, dict):
                 continue
             day_of_week = str(day.get("day_of_week") or "").strip()
             day_role = str(day.get("day_role") or "").strip()
+            skeleton_day = skeleton_days.get(day_of_week)
+            if skeleton_day:
+                day["day_role"] = skeleton_day.get("day_role")
+                day["intensity_domain"] = skeleton_day.get("intensity_domain")
+                day["load_modality"] = skeleton_day.get("load_modality")
+                day_role = str(day.get("day_role") or "").strip()
             if day_of_week in fixed_non_training_days:
                 day["day_role"] = "REST"
                 day["intensity_domain"] = "NONE"
+                day["load_modality"] = "NONE"
+                continue
+            if day_role == "RECOVERY":
+                day["intensity_domain"] = "RECOVERY"
                 day["load_modality"] = "NONE"
                 continue
             if day_role == "QUALITY":
@@ -702,6 +855,35 @@ def normalize_phase_guardrails_document(
         inherited_contract = season_data.get("selected_scenario_contract")
         if isinstance(inherited_contract, dict):
             data["inherited_scenario_contract"] = inherited_contract
+        season_phase = _season_phase_for_range(season_plan_document, meta.get("iso_week_range"))
+        if season_phase:
+            phase_summary = data.get("phase_summary")
+            if not isinstance(phase_summary, dict):
+                phase_summary = {}
+            overview = _as_map(season_phase.get("overview"))
+            phase_goals = _as_map(overview.get("phase_goals"))
+            primary_objective = str(phase_goals.get("primary") or "").strip()
+            if primary_objective:
+                phase_summary["primary_objective"] = primary_objective
+            data["phase_summary"] = phase_summary
+            semantics = _as_map(season_phase.get("allowed_forbidden_semantics"))
+            if semantics:
+                allowed_forbidden = data.get("allowed_forbidden_semantics")
+                if not isinstance(allowed_forbidden, dict):
+                    allowed_forbidden = {}
+                allowed_forbidden["allowed_intensity_domains"] = list(
+                    semantics.get("allowed_intensity_domains") or []
+                )
+                allowed_forbidden["allowed_load_modalities"] = list(
+                    semantics.get("allowed_load_modalities") or []
+                )
+                allowed_forbidden["forbidden_intensity_domains"] = list(
+                    semantics.get("forbidden_intensity_domains") or []
+                )
+                data["allowed_forbidden_semantics"] = allowed_forbidden
+            exact_bands = _season_phase_role_week_load_bands(season_phase)
+            if exact_bands:
+                load_guardrails["weekly_kj_bands"] = exact_bands
 
     document["data"] = data
     return _project_phase_guardrails_season_constraints(

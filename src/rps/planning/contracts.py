@@ -12,6 +12,11 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from rps.planning.phase_authority import (
+    format_role_week_load_bands,
+    normalize_role_week_load_bands,
+    role_week_band_by_week,
+)
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeekRange, parse_iso_week, parse_iso_week_range
 from rps.workspace.phase_intents import (
@@ -147,17 +152,7 @@ def _normalize_modalities(values: object) -> list[str]:
 
 
 def _format_role_week_bands(entries: object) -> list[str]:
-    rendered: list[str] = []
-    for entry in _as_list(entries):
-        entry_map = _as_map(entry)
-        band = _as_map(entry_map.get("band"))
-        week = str(entry_map.get("week") or "").strip()
-        role = str(entry_map.get("role") or "").strip()
-        band_min = _as_int(band.get("min"))
-        band_max = _as_int(band.get("max"))
-        if week and role and band_min is not None and band_max is not None:
-            rendered.append(f"{week}: {role} {band_min}-{band_max}")
-    return rendered
+    return format_role_week_load_bands(entries)
 
 
 def _extract_km_values(text: object) -> list[int]:
@@ -841,6 +836,16 @@ def validate_season_plan_against_phase_load_context(
         event_trace = _as_map(ctx.get("event_taper_trace"))
         expected_role_week_bands = _format_role_week_bands(ctx.get("role_week_load_bands"))
         expected_role_week_sentence_parts = [item for item in expected_role_week_bands if item]
+        observed_structured_role_week_bands = normalize_role_week_load_bands(phase.get("role_week_load_bands"))
+        expected_structured_role_week_bands = normalize_role_week_load_bands(ctx.get("role_week_load_bands"))
+        if expected_structured_role_week_bands and observed_structured_role_week_bands != expected_structured_role_week_bands:
+            issues.append(
+                PlanningContractIssue(
+                    "season_phase_role_week_bands_mismatch",
+                    "phase.role_week_load_bands must match deterministic persisted phase week-band authority exactly.",
+                    path=f"{path}.role_week_load_bands",
+                )
+            )
         weekly_kj_notes = str(planned.get("notes") or "")
         if expected_role_week_sentence_parts and not all(item in weekly_kj_notes for item in expected_role_week_sentence_parts):
             issues.append(
@@ -987,21 +992,24 @@ def validate_phase_s5_bands_against_context(
     phase_payload: JsonMap,
     phase_execution_context: JsonMap,
 ) -> list[PlanningContractIssue]:
-    """Validate phase weekly load bands directly against deterministic S5 context."""
+    """Validate phase weekly load bands against exact deterministic phase week-band authority."""
 
-    expected: dict[str, JsonMap] = {}
-    for entry in _as_list(phase_execution_context.get("phase_s5_bands")):
-        entry_map = _as_map(entry)
-        week = _week_key(entry_map.get("week"))
-        band = _as_map(entry_map.get("band"))
-        if week and band:
-            expected[week] = band
+    expected = role_week_band_by_week(phase_execution_context.get("phase_role_week_load_bands"))
+    source_path = "phase_execution_context.phase_role_week_load_bands"
+    if not expected:
+        for entry in _as_list(phase_execution_context.get("phase_s5_bands")):
+            entry_map = _as_map(entry)
+            week = _week_key(entry_map.get("week"))
+            band = _as_map(entry_map.get("band"))
+            if week and band:
+                expected[week] = band
+        source_path = "phase_execution_context.phase_s5_bands"
     if not expected:
         return [
             PlanningContractIssue(
                 "phase_s5_context_missing",
-                "Deterministic phase S5 bands are missing.",
-                path="phase_execution_context.phase_s5_bands",
+                "Deterministic phase weekly band authority is missing.",
+                path=source_path,
             )
         ]
     issues: list[PlanningContractIssue] = []
@@ -1071,6 +1079,92 @@ def validate_phase_against_execution_context(
             label="inherited_scenario_contract",
         )
     )
+    expected_allowed_domains = normalize_intensity_domain_list(
+        phase_execution_context.get("phase_allowed_intensity_domains")
+    )
+    expected_forbidden_domains = normalize_intensity_domain_list(
+        phase_execution_context.get("phase_forbidden_intensity_domains")
+    )
+    expected_modalities = _normalize_modalities(
+        phase_execution_context.get("phase_allowed_load_modalities")
+    )
+    if expected_allowed_domains or expected_forbidden_domains or expected_modalities:
+        observed_semantics = _as_map(data.get("allowed_forbidden_semantics"))
+        if observed_semantics:
+            observed_allowed_domains = normalize_intensity_domain_list(
+                observed_semantics.get("allowed_intensity_domains")
+            )
+            observed_forbidden_domains = normalize_intensity_domain_list(
+                observed_semantics.get("forbidden_intensity_domains")
+            )
+            observed_modalities = _normalize_modalities(
+                observed_semantics.get("allowed_load_modalities")
+            )
+            if expected_allowed_domains and observed_allowed_domains != expected_allowed_domains:
+                issues.append(
+                    PlanningContractIssue(
+                        "phase_allowed_domains_mismatch",
+                        "Phase allowed_intensity_domains must match exact persisted phase legality.",
+                        path="data.allowed_forbidden_semantics.allowed_intensity_domains",
+                    )
+                )
+            if expected_forbidden_domains and observed_forbidden_domains != expected_forbidden_domains:
+                issues.append(
+                    PlanningContractIssue(
+                        "phase_forbidden_domains_mismatch",
+                        "Phase forbidden_intensity_domains must match exact persisted phase legality.",
+                        path="data.allowed_forbidden_semantics.forbidden_intensity_domains",
+                    )
+                )
+            if expected_modalities and observed_modalities != expected_modalities:
+                issues.append(
+                    PlanningContractIssue(
+                        "phase_allowed_modalities_mismatch",
+                        "Phase allowed_load_modalities must match exact persisted phase legality.",
+                        path="data.allowed_forbidden_semantics.allowed_load_modalities",
+                    )
+                )
+        observed_structural = _as_map(data.get("structural_phase_elements"))
+        if observed_structural:
+            observed_structural_domains = normalize_intensity_domain_list(
+                observed_structural.get("allowed_intensity_domains")
+            )
+            observed_structural_modalities = _normalize_modalities(
+                observed_structural.get("allowed_load_modalities")
+            )
+            if expected_allowed_domains and observed_structural_domains != expected_allowed_domains:
+                issues.append(
+                    PlanningContractIssue(
+                        "phase_structural_allowed_domains_mismatch",
+                        "Phase structure allowed_intensity_domains must match exact persisted phase legality.",
+                        path="data.structural_phase_elements.allowed_intensity_domains",
+                    )
+                )
+            if expected_modalities and observed_structural_modalities != expected_modalities:
+                issues.append(
+                    PlanningContractIssue(
+                        "phase_structural_allowed_modalities_mismatch",
+                        "Phase structure allowed_load_modalities must match exact persisted phase legality.",
+                        path="data.structural_phase_elements.allowed_load_modalities",
+                    )
+                )
+    expected_primary_objective = str(phase_execution_context.get("phase_primary_objective") or "").strip()
+    if expected_primary_objective:
+        observed_primary_objective = ""
+        if isinstance(data.get("phase_summary"), dict):
+            observed_primary_objective = str(_as_map(data.get("phase_summary")).get("primary_objective") or "").strip()
+        if not observed_primary_objective and isinstance(data.get("upstream_intent"), dict):
+            observed_primary_objective = str(_as_map(data.get("upstream_intent")).get("primary_objective") or "").strip()
+        if not observed_primary_objective and isinstance(data.get("phase_intent_summary"), dict):
+            observed_primary_objective = str(_as_map(data.get("phase_intent_summary")).get("primary_objective") or "").strip()
+        if observed_primary_objective and observed_primary_objective != expected_primary_objective:
+            issues.append(
+                PlanningContractIssue(
+                    "phase_primary_objective_mismatch",
+                    "Phase primary objective must match the exact persisted Season phase objective.",
+                    path="data.phase_primary_objective",
+                )
+            )
     if not expected_roles:
         issues.append(
             PlanningContractIssue(
@@ -1197,6 +1291,25 @@ def validate_week_plan_against_week_context(
                     path=f"data.agenda[{idx}]",
                 )
             )
+    target_skeleton = _as_map(week_calendar_context.get("target_week_skeleton"))
+    if target_skeleton:
+        expected_roles_by_day = {
+            str(_as_map(item).get("day_of_week") or "").strip(): str(_as_map(item).get("day_role") or "").strip()
+            for item in _as_list(target_skeleton.get("days"))
+            if str(_as_map(item).get("day_of_week") or "").strip() and str(_as_map(item).get("day_role") or "").strip()
+        }
+        for row in agenda:
+            day = str(row.get("day") or "").strip()
+            expected_role = expected_roles_by_day.get(day)
+            observed_role = str(row.get("day_role") or "").strip()
+            if expected_role and observed_role != expected_role:
+                issues.append(
+                    PlanningContractIssue(
+                        "week_day_role_skeleton_mismatch",
+                        f"{day} day_role {observed_role!r} does not match shared skeleton role {expected_role!r}.",
+                        path="data.agenda",
+                    )
+                )
     week_role = str(week_calendar_context.get("phase_week_role") or "").upper()
     if week_role in {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"}:
         quality_days = [row for row in agenda if str(row.get("day_role") or "").upper() == "QUALITY"]

@@ -12,9 +12,10 @@ Review one candidate Phase bundle against active phase authority and decide appr
 
 ## Authority / injected sources
 
-- Treat active phase authority, deterministic week-role context, and deterministic S5/load context as authoritative.
+- Treat active phase authority, deterministic week-role context, exact role-week load bands, shared preview/week skeleton context, and deterministic S5/load context as authoritative.
 - Confirm adherence to the inherited scenario contract from Season; do not reinterpret scenario choice in review.
-- Do not rediscover week-role or S5-band authority through prose or coworker delegation.
+- Treat the inherited scenario contract as season posture ceiling only; do not allow it to widen concrete phase legality in review.
+- Do not rediscover week-role, exact week-band, or S5-band authority through prose or coworker delegation.
 
 ## Scope and non-scope
 
@@ -45,6 +46,9 @@ Formal review confirmation checklist:
 - Build-entry logic stays conservative after shortened/base/re-entry context
 - week-role/load-shape does not violate inherited season overload policy
 - phase intent stays coherent with legal allowed/forbidden domains
+- exact role-week load bands match injected phase authority
+- preview remains inside the shared deterministic week-skeleton shape
+- `RECOVERY` stays `RECOVERY` and fixed rest days stay `NONE/NONE`
 
 ## Hard rules
 

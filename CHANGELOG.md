@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added structured Season phase `role_week_load_bands` persistence plus legacy string-band read compatibility, a new shared `phase_authority` helper module, and deterministic Phase context fields for exact legality, exact role-week load bands, phase-local objective, and warning-only objective mismatch.
+- Added a shared deterministic Preview/Week skeleton path: `PHASE_PREVIEW` normalization now enforces `REST -> NONE/NONE`, `RECOVERY -> RECOVERY`, and exact phase legality, while `WEEK_PLAN` consumes the same target-week skeleton for day-role/domain allocation.
+- Added the feature spec and ADR for the new authority split between scenario posture ceiling, persisted Season phase legality, deterministic Phase authority, and shared Preview/Week skeleton semantics.
 - Added a canonical shared `selected_scenario_contract.schema.json` and aligned Season/Phase persisted contract validation to the full runtime-selected scenario contract already produced by deterministic planning context.
 - Added complete Season Scenario selection-contract hardening: `SEASON_SCENARIOS.scenario_guidance` now requires explicit operational posture (`recovery_margin`, `fatigue_exposure`, `specificity_density`) plus structured contract-note arrays, active scenario-generation prompt/task/skill guidance now frontloads those fields locally, and a new runtime guardrail rejects scenario outputs that are not selection-contract complete before they become planning-ready.
 - Added strict Season scenario-selection binding before `SEASON_PLAN`: a new central resolver now requires `SEASON_SCENARIO_SELECTION` to bind to the exact latest `SEASON_SCENARIOS` version, derives the canonical selected-scenario contract/structure once, and exposes consistent `selection_missing` / `selection_stale_vs_scenarios` / `selected_scenario_unresolved` / `selected_scenario_contract_incomplete` failure reasons.
@@ -101,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added review-bucket operationalization to the week selector audit and scoring layer: selector rows can now encode `SOLL`, `KANN`, `NUR_WENN`, and `VERMEIDEN`, and specificity-build VO2 carry-over cases are explicitly down-ranked as `NUR_WENN`.
 
 ### Changed
+- Changed Season normalization, Phase normalization, contract validation, guarded-store synthetic assembly, snapshots, and active Phase prompts/tasks so exact phase legality and exact role-week load bands come from persisted Season phase authority rather than scenario-level eligibility or silent S5 rewrites.
 - Changed active Season, Phase, Week, and workout-planning skills plus Crew task descriptions to use only the canonical phase taxonomy and planner-purpose semantics, so `BUILD` focus is expressed upstream through `phase_intent` and `build_subtype` instead of repo-specific legacy labels.
 - Changed operative week workout protocol, family, selector-rule, review-matrix, and audit-guide configuration to the canonical taxonomy, replacing generic or legacy planning labels with explicit `general_base`, `vo2_build`, `threshold_build`, `sst_build`, `durability_build`, `specificity_build`, `peak_sharpening`, `taper_freshening`, and `race_execution` semantics.
 

@@ -572,6 +572,7 @@
         "narrative",
         "overview",
         "weekly_load_corridor",
+        "role_week_load_bands",
         "allowed_forbidden_semantics",
         "structural_emphasis",
         "events_constraints",
@@ -740,6 +741,45 @@
           "properties": {
             "weekly_kj": {
               "$ref": "load_band_kj_per_kg.schema.json"
+            }
+          }
+        },
+        "role_week_load_bands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "week",
+              "role",
+              "band"
+            ],
+            "properties": {
+              "week": {
+                "$ref": "iso_week.schema.json"
+              },
+              "role": {
+                "type": "string",
+                "minLength": 1
+              },
+              "band": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
             }
           }
         },

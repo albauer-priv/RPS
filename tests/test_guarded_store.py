@@ -833,11 +833,20 @@ def test_phase_preview_rejects_days_outside_structure_authority(tmp_path):
         "2026-21--2026-21__20260520_090000",
     )
 
-    with pytest.raises(SchemaValidationError) as exc:
-        store._enforce_phase_preview_constraints(document)
+    store._enforce_phase_preview_constraints(document)
 
-    assert any("VO2MAX" in err for err in exc.value.errors)
-    assert any("load_modality" in err for err in exc.value.errors)
+    days = document["data"]["weekly_agenda_preview"][0]["days"]
+    assert days[0]["day_role"] == "REST"
+    assert days[0]["intensity_domain"] == "NONE"
+    assert days[1]["day_role"] == "QUALITY"
+    assert days[1]["intensity_domain"] == "TEMPO"
+    assert days[1]["load_modality"] == "NONE"
+    assert days[2]["day_role"] == "RECOVERY"
+    assert days[2]["intensity_domain"] == "RECOVERY"
+    assert days[5]["day_role"] == "ENDURANCE"
+    assert days[5]["intensity_domain"] == "ENDURANCE"
+    assert days[6]["day_role"] == "ENDURANCE"
+    assert days[6]["intensity_domain"] == "ENDURANCE"
 
 
 def test_phase_preview_rejects_phase_intent_mismatch(tmp_path):

@@ -435,6 +435,13 @@ def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> tuple[list[We
     role_is_reset = phase_week_role.upper() in {"DELOAD", "MINI_RESET", "SHORTENED_MINI_RESET"}
     reentry_is_conservative = phase_intent == "shortened_re_entry" or phase_week_role.upper() == "SHORTENED_RE_ENTRY"
     day_rows = [_as_map(item) for item in week_calendar_context.get("day_matrix") or []]
+    target_week_skeleton = _as_map(week_calendar_context.get("target_week_skeleton"))
+    target_week_days = target_week_skeleton.get("days")
+    skeleton_days = {
+        str(_as_map(day).get("day_of_week") or "").strip(): _as_map(day)
+        for day in (target_week_days if isinstance(target_week_days, list) else [])
+        if str(_as_map(day).get("day_of_week") or "").strip()
+    }
     roles = {
         "Tue": "QUALITY" if quality_cap >= 1 and not role_is_reset else "ENDURANCE",
         "Wed": "RECOVERY" if "RECOVERY" in allowed_day_roles else "ENDURANCE",
@@ -452,7 +459,13 @@ def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> tuple[list[We
         day = str(row.get("day") or "")
         availability = _as_map(row.get("availability_hours"))
         fixed_rest = bool(row.get("fixed_rest_day"))
-        day_role = "REST" if fixed_rest else roles.get(day, "ENDURANCE")
+        skeleton_day = skeleton_days.get(day)
+        day_role = str(skeleton_day.get("day_role") or "").strip() if skeleton_day else ""
+        if not day_role:
+            day_role = "REST" if fixed_rest else roles.get(day, "ENDURANCE")
+        intended_domain = str(skeleton_day.get("intensity_domain") or "").strip() if skeleton_day else ""
+        if not intended_domain:
+            intended_domain = "ENDURANCE" if day_role in {"RECOVERY", "ENDURANCE"} else "TEMPO"
         blueprints.append(
             WeekDayBlueprintModel(
                 day=day,  # type: ignore[arg-type]
@@ -463,7 +476,7 @@ def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> tuple[list[We
                 phase_intent=phase_intent,
                 phase_week_role=phase_week_role,
                 day_role=day_role,
-                intended_domain="ENDURANCE" if day_role in {"RECOVERY", "ENDURANCE"} else "TEMPO",
+                intended_domain=intended_domain,
                 planned_duration_minutes=0,
                 planned_kj=0,
                 workout_id=None if fixed_rest else _default_workout_id(week_calendar_context, day, day_role),
@@ -501,6 +514,7 @@ def _select_workout_blueprints(
             continue
         is_anchor = day.day == "Sat" or (day.day == "Sun" and not adjustment.preserve_sat_anchor)
         preview_hint = preview_hints.get(day.day)
+        preferred_domain = str(day.intended_domain or "").strip().upper() or str(preview_hint.get("intensity_domain") or "").strip().upper() or None
         protocol = _pick_protocol(
             protocol_config=protocol_config,
             day_role=day.day_role,
@@ -511,7 +525,7 @@ def _select_workout_blueprints(
             is_anchor=is_anchor,
             forced_quality_family=adjustment.forced_quality_family if day.day_role == "QUALITY" and quality_index == 0 else None,
             remaining_true_quality_budget=max(true_quality_cap - true_quality_used, 0),
-            preferred_domain=str(preview_hint.get("intensity_domain") or "").strip().upper() or None,
+            preferred_domain=preferred_domain,
             avoid_protocol_variants=set(selected_quality_variants) if day.day_role == "QUALITY" and quality_index > 0 and phase_intent.startswith("shortened_") else set(),
         )
         if day.day_role == "QUALITY":

@@ -27,6 +27,7 @@ from rps.planning.contracts import (
     validate_week_bundle_review_readiness,
     validate_week_plan_against_week_context,
 )
+from rps.planning.phase_authority import format_role_week_load_bands, normalize_role_week_load_bands
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
 from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
@@ -422,13 +423,14 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
                             "max": item.get("load_corridor_max"),
                             "notes": (
                                 "Inherited role-week load guardrails (season-level, not week prescriptions): "
-                                + "; ".join(str(entry) for entry in item.get("role_week_load_bands") or [] if str(entry).strip())
+                                + "; ".join(format_role_week_load_bands(item.get("role_week_load_bands")))
                                 + "."
                             )
-                            if [str(entry) for entry in item.get("role_week_load_bands") or [] if str(entry).strip()]
+                            if format_role_week_load_bands(item.get("role_week_load_bands"))
                             else ""
                         }
                     },
+                    "role_week_load_bands": normalize_role_week_load_bands(item.get("role_week_load_bands")),
                     "allowed_forbidden_semantics": {
                         "allowed_intensity_domains": item.get("allowed_domains") or [],
                         "allowed_load_modalities": item.get("allowed_load_modalities") or [],
@@ -1742,23 +1744,14 @@ def _repair_season_plan_for_contract_validation(mapping: JsonMap) -> JsonMap:
         ]
         if approved_modalities:
             semantics["allowed_load_modalities"] = approved_modalities
-        role_week_load_bands = [
-            str(entry).strip()
-            for entry in approved.get("role_week_load_bands") or []
-            if str(entry).strip()
-        ]
-        if not role_week_load_bands:
-            role_week_load_bands = [
-                f"{str(_as_map(entry).get('week') or '').strip()}: "
-                f"{str(_as_map(entry).get('role') or '').strip()} "
-                f"{_as_map(_as_map(entry).get('band')).get('min')}-"
-                f"{_as_map(_as_map(entry).get('band')).get('max')}"
-                for entry in _as_list(context_phase.get("role_week_load_bands"))
-                if str(_as_map(entry).get("week") or "").strip()
-                and str(_as_map(entry).get("role") or "").strip()
-                and _as_map(_as_map(entry).get("band")).get("min") is not None
-                and _as_map(_as_map(entry).get("band")).get("max") is not None
-            ]
+        structured_role_week_load_bands = normalize_role_week_load_bands(approved.get("role_week_load_bands"))
+        if not structured_role_week_load_bands:
+            structured_role_week_load_bands = normalize_role_week_load_bands(
+                context_phase.get("role_week_load_bands")
+            )
+        role_week_load_bands = format_role_week_load_bands(structured_role_week_load_bands)
+        if structured_role_week_load_bands:
+            phase["role_week_load_bands"] = structured_role_week_load_bands
         weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
         if role_week_load_bands and weekly_kj is not None:
             note = (

@@ -12,7 +12,9 @@ Author binding phase guardrails inside approved season authority and determinist
 ## Authority / injected sources
 
 - Treat approved season authority, deterministic exact-range phase context, and active overload-policy skills as authoritative.
-- Use injected week-role and S5/load context directly rather than rediscovering them from prose.
+- Use injected week-role, exact phase legality, exact role-week load bands, and S5/load context directly rather than rediscovering them from prose.
+- Treat S5/load context as feasibility/reference only; exact persisted phase week bands come from the injected Season-derived phase authority.
+- Treat the inherited scenario contract as season posture ceiling only; do not widen concrete phase legality from it.
 
 ## Scope and non-scope
 
@@ -39,6 +41,8 @@ Out of scope:
 - No independent cadence selection.
 - Treat inherited overload policy as binding. Guardrails must make the active cadence family operational rather than merely naming it.
 - Do not let week-role/load-shape drift away from inherited overload policy.
+- Do not rewrite exact persisted role-week load bands from S5.
+- Do not widen allowed intensity domains or load modalities beyond injected phase authority.
 - Keep phase intent coherent with legal intensity domains; do not author threshold-shaped guardrails when `THRESHOLD` is suppressed upstream.
 - Guardrails must be enforceable and phase-range specific.
 

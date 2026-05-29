@@ -312,6 +312,14 @@ class SeasonLoadEnvelopeModel(StrictOutputModel):
     expected_deload_or_low_load_weeks_count: int | None = None
 
 
+class RoleWeekLoadBandModel(StrictOutputModel):
+    """Structured exact role-week load band authority."""
+
+    week: str
+    role: str
+    band: SeasonLoadEnvelopeRangeModel
+
+
 class SeasonPhaseBlueprintModel(StrictOutputModel):
     """Internal phase blueprint preserving selected-scenario cadence semantics."""
 
@@ -329,7 +337,7 @@ class SeasonPhaseBlueprintModel(StrictOutputModel):
     load_corridor_max: int | None = None
     availability_cap_kj: int | None = None
     baseline_load_kj: int | None = None
-    role_week_load_bands: list[str] = Field(default_factory=list)
+    role_week_load_bands: list[RoleWeekLoadBandModel | str] = Field(default_factory=list)
     progression_trace: list[str] = Field(default_factory=list)
     load_feasibility_status: str | None = None
     taper_intent: str | None = None
@@ -356,7 +364,7 @@ class SeasonPhaseDraftBlueprintModel(StrictOutputModel):
     load_corridor_max: int | None = None
     availability_cap_kj: int | None = None
     baseline_load_kj: int | None = None
-    role_week_load_bands: list[str] = Field(default_factory=list)
+    role_week_load_bands: list[RoleWeekLoadBandModel | str] = Field(default_factory=list)
     progression_trace: list[str] = Field(default_factory=list)
     load_feasibility_status: str | None = None
     taper_intent: str | None = None

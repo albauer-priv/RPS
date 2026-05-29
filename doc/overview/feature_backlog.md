@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-05-18
+Last-Updated: 2026-05-29
 Owner: Product
 ---
 # Feature Backlog
@@ -103,6 +103,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_season_scenarios_tool_read_dedup — reduce redundant `workspace_get_input` / `workspace_get_latest` calls in `season_scenarios`, enforce consistent artifact/input type casing, and prefer one-pass minimal context reads per task run so guardrail retries do not amplify log noise and token/tool cost.
 - [ ] FEAT_planner_positive_frontloading_rollout — apply the documented positive-frontloading template from `FEAT_season_scenario_positive_frontloading` to Season/Phase/Week planner chains with a mandatory 3-pass model (Pass 1 structural draft, Pass 2 semantic finalization, Pass 3 planner self-audit), explicit Pass 1 vs Pass 2 loopback rules, formal review classification, and copy-only writer preconditions.
 - [x] FEAT_selected_scenario_contract_chain — bind athlete-selected scenario posture once at Season, propagate it through Season->Phase->Week contracts, deterministic context, snapshots, workspace tools, validation, renderer summaries, and positive-frontloaded active planning files.
+- [x] FEAT_phase_authority_realignment_and_shared_week_skeleton — persist exact Season phase authority, project exact legality and role-week load bands into Phase context, keep legacy Season bands readable, and align Phase Preview and Week through one shared deterministic skeleton.
 - [x] FEAT_strict_season_selection_binding — require latest `SEASON_SCENARIO_SELECTION` to bind to the exact latest `SEASON_SCENARIOS`, block stale selections before `SEASON_PLAN`, unify UI/runtime readiness, and hard-abort Season planning before CrewAI task preparation when selection binding fails.
 - [x] FEAT_season_scenarios_complete_selection_contract — require `SEASON_SCENARIOS.scenario_guidance` to emit complete operational posture (`recovery_margin`, `fatigue_exposure`, `specificity_density`, structured contract notes), harden active scenario-generation files to stay front-loaded/self-contained, and preserve canonical list/string shapes through normalization, guardrails, and selected-scenario contract extraction.
 - [x] FEAT_contract_validation_assembly_fix — fix synthetic Season/Phase contract assembly, correct Week payload-vs-authority posture validation, and add regression coverage for code-owned contract-assembly failures.

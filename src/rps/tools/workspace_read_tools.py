@@ -227,7 +227,8 @@ def read_tool_defs() -> list[JsonDict]:
             "name": "workspace_get_phase_execution_context",
             "description": (
                 "Load the code-owned deterministic phase execution context bound to the current run. "
-                "Use this for phase week roles, exact phase range, active S5 bands, and phase-level execution authority."
+                "Use this for phase week roles, exact phase range, exact phase legality, exact role-week load bands, "
+                "phase-local objective, and S5 feasibility context."
             ),
             "parameters": {
                 "type": "object",
@@ -241,7 +242,8 @@ def read_tool_defs() -> list[JsonDict]:
             "name": "workspace_get_week_calendar_context",
             "description": (
                 "Load the code-owned deterministic week calendar and availability context bound to the current run. "
-                "Use this for active week role, active weekly band, Mon-Sun dates, availability caps, fixed rest days, and allowed domains."
+                "Use this for active week role, active weekly band, target-week skeleton, Mon-Sun dates, "
+                "availability caps, fixed rest days, and allowed domains."
             ),
             "parameters": {
                 "type": "object",

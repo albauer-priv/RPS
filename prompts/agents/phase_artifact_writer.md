@@ -37,7 +37,9 @@ Out of scope:
 
 - Copy approved phase semantics and structure only.
 - Copy `inherited_scenario_contract` exactly into Phase Guardrails and Phase Structure.
-- Preserve approved phase role, inherited week role, role-aware S5 band, role progression band, event implication, overload/reset meaning, and availability trace in existing Phase Guardrails/Structure fields.
+- Preserve approved phase role, inherited week role, exact phase legality, exact persisted role-week load bands, phase-local objective, event implication, overload/reset meaning, and availability trace in existing Phase Guardrails/Structure fields.
+- Preserve shared week-skeleton semantics exactly when serializing Phase Preview; do not add any extra day-role or domain freedom.
+- Do not source persisted phase week bands from S5 text or notes when approved exact role-week load bands are present.
 - Stop rather than guess if required approved fields are missing.
 - If Review classified a Pass 1 or Pass 2 return finding, writer must not run and must not attempt semantic recovery.
 

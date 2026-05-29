@@ -874,6 +874,19 @@ def test_workout_export_force_export_runs_even_when_current(tmp_path):
             "notes": "",
         },
         "data": {
+            "inherited_planning_posture": {
+                "selected_scenario_id": "B",
+                "load_posture": "balanced_progressive",
+                "recovery_margin": "medium",
+                "fatigue_exposure": "moderate",
+                "specificity_density": "moderate",
+                "season_archetype": "endurance_build",
+                "phase_intent": "durability_build",
+                "phase_week_role": "LOAD_1",
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "risk_flags": [],
+            },
             "week_summary": {
                 "week_objective": "Test objective",
                 "weekly_load_corridor_kj": {"min": 1, "max": 2, "notes": ""},

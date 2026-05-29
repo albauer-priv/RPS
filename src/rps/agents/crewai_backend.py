@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -73,6 +73,11 @@ from rps.crewai_runtime.telemetry import (
 )
 from rps.evidence.library import canonical_reference_locator
 from rps.planning.contracts import derive_expected_average_weekly_kj_range
+from rps.planning.phase_authority import (
+    format_role_week_load_bands,
+    normalize_role_week_load_bands,
+    role_week_band_by_week,
+)
 from rps.planning.week_engine import (
     execute_week_engine,
     extract_message_from_user_input,
@@ -620,22 +625,6 @@ def _derive_season_load_envelope_counts(*, phase_blueprints: list[JsonMap]) -> t
     return high_load_weeks, low_load_weeks
 
 
-def _format_role_week_load_bands(entries: list[object]) -> list[str]:
-    """Render deterministic role-week bands into stable compact strings."""
-
-    rendered: list[str] = []
-    for entry in entries:
-        entry_map = _as_map(entry)
-        band = _as_map(entry_map.get("band"))
-        week = str(entry_map.get("week") or "").strip()
-        role = str(entry_map.get("role") or "").strip()
-        band_min = band.get("min")
-        band_max = band.get("max")
-        if week and role and band_min is not None and band_max is not None:
-            rendered.append(f"{week}: {role} {band_min}-{band_max}")
-    return rendered
-
-
 def _normalize_progression_trace(value: object) -> list[str]:
     """Normalize deterministic progression trace payloads to list form."""
 
@@ -672,10 +661,10 @@ def _append_unique_item(items: object, item: str) -> list[str]:
     return normalized
 
 
-def _format_role_week_guardrail_sentence(entries: list[object]) -> str:
+def _format_role_week_guardrail_sentence(entries: Sequence[object]) -> str:
     """Render structured role-week bands into one audit sentence."""
 
-    rendered = _format_role_week_load_bands(entries)
+    rendered = format_role_week_load_bands(entries)
     if not rendered:
         return ""
     return (
@@ -836,9 +825,12 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
             approved.get("allowed_load_modalities") or semantic_allowed_load_modalities(phase_intent)
         )
 
-        role_week_sentence = _format_role_week_guardrail_sentence(
+        structured_role_week_bands = normalize_role_week_load_bands(
             _as_list(deterministic.get("role_week_load_bands"))
         )
+        if structured_role_week_bands:
+            phase["role_week_load_bands"] = structured_role_week_bands
+        role_week_sentence = _format_role_week_guardrail_sentence(structured_role_week_bands)
         weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
         if weekly_kj:
             weekly_kj["notes"] = _append_sentence(weekly_kj.get("notes"), role_week_sentence)
@@ -1029,10 +1021,10 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
                 "load_corridor_max": recommended_corridor.get("max", blueprint.get("load_corridor_max")),
                 "availability_cap_kj": availability_cap.get("typical", blueprint.get("availability_cap_kj")),
                 "baseline_load_kj": deterministic.get("baseline_load_kj", blueprint.get("baseline_load_kj")),
-                "role_week_load_bands": _format_role_week_load_bands(
+                "role_week_load_bands": normalize_role_week_load_bands(
                     _as_list(deterministic.get("role_week_load_bands"))
                 )
-                or [str(item) for item in _as_list(blueprint.get("role_week_load_bands")) if str(item).strip()],
+                or normalize_role_week_load_bands(blueprint.get("role_week_load_bands")),
                 "progression_trace": _normalize_progression_trace(
                     deterministic.get("progression_trace") or blueprint.get("progression_trace")
                 ),
@@ -1115,15 +1107,17 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     if inherited_scenario_contract:
         normalized_bundle["inherited_scenario_contract"] = inherited_scenario_contract
     week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
-    s5_band_by_week = {
-        str(_as_map(entry).get("week") or ""): _as_map(_as_map(entry).get("band"))
-        for entry in _as_list(phase_execution_context.get("phase_s5_bands"))
-        if str(_as_map(entry).get("week") or "").strip()
-    }
+    exact_band_by_week = role_week_band_by_week(phase_execution_context.get("phase_role_week_load_bands"))
+    if not exact_band_by_week:
+        exact_band_by_week = {
+            str(_as_map(entry).get("week") or ""): _as_map(_as_map(entry).get("band"))
+            for entry in _as_list(phase_execution_context.get("phase_s5_bands"))
+            if str(_as_map(entry).get("week") or "").strip()
+        }
     normalized_weeks: list[JsonMap] = []
     for blueprint in [_as_map(item) for item in _as_list(planning_bundle.get("week_blueprints"))]:
         week = str(blueprint.get("week") or "").strip()
-        band = s5_band_by_week.get(week, {})
+        band = exact_band_by_week.get(week, {})
         normalized_weeks.append(
             {
                 **blueprint,
@@ -1135,6 +1129,8 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
             }
         )
     normalized_bundle["week_blueprints"] = normalized_weeks
+    if phase_execution_context.get("phase_primary_objective"):
+        normalized_bundle["phase_primary_objective"] = phase_execution_context.get("phase_primary_objective")
     return normalized_bundle
 
 
