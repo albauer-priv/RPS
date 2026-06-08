@@ -86,7 +86,7 @@ Owner: Workspace
 * `src/rps/workspace/guarded_store.py`
   * normalize preview against stored structure before validation
 * `src/rps/agents/output_normalization.py`
-  * project operational intensity domains into `PHASE_STRUCTURE`
+  * keep `PHASE_STRUCTURE.allowed_intensity_domains` equal to exact persisted phase legality
   * repair deterministic `PHASE_PREVIEW` derivation fields
 * `skills/phase/preview-synthesis/SKILL.md`
   * make derivation rules explicit for agenda fields
@@ -101,7 +101,7 @@ Owner: Workspace
   * candidate `PHASE_PREVIEW`
   * stored exact-range `PHASE_STRUCTURE`
 * Processing:
-  * normalize structure operational domains for fixed rest/recovery semantics
+* keep fixed rest/recovery semantics operational in Preview validation instead of widening structural legality
   * normalize preview traceability and quality-cap overflows
   * validate traceability
   * compare preview agenda weeks and day semantics against structure authority
@@ -198,7 +198,7 @@ Owner: Workspace
 * [x] Agenda day roles, intensity domains, and load modalities must stay inside structure authority.
 * [x] Fixed non-training days must remain non-training in preview agenda.
 * [x] Preview weekly `QUALITY` count must not exceed the structure cap.
-* [x] `PHASE_STRUCTURE` operational domains for rest/recovery semantics are normalized before preview validation.
+* [x] `PHASE_STRUCTURE` structural legality stays exact; Preview validation accepts operational `NONE` only for rest/non-training semantics.
 * [x] Validation passes: `python3 -m py_compile`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted pytest.
 
 ---

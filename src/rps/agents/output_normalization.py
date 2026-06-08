@@ -415,24 +415,6 @@ def normalize_phase_structure_document(
         if primary_objective:
             upstream_intent["primary_objective"] = primary_objective
 
-    structural_phase_elements = data.get("structural_phase_elements")
-    if isinstance(structural_phase_elements, dict):
-        allowed_day_roles = set(_text_list(structural_phase_elements.get("allowed_day_roles")))
-        required_operational_domains = [
-            "NONE"
-            for role in ("REST", "OFF_BIKE", "TRAVEL")
-            if role in allowed_day_roles
-        ]
-        if "RECOVERY" in allowed_day_roles:
-            required_operational_domains.append("RECOVERY")
-        normalized_domains = _merge_unique_strings(
-            _text_list(structural_phase_elements.get("allowed_intensity_domains")),
-            required_operational_domains,
-        )
-        if normalized_domains:
-            structural_phase_elements["allowed_intensity_domains"] = normalized_domains
-        data["structural_phase_elements"] = structural_phase_elements
-
     document["data"] = data
     return document
 

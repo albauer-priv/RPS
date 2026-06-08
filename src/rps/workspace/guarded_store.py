@@ -694,7 +694,18 @@ class GuardedValidatedStore:
                         f"{day_label} day_role '{day_role}' is outside "
                         "phase_structure.structural_phase_elements.allowed_day_roles."
                     )
-                if allowed_intensity_domains and intensity_domain not in allowed_intensity_domains:
+                intensity_is_operational_none = (
+                    intensity_domain == "NONE"
+                    and (
+                        day_role == "REST"
+                        or day_of_week in fixed_non_training_days
+                    )
+                )
+                if (
+                    allowed_intensity_domains
+                    and intensity_domain not in allowed_intensity_domains
+                    and not intensity_is_operational_none
+                ):
                     errors.append(
                         f"{day_label} intensity_domain '{intensity_domain}' is outside "
                         "phase_structure.structural_phase_elements.allowed_intensity_domains."

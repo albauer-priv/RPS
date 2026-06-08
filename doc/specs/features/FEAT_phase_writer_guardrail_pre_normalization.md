@@ -57,6 +57,7 @@ Owner: Planning Pipeline
 * Writer-task guardrails for Phase artifacts see the same exact-authority-projected candidate that guarded-store persistence would later enforce.
 * `PHASE_STRUCTURE` is narrowed to persisted Season phase legality and persisted `PHASE_GUARDRAILS` load bands before task guardrails evaluate it.
 * `PHASE_PREVIEW` is normalized to stored/shared skeleton semantics before task guardrails evaluate it.
+* Exact phase legality remains structural only; operational `REST -> NONE/NONE` semantics are handled downstream by day-role validation and are not reintroduced into persisted `PHASE_STRUCTURE.allowed_intensity_domains`.
 
 **UI impact**
 
@@ -80,6 +81,7 @@ Owner: Planning Pipeline
 
 * `guardrails.py`: add narrow pre-guardrail candidate projection helper and apply it inside the guardrail wrapper.
 * `crewai_backend.py`: pass `artifact_type` and `loaded_inputs` into writer-task guardrail runtime context; retain produced Phase artifacts in `loaded_inputs` for downstream writer tasks in the same bundle run.
+* `guarded_store.py`: accept operational `NONE` only for `REST` / fixed non-training days instead of requiring `NONE` inside exact structural phase legality.
 
 **Data flow**
 

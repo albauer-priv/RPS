@@ -156,27 +156,41 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
     )
 
 
-def test_normalize_phase_structure_adds_operational_intensity_domains() -> None:
+def test_normalize_phase_structure_preserves_exact_phase_legality() -> None:
     document = {
-        "meta": {"artifact_type": "PHASE_STRUCTURE"},
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
         "data": {
             "structural_phase_elements": {
                 "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
-                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
-                "allowed_load_modalities": ["NONE"],
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
             }
         },
     }
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "iso_week_range": "2026-24--2026-25",
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                        "allowed_load_modalities": ["NONE"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    }
+                }
+            ]
+        }
+    }
 
-    normalized = normalize_phase_structure_document(document)
+    normalized = normalize_phase_structure_document(document, season_plan_document=season_plan)
 
     assert normalized["data"]["structural_phase_elements"]["allowed_intensity_domains"] == [
+        "RECOVERY",
         "ENDURANCE",
         "TEMPO",
         "SWEET_SPOT",
-        "NONE",
-        "RECOVERY",
     ]
+    assert "NONE" not in normalized["data"]["structural_phase_elements"]["allowed_intensity_domains"]
 
 
 def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:
@@ -204,7 +218,7 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
         "data": {
             "structural_phase_elements": {
                 "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
-                "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
                 "allowed_load_modalities": ["NONE"],
             },
             "execution_principles": {

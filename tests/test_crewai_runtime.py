@@ -5392,6 +5392,14 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
         "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
         _fake_guard_put_validated,
     )
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend.normalize_phase_draft_bundle",
+        lambda payload: payload,
+    )
+    monkeypatch.setattr(
+        "rps.agents.crewai_backend._validate_normalized_phase_bundle",
+        lambda payload, **_: payload,
+    )
 
     runtime = AgentRuntime(
         model="openai/gpt-5-mini",
