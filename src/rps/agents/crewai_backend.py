@@ -1096,16 +1096,25 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     normalized_bundle = dict(planning_bundle)
     normalized_bundle["phase_id"] = phase_execution_context.get("phase_id", planning_bundle.get("phase_id"))
     normalized_bundle["phase_range"] = phase_execution_context.get("phase_iso_week_range", planning_bundle.get("phase_range"))
+    execution_phase_intent = phase_execution_context.get("phase_intent")
+    if not str(execution_phase_intent or "").strip():
+        raise RuntimeError("Deterministic phase_execution_context.phase_intent is missing.")
     phase_type, phase_intent, build_subtype = _canonicalize_phase_semantics_for_bundle(
         phase_type=phase_execution_context.get("phase_type", planning_bundle.get("phase_type")),
-        phase_intent=phase_execution_context.get("phase_intent", planning_bundle.get("phase_intent")),
+        phase_intent=execution_phase_intent,
         build_subtype=phase_execution_context.get("build_subtype", planning_bundle.get("build_subtype")),
     )
+    if not phase_intent:
+        raise RuntimeError("Deterministic phase_execution_context.phase_intent could not be canonicalized.")
     normalized_bundle["phase_type"] = phase_type
     normalized_bundle["phase_intent"] = phase_intent
     normalized_bundle["build_subtype"] = build_subtype
     if inherited_scenario_contract:
         normalized_bundle["inherited_scenario_contract"] = inherited_scenario_contract
+    for field in ("guardrails", "structure", "preview"):
+        nested = _as_map(normalized_bundle.get(field))
+        if nested:
+            normalized_bundle[field] = {**nested, "phase_intent": phase_intent}
     week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
     exact_band_by_week = role_week_band_by_week(phase_execution_context.get("phase_role_week_load_bands"))
     if not exact_band_by_week:
@@ -1122,7 +1131,7 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
             {
                 **blueprint,
                 "phase_role": phase_execution_context.get("phase_role") or phase_execution_context.get("phase_type") or blueprint.get("phase_role"),
-                "phase_intent": phase_execution_context.get("phase_intent") or blueprint.get("phase_intent"),
+                "phase_intent": phase_intent,
                 "week_role": week_role_by_iso_week.get(week, blueprint.get("week_role")),
                 "s5_band_min": band.get("min", blueprint.get("s5_band_min")),
                 "s5_band_max": band.get("max", blueprint.get("s5_band_max")),

@@ -42,6 +42,8 @@ Out of scope:
 
 ## Hard rules
 
+- Nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only.
+- Do not put narrative explanations, objectives, summaries, or prose into any `phase_intent` field.
 - Keep reload and re-entry semantically distinct.
 - Preserve Build-entry conservatism when shortened/base/re-entry context precedes the phase.
 - Do not let a threshold-shaped block survive when inherited phase or season authority suppresses `THRESHOLD`.

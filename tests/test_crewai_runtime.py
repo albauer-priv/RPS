@@ -8,6 +8,8 @@ import types
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from rps.agents import runtime as agent_runtime
 from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
@@ -2437,9 +2439,80 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
     assert normalized["phase_type"] == "BASE"
     assert normalized["phase_intent"] == "shortened_re_entry"
     assert normalized["inherited_scenario_contract"]["selected_scenario_id"] == "B"
+    assert normalized["guardrails"]["phase_intent"] == "shortened_re_entry"
+    assert normalized["structure"]["phase_intent"] == "shortened_re_entry"
+    assert normalized["preview"]["phase_intent"] == "shortened_re_entry"
     assert normalized["week_blueprints"][0]["week_role"] == "LOAD_1"
     assert normalized["week_blueprints"][0]["s5_band_min"] == 7800
     assert normalized["week_blueprints"][0]["s5_band_max"] == 8600
+
+
+def test_normalize_phase_draft_bundle_rewrites_nested_narrative_phase_intents() -> None:
+    draft_bundle = {
+        "phase_range": "2026-24--2026-25",
+        "phase_type": "BASE",
+        "phase_intent": "wrong",
+        "week_blueprints": [
+            {"week": "2026-24", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
+        ],
+        "guardrails": {
+            "phase_intent": "Re-establish stable training continuity under moderated load.",
+            "phase_summary": ["summary"],
+        },
+        "structure": {
+            "phase_intent": "Controlled re-entry narrative",
+            "upstream_intent": ["x"],
+        },
+        "preview": {
+            "phase_intent": "Keep the weeks feeling stable and aerobic.",
+            "phase_intent_summary": ["summary"],
+        },
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-24--2026-25",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": None,
+            "week_role_by_iso_week": {"2026-24": "SHORTENED_RE_ENTRY"},
+            "phase_s5_bands": [{"week": "2026-24", "band": {"min": 7893, "max": 10148}}],
+        }
+    ):
+        normalized = normalize_phase_draft_bundle(draft_bundle)
+
+    assert normalized["phase_intent"] == "shortened_re_entry"
+    assert normalized["guardrails"]["phase_intent"] == "shortened_re_entry"
+    assert normalized["structure"]["phase_intent"] == "shortened_re_entry"
+    assert normalized["preview"]["phase_intent"] == "shortened_re_entry"
+    assert normalized["week_blueprints"][0]["phase_intent"] == "shortened_re_entry"
+
+
+def test_normalize_phase_draft_bundle_raises_when_canonical_phase_intent_missing() -> None:
+    draft_bundle = {
+        "phase_range": "2026-24--2026-25",
+        "guardrails": {"phase_summary": ["summary"]},
+        "structure": {"upstream_intent": ["x"]},
+        "preview": {"phase_intent_summary": ["summary"]},
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-24--2026-25",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "",
+        }
+    ):
+        with pytest.raises(RuntimeError, match="phase_execution_context\\.phase_intent"):
+            normalize_phase_draft_bundle(draft_bundle)
 
 
 def test_phase_bundle_matches_context_accepts_inherited_scenario_contract_in_synthetic_candidate() -> None:
@@ -3080,6 +3153,22 @@ def test_phase_bundle_review_readiness_rejects_unready_bundle() -> None:
 
     assert ok is False
     assert "does not match bundle phase_intent" in message or "must provide guardrails.phase_summary" in message
+
+
+def test_phase_bundle_review_readiness_accepts_normalized_nested_phase_intents() -> None:
+    ok, payload = phase_bundle_review_readiness(
+        {
+            "phase_intent": "shortened_re_entry",
+            "guardrails": {"phase_intent": "shortened_re_entry", "phase_summary": ["summary"]},
+            "structure": {"phase_intent": "shortened_re_entry"},
+            "preview": {"phase_intent": "shortened_re_entry", "phase_intent_summary": ["summary"]},
+            "constraint_audit": {"blocking_issues": []},
+            "load_governance_audit": {"blocking_issues": []},
+        }
+    )
+
+    assert ok is True
+    assert payload["phase_intent"] == "shortened_re_entry"
 
 
 def test_week_bundle_review_readiness_rejects_loaded_fixed_rest_day() -> None:

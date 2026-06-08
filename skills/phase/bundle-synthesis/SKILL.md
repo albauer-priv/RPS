@@ -20,6 +20,7 @@ Authority / injected sources:
 - `weekly_kj_bands` come from approved phase guardrails
 - inherited scenario posture comes from `inherited_scenario_contract`; operationalize it rather than reopening scenario choice
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
+- nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only, never prose or narrative summaries
 
 Method:
 1. Pass 1 - structural draft: keep guardrails authoritative over structure.
