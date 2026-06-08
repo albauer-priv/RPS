@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "last_attempt_at": "2026-05-28T14:42:18.736243Z",
-  "last_success_at": "2026-05-28T14:42:18.736243Z",
-  "last_search_date": "2026-05-28",
+  "last_attempt_at": "2026-06-08T09:04:13.893940Z",
+  "last_success_at": "2026-06-08T09:04:13.893940Z",
+  "last_search_date": "2026-06-08",
   "stats": {
     "queries_run": 7,
     "candidates_seen": 10,
@@ -16,7 +16,7 @@
     "legacy_backfilled": 1,
     "processed_entries": 5,
     "skipped_unchanged": 20,
-    "skipped_due_to_cap": 22,
+    "skipped_due_to_cap": 32,
     "rate_limited_skipped": 0
   }
 }
