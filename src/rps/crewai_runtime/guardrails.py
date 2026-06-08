@@ -15,6 +15,7 @@ from typing import Any, cast
 
 from rps.agents.output_normalization import (
     extract_loaded_document,
+    normalize_phase_guardrails_document_from_execution_context,
     normalize_phase_preview_document,
     normalize_phase_structure_document_from_execution_context,
 )
@@ -2024,6 +2025,16 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     if not isinstance(loaded_inputs, dict):
         loaded_inputs = {}
     phase_execution_context = context.get("phase_execution_context")
+    if artifact_type == ArtifactType.PHASE_GUARDRAILS.value:
+        if not normalize_role_week_load_bands(_as_map(phase_execution_context).get("phase_role_week_load_bands")):
+            raise ValueError(
+                "PHASE_GUARDRAILS pre-guardrail normalization requires phase_execution_context.phase_role_week_load_bands."
+            )
+        return normalize_phase_guardrails_document_from_execution_context(
+            dict(mapping),
+            phase_execution_context=phase_execution_context if isinstance(phase_execution_context, dict) else None,
+            season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
+        )
     if artifact_type == ArtifactType.PHASE_STRUCTURE.value:
         phase_guardrails_document = extract_loaded_document(loaded_inputs.get("phase_guardrails"))
         if not _string_list(_as_map(phase_execution_context).get("phase_allowed_intensity_domains")):

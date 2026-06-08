@@ -1538,6 +1538,14 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 )
             )
         if task_name == "phase_bundle_finalize" and blocks:
+            authority_freeze_block = _phase_bundle_finalize_authority_freeze_block()
+            if authority_freeze_block:
+                blocks.append(authority_freeze_block)
+                blocks.append(
+                    "Phase finalizer authority rule: these injected values are authoritative finalizer inputs. "
+                    "do not call workspace tools to rediscover them when they are already present here; "
+                    "Fallback retrieval is allowed only if a required authority field is missing from the injected freeze block."
+                )
             blocks.append(
                 "Phase finalization rule: consume these deterministic contracts directly. "
                 "Do not delegate or rediscover week roles, S5 bands, or phase-range authority from prose."
@@ -1664,6 +1672,43 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 "Do not retrieve or expect a synthetic `candidate_week_bundle` workspace artefact."
             )
     return blocks
+
+
+def _phase_bundle_finalize_authority_freeze_block() -> str:
+    """Return a compact exact-authority block for `phase_bundle_finalize` when available."""
+
+    context = current_guardrail_runtime_context()
+    phase_execution_context = _as_map(context.get("phase_execution_context"))
+    phase_slot_context = _as_map(context.get("phase_slot_context"))
+    if not phase_execution_context and not phase_slot_context:
+        return ""
+    payload: JsonMap = {
+        "phase_id": str(phase_execution_context.get("phase_id") or phase_slot_context.get("phase_id") or "").strip(),
+        "phase_range": str(phase_execution_context.get("phase_range") or phase_slot_context.get("phase_range") or "").strip(),
+        "phase_type": str(phase_execution_context.get("phase_type") or "").strip(),
+        "phase_intent": str(phase_execution_context.get("phase_intent") or "").strip(),
+        "build_subtype": phase_execution_context.get("build_subtype"),
+        "phase_allowed_intensity_domains": list(phase_execution_context.get("phase_allowed_intensity_domains") or []),
+        "phase_forbidden_intensity_domains": list(
+            phase_execution_context.get("phase_forbidden_intensity_domains") or []
+        ),
+        "phase_allowed_load_modalities": list(phase_execution_context.get("phase_allowed_load_modalities") or []),
+        "phase_role_week_load_bands": list(phase_execution_context.get("phase_role_week_load_bands") or []),
+        "week_role_by_iso_week": _as_map(phase_execution_context.get("week_role_by_iso_week")),
+        "phase_primary_objective": str(phase_execution_context.get("phase_primary_objective") or "").strip(),
+    }
+    if not any(payload.values()):
+        return ""
+    return _render_json_block("Phase Finalizer Authority Freeze", payload)
+
+
+def _phase_bundle_finalize_has_bound_contracts() -> bool:
+    """Return whether the finalizer already has both deterministic contracts injected."""
+
+    context = current_guardrail_runtime_context()
+    return bool(_as_map(context.get("phase_execution_context"))) and bool(
+        _as_map(context.get("phase_slot_context"))
+    )
 
 
 def _resolve_prompt_agent_name(agent_name: str, blueprint: Any) -> str:
@@ -2146,6 +2191,7 @@ def _build_crewai_task(
     athlete_id: str | None = None,
     run_id: str | None = None,
     tools: list[Any] | ToolMap | None = None,
+    tools_override: list[Any] | ToolMap | None = None,
     context_tasks: list[object] | None = None,
 ) -> object:
     """Instantiate one CrewAI task object with optional explicit context."""
@@ -2173,7 +2219,13 @@ def _build_crewai_task(
     elif output_mode == "pydantic":
         kwargs["output_pydantic"] = output_model
     kwargs.update(guardrail_kwargs)
-    task_tools = _task_tools_for_blueprint(task_blueprint, tools or {})
+    if tools_override is not None and len(_tool_map_from_runtime_tools(tools_override)) == 0:
+        task_tools: list[Any] = []
+    else:
+        task_tools = _task_tools_for_blueprint(
+            task_blueprint,
+            tools_override if tools_override is not None else (tools or {}),
+        )
     if task_tools:
         kwargs["tools"] = task_tools
     if context_tasks:
@@ -2204,6 +2256,7 @@ def _execute_crewai_multiagent_crew(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     tools: list[Any] | ToolMap,
+    tools_override_by_task: dict[str, list[Any] | ToolMap] | None = None,
     user_input: str,
     final_public_task: AgentTask | None = None,
     athlete_id: str | None = None,
@@ -2327,6 +2380,7 @@ def _execute_crewai_multiagent_crew(
             athlete_id=athlete_id,
             run_id=run_id,
             tools=tools,
+            tools_override=(tools_override_by_task or {}).get(task_name),
             context_tasks=context_tasks,
         )
         crew_tasks.append(crew_task)
@@ -2568,6 +2622,9 @@ def _run_phase_bundle_document(
 ) -> JsonMap:
     """Execute the hierarchical phase planning crew and return the internal PhaseBundle."""
     final_task_name = _PHASE_PLANNING_TASKS[-1]
+    tools_override_by_task: dict[str, list[Any] | ToolMap] | None = None
+    if _phase_bundle_finalize_has_bound_contracts():
+        tools_override_by_task = {final_task_name: []}
     pydantic_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
         crewai_llm_cls=crewai_llm_cls,
@@ -2583,6 +2640,7 @@ def _run_phase_bundle_document(
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
         tools=tools,
+        tools_override_by_task=tools_override_by_task,
         user_input=user_input,
         final_public_task=None,
         athlete_id=athlete_id,

@@ -39,6 +39,13 @@ _SEASON_SCENARIO_TRACE_UPSTREAM_ARTIFACTS = _SEASON_SCENARIO_TRACE_EVENT_ARTIFAC
     "ATHLETE_STATE_SNAPSHOT",
     "PLANNING_CONTEXT_SNAPSHOT",
 }
+_PHASE_TRACE_UPSTREAM_ARTIFACTS = {
+    "SEASON_PLAN",
+    "SEASON_SCENARIO_SELECTION",
+    "SEASON_SCENARIOS",
+    "PHASE_GUARDRAILS",
+    "PHASE_STRUCTURE",
+}
 _DISALLOWED_AVOID_DOMAINS = {"NONE", "RECOVERY"}
 _SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(?:\.[0-9]+)?$")
 _META_SCOPES = {"Shared", "Season", "Phase", "Week", "Context"}
@@ -202,6 +209,46 @@ def _merge_unique_strings(existing: list[str], required: list[str]) -> list[str]
             merged.append(stripped)
             seen.add(stripped)
     return merged
+
+
+def _canonical_quality_intent(*, phase_type: object, phase_intent: object, current: object) -> str | None:
+    """Return the canonical quality-intent token for supported phase semantics."""
+
+    phase_type_token = str(phase_type or "").strip().upper()
+    phase_intent_token = str(phase_intent or "").strip().lower()
+    if phase_type_token == "BASE" and phase_intent_token in {"shortened_re_entry", "shortened_consolidation", "re_entry"}:
+        return "Stabilization"
+    rendered_current = str(current or "").strip()
+    return rendered_current or None
+
+
+def _trace_entry_from_document(
+    document: dict[str, Any] | None,
+    *,
+    expected_artifact: str,
+    version_key: str | None = None,
+) -> dict[str, str] | None:
+    """Return one canonical trace reference from a stored artifact document."""
+
+    if not isinstance(document, dict):
+        return None
+    meta = _as_map(document.get("meta"))
+    run_id = str(meta.get("run_id") or "").strip()
+    resolved_version_key = str(version_key or meta.get("version_key") or "").strip()
+    if not run_id or not resolved_version_key:
+        return None
+    reference = normalize_trace_reference(
+        {
+            "artifact": expected_artifact,
+            "version": _normalize_semver(meta.get("version")),
+            "schema_version": meta.get("schema_version"),
+            "version_key": resolved_version_key,
+            "run_id": run_id,
+        }
+    )
+    if reference is None:
+        return None
+    return {key: str(value) for key, value in reference.items()}
 
 
 def _parse_compact_event_window(value: object) -> tuple[str, str] | None:
@@ -407,6 +454,13 @@ def normalize_phase_structure_document(
             load_intensity_handling["forbidden_intensity_domains"] = list(
                 semantics.get("forbidden_intensity_domains") or []
             )
+            canonical_quality_intent = _canonical_quality_intent(
+                phase_type=upstream_intent.get("phase_type"),
+                phase_intent=upstream_intent.get("phase_intent"),
+                current=load_intensity_handling.get("quality_intent"),
+            )
+            if canonical_quality_intent:
+                load_intensity_handling["quality_intent"] = canonical_quality_intent
             execution_principles["load_intensity_handling"] = load_intensity_handling
             data["execution_principles"] = execution_principles
         overview = _as_map(season_phase.get("overview"))
@@ -414,6 +468,22 @@ def normalize_phase_structure_document(
         primary_objective = str(phase_goals.get("primary") or "").strip()
         if primary_objective:
             upstream_intent["primary_objective"] = primary_objective
+
+    trace_upstream = meta.get("trace_upstream")
+    if not isinstance(trace_upstream, list):
+        trace_upstream = []
+    phase_guardrails_ref = _trace_entry_from_document(
+        phase_guardrails_document,
+        expected_artifact="PHASE_GUARDRAILS",
+        version_key=phase_guardrails_version_key,
+    )
+    if phase_guardrails_ref is not None:
+        trace_upstream.append(phase_guardrails_ref)
+    meta["trace_upstream"] = _normalize_trace_entries(
+        trace_upstream,
+        allowed=_PHASE_TRACE_UPSTREAM_ARTIFACTS,
+    )
+    document["meta"] = meta
 
     document["data"] = data
     return document
@@ -465,6 +535,13 @@ def normalize_phase_structure_document_from_execution_context(
     forbidden_domains = _text_list(context.get("phase_forbidden_intensity_domains"))
     if forbidden_domains:
         load_intensity_handling["forbidden_intensity_domains"] = forbidden_domains
+    canonical_quality_intent = _canonical_quality_intent(
+        phase_type=context.get("phase_type"),
+        phase_intent=context.get("phase_intent"),
+        current=load_intensity_handling.get("quality_intent"),
+    )
+    if canonical_quality_intent:
+        load_intensity_handling["quality_intent"] = canonical_quality_intent
     if load_intensity_handling:
         execution_principles["load_intensity_handling"] = load_intensity_handling
     if execution_principles:
@@ -481,6 +558,26 @@ def normalize_phase_structure_document_from_execution_context(
 
     normalized["data"] = data
     return normalized
+
+
+def normalize_phase_guardrails_document_from_execution_context(
+    document: dict[str, Any],
+    *,
+    phase_execution_context: dict[str, Any] | None,
+    season_plan_document: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Project exact PHASE_GUARDRAILS authority from deterministic phase execution context."""
+
+    context = _as_map(phase_execution_context)
+    if not normalize_role_week_load_bands(context.get("phase_role_week_load_bands")):
+        raise ValueError(
+            "PHASE_GUARDRAILS pre-guardrail normalization requires phase_execution_context.phase_role_week_load_bands."
+        )
+    return normalize_phase_guardrails_document(
+        document,
+        season_plan_document=season_plan_document,
+        phase_execution_context=context,
+    )
 
 
 def _season_phase_for_range(
@@ -595,6 +692,22 @@ def normalize_phase_preview_document(
     if not isinstance(structure_data, dict):
         document["data"] = data
         return document
+
+    trace_upstream = meta.get("trace_upstream")
+    if not isinstance(trace_upstream, list):
+        trace_upstream = []
+    phase_structure_ref = _trace_entry_from_document(
+        phase_structure_document,
+        expected_artifact="PHASE_STRUCTURE",
+        version_key=phase_structure_version_key,
+    )
+    if phase_structure_ref is not None:
+        trace_upstream.append(phase_structure_ref)
+    meta["trace_upstream"] = _normalize_trace_entries(
+        trace_upstream,
+        allowed=_PHASE_TRACE_UPSTREAM_ARTIFACTS,
+    )
+    document["meta"] = meta
 
     structural_phase_elements = structure_data.get("structural_phase_elements")
     execution_principles = structure_data.get("execution_principles")
@@ -855,6 +968,7 @@ def normalize_phase_guardrails_document(
     document: dict[str, Any],
     *,
     season_plan_document: dict[str, Any] | None = None,
+    phase_execution_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Normalize PHASE_GUARDRAILS shape quirks before validation."""
 
@@ -896,6 +1010,11 @@ def normalize_phase_guardrails_document(
             if isinstance(entry, dict):
                 _widen_band(entry)
 
+    context = _as_map(phase_execution_context)
+    phase_bands = normalize_role_week_load_bands(context.get("phase_role_week_load_bands"))
+    if phase_bands:
+        load_guardrails["weekly_kj_bands"] = phase_bands
+
     season_data = season_plan_document.get("data") if isinstance(season_plan_document, dict) else None
     if isinstance(season_data, dict):
         inherited_contract = season_data.get("selected_scenario_contract")
@@ -908,28 +1027,68 @@ def normalize_phase_guardrails_document(
                 phase_summary = {}
             overview = _as_map(season_phase.get("overview"))
             phase_goals = _as_map(overview.get("phase_goals"))
-            primary_objective = str(phase_goals.get("primary") or "").strip()
-            if primary_objective:
-                phase_summary["primary_objective"] = primary_objective
+            if not str(phase_summary.get("primary_objective") or "").strip():
+                primary_objective = str(phase_goals.get("primary") or "").strip()
+                if primary_objective:
+                    phase_summary["primary_objective"] = primary_objective
             data["phase_summary"] = phase_summary
             semantics = _as_map(season_phase.get("allowed_forbidden_semantics"))
             if semantics:
                 allowed_forbidden = data.get("allowed_forbidden_semantics")
                 if not isinstance(allowed_forbidden, dict):
                     allowed_forbidden = {}
-                allowed_forbidden["allowed_intensity_domains"] = list(
-                    semantics.get("allowed_intensity_domains") or []
-                )
-                allowed_forbidden["allowed_load_modalities"] = list(
-                    semantics.get("allowed_load_modalities") or []
-                )
-                allowed_forbidden["forbidden_intensity_domains"] = list(
-                    semantics.get("forbidden_intensity_domains") or []
-                )
+                if not _text_list(allowed_forbidden.get("allowed_intensity_domains")):
+                    allowed_forbidden["allowed_intensity_domains"] = list(
+                        semantics.get("allowed_intensity_domains") or []
+                    )
+                if not _text_list(allowed_forbidden.get("allowed_load_modalities")):
+                    allowed_forbidden["allowed_load_modalities"] = list(
+                        semantics.get("allowed_load_modalities") or []
+                    )
+                if not _text_list(allowed_forbidden.get("forbidden_intensity_domains")):
+                    allowed_forbidden["forbidden_intensity_domains"] = list(
+                        semantics.get("forbidden_intensity_domains") or []
+                    )
                 data["allowed_forbidden_semantics"] = allowed_forbidden
             exact_bands = _season_phase_role_week_load_bands(season_phase)
-            if exact_bands:
+            if exact_bands and not phase_bands:
                 load_guardrails["weekly_kj_bands"] = exact_bands
+
+    phase_summary = data.get("phase_summary")
+    if not isinstance(phase_summary, dict):
+        phase_summary = {}
+    primary_objective = str(context.get("phase_primary_objective") or "").strip()
+    if primary_objective:
+        phase_summary["primary_objective"] = primary_objective
+    if phase_summary:
+        data["phase_summary"] = phase_summary
+
+    allowed_forbidden = data.get("allowed_forbidden_semantics")
+    if not isinstance(allowed_forbidden, dict):
+        allowed_forbidden = {}
+    allowed_domains = _text_list(context.get("phase_allowed_intensity_domains"))
+    if allowed_domains:
+        allowed_forbidden["allowed_intensity_domains"] = allowed_domains
+    forbidden_domains = _text_list(context.get("phase_forbidden_intensity_domains"))
+    if forbidden_domains:
+        allowed_forbidden["forbidden_intensity_domains"] = forbidden_domains
+    allowed_modalities = _text_list(context.get("phase_allowed_load_modalities"))
+    if allowed_modalities:
+        allowed_forbidden["allowed_load_modalities"] = allowed_modalities
+    quality_density = allowed_forbidden.get("quality_density")
+    if not isinstance(quality_density, dict):
+        quality_density = {}
+    canonical_quality_intent = _canonical_quality_intent(
+        phase_type=context.get("phase_type") or _as_map(data.get("body_metadata")).get("phase_type"),
+        phase_intent=context.get("phase_intent") or _as_map(data.get("body_metadata")).get("phase_intent"),
+        current=quality_density.get("quality_intent"),
+    )
+    if canonical_quality_intent:
+        quality_density["quality_intent"] = canonical_quality_intent
+    if quality_density:
+        allowed_forbidden["quality_density"] = quality_density
+    if allowed_forbidden:
+        data["allowed_forbidden_semantics"] = allowed_forbidden
 
     document["data"] = data
     return _project_phase_guardrails_season_constraints(

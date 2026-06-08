@@ -45,6 +45,9 @@ Out of scope:
 - Nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only.
 - Do not put narrative explanations, objectives, summaries, or prose into any `phase_intent` field.
 - Pass 2 must freeze exact legality, exact forbidden domains, exact load modalities, exact role-week load bands, and exact phase-local objective before review handoff.
+- If deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`.
+- Use injected authority directly and use tools only as fallback for genuinely missing authority fields.
+- Use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them.
 - Operational `NONE` belongs only to preview/non-training-day semantics and must never be reintroduced into `PHASE_STRUCTURE` structural legality.
 - Keep reload and re-entry semantically distinct.
 - Preserve Build-entry conservatism when shortened/base/re-entry context precedes the phase.
@@ -57,6 +60,26 @@ Out of scope:
 - Do not assume the writer will fix structure or semantics later.
 
 ## Finalize-check
+
+Phase Finalizer Authority Freeze example:
+
+```json
+{
+  "phase_id": "P01",
+  "phase_range": "2026-24--2026-25",
+  "phase_type": "BUILD",
+  "phase_intent": "shortened_re_entry",
+  "build_subtype": "durability_build",
+  "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+  "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+  "phase_allowed_load_modalities": ["NONE"],
+  "phase_role_week_load_bands": [
+    {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}}
+  ],
+  "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+  "phase_primary_objective": "Rebuild load tolerance with controlled sweet spot support."
+}
+```
 
 Pass 3 checklist:
 

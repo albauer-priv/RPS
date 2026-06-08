@@ -17,25 +17,31 @@ Method:
 - `iso_week` is the first week of `iso_week_range`.
 - `temporal_scope` must be copied from upstream, not computed.
 - propagate season global constraints exactly where required.
-- `weekly_kj_bands` must be the final approved S5 output band, not a widened or re-expanded corridor.
+- `weekly_kj_bands` must be copied from injected deterministic phase authority, not inferred from S5 prose or re-expanded corridor notes.
+- `inherited_scenario_contract` must remain exact season posture ceiling and must not be narrowed to phase-local legality.
+- phase legality fields remain separate from the scenario ceiling.
 - `explicit_forbidden_content` must contain exactly the required six strings.
 - all required self-check booleans must be present and true.
 - `body_metadata.phase_type`, `body_metadata.phase_intent`, and `body_metadata.phase_taxonomy_version` must match inherited upstream authority exactly.
 - `body_metadata.build_subtype` must match inherited upstream authority exactly for `BUILD` phases and stay `null` otherwise.
+- for `BASE / shortened_re_entry`, canonical `allowed_forbidden_semantics.quality_density.quality_intent` is `Stabilization`.
 
 `PHASE_STRUCTURE` rules:
 - `load_ranges.weekly_kj_bands` must copy phase-guardrails bands exactly.
 - `load_ranges.source` must be the actual stored phase-guardrails filename.
+- `meta.trace_upstream` must formally reference the exact stored `PHASE_GUARDRAILS`.
 - week-role coverage must match the full phase range.
 - `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` must match inherited Season Plan / PHASE_GUARDRAILS semantics exactly.
 - `upstream_intent.build_subtype` must match inherited authority exactly for `BUILD` phases and stay `null` otherwise.
 - `structural_phase_elements.allowed_intensity_domains` must copy exact inherited legality verbatim and must not include `NONE`.
 - `structural_phase_elements.allowed_load_modalities` must copy exact inherited modalities verbatim.
 - `execution_principles.load_intensity_handling.forbidden_intensity_domains` must copy exact inherited forbidden domains verbatim.
+- for `BASE / shortened_re_entry`, canonical `execution_principles.load_intensity_handling.quality_intent` is `Stabilization`.
 - keep workouts, interval structures, zones, %FTP, and day-by-day kJ targets in downstream artifacts.
 
 `PHASE_PREVIEW` rules:
 - derive from stored `PHASE_STRUCTURE` for the exact range.
+- `meta.trace_upstream` must formally reference the exact stored `PHASE_STRUCTURE`.
 - `traceability` may contain only `derived_from` and `conflict_resolution`.
 - `derived_from` must include the stored phase-structure filename.
 - `phase_intent_summary.phase_type`, `phase_intent_summary.phase_intent`, and `phase_intent_summary.phase_taxonomy_version` must match `PHASE_STRUCTURE.upstream_intent` exactly.

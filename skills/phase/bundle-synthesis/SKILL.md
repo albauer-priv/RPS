@@ -21,6 +21,9 @@ Authority / injected sources:
 - inherited scenario posture comes from `inherited_scenario_contract`; operationalize it rather than reopening scenario choice
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
 - nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only, never prose or narrative summaries
+- if deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`
+- use tools only as fallback for genuinely missing authority fields
+- use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them
 
 Method:
 1. Pass 1 - structural draft: keep guardrails authoritative over structure.
@@ -51,6 +54,19 @@ Method:
    - freeze exact role-week load bands
    - freeze exact phase-local objective
    - keep operational `NONE` out of structural legality; it belongs only to preview/non-training-day semantics
+
+Compact authority-freeze example:
+
+```json
+{
+  "phase_id": "P01",
+  "phase_range": "2026-24--2026-25",
+  "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+  "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+  "phase_allowed_load_modalities": ["NONE"],
+  "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"}
+}
+```
 
 Operational synthesis rules:
 - preserve load-estimation semantics exactly:

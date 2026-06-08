@@ -37,12 +37,17 @@ Out of scope:
 
 - Copy approved phase semantics and structure only.
 - Copy `inherited_scenario_contract` exactly into Phase Guardrails and Phase Structure.
+- Keep phase legality fields separate from the scenario ceiling; do not simplify them into one domain set.
 - Preserve approved phase role, inherited week role, exact phase legality, exact persisted role-week load bands, phase-local objective, event implication, overload/reset meaning, and availability trace in existing Phase Guardrails/Structure fields.
 - Preserve shared week-skeleton semantics exactly when serializing Phase Preview; do not add any extra day-role or domain freedom.
+- For `PHASE_GUARDRAILS`, copy `load_guardrails.weekly_kj_bands` from injected deterministic phase authority, not from S5 prose.
+- For `PHASE_GUARDRAILS`, for `BASE / shortened_re_entry`, canonical `allowed_forbidden_semantics.quality_density.quality_intent` is `Stabilization`.
 - For `PHASE_STRUCTURE`, copy `structural_phase_elements.allowed_intensity_domains` verbatim from exact inherited phase legality only; do not add `NONE` or any scenario-eligible extras.
 - For `PHASE_STRUCTURE`, copy `structural_phase_elements.allowed_load_modalities` and `execution_principles.load_intensity_handling.forbidden_intensity_domains` verbatim from exact inherited authority.
 - For `PHASE_STRUCTURE`, copy `load_ranges.weekly_kj_bands` and `load_ranges.source` exactly from stored `PHASE_GUARDRAILS`.
+- For `PHASE_STRUCTURE`, formally trace the exact stored `PHASE_GUARDRAILS`.
 - For `PHASE_PREVIEW`, `NONE` is operational only: use it only for `REST` or fixed non-training days; keep `RECOVERY -> RECOVERY`; keep all training-day domains inside exact structure legality.
+- For `PHASE_PREVIEW`, formally trace the exact stored `PHASE_STRUCTURE`.
 - Do not source persisted phase week bands from S5 text or notes when approved exact role-week load bands are present.
 - Stop rather than guess if required approved fields are missing.
 - If Review classified a Pass 1 or Pass 2 return finding, writer must not run and must not attempt semantic recovery.

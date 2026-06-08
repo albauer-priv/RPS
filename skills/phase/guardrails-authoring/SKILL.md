@@ -35,6 +35,7 @@ Method:
 4. Resolve a deterministic baseline week from the recent history when baseline-based progression logic is needed.
 5. Copy each code-owned role-aware S5 band and trace into `phase_guardrails.load_guardrails.weekly_kj_bands`.
    Band notes must preserve S5 band, phase role, week role, role progression band, and availability feasibility trace.
+5a. Treat the persisted Season phase authority as the exact binding band source. Copy exact week bands from injected deterministic authority; do not narrow or recompute them from S5 prose.
 6. If S5 reports STOP/fallback status, expose the status and request bounded replan rather than widening the band.
 7. Express execution boundaries that later structure and week planning must respect.
 8. Encode what is allowed, suppressed, or protected in this phase.
@@ -128,6 +129,9 @@ Hard rules:
 - surface unrealistic load pressure explicitly in review/replan guidance
 - align execution rules with season-owned cadence and taper logic
 - `weekly_kj_bands` must match injected deterministic S5 bands
+- Treat inherited scenario contract as season posture ceiling only; do not narrow it to phase-local legality
+- phase legality fields must stay separate from the scenario ceiling
+- for `BASE / shortened_re_entry`, canonical `quality_intent` is `Stabilization`
 - keep recovery days and fixed-rest days protected from load compression
 - emit `body_metadata.phase_type`, `body_metadata.phase_intent`, and `body_metadata.phase_taxonomy_version` explicitly and keep them identical to upstream authority
 - emit `body_metadata.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority

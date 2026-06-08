@@ -1,5 +1,5 @@
 ---
-Version: 1.1
+Version: 1.3
 Status: Implemented
 Last-Updated: 2026-06-08
 Owner: Planning Pipeline
@@ -39,9 +39,11 @@ Owner: Planning Pipeline
 
 **Goals**
 
+* [x] Normalize `PHASE_GUARDRAILS` writer candidates before task guardrails run.
 * [x] Normalize `PHASE_STRUCTURE` writer candidates before task guardrails run.
 * [x] Normalize `PHASE_PREVIEW` writer candidates on the same early path.
 * [x] Reuse existing code-owned normalization instead of duplicating authority logic in guardrails.
+* [x] Repair final `trace_upstream` metadata and canonical `quality_intent` drift in downstream Phase artifacts.
 
 **Non-Goals**
 
@@ -55,10 +57,13 @@ Owner: Planning Pipeline
 **User/System behavior**
 
 * Writer-task guardrails for Phase artifacts see the same exact-authority-projected candidate that guarded-store persistence would later enforce.
+* `PHASE_GUARDRAILS` is projected to exact role-week bands, exact legality, and exact phase-local objective before task guardrails evaluate it.
 * `PHASE_STRUCTURE` is narrowed to exact legality from bound `phase_execution_context` and persisted `PHASE_GUARDRAILS` load bands before task guardrails evaluate it.
 * `PHASE_PREVIEW` is normalized to stored/shared skeleton semantics before task guardrails evaluate it.
 * Exact phase legality remains structural only; operational `REST -> NONE/NONE` semantics are handled downstream by day-role validation and are not reintroduced into persisted `PHASE_STRUCTURE.allowed_intensity_domains`.
 * Writer task input for Phase artifacts now carries a compact exact-authority block so the active writer sees field-level exact copy expectations before emitting output.
+* `phase_bundle_finalize` now receives a dedicated compact authority-freeze block and, when deterministic phase authority is already injected, no longer gets live access to the same contract-read tools for rediscovery.
+* Final artifact normalization now repairs missing immediate `trace_upstream` references and canonicalizes `quality_intent` for supported phase semantics.
 
 **UI impact**
 
@@ -80,8 +85,9 @@ Owner: Planning Pipeline
 
 **Components / Modules**
 
-* `guardrails.py`: use bound `phase_execution_context` as the primary exact-authority source in the narrow pre-guardrail `PHASE_STRUCTURE` projection helper and emit compact legality-source diagnostics on mismatch.
-* `crewai_backend.py`: frontload a compact exact-authority block into Phase writer task input; retain produced Phase artifacts in `loaded_inputs` for downstream writer tasks in the same bundle run.
+* `guardrails.py`: use bound `phase_execution_context` as the primary exact-authority source in the narrow pre-guardrail `PHASE_GUARDRAILS` and `PHASE_STRUCTURE` projection helpers and emit compact legality-source diagnostics on mismatch.
+* `crewai_backend.py`: frontload compact exact-authority blocks into Phase writer and phase-finalizer task input; add task-scoped tool overrides so `phase_bundle_finalize` can run tool-free when deterministic contracts are already injected.
+* `output_normalization.py`: project exact `PHASE_GUARDRAILS` authority, canonicalize supported `quality_intent` values, and repair `trace_upstream` for `PHASE_STRUCTURE` and `PHASE_PREVIEW`.
 * `guarded_store.py`: accept operational `NONE` only for `REST` / fixed non-training days instead of requiring `NONE` inside exact structural phase legality.
 
 **Data flow**
@@ -95,6 +101,7 @@ Owner: Planning Pipeline
   * writer emits candidate
   * pre-guardrail helper projects exact authority
   * task guardrails validate projected candidate
+  * phase finalizer consumes an injected authority-freeze block and loses contract-read tools when both deterministic phase contracts are already bound
   * guarded-store normalization remains second-line protection
 * Outputs:
   * same persisted artifact types
@@ -104,7 +111,7 @@ Owner: Planning Pipeline
 
 * New artefacts: none
 * Changed artefacts: none
-* Validator implications: writer-task validation now runs against pre-normalized candidates for `PHASE_STRUCTURE` and `PHASE_PREVIEW`
+* Validator implications: writer-task validation now runs against pre-normalized candidates for `PHASE_GUARDRAILS`, `PHASE_STRUCTURE`, and `PHASE_PREVIEW`
 
 ---
 
@@ -150,11 +157,13 @@ Owner: Planning Pipeline
 
 ## 7) Acceptance Criteria (DoD)
 
+* [x] `PHASE_GUARDRAILS` writer candidates are normalized before task guardrails evaluate them.
 * [x] `PHASE_STRUCTURE` writer candidates are normalized before task guardrails evaluate them.
 * [x] `PHASE_PREVIEW` candidates can consume the same early normalization path.
 * [x] `phase_execution_context_match(...)` passes for candidates that only drift in code-owned exact-authority fields and are repairable from deterministic inputs.
 * [x] Missing exact authority still fails deterministically.
-* [x] Targeted regression tests cover the original `phase_structural_allowed_domains_mismatch` class.
+* [x] Final normalized Phase artifacts carry canonical immediate upstream lineage and supported canonical `quality_intent` values.
+* [x] Targeted regression tests cover the original `phase_structural_allowed_domains_mismatch` class and the remaining first-pass `phase_s5_band_mismatch` drift.
 
 ---
 

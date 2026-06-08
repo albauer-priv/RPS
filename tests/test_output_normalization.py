@@ -6,6 +6,7 @@ from rps.agents.output_normalization import (
     extract_planning_events_document,
     injection_mode_for_tasks,
     normalize_phase_guardrails_document,
+    normalize_phase_guardrails_document_from_execution_context,
     normalize_phase_preview_document,
     normalize_phase_structure_document,
     normalize_phase_structure_document_from_execution_context,
@@ -98,9 +99,91 @@ def test_normalize_phase_guardrails_projects_season_constraints() -> None:
     ]
 
 
+def test_normalize_phase_guardrails_from_execution_context_prefers_exact_runtime_authority() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_GUARDRAILS", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "phase_summary": {"primary_objective": "Wrong objective"},
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7893, "max": 8626}},
+                ]
+            },
+            "allowed_forbidden_semantics": {
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "allowed_load_modalities": ["NONE"],
+                "quality_density": {"quality_intent": "Build"},
+            },
+            "inherited_scenario_contract": {
+                "allowed_intensity_domains": ["ENDURANCE"],
+                "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"],
+            },
+        },
+    }
+    season_plan = {
+        "data": {
+            "selected_scenario_contract": {
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+            }
+        }
+    }
+    execution_context = {
+        "phase_type": "BASE",
+        "phase_intent": "shortened_re_entry",
+        "phase_primary_objective": "Re-establish stable training continuity without overreaching.",
+        "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+        "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+        "phase_allowed_load_modalities": ["NONE", "K3"],
+        "phase_role_week_load_bands": [
+            {"week": "2026-24", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7893, "max": 10148}},
+            {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 9020, "max": 11275}},
+        ],
+    }
+
+    normalized = normalize_phase_guardrails_document_from_execution_context(
+        document,
+        season_plan_document=season_plan,
+        phase_execution_context=execution_context,
+    )
+
+    assert normalized["data"]["load_guardrails"]["weekly_kj_bands"] == execution_context["phase_role_week_load_bands"]
+    assert normalized["data"]["phase_summary"]["primary_objective"] == execution_context["phase_primary_objective"]
+    assert normalized["data"]["allowed_forbidden_semantics"]["allowed_intensity_domains"] == (
+        execution_context["phase_allowed_intensity_domains"]
+    )
+    assert normalized["data"]["allowed_forbidden_semantics"]["forbidden_intensity_domains"] == (
+        execution_context["phase_forbidden_intensity_domains"]
+    )
+    assert normalized["data"]["allowed_forbidden_semantics"]["allowed_load_modalities"] == (
+        execution_context["phase_allowed_load_modalities"]
+    )
+    assert normalized["data"]["allowed_forbidden_semantics"]["quality_density"]["quality_intent"] == "Stabilization"
+    assert normalized["data"]["inherited_scenario_contract"] == season_plan["data"]["selected_scenario_contract"]
+
+
+def test_normalize_phase_guardrails_from_execution_context_requires_exact_bands() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_GUARDRAILS"},
+        "data": {"load_guardrails": {"weekly_kj_bands": []}},
+    }
+
+    try:
+        normalize_phase_guardrails_document_from_execution_context(
+            document,
+            season_plan_document=None,
+            phase_execution_context={"phase_role_week_load_bands": []},
+        )
+    except ValueError as exc:
+        assert "phase_role_week_load_bands" in str(exc)
+    else:
+        raise AssertionError("Expected normalize_phase_guardrails_document_from_execution_context to fail.")
+
+
 def test_normalize_phase_structure_projects_constraints_and_guardrails_source() -> None:
     document = {
-        "meta": {"artifact_type": "PHASE_STRUCTURE"},
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "trace_upstream": []},
         "data": {
             "upstream_intent": {
                 "constraints": ["Do not widen the phase beyond 2026-21--2026-23."],
@@ -125,6 +208,12 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
         }
     }
     phase_guardrails = {
+        "meta": {
+            "artifact_type": "PHASE_GUARDRAILS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "run_id": "plan_hub_phase_bundle",
+        },
         "data": {
             "load_guardrails": {
                 "weekly_kj_bands": [
@@ -155,6 +244,8 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
         normalized["data"]["load_ranges"]["source"]
         == "phase_guardrails_2026-21--2026-23__20260520_094539.json"
     )
+    assert normalized["meta"]["trace_upstream"][0]["artifact"] == "PHASE_GUARDRAILS"
+    assert normalized["meta"]["trace_upstream"][0]["version_key"] == "2026-21--2026-23__20260520_094539"
 
 
 def test_normalize_phase_structure_preserves_exact_phase_legality() -> None:
@@ -223,6 +314,8 @@ def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_
     normalized = normalize_phase_structure_document_from_execution_context(
         document,
         phase_execution_context={
+            "phase_type": "BASE",
+            "phase_intent": "shortened_re_entry",
             "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
             "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
             "phase_allowed_load_modalities": ["NONE"],
@@ -248,6 +341,7 @@ def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_
         normalized["data"]["load_ranges"]["source"]
         == "phase_guardrails_2026-24--2026-25__20260608_090000.json"
     )
+    assert normalized["data"]["execution_principles"]["load_intensity_handling"]["quality_intent"] == "Stabilization"
 
 
 def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:
@@ -272,6 +366,12 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
         },
     }
     phase_structure = {
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "run_id": "phase_structure_run",
+        },
         "data": {
             "structural_phase_elements": {
                 "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
@@ -295,6 +395,8 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
         "phase_structure_2026-21--2026-23__20260520_112942.json"
         in normalized["data"]["traceability"]["derived_from"]
     )
+    assert normalized["meta"]["trace_upstream"][0]["artifact"] == "PHASE_STRUCTURE"
+    assert normalized["meta"]["trace_upstream"][0]["version_key"] == "2026-21--2026-23__20260520_112942"
     days = normalized["data"]["weekly_agenda_preview"][0]["days"]
     assert days[0]["intensity_domain"] == "NONE"
     assert days[0]["load_modality"] == "NONE"

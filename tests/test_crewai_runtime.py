@@ -23,8 +23,11 @@ from rps.agents.crewai_backend import (
     _extract_authoritative_runtime_blocks,
     _normalize_final_season_plan_semantics,
     _normalize_publication_link,
+    _phase_bundle_finalize_authority_freeze_block,
+    _phase_bundle_finalize_has_bound_contracts,
     _phase_writer_authority_context_block,
     _run_multicrew_cycle,
+    _run_phase_bundle_document,
     _task_tools_for_blueprint,
     normalize_phase_draft_bundle,
     normalize_season_plan_draft_bundle,
@@ -1088,6 +1091,45 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
     assert callable(task.kwargs["callback"])
 
 
+def test_build_crewai_task_tools_override_takes_precedence() -> None:
+    bundle = load_crewai_config_bundle(root=Path("."))
+    tasks = build_task_blueprints(bundle)
+    tool_map = {
+        name: SimpleNamespace(name=name)
+        for name in [
+            "workspace_get_phase_execution_context",
+            "workspace_get_phase_slot_contract",
+        ]
+    }
+
+    class FakeTask:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    task = _build_crewai_task(
+        task_cls=FakeTask,
+        bundle=bundle,
+        task_blueprint=tasks["phase_bundle_finalize"],
+        agent=SimpleNamespace(llm=None),
+        description="test",
+        runtime=AgentRuntime(
+            model="openai/gpt-5-mini",
+            temperature=1.0,
+            reasoning_effort="medium",
+            reasoning_summary="auto",
+            max_completion_tokens=8000,
+            prompt_loader=PromptLoader(Path("prompts")),
+            schema_dir=Path("specs/schemas"),
+            workspace_root=Path("runtime/athletes"),
+        ),
+        crew_name="phase_planning",
+        tools=tool_map,
+        tools_override=[],
+    )
+
+    assert "tools" not in task.kwargs
+
+
 def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
     profile = resolve_agent_skill_profile(bundle, agent_name="week_revision_specialist", crew_name="coach_conversation")
@@ -1694,7 +1736,22 @@ def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> Non
 def test_contract_context_blocks_for_phase_and_week_finalizers_include_bound_contracts() -> None:
     with guardrail_runtime_context(
         phase_slot_context={"phase_slots": [{"phase_id": "P01"}]},
-        phase_execution_context={"phase_id": "P01", "phase_s5_bands": []},
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_range": "2026-24--2026-25",
+            "phase_type": "BUILD",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": "durability_build",
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}}
+            ],
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+            "phase_primary_objective": "Rebuild load tolerance.",
+            "phase_s5_bands": [],
+        },
         week_calendar_context={"target_iso_week": "2026-21", "phase_week_role": "LOAD_1"},
     ):
         phase_blocks = _contract_context_blocks_for_task(
@@ -1709,9 +1766,162 @@ def test_contract_context_blocks_for_phase_and_week_finalizers_include_bound_con
     assert any("Deterministic Phase Execution Contract" in block for block in phase_blocks)
     assert any("Deterministic Season Phase Slot Contract" in block for block in phase_blocks)
     assert any("Do not delegate or rediscover week roles" in block for block in phase_blocks)
+    assert any("Phase Finalizer Authority Freeze" in block for block in phase_blocks)
+    assert any("do not call workspace tools to rediscover them" in block for block in phase_blocks)
     assert any("Deterministic Week Calendar Contract" in block for block in week_blocks)
     assert any("Deterministic Phase Execution Contract" in block for block in week_blocks)
     assert any("Do not delegate or rediscover active week role" in block for block in week_blocks)
+
+
+def test_phase_bundle_finalize_authority_freeze_block_contains_exact_fields() -> None:
+    with guardrail_runtime_context(
+        phase_slot_context={"phase_id": "P01", "phase_range": "2026-24--2026-25"},
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_range": "2026-24--2026-25",
+            "phase_type": "BUILD",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": "durability_build",
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}}
+            ],
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+            "phase_primary_objective": "Rebuild load tolerance.",
+        },
+    ):
+        block = _phase_bundle_finalize_authority_freeze_block()
+
+    assert "Phase Finalizer Authority Freeze" in block
+    assert "\"phase_allowed_intensity_domains\"" in block
+    assert "\"phase_forbidden_intensity_domains\"" in block
+    assert "\"phase_allowed_load_modalities\"" in block
+    assert "\"phase_role_week_load_bands\"" in block
+    assert "\"week_role_by_iso_week\"" in block
+    assert "\"phase_primary_objective\": \"Rebuild load tolerance.\"" in block
+
+
+def test_phase_bundle_finalize_bound_contract_detector_requires_both_contexts() -> None:
+    with guardrail_runtime_context(
+        phase_execution_context={"phase_id": "P01"},
+        phase_slot_context={"phase_id": "P01"},
+    ):
+        assert _phase_bundle_finalize_has_bound_contracts() is True
+    with guardrail_runtime_context(
+        phase_execution_context={"phase_id": "P01"},
+        phase_slot_context={},
+    ):
+        assert _phase_bundle_finalize_has_bound_contracts() is False
+
+
+def test_run_phase_bundle_document_narrows_only_finalizer_tools_with_bound_contracts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+    bundle = load_crewai_config_bundle(root=Path("."))
+    task_blueprints = build_task_blueprints(bundle)
+    agent_blueprints = build_agent_blueprints(bundle)
+    captured: dict[str, object] = {}
+
+    def _fake_execute(**kwargs):
+        captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
+        return {"guardrails": {}, "structure": {}, "preview": {}}
+
+    monkeypatch.setattr("rps.agents.crewai_backend._execute_crewai_multiagent_crew", _fake_execute)
+    tool_map = {
+        name: SimpleNamespace(name=name)
+        for name in [
+            "workspace_get_latest",
+            "workspace_get_phase_context",
+            "workspace_get_phase_execution_context",
+            "workspace_get_phase_slot_contract",
+        ]
+    }
+
+    with guardrail_runtime_context(
+        phase_execution_context={"phase_id": "P01"},
+        phase_slot_context={"phase_id": "P01"},
+    ):
+        _run_phase_bundle_document(
+            runtime=runtime,
+            bundle=bundle,
+            user_input="Create phase bundle.",
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=object,
+            crewai_llm_cls=object,
+            crew_cls=object,
+            task_cls=object,
+            process_cls=object,
+            tools=tool_map,
+            athlete_id="i150546",
+            run_id="run-phase",
+        )
+
+    assert captured["tools_override_by_task"] == {"phase_bundle_finalize": []}
+
+
+def test_run_phase_bundle_document_keeps_finalizer_tools_without_bound_contracts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+    bundle = load_crewai_config_bundle(root=Path("."))
+    task_blueprints = build_task_blueprints(bundle)
+    agent_blueprints = build_agent_blueprints(bundle)
+    captured: dict[str, object] = {}
+
+    def _fake_execute(**kwargs):
+        captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
+        return {"guardrails": {}, "structure": {}, "preview": {}}
+
+    monkeypatch.setattr("rps.agents.crewai_backend._execute_crewai_multiagent_crew", _fake_execute)
+
+    with guardrail_runtime_context(
+        phase_execution_context={"phase_id": "P01"},
+        phase_slot_context={},
+    ):
+        _run_phase_bundle_document(
+            runtime=runtime,
+            bundle=bundle,
+            user_input="Create phase bundle.",
+            task_blueprints=task_blueprints,
+            agent_blueprints=agent_blueprints,
+            agent_cls=object,
+            crewai_llm_cls=object,
+            crew_cls=object,
+            task_cls=object,
+            process_cls=object,
+            tools={},
+            athlete_id="i150546",
+            run_id="run-phase",
+        )
+
+    assert captured["tools_override_by_task"] is None
+    with guardrail_runtime_context(
+        phase_execution_context={},
+        phase_slot_context={"phase_id": "P01"},
+    ):
+        assert _phase_bundle_finalize_has_bound_contracts() is False
 
 
 def test_phase_and_week_managers_disable_free_delegation_via_yaml_override() -> None:
@@ -2829,16 +3039,97 @@ def test_phase_writer_authority_context_block_frontloads_exact_phase_fields() ->
 
 def test_phase_active_files_frontload_exact_legality_and_operational_none_rules() -> None:
     tasks_text = Path("config/crewai/tasks.yaml").read_text(encoding="utf-8")
+    guardrails_skill_text = Path("skills/phase/guardrails-authoring/SKILL.md").read_text(encoding="utf-8")
     structure_skill_text = Path("skills/phase/structure-authoring/SKILL.md").read_text(encoding="utf-8")
     writer_skill_text = Path("skills/phase/artifact-writing/SKILL.md").read_text(encoding="utf-8")
     preview_skill_text = Path("skills/phase/preview-synthesis/SKILL.md").read_text(encoding="utf-8")
+    finalizer_prompt_text = Path("prompts/agents/phase_bundle_manager.md").read_text(encoding="utf-8")
+    finalizer_skill_text = Path("skills/phase/bundle-synthesis/SKILL.md").read_text(encoding="utf-8")
 
     assert "do not add `NONE`" in tasks_text
     assert "do not include `NONE` in `PHASE_STRUCTURE.allowed_intensity_domains`" in tasks_text
+    assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in tasks_text
+    assert "Exact week bands come from persisted Season phase authority and must be copied, not recomputed from S5." in tasks_text
+    assert "canonical `quality_intent` is `Stabilization`" in tasks_text
+    assert "must formally trace the exact stored `PHASE_GUARDRAILS`" in tasks_text
+    assert "must formally trace the exact stored `PHASE_STRUCTURE`" in tasks_text
+    assert "Treat inherited scenario contract as season posture ceiling only" in guardrails_skill_text
     assert "allowed_intensity_domains" in structure_skill_text
     assert "do not add `NONE`" in structure_skill_text
     assert "must not include `NONE`" in writer_skill_text
+    assert "weekly_kj_bands` must be copied from injected deterministic phase authority" in writer_skill_text
+    assert "phase legality fields remain separate from the scenario ceiling" in writer_skill_text
     assert "Preview may use `NONE` only on `REST` or fixed non-training days" in preview_skill_text
+    assert "Phase Finalizer Authority Freeze" in finalizer_prompt_text
+    assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in finalizer_prompt_text
+    assert "Compact authority-freeze example" in finalizer_skill_text
+    assert "use tools only as fallback for genuinely missing authority fields" in finalizer_skill_text
+
+
+def test_phase_guardrails_writer_guardrails_pre_normalize_exact_phase_authority() -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_GUARDRAILS", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "phase_summary": {"primary_objective": "Wrong objective"},
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7893, "max": 8626}},
+                ]
+            },
+            "allowed_forbidden_semantics": {
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "allowed_load_modalities": ["NONE"],
+                "quality_density": {"quality_intent": "Build"},
+            },
+            "inherited_scenario_contract": {
+                "allowed_intensity_domains": ["ENDURANCE"],
+                "forbidden_intensity_domains": ["VO2MAX", "THRESHOLD"],
+            },
+        },
+    }
+    season_plan = {
+        "data": {
+            "selected_scenario_contract": {
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+            }
+        }
+    }
+    with guardrail_runtime_context(
+        artifact_type="PHASE_GUARDRAILS",
+        loaded_inputs={"season_plan": {"ok": True, "document": season_plan}},
+        phase_execution_context={
+            "phase_type": "BASE",
+            "phase_intent": "shortened_re_entry",
+            "phase_primary_objective": "Re-establish stable training continuity without overreaching.",
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE", "K3"],
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7893, "max": 10148}},
+                {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 9020, "max": 11275}},
+            ],
+        },
+    ):
+        repaired = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+
+    assert repaired["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]["max"] == 10148
+    assert repaired["data"]["phase_summary"]["primary_objective"] == (
+        "Re-establish stable training continuity without overreaching."
+    )
+    assert repaired["data"]["allowed_forbidden_semantics"]["allowed_intensity_domains"] == [
+        "RECOVERY",
+        "ENDURANCE",
+        "TEMPO",
+        "SWEET_SPOT",
+    ]
+    assert repaired["data"]["allowed_forbidden_semantics"]["forbidden_intensity_domains"] == [
+        "THRESHOLD",
+        "VO2MAX",
+    ]
+    assert repaired["data"]["allowed_forbidden_semantics"]["quality_density"]["quality_intent"] == "Stabilization"
+    assert repaired["data"]["inherited_scenario_contract"] == season_plan["data"]["selected_scenario_contract"]
 
 
 def test_phase_preview_writer_guardrails_pre_normalize_shared_skeleton_semantics() -> None:
