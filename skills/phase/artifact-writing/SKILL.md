@@ -29,6 +29,9 @@ Method:
 - week-role coverage must match the full phase range.
 - `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` must match inherited Season Plan / PHASE_GUARDRAILS semantics exactly.
 - `upstream_intent.build_subtype` must match inherited authority exactly for `BUILD` phases and stay `null` otherwise.
+- `structural_phase_elements.allowed_intensity_domains` must copy exact inherited legality verbatim and must not include `NONE`.
+- `structural_phase_elements.allowed_load_modalities` must copy exact inherited modalities verbatim.
+- `execution_principles.load_intensity_handling.forbidden_intensity_domains` must copy exact inherited forbidden domains verbatim.
 - keep workouts, interval structures, zones, %FTP, and day-by-day kJ targets in downstream artifacts.
 
 `PHASE_PREVIEW` rules:
@@ -37,6 +40,9 @@ Method:
 - `derived_from` must include the stored phase-structure filename.
 - `phase_intent_summary.phase_type`, `phase_intent_summary.phase_intent`, and `phase_intent_summary.phase_taxonomy_version` must match `PHASE_STRUCTURE.upstream_intent` exactly.
 - `phase_intent_summary.build_subtype` must match `PHASE_STRUCTURE.upstream_intent.build_subtype` exactly for `BUILD` phases.
+- `NONE` is operational only: use it only for `REST` or fixed non-training days.
+- `RECOVERY` must stay `RECOVERY`.
+- training-day domains must stay inside exact `PHASE_STRUCTURE.allowed_intensity_domains`.
 - preview remains semantic and structural, not workout-detailed.
 
 Hard rules:
@@ -58,3 +64,18 @@ Output format:
 - Focus on `data`; if an envelope is requested, `meta` is a runtime-overwritten placeholder/hint.
 - Preserve approved bundle content, review decisions, deterministic context, and trace references.
 - Emit only the artifact object.
+
+Canonical examples:
+
+```json
+{
+  "structural_phase_elements": {
+    "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+    "allowed_load_modalities": ["NONE"]
+  }
+}
+```
+
+```json
+{"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"}
+```

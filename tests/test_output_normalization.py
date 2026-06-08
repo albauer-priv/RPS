@@ -8,6 +8,7 @@ from rps.agents.output_normalization import (
     normalize_phase_guardrails_document,
     normalize_phase_preview_document,
     normalize_phase_structure_document,
+    normalize_phase_structure_document_from_execution_context,
     normalize_season_scenarios_document,
     normalize_workout_inline_loop_headers,
     normalize_workout_percent_ranges,
@@ -191,6 +192,62 @@ def test_normalize_phase_structure_preserves_exact_phase_legality() -> None:
         "SWEET_SPOT",
     ]
     assert "NONE" not in normalized["data"]["structural_phase_elements"]["allowed_intensity_domains"]
+
+
+def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_authority() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "upstream_intent": {"primary_objective": "Wrong objective"},
+            "structural_phase_elements": {
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"forbidden_intensity_domains": ["VO2MAX"]},
+            },
+            "load_ranges": {"source": "wrong.json"},
+        },
+    }
+    phase_guardrails = {
+        "data": {
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            }
+        }
+    }
+
+    normalized = normalize_phase_structure_document_from_execution_context(
+        document,
+        phase_execution_context={
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "phase_primary_objective": "Rebuild load tolerance.",
+        },
+        phase_guardrails_document=phase_guardrails,
+        phase_guardrails_version_key="2026-24--2026-25__20260608_090000",
+        season_plan_document=None,
+    )
+
+    assert normalized["data"]["structural_phase_elements"]["allowed_intensity_domains"] == [
+        "RECOVERY",
+        "ENDURANCE",
+        "TEMPO",
+        "SWEET_SPOT",
+    ]
+    assert normalized["data"]["structural_phase_elements"]["allowed_load_modalities"] == ["NONE"]
+    assert normalized["data"]["execution_principles"]["load_intensity_handling"][
+        "forbidden_intensity_domains"
+    ] == ["THRESHOLD", "VO2MAX"]
+    assert normalized["data"]["upstream_intent"]["primary_objective"] == "Rebuild load tolerance."
+    assert (
+        normalized["data"]["load_ranges"]["source"]
+        == "phase_guardrails_2026-24--2026-25__20260608_090000.json"
+    )
 
 
 def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:

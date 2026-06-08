@@ -1,5 +1,5 @@
 ---
-Version: 1.0
+Version: 1.1
 Status: Implemented
 Last-Updated: 2026-06-08
 Owner: Planning Pipeline
@@ -55,9 +55,10 @@ Owner: Planning Pipeline
 **User/System behavior**
 
 * Writer-task guardrails for Phase artifacts see the same exact-authority-projected candidate that guarded-store persistence would later enforce.
-* `PHASE_STRUCTURE` is narrowed to persisted Season phase legality and persisted `PHASE_GUARDRAILS` load bands before task guardrails evaluate it.
+* `PHASE_STRUCTURE` is narrowed to exact legality from bound `phase_execution_context` and persisted `PHASE_GUARDRAILS` load bands before task guardrails evaluate it.
 * `PHASE_PREVIEW` is normalized to stored/shared skeleton semantics before task guardrails evaluate it.
 * Exact phase legality remains structural only; operational `REST -> NONE/NONE` semantics are handled downstream by day-role validation and are not reintroduced into persisted `PHASE_STRUCTURE.allowed_intensity_domains`.
+* Writer task input for Phase artifacts now carries a compact exact-authority block so the active writer sees field-level exact copy expectations before emitting output.
 
 **UI impact**
 
@@ -79,17 +80,17 @@ Owner: Planning Pipeline
 
 **Components / Modules**
 
-* `guardrails.py`: add narrow pre-guardrail candidate projection helper and apply it inside the guardrail wrapper.
-* `crewai_backend.py`: pass `artifact_type` and `loaded_inputs` into writer-task guardrail runtime context; retain produced Phase artifacts in `loaded_inputs` for downstream writer tasks in the same bundle run.
+* `guardrails.py`: use bound `phase_execution_context` as the primary exact-authority source in the narrow pre-guardrail `PHASE_STRUCTURE` projection helper and emit compact legality-source diagnostics on mismatch.
+* `crewai_backend.py`: frontload a compact exact-authority block into Phase writer task input; retain produced Phase artifacts in `loaded_inputs` for downstream writer tasks in the same bundle run.
 * `guarded_store.py`: accept operational `NONE` only for `REST` / fixed non-training days instead of requiring `NONE` inside exact structural phase legality.
 
 **Data flow**
 
 * Inputs:
-  * loaded `season_plan`
+  * bound `phase_execution_context`
   * stored/just-persisted `phase_guardrails`
   * stored/just-persisted `phase_structure`
-  * deterministic `phase_execution_context`
+  * optional `season_plan` for verbatim constraint enrichment only
 * Processing:
   * writer emits candidate
   * pre-guardrail helper projects exact authority

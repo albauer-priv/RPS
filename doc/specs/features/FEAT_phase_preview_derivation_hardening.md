@@ -1,7 +1,7 @@
 ---
-Version: 1.1
+Version: 1.2
 Status: Implemented
-Last-Updated: 2026-05-20
+Last-Updated: 2026-06-08
 Owner: Workspace
 ---
 # FEAT: Phase Preview Derivation Hardening
@@ -62,6 +62,7 @@ Owner: Workspace
 * Exact `PHASE_STRUCTURE` filename traceability is injected during store validation when missing.
 * Fixed non-training days remain pinned to `intensity_domain = NONE` and `load_modality = NONE`.
 * Excess `QUALITY` labels above the phase cap are downgraded deterministically before validation.
+* Active preview guidance now states the structural-vs-operational split explicitly: `PHASE_STRUCTURE.allowed_intensity_domains` excludes `NONE`, while Preview may use `NONE` only on `REST` or fixed non-training days and must keep `RECOVERY -> RECOVERY`.
 * Narrative flexibility remains, but structured preview content must stay inside phase authority.
 
 **UI impact**

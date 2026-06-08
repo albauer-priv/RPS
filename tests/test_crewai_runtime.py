@@ -23,6 +23,7 @@ from rps.agents.crewai_backend import (
     _extract_authoritative_runtime_blocks,
     _normalize_final_season_plan_semantics,
     _normalize_publication_link,
+    _phase_writer_authority_context_block,
     _run_multicrew_cycle,
     _task_tools_for_blueprint,
     normalize_phase_draft_bundle,
@@ -2598,26 +2599,6 @@ def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority()
             },
         },
     }
-    season_plan = {
-        "meta": {"artifact_type": "SEASON_PLAN"},
-        "data": {
-            "phases": [
-                {
-                    "iso_week_range": "2026-24--2026-25",
-                    "allowed_forbidden_semantics": {
-                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
-                        "allowed_load_modalities": ["NONE"],
-                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
-                    },
-                    "overview": {
-                        "phase_goals": {
-                            "primary": "Rebuild load tolerance with controlled sweet spot support."
-                        }
-                    },
-                }
-            ]
-        },
-    }
     phase_guardrails = {
         "meta": {"artifact_type": "PHASE_GUARDRAILS", "version_key": "2026-24--2026-25__20260608_090000"},
         "data": {
@@ -2648,7 +2629,6 @@ def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority()
     with guardrail_runtime_context(
         artifact_type="PHASE_STRUCTURE",
         loaded_inputs={
-            "season_plan": {"ok": True, "document": season_plan},
             "phase_guardrails": {
                 "ok": True,
                 "document": phase_guardrails,
@@ -2698,7 +2678,57 @@ def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority()
     )
 
 
-def test_phase_structure_writer_guardrails_fail_cleanly_without_exact_phase_authority_projection() -> None:
+def test_phase_structure_writer_guardrails_fail_cleanly_without_execution_context_authority() -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "structural_phase_elements": {
+                "allowed_day_roles": ["ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            },
+        },
+    }
+    wrapped = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_execution_context_match",
+        crewai_guardrails.phase_execution_context_match,
+    )
+
+    with guardrail_runtime_context(
+        artifact_type="PHASE_STRUCTURE",
+        loaded_inputs={
+            "phase_guardrails": {
+                "ok": True,
+                "document": {
+                    "data": {
+                        "load_guardrails": {
+                            "weekly_kj_bands": [
+                                {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                                {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                            ]
+                        }
+                    }
+                },
+                "version_key": "2026-24--2026-25__20260608_090000",
+            }
+        },
+        phase_execution_context={},
+    ):
+        ok, message = wrapped(candidate)
+
+    assert ok is False
+    assert "pre_guardrail_normalization_failed" in message
+    assert "phase_execution_context.phase_allowed_intensity_domains" in message
+
+
+def test_phase_structure_writer_guardrails_fail_cleanly_without_phase_guardrails_bands() -> None:
     candidate = {
         "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
         "data": {
@@ -2738,7 +2768,77 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_exact_phase_auth
         ok, message = wrapped(candidate)
 
     assert ok is False
-    assert "phase_structural_allowed_domains_mismatch" in message
+    assert "pre_guardrail_normalization_failed" in message
+    assert "phase_guardrails.data.load_guardrails.weekly_kj_bands" in message
+
+
+def test_phase_writer_authority_context_block_frontloads_exact_phase_fields() -> None:
+    phase_structure = {
+        "meta": {"version_key": "2026-24--2026-25__20260608_091500"},
+        "data": {
+            "upstream_intent": {
+                "phase_type": "BUILD",
+                "phase_intent": "shortened_re_entry",
+                "build_subtype": "durability_build",
+                "phase_taxonomy_version": "v2",
+                "primary_objective": "Rebuild load tolerance.",
+            }
+        },
+    }
+
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "phase_primary_objective": "Rebuild load tolerance.",
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}},
+                {"week": "2026-25", "role": "RELOAD", "band": {"min": 7300, "max": 8300}},
+            ],
+        }
+    ):
+        structure_block = _phase_writer_authority_context_block(
+            AgentTask.CREATE_PHASE_STRUCTURE,
+            {
+                "phase_guardrails": {
+                    "version_key": "2026-24--2026-25__20260608_090000",
+                }
+            },
+        )
+        preview_block = _phase_writer_authority_context_block(
+            AgentTask.CREATE_PHASE_PREVIEW,
+            {
+                "phase_structure": {
+                    "document": phase_structure,
+                    "version_key": "2026-24--2026-25__20260608_091500",
+                }
+            },
+        )
+
+    assert "Exact writer authority" in structure_block
+    assert "\"allowed_intensity_domains\"" in structure_block
+    assert "\"phase_guardrails_source\": \"phase_guardrails_2026-24--2026-25__20260608_090000.json\"" in structure_block
+    assert "\"phase_role_week_load_bands\"" in structure_block
+    assert "Exact writer authority" in preview_block
+    assert "\"rest_days\": \"REST -> NONE/NONE\"" in preview_block
+    assert "\"recovery_days\": \"RECOVERY -> RECOVERY\"" in preview_block
+    assert "\"phase_structure_source\": \"phase_structure_2026-24--2026-25__20260608_091500.json\"" in preview_block
+
+
+def test_phase_active_files_frontload_exact_legality_and_operational_none_rules() -> None:
+    tasks_text = Path("config/crewai/tasks.yaml").read_text(encoding="utf-8")
+    structure_skill_text = Path("skills/phase/structure-authoring/SKILL.md").read_text(encoding="utf-8")
+    writer_skill_text = Path("skills/phase/artifact-writing/SKILL.md").read_text(encoding="utf-8")
+    preview_skill_text = Path("skills/phase/preview-synthesis/SKILL.md").read_text(encoding="utf-8")
+
+    assert "do not add `NONE`" in tasks_text
+    assert "do not include `NONE` in `PHASE_STRUCTURE.allowed_intensity_domains`" in tasks_text
+    assert "allowed_intensity_domains" in structure_skill_text
+    assert "do not add `NONE`" in structure_skill_text
+    assert "must not include `NONE`" in writer_skill_text
+    assert "Preview may use `NONE` only on `REST` or fixed non-training days" in preview_skill_text
 
 
 def test_phase_preview_writer_guardrails_pre_normalize_shared_skeleton_semantics() -> None:

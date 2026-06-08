@@ -16,7 +16,7 @@ from typing import Any, cast
 from rps.agents.output_normalization import (
     extract_loaded_document,
     normalize_phase_preview_document,
-    normalize_phase_structure_document,
+    normalize_phase_structure_document_from_execution_context,
 )
 from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 from rps.crewai_runtime.telemetry import emit_runtime_event
@@ -2004,6 +2004,14 @@ def _loaded_input_version_key(raw: object) -> str | None:
     return None
 
 
+def _phase_guardrails_weekly_bands(document: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Return stored phase-guardrails weekly bands when present."""
+
+    load_guardrails = _as_map(_as_map(document).get("data")).get("load_guardrails")
+    bands = _as_map(load_guardrails).get("weekly_kj_bands")
+    return [entry for entry in _as_list(bands) if isinstance(entry, dict)]
+
+
 def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     """Project exact persisted phase authority before writer-task guardrails evaluate candidates."""
 
@@ -2015,11 +2023,22 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     loaded_inputs = context.get("loaded_inputs")
     if not isinstance(loaded_inputs, dict):
         loaded_inputs = {}
+    phase_execution_context = context.get("phase_execution_context")
     if artifact_type == ArtifactType.PHASE_STRUCTURE.value:
-        return normalize_phase_structure_document(
+        phase_guardrails_document = extract_loaded_document(loaded_inputs.get("phase_guardrails"))
+        if not _string_list(_as_map(phase_execution_context).get("phase_allowed_intensity_domains")):
+            raise ValueError(
+                "PHASE_STRUCTURE pre-guardrail normalization requires phase_execution_context.phase_allowed_intensity_domains."
+            )
+        if not _phase_guardrails_weekly_bands(phase_guardrails_document):
+            raise ValueError(
+                "PHASE_STRUCTURE pre-guardrail normalization requires phase_guardrails.data.load_guardrails.weekly_kj_bands."
+            )
+        return normalize_phase_structure_document_from_execution_context(
             dict(mapping),
+            phase_execution_context=phase_execution_context if isinstance(phase_execution_context, dict) else None,
             season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
-            phase_guardrails_document=extract_loaded_document(loaded_inputs.get("phase_guardrails")),
+            phase_guardrails_document=phase_guardrails_document,
             phase_guardrails_version_key=_loaded_input_version_key(loaded_inputs.get("phase_guardrails")),
         )
     if artifact_type == ArtifactType.PHASE_PREVIEW.value:
@@ -2031,13 +2050,36 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     return result
 
 
+def _phase_structure_guardrail_diagnostics(normalized_result: Any) -> str:
+    """Return a compact diagnostic string for PHASE_STRUCTURE legality mismatches."""
+
+    mapping = _coerce_mapping(normalized_result)
+    if not isinstance(mapping, dict):
+        return ""
+    context = current_guardrail_runtime_context()
+    loaded_inputs = context.get("loaded_inputs")
+    loaded_inputs = loaded_inputs if isinstance(loaded_inputs, dict) else {}
+    phase_execution_context = _as_map(context.get("phase_execution_context"))
+    structural = _as_map(_as_map(mapping.get("data")).get("structural_phase_elements"))
+    observed = _string_list(structural.get("allowed_intensity_domains"))
+    expected = _string_list(phase_execution_context.get("phase_allowed_intensity_domains"))
+    return (
+        "phase_structure_diag="
+        f"execution_context={'yes' if phase_execution_context else 'no'},"
+        f"phase_guardrails={'yes' if extract_loaded_document(loaded_inputs.get('phase_guardrails')) else 'no'},"
+        f"season_plan={'yes' if extract_loaded_document(loaded_inputs.get('season_plan')) else 'no'},"
+        f"observed_allowed={observed},"
+        f"expected_allowed={expected}"
+    )
+
+
 def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
     """Wrap one guardrail so failures become compact retry-relevant runtime events."""
 
     def _wrapped(result: Any):
-        normalized_result = normalize_artifact_candidate_for_task_guardrails(result)
-        ok, payload = guardrail_fn(normalized_result)
-        if not ok:
+        try:
+            normalized_result = normalize_artifact_candidate_for_task_guardrails(result)
+        except Exception as exc:
             context = _GUARDRAIL_CONTEXT.get({})
             emit_runtime_event(
                 root=context.get("root"),
@@ -2047,7 +2089,31 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
                 component=context.get("component") or f"task:{task_name}",
                 task=task_name,
                 guardrail=guardrail_name,
-                reason=str(payload)[:500],
+                reason=f"pre_guardrail_normalization_failed: {exc}"[:500],
+            )
+            return (False, f"pre_guardrail_normalization_failed: {exc}")
+        ok, payload = guardrail_fn(normalized_result)
+        if not ok:
+            context = _GUARDRAIL_CONTEXT.get({})
+            reason = str(payload)[:500]
+            artifact_type = str(context.get("artifact_type") or "").strip().upper()
+            if (
+                artifact_type == ArtifactType.PHASE_STRUCTURE.value
+                and guardrail_name == "phase_execution_context_match"
+                and "phase_structural_allowed_domains_mismatch" in str(payload)
+            ):
+                diagnostics = _phase_structure_guardrail_diagnostics(normalized_result)
+                if diagnostics:
+                    reason = f"{reason} | {diagnostics}"[:500]
+            emit_runtime_event(
+                root=context.get("root"),
+                athlete_id=context.get("athlete_id"),
+                run_id=context.get("run_id"),
+                event_type="CREW_TASK_GUARDRAIL_FAILED",
+                component=context.get("component") or f"task:{task_name}",
+                task=task_name,
+                guardrail=guardrail_name,
+                reason=reason,
             )
         return (ok, payload)
 

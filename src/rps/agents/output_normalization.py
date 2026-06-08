@@ -419,6 +419,70 @@ def normalize_phase_structure_document(
     return document
 
 
+def normalize_phase_structure_document_from_execution_context(
+    document: dict[str, Any],
+    *,
+    phase_execution_context: dict[str, Any] | None,
+    phase_guardrails_document: dict[str, Any] | None = None,
+    phase_guardrails_version_key: str | None = None,
+    season_plan_document: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Project exact PHASE_STRUCTURE authority from deterministic phase execution context."""
+
+    normalized = normalize_phase_structure_document(
+        document,
+        season_plan_document=season_plan_document,
+        phase_guardrails_document=phase_guardrails_document,
+        phase_guardrails_version_key=phase_guardrails_version_key,
+    )
+    if not isinstance(normalized, dict):
+        return normalized
+    data = normalized.get("data")
+    if not isinstance(data, dict):
+        return normalized
+    context = _as_map(phase_execution_context)
+    if not context:
+        return normalized
+
+    structural_phase_elements = data.get("structural_phase_elements")
+    if not isinstance(structural_phase_elements, dict):
+        structural_phase_elements = {}
+    allowed_domains = _text_list(context.get("phase_allowed_intensity_domains"))
+    if allowed_domains:
+        structural_phase_elements["allowed_intensity_domains"] = allowed_domains
+    allowed_modalities = _text_list(context.get("phase_allowed_load_modalities"))
+    if allowed_modalities:
+        structural_phase_elements["allowed_load_modalities"] = allowed_modalities
+    if structural_phase_elements:
+        data["structural_phase_elements"] = structural_phase_elements
+
+    execution_principles = data.get("execution_principles")
+    if not isinstance(execution_principles, dict):
+        execution_principles = {}
+    load_intensity_handling = execution_principles.get("load_intensity_handling")
+    if not isinstance(load_intensity_handling, dict):
+        load_intensity_handling = {}
+    forbidden_domains = _text_list(context.get("phase_forbidden_intensity_domains"))
+    if forbidden_domains:
+        load_intensity_handling["forbidden_intensity_domains"] = forbidden_domains
+    if load_intensity_handling:
+        execution_principles["load_intensity_handling"] = load_intensity_handling
+    if execution_principles:
+        data["execution_principles"] = execution_principles
+
+    upstream_intent = data.get("upstream_intent")
+    if not isinstance(upstream_intent, dict):
+        upstream_intent = {}
+    primary_objective = str(context.get("phase_primary_objective") or "").strip()
+    if primary_objective:
+        upstream_intent["primary_objective"] = primary_objective
+    if upstream_intent:
+        data["upstream_intent"] = upstream_intent
+
+    normalized["data"] = data
+    return normalized
+
+
 def _season_phase_for_range(
     season_plan_document: dict[str, Any] | None,
     range_key: object,

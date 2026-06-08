@@ -31,10 +31,36 @@ Method:
 Required structure rules:
 - `week_skeleton_logic.week_roles.week_roles` must cover every ISO week in `meta.iso_week_range` exactly.
 - `week_skeleton_logic.week_roles.week_roles` must match the injected inherited week roles.
+- `structural_phase_elements.allowed_intensity_domains` must equal exact inherited phase legality only; do not add `NONE`.
+- `structural_phase_elements.allowed_load_modalities` must equal exact inherited load modalities only.
+- `execution_principles.load_intensity_handling.forbidden_intensity_domains` must equal exact inherited forbidden domains only.
 - `load_ranges.weekly_kj_bands` must be copied exactly from phase guardrails.
 - `load_ranges.source` must use the stored phase-guardrails filename, not a guessed name.
 - `upstream_intent.constraints` must include season global constraints verbatim where required.
 - `key_risks_warnings` must stay aligned with phase guardrails.
+
+Canonical exact-authority fragment:
+
+```json
+{
+  "structural_phase_elements": {
+    "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+    "allowed_load_modalities": ["NONE"]
+  },
+  "execution_principles": {
+    "load_intensity_handling": {
+      "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"]
+    }
+  },
+  "load_ranges": {
+    "weekly_kj_bands": [
+      {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+      {"week": "2026-25", "band": {"min": 7300, "max": 8300}}
+    ],
+    "source": "phase_guardrails_2026-24--2026-25__20260608_090000.json"
+  }
+}
+```
 
 Structural content rules:
 - define role progression and recovery opportunities, not daily workouts

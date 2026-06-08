@@ -44,6 +44,13 @@ Method:
    - no assumption that the writer will repair bundle semantics
    - if exact-range structure, week-role skeleton, or phase-slot alignment is wrong, return to Pass 1
    - if structure is valid but reload/re-entry semantics, legality framing, preview meaning, or writer-ready summary is incomplete, return to Pass 2
+9. Mandatory Pass-2 authority freeze:
+   - freeze exact allowed intensity domains
+   - freeze exact forbidden intensity domains
+   - freeze exact allowed load modalities
+   - freeze exact role-week load bands
+   - freeze exact phase-local objective
+   - keep operational `NONE` out of structural legality; it belongs only to preview/non-training-day semantics
 
 Operational synthesis rules:
 - preserve load-estimation semantics exactly:

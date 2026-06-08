@@ -1318,6 +1318,74 @@ def _augment_user_input(user_input: str, *context_blocks: str) -> str:
     return "\n\n".join([user_input, "Additional runtime context:", *blocks])
 
 
+def _loaded_input_version_key(raw: object) -> str | None:
+    """Return a loaded input version key when present."""
+
+    if not isinstance(raw, dict):
+        return None
+    version_key = str(raw.get("version_key") or "").strip()
+    if version_key:
+        return version_key
+    document = _as_map(raw.get("document"))
+    meta = _as_map(document.get("meta"))
+    version_key = str(meta.get("version_key") or "").strip()
+    return version_key or None
+
+
+def _phase_writer_authority_context_block(
+    public_task: AgentTask,
+    loaded_inputs: dict[str, object] | None,
+) -> str:
+    """Return a compact exact-authority block for Phase writer tasks."""
+
+    if public_task not in {
+        AgentTask.CREATE_PHASE_STRUCTURE,
+        AgentTask.CREATE_PHASE_PREVIEW,
+    }:
+        return ""
+    context = current_guardrail_runtime_context()
+    phase_execution_context = _as_map(context.get("phase_execution_context"))
+    loaded_inputs = loaded_inputs if isinstance(loaded_inputs, dict) else {}
+    if public_task == AgentTask.CREATE_PHASE_STRUCTURE:
+        payload: JsonMap = {
+            "allowed_intensity_domains": list(phase_execution_context.get("phase_allowed_intensity_domains") or []),
+            "forbidden_intensity_domains": list(
+                phase_execution_context.get("phase_forbidden_intensity_domains") or []
+            ),
+            "allowed_load_modalities": list(phase_execution_context.get("phase_allowed_load_modalities") or []),
+            "phase_primary_objective": str(phase_execution_context.get("phase_primary_objective") or "").strip(),
+            "week_role_by_iso_week": _as_map(phase_execution_context.get("week_role_by_iso_week")),
+            "phase_role_week_load_bands": list(phase_execution_context.get("phase_role_week_load_bands") or []),
+        }
+        phase_guardrails_version_key = _loaded_input_version_key(loaded_inputs.get("phase_guardrails"))
+        if phase_guardrails_version_key:
+            payload["phase_guardrails_source"] = f"phase_guardrails_{phase_guardrails_version_key}.json"
+        if any(payload.values()):
+            return _render_json_block("Exact writer authority", payload)
+        return ""
+
+    phase_structure_document = extract_loaded_document(loaded_inputs.get("phase_structure"))
+    phase_structure_version_key = _loaded_input_version_key(loaded_inputs.get("phase_structure"))
+    upstream_intent = _as_map(_as_map(phase_structure_document).get("data")).get("upstream_intent")
+    payload = {
+        "phase_intent_summary": {
+            "phase_type": str(_as_map(upstream_intent).get("phase_type") or "").strip(),
+            "phase_intent": str(_as_map(upstream_intent).get("phase_intent") or "").strip(),
+            "build_subtype": _as_map(upstream_intent).get("build_subtype"),
+            "phase_taxonomy_version": str(_as_map(upstream_intent).get("phase_taxonomy_version") or "").strip(),
+            "primary_objective": str(_as_map(upstream_intent).get("primary_objective") or "").strip(),
+        },
+        "operational_rules": {
+            "rest_days": "REST -> NONE/NONE",
+            "recovery_days": "RECOVERY -> RECOVERY",
+            "training_days": "training-day domains must stay inside exact PHASE_STRUCTURE legality",
+        },
+    }
+    if phase_structure_version_key:
+        payload["phase_structure_source"] = f"phase_structure_{phase_structure_version_key}.json"
+    return _render_json_block("Exact writer authority", payload)
+
+
 def _sanitize_replan_decision_context(decision: JsonMap) -> JsonMap:
     """Return only the active replan delta that should survive into the next round."""
 
@@ -2732,6 +2800,7 @@ def _run_writer_document(
     blueprint_name = _TASK_BLUEPRINT_BY_AGENT_TASK[public_task]
     task_blueprint = task_blueprints[blueprint_name]
     agent_blueprint = agent_blueprints[task_blueprint.agent]
+    exact_authority_block = _phase_writer_authority_context_block(public_task, loaded_inputs)
     description = _build_task_description(
         runtime,
         bundle=bundle,
@@ -2740,6 +2809,7 @@ def _run_writer_document(
         task=public_task,
         user_input=_augment_user_input(
             user_input,
+            exact_authority_block,
             _render_json_block("Approved planning bundle", planning_bundle),
             _render_json_block("Review decision", review_decision),
         ),

@@ -44,6 +44,8 @@ Out of scope:
 
 - Nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only.
 - Do not put narrative explanations, objectives, summaries, or prose into any `phase_intent` field.
+- Pass 2 must freeze exact legality, exact forbidden domains, exact load modalities, exact role-week load bands, and exact phase-local objective before review handoff.
+- Operational `NONE` belongs only to preview/non-training-day semantics and must never be reintroduced into `PHASE_STRUCTURE` structural legality.
 - Keep reload and re-entry semantically distinct.
 - Preserve Build-entry conservatism when shortened/base/re-entry context precedes the phase.
 - Do not let a threshold-shaped block survive when inherited phase or season authority suppresses `THRESHOLD`.
