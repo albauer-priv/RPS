@@ -13,6 +13,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
+from rps.agents.output_normalization import (
+    extract_loaded_document,
+    normalize_phase_preview_document,
+    normalize_phase_structure_document,
+)
 from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.planning.contracts import (
@@ -1978,11 +1983,60 @@ def build_task_guardrail_kwargs(task_blueprint: Any, task_policies: JsonMap) -> 
     return kwargs
 
 
+def _loaded_input_version_key(raw: object) -> str | None:
+    """Return one version key from a loaded input or persisted save payload."""
+
+    if not isinstance(raw, dict):
+        return None
+    version_key = raw.get("version_key")
+    if isinstance(version_key, str) and version_key.strip():
+        return version_key.strip()
+    document = raw.get("document")
+    if isinstance(document, dict):
+        meta = _as_map(document.get("meta"))
+        version_key = meta.get("version_key")
+        if isinstance(version_key, str) and version_key.strip():
+            return version_key.strip()
+    meta = _as_map(raw.get("meta"))
+    version_key = meta.get("version_key")
+    if isinstance(version_key, str) and version_key.strip():
+        return version_key.strip()
+    return None
+
+
+def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
+    """Project exact persisted phase authority before writer-task guardrails evaluate candidates."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return result
+    context = current_guardrail_runtime_context()
+    artifact_type = str(context.get("artifact_type") or "").strip().upper()
+    loaded_inputs = context.get("loaded_inputs")
+    if not isinstance(loaded_inputs, dict):
+        loaded_inputs = {}
+    if artifact_type == ArtifactType.PHASE_STRUCTURE.value:
+        return normalize_phase_structure_document(
+            dict(mapping),
+            season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
+            phase_guardrails_document=extract_loaded_document(loaded_inputs.get("phase_guardrails")),
+            phase_guardrails_version_key=_loaded_input_version_key(loaded_inputs.get("phase_guardrails")),
+        )
+    if artifact_type == ArtifactType.PHASE_PREVIEW.value:
+        return normalize_phase_preview_document(
+            dict(mapping),
+            phase_structure_document=extract_loaded_document(loaded_inputs.get("phase_structure")),
+            phase_structure_version_key=_loaded_input_version_key(loaded_inputs.get("phase_structure")),
+        )
+    return result
+
+
 def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
     """Wrap one guardrail so failures become compact retry-relevant runtime events."""
 
     def _wrapped(result: Any):
-        ok, payload = guardrail_fn(result)
+        normalized_result = normalize_artifact_candidate_for_task_guardrails(result)
+        ok, payload = guardrail_fn(normalized_result)
         if not ok:
             context = _GUARDRAIL_CONTEXT.get({})
             emit_runtime_event(

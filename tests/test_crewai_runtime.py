@@ -2494,6 +2494,255 @@ def test_phase_bundle_matches_context_does_not_require_missing_authority_contrac
     assert ok is True, message
 
 
+def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority() -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            "upstream_intent": {"primary_objective": "Wrong objective"},
+            "structural_phase_elements": {
+                "allowed_day_roles": ["ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"forbidden_intensity_domains": ["VO2MAX"]},
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 6000, "max": 7000}},
+                    {"week": "2026-25", "band": {"min": 6100, "max": 7100}},
+                ],
+                "source": "wrong.json",
+            },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": "2026-24", "role": "LOAD_1"},
+                        {"week": "2026-25", "role": "RELOAD"},
+                    ]
+                }
+            },
+        },
+    }
+    season_plan = {
+        "meta": {"artifact_type": "SEASON_PLAN"},
+        "data": {
+            "phases": [
+                {
+                    "iso_week_range": "2026-24--2026-25",
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                        "allowed_load_modalities": ["NONE"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "overview": {
+                        "phase_goals": {
+                            "primary": "Rebuild load tolerance with controlled sweet spot support."
+                        }
+                    },
+                }
+            ]
+        },
+    }
+    phase_guardrails = {
+        "meta": {"artifact_type": "PHASE_GUARDRAILS", "version_key": "2026-24--2026-25__20260608_090000"},
+        "data": {
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            }
+        },
+    }
+    wrapped_context_match = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_execution_context_match",
+        crewai_guardrails.phase_execution_context_match,
+    )
+    wrapped_weeks_match = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_weeks_match_range",
+        crewai_guardrails.phase_weeks_match_range,
+    )
+    wrapped_load_coherence = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_week_role_load_coherence",
+        crewai_guardrails.phase_week_role_load_coherence,
+    )
+
+    with guardrail_runtime_context(
+        artifact_type="PHASE_STRUCTURE",
+        loaded_inputs={
+            "season_plan": {"ok": True, "document": season_plan},
+            "phase_guardrails": {
+                "ok": True,
+                "document": phase_guardrails,
+                "version_key": "2026-24--2026-25__20260608_090000",
+            },
+        },
+        phase_execution_context={
+            "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "phase_primary_objective": "Rebuild load tolerance with controlled sweet spot support.",
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}},
+                {"week": "2026-25", "role": "RELOAD", "band": {"min": 7300, "max": 8300}},
+            ],
+        },
+    ):
+        ok_context, repaired_context = wrapped_context_match(candidate)
+        ok_weeks, repaired_weeks = wrapped_weeks_match(candidate)
+        ok_coherence, repaired_coherence = wrapped_load_coherence(candidate)
+
+    assert ok_context is True, repaired_context
+    assert ok_weeks is True, repaired_weeks
+    assert ok_coherence is True, repaired_coherence
+    assert repaired_context["data"]["structural_phase_elements"]["allowed_intensity_domains"] == [
+        "RECOVERY",
+        "ENDURANCE",
+        "TEMPO",
+        "SWEET_SPOT",
+    ]
+    assert repaired_context["data"]["structural_phase_elements"]["allowed_load_modalities"] == ["NONE"]
+    assert repaired_context["data"]["execution_principles"]["load_intensity_handling"][
+        "forbidden_intensity_domains"
+    ] == ["THRESHOLD", "VO2MAX"]
+    assert repaired_context["data"]["upstream_intent"]["primary_objective"] == (
+        "Rebuild load tolerance with controlled sweet spot support."
+    )
+    assert repaired_context["data"]["load_ranges"]["weekly_kj_bands"] == [
+        {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+        {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+    ]
+    assert (
+        repaired_context["data"]["load_ranges"]["source"]
+        == "phase_guardrails_2026-24--2026-25__20260608_090000.json"
+    )
+
+
+def test_phase_structure_writer_guardrails_fail_cleanly_without_exact_phase_authority_projection() -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "structural_phase_elements": {
+                "allowed_day_roles": ["ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            },
+        },
+    }
+    wrapped = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_execution_context_match",
+        crewai_guardrails.phase_execution_context_match,
+    )
+
+    with guardrail_runtime_context(
+        artifact_type="PHASE_STRUCTURE",
+        loaded_inputs={},
+        phase_execution_context={
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}},
+                {"week": "2026-25", "role": "RELOAD", "band": {"min": 7300, "max": 8300}},
+            ],
+        },
+    ):
+        ok, message = wrapped(candidate)
+
+    assert ok is False
+    assert "phase_structural_allowed_domains_mismatch" in message
+
+
+def test_phase_preview_writer_guardrails_pre_normalize_shared_skeleton_semantics() -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_PREVIEW", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "phase_intent_summary": {"primary_objective": "Wrong objective"},
+            "weekly_agenda_preview": [
+                {
+                    "week": "2026-24",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "TEMPO", "load_modality": "K3"},
+                        {"day_of_week": "Tue", "day_role": "RECOVERY", "intensity_domain": "ENDURANCE", "load_modality": "K3"},
+                        {"day_of_week": "Wed", "day_role": "QUALITY", "intensity_domain": "THRESHOLD", "load_modality": "NONE"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "SWEET_SPOT", "load_modality": "K3"},
+                        {"day_of_week": "Sat", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "load_modality": "NONE"},
+                        {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                    ],
+                }
+            ],
+        },
+    }
+    phase_structure = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE"},
+        "data": {
+            "upstream_intent": {
+                "phase_intent": "shortened_re_entry",
+                "build_subtype": None,
+                "primary_objective": "Rebuild load tolerance with controlled sweet spot support.",
+            },
+            "structural_phase_elements": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"max_quality_days_per_week": 1},
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": "2026-24", "role": "LOAD_1"},
+                        {"week": "2026-25", "role": "RELOAD"},
+                    ]
+                }
+            },
+        },
+    }
+    with guardrail_runtime_context(
+        artifact_type="PHASE_PREVIEW",
+        loaded_inputs={
+            "phase_structure": {
+                "ok": True,
+                "document": phase_structure,
+                "version_key": "2026-24--2026-25__20260608_091500",
+            }
+        },
+    ):
+        repaired = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+
+    assert repaired["data"]["phase_intent_summary"]["primary_objective"] == (
+        "Rebuild load tolerance with controlled sweet spot support."
+    )
+    days = repaired["data"]["weekly_agenda_preview"][0]["days"]
+    assert days[0]["intensity_domain"] == "NONE"
+    assert days[0]["load_modality"] == "NONE"
+    assert days[1]["day_role"] == "QUALITY"
+    assert days[1]["intensity_domain"] == "TEMPO"
+    assert days[2]["day_role"] == "RECOVERY"
+    assert days[2]["intensity_domain"] == "RECOVERY"
+    assert days[2]["load_modality"] == "NONE"
+    assert days[5]["day_role"] == "ENDURANCE"
+    assert days[5]["intensity_domain"] == "ENDURANCE"
+
+
 def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None:
     approved_bundle = {
         "season_load_envelope": {

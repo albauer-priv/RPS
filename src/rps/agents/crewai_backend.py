@@ -2735,7 +2735,11 @@ def _run_writer_document(
             _render_json_block("Review decision", review_decision),
         ),
     )
-    with guardrail_runtime_context(approved_planning_bundle=planning_bundle):
+    with guardrail_runtime_context(
+        approved_planning_bundle=planning_bundle,
+        artifact_type=OUTPUT_SPECS[public_task].artifact_type.value,
+        loaded_inputs=loaded_inputs or {},
+    ):
         document = _execute_crewai_task(
             agent_cls=agent_cls,
             crewai_llm_cls=crewai_llm_cls,
@@ -3006,6 +3010,7 @@ def run_phase_bundle_crewai(
                 tools=tools,
                 athlete_id=athlete_id,
                 run_id=run_id,
+                loaded_inputs=loaded_inputs,
                 model_override=model_override,
                 temperature_override=temperature_override,
             )
@@ -3029,6 +3034,11 @@ def run_phase_bundle_crewai(
         except Exception as exc:
             logger.warning("CrewAI phase multi-crew store failed for %s: %s", output_spec.artifact_type.value, exc)
             return {"ok": False, "error": str(exc), "warnings": warnings, "produced": produced}
+        loaded_inputs[output_spec.artifact_type.value.lower()] = {
+            "ok": True,
+            "document": document,
+            "version_key": saved.get("version_key"),
+        }
         produced[output_spec.tool_name] = saved
 
     return {"ok": True, "produced": produced, "warnings": warnings}
