@@ -240,6 +240,63 @@ def _mark_blocked(steps: list[StepRecord], failed_step: StepRecord) -> None:
             pending["Details"] = reason
 
 
+def _step_event_context(step: StepRecord | None) -> dict[str, object]:
+    """Return shared step context fields for run-store events."""
+    if not isinstance(step, dict):
+        return {}
+    payload: dict[str, object] = {}
+    for source_key, target_key in (
+        ("step_id", "step_id"),
+        ("Step", "step"),
+        ("Details", "details"),
+        ("Agent", "agent"),
+        ("Writes", "writes"),
+        ("Authority", "authority"),
+    ):
+        value = step.get(source_key)
+        if value is not None:
+            payload[target_key] = value
+    return payload
+
+
+def _run_event_details(active: RunRecord | None) -> str | None:
+    """Return a compact run-scope detail string when available."""
+    if not isinstance(active, dict):
+        return None
+    for key in ("message", "scope", "process_subtype", "mode"):
+        value = active.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _emit_blocked_step_events(
+    root: Path,
+    athlete_id: str,
+    run_id: str,
+    steps: list[StepRecord],
+) -> None:
+    """Emit `STEP_BLOCKED` events for blocked steps that do not yet have one."""
+    existing = {
+        str(event.get("step_id") or "")
+        for event in load_events(root, athlete_id, run_id, limit=500)
+        if event.get("type") == "STEP_BLOCKED"
+    }
+    for step in steps:
+        if step.get("Status") != "BLOCKED":
+            continue
+        step_id = str(step.get("step_id") or "")
+        if not step_id or step_id in existing:
+            continue
+        append_event(
+            root,
+            athlete_id,
+            run_id,
+            {"type": "STEP_BLOCKED", **_step_event_context(step)},
+        )
+        existing.add(step_id)
+
+
 def _active_int(run_record: RunRecord, key: str) -> int | None:
     """Return an integer run-field value when present and parseable."""
     value = run_record.get(key)
@@ -356,7 +413,16 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                 "steps": steps,
             },
         )
-        append_event(config.root, config.athlete_id, config.run_id, {"type": "RUN_FAILED", "reason": "Athlete lock busy."})
+        append_event(
+            config.root,
+            config.athlete_id,
+            config.run_id,
+            {
+                "type": "RUN_FAILED",
+                "reason": "Athlete lock busy.",
+                "details": _run_event_details(active),
+            },
+        )
         return
 
     try:
@@ -384,7 +450,11 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     config.root,
                     config.athlete_id,
                     config.run_id,
-                    {"type": "RUN_CANCELLED", "reason": "cancel_requested"},
+                    {
+                        "type": "RUN_CANCELLED",
+                        "reason": "cancel_requested",
+                        "details": _run_event_details(active),
+                    },
                 )
                 break
             steps = _active_steps(active)
@@ -399,7 +469,12 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     step["Status"] = "RUNNING"
                     step["Started"] = datetime.now(UTC).isoformat()
                     if not active.get("started_at"):
-                        append_event(config.root, config.athlete_id, config.run_id, {"type": "RUN_STARTED"})
+                        append_event(
+                            config.root,
+                            config.athlete_id,
+                            config.run_id,
+                            {"type": "RUN_STARTED", "details": _run_event_details(active)},
+                        )
                         update_run(
                             config.root,
                             config.athlete_id,
@@ -422,7 +497,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                         config.root,
                         config.athlete_id,
                         config.run_id,
-                        {"type": "STEP_STARTED", "step_id": step.get("step_id")},
+                        {"type": "STEP_STARTED", **_step_event_context(step)},
                     )
                     running_found = True
                     break
@@ -439,15 +514,31 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                             outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
                         if outputs:
                             step["Outputs"] = outputs
-                            append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": outputs})
-                        append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                            append_event(
+                                config.root,
+                                config.athlete_id,
+                                config.run_id,
+                                {"type": "ARTEFACT_WRITTEN", "outputs": outputs, **_step_event_context(step)},
+                            )
+                        append_event(
+                            config.root,
+                            config.athlete_id,
+                            config.run_id,
+                            {"type": "STEP_FINISHED", **_step_event_context(step)},
+                        )
                     elif response_status in {"failed", "cancelled"}:
                         step["Status"] = "FAILED"
                         step["Details"] = f"Response {response_status}"
                         step["Ended"] = datetime.now(UTC).isoformat()
                         _set_duration(step)
                         _mark_blocked(steps, step)
-                        append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
+                        append_event(
+                            config.root,
+                            config.athlete_id,
+                            config.run_id,
+                            {"type": "STEP_FAILED", "reason": step.get("Details"), **_step_event_context(step)},
+                        )
+                        _emit_blocked_step_events(config.root, config.athlete_id, config.run_id, steps)
                         update_run(
                             config.root,
                             config.athlete_id,
@@ -559,15 +650,15 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                                 config.run_id,
                                                 {
                                                     "type": "ARTEFACT_WRITTEN",
-                                                    "step_id": bundled_step_id,
                                                     "outputs": bundled_outputs,
+                                                    **_step_event_context(bundled_step),
                                                 },
                                             )
                                         append_event(
                                             config.root,
                                             config.athlete_id,
                                             config.run_id,
-                                            {"type": "STEP_FINISHED", "step_id": bundled_step_id},
+                                            {"type": "STEP_FINISHED", **_step_event_context(bundled_step)},
                                         )
                                 else:
                                     step["Status"] = "DONE"
@@ -585,8 +676,18 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     step_outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
                                 if step_outputs:
                                     step["Outputs"] = step_outputs
-                                    append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": step_outputs})
-                                append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                                    append_event(
+                                        config.root,
+                                        config.athlete_id,
+                                        config.run_id,
+                                        {"type": "ARTEFACT_WRITTEN", "outputs": step_outputs, **_step_event_context(step)},
+                                    )
+                                append_event(
+                                    config.root,
+                                    config.athlete_id,
+                                    config.run_id,
+                                    {"type": "STEP_FINISHED", **_step_event_context(step)},
+                                )
                         else:
                             index = _load_index(config.root, config.athlete_id)
                             for artifact_type in _step_list(step, "write_types"):
@@ -599,8 +700,18 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                         written_outputs.extend(_artifact_records_for_run(index, ArtifactType(artifact_type), config.run_id))
                                     if written_outputs:
                                         step["Outputs"] = written_outputs
-                                        append_event(config.root, config.athlete_id, config.run_id, {"type": "ARTEFACT_WRITTEN", "step_id": step.get("step_id"), "outputs": written_outputs})
-                                    append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FINISHED", "step_id": step.get("step_id")})
+                                        append_event(
+                                            config.root,
+                                            config.athlete_id,
+                                            config.run_id,
+                                            {"type": "ARTEFACT_WRITTEN", "outputs": written_outputs, **_step_event_context(step)},
+                                        )
+                                    append_event(
+                                        config.root,
+                                        config.athlete_id,
+                                        config.run_id,
+                                        {"type": "STEP_FINISHED", **_step_event_context(step)},
+                                    )
                                     break
                             if step.get("Status") != "DONE":
                                 root_cause = _latest_failure_reason(
@@ -613,7 +724,13 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                 step["Ended"] = datetime.now(UTC).isoformat()
                                 _set_duration(step)
                                 _mark_blocked(steps, step)
-                                append_event(config.root, config.athlete_id, config.run_id, {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")})
+                                append_event(
+                                    config.root,
+                                    config.athlete_id,
+                                    config.run_id,
+                                    {"type": "STEP_FAILED", "reason": step.get("Details"), **_step_event_context(step)},
+                                )
+                                _emit_blocked_step_events(config.root, config.athlete_id, config.run_id, steps)
                                 update_run(
                                     config.root,
                                     config.athlete_id,
@@ -642,7 +759,12 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                         "steps": steps,
                     },
                 )
-                append_event(config.root, config.athlete_id, config.run_id, {"type": "RUN_FINISHED"})
+                append_event(
+                    config.root,
+                    config.athlete_id,
+                    config.run_id,
+                    {"type": "RUN_FINISHED", "details": _run_event_details(active)},
+                )
                 break
 
             time.sleep(2)
@@ -664,8 +786,9 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                     config.root,
                     config.athlete_id,
                     config.run_id,
-                    {"type": "STEP_FAILED", "step_id": step.get("step_id"), "reason": step.get("Details")},
+                    {"type": "STEP_FAILED", "reason": step.get("Details"), **_step_event_context(step)},
                 )
+                _emit_blocked_step_events(config.root, config.athlete_id, config.run_id, steps)
                 break
         update_run(
             config.root,
@@ -682,7 +805,12 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
             config.root,
             config.athlete_id,
             config.run_id,
-            {"type": "RUN_FAILED", "reason": detail, "secondary_reason": str(exc)},
+            {
+                "type": "RUN_FAILED",
+                "reason": detail,
+                "secondary_reason": str(exc),
+                "details": _run_event_details(active),
+            },
         )
     finally:
         release_athlete_lock(config.root, config.athlete_id)

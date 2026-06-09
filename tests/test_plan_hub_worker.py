@@ -9,7 +9,7 @@ from rps.orchestrator.plan_hub_worker import (
     _latest_failure_reason,
     run_plan_hub_worker,
 )
-from rps.ui.run_store import append_event, append_run
+from rps.ui.run_store import append_event, append_run, load_events
 
 
 def test_bundled_phase_force_steps_groups_remaining_phase_outputs() -> None:
@@ -114,3 +114,64 @@ def test_attach_run_logger_filters_debug_noise(tmp_path: Path) -> None:
     content = log_path.read_text(encoding="utf-8")
     assert "info line should be visible in run log" in content
     assert "debug line should stay out of run log" not in content
+
+
+def test_plan_hub_worker_emits_enriched_parent_step_events(tmp_path: Path, monkeypatch) -> None:
+    athlete_id = "athlete"
+    run_id = "plan_run"
+    append_run(
+        tmp_path,
+        athlete_id,
+        {
+            "run_id": run_id,
+            "athlete_id": athlete_id,
+            "status": "QUEUED",
+            "iso_year": 2026,
+            "iso_week": 24,
+            "message": "Scoped planning run.",
+            "steps": [
+                {
+                    "step_id": "WEEK_PLAN",
+                    "Step": "Week Plan",
+                    "Agent": "Week Planner",
+                    "Writes": "WEEK_PLAN",
+                    "Authority": "Binding",
+                    "Details": "Explicit scoped rerun requested.",
+                    "Status": "QUEUED",
+                    "write_types": [],
+                }
+            ],
+        },
+    )
+
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_hub_worker.execute_plan_week",
+        lambda *args, **kwargs: {"ok": True},
+    )
+
+    config = PlanHubWorkerConfig(
+        root=tmp_path,
+        athlete_id=athlete_id,
+        run_id=run_id,
+        runtime_for_agent=lambda _name: None,  # type: ignore[arg-type]
+        model_resolver=None,
+        temperature_resolver=None,
+        reasoning_effort_resolver=None,
+        reasoning_summary_resolver=None,
+        allow_delete_intervals=False,
+    )
+
+    run_plan_hub_worker(config, threading.Event())
+
+    events = load_events(tmp_path, athlete_id, run_id, limit=20)
+    step_started = next(event for event in events if event["type"] == "STEP_STARTED")
+    step_finished = next(event for event in events if event["type"] == "STEP_FINISHED")
+    run_started = next(event for event in events if event["type"] == "RUN_STARTED")
+
+    assert step_started["step"] == "Week Plan"
+    assert step_started["details"] == "Explicit scoped rerun requested."
+    assert step_started["agent"] == "Week Planner"
+    assert step_started["writes"] == "WEEK_PLAN"
+    assert step_started["authority"] == "Binding"
+    assert step_finished["step"] == "Week Plan"
+    assert run_started["details"] == "Scoped planning run."

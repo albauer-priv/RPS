@@ -19,6 +19,7 @@ JsonPayload = JsonMap | JsonList
 RunRecord = dict[str, object]
 RunEvent = dict[str, object]
 RunRuntimeSummary = dict[str, object]
+KNOWN_CHILD_RUN_SUFFIXES = ("week", "phase_bundle")
 
 @dataclass(frozen=True)
 class RunStoreConfig:
@@ -368,6 +369,207 @@ def load_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -
         except json.JSONDecodeError:
             logger.warning("Skipping invalid event line in %s", path)
     return events[-limit:]
+
+
+def _direct_child_run_ids(root: Path, athlete_id: str, run_id: str) -> list[str]:
+    """Return direct child run ids for a parent run using current naming conventions."""
+    run_root = _run_store_dir(root, athlete_id)
+    if not run_root.exists():
+        return []
+    children: list[str] = []
+    seen: set[str] = set()
+
+    def _include(candidate: str) -> None:
+        if candidate in seen:
+            return
+        if not events_jsonl_path(root, athlete_id, candidate).exists():
+            return
+        children.append(candidate)
+        seen.add(candidate)
+
+    for suffix in KNOWN_CHILD_RUN_SUFFIXES:
+        _include(f"{run_id}_{suffix}")
+    prefix = f"{run_id}_"
+    for candidate_path in sorted(run_root.iterdir()):
+        if not candidate_path.is_dir():
+            continue
+        candidate = candidate_path.name
+        if not candidate.startswith(prefix) or candidate == run_id:
+            continue
+        _include(candidate)
+    return children
+
+
+def _step_map_for_run(root: Path, athlete_id: str, run_id: str) -> tuple[RunRecord | None, dict[str, RunRecord]]:
+    """Load one run record and map its step records by step_id."""
+    run_record = _load_run_dir(root, athlete_id, run_id)
+    if not isinstance(run_record, dict):
+        return None, {}
+    steps = run_record.get("steps")
+    if not isinstance(steps, list):
+        return run_record, {}
+    step_map: dict[str, RunRecord] = {}
+    for raw_step in steps:
+        if not isinstance(raw_step, dict):
+            continue
+        step_id = raw_step.get("step_id")
+        if isinstance(step_id, str) and step_id:
+            step_map[step_id] = raw_step
+    return run_record, step_map
+
+
+def _as_text(value: object) -> str:
+    """Return a stripped string or an empty string."""
+    return str(value or "").strip()
+
+
+def _canonical_step_label(step_id: str) -> str:
+    """Return a readable fallback label for a step id."""
+    raw = step_id.strip()
+    if not raw:
+        return ""
+    return raw.replace("_", " ").title()
+
+
+def _stringify_detail_value(value: object) -> str:
+    """Convert structured detail payloads into compact display text."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float, bool)):
+        return str(value)
+    if isinstance(value, (dict, list)):
+        try:
+            return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        except TypeError:
+            return str(value)
+    return str(value)
+
+
+def _event_signature(event: RunEvent) -> str:
+    """Build a stable signature for event deduplication."""
+    fields = (
+        _as_text(event.get("source_run_id")),
+        _as_text(event.get("ts")),
+        _as_text(event.get("type")),
+        _as_text(event.get("flow")),
+        _as_text(event.get("crew")),
+        _as_text(event.get("step")),
+        _as_text(event.get("task")),
+        _as_text(event.get("step_id")),
+        _as_text(event.get("reason")),
+        _as_text(event.get("details")),
+        _as_text(event.get("component")),
+    )
+    return "|".join(fields)
+
+
+def _normalize_run_event(
+    *,
+    event: RunEvent,
+    source_run_id: str,
+    run_record: RunRecord | None,
+    step_map: dict[str, RunRecord],
+) -> RunEvent:
+    """Normalize one raw event into a UI-ready event record."""
+    normalized = dict(event)
+    normalized["source_run_id"] = source_run_id
+
+    step_id = _as_text(normalized.get("step_id"))
+    step_record = step_map.get(step_id) if step_id else None
+
+    step_label = _as_text(normalized.get("step")) or _as_text(normalized.get("task"))
+    if not step_label and isinstance(step_record, dict):
+        step_label = _as_text(step_record.get("Step"))
+    if not step_label and step_id:
+        step_label = _canonical_step_label(step_id)
+    if step_label:
+        normalized["step"] = step_label
+
+    if not _as_text(normalized.get("agent")) and isinstance(step_record, dict):
+        agent = _as_text(step_record.get("Agent"))
+        if agent:
+            normalized["agent"] = agent
+    if not normalized.get("writes") and isinstance(step_record, dict):
+        writes = step_record.get("Writes")
+        if writes:
+            normalized["writes"] = writes
+    if not normalized.get("authority") and isinstance(step_record, dict):
+        authority = step_record.get("Authority")
+        if authority:
+            normalized["authority"] = authority
+
+    details = _stringify_detail_value(normalized.get("details"))
+    if not details:
+        for key in ("reason", "outputs", "route", "tasks"):
+            details = _stringify_detail_value(normalized.get(key))
+            if details:
+                break
+    if not details and isinstance(step_record, dict):
+        details = _stringify_detail_value(step_record.get("Details"))
+    if (
+        not details
+        and _as_text(normalized.get("type")).startswith("RUN_")
+        and isinstance(run_record, dict)
+    ):
+        details = _stringify_detail_value(run_record.get("message"))
+    normalized["details"] = details or "—"
+    return normalized
+
+
+def load_enriched_run_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -> list[RunEvent]:
+    """Load merged, normalized run-family events for one selected run."""
+    family_run_ids = [run_id, *_direct_child_run_ids(root, athlete_id, run_id)]
+    logger.debug(
+        "Loading enriched run events athlete=%s selected_run_id=%s family_run_ids=%s",
+        athlete_id,
+        run_id,
+        family_run_ids,
+    )
+
+    merged: list[RunEvent] = []
+    seen: set[str] = set()
+    for family_run_id in family_run_ids:
+        path = events_jsonl_path(root, athlete_id, family_run_id)
+        if not path.exists():
+            logger.debug(
+                "Run event file missing athlete=%s run_id=%s path=%s",
+                athlete_id,
+                family_run_id,
+                path,
+            )
+            continue
+        logger.debug(
+            "Run event file found athlete=%s run_id=%s path=%s",
+            athlete_id,
+            family_run_id,
+            path,
+        )
+        raw_events = load_events(root, athlete_id, family_run_id, limit=limit)
+        run_record, step_map = _step_map_for_run(root, athlete_id, family_run_id)
+        for raw_event in raw_events:
+            normalized = _normalize_run_event(
+                event=raw_event,
+                source_run_id=family_run_id,
+                run_record=run_record,
+                step_map=step_map,
+            )
+            signature = _event_signature(normalized)
+            if signature in seen:
+                continue
+            seen.add(signature)
+            merged.append(normalized)
+    merged.sort(key=lambda event: _as_text(event.get("ts")))
+    if limit > 0:
+        merged = merged[-limit:]
+    logger.debug(
+        "Loaded enriched run events athlete=%s selected_run_id=%s merged_count=%s",
+        athlete_id,
+        run_id,
+        len(merged),
+    )
+    return merged
 
 
 def summarize_runtime_events(events: list[RunEvent]) -> RunRuntimeSummary:

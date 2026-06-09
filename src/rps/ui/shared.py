@@ -480,9 +480,9 @@ def render_run_event_table(
 ) -> None:
     """Render filtered run-store events for one run."""
 
-    from rps.ui.run_store import load_events
+    from rps.ui.run_store import load_enriched_run_events
 
-    events = load_events(workspace_root, athlete_id, run_id, limit=limit)
+    events = load_enriched_run_events(workspace_root, athlete_id, run_id, limit=limit)
     if not events:
         st.info("No runtime events recorded for this run.")
         return
@@ -512,7 +512,7 @@ def render_run_event_table(
             continue
         if selected_filter not in {"All", "FLOW_*", "CREW_*", "RUN_*", "STEP_*"} and event_type != selected_filter:
             continue
-        details = event.get("reason") or event.get("outputs") or event.get("route") or event.get("tasks") or "—"
+        details = event.get("details") or event.get("reason") or event.get("outputs") or event.get("route") or event.get("tasks") or "—"
         rows.append(
             {
                 "Timestamp": event.get("ts") or "—",
@@ -524,6 +524,7 @@ def render_run_event_table(
                 "Progress": event.get("status") or "—",
                 "Model": event.get("model") or "—",
                 "Component": event.get("component") or "—",
+                "Run": event.get("source_run_id") or run_id,
                 "Details": details,
             }
         )

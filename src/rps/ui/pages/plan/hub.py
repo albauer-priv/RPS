@@ -20,7 +20,7 @@ from rps.ui.run_store import (
     RunRecord,
     append_run,
     find_active_runs,
-    load_events,
+    load_enriched_run_events,
     load_runs,
     summarize_runtime_events,
     update_run,
@@ -2046,7 +2046,7 @@ if active_run:
             break
     if pipeline_total and pipeline_index:
         st.caption(f"Pipeline progress: {pipeline_index}/{pipeline_total}")
-    runtime_events = load_events(
+    runtime_events = load_enriched_run_events(
         SETTINGS.workspace_root,
         hub_scope["athlete_id"],
         str(active_run.get("run_id") or ""),
