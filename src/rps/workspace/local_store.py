@@ -260,8 +260,8 @@ class LocalArtifactStore:
         """Record a write in the per-athlete index.json."""
         rel_path = str(version_path.relative_to(self.athlete_root(athlete_id)))
         created_at: str | None = None
-        iso_week: dict[str, object] | str | None = None
-        iso_week_range: dict[str, object] | str | None = None
+        iso_week: object | None = None
+        iso_week_range: object | None = None
         if meta:
             created_at = _as_str(meta.get("created_at"))
             iso_week_raw = meta.get("iso_week")

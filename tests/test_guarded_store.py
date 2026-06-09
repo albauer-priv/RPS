@@ -673,7 +673,7 @@ def test_phase_structure_store_logs_capacity_builder_failures(tmp_path, monkeypa
 
 def test_build_load_capacity_block_rejects_unknown_kwargs() -> None:
     with pytest.raises(TypeError):
-        build_load_capacity_block(planning_events_payload={})  # type: ignore[call-arg]
+        build_load_capacity_block(planning_events_payload={})
 
 
 def test_phase_guardrails_missing_structured_event_still_fails(tmp_path):

@@ -1280,7 +1280,7 @@ def validate_week_plan_against_week_context(
                     )
                 )
         planned = _as_float(summary.get("planned_weekly_load_kj"))
-        if None not in {planned, expected_min, expected_max} and not (expected_min <= planned <= expected_max):
+        if planned is not None and expected_min is not None and expected_max is not None and not (expected_min <= planned <= expected_max):
             assert planned is not None
             assert expected_min is not None and expected_max is not None
             issues.append(
@@ -1373,14 +1373,14 @@ def validate_writer_output_against_blueprints(
             for bp in blueprints
             if bp.get("week") and bp.get("week_role")
         }
-        context: JsonMap = {"week_role_by_iso_week": expected_roles, "phase_s5_bands": []}
+        phase_context: JsonMap = {"week_role_by_iso_week": expected_roles, "phase_s5_bands": []}
         for bp in blueprints:
             week = bp.get("week")
             band_min = bp.get("s5_band_min")
             band_max = bp.get("s5_band_max")
             if week and band_min is not None and band_max is not None:
-                context["phase_s5_bands"].append({"week": week, "band": {"min": band_min, "max": band_max}})
-        return validate_phase_against_execution_context(phase_payload=artifact_payload, phase_execution_context=context)
+                phase_context["phase_s5_bands"].append({"week": week, "band": {"min": band_min, "max": band_max}})
+        return validate_phase_against_execution_context(phase_payload=artifact_payload, phase_execution_context=phase_context)
     agenda = [_as_map(item) for item in _as_list(_as_map(artifact_payload.get("data")).get("agenda"))]
     issues: list[PlanningContractIssue] = []
     day_blueprints = [bp for bp in blueprints if bp.get("day")]

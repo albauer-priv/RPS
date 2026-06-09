@@ -5,8 +5,10 @@ import logging
 import os
 import sys
 import types
+from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -160,8 +162,15 @@ from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
+JsonMap = dict[str, Any]
 
-def _install_fake_crewai_events(monkeypatch) -> object:
+
+def _set_module_attrs(module: types.ModuleType, **attrs: Any) -> None:
+    for key, value in attrs.items():
+        setattr(module, key, value)
+
+
+def _install_fake_crewai_events(monkeypatch) -> types.ModuleType:
     """Install a minimal CrewAI events module with a singleton event bus."""
 
     events_module = types.ModuleType("crewai.events")
@@ -212,8 +221,7 @@ def _install_fake_crewai_events(monkeypatch) -> object:
         "MethodExecutionFailedEvent",
     ]:
         setattr(events_module, name, type(name, (_BaseEvent,), {}))
-    events_module.BaseEventListener = BaseEventListener
-    events_module.crewai_event_bus = bus
+    _set_module_attrs(events_module, BaseEventListener=BaseEventListener, crewai_event_bus=bus)
     monkeypatch.setitem(sys.modules, "crewai.events", events_module)
     crewai_telemetry._LISTENER_READY = False
     crewai_telemetry._LISTENER_INIT_FAILED = False
@@ -225,7 +233,8 @@ def _install_fake_flow_module(monkeypatch) -> None:
 
     flow_module = types.ModuleType("crewai.flow.flow")
     events_module = sys.modules.get("crewai.events")
-    bus = getattr(events_module, "crewai_event_bus", None)
+    events_module_any = cast(Any, events_module)
+    bus = getattr(events_module_any, "crewai_event_bus", None)
 
     def start(*_args, **_kwargs):
         def _decorate(func):
@@ -312,10 +321,7 @@ def _install_fake_flow_module(monkeypatch) -> None:
                     bus.emit(events_module.MethodExecutionFinishedEvent(flow_name=type(self).__name__, method_name=getattr(next_listener, "__name__", "")))
                 current_name = getattr(next_listener, "__name__", "")
 
-    flow_module.Flow = FakeFlow
-    flow_module.start = start
-    flow_module.listen = listen
-    flow_module.router = router
+    _set_module_attrs(flow_module, Flow=FakeFlow, start=start, listen=listen, router=router)
     monkeypatch.setitem(sys.modules, "crewai.flow.flow", flow_module)
 
 
@@ -764,9 +770,9 @@ def test_build_crewai_knowledge_kwargs_mirrors_rps_openai_env(monkeypatch, tmp_p
             return []
 
     fake_module = types.ModuleType("crewai.knowledge.source.string_knowledge_source")
-    fake_module.StringKnowledgeSource = FakeStringKnowledgeSource
+    _set_module_attrs(fake_module, StringKnowledgeSource=FakeStringKnowledgeSource)
     fake_storage_module = types.ModuleType("crewai.knowledge.storage.knowledge_storage")
-    fake_storage_module.KnowledgeStorage = FakeKnowledgeStorage
+    _set_module_attrs(fake_storage_module, KnowledgeStorage=FakeKnowledgeStorage)
     monkeypatch.setitem(sys.modules, "crewai.knowledge.source.string_knowledge_source", fake_module)
     monkeypatch.setitem(sys.modules, "crewai.knowledge.storage.knowledge_storage", fake_storage_module)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -1492,6 +1498,7 @@ def test_artifact_schema_valid_guardrail_uses_concrete_json_schema() -> None:
             "schema_id": "SeasonScenarioSelectionInterface",
             "schema_version": "1.1",
             "version": "1.0",
+            "version_key": "2026-20__20260517_160725",
             "authority": "Informational",
             "owner_agent": "Season-Scenario-Agent",
             "run_id": "run-1",
@@ -1535,6 +1542,7 @@ def test_artifact_schema_valid_normalizes_schema_sensitive_meta_before_validatio
             "schema_id": "SeasonPlanInterface",
             "schema_version": "20260518_175726",
             "version": "2026-20",
+            "version_key": "2026-20__20260517_160725",
             "authority": "Binding",
             "owner_agent": "Season-Planner",
             "run_id": "run-1",
@@ -2372,7 +2380,7 @@ def test_normalize_season_plan_draft_bundle_overwrites_raw_semantics() -> None:
     assert blueprint["role_week_load_bands"] == [
         {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7800, "max": 8600}}
     ]
-    assert normalized["season_load_envelope"]["expected_average_weekly_kj_range"] == {"min": 7800, "max": 9800}
+    assert normalized["season_load_envelope"]["expected_average_weekly_kj_range"] == {"min": 7800, "max": 8600}
     assert normalized["selected_scenario_contract"]["selected_scenario_id"] == "B"
     assert ok is True
 
@@ -2381,7 +2389,7 @@ def test_season_bundle_matches_contract_accepts_selected_scenario_contract_in_sy
     normalized = {
         "event_priority": {"primary_a_events": ["A Event"]},
         "macrocycle": {"deload_cadence": "2:1:1"},
-        "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 9800}},
+        "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 8600}},
         "season_semantic_notes": ["Frame the objective against the A event."],
         "phase_blueprints": [
             {
@@ -2525,8 +2533,33 @@ def test_normalize_season_plan_draft_bundle_derives_envelope_counts_when_missing
         "macrocycle": {"deload_cadence": "2:1:1"},
         "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 1, "max": 2}},
         "phase_blueprints": [
-            {"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "scenario_cadence": "2:1:1"},
-            {"phase_id": "P02", "iso_week_range": "2026-24--2026-27", "scenario_cadence": "2:1:1"},
+            {
+                "phase_id": "P01",
+                "iso_week_range": "2026-21--2026-23",
+                "scenario_cadence": "2:1:1",
+                "cadence_week_roles": [
+                    "SHORTENED_RE_ENTRY",
+                    "SHORTENED_CONSOLIDATION",
+                    "SHORTENED_MINI_RESET",
+                ],
+                "role_week_load_bands": [
+                    {"week": "2026-21", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7800, "max": 8200}},
+                    {"week": "2026-22", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 8000, "max": 8400}},
+                    {"week": "2026-23", "role": "SHORTENED_MINI_RESET", "band": {"min": 7600, "max": 8000}},
+                ],
+            },
+            {
+                "phase_id": "P02",
+                "iso_week_range": "2026-24--2026-27",
+                "scenario_cadence": "2:1:1",
+                "cadence_week_roles": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                "role_week_load_bands": [
+                    {"week": "2026-24", "role": "LOAD_1", "band": {"min": 9000, "max": 9800}},
+                    {"week": "2026-25", "role": "LOAD_2", "band": {"min": 9400, "max": 10200}},
+                    {"week": "2026-26", "role": "MINI_RESET", "band": {"min": 8200, "max": 9000}},
+                    {"week": "2026-27", "role": "RELOAD", "band": {"min": 9300, "max": 10100}},
+                ],
+            },
         ],
     }
     with guardrail_runtime_context(
@@ -2545,7 +2578,11 @@ def test_normalize_season_plan_draft_bundle_derives_envelope_counts_when_missing
                     "availability_cap_kj": {"typical": 10000, "max": 11000},
                     "baseline_load_kj": 8200,
                     "recommended_phase_corridor": {"min": 7800, "max": 9800},
-                    "role_week_load_bands": [],
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7800, "max": 8200}},
+                        {"week": "2026-22", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 8000, "max": 8400}},
+                        {"week": "2026-23", "role": "SHORTENED_MINI_RESET", "band": {"min": 7600, "max": 8000}},
+                    ],
                     "progression_trace": {"source": "deterministic"},
                 },
                 {
@@ -2560,7 +2597,12 @@ def test_normalize_season_plan_draft_bundle_derives_envelope_counts_when_missing
                     "availability_cap_kj": {"typical": 12000, "max": 13000},
                     "baseline_load_kj": 9200,
                     "recommended_phase_corridor": {"min": 9000, "max": 12000},
-                    "role_week_load_bands": [],
+                    "role_week_load_bands": [
+                        {"week": "2026-24", "role": "LOAD_1", "band": {"min": 9000, "max": 9800}},
+                        {"week": "2026-25", "role": "LOAD_2", "band": {"min": 9400, "max": 10200}},
+                        {"week": "2026-26", "role": "MINI_RESET", "band": {"min": 8200, "max": 9000}},
+                        {"week": "2026-27", "role": "RELOAD", "band": {"min": 9300, "max": 10100}},
+                    ],
                     "progression_trace": {"source": "deterministic"},
                 },
             ],
@@ -2582,6 +2624,11 @@ def test_normalize_season_plan_draft_bundle_canonicalizes_invalid_deterministic_
                 "phase_id": "P02",
                 "iso_week_range": "2026-24--2026-25",
                 "scenario_cadence": "2:1:1",
+                "cadence_week_roles": ["SHORTENED_RE_ENTRY", "SHORTENED_CONSOLIDATION"],
+                "role_week_load_bands": [
+                    {"week": "2026-24", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7800, "max": 8200}},
+                    {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 8000, "max": 8400}},
+                ],
             }
         ],
     }
@@ -2601,7 +2648,10 @@ def test_normalize_season_plan_draft_bundle_canonicalizes_invalid_deterministic_
                     "availability_cap_kj": {"typical": 10000, "max": 11000},
                     "baseline_load_kj": 8200,
                     "recommended_phase_corridor": {"min": 7800, "max": 9800},
-                    "role_week_load_bands": [],
+                    "role_week_load_bands": [
+                        {"week": "2026-24", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7800, "max": 8200}},
+                        {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 8000, "max": 8400}},
+                    ],
                     "progression_trace": {"source": "deterministic"},
                 }
             ],
@@ -3401,7 +3451,7 @@ def test_season_phase_load_context_match_repairs_missing_role_week_notes_before_
                     "events_constraints": [],
                 }
             ],
-            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 9800}},
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 8600}},
             "assumptions_unknowns": {"assumptions": ["a"], "uncertainties": ["u"], "revisit_items": ["r"]},
             "justification": {"phase_justifications": []},
         }
@@ -3471,7 +3521,7 @@ def test_season_phase_load_context_match_clears_stale_event_constraints_and_igno
                     ],
                 }
             ],
-            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 9800}},
+            "season_load_envelope": {"expected_average_weekly_kj_range": {"min": 7800, "max": 8600}},
             "assumptions_unknowns": {"assumptions": ["a"], "uncertainties": ["u"], "revisit_items": ["r"]},
             "justification": {"phase_justifications": []},
         }
@@ -5282,7 +5332,8 @@ def test_coach_flow_routes_confirmation_and_records_events(monkeypatch, tmp_path
 def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Path, caplog) -> None:
     events_module = _install_fake_crewai_events(monkeypatch)
     crewai_telemetry.ensure_crewai_event_listener()
-    bus = events_module.crewai_event_bus
+    events = cast(Any, events_module)
+    bus = events.crewai_event_bus
 
     task = SimpleNamespace(
         id="12345678-abcdef",
@@ -5297,9 +5348,9 @@ def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Pat
         run_id="run-compact",
         component="coach_turn",
     ):
-        bus.emit(events_module.CrewKickoffStartedEvent(crew=crew))
-        bus.emit(events_module.TaskStartedEvent(task=task))
-        bus.emit(events_module.ToolUsageStartedEvent(tool=SimpleNamespace(name="read_current_plan_context")))
+        bus.emit(events.CrewKickoffStartedEvent(crew=crew))
+        bus.emit(events.TaskStartedEvent(task=task))
+        bus.emit(events.ToolUsageStartedEvent(tool=SimpleNamespace(name="read_current_plan_context")))
 
     events = load_events(tmp_path, "athlete", "run-compact")
     assert events[0]["type"] == "CREW_STARTED"
@@ -5320,7 +5371,8 @@ def test_event_listener_compacts_task_and_crew_labels(monkeypatch, tmp_path: Pat
 def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Path, caplog) -> None:
     events_module = _install_fake_crewai_events(monkeypatch)
     crewai_telemetry.ensure_crewai_event_listener()
-    bus = events_module.crewai_event_bus
+    events = cast(Any, events_module)
+    bus = events.crewai_event_bus
 
     task = SimpleNamespace(name="Task")
     crew = SimpleNamespace(name="crew")
@@ -5340,8 +5392,8 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
         run_id="run-labelled",
         component="crew:season_plan_finalize",
     ):
-        bus.emit(events_module.CrewKickoffStartedEvent(crew=crew))
-        bus.emit(events_module.TaskStartedEvent(task=task, agent=agent))
+        bus.emit(events.CrewKickoffStartedEvent(crew=crew))
+        bus.emit(events.TaskStartedEvent(task=task, agent=agent))
 
     events = load_events(tmp_path, "athlete", "run-labelled")
     assert events[0]["crew"] == "season_planning"
@@ -5433,7 +5485,7 @@ def test_runtime_gateway_dispatches_to_crewai_backend(monkeypatch) -> None:
 
     monkeypatch.setattr(agent_runtime, "resolve_agent_runtime_selection", _fake_selection)
     module = types.ModuleType("rps.agents.crewai_backend")
-    module.run_agent_multi_output_crewai = _fake_backend
+    _set_module_attrs(module, run_agent_multi_output_crewai=_fake_backend)
     monkeypatch.setitem(sys.modules, "rps.agents.crewai_backend", module)
 
     result = agent_runtime.run_agent_multi_output()
@@ -5575,12 +5627,15 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
         return _decorate
 
-    fake_crewai.LLM = FakeLLM
-    fake_crewai.Agent = FakeAgent
-    fake_crewai.Task = FakeTask
-    fake_crewai.Crew = FakeCrew
-    fake_crewai.Process = FakeProcess
-    fake_tools.tool = _tool
+    _set_module_attrs(
+        fake_crewai,
+        LLM=FakeLLM,
+        Agent=FakeAgent,
+        Task=FakeTask,
+        Crew=FakeCrew,
+        Process=FakeProcess,
+    )
+    _set_module_attrs(fake_tools, tool=_tool)
 
     monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
     monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
@@ -5649,15 +5704,16 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         model_override="gpt-5.4-nano",
     )
 
+    crews = cast(list[JsonMap], captured_crew["crews"])
     assert result["ok"] is True
     assert result["produced"]["store_season_plan"] == saved
     assert isinstance(captured_crew["agents"], list)
-    assert int(captured_crew["max_agents"]) >= 7
-    assert captured_crew["crews"][0].get("manager_agent") is None
-    assert captured_crew["crews"][0].get("process") == "sequential"
-    assert captured_crew["crews"][1].get("manager_agent") is None
-    assert captured_crew["crews"][1].get("process") == "sequential"
-    planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
+    assert int(cast(int, captured_crew["max_agents"])) >= 7
+    assert crews[0].get("manager_agent") is None
+    assert crews[0].get("process") == "sequential"
+    assert crews[1].get("manager_agent") is None
+    assert crews[1].get("process") == "sequential"
+    planning_crews = [crew for crew in crews if crew.get("planning") is True]
     assert planning_crews == []
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
     assert "reasoning" not in macrocycle_agent
@@ -5775,12 +5831,15 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
 
         return _decorate
 
-    fake_crewai.LLM = FakeLLM
-    fake_crewai.Agent = FakeAgent
-    fake_crewai.Task = FakeTask
-    fake_crewai.Crew = FakeCrew
-    fake_crewai.Process = FakeProcess
-    fake_tools.tool = _tool
+    _set_module_attrs(
+        fake_crewai,
+        LLM=FakeLLM,
+        Agent=FakeAgent,
+        Task=FakeTask,
+        Crew=FakeCrew,
+        Process=FakeProcess,
+    )
+    _set_module_attrs(fake_tools, tool=_tool)
 
     monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
     monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
@@ -5824,6 +5883,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
         run_id="run-phase",
     )
 
+    crews = cast(list[JsonMap], captured_crew["crews"])
     assert result["ok"] is True
     document = captured["document"]
     assert isinstance(document, dict)
@@ -5831,12 +5891,12 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     assert meta["artifact_type"] == "PHASE_GUARDRAILS"
     assert meta["owner_agent"] == "Phase-Artifact-Writer"
     assert isinstance(captured_crew["agents"], list)
-    assert int(captured_crew["max_agents"]) >= 7
-    assert captured_crew["crews"][0].get("manager_agent") is None
-    assert captured_crew["crews"][0].get("process") == "sequential"
-    assert captured_crew["crews"][1].get("manager_agent") is None
-    assert captured_crew["crews"][1].get("process") == "sequential"
-    planning_crews = [crew for crew in captured_crew["crews"] if crew.get("planning") is True]
+    assert int(cast(int, captured_crew["max_agents"])) >= 7
+    assert crews[0].get("manager_agent") is None
+    assert crews[0].get("process") == "sequential"
+    assert crews[1].get("manager_agent") is None
+    assert crews[1].get("process") == "sequential"
+    planning_crews = [crew for crew in crews if crew.get("planning") is True]
     assert planning_crews == []
     band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")
     assert "reasoning" not in band_agent
@@ -5938,12 +5998,15 @@ def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_exec
 
         return _decorate
 
-    fake_crewai.LLM = FakeLLM
-    fake_crewai.Agent = FakeAgent
-    fake_crewai.Task = FakeTask
-    fake_crewai.Crew = FakeCrew
-    fake_crewai.Process = FakeProcess
-    fake_tools.tool = _tool
+    _set_module_attrs(
+        fake_crewai,
+        LLM=FakeLLM,
+        Agent=FakeAgent,
+        Task=FakeTask,
+        Crew=FakeCrew,
+        Process=FakeProcess,
+    )
+    _set_module_attrs(fake_tools, tool=_tool)
 
     monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
     monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
@@ -6002,9 +6065,10 @@ def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_exec
         execution_mode="sequential",
     )
 
+    crews = cast(list[JsonMap], captured_crew["crews"])
     assert result.model_dump()["day_blueprints"]
-    assert captured_crew["crews"][0].get("manager_agent") is None
-    assert captured_crew["crews"][0].get("process") == "sequential"
+    assert crews[0].get("manager_agent") is None
+    assert crews[0].get("process") == "sequential"
     manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal week bundle synthesizer")
     assert getattr(manager_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
 
@@ -6016,7 +6080,7 @@ def test_run_multicrew_cycle_replays_only_sanitized_replan_context(tmp_path) -> 
         captured_inputs.append(loop_input)
         return {"bundle": "candidate", "warnings": []}
 
-    decisions = iter(
+    decisions: Iterator[dict[str, object]] = iter(
         [
             {
                 "status": "replan_required",
@@ -6173,12 +6237,15 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
 
         return _decorate
 
-    fake_crewai.LLM = FakeLLM
-    fake_crewai.Agent = FakeAgent
-    fake_crewai.Task = FakeTask
-    fake_crewai.Crew = FakeCrew
-    fake_crewai.Process = FakeProcess
-    fake_tools.tool = _tool
+    _set_module_attrs(
+        fake_crewai,
+        LLM=FakeLLM,
+        Agent=FakeAgent,
+        Task=FakeTask,
+        Crew=FakeCrew,
+        Process=FakeProcess,
+    )
+    _set_module_attrs(fake_tools, tool=_tool)
 
     monkeypatch.setitem(sys.modules, "crewai", fake_crewai)
     monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)

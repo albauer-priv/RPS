@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -27,8 +28,10 @@ from rps.workspace.local_store import LocalArtifactStore  # noqa: E402
 from rps.workspace.schema_registry import SchemaValidationError  # noqa: E402
 from rps.workspace.types import ArtifactType  # noqa: E402
 
+JsonMap = dict[str, Any]
 
-def _sample_week_plan(workout_text: str) -> dict[str, object]:
+
+def _sample_week_plan(workout_text: str) -> JsonMap:
     return {
         "meta": {
             "artifact_type": "WEEK_PLAN",

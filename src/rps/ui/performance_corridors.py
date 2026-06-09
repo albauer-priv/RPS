@@ -14,6 +14,18 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 
+def _as_map(value: object) -> dict[str, object]:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
 def iter_weeks_in_range(range_spec) -> list[IsoWeek]:
     """Return all ISO week objects covered by a parsed ISO week range."""
     if not range_spec:
@@ -192,9 +204,11 @@ def week_plan_corridor_by_week(store: LocalArtifactStore, athlete_id: str) -> di
     """Build per-week week-plan corridors from the latest stored week plan per week."""
     corridors: dict[str, dict[str, float]] = {}
     for label, payload in _latest_week_plan_payloads_by_week(store, athlete_id).items():
-        corridor = (payload.get("data") or {}).get("week_summary", {}).get("weekly_load_corridor_kj") or {}
-        minimum = corridor.get("min")
-        maximum = corridor.get("max")
+        data = _as_map(payload.get("data"))
+        summary = _as_map(data.get("week_summary"))
+        corridor = _as_map(summary.get("weekly_load_corridor_kj"))
+        minimum = _as_float(corridor.get("min"))
+        maximum = _as_float(corridor.get("max"))
         if minimum is None or maximum is None:
             continue
         corridors[label] = {"min": minimum, "max": maximum}
@@ -205,9 +219,10 @@ def planned_weekly_kj_by_week(store: LocalArtifactStore, athlete_id: str) -> dic
     """Build per-week planned kJ values from the latest stored week plan per week."""
     planned: dict[str, float] = {}
     for normalized, payload in _latest_week_plan_payloads_by_week(store, athlete_id).items():
-        summary = (payload.get("data") or {}).get("week_summary") or {}
-        value = summary.get("planned_weekly_load_kj")
+        data = _as_map(payload.get("data"))
+        summary = _as_map(data.get("week_summary"))
+        value = _as_float(summary.get("planned_weekly_load_kj"))
         if value is None:
             continue
-        planned[normalized] = float(value)
+        planned[normalized] = value
     return planned

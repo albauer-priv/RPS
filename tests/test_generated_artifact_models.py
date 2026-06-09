@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 from pydantic import ValidationError
 
@@ -98,19 +100,25 @@ def test_schema_backed_metadata_normalizes_operational_trace_version_keys() -> N
     }
 
     normalized = _normalize_schema_backed_metadata(payload, schema)
+    normalized_meta = cast(dict[str, Any], normalized["meta"])
+    trace_upstream = cast(list[dict[str, Any]], normalized_meta["trace_upstream"])
+    trace_data = cast(list[dict[str, Any]], normalized_meta["trace_data"])
+    trace_events = cast(list[dict[str, Any]], normalized_meta["trace_events"])
 
-    assert normalized["meta"]["artifact_type"] == "SEASON_SCENARIOS"
-    assert normalized["meta"]["schema_id"] == "SeasonScenariosInterface"
-    assert normalized["meta"]["schema_version"] == "1.0"
-    assert normalized["meta"]["authority"] == "Informational"
-    assert normalized["meta"]["owner_agent"] == "Season-Scenario-Agent"
-    assert normalized["meta"]["version"] == "1.0"
-    assert normalized["meta"]["trace_upstream"][0]["version"] == "1.0"
-    assert normalized["meta"]["trace_upstream"][0]["version_key"] == "20260518_103858"
-    assert normalized["meta"]["trace_data"][0]["version"] == "1.0"
-    assert normalized["meta"]["trace_data"][0]["version_key"] == "20260315_091949"
-    assert normalized["meta"]["trace_data"][1]["version"] == "1.2.0"
-    assert normalized["meta"]["trace_data"][1]["version_key"] == "1.2.0"
-    assert normalized["meta"]["trace_events"][0]["version"] == "1.0"
-    assert normalized["meta"]["trace_events"][0]["version_key"] == "20260504_094650"
-    assert payload["meta"]["trace_data"][0]["version"] == "20260315_091949"
+    assert normalized_meta["artifact_type"] == "SEASON_SCENARIOS"
+    assert normalized_meta["schema_id"] == "SeasonScenariosInterface"
+    assert normalized_meta["schema_version"] == "1.0"
+    assert normalized_meta["authority"] == "Informational"
+    assert normalized_meta["owner_agent"] == "Season-Scenario-Agent"
+    assert normalized_meta["version"] == "1.0"
+    assert trace_upstream[0]["version"] == "1.0"
+    assert trace_upstream[0]["version_key"] == "20260518_103858"
+    assert trace_data[0]["version"] == "1.0"
+    assert trace_data[0]["version_key"] == "20260315_091949"
+    assert trace_data[1]["version"] == "1.2.0"
+    assert trace_data[1]["version_key"] == "1.2.0"
+    assert trace_events[0]["version"] == "1.0"
+    assert trace_events[0]["version_key"] == "20260504_094650"
+    payload_meta = cast(dict[str, Any], payload["meta"])
+    payload_trace_data = cast(list[dict[str, Any]], payload_meta["trace_data"])
+    assert payload_trace_data[0]["version"] == "20260315_091949"

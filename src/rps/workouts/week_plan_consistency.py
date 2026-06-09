@@ -266,11 +266,16 @@ def _hhmm_to_seconds(value: str) -> int:
 
 
 def _to_nonnegative_number(value: object) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
+    if isinstance(value, bool):
         return 0.0
-    return max(0.0, number)
+    if isinstance(value, (int, float)):
+        return max(0.0, float(value))
+    if isinstance(value, str):
+        try:
+            return max(0.0, float(value))
+        except ValueError:
+            return 0.0
+    return 0.0
 
 
 def _as_map(value: object) -> JsonMap:

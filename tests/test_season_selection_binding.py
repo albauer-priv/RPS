@@ -1,3 +1,5 @@
+from typing import Any
+
 from rps.planning.season_selection_binding import (
     REASON_SCENARIOS_MISSING,
     REASON_SELECTED_SCENARIO_CONTRACT_INCOMPLETE,
@@ -8,8 +10,10 @@ from rps.planning.season_selection_binding import (
     resolve_bound_season_selection,
 )
 
+JsonMap = dict[str, Any]
 
-def _scenario_payload(*, version_key: str = "2026-22__20260528_084859") -> dict[str, object]:
+
+def _scenario_payload(*, version_key: str = "2026-22__20260528_084859") -> JsonMap:
     return {
         "meta": {
             "artifact_type": "SEASON_SCENARIOS",
@@ -54,7 +58,7 @@ def _scenario_payload(*, version_key: str = "2026-22__20260528_084859") -> dict[
     }
 
 
-def _selection_payload(*, version_key: str = "2026-22__20260528_084939", scenarios_version_key: str) -> dict[str, object]:
+def _selection_payload(*, version_key: str = "2026-22__20260528_084939", scenarios_version_key: str) -> JsonMap:
     return {
         "meta": {
             "artifact_type": "SEASON_SCENARIO_SELECTION",

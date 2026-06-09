@@ -1047,6 +1047,7 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
             "phases": [
                 {
                     "iso_week_range": item.get("iso_week_range"),
+                    "role_week_load_bands": item.get("role_week_load_bands"),
                     "weekly_load_corridor": {
                         "weekly_kj": {
                             "min": item.get("load_corridor_min"),

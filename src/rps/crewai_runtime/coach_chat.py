@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -38,6 +38,7 @@ from .telemetry import register_runtime_label, runtime_event_scope
 logger = logging.getLogger(__name__)
 
 JsonMap = dict[str, Any]
+StructuredTaskModelT = TypeVar("StructuredTaskModelT", bound=BaseModel)
 
 _TASK_RUNNER_REPLY_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"(?im)^\s*(DONE|READY|OUTPUT)\s*:?\s*$"),
@@ -264,7 +265,11 @@ def _build_agent(
     return agent
 
 
-def _extract_model(task: Any, result: Any, model_cls: type[BaseModel]) -> BaseModel:
+def _extract_model(
+    task: Any,
+    result: Any,
+    model_cls: type[StructuredTaskModelT],
+) -> StructuredTaskModelT:
     for candidate in (
         getattr(getattr(task, "output", None), "pydantic", None),
         getattr(result, "pydantic", None),
@@ -301,14 +306,14 @@ def _run_structured_task(
     agent_name: str,
     description: str,
     expected_output: str,
-    output_model: type[BaseModel],
+    output_model: type[StructuredTaskModelT],
     tool_specs: list[CoachTool],
     model_override: str | None,
     temperature_override: float | None,
     prompts_dir: Path,
     surface_name: str,
     athlete_id: str,
-) -> BaseModel:
+) -> StructuredTaskModelT:
     crewai = import_module("crewai")
     Crew = getattr(crewai, "Crew")
     Process = getattr(crewai, "Process")
@@ -715,14 +720,14 @@ def run_conversational_turn(
     def _run() -> str:
         mode_result = _classify()
         if mode_result.mode == "resolve_pending":
-            payload = _resolve_pending()
-            return _finalize(mode_result.mode, payload)
+            pending_result = _resolve_pending()
+            return _finalize(mode_result.mode, pending_result)
         context_result = _analyze()
         if mode_result.mode == "analyze":
             return _finalize(mode_result.mode, context_result)
         if mode_result.mode == "recommend":
-            payload = _recommend(context_result)
-            return _finalize(mode_result.mode, payload)
+            recommendation_result = _recommend(context_result)
+            return _finalize(mode_result.mode, recommendation_result)
         intent_result = _intent(context_result)
         preview_result = _preview(intent_result)
         return _finalize(mode_result.mode, preview_result)
@@ -769,6 +774,7 @@ def run_coach_turn(
         temperature_override=temperature_override,
         prompts_dir=Path("prompts"),
         surface_name="coach",
+        athlete_id=athlete_id or "unknown",
     )
     history_text = _history_block(history)
     description = "\n".join(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from datetime import date
 from statistics import mean
 from typing import Any
@@ -27,16 +28,16 @@ def _as_float(value: object) -> float | None:
     return None
 
 
-def _numbers(values: list[object]) -> list[float]:
+def _numbers(values: Sequence[object]) -> list[float]:
     return [number for value in values if (number := _as_float(value)) is not None]
 
 
-def _average(values: list[object]) -> float | None:
+def _average(values: Sequence[object]) -> float | None:
     numbers = _numbers(values)
     return mean(numbers) if numbers else None
 
 
-def _coefficient_of_variation(values: list[object]) -> float | None:
+def _coefficient_of_variation(values: Sequence[object]) -> float | None:
     numbers = _numbers(values)
     if len(numbers) < 2:
         return None

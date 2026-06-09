@@ -1104,6 +1104,10 @@ def plan_week(
         if out.get("ok") and out.get("produced"):
             _log("Done.")
 
+    refreshed_index_query = IndexExactQuery(
+        root=workspace.store.root,
+        athlete_id=athlete_id,
+    )
     required_phase_artefacts = _required_phase_artefacts_for_forced_steps(forced_steps)
     if required_phase_artefacts:
         phase_steps_ok = all(
@@ -1118,7 +1122,7 @@ def plan_week(
         missing_required = [
             artifact_type
             for artifact_type in required_phase_artefacts
-            if not index_query.has_exact_range(artifact_type.value, phase_range)
+            if not refreshed_index_query.has_exact_range(artifact_type.value, phase_range)
         ]
         if missing_required:
             missing_labels = ", ".join(artifact_type.value for artifact_type in missing_required)
@@ -1143,7 +1147,7 @@ def plan_week(
         )
         return PlanWeekResult(ok=True, steps=steps)
 
-    if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not index_query.has_exact_range(
+    if not refreshed_index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not refreshed_index_query.has_exact_range(
         ArtifactType.PHASE_STRUCTURE.value, phase_range
     ):
         message = (

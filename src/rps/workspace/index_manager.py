@@ -128,8 +128,8 @@ class WorkspaceIndexManager:
         run_id: str,
         producer_agent: str,
         created_at: str | None = None,
-        iso_week: JsonMap | None = None,
-        iso_week_range: JsonMap | None = None,
+        iso_week: object | None = None,
+        iso_week_range: object | None = None,
     ) -> None:
         """Record a write event and mark it as latest for the artifact type."""
         index = self.load()

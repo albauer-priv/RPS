@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from rps.agents.tasks import OUTPUT_SPECS, AgentTask
 from rps.workspace.artifact_metadata import canonicalize_artifact_envelope_meta
@@ -6,8 +7,10 @@ from rps.workspace.guarded_store import GuardedValidatedStore
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 from rps.workspace.types import ArtifactType
 
+JsonMap = dict[str, Any]
 
-def _minimal_season_plan_document() -> dict[str, object]:
+
+def _minimal_season_plan_document() -> JsonMap:
     return {
         "meta": {
             "artifact_type": "SEASON_PLAN",

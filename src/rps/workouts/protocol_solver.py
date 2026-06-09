@@ -466,7 +466,7 @@ def _solve_microburst_distribution(
         )
         if progressed is not None:
             return len(progressed), progressed
-    best: tuple[int, int, int] | None = None
+    best: tuple[int, int, int, int] | None = None
     best_distribution: list[int] = []
     for set_count in range(set_count_min, set_count_max + 1):
         base = total_reps // set_count

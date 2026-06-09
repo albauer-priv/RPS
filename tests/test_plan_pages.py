@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -11,6 +12,7 @@ from rps.orchestrator import season_flow
 from rps.orchestrator.plan_week import create_performance_report, plan_week
 from rps.orchestrator.workout_export import run_workout_export
 from rps.ui.shared import SETTINGS
+from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -18,6 +20,7 @@ from rps.workspace.types import ArtifactType
 MIN_PHASE_SELECTBOX_COUNT = 2
 EXPECTED_SCOPED_ACTION_CALLS = 2
 MIN_PLAN_HUB_NUMBER_INPUTS = 2
+JsonMap = dict[str, Any]
 
 
 def _write_minimal_scenario_chain(
@@ -269,6 +272,67 @@ def _write_contract_phase_docs(
         run_id=f"store_phase_preview_{phase_range}",
         update_latest=True,
     )
+
+
+def _patch_plan_week_exact_query(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    root: Path,
+    athlete_id: str,
+) -> None:
+    class _BoundExactQuery:
+        def __init__(self, *args, **kwargs) -> None:
+            self._delegate = IndexExactQuery(root=root, athlete_id=athlete_id)
+            self._index_manager = self._delegate._index_manager
+
+        def has_exact_range(self, artifact_type: str, expected_range) -> bool:
+            return self._delegate.has_exact_range(artifact_type, expected_range)
+
+        def best_exact_range_version(self, artifact_type: str, expected_range) -> str | None:
+            return self._delegate.best_exact_range_version(artifact_type, expected_range)
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.IndexExactQuery", _BoundExactQuery)
+
+
+def _season_plan_stub_payload(
+    *,
+    phase_range: str = "2026-11--2026-13",
+    weeks: tuple[str, ...] = ("2026-11", "2026-12", "2026-13"),
+) -> dict[str, object]:
+    roles = ["LOAD_1", "LOAD_2", "DELOAD"][: len(weeks)]
+    return {
+        "meta": {"iso_week_range": phase_range},
+        "data": {
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "id": "P01",
+                    "name": "Base 1",
+                    "cycle": "Base",
+                    "phase_type": "BASE",
+                    "phase_intent": "shortened_re_entry",
+                    "build_subtype": None,
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": roles,
+                    "iso_week_range": phase_range,
+                    "role_week_load_bands": [
+                        {
+                            "week": week,
+                            "role": role,
+                            "band": {"min": 1000 + idx * 100, "max": 2000 + idx * 100},
+                        }
+                        for idx, (week, role) in enumerate(zip(weeks, roles, strict=False))
+                    ],
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                        "allowed_load_modalities": ["NONE"],
+                    },
+                    "overview": {"phase_goals": {"primary": "Protect continuity."}},
+                }
+            ]
+        },
+    }
 
 
 @pytest.fixture(autouse=True)
@@ -1415,23 +1479,14 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
     _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
@@ -1453,12 +1508,17 @@ def test_plan_week_force_phase_structure_rerun(monkeypatch, tmp_path):
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
+
+    def _record_run_id(*_args, **kwargs):
+        run_ids.append(kwargs["run_id"])
+        return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_agent_multi_output",
-        lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},
+        _record_run_id,
     )
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_workout_export",
@@ -1493,19 +1553,7 @@ def test_plan_week_force_phase_guardrails_and_structure_reruns_preview(
         athlete_id,
         ArtifactType.SEASON_PLAN,
         "2026-11--2026-13",
-        {
-            "meta": {"iso_week_range": "2026-11--2026-13"},
-            "data": {
-                "phases": [
-                    {
-                        "phase_id": "P01",
-                        "name": "Base 1",
-                        "cycle": "Base",
-                        "iso_week_range": "2026-11--2026-13",
-                    }
-                ]
-            },
-        },
+        _season_plan_stub_payload(),
         producer_agent="test",
         run_id="season_plan_test",
         update_latest=True,
@@ -1538,13 +1586,33 @@ def test_plan_week_force_phase_guardrails_and_structure_reruns_preview(
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
-    monkeypatch.setattr(
-        "rps.orchestrator.plan_week.run_agent_multi_output",
-        lambda *_args, **kwargs: run_ids.append(kwargs["run_id"]) or {"ok": True, "produced": True},
-    )
+    def _record_run_id(*_args, **kwargs):
+        run_ids.append(kwargs["run_id"])
+        for task in kwargs["tasks"]:
+            artifact_type = ArtifactType[task.value.removeprefix("CREATE_")]
+            store.save_document(
+                athlete_id,
+                artifact_type,
+                "2026-11--2026-13",
+                {
+                    "meta": {
+                        "artifact_type": artifact_type.value,
+                        "iso_week": "2026-12",
+                        "iso_week_range": "2026-11--2026-13",
+                    },
+                    "data": {},
+                },
+                producer_agent="test",
+                run_id=kwargs["run_id"],
+                update_latest=True,
+            )
+        return {"ok": True, "produced": True}
+
+    monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _record_run_id)
     monkeypatch.setattr(
         "rps.orchestrator.plan_week.run_workout_export",
         lambda *_args, **_kwargs: {"ran": False, "ok": True, "produced": False, "result": None},
@@ -1573,23 +1641,14 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
     _write_minimal_scenario_chain(store, athlete_id)
 
@@ -1598,6 +1657,7 @@ def test_plan_week_force_phase_guardrails_runs_in_isolation(
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
@@ -1659,6 +1719,8 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
     athlete_id = "test_athlete"
     year = 2026
     week = 12
+    season_plan_payload = _season_plan_stub_payload()
+    season_plan_meta = cast(JsonMap, season_plan_payload["meta"])
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
     store.save_document(
@@ -1666,22 +1728,13 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
         ArtifactType.SEASON_PLAN,
         "2026-11",
         {
+            **season_plan_payload,
             "meta": {
+                **season_plan_meta,
                 "artifact_type": "SEASON_PLAN",
                 "version_key": "2026-11",
                 "iso_week": "2026-11",
-                "iso_week_range": "2026-11--2026-13",
                 "created_at": "2026-04-02T00:00:00Z",
-            },
-            "data": {
-                "phases": [
-                    {
-                        "id": "P01",
-                        "name": "Base 1",
-                        "cycle": "Base",
-                        "iso_week_range": "2026-11--2026-13",
-                    }
-                ]
             },
         },
         producer_agent="season_planner",
@@ -1746,6 +1799,7 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
@@ -1754,18 +1808,18 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
     monkeypatch.setattr("rps.orchestrator.plan_week.build_planning_context_snapshot_prompt_block", lambda *_args, **_kwargs: "")
 
     def _fake_run_agent_multi_output(*_args, **kwargs):
-        task_value = kwargs["tasks"][0].value
-        if task_value == "CREATE_PHASE_STRUCTURE":
+        for idx, task in enumerate(kwargs["tasks"]):
+            artifact_type = ArtifactType[task.value.removeprefix("CREATE_")]
             store.save_document(
                 athlete_id,
-                ArtifactType.PHASE_STRUCTURE,
+                artifact_type,
                 "2026-11--2026-13__new",
                 {
                     "meta": {
-                        "artifact_type": "PHASE_STRUCTURE",
+                        "artifact_type": artifact_type.value,
                         "version_key": "2026-11--2026-13__new",
                         "iso_week_range": "2026-11--2026-13",
-                        "created_at": "2026-04-03T00:00:00Z",
+                        "created_at": f"2026-04-03T00:00:0{idx}Z",
                     },
                     "data": {},
                 },
@@ -1773,26 +1827,6 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
                 run_id=kwargs["run_id"],
                 update_latest=True,
             )
-        elif task_value == "CREATE_PHASE_PREVIEW":
-            store.save_document(
-                athlete_id,
-                ArtifactType.PHASE_PREVIEW,
-                "2026-11--2026-13__new",
-                {
-                    "meta": {
-                        "artifact_type": "PHASE_PREVIEW",
-                        "version_key": "2026-11--2026-13__new",
-                        "iso_week_range": "2026-11--2026-13",
-                        "created_at": "2026-04-03T00:00:01Z",
-                    },
-                    "data": {},
-                },
-                producer_agent="phase_architect",
-                run_id=kwargs["run_id"],
-                update_latest=True,
-            )
-        else:
-            pytest.fail(f"Unexpected task {task_value}")
         return {"ok": True, "produced": True}
 
     monkeypatch.setattr("rps.orchestrator.plan_week.run_agent_multi_output", _fake_run_agent_multi_output)
@@ -1823,24 +1857,16 @@ def test_plan_week_scoped_phase_failure_does_not_log_completion(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE, ArtifactType.PHASE_PREVIEW):
         store.save_document(
@@ -1866,6 +1892,7 @@ def test_plan_week_scoped_phase_failure_does_not_log_completion(
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
@@ -1900,24 +1927,16 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     store.save_document(
         athlete_id,
         ArtifactType.SEASON_SCENARIO_SELECTION,
@@ -2084,24 +2103,16 @@ def test_plan_week_week_planner_uses_historical_activity_versions(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
         ArtifactType.PHASE_GUARDRAILS,
         ArtifactType.PHASE_STRUCTURE,
@@ -2182,24 +2193,16 @@ def test_plan_week_week_planner_injects_wellness_body_mass_for_kpi_gating(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
         ArtifactType.PHASE_GUARDRAILS,
         ArtifactType.PHASE_STRUCTURE,
@@ -2751,6 +2754,7 @@ def test_plan_week_injects_resolved_activity_context(
     store = LocalArtifactStore(root=tmp_path)
     athlete_id = "athlete1"
     store.ensure_workspace(athlete_id)
+    _write_minimal_scenario_chain(store, athlete_id, version_key="2026-17", horizon_weeks=3, cadence="2:1")
 
     store.save_document(
         athlete_id,
@@ -2781,7 +2785,17 @@ def test_plan_week_injects_resolved_activity_context(
                         "phase_id": "P01",
                         "name": "Build",
                         "cycle": "Build",
+                        "phase_type": "BUILD",
+                        "phase_intent": "durability_build",
+                        "build_subtype": "durability_build",
+                        "scenario_cadence": "2:1",
+                        "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
                         "iso_week_range": "2026-17--2026-19",
+                        "role_week_load_bands": [
+                            {"week": "2026-17", "role": "LOAD_1", "band": {"min": 7200, "max": 7800}},
+                            {"week": "2026-18", "role": "LOAD_2", "band": {"min": 7600, "max": 8600}},
+                            {"week": "2026-19", "role": "DELOAD", "band": {"min": 6800, "max": 7400}},
+                        ],
                         "weekly_load_corridor": {
                             "weekly_kj": {
                                 "min": 7200,
@@ -2789,6 +2803,12 @@ def test_plan_week_injects_resolved_activity_context(
                                 "notes": "Season corridor",
                             }
                         },
+                        "allowed_forbidden_semantics": {
+                            "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                            "forbidden_intensity_domains": ["VO2MAX"],
+                            "allowed_load_modalities": ["NONE", "K3"],
+                        },
+                        "overview": {"phase_goals": {"primary": "Build durable repeatable load."}},
                     }
                 ]
             },
@@ -3015,6 +3035,7 @@ def test_plan_week_injects_resolved_activity_context(
     )
 
     runtime = SimpleNamespace(workspace_root=tmp_path)
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
     result = plan_week(runtime, athlete_id=athlete_id, year=2026, week=17, run_id="week_run")
 
     assert result.ok
@@ -3039,24 +3060,16 @@ def test_plan_week_injects_resolved_logistics_and_zone_context(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
         ArtifactType.PHASE_GUARDRAILS,
         ArtifactType.PHASE_STRUCTURE,
@@ -3180,6 +3193,7 @@ def test_plan_week_injects_resolved_logistics_and_zone_context(
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
@@ -3229,24 +3243,16 @@ def test_plan_week_skips_export_when_week_plan_creation_fails(
 
     store = LocalArtifactStore(root=tmp_path)
     store.ensure_workspace(athlete_id)
-    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
-        json.dumps(
-            {
-                "meta": {"iso_week_range": "2026-11--2026-13"},
-                "data": {
-                    "phases": [
-                        {
-                            "id": "P01",
-                            "name": "Base 1",
-                            "cycle": "Base",
-                            "iso_week_range": "2026-11--2026-13",
-                        }
-                    ]
-                },
-            }
-        ),
-        encoding="utf-8",
+    store.save_document(
+        athlete_id,
+        ArtifactType.SEASON_PLAN,
+        "2026-11--2026-13",
+        _season_plan_stub_payload(),
+        producer_agent="test",
+        run_id="season_plan_test",
+        update_latest=True,
     )
+    _write_minimal_scenario_chain(store, athlete_id)
     for artifact_type in (
         ArtifactType.PHASE_GUARDRAILS,
         ArtifactType.PHASE_STRUCTURE,
@@ -3268,6 +3274,7 @@ def test_plan_week_skips_export_when_week_plan_creation_fails(
         reasoning_effort=None,
         reasoning_summary=None,
     )
+    _patch_plan_week_exact_query(monkeypatch, root=tmp_path, athlete_id=athlete_id)
 
     monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
     monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")

@@ -50,7 +50,7 @@ def test_plan_hub_worker_skips_terminal_run(tmp_path: Path, caplog) -> None:
         root=tmp_path,
         athlete_id=athlete_id,
         run_id=run_id,
-        runtime_for_agent=lambda _name: None,  # type: ignore[arg-type]
+        runtime_for_agent=lambda _name: None,
         model_resolver=None,
         temperature_resolver=None,
         reasoning_effort_resolver=None,
@@ -153,7 +153,7 @@ def test_plan_hub_worker_emits_enriched_parent_step_events(tmp_path: Path, monke
         root=tmp_path,
         athlete_id=athlete_id,
         run_id=run_id,
-        runtime_for_agent=lambda _name: None,  # type: ignore[arg-type]
+        runtime_for_agent=lambda _name: None,
         model_resolver=None,
         temperature_resolver=None,
         reasoning_effort_resolver=None,

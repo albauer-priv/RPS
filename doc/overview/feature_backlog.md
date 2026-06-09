@@ -117,6 +117,7 @@ When resuming work, follow this order so context stays consistent:
 - [x] FEAT_repo_metadata_trace_workspace_cleanup — unify repo-internal trace metadata typing around canonical dict references, normalize trace fields on local-store writes, and keep legacy trace-string support read-only through explicit local-store normalization.
 - [x] FEAT_runtime_compat_boundary_reduction — move active CrewAI runtime availability checks onto a repo-owned `runtime_status` boundary and reduce `compat.py` to a legacy shim.
 - [x] FEAT_runtime_flow_listener_adapter_hardening — harden the active CrewAI Flow and event-listener adapter boundary by dynamically constructing runtime-loaded Flow/listener classes inside repo-owned adapter code, while keeping active runtime entrypoints and telemetry behavior unchanged.
+- [x] FEAT_full_typecheck_and_test_harness_closure — close the remaining full-repo mypy debt across active planning/runtime/store helpers and the high-friction test harness clusters, without relaxing repo-wide typing rules.
 - [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
 - [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
 - [ ] FEAT_crewai_planning_profile_tuning — refine where CrewAI planning is enabled, keeping deterministic Load/S5/Cadence outside planning LLM authority.
