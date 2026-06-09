@@ -237,19 +237,58 @@ def test_validate_season_plan_against_phase_load_context_allows_phase_narrowing(
     assert not any(issue.code == "season_intensity_domains_collapsed_to_endurance_only" for issue in issues)
 
 
-def test_derive_expected_average_weekly_kj_range_uses_phase_weighting() -> None:
+def test_derive_expected_average_weekly_kj_range_uses_role_week_load_bands() -> None:
     season_plan = {
         "data": {
             "phases": [
-                {"iso_week_range": "2026-21--2026-23", "weekly_load_corridor": {"weekly_kj": {"min": 7000, "max": 10000}}},
-                {"iso_week_range": "2026-24--2026-25", "weekly_load_corridor": {"weekly_kj": {"min": 5000, "max": 8000}}},
+                {
+                    "iso_week_range": "2026-21--2026-23",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 7000, "max": 10000}},
+                    "role_week_load_bands": [
+                        {"week": "2026-21", "role": "LOAD_1", "band": {"min": 7200, "max": 9500}},
+                        {"week": "2026-22", "role": "LOAD_2", "band": {"min": 8100, "max": 10300}},
+                        {"week": "2026-23", "role": "MINI_RESET", "band": {"min": 6800, "max": 8200}},
+                    ],
+                },
+                {
+                    "iso_week_range": "2026-24--2026-25",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 5000, "max": 8000}},
+                    "role_week_load_bands": [
+                        {"week": "2026-24", "role": "LOAD_1", "band": {"min": 6100, "max": 7600}},
+                        {"week": "2026-25", "role": "RELOAD", "band": {"min": 6400, "max": 7900}},
+                    ],
+                },
             ]
         }
     }
 
     derived = derive_expected_average_weekly_kj_range(season_plan_payload=season_plan)
 
-    assert derived == {"min": 6200, "max": 9200}
+    assert derived == {"min": 6920, "max": 8700}
+
+
+def test_derive_expected_average_weekly_kj_range_falls_back_to_legacy_band_notes() -> None:
+    season_plan = {
+        "data": {
+            "phases": [
+                {
+                    "iso_week_range": "2026-21--2026-22",
+                    "weekly_load_corridor": {
+                        "weekly_kj": {
+                            "notes": [
+                                "2026-21: LOAD 7000-9000",
+                                "2026-22: RELOAD 6500-8500",
+                            ]
+                        }
+                    },
+                }
+            ]
+        }
+    }
+
+    derived = derive_expected_average_weekly_kj_range(season_plan_payload=season_plan)
+
+    assert derived == {"min": 6750, "max": 8750}
 
 
 def test_validate_season_plan_against_phase_load_context_blocks_vo2_in_taper_intent() -> None:

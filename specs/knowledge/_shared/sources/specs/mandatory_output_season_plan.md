@@ -154,7 +154,9 @@ Required:
 #### 7) `data.season_load_envelope`
 Required:
 - `expected_average_weekly_kj_range` `{ "min": number, "max": number }`
-  - This range is also a governance-load range, not a mechanical weekly-work estimate.
+  - Derive this range from the authoritative persisted `role_week_load_bands` across all season phases.
+  - Do not derive it from broad phase corridor averages when exact role-week bands exist.
+  - This range is still a governance-load range, not a mechanical session-level weekly-work estimate.
 - `expected_high_load_weeks_count` (int)
 - `expected_deload_or_low_load_weeks_count` (int)
 

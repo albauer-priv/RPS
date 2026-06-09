@@ -380,7 +380,7 @@ def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_
 
 def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:
     document = {
-        "meta": {"artifact_type": "PHASE_PREVIEW"},
+        "meta": {"artifact_type": "PHASE_PREVIEW", "authority": "Binding"},
         "data": {
             "traceability": {"derived_from": ["Season plan version 2026-21__20260520_084154"]},
             "weekly_agenda_preview": [
@@ -429,6 +429,7 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
         "phase_structure_2026-21--2026-23__20260520_112942.json"
         in normalized["data"]["traceability"]["derived_from"]
     )
+    assert normalized["meta"]["authority"] == "Informational"
     assert normalized["meta"]["trace_upstream"][0]["artifact"] == "PHASE_STRUCTURE"
     assert normalized["meta"]["trace_upstream"][0]["version_key"] == "2026-21--2026-23__20260520_112942"
     days = normalized["data"]["weekly_agenda_preview"][0]["days"]
@@ -438,7 +439,75 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
     assert days[4]["load_modality"] == "NONE"
     assert days[5]["day_role"] == "ENDURANCE"
     assert days[5]["intensity_domain"] == "ENDURANCE"
+    assert (
+        normalized["data"]["week_to_week_narrative"]["what_will_not_change"]
+        == "The preview reflects the current phase-derived skeleton: fixed rest days, recovery semantics, and allowed day-role/domain shape stay aligned unless an explicit replan changes upstream phase authority."
+    )
+    assert "Week planning may add concrete workout detail" in normalized["data"]["week_to_week_narrative"]["what_is_flexible"]
     assert "inherited_scenario_contract" not in normalized["data"]
+
+
+def test_normalize_phase_preview_replaces_duplicate_trace_entries_with_canonical_structure_ref() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "PHASE_PREVIEW",
+            "trace_upstream": [
+                {
+                    "artifact": "PHASE_STRUCTURE",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-24--2026-25__20260609_070455.json",
+                    "run_id": "runtime-owned",
+                },
+                {
+                    "artifact": "SEASON_PLAN",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-24__20260608_160322",
+                    "run_id": "runtime-owned",
+                },
+            ],
+        },
+        "data": {
+            "weekly_agenda_preview": [{"week": "2026-24", "days": []}],
+        },
+    }
+    phase_structure = {
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "run_id": "plan_hub_phase_2026W24_20260609_070024_phase_bundle",
+        },
+        "data": {
+            "structural_phase_elements": {
+                "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"max_quality_days_per_week": 1},
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+            "week_skeleton_logic": {"week_roles": {"week_roles": [{"week": "2026-24", "role": "SHORTENED_RE_ENTRY"}]}},
+            "upstream_intent": {"phase_intent": "shortened_re_entry"},
+        },
+    }
+
+    normalized = normalize_phase_preview_document(
+        document,
+        phase_structure_document=phase_structure,
+        phase_structure_version_key="2026-24--2026-25__20260609_070455",
+    )
+
+    assert normalized["meta"]["trace_upstream"] == [
+        {
+            "artifact": "PHASE_STRUCTURE",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-24--2026-25__20260609_070455",
+            "run_id": "plan_hub_phase_2026W24_20260609_070024_phase_bundle",
+        }
+    ]
 
 
 def test_extract_planning_events_document_parses_workspace_payload() -> None:

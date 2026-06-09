@@ -31,6 +31,8 @@ Out of scope:
 - Add no new planning decisions.
 - Do not change guardrails or structure.
 - Do not prescribe workouts.
+- Treat Preview as derived and informational, even when it shows day-by-day agenda shape.
+- Do not imply that Preview itself is the binding week authority; alignment with Week comes from the shared deterministic skeleton.
 
 ## Output discipline
 

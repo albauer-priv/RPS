@@ -120,11 +120,11 @@ Forbidden combinations (examples):
 N/A
 {% endif %}
 
-## 5) Week-to-week narrative (non-numeric)
+## 5) Week-to-week narrative (non-numeric, derived)
 
 - Direction (conceptual): {{ week_to_week_narrative.direction }}
-- What will NOT change (non-negotiables upheld): {{ week_to_week_narrative.what_will_not_change }}
-- What is flexible (allowed week adjustments): {{ week_to_week_narrative.what_is_flexible }}
+- What remains stable absent explicit replan: {{ week_to_week_narrative.what_will_not_change }}
+- What week planning may still refine: {{ week_to_week_narrative.what_is_flexible }}
 
 ## 6) If reality deviates (Ops rules)
 {{ bullet_list(deviation_rules) }}

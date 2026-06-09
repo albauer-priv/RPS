@@ -16,6 +16,8 @@ Rules:
 - `PHASE_STRUCTURE.allowed_intensity_domains` excludes `NONE`; Preview may use `NONE` only on `REST` or fixed non-training days
 - `RECOVERY` must remain `RECOVERY`
 - all training-day domains must stay inside exact structural legality
+- Preview is derived and informational; it must not claim to be the immutable binding authority for the later week
+- Preview and Week stay aligned because both consume the same shared deterministic skeleton
 - use only weeks from the exact phase range
 - use only allowed day roles, intensity domains, and load modalities from structure
 - fixed non-training days must remain non-training with `NONE` / `NONE`

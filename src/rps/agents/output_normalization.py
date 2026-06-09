@@ -668,6 +668,8 @@ def normalize_phase_preview_document(
     artifact_type = str(meta.get("artifact_type", "")).upper()
     if artifact_type and artifact_type != "PHASE_PREVIEW":
         return document
+    if meta.get("authority") != "Informational":
+        meta["authority"] = "Informational"
     data = document.get("data")
     if not isinstance(data, dict):
         return document
@@ -694,16 +696,12 @@ def normalize_phase_preview_document(
         document["data"] = data
         return document
 
-    trace_upstream = meta.get("trace_upstream")
-    if not isinstance(trace_upstream, list):
-        trace_upstream = []
     phase_structure_ref = _trace_entry_from_document(
         phase_structure_document,
         expected_artifact="PHASE_STRUCTURE",
         version_key=phase_structure_version_key,
     )
-    if phase_structure_ref is not None:
-        trace_upstream.append(phase_structure_ref)
+    trace_upstream = [phase_structure_ref] if phase_structure_ref is not None else []
     meta["trace_upstream"] = _normalize_trace_entries(
         trace_upstream,
         allowed=_PHASE_TRACE_UPSTREAM_ARTIFACTS,
@@ -750,6 +748,22 @@ def normalize_phase_preview_document(
     if primary_objective:
         phase_intent_summary["primary_objective"] = primary_objective
     data["phase_intent_summary"] = phase_intent_summary
+
+    week_to_week_narrative = data.get("week_to_week_narrative")
+    if not isinstance(week_to_week_narrative, dict):
+        week_to_week_narrative = {}
+    rendered_not_change = str(week_to_week_narrative.get("what_will_not_change") or "").strip().lower()
+    if not rendered_not_change or "stay fixed" in rendered_not_change or "will not change" in rendered_not_change:
+        week_to_week_narrative["what_will_not_change"] = (
+            "The preview reflects the current phase-derived skeleton: fixed rest days, "
+            "recovery semantics, and allowed day-role/domain shape stay aligned unless an explicit replan changes upstream phase authority."
+        )
+    if not str(week_to_week_narrative.get("what_is_flexible") or "").strip():
+        week_to_week_narrative["what_is_flexible"] = (
+            "Week planning may add concrete workout detail and bounded within-guardrail adjustments "
+            "without changing the inherited day-role/domain skeleton."
+        )
+    data["week_to_week_narrative"] = week_to_week_narrative
 
     shared_skeleton = _phase_preview_shared_skeleton(
         expected_range=meta.get("iso_week_range"),
@@ -920,16 +934,38 @@ def _trace_entry_from_string(value: str, *, allowed: set[str]) -> dict[str, str]
         "artifact": artifact,
         "version": "1.0",
         "schema_version": "1.0",
-        "version_key": run_id,
+        "version_key": _canonical_trace_version_key(artifact, run_id),
         "run_id": run_id,
     }
+
+
+def _canonical_trace_version_key(artifact: str, version_key: object) -> str:
+    """Return a canonical version_key for phase/season artifact lineage."""
+
+    rendered = str(version_key or "").strip()
+    if not rendered:
+        return rendered
+    canonical = rendered.removesuffix(".json")
+    prefix = f"{artifact.lower()}_"
+    if canonical.lower().startswith(prefix):
+        canonical = canonical[len(prefix) :]
+    return canonical
 
 
 def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[str, str]]:
     if not isinstance(value, list):
         return []
-    normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str]] = set()
+    normalized_by_key: dict[tuple[str, str], dict[str, str]] = {}
+    ordered_keys: list[tuple[str, str]] = []
+
+    def _score(entry: dict[str, str]) -> tuple[int, int]:
+        run_id = entry["run_id"].strip().lower()
+        version_key = entry["version_key"].strip().lower()
+        return (
+            0 if run_id in {"runtime-owned", "unknown"} else 1,
+            0 if version_key.endswith(".json") else 1,
+        )
+
     for item in value:
         if isinstance(item, str):
             entry = _trace_entry_from_string(item, allowed=allowed)
@@ -948,7 +984,7 @@ def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[s
                     "artifact": artifact,
                     "version": version,
                     "schema_version": item.get("schema_version"),
-                    "version_key": item.get("version_key"),
+                    "version_key": _canonical_trace_version_key(artifact, item.get("version_key")),
                     "run_id": run_id,
                 }
             )
@@ -957,12 +993,15 @@ def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[s
             entry = {key: str(value) for key, value in reference.items()}
         else:
             continue
-        token = (entry["artifact"], entry["version_key"], entry["run_id"])
-        if token in seen:
+        token = (entry["artifact"], entry["version_key"])
+        existing = normalized_by_key.get(token)
+        if existing is None:
+            normalized_by_key[token] = entry
+            ordered_keys.append(token)
             continue
-        seen.add(token)
-        normalized.append(entry)
-    return normalized
+        if _score(entry) > _score(existing):
+            normalized_by_key[token] = entry
+    return [normalized_by_key[token] for token in ordered_keys]
 
 
 def normalize_phase_guardrails_document(

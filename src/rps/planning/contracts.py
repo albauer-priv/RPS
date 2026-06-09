@@ -203,28 +203,34 @@ def _candidate_or_document(mapping: JsonMap) -> JsonMap:
 
 
 def derive_expected_average_weekly_kj_range(*, season_plan_payload: JsonMap) -> JsonMap | None:
-    """Derive the weighted expected average weekly kJ range from phase corridors."""
+    """Derive the authoritative average weekly kJ range from role-week load bands."""
 
     document = _candidate_or_document(season_plan_payload)
     phases = _phase_data(document)
     total_weeks = 0
-    weighted_min = 0.0
-    weighted_max = 0.0
+    total_min = 0.0
+    total_max = 0.0
     for phase in phases:
-        weeks = _range_week_count(phase.get("iso_week_range"))
-        weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
-        min_value = _as_float(weekly_kj.get("min"))
-        max_value = _as_float(weekly_kj.get("max"))
-        if weeks is None or weeks <= 0 or min_value is None or max_value is None:
+        role_week_load_bands = normalize_role_week_load_bands(phase.get("role_week_load_bands"))
+        if not role_week_load_bands:
+            weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
+            role_week_load_bands = normalize_role_week_load_bands(weekly_kj.get("notes"))
+        if not role_week_load_bands:
             return None
-        total_weeks += weeks
-        weighted_min += min_value * weeks
-        weighted_max += max_value * weeks
+        for entry in role_week_load_bands:
+            band = _as_map(entry.get("band"))
+            min_value = _as_float(band.get("min"))
+            max_value = _as_float(band.get("max"))
+            if min_value is None or max_value is None:
+                return None
+            total_weeks += 1
+            total_min += min_value
+            total_max += max_value
     if total_weeks <= 0:
         return None
     return {
-        "min": int(round(weighted_min / total_weeks)),
-        "max": int(round(weighted_max / total_weeks)),
+        "min": int(round(total_min / total_weeks)),
+        "max": int(round(total_max / total_weeks)),
     }
 
 
