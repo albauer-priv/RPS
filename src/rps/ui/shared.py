@@ -518,7 +518,12 @@ def render_run_event_table(
                 "Timestamp": event.get("ts") or "—",
                 "Type": event_type or "—",
                 "Flow": event.get("flow") or "—",
+                "Crew": event.get("crew") or "—",
                 "Step": event.get("step") or event.get("task") or "—",
+                "Agent": event.get("agent") or event.get("assigned_agent") or "—",
+                "Progress": event.get("status") or "—",
+                "Model": event.get("model") or "—",
+                "Component": event.get("component") or "—",
                 "Details": details,
             }
         )

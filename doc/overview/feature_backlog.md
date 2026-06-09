@@ -110,6 +110,7 @@ When resuming work, follow this order so context stays consistent:
 - [x] FEAT_phase_writer_guardrail_pre_normalization — normalize `PHASE_STRUCTURE` / `PHASE_PREVIEW` writer candidates against exact persisted authority before task guardrails run, while keeping guarded-store normalization as second-line protection.
 - [x] FEAT_phase_bundle_nested_intent_normalization — normalize nested internal `phase_intent` fields in `PhaseDraftBundle` before review-readiness validation and fail closed during bundle normalization when canonical deterministic phase intent is unavailable.
 - [x] FEAT_selected_scenario_contract_schema_alignment — align the full selected-scenario contract schema across `SEASON_PLAN`, `PHASE_GUARDRAILS`, and `PHASE_STRUCTURE`, keep `WEEK_PLAN` on the reduced inherited posture shape, and keep `PHASE_PREVIEW` derivation-only.
+- [x] FEAT_plan_hub_runtime_progress_visibility — surface active flow/crew/task progress and `x/y` task counts in Plan Hub from existing runtime telemetry, without adding new event types.
 - [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
 - [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
 - [ ] FEAT_crewai_planning_profile_tuning — refine where CrewAI planning is enabled, keeping deterministic Load/S5/Cadence outside planning LLM authority.

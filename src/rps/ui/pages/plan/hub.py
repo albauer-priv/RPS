@@ -20,7 +20,9 @@ from rps.ui.run_store import (
     RunRecord,
     append_run,
     find_active_runs,
+    load_events,
     load_runs,
+    summarize_runtime_events,
     update_run,
 )
 from rps.ui.shared import (
@@ -2034,6 +2036,41 @@ if active_run:
         )
     if active_run.get("current_step"):
         st.caption(f"Current step: {active_run.get('current_step')}")
+    current_step_id = str(active_run.get("current_step") or "").strip().upper()
+    pipeline_total = len(active_steps)
+    pipeline_index = 0
+    for idx, active_step in enumerate(active_steps, start=1):
+        step_id = str(active_step.get("step_id") or "").strip().upper()
+        if current_step_id and step_id == current_step_id:
+            pipeline_index = idx
+            break
+    if pipeline_total and pipeline_index:
+        st.caption(f"Pipeline progress: {pipeline_index}/{pipeline_total}")
+    runtime_events = load_events(
+        SETTINGS.workspace_root,
+        hub_scope["athlete_id"],
+        str(active_run.get("run_id") or ""),
+        limit=300,
+    )
+    runtime_summary = summarize_runtime_events(runtime_events)
+    runtime_bits: list[str] = []
+    if runtime_summary.get("flow"):
+        runtime_bits.append(f"Flow `{runtime_summary['flow']}`")
+    if runtime_summary.get("flow_step"):
+        runtime_bits.append(f"Flow step `{runtime_summary['flow_step']}`")
+    if runtime_summary.get("crew"):
+        runtime_bits.append(f"Crew `{runtime_summary['crew']}`")
+    if runtime_summary.get("task"):
+        task_text = f"Task `{runtime_summary['task']}`"
+        if runtime_summary.get("task_progress"):
+            task_text += f" ({runtime_summary['task_progress']})"
+        runtime_bits.append(task_text)
+    if runtime_summary.get("agent"):
+        runtime_bits.append(f"Agent `{runtime_summary['agent']}`")
+    if runtime_summary.get("model"):
+        runtime_bits.append(f"Model `{runtime_summary['model']}`")
+    if runtime_bits:
+        st.caption("Runtime detail: " + " · ".join(runtime_bits))
     manual_missing = False
     if any(
         active_step.get("step_id") == "SCENARIO_SELECTION" and active_step.get("Status") == "FAILED"

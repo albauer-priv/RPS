@@ -18,6 +18,7 @@ JsonList = list[object]
 JsonPayload = JsonMap | JsonList
 RunRecord = dict[str, object]
 RunEvent = dict[str, object]
+RunRuntimeSummary = dict[str, object]
 
 @dataclass(frozen=True)
 class RunStoreConfig:
@@ -367,3 +368,83 @@ def load_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -
         except json.JSONDecodeError:
             logger.warning("Skipping invalid event line in %s", path)
     return events[-limit:]
+
+
+def summarize_runtime_events(events: list[RunEvent]) -> RunRuntimeSummary:
+    """Summarize active flow/crew/task progress from runtime events."""
+
+    def _as_text(value: object) -> str:
+        return str(value or "").strip()
+
+    def _parse_status(status: str) -> tuple[int | None, int | None]:
+        raw = _as_text(status)
+        if "/" not in raw:
+            return None, None
+        left, right = raw.split("/", 1)
+        if not left.isdigit() or not right.isdigit():
+            return None, None
+        return int(left), int(right)
+
+    prepared_status_by_crew_task: dict[tuple[str, str], str] = {}
+    active_flow = ""
+    active_flow_step = ""
+    active_crew = ""
+    active_task: RunEvent | None = None
+    latest_event: RunEvent | None = events[-1] if events else None
+
+    for event in events:
+        event_type = _as_text(event.get("type"))
+        crew = _as_text(event.get("crew"))
+        task = _as_text(event.get("task"))
+        flow = _as_text(event.get("flow"))
+        step = _as_text(event.get("step"))
+
+        if event_type == "CREW_TASK_PREPARED" and crew and task:
+            prepared_status_by_crew_task[(crew, task)] = _as_text(event.get("status"))
+        elif event_type == "CREW_STARTED" and crew:
+            active_crew = crew
+            active_task = None
+        elif event_type == "CREW_FINISHED" and crew == active_crew:
+            active_crew = ""
+            active_task = None
+        elif event_type == "CREW_FAILED" and crew == active_crew:
+            active_crew = crew
+            active_task = None
+        elif event_type == "CREW_TASK_STARTED" and task:
+            active_task = event
+            if crew:
+                active_crew = crew
+        elif event_type in {"CREW_TASK_FINISHED", "CREW_TASK_FAILED"} and active_task is not None:
+            active_task_name = _as_text(active_task.get("task"))
+            active_task_crew = _as_text(active_task.get("crew"))
+            if task == active_task_name and (not crew or crew == active_task_crew):
+                active_task = None
+        elif event_type == "FLOW_STARTED" and flow:
+            active_flow = flow
+            active_flow_step = ""
+        elif event_type == "FLOW_FINISHED" and flow == active_flow:
+            active_flow = flow
+            active_flow_step = ""
+        elif event_type == "FLOW_STEP_STARTED" and step:
+            active_flow = flow or active_flow
+            active_flow_step = step
+        elif event_type == "FLOW_STEP_FINISHED" and step == active_flow_step:
+            active_flow = flow or active_flow
+
+    active_task_name = _as_text(active_task.get("task")) if isinstance(active_task, dict) else ""
+    active_task_crew = _as_text(active_task.get("crew")) if isinstance(active_task, dict) else active_crew
+    task_progress = prepared_status_by_crew_task.get((active_task_crew, active_task_name), "")
+    task_index, task_total = _parse_status(task_progress)
+    return {
+        "latest_event_type": _as_text(_as_text(latest_event.get("type")) if isinstance(latest_event, dict) else ""),
+        "component": _as_text(_as_text(latest_event.get("component")) if isinstance(latest_event, dict) else ""),
+        "flow": active_flow,
+        "flow_step": active_flow_step,
+        "crew": active_task_crew or active_crew,
+        "task": active_task_name,
+        "agent": _as_text(active_task.get("agent")) if isinstance(active_task, dict) else "",
+        "model": _as_text(active_task.get("model")) if isinstance(active_task, dict) else "",
+        "task_progress": task_progress,
+        "task_index": task_index,
+        "task_total": task_total,
+    }
