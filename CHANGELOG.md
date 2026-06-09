@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added a targeted Season-scenario frontloading regression closure: Scenario C `VO2MAX` rationale is again frontloaded as a canonical top-priority rule across the active task/prompt/skill surfaces, and new regression tests now lock the exact wording plus its early placement so later prompt growth cannot silently re-bury the rule.
 - Added `FEAT_pipeline_meta_version_key_backfill` to document the Intervals pipeline metadata regression and the code-owned fix: missing pipeline `meta.version_key` values are now deterministically backfilled during envelope canonicalization, and `ZONE_MODEL` validation now logs concrete schema errors before re-raising.
 - Added `FEAT_active_prompt_skill_doc_debt_cleanup` as the first Wave-4 cleanup slice: the remaining active prompt/skill/doc migration gaps are now closed for the current Season/Phase/Week runtime, the shared durability skill now follows the current self-contained active-skill standard, and planner/finalizer/review guidance now explicitly treats historical migration docs and superseded prose as non-operative runtime sources.
 - Added `FEAT_full_typecheck_and_test_harness_closure` as the Wave-3 cleanup slice: full-repo mypy is now part of the verified engineering baseline again, the high-friction planning/runtime/page test fixtures were modernized to typed builders/aliases, and active helper signatures were tightened without weakening repo-wide typing rules.

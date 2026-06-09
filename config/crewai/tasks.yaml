@@ -112,8 +112,18 @@ tasks:
       - workspace_get_input
       - workspace_get_latest
     description: >-
-      Create the season-scenarios artifact envelope for the selected planning
-      horizon. Only future / in-horizon events are provided to this task; do
+      Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when
+      it is explicitly justified as `sparse ceiling-support`, `fresh-only`,
+      `not primary identity`, and ambition sourced from
+      `specificity-under-fatigue`, `density`, `event simulation`, or `load
+      posture`. If that rationale cannot be stated explicitly in
+      `decision_notes` and/or `kpi_guardrail_notes`, omit `VO2MAX` from
+      Scenario C `allowed_domains`. Preferred copyable wording:
+      `VO2MAX remains sparse ceiling-support only when fresh-only, not primary
+      identity; the scenario ambition comes from specificity-under-fatigue,
+      density, and event simulation.` Create the season-scenarios artifact
+      envelope for the selected planning horizon. Only future / in-horizon
+      events are provided to this task; do
       not infer active scenario logic from past, completed, or pre-horizon
       events. Differentiate A/B/C primarily by kJ-envelope,
       specificity-under-fatigue, density, recovery tolerance, cadence rhythm,
@@ -195,15 +205,7 @@ tasks:
       clearly supports optional early ceiling work, enough runway, preserved
       later durability/specificity work, and recovery tolerance. Objective
       mismatch may be named as unresolved input context only; do not resolve it
-      here. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly
-      explain in `decision_notes` and/or `kpi_guardrail_notes` that it is only
-      sparse / limited / occasional ceiling-support or fresh-only permission,
-      include the exact phrase `not primary identity`, and say that the
-      ambition instead comes from `specificity-under-fatigue`, `density`,
-      `event simulation`, or `load posture`; otherwise omit `VO2MAX`. Preferred copyable wording:
-      `VO2MAX remains sparse ceiling-support only when
-      fresh-only, not primary identity; the scenario ambition comes from
-      specificity-under-fatigue, density, and event simulation.`
+      here.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario

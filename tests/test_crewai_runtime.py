@@ -4611,6 +4611,53 @@ def test_season_scenarios_profile_quality_rejects_vo2_rationale_missing_specific
     assert message == "Scenario C may allow VO2MAX only with explicit sparse ceiling-support rationale."
 
 
+def test_season_scenarios_profile_quality_accepts_scenario_c_without_vo2max() -> None:
+    ok, payload = season_scenarios_profile_quality(
+        _season_scenarios_payload(
+            _season_scenario_item(
+                scenario_id="A",
+                load_philosophy="Lower feasible kJ-envelope with high recovery margin.",
+                risk_profile="Lowest risk profile.",
+                key_differences="Completion-first with sparse tempo.",
+                cadence="2:1",
+                allowed_domains=["ENDURANCE"],
+                decision_notes=["Use 2:1 cadence to protect recovery margin."],
+                best_suited_if="Choose when continuity priority and uncertain recovery dominate.",
+                risk_flags=["May under-deliver if high load tolerance is available."],
+            ),
+            _season_scenario_item(
+                scenario_id="B",
+                load_philosophy="Realistic target kJ-envelope with systematic long-ride progression.",
+                risk_profile="Balanced recovery risk.",
+                key_differences="Durability-forward target plan.",
+                cadence="2:1:1",
+                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                decision_notes=["Use 2:1:1 cadence to absorb tempo economy work."],
+                best_suited_if="Choose when stable recovery supports systematic progression.",
+                risk_flags=["Less forgiving than A if continuity break or recovery slip appears."],
+            ),
+            _season_scenario_item(
+                scenario_id="C",
+                load_philosophy="Upper plausible kJ-envelope with more event simulation.",
+                risk_profile="Ambitious performance-forward long build with higher specificity under fatigue.",
+                key_differences="More back-to-back and hard-late specificity.",
+                cadence="3:1",
+                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                decision_notes=["Use 3:1 cadence for back-to-back and hard-late specificity under fatigue."],
+                best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
+                risk_flags=["Fatigue risk rises quickly if travel disruption appears."],
+                constraint_summary=["Event simulation and fatigue exposure."],
+                kpi_guardrail_notes=[
+                    "Ambition comes from specificity-under-fatigue, density, and event simulation rather than optional high-intensity escalation."
+                ],
+            ),
+        )
+    )
+
+    assert ok is True
+    assert "VO2MAX" not in payload["data"]["scenarios"][2]["scenario_guidance"]["intensity_guidance"]["allowed_domains"]
+
+
 def test_season_scenarios_profile_quality_rejects_phase_wide_domain_authorization_wording() -> None:
     failed, message = season_scenarios_profile_quality(
         _season_scenarios_payload(

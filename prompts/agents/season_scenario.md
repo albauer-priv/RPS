@@ -37,9 +37,12 @@ Out of scope:
 2. Only future / in-horizon events are provided to this task. Do not infer active scenario logic from past, completed, or pre-horizon events.
 3. Distinguish scenarios primarily by load philosophy, exposure under fatigue, specificity, cadence rhythm, and recovery/risk tradeoffs.
 4. Keep intensity domains as training semantics, not the whole scenario identity. `allowed_domains` means eligibility for later assignment only; it does not authorize every domain in every phase.
-5. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
-6. Emit a coherent advisory `deload_cadence` per scenario and explain its role in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
-7. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
+5. Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as `sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
+6. If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, omit `VO2MAX` from Scenario C `allowed_domains`.
+7. Preferred copyable wording for Scenario C when `VO2MAX` is allowed: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
+8. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
+9. Emit a coherent advisory `deload_cadence` per scenario and explain its role in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
+10. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
 
 ## Field completion contract
 
@@ -70,12 +73,9 @@ Out of scope:
 17. If multiple scenarios share the same `deload_cadence`, explicitly state that cadence is intentionally held constant and that differentiation instead comes from load philosophy, specificity-under-fatigue, recovery margin, intensity permissions, or risk posture.
 18. Cluster wording requires multiple relevant in-horizon events. Do not use `cluster`, `event cluster`, `B-event cluster`, or `peak cluster` language for a single future event.
 19. `season_archetype` defaults to `none`. Use `ceiling_first_durability` only when the stored scenario fields explicitly justify early ceiling support, enough runway, preserved later durability/specificity work, and recovery tolerance.
-20. If Scenario C includes `VO2MAX` in `allowed_domains`, explicitly explain in stored `decision_notes` and/or `kpi_guardrail_notes` that it is only sparse / limited / occasional `ceiling-support` or `fresh-only` permission, `not primary identity`, and that the ambition instead comes from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
-21. If that explanation cannot be stated cleanly in the stored scenario fields, omit `VO2MAX` from Scenario C.
-22. Preferred copyable wording for Scenario C when `VO2MAX` is allowed: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
-23. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
-24. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
-25. Leave binding structural decisions to Season planning.
+20. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
+21. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
+22. Leave binding structural decisions to Season planning.
 
 ## Remaining field rules
 

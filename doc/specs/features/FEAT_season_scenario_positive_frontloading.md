@@ -1,15 +1,15 @@
 ---
-Version: 1.0
-Status: Implemented
-Last-Updated: 2026-05-28
+Version: 1.1
+Status: Updated
+Last-Updated: 2026-06-09
 Owner: Planning
 ---
 # FEAT: Season Scenario Positive Frontloading
 
 * **ID:** FEAT_season_scenario_positive_frontloading
-* **Status:** Implemented
+* **Status:** Updated
 * **Owner/Area:** Planning / CrewAI season scenarios
-* **Last-Updated:** 2026-05-28
+* **Last-Updated:** 2026-06-09
 * **Related:** [FEAT_season_scenario_vo2max_explanation_hardening](/Users/alexander/RPS/doc/specs/features/FEAT_season_scenario_vo2max_explanation_hardening.md), [FEAT_active_prompt_policy_migration_completion](/Users/alexander/RPS/doc/specs/features/FEAT_active_prompt_policy_migration_completion.md)
 
 ---
