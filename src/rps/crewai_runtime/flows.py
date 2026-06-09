@@ -454,7 +454,7 @@ def run_phase_flow(
 
     Flow, start, listen, _router, persist = _load_flow_symbols()
 
-    def phase_bootstrap(self: Any) -> list[str]:
+    def bootstrap(self: Any) -> list[str]:
         return list(self.state.requested_tasks)
 
     def run_planning_cycle(self: Any, _requested_tasks: list[str]) -> JsonMap:
@@ -499,8 +499,8 @@ def run_phase_flow(
         Flow=Flow,
         state_model=PhaseFlowState,
         attrs={
-            "bootstrap": start()(phase_bootstrap),
-            "run_planning_cycle": listen(phase_bootstrap)(run_planning_cycle),
+            "bootstrap": start()(bootstrap),
+            "run_planning_cycle": listen(bootstrap)(run_planning_cycle),
             "record_review": listen(run_planning_cycle)(record_review),
             "record_writer": listen(record_review)(record_writer),
         },
@@ -536,10 +536,10 @@ def run_week_flow(
 
     Flow, start, listen, _router, persist = _load_flow_symbols()
 
-    def week_bootstrap(self: Any) -> str:
+    def bootstrap(self: Any) -> str:
         return "week_plan"
 
-    def week_run_planning_cycle(self: Any, _label: str) -> JsonMap:
+    def run_planning_cycle(self: Any, _label: str) -> JsonMap:
         try:
             target_year, target_week = parse_target_week_from_user_input(user_input)
             runtime = runtime_for(agent_name)
@@ -562,14 +562,14 @@ def run_week_flow(
         self.state.candidate_week_plan = _extract_stage_summary(self.state.result)
         return self.state.result
 
-    def week_record_review(self: Any, _result: JsonMap) -> JsonMap:
+    def record_review(self: Any, _result: JsonMap) -> JsonMap:
         self.state.diff_summary = {
             "stages": ["planning", "review"] if preview_only else ["planning", "review", "writer"],
             "preview_only": preview_only,
         }
         return self.state.result
 
-    def week_record_writer(self: Any, _result: JsonMap) -> JsonMap:
+    def record_writer(self: Any, _result: JsonMap) -> JsonMap:
         self.state.persistence_summary = {
             "persisted": bool(self.state.result.get("ok")) and not preview_only,
             "preview_only": preview_only,
@@ -585,10 +585,10 @@ def run_week_flow(
         Flow=Flow,
         state_model=WeekFlowState,
         attrs={
-            "bootstrap": start()(week_bootstrap),
-            "run_planning_cycle": listen(week_bootstrap)(week_run_planning_cycle),
-            "record_review": listen(week_run_planning_cycle)(week_record_review),
-            "record_writer": listen(week_record_review)(week_record_writer),
+            "bootstrap": start()(bootstrap),
+            "run_planning_cycle": listen(bootstrap)(run_planning_cycle),
+            "record_review": listen(run_planning_cycle)(record_review),
+            "record_writer": listen(record_review)(record_writer),
         },
     )
     week_outer_flow_cls = _decorate_persist(week_outer_flow_cls, "week", persist)
@@ -616,10 +616,10 @@ def run_report_flow(
 
     Flow, start, listen, _router, persist = _load_flow_symbols()
 
-    def report_bootstrap(self: Any) -> str:
+    def bootstrap(self: Any) -> str:
         return "report"
 
-    def report_run_planning_cycle(self: Any, _label: str) -> JsonMap:
+    def run_planning_cycle(self: Any, _label: str) -> JsonMap:
         try:
             self.state.result = report_runner()
         except Exception as exc:
@@ -629,11 +629,11 @@ def run_report_flow(
         _ensure_state_dict(self.state, "source_versions")["planning_stage"] = "report planning executed"
         return self.state.result
 
-    def report_record_review(self: Any, _result: JsonMap) -> JsonMap:
+    def record_review(self: Any, _result: JsonMap) -> JsonMap:
         _ensure_state_dict(self.state, "source_versions")["review_stage"] = "report review executed"
         return self.state.result
 
-    def report_record_writer(self: Any, _result: JsonMap) -> JsonMap:
+    def record_writer(self: Any, _result: JsonMap) -> JsonMap:
         self.state.persistence_summary = {
             "stages": ["planning", "review", "writer"],
             "persisted": bool(self.state.result.get("ok")),
@@ -649,10 +649,10 @@ def run_report_flow(
         Flow=Flow,
         state_model=ReportFlowState,
         attrs={
-            "bootstrap": start()(report_bootstrap),
-            "run_planning_cycle": listen(report_bootstrap)(report_run_planning_cycle),
-            "record_review": listen(report_run_planning_cycle)(report_record_review),
-            "record_writer": listen(report_record_review)(report_record_writer),
+            "bootstrap": start()(bootstrap),
+            "run_planning_cycle": listen(bootstrap)(run_planning_cycle),
+            "record_review": listen(run_planning_cycle)(record_review),
+            "record_writer": listen(record_review)(record_writer),
         },
     )
     report_outer_flow_cls = _decorate_persist(report_outer_flow_cls, "report", persist)
@@ -681,10 +681,10 @@ def run_feed_forward_flow(
 
     Flow, start, listen, _router, persist = _load_flow_symbols()
 
-    def feed_forward_bootstrap(self: Any) -> str:
+    def bootstrap(self: Any) -> str:
         return "report"
 
-    def feed_forward_run_report(self: Any, _label: str) -> JsonMap:
+    def run_report(self: Any, _label: str) -> JsonMap:
         try:
             self.state.report_result = report_runner()
         except Exception as exc:
@@ -719,9 +719,9 @@ def run_feed_forward_flow(
         Flow=Flow,
         state_model=FeedForwardFlowState,
         attrs={
-            "bootstrap": start()(feed_forward_bootstrap),
-            "run_report": listen(feed_forward_bootstrap)(feed_forward_run_report),
-            "run_season_phase": listen(feed_forward_run_report)(run_season_phase),
+            "bootstrap": start()(bootstrap),
+            "run_report": listen(bootstrap)(run_report),
+            "run_season_phase": listen(run_report)(run_season_phase),
             "run_phase": listen(run_season_phase)(run_phase),
         },
     )
@@ -754,7 +754,7 @@ def run_coach_flow(
 
     Flow, start, listen, router, _persist = _load_flow_symbols()
 
-    def coach_bootstrap(self: Any) -> str:
+    def bootstrap(self: Any) -> str:
         self.state.user_message = user_message
         return self.state.user_message
 
@@ -784,8 +784,8 @@ def run_coach_flow(
         Flow=Flow,
         state_model=CoachFlowState,
         attrs={
-            "bootstrap": start()(coach_bootstrap),
-            "route_turn": router(coach_bootstrap)(route_turn),
+            "bootstrap": start()(bootstrap),
+            "route_turn": router(bootstrap)(route_turn),
             "run_chat_turn": listen("conversational_turn")(run_chat_turn),
         },
     )

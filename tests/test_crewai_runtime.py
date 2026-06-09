@@ -6633,6 +6633,37 @@ def test_run_phase_flow_executes_bundle_once(monkeypatch) -> None:
     assert marker["calls"] == 1
 
 
+def test_run_phase_flow_uses_typed_flow_state(monkeypatch) -> None:
+    _install_strict_state_flow_module(monkeypatch)
+
+    monkeypatch.setattr(
+        "rps.crewai_runtime.flows.run_phase_bundle_crewai",
+        lambda *args, **kwargs: {"ok": True, "produced": {}},
+    )
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_phase_flow(
+        runtime,
+        agent_name="phase_architect",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_PHASE_GUARDRAILS],
+        user_input="Create phase bundle.",
+        run_id="phase-flow-state-run",
+    )
+
+    assert result["ok"] is True
+
+
 def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
     _install_fake_flow_module(monkeypatch)
     captured: dict[str, object] = {}
@@ -6667,6 +6698,37 @@ def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
     assert captured["target_year"] == 2026
     assert captured["target_week"] == 21
     assert captured["preview_only"] is False
+
+
+def test_run_week_flow_uses_typed_flow_state(monkeypatch) -> None:
+    _install_strict_state_flow_module(monkeypatch)
+
+    monkeypatch.setattr(
+        "rps.crewai_runtime.flows.execute_week_engine",
+        lambda **kwargs: {"ok": True, "produced": {"store_week_plan": {"run_id": kwargs["run_id"]}}},
+    )
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_week_flow(
+        runtime_for=lambda _name: runtime,
+        agent_name="week_planner",
+        athlete_id="i150546",
+        tasks=[AgentTask.CREATE_WEEK_PLAN],
+        user_input="Target ISO week: year=2026, week=21. Message: ",
+        run_id="week-flow-state-run",
+    )
+
+    assert result["ok"] is True
 
 
 def test_run_week_flow_preview_only_dispatches_preview_runner(monkeypatch) -> None:
@@ -6730,6 +6792,14 @@ def test_run_report_flow_converts_runner_exception_to_failure_state(monkeypatch)
     assert result == {"ok": False, "error": "schema store failed"}
 
 
+def test_run_report_flow_uses_typed_flow_state(monkeypatch) -> None:
+    _install_strict_state_flow_module(monkeypatch)
+
+    result = run_report_flow(lambda: {"ok": True})
+
+    assert result["ok"] is True
+
+
 def test_run_feed_forward_flow_runs_chain(monkeypatch) -> None:
     _install_fake_flow_module(monkeypatch)
     marker = {"report": 0, "season": 0, "phase": 0}
@@ -6756,6 +6826,20 @@ def test_run_feed_forward_flow_runs_chain(monkeypatch) -> None:
     assert result["season_phase_result"]["ok"] is True
     assert result["phase_result"]["ok"] is True
     assert marker == {"report": 1, "season": 1, "phase": 1}
+
+
+def test_run_feed_forward_flow_uses_typed_flow_state(monkeypatch) -> None:
+    _install_strict_state_flow_module(monkeypatch)
+
+    result = run_feed_forward_flow(
+        report_runner=lambda: {"ok": True},
+        season_phase_runner=lambda: {"ok": True},
+        phase_runner=lambda: {"ok": True},
+    )
+
+    assert result["report_result"]["ok"] is True
+    assert result["season_phase_result"]["ok"] is True
+    assert result["phase_result"]["ok"] is True
 
 
 def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> None:
