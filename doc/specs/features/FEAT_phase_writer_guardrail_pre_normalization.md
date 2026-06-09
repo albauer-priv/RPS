@@ -1,7 +1,7 @@
 ---
-Version: 1.3
+Version: 1.4
 Status: Implemented
-Last-Updated: 2026-06-08
+Last-Updated: 2026-06-09
 Owner: Planning Pipeline
 ---
 # FEAT: Phase Writer Guardrail Pre-Normalization
@@ -185,14 +185,31 @@ Owner: Planning Pipeline
 ## 10) Observability / Logging
 
 * Existing `CREW_TASK_GUARDRAIL_FAILED` events remain the primary signal.
+* Scoped Phase orchestration now fails closed in result/logging when forced Phase steps fail, instead of emitting a completion-style success line.
 * No new event type required; the meaningful change is that false failures on code-owned Phase authority fields are removed.
 
 ---
 
 ## 11) Documentation Updates
 
-* [x] `CHANGELOG.md` — record the writer-task pre-normalization fix.
+* [x] `CHANGELOG.md` — record the writer-task pre-normalization fix and persisted-band boundary hardening.
 * [x] `doc/overview/feature_backlog.md` — add implemented feature entry.
+
+## 13) Follow-up Hardening
+
+* Internal exact phase week-band authority remains `phase_execution_context.phase_role_week_load_bands` with top-level `role`.
+* Persisted `PHASE_GUARDRAILS` / `PHASE_STRUCTURE` weekly bands now serialize through one deterministic boundary:
+  * `week`
+  * `band.min`
+  * `band.max`
+  * `band.notes`
+* Persisted rows must not carry top-level `role`.
+* `band.notes` is deterministic, not model-authored prose, and currently materializes:
+  * the phase week-role token
+  * the exact deterministic S5 band
+  * the explicit feasible-band maximum
+* All writer pre-normalization and store-time normalization paths that materialize persisted Phase weekly bands must use the same translator.
+* Consumers that parse or render `band.notes` (`guardrails`, `guarded_store`, resolved context, renderer, week/workout helpers) must treat this deterministic note shape as canonical.
 
 ---
 

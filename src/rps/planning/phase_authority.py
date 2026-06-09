@@ -112,6 +112,37 @@ def format_role_week_load_bands(entries: object) -> list[str]:
     return rendered
 
 
+def persisted_phase_weekly_kj_bands(entries: object) -> list[JsonMap]:
+    """Serialize internal role-week authority into persisted phase weekly-band rows."""
+
+    serialized: list[JsonMap] = []
+    for entry in normalize_role_week_load_bands(entries):
+        week = str(entry.get("week") or "").strip()
+        role = str(entry.get("role") or "").strip().upper()
+        band = _as_map(entry.get("band"))
+        low = _as_float(band.get("min"))
+        high = _as_float(band.get("max"))
+        if not week or not role or low is None or high is None:
+            continue
+        minimum = int(round(min(low, high)))
+        maximum = int(round(max(low, high)))
+        serialized.append(
+            {
+                "week": week,
+                "band": {
+                    "min": minimum,
+                    "max": maximum,
+                    "notes": (
+                        f"role {role}; "
+                        f"S5 deterministic band is {minimum}-{maximum}; "
+                        f"feasible band max is {maximum}"
+                    ),
+                },
+            }
+        )
+    return serialized
+
+
 def role_week_band_by_week(entries: object) -> dict[str, JsonMap]:
     """Return canonical structured week-band mapping keyed by ISO week."""
 

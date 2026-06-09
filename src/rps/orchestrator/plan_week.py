@@ -1106,6 +1106,15 @@ def plan_week(
 
     required_phase_artefacts = _required_phase_artefacts_for_forced_steps(forced_steps)
     if required_phase_artefacts:
+        phase_steps_ok = all(
+            isinstance((result := step.get("result")), dict) and bool(result.get("ok"))
+            for step in steps
+            if step.get("agent") == "phase_architect"
+        )
+        if not phase_steps_ok:
+            message = f"Scoped phase run failed for range {phase_range_label}."
+            _log(message, logging.ERROR)
+            return PlanWeekResult(ok=False, steps=steps)
         missing_required = [
             artifact_type
             for artifact_type in required_phase_artefacts
@@ -1458,11 +1467,11 @@ def plan_week(
             if out.get("ok") and out.get("produced"):
                 _log("Done.")
 
-    def _step_ok(step: StepRecord) -> bool:
-        result = step.get("result")
-        return isinstance(result, dict) and bool(result.get("ok"))
-
-    ok = all(_step_ok(step) for step in steps) if steps else True
+    ok = (
+        all(isinstance((result := step.get("result")), dict) and bool(result.get("ok")) for step in steps)
+        if steps
+        else True
+    )
     if ok:
         try:
             week_plan_payload = (

@@ -3115,6 +3115,10 @@ def test_phase_guardrails_writer_guardrails_pre_normalize_exact_phase_authority(
         repaired = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert repaired["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]["max"] == 10148
+    assert repaired["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]["notes"] == (
+        "role SHORTENED_RE_ENTRY; S5 deterministic band is 7893-10148; feasible band max is 10148"
+    )
+    assert "role" not in repaired["data"]["load_guardrails"]["weekly_kj_bands"][0]
     assert repaired["data"]["phase_summary"]["primary_objective"] == (
         "Re-establish stable training continuity without overreaching."
     )

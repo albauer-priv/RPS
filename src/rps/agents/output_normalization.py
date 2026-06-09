@@ -14,6 +14,7 @@ from rps.agents.tasks import AgentTask
 from rps.planning.phase_authority import (
     build_week_skeleton_for_phase,
     normalize_role_week_load_bands,
+    persisted_phase_weekly_kj_bands,
 )
 from rps.workspace.artifact_metadata import normalize_trace_reference
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
@@ -1011,7 +1012,7 @@ def normalize_phase_guardrails_document(
                 _widen_band(entry)
 
     context = _as_map(phase_execution_context)
-    phase_bands = normalize_role_week_load_bands(context.get("phase_role_week_load_bands"))
+    phase_bands = persisted_phase_weekly_kj_bands(context.get("phase_role_week_load_bands"))
     if phase_bands:
         load_guardrails["weekly_kj_bands"] = phase_bands
 
@@ -1050,7 +1051,7 @@ def normalize_phase_guardrails_document(
                         semantics.get("forbidden_intensity_domains") or []
                     )
                 data["allowed_forbidden_semantics"] = allowed_forbidden
-            exact_bands = _season_phase_role_week_load_bands(season_phase)
+            exact_bands = persisted_phase_weekly_kj_bands(_season_phase_role_week_load_bands(season_phase))
             if exact_bands and not phase_bands:
                 load_guardrails["weekly_kj_bands"] = exact_bands
 

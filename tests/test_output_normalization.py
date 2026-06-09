@@ -15,6 +15,7 @@ from rps.agents.output_normalization import (
     normalize_workout_percent_ranges,
 )
 from rps.agents.tasks import AgentTask
+from rps.planning.phase_authority import persisted_phase_weekly_kj_bands
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 
 
@@ -148,7 +149,12 @@ def test_normalize_phase_guardrails_from_execution_context_prefers_exact_runtime
         phase_execution_context=execution_context,
     )
 
-    assert normalized["data"]["load_guardrails"]["weekly_kj_bands"] == execution_context["phase_role_week_load_bands"]
+    assert normalized["data"]["load_guardrails"]["weekly_kj_bands"] == persisted_phase_weekly_kj_bands(
+        execution_context["phase_role_week_load_bands"]
+    )
+    assert normalized["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]["notes"] == (
+        "role SHORTENED_RE_ENTRY; S5 deterministic band is 7893-10148; feasible band max is 10148"
+    )
     assert normalized["data"]["phase_summary"]["primary_objective"] == execution_context["phase_primary_objective"]
     assert normalized["data"]["allowed_forbidden_semantics"]["allowed_intensity_domains"] == (
         execution_context["phase_allowed_intensity_domains"]
@@ -179,6 +185,34 @@ def test_normalize_phase_guardrails_from_execution_context_requires_exact_bands(
         assert "phase_role_week_load_bands" in str(exc)
     else:
         raise AssertionError("Expected normalize_phase_guardrails_document_from_execution_context to fail.")
+
+
+def test_persisted_phase_weekly_kj_bands_drop_role_and_materialize_deterministic_notes() -> None:
+    serialized = persisted_phase_weekly_kj_bands(
+        [
+            {"week": "2026-24", "role": "SHORTENED_RE_ENTRY", "band": {"min": 7893, "max": 10148}},
+            {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION", "band": {"min": 11275, "max": 9020}},
+        ]
+    )
+
+    assert serialized == [
+        {
+            "week": "2026-24",
+            "band": {
+                "min": 7893,
+                "max": 10148,
+                "notes": "role SHORTENED_RE_ENTRY; S5 deterministic band is 7893-10148; feasible band max is 10148",
+            },
+        },
+        {
+            "week": "2026-25",
+            "band": {
+                "min": 9020,
+                "max": 11275,
+                "notes": "role SHORTENED_CONSOLIDATION; S5 deterministic band is 9020-11275; feasible band max is 11275",
+            },
+        },
+    ]
 
 
 def test_normalize_phase_structure_projects_constraints_and_guardrails_source() -> None:

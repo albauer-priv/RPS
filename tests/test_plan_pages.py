@@ -1806,6 +1806,83 @@ def test_plan_week_logs_effective_phase_steps_when_preview_is_bundled(
     assert "forced_steps=['PHASE_STRUCTURE', 'PHASE_PREVIEW']" in caplog.text
 
 
+def test_plan_week_scoped_phase_failure_does_not_log_completion(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    athlete_id = "test_athlete"
+    year, week = 2026, 12
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.SEASON_PLAN).write_text(
+        json.dumps(
+            {
+                "meta": {"iso_week_range": "2026-11--2026-13"},
+                "data": {
+                    "phases": [
+                        {
+                            "id": "P01",
+                            "name": "Base 1",
+                            "cycle": "Base",
+                            "iso_week_range": "2026-11--2026-13",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_minimal_scenario_chain(store, athlete_id)
+    for artifact_type in (ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE, ArtifactType.PHASE_PREVIEW):
+        store.save_document(
+            athlete_id,
+            artifact_type,
+            "2026-11--2026-13__old",
+            {
+                "meta": {
+                    "artifact_type": artifact_type.value,
+                    "version_key": "2026-11--2026-13__old",
+                    "iso_week_range": "2026-11--2026-13",
+                    "created_at": "2026-04-01T00:00:00Z",
+                },
+                "data": {},
+            },
+            producer_agent="phase_architect",
+            run_id="seed",
+            update_latest=True,
+        )
+
+    runtime = SimpleNamespace(
+        workspace_root=tmp_path,
+        reasoning_effort=None,
+        reasoning_summary=None,
+    )
+
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_user_data_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week._build_kpi_selection_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week._resolve_latest_historical_week_versions", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_athlete_state_snapshot_prompt_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr("rps.orchestrator.plan_week.build_planning_context_snapshot_prompt_block", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr(
+        "rps.orchestrator.plan_week.run_agent_multi_output",
+        lambda *_args, **_kwargs: {"ok": False, "error": "guardrail failed"},
+    )
+
+    with caplog.at_level(logging.INFO, logger="rps.orchestrator.plan_week"):
+        result = plan_week(
+            runtime,
+            athlete_id=athlete_id,
+            year=year,
+            week=week,
+            run_id="test_run",
+            force_steps=["PHASE_GUARDRAILS"],
+        )
+
+    assert result.ok is False
+    assert "Scoped phase run failed for range 2026-11--2026-13." in caplog.text
+    assert "Scoped phase run completed for range 2026-11--2026-13" not in caplog.text
+
+
 def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
