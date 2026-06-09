@@ -7,6 +7,7 @@ Artifact-Type: {{ meta.artifact_type }}
 Schema-ID: {{ meta.schema_id }}
 Schema-Version: {{ meta.schema_version }}
 Version: {{ meta.version }}
+Version-Key: {{ meta.version_key or "N/A" }}
 Created-At: {{ meta.created_at }}
 Owner-Agent: {{ meta.owner_agent }}
 Authority: {{ meta.authority }}
@@ -28,7 +29,17 @@ Trace-Upstream:
 - Planned weekly load (kJ): {{ week_summary.planned_weekly_load_kj }}
 - Notes (factual, optional): {{ week_summary.notes or "N/A" }}
 
-## 2) Weekly Agenda (Mon-Sun)
+## 2) Effective Week Constraints
+{% set effective = effective_week_constraints %}
+{% set effective_band = effective.weekly_kj_band %}
+- Phase intent: {{ effective.phase_intent or "N/A" }}
+- Phase week role: {{ effective.phase_week_role or "N/A" }}
+- Allowed intensity domains: {{ effective.allowed_intensity_domains | join(", ") if effective.allowed_intensity_domains else "N/A" }}
+- Forbidden intensity domains: {{ effective.forbidden_intensity_domains | join(", ") if effective.forbidden_intensity_domains else "N/A" }}
+- Allowed load modalities: {{ effective.allowed_load_modalities | join(", ") if effective.allowed_load_modalities else "N/A" }}
+- Effective weekly kJ band: {{ effective_band.min }}-{{ effective_band.max }}{% if effective_band.notes %} ({{ effective_band.notes }}){% endif %}
+
+## 3) Weekly Agenda (Mon-Sun)
 
 | Day | Date (YYYY-MM-DD) | Day-Role (AGENDA_ENUM) | Planned Duration (hh:mm) | Planned Load (kJ) | Workout-ID |
 |---|---|---|---|---:|---|
@@ -36,7 +47,7 @@ Trace-Upstream:
 {% endfor %}{% else %}| N/A | N/A | N/A | N/A | N/A | N/A |
 {% endif %}
 
-## 3) Workout Definitions (Intervals.icu Text, EBNF-based)
+## 4) Workout Definitions (Intervals.icu Text, EBNF-based)
 {% if workouts %}
 {% for workout in workouts %}
 ---

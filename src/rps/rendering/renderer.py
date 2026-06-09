@@ -503,6 +503,18 @@ def build_week_plan_context(doc):
         "trace_upstream": format_trace_list(meta.get("trace_upstream")),
         "trace_data": format_trace_list(meta.get("trace_data")),
         "trace_events": format_trace_list(meta.get("trace_events")),
+        "effective_week_constraints": {
+            "phase_intent": data.get("effective_week_constraints", {}).get("phase_intent", ""),
+            "phase_week_role": data.get("effective_week_constraints", {}).get("phase_week_role", ""),
+            "allowed_intensity_domains": data.get("effective_week_constraints", {}).get("allowed_intensity_domains", []),
+            "forbidden_intensity_domains": data.get("effective_week_constraints", {}).get("forbidden_intensity_domains", []),
+            "allowed_load_modalities": data.get("effective_week_constraints", {}).get("allowed_load_modalities", []),
+            "weekly_kj_band": {
+                "min": fmt_number(data.get("effective_week_constraints", {}).get("weekly_kj_band", {}).get("min")),
+                "max": fmt_number(data.get("effective_week_constraints", {}).get("weekly_kj_band", {}).get("max")),
+                "notes": data.get("effective_week_constraints", {}).get("weekly_kj_band", {}).get("notes", ""),
+            },
+        },
         "week_summary": {
             "week_objective": week_summary.get("week_objective", ""),
             "weekly_load_corridor_kj": {

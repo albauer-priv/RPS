@@ -24,11 +24,22 @@ st.set_page_config(page_title="RPS - Randonneur Performance System", layout="wid
 ensure_logging(get_athlete_id())
 
 
+def _iter_athlete_workspace_dirs(root: Path):
+    """Yield only real athlete workspace directories under the runtime root."""
+
+    for candidate in root.iterdir():
+        if not candidate.is_dir():
+            continue
+        if candidate.name == "runs":
+            continue
+        if not ((candidate / "data").is_dir() or (candidate / "latest").is_dir()):
+            continue
+        yield candidate
+
+
 def _cleanup_index_background(root: Path) -> None:
     """Background cleanup for missing index entries."""
-    for athlete_dir in root.iterdir():
-        if not athlete_dir.is_dir():
-            continue
+    for athlete_dir in _iter_athlete_workspace_dirs(root):
         active = find_active_runs(
             root,
             athlete_dir.name,
@@ -56,9 +67,7 @@ def _cleanup_index_background(root: Path) -> None:
 
 def _cleanup_logs_background(root: Path, retention_days: int) -> None:
     """Background cleanup for stale log files."""
-    for athlete_dir in root.iterdir():
-        if not athlete_dir.is_dir():
-            continue
+    for athlete_dir in _iter_athlete_workspace_dirs(root):
         active = find_active_runs(
             root,
             athlete_dir.name,
@@ -85,9 +94,7 @@ def _cleanup_logs_background(root: Path, retention_days: int) -> None:
 
 def _cleanup_runs_background(root: Path, retention_days: int) -> None:
     """Background cleanup for run history + queue files."""
-    for athlete_dir in root.iterdir():
-        if not athlete_dir.is_dir():
-            continue
+    for athlete_dir in _iter_athlete_workspace_dirs(root):
         active = find_active_runs(
             root,
             athlete_dir.name,

@@ -261,7 +261,7 @@ class LocalStoreTests(unittest.TestCase):
 
             written = json.loads(Path(path).read_text(encoding="utf-8"))
             meta = written["meta"]
-            self.assertNotIn("version_key", meta)
+            self.assertEqual(meta["version_key"], "2026-17--2026-18__20260421_143500")
             self.assertEqual(meta["run_id"], "actual_store_run")
             self.assertNotEqual(meta["created_at"], "2026-04-21T14:32:28Z")
             loaded = store.load_version(
@@ -304,7 +304,7 @@ class LocalStoreTests(unittest.TestCase):
             written = json.loads(Path(path).read_text(encoding="utf-8"))
             meta = written["meta"]
             self.assertEqual(path.name, "season_scenarios_2026-17__20260422_110852.json")
-            self.assertNotIn("version_key", meta)
+            self.assertEqual(meta["version_key"], "2026-17__20260422_110852")
             self.assertEqual(meta["created_at"], "2026-04-22T11:08:52Z")
             self.assertEqual(meta["run_id"], "actual_store_run")
             self.assertEqual(store.get_latest_version_key(athlete_id, ArtifactType.SEASON_SCENARIOS), "2026-17__20260422_110852")

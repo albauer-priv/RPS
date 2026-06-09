@@ -139,6 +139,7 @@
       "additionalProperties": false,
       "required": [
         "inherited_planning_posture",
+        "effective_week_constraints",
         "week_summary",
         "agenda",
         "workouts"
@@ -226,6 +227,53 @@
                 "string",
                 "null"
               ]
+            }
+          }
+        },
+        "effective_week_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_intent",
+            "phase_week_role",
+            "allowed_intensity_domains",
+            "forbidden_intensity_domains",
+            "allowed_load_modalities",
+            "weekly_kj_band"
+          ],
+          "properties": {
+            "phase_intent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "phase_week_role": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "allowed_intensity_domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "forbidden_intensity_domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "allowed_load_modalities": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "weekly_kj_band": {
+              "$ref": "load_band.schema.json"
             }
           }
         },

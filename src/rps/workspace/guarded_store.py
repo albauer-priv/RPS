@@ -31,6 +31,7 @@ from rps.planning.deterministic_context import (
     build_selected_scenario_contract_block,
     build_selected_scenario_structure_block,
     build_week_calendar_context,
+    resolve_effective_allowed_modalities,
 )
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.rendering.auto_render import render_sidecar
@@ -1033,6 +1034,11 @@ class GuardedValidatedStore:
                         phase_structure_payload=phase_structure,
                         load_capacity_context=self._load_capacity_context_for_store(),
                     )
+                    effective_modalities, _ = resolve_effective_allowed_modalities(
+                        week_calendar_context=context,
+                        phase_structure_payload=phase_structure,
+                    )
+                    context["allowed_load_modalities"] = effective_modalities
                     errors.extend(
                         blocking_messages(
                             validate_week_plan_against_week_context(
@@ -1092,7 +1098,7 @@ class GuardedValidatedStore:
                 child_schema = self._child_rounding_schema(schema_node, k)
                 rounded[k] = self._round_numeric_fields(
                     v,
-                    child_schema,
+                    child_schema if isinstance(child_schema, dict) else None,
                     root_schema,
                     path + [str(k)],
                 )
@@ -1242,6 +1248,7 @@ class GuardedValidatedStore:
                 artifact_type=target,
                 schema=schema,
                 run_id=run_id,
+                version_key=None,
             )
             raw_document = document
             self._log_store_attempt(
@@ -1259,6 +1266,13 @@ class GuardedValidatedStore:
             if target == ArtifactType.INTERVALS_WORKOUTS:
                 version_key = self._derive_intervals_version_key(document)
             version_key = normalize_version_key(version_key, artifact_type=target)
+            document = canonicalize_artifact_envelope_meta(
+                document,
+                artifact_type=target,
+                schema=schema,
+                run_id=run_id,
+                version_key=version_key,
+            )
 
             self._apply_phase_store_constraints(target, cast(JsonMap, document))
             self._enforce_store_contract_constraints(target, cast(JsonMap, document))
@@ -1321,8 +1335,11 @@ class GuardedValidatedStore:
                 document["meta"]["data_confidence"] = "UNKNOWN"
             document = self._apply_rounding(document, schema)
             envelope_document = cast(JsonMap, document)
-            validate_or_raise(validator, envelope_document)
             version_key = derive_version_key_from_envelope(envelope_document, target)
+            meta = self._as_map(envelope_document.get("meta"))
+            meta["version_key"] = version_key
+            envelope_document["meta"] = meta
+            validate_or_raise(validator, envelope_document)
             return document, version_key
         document = self._apply_rounding(document, schema)
         validate_or_raise(validator, cast(JsonMap, document))

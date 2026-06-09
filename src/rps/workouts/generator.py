@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from rps.crewai_runtime.models import WeekPlanBundleModel, WeekWorkoutBlueprintModel
+from rps.planning.deterministic_context import build_effective_week_constraints_block
 from rps.workouts.protocol_solver import solve_protocol_workout
 from rps.workouts.structured import render_workout_structure
 from rps.workspace.intensity_domains import normalize_intensity_domain
@@ -54,12 +55,13 @@ def build_week_plan_document_from_bundle(
     corridor = _active_weekly_band(context)
     agenda = _build_agenda(bundle_model)
     workouts = _build_workouts(bundle_model)
-    week_objective = _week_objective(bundle_model, context)
     notes = _week_notes(bundle_model, context, review_decision or {})
     iso_week = str(context.get("target_iso_week") or "")
     week_start = str(context.get("week_start_date") or _day_date(bundle_model, "Mon") or "")
     week_end = str(context.get("week_end_date") or _day_date(bundle_model, "Sun") or "")
     planned_total = sum(int(row.get("planned_kj") or 0) for row in agenda)
+    effective_constraints = build_effective_week_constraints_block(context)
+    trace_upstream = list(context.get("trace_upstream") or []) if isinstance(context.get("trace_upstream"), list) else []
     return {
         "meta": {
             "artifact_type": "WEEK_PLAN",
@@ -74,7 +76,7 @@ def build_week_plan_document_from_bundle(
             "iso_week": iso_week,
             "iso_week_range": f"{iso_week}--{iso_week}" if iso_week else "",
             "temporal_scope": {"from": week_start, "to": week_end},
-            "trace_upstream": [],
+            "trace_upstream": trace_upstream,
             "trace_data": [],
             "trace_events": [],
             "data_confidence": "HIGH",
@@ -82,12 +84,13 @@ def build_week_plan_document_from_bundle(
         },
         "data": {
             "inherited_planning_posture": (
-                dict(context.get("inherited_planning_posture"))
+                context.get("inherited_planning_posture", {})
                 if isinstance(context.get("inherited_planning_posture"), dict)
                 else {}
             ),
+            "effective_week_constraints": effective_constraints,
             "week_summary": {
-                "week_objective": week_objective,
+                "week_objective": _week_objective(bundle_model, context, planned_total=planned_total),
                 "weekly_load_corridor_kj": corridor,
                 "planned_weekly_load_kj": planned_total,
                 "notes": notes,
@@ -194,11 +197,16 @@ def _resolve_render_spec(blueprint: WeekWorkoutBlueprintModel) -> WorkoutBluepri
     )
 
 
-def _week_objective(bundle: WeekPlanBundleModel, context: JsonMap) -> str:
-    if bundle.load_target_summary:
-        return str(bundle.load_target_summary[0]).strip()
-    if bundle.revision_summary:
-        return str(bundle.revision_summary[0]).strip()
+def _week_objective(bundle: WeekPlanBundleModel, context: JsonMap, *, planned_total: int) -> str:
+    band = _active_weekly_band(context)
+    phase_week_role = str(context.get("phase_week_role") or context.get("phase_role_for_week") or "Week").replace("_", " ").title()
+    phase_intent = str(context.get("phase_intent") or "").replace("_", " ").strip()
+    if band.get("min") or band.get("max"):
+        intent_prefix = f"{phase_intent} " if phase_intent else ""
+        return (
+            f"{intent_prefix}{phase_week_role} planned at {int(planned_total)} kJ "
+            f"inside the binding {int(band.get('min') or 0)}-{int(band.get('max') or 0)} kJ band."
+        )
     phase_week_role = str(context.get("phase_week_role") or context.get("phase_role_for_week") or "Week")
     return f"{phase_week_role.replace('_', ' ').title()} week generated from approved day and workout blueprints."
 

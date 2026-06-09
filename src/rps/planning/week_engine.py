@@ -24,6 +24,7 @@ from rps.planning.contracts import (
 from rps.planning.deterministic_context import (
     build_load_capacity_block,
     build_week_calendar_context,
+    resolve_effective_allowed_modalities,
 )
 from rps.planning.load_bands import selected_kpi_rate_band_from_selection
 from rps.planning.week_protocols import (
@@ -128,11 +129,17 @@ def execute_week_engine(
         phase_structure_payload=phase_structure,
         load_capacity_context=load_capacity.payload,
     )
-    effective_modalities, week_context_warnings = _resolve_effective_allowed_modalities(
+    effective_modalities, week_context_warnings = resolve_effective_allowed_modalities(
         week_calendar_context=week_calendar,
         phase_structure_payload=phase_structure,
     )
     week_calendar["allowed_load_modalities"] = effective_modalities
+    week_calendar["trace_upstream"] = build_trace_upstream(
+        [
+            (ArtifactType.PHASE_GUARDRAILS, phase_guardrails),
+            (ArtifactType.PHASE_STRUCTURE, phase_structure),
+        ]
+    )
     load_method = build_workout_load_method_context(
         athlete_profile_payload=athlete_profile or {},
         zone_model_payload=zone_model or {},
@@ -201,10 +208,8 @@ def execute_week_engine(
     )
     trace_upstream = build_trace_upstream(
         [
-            (ArtifactType.SEASON_PLAN, season_plan),
             (ArtifactType.PHASE_GUARDRAILS, phase_guardrails),
             (ArtifactType.PHASE_STRUCTURE, phase_structure),
-            (ArtifactType.PHASE_PREVIEW, phase_preview),
         ]
     )
     previous_payload = _load_previous_week_plan_payload(store=store, athlete_id=athlete_id, target_week=target)
@@ -468,7 +473,7 @@ def _allocate_day_blueprints(*, week_calendar_context: JsonMap) -> tuple[list[We
             intended_domain = "ENDURANCE" if day_role in {"RECOVERY", "ENDURANCE"} else "TEMPO"
         blueprints.append(
             WeekDayBlueprintModel(
-                day=day,  # type: ignore[arg-type]
+                day=day,
                 date=str(row.get("date") or ""),
                 fixed_rest_day=fixed_rest,
                 availability_cap_minutes=_availability_cap_minutes(availability),
@@ -513,8 +518,12 @@ def _select_workout_blueprints(
         if day.fixed_rest_day or not day.workout_id:
             continue
         is_anchor = day.day == "Sat" or (day.day == "Sun" and not adjustment.preserve_sat_anchor)
-        preview_hint = preview_hints.get(day.day)
-        preferred_domain = str(day.intended_domain or "").strip().upper() or str(preview_hint.get("intensity_domain") or "").strip().upper() or None
+        preview_hint = preview_hints.get(day.day) or {}
+        preferred_domain = (
+            str(day.intended_domain or "").strip().upper()
+            or str(preview_hint.get("intensity_domain") or "").strip().upper()
+            or None
+        )
         protocol = _pick_protocol(
             protocol_config=protocol_config,
             day_role=day.day_role,
@@ -750,27 +759,6 @@ def _quality_budget_allows(*, protocol: WeekWorkoutProtocol, remaining_true_qual
     if quality_cost != "true_quality":
         return True
     return remaining_true_quality_budget > 0
-
-
-def _resolve_effective_allowed_modalities(*, week_calendar_context: JsonMap, phase_structure_payload: JsonMap) -> tuple[list[str], list[str]]:
-    guardrails_modalities = [str(item).strip().upper() for item in week_calendar_context.get("allowed_load_modalities") or [] if str(item).strip()]
-    execution = _as_map(_as_map(_as_map(phase_structure_payload.get("data")).get("execution_principles")).get("load_intensity_handling"))
-    structure_modalities = [str(item).strip().upper() for item in execution.get("load_modality_constraints") or [] if str(item).strip()]
-    warnings: list[str] = []
-    if not guardrails_modalities:
-        return structure_modalities, warnings
-    if not structure_modalities:
-        return guardrails_modalities, warnings
-    effective = [item for item in guardrails_modalities if item in set(structure_modalities)]
-    if effective:
-        if set(effective) != set(guardrails_modalities) or set(effective) != set(structure_modalities):
-            warnings.append(
-                "load_modality_constraint_mismatch: using intersection of PHASE_GUARDRAILS and PHASE_STRUCTURE modalities "
-                f"({', '.join(effective)})."
-            )
-        return effective, warnings
-    warnings.append("load_modality_constraint_mismatch: empty intersection between PHASE_GUARDRAILS and PHASE_STRUCTURE; falling back to PHASE_GUARDRAILS modalities.")
-    return guardrails_modalities, warnings
 
 
 def _phase_preview_hints(*, phase_preview_payload: JsonMap, target_week: str) -> dict[str, JsonMap]:

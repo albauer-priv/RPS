@@ -547,6 +547,58 @@ def build_week_calendar_context(
     }
 
 
+def build_effective_week_constraints_block(context: JsonMap) -> JsonMap:
+    """Return the exact effective week-local legality and load envelope."""
+
+    band = _as_map(
+        context.get("active_weekly_kj_band")
+        or context.get("phase_weekly_kj_band")
+        or context.get("active_s5_band")
+    )
+    minimum = band.get("min")
+    maximum = band.get("max")
+    notes = str(band.get("notes") or "")
+    return {
+        "phase_intent": context.get("phase_intent"),
+        "phase_week_role": context.get("phase_week_role"),
+        "allowed_intensity_domains": [str(item) for item in _as_list(context.get("allowed_intensity_domains")) if str(item).strip()],
+        "forbidden_intensity_domains": [str(item) for item in _as_list(context.get("forbidden_intensity_domains")) if str(item).strip()],
+        "allowed_load_modalities": [str(item) for item in _as_list(context.get("allowed_load_modalities")) if str(item).strip()],
+        "weekly_kj_band": {
+            "min": int(round(float(minimum or 0))),
+            "max": int(round(float(maximum or 0))),
+            "notes": notes,
+        },
+    }
+
+
+def resolve_effective_allowed_modalities(
+    *,
+    week_calendar_context: JsonMap,
+    phase_structure_payload: JsonMap | None,
+) -> tuple[list[str], list[str]]:
+    """Return the effective week-local load modalities after structure reconciliation."""
+
+    guardrails_modalities = [str(item).strip().upper() for item in week_calendar_context.get("allowed_load_modalities") or [] if str(item).strip()]
+    execution = _as_map(_as_map(_as_map((phase_structure_payload or {}).get("data")).get("execution_principles")).get("load_intensity_handling"))
+    structure_modalities = [str(item).strip().upper() for item in execution.get("load_modality_constraints") or [] if str(item).strip()]
+    warnings: list[str] = []
+    if not guardrails_modalities:
+        return structure_modalities, warnings
+    if not structure_modalities:
+        return guardrails_modalities, warnings
+    effective = [item for item in guardrails_modalities if item in set(structure_modalities)]
+    if effective:
+        if set(effective) != set(guardrails_modalities) or set(effective) != set(structure_modalities):
+            warnings.append(
+                "load_modality_constraint_mismatch: using intersection of PHASE_GUARDRAILS and PHASE_STRUCTURE modalities "
+                f"({', '.join(effective)})."
+            )
+        return effective, warnings
+    warnings.append("load_modality_constraint_mismatch: empty intersection between PHASE_GUARDRAILS and PHASE_STRUCTURE; falling back to PHASE_GUARDRAILS modalities.")
+    return guardrails_modalities, warnings
+
+
 def render_week_calendar_context_block(context: JsonMap) -> str:
     """Render target-week deterministic calendar and availability context."""
 

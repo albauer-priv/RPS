@@ -106,9 +106,6 @@ def run_workout_export(
         )
         if not isinstance(week_plan_for_validation, dict):
             raise ValueError("WEEK_PLAN payload is not an object")
-        meta = week_plan_for_validation.get("meta")
-        if isinstance(meta, dict):
-            meta.pop("version_key", None)
         validate_or_raise(week_plan_validator, week_plan_for_validation)
 
         export_payload = build_workout_export_payload(week_plan)

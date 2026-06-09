@@ -83,7 +83,7 @@ def _week_bounds_from_key(week_key: str) -> tuple[str, str] | None:
 
 def _normalize_trace_references(value: object) -> JsonList:
     """Return canonical trace references with fallback run ids for legacy docs."""
-    return normalize_trace_references(value)
+    return [dict(item) for item in normalize_trace_references(value)]
 
 
 def _normalize_loaded_meta(document: object) -> object:
@@ -250,9 +250,9 @@ class LocalArtifactStore:
     ) -> None:
         """Record a write in the per-athlete index.json."""
         rel_path = str(version_path.relative_to(self.athlete_root(athlete_id)))
-        created_at = None
-        iso_week = None
-        iso_week_range = None
+        created_at: str | None = None
+        iso_week: dict[str, object] | str | None = None
+        iso_week_range: dict[str, object] | str | None = None
         if meta:
             created_at = _as_str(meta.get("created_at"))
             iso_week_raw = meta.get("iso_week")
@@ -374,9 +374,9 @@ class LocalArtifactStore:
 
         cfg = ARTIFACT_PATHS[artifact_type]
         if artifact_type in PARTITIONED_WEEK_ARTIFACTS:
-            versions = self._list_partitioned_week_versions(athlete_id, cfg.filename_prefix)
-            if versions:
-                return sorted(versions, key=_version_sort_key)
+            partitioned_versions = self._list_partitioned_week_versions(athlete_id, cfg.filename_prefix)
+            if partitioned_versions:
+                return sorted(partitioned_versions, key=_version_sort_key)
         folder = self.type_dir(athlete_id, artifact_type)
         if not folder.exists():
             return []
@@ -527,6 +527,7 @@ class LocalArtifactStore:
             "schema_id": payload_meta.get("schema_id", f"{meta.artifact_type.value}Interface"),
             "schema_version": payload_meta.get("schema_version", "1.0"),
             "version": payload_meta.get("version", "1.0"),
+            "version_key": meta.version_key,
             "authority": authority_value,
             "owner_agent": payload_meta.get("owner_agent", meta.producer_agent),
             "run_id": meta.run_id,
@@ -598,7 +599,7 @@ class LocalArtifactStore:
                 meta_doc = dict(candidate)
                 meta_doc["created_at"] = stored_created_at
                 meta_doc["run_id"] = run_id
-                meta_doc.pop("version_key", None)
+                meta_doc["version_key"] = normalized_key
                 document = dict(document)
                 document["meta"] = meta_doc
         version_path = self.versioned_path(athlete_id, artifact_type, normalized_key)

@@ -291,6 +291,7 @@
         "schema_id",
         "schema_version",
         "version",
+        "version_key",
         "authority",
         "owner_agent",
         "run_id",
@@ -321,6 +322,10 @@
         "version": {
           "type": "string",
           "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "version_key": {
+          "type": "string",
+          "minLength": 1
         },
         "authority": {
           "type": "string",

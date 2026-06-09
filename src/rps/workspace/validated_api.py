@@ -63,17 +63,17 @@ class ValidatedWorkspace:
             meta.setdefault("trace_upstream", [])
             meta.setdefault("data_confidence", "UNKNOWN")
 
-            instance = {"meta": meta, "data": payload}
-            instance = canonicalize_artifact_envelope_meta(
-                instance,
+            envelope_instance = canonicalize_artifact_envelope_meta(
+                {"meta": meta, "data": payload},
                 artifact_type=artifact_type,
                 schema=schema,
                 run_id=run_id,
+                version_key=version_key,
             )
-            if not isinstance(instance, dict):
+            if not isinstance(envelope_instance, dict):
                 raise ValueError("Envelope artefact must be an object")
-            validate_or_raise(validator, instance)
-            document = instance
+            validate_or_raise(validator, envelope_instance)
+            document = envelope_instance
         else:
             validate_or_raise(validator, payload)
             document = payload

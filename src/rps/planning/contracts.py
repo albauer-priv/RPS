@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from rps.planning.deterministic_context import build_effective_week_constraints_block
 from rps.planning.phase_authority import (
     format_role_week_load_bands,
     normalize_role_week_load_bands,
@@ -694,6 +695,8 @@ def validate_season_plan_against_phase_load_context(
         rec_min = _as_float(rec.get("min"))
         rec_max = _as_float(rec.get("max"))
         if None not in {planned_min, planned_max, rec_min, rec_max}:
+            assert planned_min is not None and planned_max is not None
+            assert rec_min is not None and rec_max is not None
             if planned_min < rec_min or planned_max > rec_max:
                 issues.append(
                     PlanningContractIssue(
@@ -961,7 +964,9 @@ def validate_season_plan_against_phase_load_context(
             ),
         )
         event_label = " ".join(
-            part for part in (highest_a_event.get("name"), highest_a_event.get("date")) if str(part or "").strip()
+            str(part).strip()
+            for part in (highest_a_event.get("name"), highest_a_event.get("date"))
+            if str(part or "").strip()
         ).strip()
         event_km = _extract_km_values(event_label)
         if event_km and not any(abs(event_distance - objective_distance) <= 25 for event_distance in event_km for objective_distance in objective_km):
@@ -979,13 +984,14 @@ def validate_season_plan_against_phase_load_context(
     actual_min = _as_float(actual_envelope_map.get("min"))
     actual_max = _as_float(actual_envelope_map.get("max"))
     if expected_envelope and None not in {actual_min, actual_max}:
+        assert actual_min is not None and actual_max is not None
         if round(actual_min) != expected_envelope["min"] or round(actual_max) != expected_envelope["max"]:
             issues.append(
                 PlanningContractIssue(
                     "season_load_envelope_mismatch",
                     (
                         f"expected_average_weekly_kj_range is {actual_min:g}-{actual_max:g}, "
-                        f"expected weighted phase-derived {expected_envelope['min']}-{expected_envelope['max']}."
+                        f"expected authoritative role-week-band-derived {expected_envelope['min']}-{expected_envelope['max']}."
                     ),
                     path="data.season_load_envelope.expected_average_weekly_kj_range",
                 )
@@ -1050,16 +1056,17 @@ def validate_phase_s5_bands_against_context(
         observed_max = _as_float(band.get("max"))
         expected_min = _as_float(expected_band.get("min"))
         expected_max = _as_float(expected_band.get("max"))
-        if None not in {observed_min, observed_max, expected_min, expected_max} and (
-            round(observed_min) != round(expected_min) or round(observed_max) != round(expected_max)
-        ):
-            issues.append(
-                PlanningContractIssue(
-                    "phase_s5_band_mismatch",
-                    f"{week} band {observed_min:g}-{observed_max:g} does not match deterministic {expected_min:g}-{expected_max:g}.",
-                    path="data.load_guardrails.weekly_kj_bands",
+        if None not in {observed_min, observed_max, expected_min, expected_max}:
+            assert observed_min is not None and observed_max is not None
+            assert expected_min is not None and expected_max is not None
+            if round(observed_min) != round(expected_min) or round(observed_max) != round(expected_max):
+                issues.append(
+                    PlanningContractIssue(
+                        "phase_s5_band_mismatch",
+                        f"{week} band {observed_min:g}-{observed_max:g} does not match deterministic {expected_min:g}-{expected_max:g}.",
+                        path="data.load_guardrails.weekly_kj_bands",
+                    )
                 )
-            )
     return issues
 
 
@@ -1233,6 +1240,15 @@ def validate_week_plan_against_week_context(
             label="inherited_planning_posture",
         )
     )
+    issues.extend(
+        _compare_contract_subset(
+            candidate=_as_map(data.get("effective_week_constraints")),
+            authority=build_effective_week_constraints_block(week_calendar_context),
+            path="data.effective_week_constraints",
+            code="week_effective_constraints_mismatch",
+            label="effective_week_constraints",
+        )
+    )
     active_band = _as_map(
         week_calendar_context.get("active_weekly_kj_band")
         or week_calendar_context.get("phase_weekly_kj_band")
@@ -1252,18 +1268,21 @@ def validate_week_plan_against_week_context(
         observed_max = _as_float(corridor.get("max"))
         expected_min = _as_float(active_band.get("min"))
         expected_max = _as_float(active_band.get("max"))
-        if None not in {observed_min, observed_max, expected_min, expected_max} and (
-            observed_min != expected_min or observed_max != expected_max
-        ):
-            issues.append(
-                PlanningContractIssue(
-                    "week_corridor_active_band_mismatch",
-                    f"Week corridor {observed_min:g}-{observed_max:g}, expected active band {expected_min:g}-{expected_max:g}.",
-                    path="data.week_summary.weekly_load_corridor_kj",
+        if None not in {observed_min, observed_max, expected_min, expected_max}:
+            assert observed_min is not None and observed_max is not None
+            assert expected_min is not None and expected_max is not None
+            if observed_min != expected_min or observed_max != expected_max:
+                issues.append(
+                    PlanningContractIssue(
+                        "week_corridor_active_band_mismatch",
+                        f"Week corridor {observed_min:g}-{observed_max:g}, expected active band {expected_min:g}-{expected_max:g}.",
+                        path="data.week_summary.weekly_load_corridor_kj",
+                    )
                 )
-            )
         planned = _as_float(summary.get("planned_weekly_load_kj"))
         if None not in {planned, expected_min, expected_max} and not (expected_min <= planned <= expected_max):
+            assert planned is not None
+            assert expected_min is not None and expected_max is not None
             issues.append(
                 PlanningContractIssue(
                     "week_planned_load_outside_active_band",
@@ -1354,7 +1373,7 @@ def validate_writer_output_against_blueprints(
             for bp in blueprints
             if bp.get("week") and bp.get("week_role")
         }
-        context = {"week_role_by_iso_week": expected_roles, "phase_s5_bands": []}
+        context: JsonMap = {"week_role_by_iso_week": expected_roles, "phase_s5_bands": []}
         for bp in blueprints:
             week = bp.get("week")
             band_min = bp.get("s5_band_min")

@@ -135,12 +135,22 @@ def normalize_trace_references(value: object) -> list[JsonMap]:
 
     if not isinstance(value, list):
         return []
-    normalized: list[JsonMap] = []
+    normalized_by_key: dict[tuple[str, str], JsonMap] = {}
+    insertion_order: list[tuple[str, str]] = []
     for index, item in enumerate(value, start=1):
         reference = normalize_trace_reference(item, index=index)
         if reference is not None:
-            normalized.append(reference)
-    return normalized
+            dedupe_key = (str(reference.get("artifact") or ""), str(reference.get("version_key") or ""))
+            if dedupe_key not in normalized_by_key:
+                insertion_order.append(dedupe_key)
+                normalized_by_key[dedupe_key] = reference
+                continue
+            current = normalized_by_key[dedupe_key]
+            current_run_id = _as_str(current.get("run_id")) or ""
+            next_run_id = _as_str(reference.get("run_id")) or ""
+            if current_run_id.startswith("legacy_trace_") and not next_run_id.startswith("legacy_trace_"):
+                normalized_by_key[dedupe_key] = reference
+    return [normalized_by_key[key] for key in insertion_order]
 
 
 def canonicalize_artifact_envelope_meta(
@@ -149,6 +159,7 @@ def canonicalize_artifact_envelope_meta(
     artifact_type: ArtifactType | str | None = None,
     schema: JsonMap | None = None,
     run_id: str | None = None,
+    version_key: str | None = None,
     created_at: str | None = None,
 ) -> object:
     """Build code-owned persisted metadata for a `{meta, data}` artifact envelope."""
@@ -187,6 +198,9 @@ def canonicalize_artifact_envelope_meta(
         meta["version"] = schema_semver(meta.get("version"))
     else:
         meta["version"] = "1.0"
+    resolved_version_key = _as_str(version_key) or _as_str(meta.get("version_key"))
+    if resolved_version_key:
+        meta["version_key"] = resolved_version_key
 
     if run_id:
         meta["run_id"] = run_id

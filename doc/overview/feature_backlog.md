@@ -113,6 +113,7 @@ When resuming work, follow this order so context stays consistent:
 - [x] FEAT_plan_hub_runtime_progress_visibility — surface active flow/crew/task progress and `x/y` task counts in Plan Hub from existing runtime telemetry, without adding new event types.
 - [x] FEAT_run_event_telemetry_enrichment — enrich Run Events with parent-step metadata, merge direct child run telemetry, and keep Plan Hub / System Status / History on one shared event-loading path.
 - [x] FEAT_season_preview_trace_consistency — derive Season average weekly kJ envelope from authoritative role-week bands, keep Preview informational while aligned to Week through the shared skeleton, and canonicalize immediate Phase trace lineage.
+- [x] FEAT_week_constraint_metadata_housekeeping_closure — persist effective week-local legality separately from scenario posture, make week objectives truthful to actual planned load, persist canonical artifact `version_key` and direct trace lineage, and scope housekeeping to real athlete workspaces only.
 - [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
 - [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
 - [ ] FEAT_crewai_planning_profile_tuning — refine where CrewAI planning is enabled, keeping deterministic Load/S5/Cadence outside planning LLM authority.

@@ -14,6 +14,7 @@ def _minimal_season_plan_document() -> dict[str, object]:
             "schema_id": "season_plan.schema.json",
             "schema_version": "1.0",
             "version": "2026-21",
+            "version_key": "2026-21__20260518_194700",
             "authority": "Binding",
             "owner_agent": "Invented writer",
             "run_id": "llm-run",
@@ -140,6 +141,23 @@ def _minimal_season_plan_document() -> dict[str, object]:
                             "notes": "Reference mass 92 kg.",
                         }
                     },
+                    "role_week_load_bands": [
+                        {
+                            "week": "2026-21",
+                            "role": "LOAD_1",
+                            "band": {"min": 7426, "max": 8600},
+                        },
+                        {
+                            "week": "2026-22",
+                            "role": "LOAD_2",
+                            "band": {"min": 8000, "max": 9901},
+                        },
+                        {
+                            "week": "2026-23",
+                            "role": "MINI_RESET",
+                            "band": {"min": 7426, "max": 8200},
+                        },
+                    ],
                     "allowed_forbidden_semantics": {
                         "allowed_intensity_domains": ["ENDURANCE"],
                         "allowed_load_modalities": ["NONE"],
@@ -251,12 +269,14 @@ def test_meta_builder_canonicalizes_schema_fields_and_trace_version_keys() -> No
         artifact_type=ArtifactType.SEASON_PLAN,
         schema=schema,
         run_id="ui_season_plan_2026W21_20260518_190440",
+        version_key="2026-21__20260518_190440",
     )
 
     meta = normalized["meta"]
     assert meta["schema_id"] == "SeasonPlanInterface"
     assert meta["owner_agent"] == "Season-Artifact-Writer"
     assert meta["version"] == "1.0"
+    assert meta["version_key"] == "2026-21__20260518_190440"
     assert meta["run_id"] == "ui_season_plan_2026W21_20260518_190440"
     assert meta["trace_upstream"][0]["schema_version"] == "1.0"
     assert meta["trace_upstream"][0]["version"] == "1.0"
@@ -277,6 +297,7 @@ def test_meta_builder_wraps_data_only_payload_for_envelope_schema() -> None:
         artifact_type=ArtifactType.SEASON_PLAN,
         schema=schema,
         run_id="run-1",
+        version_key="2026-21__run_1",
     )
 
     assert set(normalized) == {"meta", "data"}
@@ -296,6 +317,7 @@ def test_minimal_season_plan_document_validates_against_current_schema() -> None
         artifact_type=ArtifactType.SEASON_PLAN,
         schema=schema,
         run_id="ui_season_plan_2026W21_20260518_190440",
+        version_key="2026-21__20260518_190440",
     )
     validate_or_raise(registry.validator_for("season_plan.schema.json"), normalized)
 

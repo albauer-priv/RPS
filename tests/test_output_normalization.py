@@ -582,6 +582,7 @@ def test_normalize_season_scenarios_repairs_agent_payload_for_schema() -> None:
             "schema_id": "Wrong",
             "schema_version": "2026-20",
             "version": "2026-20_A01",
+            "version_key": "2026-20__20260517_160725",
             "authority": "Binding",
             "owner_agent": "Season-Planner",
             "run_id": "season_scenarios_2026-20_A01",

@@ -968,6 +968,7 @@ def test_phase_guardrails_schema_accepts_full_inherited_contract() -> None:
             "schema_id": "PhaseGuardrailsInterface",
             "schema_version": "1.0",
             "version": "1.0",
+            "version_key": "2026-26--2026-29__20260528_130000",
             "authority": "Binding",
             "owner_agent": "Phase-Artifact-Writer",
             "run_id": "phase_guardrails_run",
@@ -1075,6 +1076,7 @@ def test_phase_structure_schema_accepts_full_inherited_contract() -> None:
             "schema_id": "PhaseStructureInterface",
             "schema_version": "1.0",
             "version": "1.0",
+            "version_key": "2026-26--2026-29__20260528_130000",
             "authority": "Binding",
             "owner_agent": "Phase-Artifact-Writer",
             "run_id": "phase_structure_run",
@@ -1135,16 +1137,16 @@ def test_phase_structure_schema_accepts_full_inherited_contract() -> None:
                 "allowed_intensity_domains": ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
                 "allowed_load_modalities": ["NONE", "K3"],
             },
-                "week_skeleton_logic": {
-                    "week_roles": {
-                        "week_roles": [
-                            {"week": "2026-26", "role": "LOAD_1"},
-                            {"week": "2026-27", "role": "LOAD_2"},
-                            {"week": "2026-28", "role": "MINI_RESET"},
-                            {"week": "2026-29", "role": "RELOAD"},
-                        ],
-                        "allowed_role_set": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
-                    },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": "2026-26", "role": "LOAD_1"},
+                        {"week": "2026-27", "role": "LOAD_2"},
+                        {"week": "2026-28", "role": "MINI_RESET"},
+                        {"week": "2026-29", "role": "RELOAD"},
+                    ],
+                    "allowed_role_set": ["LOAD_1", "LOAD_2", "MINI_RESET", "RELOAD"],
+                },
                 "mandatory_elements": {
                     "recovery_opportunities_min": 2,
                     "endurance_anchor_required": True,
