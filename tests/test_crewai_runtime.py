@@ -3288,7 +3288,19 @@ def test_phase_preview_writer_guardrails_pre_normalize_shared_skeleton_semantics
                         {"day_of_week": "Sat", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "load_modality": "NONE"},
                         {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
                     ],
-                }
+                },
+                {
+                    "week": "",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "TEMPO", "load_modality": "K3"},
+                        {"day_of_week": "Tue", "day_role": "RECOVERY", "intensity_domain": "ENDURANCE", "load_modality": "K3"},
+                        {"day_of_week": "Wed", "day_role": "QUALITY", "intensity_domain": "THRESHOLD", "load_modality": "NONE"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "SWEET_SPOT", "load_modality": "K3"},
+                        {"day_of_week": "Sat", "day_role": "QUALITY", "intensity_domain": "SWEET_SPOT", "load_modality": "NONE"},
+                        {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                    ],
+                },
             ],
         },
     }
@@ -3344,6 +3356,7 @@ def test_phase_preview_writer_guardrails_pre_normalize_shared_skeleton_semantics
     assert days[2]["load_modality"] == "NONE"
     assert days[5]["day_role"] == "ENDURANCE"
     assert days[5]["intensity_domain"] == "ENDURANCE"
+    assert repaired["data"]["weekly_agenda_preview"][1]["week"] == "2026-25"
 
 
 def test_season_writer_bundle_match_repairs_deterministic_writer_drift() -> None:

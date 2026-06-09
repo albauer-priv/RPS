@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from rps.agents.output_normalization import (
     extract_planning_events_document,
     injection_mode_for_tasks,
@@ -15,6 +17,7 @@ from rps.agents.output_normalization import (
     normalize_workout_percent_ranges,
 )
 from rps.agents.tasks import AgentTask
+from rps.crewai_runtime.models import PhasePreviewPayloadModel
 from rps.planning.phase_authority import persisted_phase_weekly_kj_bands
 from rps.workspace.schema_registry import SchemaRegistry, validate_or_raise
 
@@ -447,6 +450,178 @@ def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap(
     assert "inherited_scenario_contract" not in normalized["data"]
 
 
+def test_normalize_phase_preview_backfills_blank_week_keys_from_shared_skeleton() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_PREVIEW", "authority": "Informational", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "traceability": {"derived_from": ["phase_structure_2026-24--2026-25__20260609_070455.json"]},
+            "phase_intent_summary": {"phase_intent": "shortened_re_entry"},
+            "weekly_agenda_preview": [
+                {
+                    "week": "",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"},
+                        {"day_of_week": "Tue", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE"},
+                        {"day_of_week": "Wed", "day_role": "RECOVERY", "intensity_domain": "RECOVERY", "load_modality": "NONE"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"},
+                        {"day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                    ],
+                },
+                {
+                    "week": "   ",
+                    "days": [
+                        {"day_of_week": "Mon", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"},
+                        {"day_of_week": "Tue", "day_role": "QUALITY", "intensity_domain": "TEMPO", "load_modality": "NONE"},
+                        {"day_of_week": "Wed", "day_role": "RECOVERY", "intensity_domain": "RECOVERY", "load_modality": "NONE"},
+                        {"day_of_week": "Thu", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Fri", "day_role": "REST", "intensity_domain": "NONE", "load_modality": "NONE"},
+                        {"day_of_week": "Sat", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                        {"day_of_week": "Sun", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "load_modality": "NONE"},
+                    ],
+                },
+            ],
+        },
+    }
+    phase_structure = {
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "run_id": "phase_structure_run",
+        },
+        "data": {
+            "structural_phase_elements": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"max_quality_days_per_week": 1},
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": "2026-24", "role": "SHORTENED_RE_ENTRY"},
+                        {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION"},
+                    ]
+                }
+            },
+            "upstream_intent": {
+                "phase_intent": "shortened_re_entry",
+                "primary_objective": "Rebuild load tolerance.",
+            },
+        },
+    }
+
+    normalized = normalize_phase_preview_document(
+        document,
+        phase_structure_document=phase_structure,
+        phase_structure_version_key="2026-24--2026-25__20260609_070455",
+    )
+
+    assert [week["week"] for week in normalized["data"]["weekly_agenda_preview"]] == ["2026-24", "2026-25"]
+
+
+def test_normalize_phase_preview_rejects_week_count_mismatch_vs_shared_skeleton() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_PREVIEW", "authority": "Informational", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "traceability": {"derived_from": ["phase_structure_2026-24--2026-25__20260609_070455.json"]},
+            "weekly_agenda_preview": [
+                {"week": "", "days": []},
+            ],
+        },
+    }
+    phase_structure = {
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "run_id": "phase_structure_run",
+        },
+        "data": {
+            "structural_phase_elements": {
+                "allowed_day_roles": ["REST", "RECOVERY", "ENDURANCE", "QUALITY"],
+                "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {"max_quality_days_per_week": 1},
+                "recovery_protection": {"fixed_non_training_days": ["Mon", "Fri"]},
+            },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": "2026-24", "role": "SHORTENED_RE_ENTRY"},
+                        {"week": "2026-25", "role": "SHORTENED_CONSOLIDATION"},
+                    ]
+                }
+            },
+            "upstream_intent": {"phase_intent": "shortened_re_entry"},
+        },
+    }
+
+    with pytest.raises(ValueError, match="weekly_agenda_preview must match exact shared skeleton week coverage"):
+        normalize_phase_preview_document(
+            document,
+            phase_structure_document=phase_structure,
+            phase_structure_version_key="2026-24--2026-25__20260609_070455",
+        )
+
+
+def test_normalize_phase_structure_replaces_synthetic_guardrails_trace_run_id() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "trace_upstream": [
+                {
+                    "artifact": "PHASE_GUARDRAILS",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-24--2026-25__20260609_160308",
+                    "run_id": "run_20260609_155823",
+                }
+            ],
+        },
+        "data": {},
+    }
+    phase_guardrails = {
+        "meta": {
+            "artifact_type": "PHASE_GUARDRAILS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-24--2026-25__20260609_160308",
+            "run_id": "plan_hub_phase_2026W24_20260609_155818_phase_bundle",
+        },
+        "data": {
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7893, "max": 10148, "notes": "x"}}
+                ]
+            }
+        },
+    }
+
+    normalized = normalize_phase_structure_document(
+        document,
+        phase_guardrails_document=phase_guardrails,
+        phase_guardrails_version_key="2026-24--2026-25__20260609_160308",
+    )
+
+    assert normalized["meta"]["trace_upstream"] == [
+        {
+            "artifact": "PHASE_GUARDRAILS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-24--2026-25__20260609_160308",
+            "run_id": "plan_hub_phase_2026W24_20260609_155818_phase_bundle",
+        }
+    ]
+
+
 def test_normalize_phase_preview_replaces_duplicate_trace_entries_with_canonical_structure_ref() -> None:
     document = {
         "meta": {
@@ -508,6 +683,32 @@ def test_normalize_phase_preview_replaces_duplicate_trace_entries_with_canonical
             "run_id": "plan_hub_phase_2026W24_20260609_070024_phase_bundle",
         }
     ]
+
+
+def test_phase_preview_payload_model_accepts_structured_weekly_agenda_preview() -> None:
+    model = PhasePreviewPayloadModel(
+        phase_intent_summary=["summary"],
+        feel_overview=["feel"],
+        weekly_agenda_preview=[
+            {
+                "week": "2026-24",
+                "days": [
+                    {
+                        "day_of_week": "Mon",
+                        "day_role": "REST",
+                        "intensity_domain": "NONE",
+                        "load_modality": "NONE",
+                        "notes": "Fixed rest",
+                    }
+                ],
+            }
+        ],
+        week_to_week_narrative=["narrative"],
+        deviation_rules=["rule"],
+    )
+
+    assert model.weekly_agenda_preview[0].week == "2026-24"
+    assert model.weekly_agenda_preview[0].days[0].day_role == "REST"
 
 
 def test_extract_planning_events_document_parses_workspace_payload() -> None:

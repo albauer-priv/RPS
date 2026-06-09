@@ -471,15 +471,15 @@ def normalize_phase_structure_document(
             upstream_intent["primary_objective"] = primary_objective
 
     trace_upstream = meta.get("trace_upstream")
-    if not isinstance(trace_upstream, list):
-        trace_upstream = []
     phase_guardrails_ref = _trace_entry_from_document(
         phase_guardrails_document,
         expected_artifact="PHASE_GUARDRAILS",
         version_key=phase_guardrails_version_key,
     )
-    if phase_guardrails_ref is not None:
-        trace_upstream.append(phase_guardrails_ref)
+    trace_upstream = _replace_canonical_direct_trace_entry(
+        trace_upstream,
+        replacement=phase_guardrails_ref,
+    )
     meta["trace_upstream"] = _normalize_trace_entries(
         trace_upstream,
         allowed=_PHASE_TRACE_UPSTREAM_ARTIFACTS,
@@ -774,10 +774,22 @@ def normalize_phase_preview_document(
         for entry in shared_skeleton
         if str(_as_map(entry).get("week") or "").strip()
     }
+    expected_week_keys = [
+        str(_as_map(entry).get("week") or "").strip()
+        for entry in shared_skeleton
+        if str(_as_map(entry).get("week") or "").strip()
+    ]
+    if expected_week_keys and len(weekly_agenda_preview) != len(expected_week_keys):
+        raise ValueError(
+            "PHASE_PREVIEW weekly_agenda_preview must match exact shared skeleton week coverage."
+        )
 
-    for week_entry in weekly_agenda_preview:
+    for index, week_entry in enumerate(weekly_agenda_preview):
         if not isinstance(week_entry, dict):
             continue
+        expected_week_key = expected_week_keys[index] if index < len(expected_week_keys) else ""
+        if expected_week_key:
+            week_entry["week"] = expected_week_key
         week_key = str(week_entry.get("week") or "").strip()
         days = week_entry.get("days")
         if not isinstance(days, list):
@@ -1002,6 +1014,35 @@ def _normalize_trace_entries(value: object, *, allowed: set[str]) -> list[dict[s
         if _score(entry) > _score(existing):
             normalized_by_key[token] = entry
     return [normalized_by_key[token] for token in ordered_keys]
+
+
+def _replace_canonical_direct_trace_entry(
+    entries: object,
+    *,
+    replacement: dict[str, str] | None,
+) -> list[dict[str, Any] | str]:
+    """Replace direct-upstream lineage for one artifact/version pair with a canonical entry."""
+
+    normalized_entries = list(entries) if isinstance(entries, list) else []
+    if replacement is None:
+        return [item for item in normalized_entries if isinstance(item, (dict, str))]
+
+    target_artifact = replacement["artifact"].strip().upper()
+    target_version_key = _canonical_trace_version_key(target_artifact, replacement["version_key"])
+    filtered: list[dict[str, Any] | str] = []
+    for item in normalized_entries:
+        if isinstance(item, str):
+            filtered.append(item)
+            continue
+        if not isinstance(item, dict):
+            continue
+        artifact = str(item.get("artifact") or "").strip().upper()
+        version_key = _canonical_trace_version_key(artifact, item.get("version_key"))
+        if artifact == target_artifact and version_key == target_version_key:
+            continue
+        filtered.append(item)
+    filtered.append(replacement)
+    return filtered
 
 
 def normalize_phase_guardrails_document(

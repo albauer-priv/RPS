@@ -488,13 +488,30 @@ class PhaseStructurePayloadModel(StrictOutputModel):
     adaptation_rules: list[str] = Field(default_factory=list)
 
 
+class PhasePreviewAgendaDayModel(StrictOutputModel):
+    """One day row inside the structured phase preview agenda."""
+
+    day_of_week: str
+    day_role: str
+    intensity_domain: str
+    load_modality: str
+    notes: str | None = None
+
+
+class PhasePreviewWeekAgendaModel(StrictOutputModel):
+    """One structured phase preview week with exact day rows."""
+
+    week: str
+    days: list[PhasePreviewAgendaDayModel] = Field(default_factory=list)
+
+
 class PhasePreviewPayloadModel(StrictOutputModel):
     """Internal phase draft for preview-only narrative output."""
 
     phase_intent_summary: list[str] = Field(default_factory=list)
     phase_intent: str | None = None
     feel_overview: list[str] = Field(default_factory=list)
-    weekly_agenda_preview: list[str] = Field(default_factory=list)
+    weekly_agenda_preview: list[PhasePreviewWeekAgendaModel] = Field(default_factory=list)
     week_to_week_narrative: list[str] = Field(default_factory=list)
     deviation_rules: list[str] = Field(default_factory=list)
 
