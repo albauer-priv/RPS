@@ -20,6 +20,7 @@ Keep season authority intact and leave final envelope serialization to the write
 - When week roles, exact phase range, exact role-week load bands, or phase-local objective are required, consume injected contract context or dedicated tools.
 - Treat S5/load context as feasibility/reference input only unless the injected contract explicitly marks it as the active fallback.
 - Do not rediscover authority from prose or coworker delegation.
+- Historical migration audits, superseded prose docs, and legacy prompt sources are not operative runtime authority for this step.
 
 ## Scope and non-scope
 

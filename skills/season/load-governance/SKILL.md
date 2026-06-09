@@ -11,6 +11,7 @@ Definitions:
 - `planned_kj`: mechanical work estimate at workout/day level; never use it directly for season corridor compliance
 - `planned_weekly_load_kj`: governance week-load metric used for season corridor and band compliance
 - `availability_load_capacity_kj`: deterministic season-level governance-load capacity context for a phase or week-role slice
+- `LR_share`: long-ride share of total planned weekly time/work from injected deterministic context when such a share is available; use it only as a conservative dominance signal, never as a value to invent from prose
 - `phase_role`: deterministic season role for a slot, such as Base, Build, Peak, or Transition-like re-entry behavior
 - `cadence_week_roles`: inherited cadence-owned role sequence within a slot, such as `LOAD_1`, `LOAD_2`, `MINI_RESET`, `RELOAD`
 - `BL_kJ`: baseline weekly governance-load anchor used for overload, deload, and re-entry decisions in this layer
@@ -24,6 +25,7 @@ Definitions:
 
 Authority / injected sources:
 - `availability_load_capacity_kj`, `phase_role`, `cadence_week_roles`, baseline hints, and progression trace come from `Deterministic Season Phase Load Context`
+- `LR_share`, when available, must come from deterministic historical/context blocks already injected for this run; if it is absent, omit the long-ride dominance inference rather than inventing it
 - load-estimation math and `IF_ref_load` semantics come from `skills/shared/load-estimation-core/SKILL.md`
 - when `BL_kJ` is not directly injected, derive it only from the deterministic baseline/progression context already present in the season load context; do not invent it from prose
 - this layer must not compute workout-level segment math

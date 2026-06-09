@@ -7,6 +7,29 @@ metadata:
 ---
 Use durability as the primary planning objective.
 
+Definitions:
+- `durability`: preservation of usable submaximal performance over long durations under accumulated work, not just fresh peak ability
+- `repeatability`: ability to reproduce the next load step or the next week without hidden recovery debt
+- `recovery protection`: preserved non-training days, recovery spacing, and removal of lower-priority stress before removing recovery structure
+- `authority level`: the active planning layer in control of the current decision, such as Season, Phase, Week, or Coach advisory context
+
+Authority / injected sources:
+- deterministic load bands, week roles, legality, event hierarchy, and availability limits come from the active injected runtime context; this skill does not replace them
+- curated durability evidence sources under `references/` are justification material only, never authority over active plan guardrails or deterministic planning constraints
+- historical migration audits, superseded prose, and decommissioned bibliography files are not operative runtime sources for this skill
+
+Scope and non-scope:
+- In scope:
+  - durability-first decision framing
+  - repeatability-first overload logic
+  - recovery-protection prioritization
+  - explanation of why a more repeatable option is preferred
+- Out of scope:
+  - deterministic load math
+  - schema or metadata decisions
+  - inventing legality or overriding active plan constraints
+  - treating evidence citations as permission to break deterministic governance
+
 Durability model:
 - durability means maintaining submaximal performance over long durations with limited physiological, biomechanical, and mental decay
 - fresh peak metrics such as FTP or VO2max are not sufficient durability evidence
@@ -49,6 +72,11 @@ Required checks before returning:
 - proposed change does not create hidden overload via intensity density
 - the plan can survive a small execution miss without collapsing
 - athlete guidance remains consistency-first and fatigue-aware
+
+Output expectation:
+- Return direct operational guidance that helps the active layer choose the more repeatable option.
+- When multiple options remain valid, explain the durability-first preference in one or two concrete decision sentences.
+- If deterministic constraints or legality already decide the issue, support that outcome instead of reopening it.
 
 Evidence-use boundary:
 - Reference priority for explanation and lookup:

@@ -215,21 +215,32 @@ That means the correct current position is:
 - the runtime is much less dependent on legacy prose than before
 - but the migration is still **not uniformly complete** under the stricter 2026-05-23 standard
 
-### Next required cleanup pass
+### 2026-06-09 residual active-layer cleanup
 
-To close the remaining gaps, the next pass should:
+The remaining high-value residual gaps from the stricter re-audit were closed in a focused Wave-4 cleanup pass:
 
-1. Fix explicit-variable leftovers
-   - define or map `LR_share`
-   - define or map `CH_kJ`
-   - repeat the audit for similar residual shorthand in active files
+1. Explicit-variable leftovers were fixed in active runtime skills
+   - `LR_share` is now locally defined and explicitly mapped in `skills/season/load-governance/SKILL.md`
+   - `CH_kJ` is now locally defined and explicitly mapped in `skills/phase/cadence-recovery/SKILL.md`
 
-2. Upgrade thin active wrappers
-   - `skills/season/load-estimation-season/SKILL.md`
-   - `skills/phase/load-estimation-phase/SKILL.md`
-   - `skills/shared/durability-methodology/SKILL.md`
+2. The shared durability runtime skill was upgraded to the current self-contained active-skill standard
+   - `skills/shared/durability-methodology/SKILL.md` now includes:
+     - definitions
+     - authority / injected-source boundary
+     - scope / non-scope
+     - explicit output expectation
+     - an explicit ban on treating historical migration audits or superseded prose docs as operative runtime authority
 
-3. Re-run the same source-to-active audit after that pass and only then treat the migration as complete under the new standard
+3. Active planner/finalizer/review surfaces now frontload the same boundary explicitly
+   - selected active task descriptions and manager prompts now state that:
+     - injected deterministic context
+     - the active task contract
+     - local active skills
+     are the only operative runtime sources for these steps
+
+Updated conclusion:
+- the currently active Season / Phase / Week prompt-and-skill runtime layer is now materially complete under the stricter self-contained standard used in `AGENTS.md`
+- future gaps may still emerge when new roles are added, but the residual debt identified in this audit is no longer open for the active layers named here
 
 ## 2026-05-26 Prompt Source Migration Audit
 

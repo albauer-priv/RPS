@@ -15,6 +15,7 @@ Definitions:
 - `MR_kJ`: mini-reset governance-load target
 - `W1_kJ`, `W2_kJ`, `W3_kJ`, `W4_kJ`: cadence-step governance-load targets inside the exact phase range
 - `BL_kJ_next`: conservative next-baseline anchor after a finished cadence cycle
+- `CH_kJ`: conservative rolling baseline anchor from deterministic baseline/history context when that rolling anchor is explicitly injected; do not invent it from narrative prose
 - `week_role`: inherited exact-week cadence role from deterministic phase execution context
 - `phase_role`: deterministic phase role for the active exact range
 - `planned_weekly_load_kj`: governance load metric used for phase/weekly bands
@@ -22,6 +23,7 @@ Definitions:
 Authority / injected sources:
 - `week_role`, exact phase range, and cadence family come from `Deterministic Phase Execution Context`
 - baseline context should come from deterministic baseline or recent-history inputs already prepared for this layer; if baseline is absent, this layer must mark it low-confidence rather than inventing it from prose
+- `CH_kJ`, if used, must come from deterministic baseline/history context already prepared for this layer; if it is absent, use the explicit `mean(W2_kJ, W4_kJ)` path instead of inventing a rolling anchor
 - this layer calculates overload, deload, mini-reset, reload, and re-entry semantics for the exact phase range
 - this layer must not compute workout-level segment math
 
