@@ -59,11 +59,15 @@ Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
-4. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
-5. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
-6. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
-7. Write `best_suited_if` as a short concrete selection sentence, not generic praise. Use explicit positive markers such as `stable recovery`, `uncertain recovery`, `continuity priority`, `recoverability`, `load tolerance`, `fatigue exposure tolerance`, `travel`, `logistics`, `lower recovery margin`, or `recovery margin`.
-8. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
+4. Recommendation-default cadence hard rule: deterministic recommendation cadence is advisory for one scenario, not the default cadence for all scenarios.
+5. A/B/C must not all mirror the recommendation-default cadence unless the stored scenario fields explicitly justify that cadence is intentionally shared.
+6. When cadence is intentionally shared, the stored scenario fields must explicitly say that differentiation instead comes from `load philosophy`, `specificity-under-fatigue`, `recovery margin` and/or `recovery tolerance`, `intensity permissions`, or `risk posture`.
+7. If that rationale cannot be stated explicitly in `decision_notes`, `risk_flags`, `event_alignment_notes`, and/or `kpi_guardrail_notes`, at least one scenario must use a different `deload_cadence`.
+8. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
+9. Keep every scenario internally consistent with durability-first planning, progressive-overload policy, and agenda intensity vocabulary.
+10. Express scenario guidance as advisory planning intent only; leave scenario selection and binding season planning to their dedicated tasks.
+11. Write `best_suited_if` as a short concrete selection sentence, not generic praise. Use explicit positive markers such as `stable recovery`, `uncertain recovery`, `continuity priority`, `recoverability`, `load tolerance`, `fatigue exposure tolerance`, `travel`, `logistics`, `lower recovery margin`, or `recovery margin`.
+12. Write `risk_flags` as short concrete caution sentences, not generic labels. Use explicit caution markers such as `under-deliver`, `continuity break`, `recovery slip`, `fatigue risk`, `travel disruption`, `logistics disruption`, `insufficient tolerance`, `too conservative`, or `too aggressive`.
 
 kJ-first scenario methodology:
 - In ultra/brevet planning, the planned kJ-envelope is the leading steering quantity for scenario identity.

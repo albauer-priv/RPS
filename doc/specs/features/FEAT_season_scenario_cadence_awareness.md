@@ -1,15 +1,15 @@
 ---
-Version: 1.0
-Status: Approved
-Last-Updated: 2026-05-27
+Version: 1.1
+Status: Updated
+Last-Updated: 2026-06-09
 Owner: Planning Runtime
 ---
 # FEAT: Cadence-Aware and Future-Scoped Season Scenario Generation
 
 * **ID:** FEAT_season_scenario_cadence_awareness
-* **Status:** Approved
+* **Status:** Updated
 * **Owner/Area:** Planning Runtime
-* **Last-Updated:** 2026-05-27
+* **Last-Updated:** 2026-06-09
 * **Related:** [FEAT_season_scenario_recommendation](/doc/specs/features/FEAT_season_scenario_recommendation.md), [FEAT_season_scenario_guardrail_alignment](/doc/specs/features/FEAT_season_scenario_guardrail_alignment.md), [FEAT_season_scenarios_deterministic_horizon](/doc/specs/features/FEAT_season_scenarios_deterministic_horizon.md)
 
 ---

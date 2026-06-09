@@ -37,12 +37,16 @@ Out of scope:
 2. Only future / in-horizon events are provided to this task. Do not infer active scenario logic from past, completed, or pre-horizon events.
 3. Distinguish scenarios primarily by load philosophy, exposure under fatigue, specificity, cadence rhythm, and recovery/risk tradeoffs.
 4. Keep intensity domains as training semantics, not the whole scenario identity. `allowed_domains` means eligibility for later assignment only; it does not authorize every domain in every phase.
-5. Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as `sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
-6. If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, omit `VO2MAX` from Scenario C `allowed_domains`.
-7. Preferred copyable wording for Scenario C when `VO2MAX` is allowed: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
-8. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
-9. Emit a coherent advisory `deload_cadence` per scenario and explain its role in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
-10. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
+5. Recommendation-default cadence hard rule: deterministic recommendation cadence is advisory for one scenario, not the default cadence for all scenarios.
+6. A/B/C must not all mirror the recommendation-default cadence unless the stored scenario fields explicitly justify that cadence is intentionally shared.
+7. When cadence is intentionally shared, the stored scenario fields must explicitly say that differentiation instead comes from `load philosophy`, `specificity-under-fatigue`, `recovery margin` and/or `recovery tolerance`, `intensity permissions`, or `risk posture`.
+8. If that rationale cannot be stated explicitly in `decision_notes`, `risk_flags`, `event_alignment_notes`, and/or `kpi_guardrail_notes`, at least one scenario must use a different `deload_cadence`.
+9. Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as `sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
+10. If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, omit `VO2MAX` from Scenario C `allowed_domains`.
+11. Preferred copyable wording for Scenario C when `VO2MAX` is allowed: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
+12. Treat Scenario C ambition primarily as specificity-under-fatigue, density, and risk exposure rather than automatic high-intensity escalation.
+13. Emit a coherent advisory `deload_cadence` per scenario and explain its role in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
+14. Emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` directly in `scenario_guidance`; do not expect later Season planning to infer them from prose.
 
 ## Field completion contract
 

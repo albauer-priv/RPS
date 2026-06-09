@@ -4084,6 +4084,57 @@ def test_season_scenarios_profile_quality_accepts_shared_cadence_with_explicit_j
     assert payload["data"]["scenarios"][0]["scenario_guidance"]["deload_cadence"] == "2:1:1"
 
 
+def test_season_scenarios_profile_quality_accepts_recommendation_mirrored_cadence_with_explicit_justification() -> None:
+    with guardrail_runtime_context(season_scenario_recommendation_context={"recommended_cadence": "2:1:1"}):
+        ok, payload = season_scenarios_profile_quality(
+            _season_scenarios_payload(
+                _season_scenario_item(
+                    scenario_id="A",
+                    load_philosophy="Lower feasible kJ-envelope with high recovery margin.",
+                    risk_profile="Lowest risk profile.",
+                    key_differences="Completion-first with sparse tempo.",
+                    cadence="2:1:1",
+                    allowed_domains=["ENDURANCE"],
+                    decision_notes=[
+                        "Use 2:1:1 cadence and keep cadence intentionally shared because differentiation comes from recovery margin and low-risk load philosophy."
+                    ],
+                    best_suited_if="Choose when uncertain recovery makes continuity priority essential.",
+                    risk_flags=["May under-deliver if high load tolerance is available."],
+                ),
+                _season_scenario_item(
+                    scenario_id="B",
+                    load_philosophy="Realistic target kJ-envelope with long-ride progression.",
+                    risk_profile="Balanced recovery risk.",
+                    key_differences="Durability-forward target plan.",
+                    cadence="2:1:1",
+                    allowed_domains=["ENDURANCE", "TEMPO"],
+                    decision_notes=[
+                        "Use 2:1:1 cadence and keep cadence intentionally shared because differentiation comes from systematic progression, specificity-under-fatigue, and balanced risk posture."
+                    ],
+                    best_suited_if="Choose when stable recovery supports systematic progression.",
+                    risk_flags=["Less forgiving than A if continuity break appears."],
+                ),
+                _season_scenario_item(
+                    scenario_id="C",
+                    load_philosophy="Upper plausible kJ-envelope with more event simulation.",
+                    risk_profile="Higher specificity and fatigue exposure.",
+                    key_differences="More back-to-back and hard-late specificity.",
+                    cadence="2:1:1",
+                    allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                    decision_notes=[
+                        "Use 2:1:1 cadence and keep cadence intentionally shared because differentiation comes from event simulation, fatigue exposure tolerance, and risk posture."
+                    ],
+                    best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
+                    risk_flags=["Too aggressive if travel disruption appears."],
+                    constraint_summary=["Fatigue exposure and event simulation."],
+                ),
+            )
+        )
+
+    assert ok is True
+    assert payload["data"]["scenarios"][0]["scenario_guidance"]["deload_cadence"] == "2:1:1"
+
+
 def test_season_scenarios_profile_quality_rejects_recommendation_mirrored_cadence_without_rationale() -> None:
     with guardrail_runtime_context(season_scenario_recommendation_context={"recommended_cadence": "2:1:1"}):
         failed, message = season_scenarios_profile_quality(

@@ -112,7 +112,18 @@ tasks:
       - workspace_get_input
       - workspace_get_latest
     description: >-
-      Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when
+      Recommendation-default cadence hard rule: deterministic recommendation
+      cadence is advisory for one scenario, not the default cadence for all
+      scenarios. A/B/C must not all mirror the recommendation-default cadence
+      unless the stored scenario fields explicitly justify that cadence is
+      intentionally shared. When cadence is intentionally shared, the stored
+      scenario fields must explicitly say that differentiation instead comes
+      from `load philosophy`, `specificity-under-fatigue`, `recovery margin`
+      and/or `recovery tolerance`, `intensity permissions`, or `risk posture`.
+      If that rationale cannot be stated explicitly in `decision_notes`,
+      `risk_flags`, `event_alignment_notes`, and/or `kpi_guardrail_notes`, at
+      least one scenario must use a different `deload_cadence`. Scenario C
+      VO2MAX hard rule: Scenario C may include `VO2MAX` only when
       it is explicitly justified as `sparse ceiling-support`, `fresh-only`,
       `not primary identity`, and ambition sourced from
       `specificity-under-fatigue`, `density`, `event simulation`, or `load

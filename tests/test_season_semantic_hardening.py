@@ -51,6 +51,7 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     prompt = _read("prompts/agents/season_scenario.md")
     task_config = _read("config/crewai/tasks.yaml")
     scenario_skill = _read("skills/season/scenario-generation/SKILL.md")
+    normalized_task_config = " ".join(task_config.split())
 
     assert "Scenario C VO2MAX hard rule:" in prompt
     assert "`decision_notes` and/or `kpi_guardrail_notes`" in prompt
@@ -75,7 +76,7 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "`unknowns` should state the uncertainties" in prompt
     assert "`season_archetype` defaults to `none`." in prompt
     assert "Objective mismatch may be named as unresolved upstream input context only." in prompt
-    assert "Scenario C VO2MAX hard rule:" in task_config
+    assert "Scenario C VO2MAX hard rule:" in normalized_task_config
     assert "Preferred copyable wording:" in task_config
     assert "not primary identity" in task_config
     assert "front-loaded, self-contained source of" in task_config
@@ -83,7 +84,6 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "`scenario_guidance.recovery_margin`" in task_config
     assert "`scenario_guidance.fatigue_exposure`" in task_config
     assert "`scenario_guidance.specificity_density`" in task_config
-    normalized_task_config = " ".join(task_config.split())
     assert "Only future / in-horizon events are provided to this task" in normalized_task_config
     assert "`best_suited_if`" in task_config and "must carry explicit positive selection conditions" in task_config
     assert "Write `best_suited_if` as" in task_config
@@ -164,6 +164,43 @@ def test_season_scenario_vo2_rule_is_canonical_and_frontloaded() -> None:
     assert normalized_prompt.index(canonical_rule) < normalized_prompt.index("For Scenario A, make `best_suited_if`")
     assert normalized_task.index(canonical_rule) < normalized_task.index("For Scenario A, make")
     assert scenario_skill.index(canonical_rule) < scenario_skill.index("- Scenarios B and C may legitimately share identical `allowed_domains`")
+
+
+def test_season_scenario_cadence_rule_is_canonical_and_frontloaded() -> None:
+    prompt = _read("prompts/agents/season_scenario.md")
+    task_config = _read("config/crewai/tasks.yaml")
+    scenario_skill = _read("skills/season/scenario-generation/SKILL.md")
+    canonical_rule = (
+        "Recommendation-default cadence hard rule: deterministic recommendation cadence is advisory for one scenario, "
+        "not the default cadence for all scenarios."
+    )
+    canonical_shared = (
+        "A/B/C must not all mirror the recommendation-default cadence unless the stored scenario fields explicitly justify "
+        "that cadence is intentionally shared."
+    )
+    canonical_diff = (
+        "When cadence is intentionally shared, the stored scenario fields must explicitly say that differentiation instead "
+        "comes from `load philosophy`, `specificity-under-fatigue`, `recovery margin` and/or `recovery tolerance`, "
+        "`intensity permissions`, or `risk posture`."
+    )
+    canonical_omission = (
+        "If that rationale cannot be stated explicitly in `decision_notes`, `risk_flags`, `event_alignment_notes`, and/or "
+        "`kpi_guardrail_notes`, at least one scenario must use a different `deload_cadence`."
+    )
+
+    normalized = [" ".join(content.split()) for content in (prompt, task_config, scenario_skill)]
+    for content in normalized:
+        assert canonical_rule in content
+        assert canonical_shared in content
+        assert canonical_diff in content
+        assert canonical_omission in content
+
+    normalized_prompt = " ".join(prompt.split())
+    normalized_task = " ".join(task_config.split())
+    normalized_skill = " ".join(scenario_skill.split())
+    assert normalized_prompt.index(canonical_rule) < normalized_prompt.index("Scenario C VO2MAX hard rule:")
+    assert normalized_task.index(canonical_rule) < normalized_task.index("Scenario C VO2MAX hard rule:")
+    assert normalized_skill.index(canonical_rule) < normalized_skill.index("Scenario C VO2MAX hard rule:")
 
 
 def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:
