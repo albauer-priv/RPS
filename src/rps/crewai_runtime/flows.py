@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
+from types import new_class
 from typing import Any, cast
 
 from pydantic import BaseModel, Field
@@ -289,6 +290,25 @@ def _decorate_persist(flow_cls: type[Any], flow_name: str, persist_decorator: An
     return decorated if isinstance(decorated, type) else flow_cls
 
 
+def _build_typed_flow_class(
+    *,
+    name: str,
+    Flow: FlowClass,
+    state_model: type[BaseModel],
+    attrs: dict[str, Any],
+) -> FlowClass:
+    """Create a runtime Flow subclass preserving CrewAI state typing.
+
+    CrewAI derives its proxy-state behavior from the specialized `Flow[StateModel]`
+    base. If we subclass the raw `Flow` class dynamically, CrewAI falls back to a
+    plain dict-like state and attribute assignment such as `flow.state.athlete_id = …`
+    breaks at runtime.
+    """
+
+    typed_base = cast(Any, Flow)[state_model]
+    return cast(FlowClass, new_class(name, (typed_base,), {}, lambda ns: ns.update(attrs)))
+
+
 def run_season_flow(
     *,
     runtime_for: Callable[[str], AgentRuntime],
@@ -389,19 +409,17 @@ def run_season_flow(
             )
         return self.state.result
 
-    season_outer_flow_cls = cast(
-        FlowClass,
-        type(
-            "_SeasonOuterFlow",
-            (Flow,),
-            {
-                "bootstrap": start()(bootstrap),
-                "route": router(bootstrap)(route),
-                "run_scenarios": listen("season_scenarios")(run_scenarios),
-                "run_selection": listen("season_scenario_selection")(run_selection),
-                "run_plan": listen("season_plan")(run_plan),
-            },
-        ),
+    season_outer_flow_cls = _build_typed_flow_class(
+        name="_SeasonOuterFlow",
+        Flow=Flow,
+        state_model=SeasonFlowState,
+        attrs={
+            "bootstrap": start()(bootstrap),
+            "route": router(bootstrap)(route),
+            "run_scenarios": listen("season_scenarios")(run_scenarios),
+            "run_selection": listen("season_scenario_selection")(run_selection),
+            "run_plan": listen("season_plan")(run_plan),
+        },
     )
     season_outer_flow_cls = _decorate_persist(season_outer_flow_cls, "season", persist)
     flow = season_outer_flow_cls()
@@ -476,18 +494,16 @@ def run_phase_flow(
             )
         return self.state.result
 
-    phase_outer_flow_cls = cast(
-        FlowClass,
-        type(
-            "_PhaseOuterFlow",
-            (Flow,),
-            {
-                "bootstrap": start()(phase_bootstrap),
-                "run_planning_cycle": listen(phase_bootstrap)(run_planning_cycle),
-                "record_review": listen(run_planning_cycle)(record_review),
-                "record_writer": listen(record_review)(record_writer),
-            },
-        ),
+    phase_outer_flow_cls = _build_typed_flow_class(
+        name="_PhaseOuterFlow",
+        Flow=Flow,
+        state_model=PhaseFlowState,
+        attrs={
+            "bootstrap": start()(phase_bootstrap),
+            "run_planning_cycle": listen(phase_bootstrap)(run_planning_cycle),
+            "record_review": listen(run_planning_cycle)(record_review),
+            "record_writer": listen(record_review)(record_writer),
+        },
     )
     phase_outer_flow_cls = _decorate_persist(phase_outer_flow_cls, "phase", persist)
     flow = phase_outer_flow_cls()
@@ -564,18 +580,16 @@ def run_week_flow(
             )
         return self.state.result
 
-    week_outer_flow_cls = cast(
-        FlowClass,
-        type(
-            "_WeekOuterFlow",
-            (Flow,),
-            {
-                "bootstrap": start()(week_bootstrap),
-                "run_planning_cycle": listen(week_bootstrap)(week_run_planning_cycle),
-                "record_review": listen(week_run_planning_cycle)(week_record_review),
-                "record_writer": listen(week_record_review)(week_record_writer),
-            },
-        ),
+    week_outer_flow_cls = _build_typed_flow_class(
+        name="_WeekOuterFlow",
+        Flow=Flow,
+        state_model=WeekFlowState,
+        attrs={
+            "bootstrap": start()(week_bootstrap),
+            "run_planning_cycle": listen(week_bootstrap)(week_run_planning_cycle),
+            "record_review": listen(week_run_planning_cycle)(week_record_review),
+            "record_writer": listen(week_record_review)(week_record_writer),
+        },
     )
     week_outer_flow_cls = _decorate_persist(week_outer_flow_cls, "week", persist)
     flow = week_outer_flow_cls()
@@ -630,18 +644,16 @@ def run_report_flow(
             )
         return self.state.result
 
-    report_outer_flow_cls = cast(
-        FlowClass,
-        type(
-            "_ReportOuterFlow",
-            (Flow,),
-            {
-                "bootstrap": start()(report_bootstrap),
-                "run_planning_cycle": listen(report_bootstrap)(report_run_planning_cycle),
-                "record_review": listen(report_run_planning_cycle)(report_record_review),
-                "record_writer": listen(report_record_review)(report_record_writer),
-            },
-        ),
+    report_outer_flow_cls = _build_typed_flow_class(
+        name="_ReportOuterFlow",
+        Flow=Flow,
+        state_model=ReportFlowState,
+        attrs={
+            "bootstrap": start()(report_bootstrap),
+            "run_planning_cycle": listen(report_bootstrap)(report_run_planning_cycle),
+            "record_review": listen(report_run_planning_cycle)(report_record_review),
+            "record_writer": listen(report_record_review)(report_record_writer),
+        },
     )
     report_outer_flow_cls = _decorate_persist(report_outer_flow_cls, "report", persist)
     flow = report_outer_flow_cls()
@@ -702,18 +714,16 @@ def run_feed_forward_flow(
         _record_flow_result_state(self.state, self.state.phase_result)
         return self.state.phase_result
 
-    feed_forward_outer_flow_cls = cast(
-        FlowClass,
-        type(
-            "_FeedForwardOuterFlow",
-            (Flow,),
-            {
-                "bootstrap": start()(feed_forward_bootstrap),
-                "run_report": listen(feed_forward_bootstrap)(feed_forward_run_report),
-                "run_season_phase": listen(feed_forward_run_report)(run_season_phase),
-                "run_phase": listen(run_season_phase)(run_phase),
-            },
-        ),
+    feed_forward_outer_flow_cls = _build_typed_flow_class(
+        name="_FeedForwardOuterFlow",
+        Flow=Flow,
+        state_model=FeedForwardFlowState,
+        attrs={
+            "bootstrap": start()(feed_forward_bootstrap),
+            "run_report": listen(feed_forward_bootstrap)(feed_forward_run_report),
+            "run_season_phase": listen(feed_forward_run_report)(run_season_phase),
+            "run_phase": listen(run_season_phase)(run_phase),
+        },
     )
     feed_forward_outer_flow_cls = _decorate_persist(feed_forward_outer_flow_cls, "feed_forward", persist)
     flow = feed_forward_outer_flow_cls()
@@ -769,17 +779,15 @@ def run_coach_flow(
             self.state.response = ""
         return self.state.response
 
-    coach_outer_flow_cls = cast(
-        FlowClass,
-        type(
-            "_CoachOuterFlow",
-            (Flow,),
-            {
-                "bootstrap": start()(coach_bootstrap),
-                "route_turn": router(coach_bootstrap)(route_turn),
-                "run_chat_turn": listen("conversational_turn")(run_chat_turn),
-            },
-        ),
+    coach_outer_flow_cls = _build_typed_flow_class(
+        name="_CoachOuterFlow",
+        Flow=Flow,
+        state_model=CoachFlowState,
+        attrs={
+            "bootstrap": start()(coach_bootstrap),
+            "route_turn": router(coach_bootstrap)(route_turn),
+            "run_chat_turn": listen("conversational_turn")(run_chat_turn),
+        },
     )
     flow = coach_outer_flow_cls()
     flow.state.athlete_id = athlete_id

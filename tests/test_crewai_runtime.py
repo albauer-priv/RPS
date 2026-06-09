@@ -325,6 +325,90 @@ def _install_fake_flow_module(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "crewai.flow.flow", flow_module)
 
 
+def _install_strict_state_flow_module(monkeypatch) -> None:
+    """Install a fake Flow module that reproduces the dict-state regression."""
+
+    flow_module = types.ModuleType("crewai.flow.flow")
+
+    def start(*_args, **_kwargs):
+        def _decorate(func):
+            func._flow_start = True
+            return func
+
+        return _decorate
+
+    def router(trigger):
+        def _decorate(func):
+            func._flow_router = trigger
+            return func
+
+        return _decorate
+
+    def listen(trigger):
+        def _decorate(func):
+            func._flow_listen = trigger
+            return func
+
+        return _decorate
+
+    class FakeFlow:
+        _state_model = None
+
+        @classmethod
+        def __class_getitem__(cls, item):
+            class TypedFakeFlow(cls):
+                _state_model = item
+
+            return TypedFakeFlow
+
+        def __init__(self):
+            if getattr(type(self), "_state_model", None) is None:
+                self.state = {}
+            else:
+                self.state = SimpleNamespace(action="", result={}, requested_tasks=[])
+
+        def kickoff(self):
+            start_method = None
+            router_method = None
+            listeners: list[tuple[object, object]] = []
+            for name in dir(self):
+                candidate = getattr(self, name)
+                func = getattr(type(self), name, None)
+                if callable(candidate) and getattr(func, "_flow_start", False):
+                    start_method = candidate
+                if callable(candidate) and hasattr(func, "_flow_router"):
+                    router_method = candidate
+                if callable(candidate) and hasattr(func, "_flow_listen"):
+                    listeners.append((getattr(func, "_flow_listen"), candidate))
+            if start_method is None:
+                raise AssertionError("FakeFlow requires a @start method")
+            current_result = start_method()
+            current_name = getattr(start_method, "__name__", "")
+            if router_method is not None:
+                route_label = router_method(current_result)
+                for trigger, listener_method in listeners:
+                    if trigger == route_label:
+                        current_result = listener_method()
+                        current_name = getattr(listener_method, "__name__", "")
+                        break
+                else:
+                    return None
+            while True:
+                next_listener = None
+                for trigger, listener_method in listeners:
+                    trigger_name = getattr(trigger, "__name__", None)
+                    if trigger_name == current_name:
+                        next_listener = listener_method
+                        break
+                if next_listener is None:
+                    return current_result
+                current_result = next_listener(current_result)
+                current_name = getattr(next_listener, "__name__", "")
+
+    _set_module_attrs(flow_module, Flow=FakeFlow, start=start, listen=listen, router=router)
+    monkeypatch.setitem(sys.modules, "crewai.flow.flow", flow_module)
+
+
 def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
 
@@ -6380,6 +6464,37 @@ def test_run_season_flow_routes_to_requested_task(monkeypatch) -> None:
 
     assert result["ok"] is True
     assert captured["task"] == AgentTask.CREATE_SEASON_PLAN
+
+
+def test_run_season_flow_uses_typed_flow_state(monkeypatch) -> None:
+    _install_strict_state_flow_module(monkeypatch)
+
+    monkeypatch.setattr(
+        "rps.crewai_runtime.flows.run_agent_multi_output",
+        lambda *args, **kwargs: {"ok": True, "produced": {}},
+    )
+
+    runtime = AgentRuntime(
+        model="openai/gpt-5-mini",
+        temperature=1.0,
+        reasoning_effort="medium",
+        reasoning_summary="auto",
+        max_completion_tokens=8000,
+        prompt_loader=PromptLoader(Path("prompts")),
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime/athletes"),
+    )
+
+    result = run_season_flow(
+        runtime_for=lambda _name: runtime,
+        agent_name="season_planner",
+        athlete_id="i150546",
+        task=AgentTask.CREATE_SEASON_SCENARIOS,
+        user_input="Create season scenarios.",
+        run_id="season-flow-state-run",
+    )
+
+    assert result["ok"] is True
 
 
 def test_run_phase_flow_executes_bundle_once(monkeypatch) -> None:
