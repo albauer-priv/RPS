@@ -305,6 +305,31 @@ def test_meta_builder_wraps_data_only_payload_for_envelope_schema() -> None:
     assert normalized["data"] == document["data"]
 
 
+def test_meta_builder_normalizes_legacy_string_trace_entries() -> None:
+    schema = GuardedValidatedStore(
+        athlete_id="i150546",
+        schema_dir=Path("specs/schemas"),
+        workspace_root=Path("runtime"),
+    ).schemas.get_schema("season_plan.schema.json")
+    document = _minimal_season_plan_document()
+    document["meta"]["trace_upstream"] = ["ATHLETE_PROFILE.athlete_profile__i150546__20260315_091949.json"]
+
+    normalized = canonicalize_artifact_envelope_meta(
+        document,
+        artifact_type=ArtifactType.SEASON_PLAN,
+        schema=schema,
+        run_id="ui_season_plan_2026W21_20260518_190440",
+        version_key="2026-21__20260518_190440",
+    )
+
+    trace_entry = normalized["meta"]["trace_upstream"][0]
+    assert trace_entry["artifact"] == "ATHLETE_PROFILE"
+    assert trace_entry["schema_version"] == "1.0"
+    assert trace_entry["version"] == "1.0"
+    assert trace_entry["version_key"] == "athlete_profile__i150546__20260315_091949"
+    assert trace_entry["run_id"] == "athlete_profile__i150546__20260315_091949"
+
+
 def test_minimal_season_plan_document_validates_against_current_schema() -> None:
     registry = SchemaRegistry(Path("specs/schemas"))
     schema = GuardedValidatedStore(

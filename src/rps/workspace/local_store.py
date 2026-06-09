@@ -14,7 +14,7 @@ from .artifact_metadata import normalize_trace_references
 from .index_manager import WorkspaceIndexManager
 from .iso_helpers import parse_iso_week
 from .paths import ARTIFACT_PATHS, ensure_dir
-from .types import ArtifactMeta, ArtifactType, Authority
+from .types import ArtifactMeta, ArtifactType, Authority, TraceReference
 from .versioning import (
     RANGE_SCOPED_ARTIFACTS,
     WEEK_SCOPED_ARTIFACTS,
@@ -130,6 +130,15 @@ def _normalize_loaded_meta(document: object) -> object:
     meta_map["temporal_scope"] = temporal_scope
 
     normalized["meta"] = meta_map
+    return normalized
+
+
+def _normalize_meta_trace_fields(meta: JsonMap) -> JsonMap:
+    """Return meta with canonical trace reference lists for all trace surfaces."""
+
+    normalized = dict(meta)
+    for key in ("trace_upstream", "trace_data", "trace_events"):
+        normalized[key] = _normalize_trace_references(normalized.get(key))
     return normalized
 
 
@@ -492,7 +501,7 @@ class LocalArtifactStore:
         authority: Authority = Authority.STRUCTURAL,
         producer_agent: str = "unknown_agent",
         run_id: str = "run_unknown",
-        trace_upstream: list[str] | None = None,
+        trace_upstream: list[TraceReference] | None = None,
         update_latest: bool = True,
     ) -> Path:
         """Write a schema-style {meta,data} envelope to disk."""
@@ -539,6 +548,7 @@ class LocalArtifactStore:
             if key == "version_key" or key in meta_doc or value is None:
                 continue
             meta_doc[key] = value
+        meta_doc = _normalize_meta_trace_fields(meta_doc)
 
         doc = {"meta": meta_doc, "data": payload}
 
@@ -596,7 +606,7 @@ class LocalArtifactStore:
         if isinstance(document, dict):
             candidate = document.get("meta")
             if isinstance(candidate, dict):
-                meta_doc = dict(candidate)
+                meta_doc = _normalize_meta_trace_fields(candidate)
                 meta_doc["created_at"] = stored_created_at
                 meta_doc["run_id"] = run_id
                 meta_doc["version_key"] = normalized_key

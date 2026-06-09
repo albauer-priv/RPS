@@ -271,6 +271,71 @@ class LocalStoreTests(unittest.TestCase):
             )
             self.assertEqual(loaded["meta"]["version_key"], "2026-17--2026-18__20260421_143500")
 
+    def test_save_document_normalizes_legacy_trace_strings_on_write(self) -> None:
+        """Verify envelope writes persist canonical dict trace entries instead of legacy strings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_003c_trace"
+            payload = {
+                "meta": {
+                    "artifact_type": "PHASE_STRUCTURE",
+                    "version_key": "2026-17--2026-18__20260421_143228",
+                    "iso_week_range": "2026-17--2026-18",
+                    "created_at": "2026-04-21T14:32:28Z",
+                    "run_id": "stale_model_run",
+                    "trace_upstream": ["PHASE_GUARDRAILS.phase_guardrails_2026-17--2026-18__20260421_143000.json"],
+                },
+                "data": {},
+            }
+
+            path = store.save_document(
+                athlete_id,
+                ArtifactType.PHASE_STRUCTURE,
+                "2026-17--2026-18__20260421_143500",
+                payload,
+                producer_agent="phase_architect",
+                run_id="actual_store_run",
+                update_latest=True,
+            )
+
+            written = json.loads(Path(path).read_text(encoding="utf-8"))
+            trace_entry = written["meta"]["trace_upstream"][0]
+            self.assertEqual(trace_entry["artifact"], "PHASE_GUARDRAILS")
+            self.assertEqual(trace_entry["version_key"], "phase_guardrails_2026-17--2026-18__20260421_143000")
+            self.assertEqual(trace_entry["run_id"], "phase_guardrails_2026-17--2026-18__20260421_143000")
+
+    def test_save_version_normalizes_trace_fields_to_canonical_dict_entries(self) -> None:
+        """Verify save_version canonicalizes trace metadata before persisting."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_003e"
+
+            path = store.save_version(
+                athlete_id=athlete_id,
+                artifact_type=ArtifactType.WEEK_PLAN,
+                version_key="2026-06__20260201_120000",
+                payload={"foo": "bar"},
+                payload_meta={
+                    "trace_upstream": ["PHASE_STRUCTURE.phase_structure_2026-05--2026-08__20260201_090000.json"],
+                    "trace_data": [
+                        {
+                            "artifact": "AVAILABILITY",
+                            "version": "20260315_091949",
+                            "run_id": "availability_20260315_091949",
+                        }
+                    ],
+                },
+            )
+
+            written = json.loads(Path(path).read_text(encoding="utf-8"))
+            upstream_entry = written["meta"]["trace_upstream"][0]
+            data_entry = written["meta"]["trace_data"][0]
+            self.assertEqual(upstream_entry["artifact"], "PHASE_STRUCTURE")
+            self.assertEqual(upstream_entry["version_key"], "phase_structure_2026-05--2026-08__20260201_090000")
+            self.assertEqual(data_entry["artifact"], "AVAILABILITY")
+            self.assertEqual(data_entry["version"], "1.0")
+            self.assertEqual(data_entry["version_key"], "20260315_091949")
+
     def test_save_document_week_scoped_envelope_uses_store_write_time_for_version_key(self) -> None:
         """Verify week-scoped envelope writes ignore stale payload timestamps for the stored key."""
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -4,6 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypedDict
+
+
+class TraceReference(TypedDict):
+    """Canonical upstream/data/event trace reference persisted in artifact metadata."""
+
+    artifact: str
+    version: str
+    schema_version: str
+    version_key: str
+    run_id: str
 
 
 class Authority(str, Enum):
@@ -71,4 +82,4 @@ class ArtifactMeta:
     producer_agent: str
     run_id: str
     created_at: str
-    trace_upstream: list[str]
+    trace_upstream: list[TraceReference]

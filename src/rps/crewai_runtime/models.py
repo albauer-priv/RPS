@@ -185,6 +185,16 @@ class ArtifactWriteModel(StrictOutputModel):
     run_id: str | None = None
 
 
+class ArtifactTraceReferenceModel(StrictOutputModel):
+    """Canonical trace reference persisted inside artifact metadata."""
+
+    artifact: str
+    version: str
+    schema_version: str
+    version_key: str
+    run_id: str
+
+
 class ArtifactEnvelopeMetaModel(StrictOutputModel):
     """Generic full-envelope meta model for persisted CrewAI task outputs."""
 
@@ -200,9 +210,9 @@ class ArtifactEnvelopeMetaModel(StrictOutputModel):
     iso_week: str | None = None
     iso_week_range: str | None = None
     temporal_scope: list[str] = Field(default_factory=list)
-    trace_upstream: list[str] = Field(default_factory=list)
-    trace_data: list[str] = Field(default_factory=list)
-    trace_events: list[str] = Field(default_factory=list)
+    trace_upstream: list[ArtifactTraceReferenceModel] = Field(default_factory=list)
+    trace_data: list[ArtifactTraceReferenceModel] = Field(default_factory=list)
+    trace_events: list[ArtifactTraceReferenceModel] = Field(default_factory=list)
     data_confidence: str | None = None
     notes: str | None = None
     version_key: str | None = None

@@ -1,14 +1,14 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-02-03
+Last-Updated: 2026-06-09
 Owner: Architecture
 ---
 # Artefact Renderer
 
-Version: 2.1  
+Version: 2.2  
 Status: Updated  
-Last-Updated: 2026-01-31
+Last-Updated: 2026-06-09
 
 ---
 
@@ -66,7 +66,7 @@ The renderer supports the following artifact types (meta.artifact_type):
   - [runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md](runtime/athletes/<ATHLETE_ID>/rendered/<filename>.md)
   - `ATHLETE_ID` is loaded from `.env` (Intervals.icu athlete ID).
 - Artefacts saved via the runner are auto-rendered using the integrated renderer.
-- If `meta.trace_upstream` is a list of strings, it is rendered directly.
+- Renderer inputs should already carry canonical dict-based trace references; the renderer converts them into display-ready strings before handing them to templates.
 - If `validate=True` is enabled, schema validation occurs before rendering.
 - Raw payload artifacts (e.g., `INTERVALS_WORKOUTS`) are not rendered.
 

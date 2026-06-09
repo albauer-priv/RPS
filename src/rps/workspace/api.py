@@ -9,7 +9,7 @@ from pathlib import Path
 from .guards import DEFAULT_RULES, MissingDependenciesError
 from .helpers import PhaseRange, resolve_current_phase, resolve_current_week
 from .local_store import LocalArtifactStore
-from .types import ArtifactType, Authority
+from .types import ArtifactType, Authority, TraceReference
 
 JsonMap = dict[str, object]
 
@@ -80,7 +80,7 @@ class Workspace:
         producer_agent: str,
         run_id: str,
         authority: Authority = Authority.STRUCTURAL,
-        trace_upstream: list[str] | None = None,
+        trace_upstream: list[TraceReference] | None = None,
         update_latest: bool = True,
     ) -> str:
         """Write an artifact after enforcing dependency rules."""
@@ -142,7 +142,7 @@ class Workspace:
         authority: Authority = Authority.STRUCTURAL,
         producer_agent: str = "unknown_agent",
         run_id: str = "run_unknown",
-        trace_upstream: list[str] | None = None,
+        trace_upstream: list[TraceReference] | None = None,
         update_latest: bool = True,
     ) -> str:
         """Write a schema-style {meta,data} envelope without validation."""

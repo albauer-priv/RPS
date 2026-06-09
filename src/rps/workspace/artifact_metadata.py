@@ -7,7 +7,7 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-from rps.workspace.types import ArtifactType
+from rps.workspace.types import ArtifactType, TraceReference
 
 JsonMap = dict[str, Any]
 
@@ -45,6 +45,45 @@ def schema_semver(value: object, *, default: str = "1.0") -> str:
 
 def _as_str(value: object) -> str | None:
     return value if isinstance(value, str) and value.strip() else None
+
+
+def _resolve_trace_artifact_token(value: str) -> str | None:
+    """Resolve the canonical artifact token from a legacy trace string."""
+
+    lowered = value.strip().lower()
+    if not lowered:
+        return None
+    for candidate in sorted((item.value for item in ArtifactType), key=len, reverse=True):
+        token = candidate.lower()
+        if lowered.startswith(token):
+            return candidate
+    return None
+
+
+def _normalize_legacy_trace_string(value: object, *, index: int) -> JsonMap | None:
+    """Convert one legacy string trace entry into the canonical dict shape."""
+
+    raw = _as_str(value)
+    if raw is None:
+        return None
+    artifact = _resolve_trace_artifact_token(raw)
+    if artifact is None:
+        return None
+
+    remainder = raw[len(artifact) :].strip()
+    remainder = remainder.removeprefix(":").removeprefix("@").removeprefix(".").strip()
+    if not remainder:
+        return None
+    run_id = remainder.removesuffix(".json").strip()
+    if not run_id:
+        return None
+    return {
+        "artifact": artifact,
+        "version": "1.0",
+        "schema_version": "1.0",
+        "version_key": run_id,
+        "run_id": run_id or f"legacy_trace_{index}",
+    }
 
 
 def _schema_meta_const(schema: JsonMap | None, key: str) -> str | None:
@@ -101,9 +140,11 @@ def _artifact_type_value(artifact_type: ArtifactType | str | None, schema: JsonM
     return str(meta.get("artifact_type") or "").strip().upper()
 
 
-def normalize_trace_reference(entry: object, *, index: int = 1) -> JsonMap | None:
+def normalize_trace_reference(entry: object, *, index: int = 1) -> TraceReference | None:
     """Return a schema-valid trace reference preserving operational version keys."""
 
+    if isinstance(entry, str):
+        entry = _normalize_legacy_trace_string(entry, index=index)
     if not isinstance(entry, dict):
         return None
     artifact = _as_str(entry.get("artifact")) or f"legacy_trace_{index}"
@@ -130,12 +171,12 @@ def normalize_trace_reference(entry: object, *, index: int = 1) -> JsonMap | Non
     }
 
 
-def normalize_trace_references(value: object) -> list[JsonMap]:
+def normalize_trace_references(value: object) -> list[TraceReference]:
     """Return schema-valid trace reference objects."""
 
     if not isinstance(value, list):
         return []
-    normalized_by_key: dict[tuple[str, str], JsonMap] = {}
+    normalized_by_key: dict[tuple[str, str], TraceReference] = {}
     insertion_order: list[tuple[str, str]] = []
     for index, item in enumerate(value, start=1):
         reference = normalize_trace_reference(item, index=index)
