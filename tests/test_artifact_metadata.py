@@ -428,3 +428,123 @@ def test_meta_builder_respects_closed_historical_baseline_meta_schema() -> None:
     assert "trace_data" not in normalized["meta"]
     assert "trace_events" not in normalized["meta"]
     validate_or_raise(validator, normalized)
+
+
+def test_meta_builder_backfills_missing_version_key_from_iso_week_for_zone_model() -> None:
+    registry = SchemaRegistry(Path("specs/schemas"))
+    schema = registry.get_schema("zone_model.schema.json")
+    validator = registry.validator_for("zone_model.schema.json")
+    document = {
+        "meta": {
+            "artifact_type": "ZONE_MODEL",
+            "schema_id": "ZoneModelInterface",
+            "schema_version": "1.0",
+            "version": "1.0",
+            "authority": "Binding",
+            "owner_agent": "Data-Pipeline",
+            "run_id": "20260609-140812-data-pipeline-zone-model",
+            "created_at": "2026-06-09T14:08:12Z",
+            "scope": "Shared",
+            "iso_week": "2026-24",
+            "iso_week_range": "2026-24--2026-52",
+            "data_confidence": "HIGH",
+            "temporal_scope": {"from": "2026-06-09", "to": "2026-12-31"},
+            "trace_upstream": [
+                {
+                    "artifact": "intervals_icu_athlete",
+                    "version": "1.0",
+                    "run_id": "i150546",
+                }
+            ],
+            "trace_data": [],
+            "trace_events": [],
+            "notes": "Generated from Intervals.icu athlete sportSettings (Ride).",
+        },
+        "data": {
+            "model_metadata": {
+                "valid_from": "2026-06-09",
+                "ftp_watts": 250,
+                "purpose": "Power zone model derived from Intervals.icu sport settings.",
+                "filename": "zone_model_power_250W_2026-06-09",
+            },
+            "zones": [
+                {
+                    "zone_id": "Z1",
+                    "name": "Recovery",
+                    "ftp_percent_range": {"min": 0.0, "max": 55.0},
+                    "watt_range": {"min": 0, "max": 138},
+                    "typical_if": 0.5,
+                    "training_intent": "Recovery and regeneration.",
+                },
+                {
+                    "zone_id": "Z2",
+                    "name": "Endurance",
+                    "ftp_percent_range": {"min": 55.0, "max": 75.0},
+                    "watt_range": {"min": 138, "max": 188},
+                    "typical_if": 0.65,
+                    "training_intent": "Aerobic endurance development.",
+                },
+                {
+                    "zone_id": "Z3",
+                    "name": "Tempo",
+                    "ftp_percent_range": {"min": 75.0, "max": 90.0},
+                    "watt_range": {"min": 188, "max": 225},
+                    "typical_if": 0.83,
+                    "training_intent": "Steady aerobic pressure.",
+                },
+                {
+                    "zone_id": "SS",
+                    "name": "Sweet Spot",
+                    "ftp_percent_range": {"min": 88.0, "max": 94.0},
+                    "watt_range": {"min": 220, "max": 235},
+                    "typical_if": 0.91,
+                    "training_intent": "High aerobic stimulus with controlled fatigue.",
+                },
+                {
+                    "zone_id": "Z4",
+                    "name": "Threshold",
+                    "ftp_percent_range": {"min": 90.0, "max": 105.0},
+                    "watt_range": {"min": 225, "max": 262},
+                    "typical_if": 0.98,
+                    "training_intent": "Threshold development.",
+                },
+                {
+                    "zone_id": "Z5",
+                    "name": "VO2max",
+                    "ftp_percent_range": {"min": 105.0, "max": 120.0},
+                    "watt_range": {"min": 262, "max": 300},
+                    "typical_if": 1.1,
+                    "training_intent": "VO2max development.",
+                },
+                {
+                    "zone_id": "Z6",
+                    "name": "Anaerobic",
+                    "ftp_percent_range": {"min": 120.0, "max": 150.0},
+                    "watt_range": {"min": 300, "max": 375},
+                    "typical_if": None,
+                    "training_intent": "Anaerobic repeatability.",
+                },
+                {
+                    "zone_id": "Z7",
+                    "name": "Neuromuscular",
+                    "ftp_percent_range": {"min": 150.0, "max": 200.0},
+                    "watt_range": {"min": 375, "max": 500},
+                    "typical_if": None,
+                    "training_intent": "Sprint and neuromuscular recruitment.",
+                },
+            ],
+            "examples": [],
+            "versioning_usage": [
+                "Use this zone model for IF calculations and workout encoding.",
+            ],
+        },
+    }
+
+    normalized = canonicalize_artifact_envelope_meta(
+        document,
+        artifact_type=ArtifactType.ZONE_MODEL,
+        schema=schema,
+    )
+
+    assert normalized["meta"]["version_key"] == "2026-24"
+    validate_or_raise(validator, normalized)

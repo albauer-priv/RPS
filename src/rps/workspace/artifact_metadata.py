@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from rps.workspace.types import ArtifactType, TraceReference
+from rps.workspace.versioning import derive_version_key_from_envelope
 
 JsonMap = dict[str, Any]
 
@@ -239,10 +240,6 @@ def canonicalize_artifact_envelope_meta(
         meta["version"] = schema_semver(meta.get("version"))
     else:
         meta["version"] = "1.0"
-    resolved_version_key = _as_str(version_key) or _as_str(meta.get("version_key"))
-    if resolved_version_key:
-        meta["version_key"] = resolved_version_key
-
     if run_id:
         meta["run_id"] = run_id
     elif not _as_str(meta.get("run_id")):
@@ -252,6 +249,16 @@ def canonicalize_artifact_envelope_meta(
         meta["created_at"] = created_at
     elif not _as_str(meta.get("created_at")):
         meta["created_at"] = utc_timestamp()
+
+    resolved_version_key = _as_str(version_key) or _as_str(meta.get("version_key"))
+    if resolved_version_key is None:
+        derived_version_key = derive_version_key_from_envelope(
+            {"meta": meta, "data": normalized.get("data")},
+            artifact_type if isinstance(artifact_type, ArtifactType) else None,
+        )
+        resolved_version_key = _as_str(derived_version_key)
+    if resolved_version_key:
+        meta["version_key"] = resolved_version_key
 
     for key in ("trace_upstream", "trace_data", "trace_events"):
         meta[key] = normalize_trace_references(meta.get(key))

@@ -983,7 +983,13 @@ def write_zone_model(
         payload=payload,
     )
     if not skip_validate:
-        validate_or_raise(validator, payload)
+        try:
+            validate_or_raise(validator, payload)
+        except SchemaValidationError as exc:
+            print("Schema validation failed for ZONE_MODEL:")
+            for err in exc.errors:
+                print(f"- {err}")
+            raise
 
     ftp_watts = payload["data"]["model_metadata"]["ftp_watts"]
     latest_dir.mkdir(parents=True, exist_ok=True)
