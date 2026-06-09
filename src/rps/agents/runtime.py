@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from rps.crewai_runtime.compat import CrewAIRuntimeStatus, crewai_runtime_status
+from rps.crewai_runtime.runtime_status import CrewAIRuntimeStatus, crewai_runtime_status
 from rps.prompts.loader import PromptLoader
 
 JsonMap = dict[str, Any]

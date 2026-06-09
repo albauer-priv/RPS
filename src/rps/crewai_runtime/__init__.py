@@ -1,7 +1,6 @@
-"""CrewAI foundation helpers for future runtime cutover."""
+"""CrewAI runtime helpers exposed through repo-owned entrypoints."""
 
 from .bindings import CrewAIBindings, build_crewai_bindings
-from .compat import crewai_runtime_status
 from .config import CrewAIConfigBundle, load_crewai_config_bundle
 from .models import (
     ArtifactEnvelopeModel,
@@ -9,6 +8,7 @@ from .models import (
     CoachOperationApplyResultModel,
     CoachOperationPreviewModel,
 )
+from .runtime_status import crewai_runtime_status
 
 __all__ = [
     "ArtifactEnvelopeModel",

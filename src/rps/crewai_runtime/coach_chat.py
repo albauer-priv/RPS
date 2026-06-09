@@ -15,7 +15,6 @@ from pydantic import BaseModel
 
 from rps.prompts.loader import PromptLoader
 
-from .compat import crewai_runtime_status
 from .config import load_crewai_config_bundle
 from .knowledge import build_crewai_knowledge_kwargs, resolve_agent_knowledge_profile
 from .memory import (
@@ -29,6 +28,7 @@ from .provider import (
     build_crewai_planning_llm_kwargs,
     resolve_crewai_planning_enabled,
 )
+from .runtime_status import crewai_runtime_status
 from .skills import (
     build_crewai_skill_kwargs,
     resolve_agent_skill_profile,

@@ -8,7 +8,6 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-from .compat import crewai_runtime_status
 from .config import CrewAIConfigBundle, load_crewai_config_bundle
 from .generated_artifact_models import artifact_model_for_task_name
 from .guardrails import build_task_guardrail_kwargs, resolve_task_policy
@@ -46,6 +45,7 @@ from .models import (
     WeekPlanBundleModel,
     WeekReviewDecisionModel,
 )
+from .runtime_status import crewai_runtime_status
 from .skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
 from .telemetry import register_runtime_label
 

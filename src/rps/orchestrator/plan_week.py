@@ -14,9 +14,9 @@ from rps.agents.runtime import AgentRuntime
 from rps.agents.runtime import run_agent_multi_output as run_agent_multi_output_direct
 from rps.agents.tasks import AgentTask
 from rps.core.logging import log_and_print
-from rps.crewai_runtime.compat import crewai_runtime_status
 from rps.crewai_runtime.flows import run_phase_flow, run_report_flow, run_week_flow
 from rps.crewai_runtime.guardrails import guardrail_runtime_context
+from rps.crewai_runtime.runtime_status import crewai_runtime_status
 from rps.data_pipeline.intervals_data import run_pipeline as run_intervals_pipeline
 from rps.orchestrator.context_snapshots import (
     build_athlete_state_snapshot_prompt_block,

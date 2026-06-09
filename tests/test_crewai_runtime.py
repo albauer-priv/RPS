@@ -47,6 +47,7 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
     output_model_for_task,
 )
+from rps.crewai_runtime.compat import crewai_runtime_status as compat_crewai_runtime_status
 from rps.crewai_runtime.flows import (
     run_coach_flow,
     run_feed_forward_flow,
@@ -5093,6 +5094,13 @@ def test_crewai_runtime_status_reports_python_compatibility() -> None:
         assert "unsupported" in status.message.lower()
     else:
         assert status.python_supported is True
+
+
+def test_crewai_runtime_status_compat_shim_matches_runtime_status_module() -> None:
+    active = crewai_runtime_status()
+    compat = compat_crewai_runtime_status()
+
+    assert compat == active
 
 
 def test_preview_scoped_week_replan_requires_message() -> None:
