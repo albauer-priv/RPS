@@ -401,7 +401,7 @@ def season_bundle_matches_contract(result: Any) -> GuardrailResult:
         for item in _as_list(_as_map(season_phase_load_context).get("phases"))
         if str(_as_map(item).get("phase_id") or "").strip()
     }
-    candidate = {
+    candidate: dict[str, object] = {
         "season_allowed_domains": season_phase_load_context.get("season_allowed_intensity_domains") if season_phase_load_context else [],
         "season_load_envelope": mapping.get("season_load_envelope"),
         "season_semantic_notes": mapping.get("season_semantic_notes"),
@@ -612,12 +612,12 @@ def season_phase_load_feasibility(result: Any) -> GuardrailResult:
                 f"Season phase {phase_id} load_corridor_max {max_value:g} exceeds availability_cap_kj {availability_cap:g}.",
             )
         if phase_type == "PEAK" and max_value is not None:
-            build_max = [
+            build_max_candidates = [
                 _as_float(item.get("load_corridor_max"))
                 for item in blueprints
                 if isinstance(item, dict) and (item.get("phase_type") or item.get("cycle")) == "BUILD"
             ]
-            build_max = [item for item in build_max if item is not None]
+            build_max: list[float] = [item for item in build_max_candidates if item is not None]
             if build_max and max_value >= max(build_max):
                 return (False, f"Season Peak phase {phase_id} must show load reduction versus Build phases.")
     if (

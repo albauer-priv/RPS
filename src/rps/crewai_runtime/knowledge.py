@@ -57,7 +57,9 @@ def _compact_knowledge_query(query: object) -> object:
                 compacted.append(_compact_query_text(item))
             else:
                 compacted.append(item)
-        return type(query)(compacted) if not isinstance(query, list) else compacted
+        if isinstance(query, tuple):
+            return tuple(compacted)
+        return compacted
     return query
 
 

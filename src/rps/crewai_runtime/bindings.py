@@ -132,8 +132,10 @@ def collect_native_agent_kwargs(agent_name: str, config: JsonMap) -> JsonMap:
 def collect_native_crew_kwargs(config: JsonMap, *, persisted_artifact_flow: bool = False) -> JsonMap:
     """Collect CrewAI-native Crew kwargs from runtime-profile config."""
 
-    native_cfg = config.get("native") if isinstance(config.get("native"), dict) else {}
-    merged = {**{field: config[field] for field in CREW_NATIVE_CONFIG_FIELDS if field in config}, **native_cfg}
+    native_cfg_obj = config.get("native")
+    native_cfg: JsonMap = native_cfg_obj if isinstance(native_cfg_obj, dict) else {}
+    merged: JsonMap = {field: config[field] for field in CREW_NATIVE_CONFIG_FIELDS if field in config}
+    merged.update(native_cfg)
     if persisted_artifact_flow:
         merged.pop("stream", None)
     return {
@@ -371,28 +373,28 @@ def build_crewai_bindings(
         agents[name] = agent
 
     tasks: dict[str, object] = {}
-    for name, blueprint in task_blueprints.items():
+    for name, task_blueprint in task_blueprints.items():
         task_kwargs: JsonMap = {
-            "description": blueprint.description,
-            "expected_output": blueprint.expected_output,
-            "agent": agents[blueprint.agent],
+            "description": task_blueprint.description,
+            "expected_output": task_blueprint.expected_output,
+            "agent": agents[task_blueprint.agent],
         }
-        if blueprint.context_names:
-            missing = [item for item in blueprint.context_names if item not in tasks]
+        if task_blueprint.context_names:
+            missing = [item for item in task_blueprint.context_names if item not in tasks]
             if missing:
                 raise ValueError(
                     f"Task '{name}' references unknown or later context tasks: {', '.join(missing)}"
                 )
-            task_kwargs["context"] = [tasks[item] for item in blueprint.context_names]
-        guardrail_kwargs = build_task_guardrail_kwargs(blueprint, bundle.task_policies)
+            task_kwargs["context"] = [tasks[item] for item in task_blueprint.context_names]
+        guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
         output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
-        output_model = output_model_for_task(blueprint)
+        output_model = output_model_for_task(task_blueprint)
         if output_mode == "json":
             task_kwargs["output_json"] = output_model
         elif output_mode == "pydantic":
             task_kwargs["output_pydantic"] = output_model
         task_kwargs.update(guardrail_kwargs)
-        tools = tools_factory(blueprint) if tools_factory else []
+        tools = tools_factory(task_blueprint) if tools_factory else []
         if tools:
             task_kwargs["tools"] = tools
         task = Task(**task_kwargs)

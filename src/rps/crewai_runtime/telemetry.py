@@ -10,7 +10,7 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from rps.ui.run_store import append_event
 
@@ -434,19 +434,20 @@ def summarize_exception(exc: BaseException) -> dict[str, object]:
         body_map = body if isinstance(body, dict) else {}
         error_map = body_map.get("error") if isinstance(body_map.get("error"), dict) else {}
         for mapping in (body_map, error_map):
+            mapping_dict = mapping if isinstance(mapping, dict) else {}
             for source_key, key in (
                 ("message", "reason"),
                 ("type", "error_type"),
                 ("code", "error_code"),
                 ("param", "error_param"),
             ):
-                value = mapping.get(source_key)
+                value = mapping_dict.get(source_key)
                 text = _safe_str(value, default="")
                 if text:
                     payload[key] = _compact_text(text, max_len=220) if key == "reason" else text
 
     parsed = _extract_error_mapping(root_message)
-    error_map = parsed.get("error") if isinstance(parsed.get("error"), dict) else {}
+    error_map = cast(dict[str, object], parsed.get("error")) if isinstance(parsed.get("error"), dict) else {}
     if error_map:
         for source_key, key in (
             ("message", "reason"),
@@ -619,7 +620,7 @@ def ensure_crewai_event_listener() -> None:
         return
     try:
         crewai_events = import_module("crewai.events")
-        BaseEventListener = getattr(crewai_events, "BaseEventListener")
+        BaseEventListener = cast(type[Any], getattr(crewai_events, "BaseEventListener"))
         CrewKickoffStartedEvent = getattr(crewai_events, "CrewKickoffStartedEvent")
         CrewKickoffCompletedEvent = getattr(crewai_events, "CrewKickoffCompletedEvent")
         CrewKickoffFailedEvent = getattr(crewai_events, "CrewKickoffFailedEvent")
@@ -639,120 +640,129 @@ def ensure_crewai_event_listener() -> None:
         logger.warning("CrewAI event listener setup unavailable: %s", exc)
         return
 
-    class RPSCrewAIEventListener(BaseEventListener):
-        """Translate CrewAI lifecycle events into run-store rows."""
+    def _setup_listeners(self: object, crewai_event_bus: Any) -> None:  # pragma: no cover - integration behavior
+        @crewai_event_bus.on(CrewKickoffStartedEvent)
+        def _on_crew_started(source: object, event: object) -> None:
+            _append_with_context(
+                "CREW_STARTED",
+                crew=_crew_label(event, source),
+            )
 
-        def setup_listeners(self, crewai_event_bus: Any) -> None:  # pragma: no cover - integration behavior
-            @crewai_event_bus.on(CrewKickoffStartedEvent)
-            def _on_crew_started(source: object, event: object) -> None:
-                _append_with_context(
-                    "CREW_STARTED",
-                    crew=_crew_label(event, source),
-                )
+        @crewai_event_bus.on(CrewKickoffCompletedEvent)
+        def _on_crew_finished(source: object, event: object) -> None:
+            _append_with_context(
+                "CREW_FINISHED",
+                crew=_crew_label(event, source),
+            )
 
-            @crewai_event_bus.on(CrewKickoffCompletedEvent)
-            def _on_crew_finished(source: object, event: object) -> None:
-                _append_with_context(
-                    "CREW_FINISHED",
-                    crew=_crew_label(event, source),
-                )
+        @crewai_event_bus.on(CrewKickoffFailedEvent)
+        def _on_crew_failed(source: object, event: object) -> None:
+            _append_exception_with_context(
+                "CREW_FAILED",
+                exc=_event_attr(event, "error", "error_message", "message"),
+                crew=_crew_label(event, source),
+            )
 
-            @crewai_event_bus.on(CrewKickoffFailedEvent)
-            def _on_crew_failed(source: object, event: object) -> None:
-                _append_exception_with_context(
-                    "CREW_FAILED",
-                    exc=_event_attr(event, "error", "error_message", "message"),
-                    crew=_crew_label(event, source),
-                )
+        @crewai_event_bus.on(TaskStartedEvent)
+        def _on_task_started(source: object, event: object) -> None:
+            _append_with_context(
+                "CREW_TASK_STARTED",
+                task=_task_label(event, source),
+                agent=_agent_label(event, source),
+                assigned_agent=_assigned_agent_label(event, source),
+                model=_agent_model_label(event, source),
+            )
 
-            @crewai_event_bus.on(TaskStartedEvent)
-            def _on_task_started(source: object, event: object) -> None:
-                _append_with_context(
-                    "CREW_TASK_STARTED",
-                    task=_task_label(event, source),
-                    agent=_agent_label(event, source),
-                    assigned_agent=_assigned_agent_label(event, source),
-                    model=_agent_model_label(event, source),
-                )
+        @crewai_event_bus.on(TaskCompletedEvent)
+        def _on_task_completed(source: object, event: object) -> None:
+            _append_with_context(
+                "CREW_TASK_FINISHED",
+                task=_task_label(event, source),
+                agent=_agent_label(event, source),
+                assigned_agent=_assigned_agent_label(event, source),
+                model=_agent_model_label(event, source),
+            )
 
-            @crewai_event_bus.on(TaskCompletedEvent)
-            def _on_task_completed(source: object, event: object) -> None:
-                _append_with_context(
-                    "CREW_TASK_FINISHED",
-                    task=_task_label(event, source),
-                    agent=_agent_label(event, source),
-                    assigned_agent=_assigned_agent_label(event, source),
-                    model=_agent_model_label(event, source),
-                )
+        @crewai_event_bus.on(TaskFailedEvent)
+        def _on_task_failed(source: object, event: object) -> None:
+            _append_exception_with_context(
+                "CREW_TASK_FAILED",
+                exc=_event_attr(event, "error", "error_message", "message"),
+                task=_task_label(event, source),
+                agent=_agent_label(event, source),
+                assigned_agent=_assigned_agent_label(event, source),
+                model=_agent_model_label(event, source),
+            )
 
-            @crewai_event_bus.on(TaskFailedEvent)
-            def _on_task_failed(source: object, event: object) -> None:
-                _append_exception_with_context(
-                    "CREW_TASK_FAILED",
-                    exc=_event_attr(event, "error", "error_message", "message"),
-                    task=_task_label(event, source),
-                    agent=_agent_label(event, source),
-                    assigned_agent=_assigned_agent_label(event, source),
-                    model=_agent_model_label(event, source),
-                )
+        @crewai_event_bus.on(ToolUsageStartedEvent)
+        def _on_tool_started(source: object, event: object) -> None:
+            _append_with_context("TOOL_STARTED", tool=_tool_name(event, source))
 
-            @crewai_event_bus.on(ToolUsageStartedEvent)
-            def _on_tool_started(source: object, event: object) -> None:
-                _append_with_context("TOOL_STARTED", tool=_tool_name(event, source))
+        @crewai_event_bus.on(ToolUsageFinishedEvent)
+        def _on_tool_finished(source: object, event: object) -> None:
+            _append_with_context("TOOL_FINISHED", tool=_tool_name(event, source))
 
-            @crewai_event_bus.on(ToolUsageFinishedEvent)
-            def _on_tool_finished(source: object, event: object) -> None:
-                _append_with_context("TOOL_FINISHED", tool=_tool_name(event, source))
+        @crewai_event_bus.on(ToolUsageErrorEvent)
+        def _on_tool_failed(source: object, event: object) -> None:
+            _append_exception_with_context(
+                "TOOL_FAILED",
+                exc=_event_attr(event, "error", "error_message", "message"),
+                tool=_tool_name(event, source),
+            )
 
-            @crewai_event_bus.on(ToolUsageErrorEvent)
-            def _on_tool_failed(source: object, event: object) -> None:
-                _append_exception_with_context(
-                    "TOOL_FAILED",
-                    exc=_event_attr(event, "error", "error_message", "message"),
-                    tool=_tool_name(event, source),
-                )
+        @crewai_event_bus.on(FlowStartedEvent)
+        def _on_flow_started(_source: object, event: object) -> None:
+            _append_with_context(
+                "FLOW_STARTED",
+                flow=_safe_str(_event_attr(event, "flow_name", "flow_id", "flow")),
+            )
 
-            @crewai_event_bus.on(FlowStartedEvent)
-            def _on_flow_started(_source: object, event: object) -> None:
-                _append_with_context(
-                    "FLOW_STARTED",
-                    flow=_safe_str(_event_attr(event, "flow_name", "flow_id", "flow")),
-                )
+        @crewai_event_bus.on(FlowFinishedEvent)
+        def _on_flow_finished(_source: object, event: object) -> None:
+            _append_with_context(
+                "FLOW_FINISHED",
+                flow=_safe_str(_event_attr(event, "flow_name", "flow_id", "flow")),
+            )
 
-            @crewai_event_bus.on(FlowFinishedEvent)
-            def _on_flow_finished(_source: object, event: object) -> None:
-                _append_with_context(
-                    "FLOW_FINISHED",
-                    flow=_safe_str(_event_attr(event, "flow_name", "flow_id", "flow")),
-                )
+        @crewai_event_bus.on(MethodExecutionStartedEvent)
+        def _on_method_started(_source: object, event: object) -> None:
+            _append_with_context(
+                "FLOW_STEP_STARTED",
+                flow=_safe_str(_event_attr(event, "flow_name", "flow")),
+                step=_safe_str(_event_attr(event, "method_name", "method")),
+            )
 
-            @crewai_event_bus.on(MethodExecutionStartedEvent)
-            def _on_method_started(_source: object, event: object) -> None:
-                _append_with_context(
-                    "FLOW_STEP_STARTED",
-                    flow=_safe_str(_event_attr(event, "flow_name", "flow")),
-                    step=_safe_str(_event_attr(event, "method_name", "method")),
-                )
+        @crewai_event_bus.on(MethodExecutionFinishedEvent)
+        def _on_method_finished(_source: object, event: object) -> None:
+            _append_with_context(
+                "FLOW_STEP_FINISHED",
+                flow=_safe_str(_event_attr(event, "flow_name", "flow")),
+                step=_safe_str(_event_attr(event, "method_name", "method")),
+            )
 
-            @crewai_event_bus.on(MethodExecutionFinishedEvent)
-            def _on_method_finished(_source: object, event: object) -> None:
-                _append_with_context(
-                    "FLOW_STEP_FINISHED",
-                    flow=_safe_str(_event_attr(event, "flow_name", "flow")),
-                    step=_safe_str(_event_attr(event, "method_name", "method")),
-                )
+        @crewai_event_bus.on(MethodExecutionFailedEvent)
+        def _on_method_failed(_source: object, event: object) -> None:
+            _append_exception_with_context(
+                "FLOW_STEP_FAILED",
+                exc=_event_attr(event, "error", "error_message", "message"),
+                flow=_safe_str(_event_attr(event, "flow_name", "flow")),
+                step=_safe_str(_event_attr(event, "method_name", "method")),
+            )
 
-            @crewai_event_bus.on(MethodExecutionFailedEvent)
-            def _on_method_failed(_source: object, event: object) -> None:
-                _append_exception_with_context(
-                    "FLOW_STEP_FAILED",
-                    exc=_event_attr(event, "error", "error_message", "message"),
-                    flow=_safe_str(_event_attr(event, "flow_name", "flow")),
-                    step=_safe_str(_event_attr(event, "method_name", "method")),
-                )
+    listener_cls = cast(
+        type[Any],
+        type(
+            "RPSCrewAIEventListener",
+            (BaseEventListener,),
+            {
+                "__doc__": "Translate CrewAI lifecycle events into run-store rows.",
+                "setup_listeners": _setup_listeners,
+            },
+        ),
+    )
 
     try:
-        RPSCrewAIEventListener()
+        listener_cls()
     except Exception as exc:  # pragma: no cover - depends on CrewAI runtime details
         _LISTENER_INIT_FAILED = True
         logger.warning("Failed to initialize CrewAI event listener: %s", exc)
