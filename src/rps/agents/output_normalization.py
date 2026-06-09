@@ -376,6 +376,7 @@ def normalize_phase_structure_document(
     season_plan_document: dict[str, Any] | None = None,
     phase_guardrails_document: dict[str, Any] | None = None,
     phase_guardrails_version_key: str | None = None,
+    phase_execution_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Deterministically project required season and guardrails constraints into PHASE_STRUCTURE."""
 
@@ -388,6 +389,7 @@ def normalize_phase_structure_document(
     data = document.get("data")
     if not isinstance(data, dict):
         return document
+    execution_context = _as_map(phase_execution_context)
 
     upstream_intent = data.get("upstream_intent")
     if not isinstance(upstream_intent, dict):
@@ -415,12 +417,18 @@ def normalize_phase_structure_document(
                 upstream_constraints = upstream_intent["constraints"]
     data["upstream_intent"] = upstream_intent
 
-    if isinstance(phase_guardrails_document, dict):
+    inherited_scenario_contract = _as_map(execution_context.get("inherited_scenario_contract"))
+    if inherited_scenario_contract:
+        data["inherited_scenario_contract"] = inherited_scenario_contract
+    elif isinstance(phase_guardrails_document, dict):
         guardrails_data = phase_guardrails_document.get("data")
         if isinstance(guardrails_data, dict):
             inherited_contract = guardrails_data.get("inherited_scenario_contract")
             if isinstance(inherited_contract, dict):
                 data["inherited_scenario_contract"] = inherited_contract
+    if isinstance(phase_guardrails_document, dict):
+        guardrails_data = phase_guardrails_document.get("data")
+        if isinstance(guardrails_data, dict):
             load_guardrails = guardrails_data.get("load_guardrails")
             if isinstance(load_guardrails, dict):
                 weekly_kj_bands = load_guardrails.get("weekly_kj_bands")
@@ -500,11 +508,13 @@ def normalize_phase_structure_document_from_execution_context(
 ) -> dict[str, Any]:
     """Project exact PHASE_STRUCTURE authority from deterministic phase execution context."""
 
+    context = _as_map(phase_execution_context)
     normalized = normalize_phase_structure_document(
         document,
         season_plan_document=season_plan_document,
         phase_guardrails_document=phase_guardrails_document,
         phase_guardrails_version_key=phase_guardrails_version_key,
+        phase_execution_context=context,
     )
     if not isinstance(normalized, dict):
         return normalized
@@ -514,6 +524,12 @@ def normalize_phase_structure_document_from_execution_context(
     context = _as_map(phase_execution_context)
     if not context:
         return normalized
+    inherited_scenario_contract = _as_map(context.get("inherited_scenario_contract"))
+    if not inherited_scenario_contract:
+        raise ValueError(
+            "PHASE_STRUCTURE pre-guardrail normalization requires phase_execution_context.inherited_scenario_contract."
+        )
+    data["inherited_scenario_contract"] = inherited_scenario_contract
 
     structural_phase_elements = data.get("structural_phase_elements")
     if not isinstance(structural_phase_elements, dict):

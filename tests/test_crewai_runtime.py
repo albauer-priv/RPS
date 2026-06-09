@@ -2759,9 +2759,9 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
         "week_blueprints": [
             {"week": "2026-21", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
         ],
-        "guardrails": {"phase_summary": []},
-        "structure": {"upstream_intent": []},
-        "preview": {"phase_intent_summary": []},
+        "guardrails": {"phase_summary": [], "inherited_scenario_contract": {"selected_scenario_id": "C"}},
+        "structure": {"upstream_intent": [], "inherited_scenario_contract": {"selected_scenario_id": "A"}},
+        "preview": {"phase_intent_summary": [], "inherited_scenario_contract": {"selected_scenario_id": "D"}},
         "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
         "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
@@ -2785,6 +2785,9 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
     assert normalized["phase_type"] == "BASE"
     assert normalized["phase_intent"] == "shortened_re_entry"
     assert normalized["inherited_scenario_contract"]["selected_scenario_id"] == "B"
+    assert normalized["guardrails"]["inherited_scenario_contract"]["selected_scenario_id"] == "B"
+    assert normalized["structure"]["inherited_scenario_contract"]["selected_scenario_id"] == "B"
+    assert normalized["preview"]["inherited_scenario_contract"]["selected_scenario_id"] == "B"
     assert normalized["guardrails"]["phase_intent"] == "shortened_re_entry"
     assert normalized["structure"]["phase_intent"] == "shortened_re_entry"
     assert normalized["preview"]["phase_intent"] == "shortened_re_entry"
@@ -2825,6 +2828,7 @@ def test_normalize_phase_draft_bundle_rewrites_nested_narrative_phase_intents() 
             "phase_role": "BASE",
             "phase_intent": "shortened_re_entry",
             "build_subtype": None,
+            "inherited_scenario_contract": {"selected_scenario_id": "B"},
             "week_role_by_iso_week": {"2026-24": "SHORTENED_RE_ENTRY"},
             "phase_s5_bands": [{"week": "2026-24", "band": {"min": 7893, "max": 10148}}],
         }
@@ -2836,6 +2840,69 @@ def test_normalize_phase_draft_bundle_rewrites_nested_narrative_phase_intents() 
     assert normalized["structure"]["phase_intent"] == "shortened_re_entry"
     assert normalized["preview"]["phase_intent"] == "shortened_re_entry"
     assert normalized["week_blueprints"][0]["phase_intent"] == "shortened_re_entry"
+
+
+def test_normalize_phase_draft_bundle_overwrites_nested_inherited_scenario_contracts() -> None:
+    expected_contract = {
+        "selected_scenario_id": "B",
+        "constraint_summary": [
+            "Indoor trainer availability supports continuity when travel or weather reduces outdoor options."
+        ],
+        "risk_flags": ["Preserve recovery margin through controlled progression."],
+    }
+    draft_bundle = {
+        "phase_range": "2026-24--2026-25",
+        "phase_type": "BASE",
+        "phase_intent": "wrong",
+        "week_blueprints": [
+            {"week": "2026-24", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
+        ],
+        "guardrails": {
+            "phase_summary": ["summary"],
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": [
+                    "Indoor trainer availability supports continuity when travel or weather reduces outdoor work."
+                ],
+            },
+        },
+        "structure": {
+            "upstream_intent": ["x"],
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": ["Paraphrased constraint summary"],
+            },
+        },
+        "preview": {
+            "phase_intent_summary": ["summary"],
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "risk_flags": ["Paraphrased risk flag"],
+            },
+        },
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-24--2026-25",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": None,
+            "inherited_scenario_contract": expected_contract,
+            "week_role_by_iso_week": {"2026-24": "SHORTENED_RE_ENTRY"},
+            "phase_s5_bands": [{"week": "2026-24", "band": {"min": 7893, "max": 10148}}],
+        }
+    ):
+        normalized = normalize_phase_draft_bundle(draft_bundle)
+
+    assert normalized["inherited_scenario_contract"] == expected_contract
+    assert normalized["guardrails"]["inherited_scenario_contract"] == expected_contract
+    assert normalized["structure"]["inherited_scenario_contract"] == expected_contract
+    assert normalized["preview"]["inherited_scenario_contract"] == expected_contract
 
 
 def test_normalize_phase_draft_bundle_raises_when_canonical_phase_intent_missing() -> None:
@@ -2858,6 +2925,29 @@ def test_normalize_phase_draft_bundle_raises_when_canonical_phase_intent_missing
         }
     ):
         with pytest.raises(RuntimeError, match="phase_execution_context\\.phase_intent"):
+            normalize_phase_draft_bundle(draft_bundle)
+
+
+def test_normalize_phase_draft_bundle_raises_when_inherited_scenario_contract_missing() -> None:
+    draft_bundle = {
+        "phase_range": "2026-24--2026-25",
+        "guardrails": {"phase_summary": ["summary"]},
+        "structure": {"upstream_intent": ["x"]},
+        "preview": {"phase_intent_summary": ["summary"]},
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-24--2026-25",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "shortened_re_entry",
+        }
+    ):
+        with pytest.raises(RuntimeError, match="inherited_scenario_contract"):
             normalize_phase_draft_bundle(draft_bundle)
 
 
@@ -2914,10 +3004,23 @@ def test_phase_bundle_matches_context_does_not_require_missing_authority_contrac
 
 
 def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority() -> None:
+    expected_contract = {
+        "selected_scenario_id": "B",
+        "constraint_summary": [
+            "Indoor trainer availability supports continuity when travel or weather reduces outdoor options."
+        ],
+        "risk_flags": ["Preserve recovery margin through controlled progression."],
+    }
     candidate = {
         "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
         "data": {
-            "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": [
+                    "Indoor trainer availability supports continuity when travel or weather reduces outdoor work."
+                ],
+                "risk_flags": ["Paraphrased risk flag."],
+            },
             "upstream_intent": {"primary_objective": "Wrong objective"},
             "structural_phase_elements": {
                 "allowed_day_roles": ["ENDURANCE", "QUALITY"],
@@ -2981,7 +3084,7 @@ def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority()
             },
         },
         phase_execution_context={
-            "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            "inherited_scenario_contract": expected_contract,
             "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
             "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
             "phase_allowed_load_modalities": ["NONE"],
@@ -3013,6 +3116,7 @@ def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority()
     assert repaired_context["data"]["upstream_intent"]["primary_objective"] == (
         "Rebuild load tolerance with controlled sweet spot support."
     )
+    assert repaired_context["data"]["inherited_scenario_contract"] == expected_contract
     assert repaired_context["data"]["load_ranges"]["weekly_kj_bands"] == [
         {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
         {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
@@ -3103,6 +3207,7 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_phase_guardrails
             "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
             "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
             "phase_allowed_load_modalities": ["NONE"],
+            "inherited_scenario_contract": {"selected_scenario_id": "B"},
             "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
             "phase_role_week_load_bands": [
                 {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}},
@@ -3115,6 +3220,61 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_phase_guardrails
     assert ok is False
     assert "pre_guardrail_normalization_failed" in message
     assert "phase_guardrails.data.load_guardrails.weekly_kj_bands" in message
+
+
+def test_phase_structure_writer_guardrails_fail_cleanly_without_inherited_scenario_contract() -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            "structural_phase_elements": {
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                "allowed_load_modalities": ["NONE", "K3"],
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            },
+        },
+    }
+    wrapped = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_execution_context_match",
+        crewai_guardrails.phase_execution_context_match,
+    )
+
+    with guardrail_runtime_context(
+        artifact_type="PHASE_STRUCTURE",
+        loaded_inputs={
+            "phase_guardrails": {
+                "ok": True,
+                "document": {
+                    "data": {
+                        "load_guardrails": {
+                            "weekly_kj_bands": [
+                                {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                                {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                            ]
+                        }
+                    }
+                },
+                "version_key": "2026-24--2026-25__20260608_090000",
+            }
+        },
+        phase_execution_context={
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+        },
+    ):
+        ok, message = wrapped(candidate)
+
+    assert ok is False
+    assert "pre_guardrail_normalization_failed" in message
+    assert "phase_execution_context.inherited_scenario_contract" in message
 
 
 def test_phase_writer_authority_context_block_frontloads_exact_phase_fields() -> None:

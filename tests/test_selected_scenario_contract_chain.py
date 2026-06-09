@@ -33,6 +33,9 @@ def test_review_and_writer_files_state_contract_preservation() -> None:
     assert "inherited_planning_posture" in week_review
     assert "`selected_scenario_contract`" in season_writer
     assert "`inherited_scenario_contract`" in phase_writer
+    assert "do not summarize, paraphrase, compress, or rewrite" in phase_writer.lower()
+    assert "constraint_summary" in phase_writer
+    assert "risk_flags" in phase_writer
 
 
 def test_task_descriptions_reference_selected_or_inherited_posture() -> None:
@@ -41,3 +44,17 @@ def test_task_descriptions_reference_selected_or_inherited_posture() -> None:
     assert "selected_scenario_contract" in tasks
     assert "inherited scenario contract" in tasks.lower()
     assert "inherited_planning_posture" in tasks
+    assert "do not summarize, paraphrase, compress, or rewrite nested fields" in tasks
+
+
+def test_phase_bundle_and_skill_frontload_exact_inherited_contract_copy() -> None:
+    phase_prompt = Path("prompts/agents/phase_bundle_manager.md").read_text(encoding="utf-8")
+    phase_skill = Path("skills/phase/bundle-synthesis/SKILL.md").read_text(encoding="utf-8")
+    artifact_skill = Path("skills/phase/artifact-writing/SKILL.md").read_text(encoding="utf-8")
+
+    assert "freeze `inherited_scenario_contract` exactly" in phase_prompt
+    assert "do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields" in phase_prompt
+    assert "inherited_scenario_contract" in phase_skill
+    assert "constraint_summary" in phase_skill
+    assert "risk_flags" in phase_skill
+    assert "must be copied exactly" in artifact_skill

@@ -595,7 +595,7 @@ tasks:
     agent: phase_artifact_writer
     kind: persisted_artifact
     output: artifact_envelope
-    description: "Create the phase-structure artifact envelope for the exact phase range only after Pass 3 self-audit passed and Review approved. Copy exact legality fields verbatim, emit no extra structural domains, and do not include `NONE` in `PHASE_STRUCTURE.allowed_intensity_domains`; `load_ranges.weekly_kj_bands` and `load_ranges.source` must copy the stored phase-guardrails values exactly. `PHASE_STRUCTURE` must formally trace the exact stored `PHASE_GUARDRAILS`. If review classified a Pass 1 or Pass 2 return finding, do not run writer recovery."
+    description: "Create the phase-structure artifact envelope for the exact phase range only after Pass 3 self-audit passed and Review approved. Copy exact legality fields verbatim, emit no extra structural domains, and do not include `NONE` in `PHASE_STRUCTURE.allowed_intensity_domains`; `load_ranges.weekly_kj_bands` and `load_ranges.source` must copy the stored phase-guardrails values exactly. Copy `inherited_scenario_contract` exactly from injected deterministic authority; do not summarize, paraphrase, compress, or rewrite nested fields such as `constraint_summary` or `risk_flags`. `PHASE_STRUCTURE` must formally trace the exact stored `PHASE_GUARDRAILS`. If review classified a Pass 1 or Pass 2 return finding, do not run writer recovery."
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   phase_preview:
     agent: phase_artifact_writer

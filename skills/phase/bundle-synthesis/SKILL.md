@@ -21,6 +21,7 @@ Authority / injected sources:
 - inherited scenario posture comes from `inherited_scenario_contract`; operationalize it rather than reopening scenario choice
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
 - nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only, never prose or narrative summaries
+- `inherited_scenario_contract` is an exact deterministic contract object; freeze it verbatim and do not paraphrase nested fields such as `constraint_summary` or `risk_flags`
 - if deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`
 - use tools only as fallback for genuinely missing authority fields
 - use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them
@@ -48,6 +49,7 @@ Method:
    - if exact-range structure, week-role skeleton, or phase-slot alignment is wrong, return to Pass 1
    - if structure is valid but reload/re-entry semantics, legality framing, preview meaning, or writer-ready summary is incomplete, return to Pass 2
 9. Mandatory Pass-2 authority freeze:
+   - freeze exact inherited scenario contract
    - freeze exact allowed intensity domains
    - freeze exact forbidden intensity domains
    - freeze exact allowed load modalities

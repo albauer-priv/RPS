@@ -1107,15 +1107,20 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
     )
     if not phase_intent:
         raise RuntimeError("Deterministic phase_execution_context.phase_intent could not be canonicalized.")
+    if not inherited_scenario_contract:
+        raise RuntimeError("Deterministic phase_execution_context.inherited_scenario_contract is missing.")
     normalized_bundle["phase_type"] = phase_type
     normalized_bundle["phase_intent"] = phase_intent
     normalized_bundle["build_subtype"] = build_subtype
-    if inherited_scenario_contract:
-        normalized_bundle["inherited_scenario_contract"] = inherited_scenario_contract
+    normalized_bundle["inherited_scenario_contract"] = inherited_scenario_contract
     for field in ("guardrails", "structure", "preview"):
         nested = _as_map(normalized_bundle.get(field))
         if nested:
-            normalized_bundle[field] = {**nested, "phase_intent": phase_intent}
+            normalized_bundle[field] = {
+                **nested,
+                "phase_intent": phase_intent,
+                "inherited_scenario_contract": inherited_scenario_contract,
+            }
     week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
     exact_band_by_week = role_week_band_by_week(phase_execution_context.get("phase_role_week_load_bands"))
     if not exact_band_by_week:

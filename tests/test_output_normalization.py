@@ -326,6 +326,10 @@ def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_
     document = {
         "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
         "data": {
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": ["Paraphrased constraint summary"],
+            },
             "upstream_intent": {"primary_objective": "Wrong objective"},
             "structural_phase_elements": {
                 "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
@@ -353,6 +357,12 @@ def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_
         phase_execution_context={
             "phase_type": "BASE",
             "phase_intent": "shortened_re_entry",
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": [
+                    "Indoor trainer availability supports continuity when travel or weather reduces outdoor options."
+                ],
+            },
             "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
             "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
             "phase_allowed_load_modalities": ["NONE"],
@@ -374,11 +384,51 @@ def test_normalize_phase_structure_from_execution_context_prefers_exact_runtime_
         "forbidden_intensity_domains"
     ] == ["THRESHOLD", "VO2MAX"]
     assert normalized["data"]["upstream_intent"]["primary_objective"] == "Rebuild load tolerance."
+    assert normalized["data"]["inherited_scenario_contract"]["constraint_summary"] == [
+        "Indoor trainer availability supports continuity when travel or weather reduces outdoor options."
+    ]
     assert (
         normalized["data"]["load_ranges"]["source"]
         == "phase_guardrails_2026-24--2026-25__20260608_090000.json"
     )
     assert normalized["data"]["execution_principles"]["load_intensity_handling"]["quality_intent"] == "Stabilization"
+
+
+def test_normalize_phase_structure_from_execution_context_requires_inherited_contract() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {"upstream_intent": {"primary_objective": "Wrong objective"}},
+    }
+    phase_guardrails = {
+        "data": {
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            }
+        }
+    }
+
+    try:
+        normalize_phase_structure_document_from_execution_context(
+            document,
+            phase_execution_context={
+                "phase_type": "BASE",
+                "phase_intent": "shortened_re_entry",
+                "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                "phase_allowed_load_modalities": ["NONE"],
+                "phase_primary_objective": "Rebuild load tolerance.",
+            },
+            phase_guardrails_document=phase_guardrails,
+            phase_guardrails_version_key="2026-24--2026-25__20260608_090000",
+            season_plan_document=None,
+        )
+    except ValueError as exc:
+        assert "inherited_scenario_contract" in str(exc)
+    else:
+        raise AssertionError("Expected normalize_phase_structure_document_from_execution_context to fail.")
 
 
 def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:

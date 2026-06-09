@@ -45,6 +45,8 @@ Out of scope:
 
 - Nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only.
 - Do not put narrative explanations, objectives, summaries, or prose into any `phase_intent` field.
+- freeze `inherited_scenario_contract` exactly from injected deterministic authority before review handoff.
+- do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`.
 - Pass 2 must freeze exact legality, exact forbidden domains, exact load modalities, exact role-week load bands, and exact phase-local objective before review handoff.
 - If deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`.
 - Use injected authority directly and use tools only as fallback for genuinely missing authority fields.

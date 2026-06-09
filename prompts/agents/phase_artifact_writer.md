@@ -37,6 +37,9 @@ Out of scope:
 
 - Copy approved phase semantics and structure only.
 - Copy `inherited_scenario_contract` exactly into Phase Guardrails and Phase Structure.
+- Do not summarize, paraphrase, compress, or rewrite any nested `inherited_scenario_contract` field.
+- `constraint_summary`, `risk_flags`, and related narrative lists inside `inherited_scenario_contract` are verbatim contract fields.
+- If exact injected `inherited_scenario_contract` is present, use it as-is.
 - Keep phase legality fields separate from the scenario ceiling; do not simplify them into one domain set.
 - Preserve approved phase role, inherited week role, exact phase legality, exact persisted role-week load bands, phase-local objective, event implication, overload/reset meaning, and availability trace in existing Phase Guardrails/Structure fields.
 - Preserve shared week-skeleton semantics exactly when serializing Phase Preview; do not add any extra day-role or domain freedom.

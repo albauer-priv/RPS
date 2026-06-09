@@ -19,6 +19,7 @@ Method:
 - propagate season global constraints exactly where required.
 - `weekly_kj_bands` must be copied from injected deterministic phase authority, not inferred from S5 prose or re-expanded corridor notes.
 - `inherited_scenario_contract` must remain exact season posture ceiling and must not be narrowed to phase-local legality.
+- `inherited_scenario_contract` must be copied exactly; do not summarize, paraphrase, compress, or rewrite nested fields such as `constraint_summary` or `risk_flags`.
 - phase legality fields remain separate from the scenario ceiling.
 - `explicit_forbidden_content` must contain exactly the required six strings.
 - all required self-check booleans must be present and true.
@@ -30,6 +31,7 @@ Method:
 - `load_ranges.weekly_kj_bands` must copy phase-guardrails bands exactly.
 - `load_ranges.source` must be the actual stored phase-guardrails filename.
 - `meta.trace_upstream` must formally reference the exact stored `PHASE_GUARDRAILS`.
+- `inherited_scenario_contract` must be copied exactly from injected deterministic authority; no nested field may be paraphrased or summarized.
 - week-role coverage must match the full phase range.
 - `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` must match inherited Season Plan / PHASE_GUARDRAILS semantics exactly.
 - `upstream_intent.build_subtype` must match inherited authority exactly for `BUILD` phases and stay `null` otherwise.

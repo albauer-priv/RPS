@@ -2041,6 +2041,10 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
             raise ValueError(
                 "PHASE_STRUCTURE pre-guardrail normalization requires phase_execution_context.phase_allowed_intensity_domains."
             )
+        if not _as_map(_as_map(phase_execution_context).get("inherited_scenario_contract")):
+            raise ValueError(
+                "PHASE_STRUCTURE pre-guardrail normalization requires phase_execution_context.inherited_scenario_contract."
+            )
         if not _phase_guardrails_weekly_bands(phase_guardrails_document):
             raise ValueError(
                 "PHASE_STRUCTURE pre-guardrail normalization requires phase_guardrails.data.load_guardrails.weekly_kj_bands."
@@ -2084,6 +2088,61 @@ def _phase_structure_guardrail_diagnostics(normalized_result: Any) -> str:
     )
 
 
+def _first_contract_mismatch_path(candidate: object, authority: object, *, prefix: str) -> str:
+    """Return the first nested mismatch path between two JSON-like contract values."""
+
+    if isinstance(candidate, dict) and isinstance(authority, dict):
+        keys = sorted(set(candidate) | set(authority))
+        for key in keys:
+            child = _first_contract_mismatch_path(
+                candidate.get(key),
+                authority.get(key),
+                prefix=f"{prefix}.{key}",
+            )
+            if child:
+                return child
+        return ""
+    if isinstance(candidate, list) and isinstance(authority, list):
+        if len(candidate) != len(authority):
+            return f"{prefix}[len]"
+        for index, (left, right) in enumerate(zip(candidate, authority, strict=True)):
+            child = _first_contract_mismatch_path(
+                left,
+                right,
+                prefix=f"{prefix}[{index}]",
+            )
+            if child:
+                return child
+        return ""
+    return "" if candidate == authority else prefix
+
+
+def _phase_structure_contract_diagnostics(normalized_result: Any) -> str:
+    """Return a compact diagnostic string for PHASE_STRUCTURE inherited-contract mismatches."""
+
+    mapping = _coerce_mapping(normalized_result)
+    if not isinstance(mapping, dict):
+        return ""
+    context = current_guardrail_runtime_context()
+    loaded_inputs = context.get("loaded_inputs")
+    loaded_inputs = loaded_inputs if isinstance(loaded_inputs, dict) else {}
+    phase_execution_context = _as_map(context.get("phase_execution_context"))
+    observed = _as_map(_as_map(mapping.get("data")).get("inherited_scenario_contract"))
+    expected = _as_map(phase_execution_context.get("inherited_scenario_contract"))
+    mismatch_path = _first_contract_mismatch_path(
+        observed,
+        expected,
+        prefix="data.inherited_scenario_contract",
+    )
+    return (
+        "phase_contract_diag="
+        f"execution_context_contract={'yes' if expected else 'no'},"
+        f"bundle_contract={'yes' if _as_map(mapping.get('inherited_scenario_contract')) else 'no'},"
+        f"phase_guardrails={'yes' if extract_loaded_document(loaded_inputs.get('phase_guardrails')) else 'no'},"
+        f"mismatch_path={mismatch_path or 'none'}"
+    )
+
+
 def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
     """Wrap one guardrail so failures become compact retry-relevant runtime events."""
 
@@ -2111,11 +2170,18 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
             if (
                 artifact_type == ArtifactType.PHASE_STRUCTURE.value
                 and guardrail_name == "phase_execution_context_match"
-                and "phase_structural_allowed_domains_mismatch" in str(payload)
             ):
-                diagnostics = _phase_structure_guardrail_diagnostics(normalized_result)
-                if diagnostics:
-                    reason = f"{reason} | {diagnostics}"[:500]
+                diagnostics_parts: list[str] = []
+                if "phase_structural_allowed_domains_mismatch" in str(payload):
+                    diagnostics = _phase_structure_guardrail_diagnostics(normalized_result)
+                    if diagnostics:
+                        diagnostics_parts.append(diagnostics)
+                if "phase_inherited_scenario_contract_mismatch" in str(payload):
+                    diagnostics = _phase_structure_contract_diagnostics(normalized_result)
+                    if diagnostics:
+                        diagnostics_parts.append(diagnostics)
+                if diagnostics_parts:
+                    reason = f"{reason} | {' | '.join(diagnostics_parts)}"[:500]
             emit_runtime_event(
                 root=context.get("root"),
                 athlete_id=context.get("athlete_id"),
