@@ -446,7 +446,7 @@ def validate_phase_bundle_review_readiness(*, phase_bundle_payload: JsonMap) -> 
                     path=f"{field}.phase_intent",
                 )
             )
-    if not [str(item).strip() for item in _as_list(_as_map(phase_bundle_payload.get("guardrails")).get("phase_summary")) if str(item).strip()]:
+    if not _as_map(_as_map(phase_bundle_payload.get("guardrails")).get("phase_summary")):
         issues.append(
             PlanningContractIssue(
                 "phase_bundle_guardrails_summary_missing",
@@ -454,7 +454,7 @@ def validate_phase_bundle_review_readiness(*, phase_bundle_payload: JsonMap) -> 
                 path="guardrails.phase_summary",
             )
         )
-    if not [str(item).strip() for item in _as_list(_as_map(phase_bundle_payload.get("preview")).get("phase_intent_summary")) if str(item).strip()]:
+    if not _as_map(_as_map(phase_bundle_payload.get("preview")).get("phase_intent_summary")):
         issues.append(
             PlanningContractIssue(
                 "phase_bundle_preview_summary_missing",

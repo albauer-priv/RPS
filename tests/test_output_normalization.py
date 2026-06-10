@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from rps.agents.output_normalization import (
     extract_planning_events_document,
@@ -815,8 +816,8 @@ def test_normalize_phase_preview_replaces_duplicate_trace_entries_with_canonical
 
 def test_phase_preview_payload_model_accepts_structured_weekly_agenda_preview() -> None:
     model = PhasePreviewPayloadModel(
-        phase_intent_summary=["summary"],
-        feel_overview=["feel"],
+        phase_intent_summary={"phase_intent": "shortened_re_entry", "primary_objective": "Rebuild load tolerance."},
+        feel_overview={"dominant_theme": "Calm re-entry"},
         weekly_agenda_preview=[
             {
                 "week": "2026-24",
@@ -831,12 +832,27 @@ def test_phase_preview_payload_model_accepts_structured_weekly_agenda_preview() 
                 ],
             }
         ],
-        week_to_week_narrative=["narrative"],
+        week_to_week_narrative={
+            "what_will_not_change": "Fixed rest and allowed domain shape stay aligned.",
+            "what_is_flexible": "Week planning may add concrete workout detail.",
+        },
         deviation_rules=["rule"],
     )
 
     assert model.weekly_agenda_preview[0].week == "2026-24"
     assert model.weekly_agenda_preview[0].days[0].day_role == "REST"
+    assert model.phase_intent_summary.phase_intent == "shortened_re_entry"
+    assert model.feel_overview.dominant_theme == "Calm re-entry"
+    assert "Week planning may add concrete workout detail." == model.week_to_week_narrative.what_is_flexible
+
+
+def test_phase_preview_payload_model_rejects_legacy_list_shape() -> None:
+    with pytest.raises(ValidationError):
+        PhasePreviewPayloadModel(
+            phase_intent_summary=["summary"],
+            feel_overview=["feel"],
+            week_to_week_narrative=["narrative"],
+        )
 
 
 def test_extract_planning_events_document_parses_workspace_payload() -> None:

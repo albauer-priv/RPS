@@ -1752,9 +1752,9 @@ def test_draft_bundle_models_accept_legacy_semantic_hints_before_normalization()
                 week_role="LOAD_2",
             )
         ],
-        guardrails={"phase_summary": []},
-        structure={"upstream_intent": []},
-        preview={"phase_intent_summary": []},
+        guardrails={"phase_summary": {}},
+        structure={"upstream_intent": {}},
+        preview={"phase_intent_summary": {}},
         constraint_audit={"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         load_governance_audit={
             "blocking_issues": [],
@@ -2847,9 +2847,9 @@ def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_co
         "week_blueprints": [
             {"week": "2026-21", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
         ],
-        "guardrails": {"phase_summary": [], "inherited_scenario_contract": {"selected_scenario_id": "C"}},
-        "structure": {"upstream_intent": [], "inherited_scenario_contract": {"selected_scenario_id": "A"}},
-        "preview": {"phase_intent_summary": [], "inherited_scenario_contract": {"selected_scenario_id": "D"}},
+        "guardrails": {"phase_summary": {}, "inherited_scenario_contract": {"selected_scenario_id": "C"}},
+        "structure": {"upstream_intent": {}, "inherited_scenario_contract": {"selected_scenario_id": "A"}},
+        "preview": {"phase_intent_summary": {}, "inherited_scenario_contract": {"selected_scenario_id": "D"}},
         "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
         "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
@@ -2894,15 +2894,15 @@ def test_normalize_phase_draft_bundle_rewrites_nested_narrative_phase_intents() 
         ],
         "guardrails": {
             "phase_intent": "Re-establish stable training continuity under moderated load.",
-            "phase_summary": ["summary"],
+            "phase_summary": {"primary_objective": "Rebuild load tolerance."},
         },
         "structure": {
             "phase_intent": "Controlled re-entry narrative",
-            "upstream_intent": ["x"],
+            "upstream_intent": {"phase_intent": "shortened_re_entry"},
         },
         "preview": {
             "phase_intent": "Keep the weeks feeling stable and aerobic.",
-            "phase_intent_summary": ["summary"],
+            "phase_intent_summary": {"phase_intent": "shortened_re_entry"},
         },
         "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
@@ -2946,7 +2946,7 @@ def test_normalize_phase_draft_bundle_overwrites_nested_inherited_scenario_contr
             {"week": "2026-24", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
         ],
         "guardrails": {
-            "phase_summary": ["summary"],
+            "phase_summary": {"primary_objective": "Rebuild load tolerance."},
             "inherited_scenario_contract": {
                 "selected_scenario_id": "B",
                 "constraint_summary": [
@@ -2955,14 +2955,14 @@ def test_normalize_phase_draft_bundle_overwrites_nested_inherited_scenario_contr
             },
         },
         "structure": {
-            "upstream_intent": ["x"],
+            "upstream_intent": {"phase_intent": "shortened_re_entry"},
             "inherited_scenario_contract": {
                 "selected_scenario_id": "B",
                 "constraint_summary": ["Paraphrased constraint summary"],
             },
         },
         "preview": {
-            "phase_intent_summary": ["summary"],
+            "phase_intent_summary": {"phase_intent": "shortened_re_entry"},
             "inherited_scenario_contract": {
                 "selected_scenario_id": "B",
                 "risk_flags": ["Paraphrased risk flag"],
@@ -2996,9 +2996,9 @@ def test_normalize_phase_draft_bundle_overwrites_nested_inherited_scenario_contr
 def test_normalize_phase_draft_bundle_raises_when_canonical_phase_intent_missing() -> None:
     draft_bundle = {
         "phase_range": "2026-24--2026-25",
-        "guardrails": {"phase_summary": ["summary"]},
-        "structure": {"upstream_intent": ["x"]},
-        "preview": {"phase_intent_summary": ["summary"]},
+        "guardrails": {"phase_summary": {"primary_objective": "Rebuild load tolerance."}},
+        "structure": {"upstream_intent": {"phase_intent": "shortened_re_entry"}},
+        "preview": {"phase_intent_summary": {"phase_intent": "shortened_re_entry"}},
         "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
         "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
@@ -3019,9 +3019,9 @@ def test_normalize_phase_draft_bundle_raises_when_canonical_phase_intent_missing
 def test_normalize_phase_draft_bundle_raises_when_inherited_scenario_contract_missing() -> None:
     draft_bundle = {
         "phase_range": "2026-24--2026-25",
-        "guardrails": {"phase_summary": ["summary"]},
-        "structure": {"upstream_intent": ["x"]},
-        "preview": {"phase_intent_summary": ["summary"]},
+        "guardrails": {"phase_summary": {"primary_objective": "Rebuild load tolerance."}},
+        "structure": {"upstream_intent": {"phase_intent": "shortened_re_entry"}},
+        "preview": {"phase_intent_summary": {"phase_intent": "shortened_re_entry"}},
         "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
         "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
@@ -3047,9 +3047,9 @@ def test_phase_bundle_matches_context_accepts_inherited_scenario_contract_in_syn
         "week_blueprints": [
             {"week": "2026-21", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000},
         ],
-        "guardrails": {"phase_summary": []},
-        "structure": {"upstream_intent": []},
-        "preview": {"phase_intent_summary": []},
+        "guardrails": {"phase_summary": {}},
+        "structure": {"upstream_intent": {}},
+        "preview": {"phase_intent_summary": {}},
         "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
         "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
         "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
@@ -4043,9 +4043,9 @@ def test_phase_bundle_review_readiness_rejects_unready_bundle() -> None:
     ok, message = phase_bundle_review_readiness(
         {
             "phase_intent": "general_base",
-            "guardrails": {"phase_intent": "general_base", "phase_summary": []},
+            "guardrails": {"phase_intent": "general_base", "phase_summary": {}},
             "structure": {"phase_intent": "specificity_build"},
-            "preview": {"phase_intent": "general_base", "phase_intent_summary": []},
+            "preview": {"phase_intent": "general_base", "phase_intent_summary": {}},
             "constraint_audit": {"blocking_issues": []},
             "load_governance_audit": {"blocking_issues": []},
         }
@@ -4059,9 +4059,9 @@ def test_phase_bundle_review_readiness_accepts_normalized_nested_phase_intents()
     ok, payload = phase_bundle_review_readiness(
         {
             "phase_intent": "shortened_re_entry",
-            "guardrails": {"phase_intent": "shortened_re_entry", "phase_summary": ["summary"]},
+            "guardrails": {"phase_intent": "shortened_re_entry", "phase_summary": {"primary_objective": "Rebuild load tolerance."}},
             "structure": {"phase_intent": "shortened_re_entry"},
-            "preview": {"phase_intent": "shortened_re_entry", "phase_intent_summary": ["summary"]},
+            "preview": {"phase_intent": "shortened_re_entry", "phase_intent_summary": {"phase_intent": "shortened_re_entry"}},
             "constraint_audit": {"blocking_issues": []},
             "load_governance_audit": {"blocking_issues": []},
         }
@@ -6358,9 +6358,9 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                             s5_band_max=6000,
                         )
                     ],
-                    guardrails={"phase_intent": "general_base", "phase_summary": ["Conservative base support."]},
+                    guardrails={"phase_intent": "general_base", "phase_summary": {"primary_objective": "Conservative base support."}},
                     structure={"phase_intent": "general_base"},
-                    preview={"phase_intent": "general_base", "phase_intent_summary": ["Stable aerobic build."]},
+                    preview={"phase_intent": "general_base", "phase_intent_summary": {"phase_intent": "general_base", "primary_objective": "Stable aerobic build."}},
                     constraint_audit={"blocking_issues": []},
                     load_governance_audit={"blocking_issues": []},
                     decision_summary={},

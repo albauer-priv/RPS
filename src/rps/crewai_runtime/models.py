@@ -463,28 +463,174 @@ class LoadGovernanceAuditModel(StrictOutputModel):
     durability_first_respected: bool = True
 
 
+class PhasePersistedLoadBandModel(StrictOutputModel):
+    """Structured persisted load band with deterministic notes."""
+
+    min: int | float
+    max: int | float
+    notes: str | None = None
+
+
+class PhaseWeeklyKjBandModel(StrictOutputModel):
+    """One persisted weekly kJ band row for phase artifacts."""
+
+    week: str
+    band: PhasePersistedLoadBandModel
+
+
+class PhaseSummaryModel(StrictOutputModel):
+    """Structured summary block used by PHASE_GUARDRAILS and preview intent summaries."""
+
+    primary_objective: str | None = None
+    secondary_objectives: list[str] = Field(default_factory=list)
+    non_negotiables: list[str] = Field(default_factory=list)
+    key_risks_warnings: list[str] = Field(default_factory=list)
+
+
+class PhaseQualityDensityModel(StrictOutputModel):
+    """Structured quality-density and intensity handling semantics."""
+
+    quality_intent: str | None = None
+    max_quality_days_per_week: int | None = None
+    forbidden_intensity_domains: list[str] = Field(default_factory=list)
+
+
+class PhaseAllowedForbiddenSemanticsModel(StrictOutputModel):
+    """Structured legality block for phase guardrails."""
+
+    allowed_day_roles: list[str] = Field(default_factory=list)
+    forbidden_day_roles: list[str] = Field(default_factory=list)
+    allowed_intensity_domains: list[str] = Field(default_factory=list)
+    forbidden_intensity_domains: list[str] = Field(default_factory=list)
+    allowed_load_modalities: list[str] = Field(default_factory=list)
+    forbidden_load_modalities: list[str] = Field(default_factory=list)
+    quality_density: PhaseQualityDensityModel = Field(default_factory=PhaseQualityDensityModel)
+
+
+class PhaseEventConstraintModel(StrictOutputModel):
+    """Structured event constraint row for phase guardrails."""
+
+    date: str | None = None
+    week: str | None = None
+    type: str | None = None
+    constraint: str | None = None
+
+
+class PhaseEventsConstraintsModel(StrictOutputModel):
+    """Structured events and logistics constraints for phase guardrails."""
+
+    events: list[PhaseEventConstraintModel] = Field(default_factory=list)
+    logistics_time_constraints: list[str] = Field(default_factory=list)
+
+
+class PhaseExecutionNonNegotiablesModel(StrictOutputModel):
+    """Structured non-negotiables for phase guardrails."""
+
+    recovery_protection_rules: str | None = None
+    long_endurance_anchor_protection: str | None = None
+    minimum_recovery_opportunities: str | None = None
+    no_catch_up_rule: str | None = None
+
+
+class PhaseLoadGuardrailsModel(StrictOutputModel):
+    """Structured load guardrails for phase guardrails payloads."""
+
+    weekly_kj_bands: list[PhaseWeeklyKjBandModel] = Field(default_factory=list)
+    confidence_assumptions: list[str] = Field(default_factory=list)
+
+
 class PhaseGuardrailsPayloadModel(StrictOutputModel):
     """Internal phase draft for guardrails payload content."""
 
     inherited_scenario_contract: SelectedScenarioContractModel | None = None
-    phase_summary: list[str] = Field(default_factory=list)
+    phase_summary: PhaseSummaryModel = Field(default_factory=PhaseSummaryModel)
     phase_intent: str | None = None
-    load_guardrails: list[str] = Field(default_factory=list)
-    allowed_forbidden_semantics: list[str] = Field(default_factory=list)
-    events_constraints: list[str] = Field(default_factory=list)
-    execution_non_negotiables: list[str] = Field(default_factory=list)
+    load_guardrails: PhaseLoadGuardrailsModel = Field(default_factory=PhaseLoadGuardrailsModel)
+    allowed_forbidden_semantics: PhaseAllowedForbiddenSemanticsModel = Field(
+        default_factory=PhaseAllowedForbiddenSemanticsModel
+    )
+    events_constraints: PhaseEventsConstraintsModel = Field(default_factory=PhaseEventsConstraintsModel)
+    execution_non_negotiables: PhaseExecutionNonNegotiablesModel = Field(
+        default_factory=PhaseExecutionNonNegotiablesModel
+    )
+
+
+class PhaseUpstreamIntentModel(StrictOutputModel):
+    """Structured upstream phase intent block for phase structure."""
+
+    phase_intent: str | None = None
+    phase_taxonomy_version: str | None = None
+    phase_type: str | None = None
+    build_subtype: str | None = None
+    primary_objective: str | None = None
+    phase_status: str | None = None
+    non_negotiables: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+    key_risks_warnings: list[str] = Field(default_factory=list)
+
+
+class PhaseLoadRangesModel(StrictOutputModel):
+    """Structured load ranges block for phase structure."""
+
+    weekly_kj_bands: list[PhaseWeeklyKjBandModel] = Field(default_factory=list)
+    source: str | None = None
+
+
+class PhaseRecoveryProtectionModel(StrictOutputModel):
+    """Structured recovery-protection block for phase structure."""
+
+    fixed_non_training_days: list[str] = Field(default_factory=list)
+
+
+class PhaseExecutionPrinciplesModel(StrictOutputModel):
+    """Structured execution-principles block for phase structure."""
+
+    load_intensity_handling: PhaseQualityDensityModel = Field(default_factory=PhaseQualityDensityModel)
+    recovery_protection: PhaseRecoveryProtectionModel = Field(default_factory=PhaseRecoveryProtectionModel)
+    consistency_over_optimization: str | None = None
+    phase_role: str | None = None
+
+
+class PhaseStructuralElementsModel(StrictOutputModel):
+    """Structured structural legality block for phase structure."""
+
+    allowed_day_roles: list[str] = Field(default_factory=list)
+    allowed_intensity_domains: list[str] = Field(default_factory=list)
+    allowed_load_modalities: list[str] = Field(default_factory=list)
+
+
+class PhaseWeekRoleEntryModel(StrictOutputModel):
+    """One week-role row inside the shared phase skeleton."""
+
+    week: str
+    role: str
+
+
+class PhaseWeekRolesModel(StrictOutputModel):
+    """Wrapper for structured week-role rows."""
+
+    week_roles: list[PhaseWeekRoleEntryModel] = Field(default_factory=list)
+
+
+class PhaseWeekSkeletonLogicModel(StrictOutputModel):
+    """Structured week-skeleton logic for phase structure."""
+
+    week_roles: PhaseWeekRolesModel = Field(default_factory=PhaseWeekRolesModel)
+    mandatory_elements: list[str] = Field(default_factory=list)
+    optional_elements: list[str] = Field(default_factory=list)
+    forbidden_patterns: list[str] = Field(default_factory=list)
 
 
 class PhaseStructurePayloadModel(StrictOutputModel):
     """Internal phase draft for structural execution guidance."""
 
     inherited_scenario_contract: SelectedScenarioContractModel | None = None
-    upstream_intent: list[str] = Field(default_factory=list)
+    upstream_intent: PhaseUpstreamIntentModel = Field(default_factory=PhaseUpstreamIntentModel)
     phase_intent: str | None = None
-    load_ranges: list[str] = Field(default_factory=list)
-    execution_principles: list[str] = Field(default_factory=list)
-    structural_phase_elements: list[str] = Field(default_factory=list)
-    week_skeleton_logic: list[str] = Field(default_factory=list)
+    load_ranges: PhaseLoadRangesModel = Field(default_factory=PhaseLoadRangesModel)
+    execution_principles: PhaseExecutionPrinciplesModel = Field(default_factory=PhaseExecutionPrinciplesModel)
+    structural_phase_elements: PhaseStructuralElementsModel = Field(default_factory=PhaseStructuralElementsModel)
+    week_skeleton_logic: PhaseWeekSkeletonLogicModel = Field(default_factory=PhaseWeekSkeletonLogicModel)
     adaptation_rules: list[str] = Field(default_factory=list)
 
 
@@ -505,14 +651,42 @@ class PhasePreviewWeekAgendaModel(StrictOutputModel):
     days: list[PhasePreviewAgendaDayModel] = Field(default_factory=list)
 
 
+class PhaseIntentSummaryModel(StrictOutputModel):
+    """Structured phase intent summary for preview payloads."""
+
+    phase_type: str | None = None
+    phase_intent: str | None = None
+    build_subtype: str | None = None
+    phase_taxonomy_version: str | None = None
+    primary_objective: str | None = None
+    non_negotiables: list[str] = Field(default_factory=list)
+    key_risks_warnings: list[str] = Field(default_factory=list)
+
+
+class PhaseFeelOverviewModel(StrictOutputModel):
+    """Structured high-level feel summary for preview payloads."""
+
+    dominant_theme: str | None = None
+    intensity_handling_conceptual: str | None = None
+    recovery_protection_conceptual: str | None = None
+
+
+class PhaseWeekToWeekNarrativeModel(StrictOutputModel):
+    """Structured explanation of fixed versus flexible preview semantics."""
+
+    direction: str | None = None
+    what_will_not_change: str | None = None
+    what_is_flexible: str | None = None
+
+
 class PhasePreviewPayloadModel(StrictOutputModel):
     """Internal phase draft for preview-only narrative output."""
 
-    phase_intent_summary: list[str] = Field(default_factory=list)
+    phase_intent_summary: PhaseIntentSummaryModel = Field(default_factory=PhaseIntentSummaryModel)
     phase_intent: str | None = None
-    feel_overview: list[str] = Field(default_factory=list)
+    feel_overview: PhaseFeelOverviewModel = Field(default_factory=PhaseFeelOverviewModel)
     weekly_agenda_preview: list[PhasePreviewWeekAgendaModel] = Field(default_factory=list)
-    week_to_week_narrative: list[str] = Field(default_factory=list)
+    week_to_week_narrative: PhaseWeekToWeekNarrativeModel = Field(default_factory=PhaseWeekToWeekNarrativeModel)
     deviation_rules: list[str] = Field(default_factory=list)
 
 
