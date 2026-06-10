@@ -41,7 +41,14 @@ Field completion contract:
   - preferred example: `Matches the target horizon well by supporting a steadier progression toward the September A event.`
 - `constraint_summary` = binding practical constraints
   - keep it as a structured string array, not one joined paragraph
-  - preferred examples: `Fixed rest days are Monday and Friday.`, `Weekly availability remains limited on weekdays and higher on the weekend.`
+  - examples are illustrative of structure and specificity only, not canonical wording
+  - do not mechanically reuse example sentences; express the actual constraint supported by injected athlete/context facts
+  - fixed rest-day constraint pattern
+    - valid examples: `Monday and Friday remain fixed no-ride days.` / `The weekly structure keeps Monday and Friday as fixed rest days.`
+  - weekday vs weekend availability asymmetry pattern
+    - valid examples: `Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.` / `The load-bearing time budget sits mainly on the weekend because weekday availability stays compressed.`
+  - indoor / weather / travel continuity pattern
+    - valid examples: `Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.` / `Travel or poor weather can be absorbed more safely because indoor fallback remains available.`
 - `kpi_guardrail_notes` = pacing / efficiency / metabolic guardrails, not sales prose
   - keep it as a structured string array
   - preferred example: `Keep long-ride pacing aligned with the brevet-ultra sustainable to fast-competitive boundary rather than chasing intensity for its own sake.`
@@ -227,6 +234,7 @@ Internal consistency checks:
 Hard rules:
 - the active scenario-generation layer is the front-loaded source of operational posture; do not defer recovery, fatigue, or specificity stance to Selection, Season planning, review, writer, or renderer
 - the active scenario-generation layer must be self-contained for operational posture: define `recovery_margin`, `fatigue_exposure`, and `specificity_density` locally here and serialize them directly
+- examples illustrate structure and specificity only; do not mechanically reuse example sentences in `constraint_summary`, and apply the same principle to `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes`
 - output exactly three scenarios
 - keep numeric weekly kJ targets for season/phase planning tasks
 - use canonical intensity domains

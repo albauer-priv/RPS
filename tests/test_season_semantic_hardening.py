@@ -110,6 +110,19 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "only future / in-horizon events are provided to the scenario agent" in scenario_skill
     assert "do not infer active scenario logic from past or completed events" in scenario_skill
     assert "`allowed_domains` define eligibility for later assignment only" in scenario_skill
+    assert "Examples are illustrative of structure and specificity only, not canonical wording." in prompt
+    assert "Do not mechanically reuse example sentences" in prompt
+    assert "Fixed rest-day constraint pattern" in prompt
+    assert "Weekday vs weekend availability asymmetry pattern" in prompt
+    assert "Indoor / weather / travel continuity pattern" in prompt
+    assert "Monday and Friday remain fixed no-ride days." in prompt
+    assert "The weekly structure keeps Monday and Friday as fixed rest days." in prompt
+    assert "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend." in prompt
+    assert "The load-bearing time budget sits mainly on the weekend because weekday availability stays compressed." in prompt
+    assert "Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding." in prompt
+    assert "Travel or poor weather can be absorbed more safely because indoor fallback remains available." in prompt
+    assert "Fixed rest days are Monday and Friday." not in prompt
+    assert "Weekly availability remains limited on weekdays and higher on the weekend." not in prompt
     assert "Ensure `best_suited_if` is a real positive selection gate" in scenario_skill
     assert "preferred example: `Choose when continuity priority and uncertain recovery dominate.`" in scenario_skill
     assert "preferred example: `Choose when stable recovery supports systematic progression.`" in scenario_skill
@@ -118,6 +131,19 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "preferred example: `Less forgiving than A if continuity break or recovery slip appears.`" in scenario_skill
     assert "preferred example: `Too aggressive if fatigue risk or travel disruption appears.`" in scenario_skill
     assert "Field completion contract:" in scenario_skill
+    assert "examples are illustrative of structure and specificity only, not canonical wording" in scenario_skill
+    assert "do not mechanically reuse example sentences" in scenario_skill
+    assert "fixed rest-day constraint pattern" in scenario_skill
+    assert "weekday vs weekend availability asymmetry pattern" in scenario_skill
+    assert "indoor / weather / travel continuity pattern" in scenario_skill
+    assert "Monday and Friday remain fixed no-ride days." in scenario_skill
+    assert "The weekly structure keeps Monday and Friday as fixed rest days." in scenario_skill
+    assert "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend." in scenario_skill
+    assert "The load-bearing time budget sits mainly on the weekend because weekday availability stays compressed." in scenario_skill
+    assert "Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding." in scenario_skill
+    assert "Travel or poor weather can be absorbed more safely because indoor fallback remains available." in scenario_skill
+    assert "Fixed rest days are Monday and Friday." not in scenario_skill
+    assert "Weekly availability remains limited on weekdays and higher on the weekend." not in scenario_skill
     assert "`scenario_guidance.recovery_margin` = explicit recovery stance as a non-empty string" in scenario_skill
     assert "`scenario_guidance.fatigue_exposure` = explicit fatigue posture as a non-empty string" in scenario_skill
     assert "`scenario_guidance.specificity_density` = explicit specificity posture as a non-empty string" in scenario_skill

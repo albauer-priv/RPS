@@ -97,7 +97,14 @@ Out of scope:
   - preferred example: `Matches the target horizon well by supporting a steadier progression toward the September A event.`
 - `constraint_summary` should summarize the binding practical constraints that shape the scenario.
   - Keep `constraint_summary` as a structured string array.
-  - preferred examples: `Fixed rest days are Monday and Friday.`, `Weekly availability remains limited on weekdays and higher on the weekend.`, `Travel history argues for a plan that can tolerate occasional interruptions without collapsing.`
+  - Examples are illustrative of structure and specificity only, not canonical wording.
+  - Do not mechanically reuse example sentences; write the actual constraint supported by injected athlete/context facts.
+  - Fixed rest-day constraint pattern: short operational sentence naming non-training anchors.
+    - valid examples: `Monday and Friday remain fixed no-ride days.` / `The weekly structure keeps Monday and Friday as fixed rest days.`
+  - Weekday vs weekend availability asymmetry pattern: short sentence explaining compact weekday windows and longer weekend capacity.
+    - valid examples: `Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.` / `The load-bearing time budget sits mainly on the weekend because weekday availability stays compressed.`
+  - Indoor / weather / travel continuity pattern: short sentence explaining fallback continuity when outdoor execution is disrupted.
+    - valid examples: `Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.` / `Travel or poor weather can be absorbed more safely because indoor fallback remains available.`
 - `kpi_guardrail_notes` should explain pacing, efficiency, or metabolic guardrails, not repeat the whole scenario sales pitch.
   - Keep `kpi_guardrail_notes` as a structured string array.
   - preferred example: `Keep long-ride pacing aligned with the brevet-ultra sustainable to fast-competitive boundary rather than chasing intensity for its own sake.`
@@ -115,6 +122,7 @@ Out of scope:
 
 - The active scenario-generation layer is the front-loaded source of operational posture. Do not defer `recovery_margin`, `fatigue_exposure`, or `specificity_density` to selection, season planning, review, writer, or renderer.
 - The active scenario-generation layer must be self-contained for operational posture: define those fields locally here and serialize them directly.
+- Examples illustrate structure and specificity only. Do not mechanically reuse example sentences in `constraint_summary`; the same principle applies when writing `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes`.
 - Stay qualitative unless the schema explicitly requires a bounded value.
 - Do not make binding cadence, macrocycle, or corridor decisions, but do emit a coherent advisory cadence recommendation per scenario.
 - Do not redesign season governance.
