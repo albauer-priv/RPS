@@ -3091,6 +3091,8 @@ def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, o
     normalized = normalize_phase_guardrails_document(
         normalized,
         season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
+        season_scenario_selection_document=extract_loaded_document(loaded_inputs.get("season_scenario_selection")),
+        season_scenarios_document=extract_loaded_document(loaded_inputs.get("season_scenarios")),
     )
     if spec.artifact_type == ArtifactType.WEEK_PLAN:
         normalized = _normalize_week_plan_meta(normalized)

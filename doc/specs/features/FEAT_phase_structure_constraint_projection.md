@@ -61,6 +61,16 @@ Owner: Planning Runtime
   * missing season availability/risk/recovery/event constraints in `upstream_intent.constraints`
   * exact `load_ranges.weekly_kj_bands` from stored `PHASE_GUARDRAILS`
   * exact `load_ranges.source` filename derived from the written guardrails version
+* Final `PHASE_STRUCTURE` normalization also canonicalizes `upstream_intent.constraints` against deterministic upstream fact groups:
+  * one canonical injected sentence per known season/global fact
+  * no surviving writer paraphrase for the same fact
+  * exact residual free-text constraints preserved once when they do not map to a deterministic upstream fact
+* Stored constraint order is stabilized as:
+  * availability/logistics
+  * risk/recovery resilience
+  * phase-local residual directives
+  * event windows/anchors
+  * remaining residual exact strings
 
 **UI impact**
 

@@ -212,6 +212,162 @@ def _merge_unique_strings(existing: list[str], required: list[str]) -> list[str]
     return merged
 
 
+def _normalized_text_token(value: object) -> str:
+    """Return a stable lowercase token for exact text dedupe only."""
+
+    return " ".join(str(value or "").strip().lower().split())
+
+
+_DAY_NAME_TOKENS = {
+    "monday",
+    "mon",
+    "tuesday",
+    "tue",
+    "wednesday",
+    "wed",
+    "thursday",
+    "thu",
+    "friday",
+    "fri",
+    "saturday",
+    "sat",
+    "sunday",
+    "sun",
+}
+
+
+def _constraint_semantic_signature(value: object) -> tuple[str, tuple[str, ...]] | None:
+    """Return a narrow deterministic signature for recurring season constraint facts.
+
+    This intentionally targets only known recurring upstream fact families so we can
+    drop writer paraphrases when the canonical injected season constraint is present.
+    Unknown free-text constraints are left untouched apart from exact-text dedupe.
+    """
+
+    text = str(value or "").strip()
+    if not text:
+        return None
+    lowered = text.lower()
+    tokens = set(re.findall(r"[a-z0-9]+", lowered))
+
+    event_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", text)
+    if event_match:
+        return ("event_window", (event_match.group(1),))
+
+    day_tokens = tuple(sorted(token for token in tokens if token in _DAY_NAME_TOKENS))
+    if (
+        "rest" in tokens
+        or "ride" in tokens
+        or "noride" in tokens
+        or "no" in tokens
+        or "non" in tokens
+        or "training" in tokens
+    ) and ("fixed" in tokens or "locked" in tokens or "preserved" in tokens):
+        return ("fixed_rest_days", day_tokens or ("generic",))
+
+    if (
+        ("indoor" in tokens or "trainer" in tokens)
+        and ({"weather", "travel"} & tokens)
+        and ({"continuity", "outdoor", "disrupt", "disrupts", "reduces", "reduce"} & tokens)
+    ):
+        return ("indoor_continuity", ())
+
+    if (
+        ({"weekday", "weekdays"} & tokens or {"tue", "thu"} <= tokens)
+        and ({"weekend", "weekends"} & tokens)
+        and ({"compact", "limited", "windows", "window", "longer", "shifting"} & tokens)
+    ):
+        return ("weekday_weekend_asymmetry", ())
+
+    if (
+        ("business" in tokens and "travel" in tokens)
+        or ({"travel", "disruption"} <= tokens)
+        or ({"missed", "sessions"} <= tokens)
+    ) and ({"resilience", "resilient", "conservative", "continuity"} & tokens):
+        return ("travel_resilience", ())
+
+    return None
+
+
+def _canonicalize_phase_structure_constraints(
+    existing_constraints: list[str],
+    *,
+    canonical_availability: list[str],
+    canonical_risks: list[str],
+    canonical_phase_constraints: list[str],
+    canonical_event_windows: list[str],
+    canonical_residual: list[str] | None = None,
+) -> list[str]:
+    """Return one stable constraint list for PHASE_STRUCTURE.upstream_intent.constraints."""
+
+    canonical_residual = canonical_residual or []
+    canonical_groups = [
+        canonical_availability,
+        canonical_risks,
+        canonical_phase_constraints,
+        canonical_event_windows,
+    ]
+    canonical_signatures = {
+        signature
+        for group in canonical_groups
+        for item in group
+        for signature in [_constraint_semantic_signature(item)]
+        if signature is not None
+    }
+    if any(signature[0] == "fixed_rest_days" for signature in canonical_signatures):
+        canonical_signatures.add(("fixed_rest_days", ("generic",)))
+
+    residual_phase: list[str] = []
+    residual_exact: list[str] = []
+    seen_exact: set[str] = set()
+    for item in _text_list(existing_constraints):
+        signature = _constraint_semantic_signature(item)
+        if signature is not None and signature in canonical_signatures:
+            continue
+        token = _normalized_text_token(item)
+        if not token or token in seen_exact:
+            continue
+        seen_exact.add(token)
+        if signature is None or signature[0] != "event_window":
+            residual_phase.append(item)
+        else:
+            residual_exact.append(item)
+
+    normalized: list[str] = []
+    seen_tokens: set[str] = set()
+    for item in (
+        canonical_availability
+        + canonical_risks
+        + canonical_phase_constraints
+        + residual_phase
+        + canonical_event_windows
+        + canonical_residual
+        + residual_exact
+    ):
+        token = _normalized_text_token(item)
+        if not token or token in seen_tokens:
+            continue
+        seen_tokens.add(token)
+        normalized.append(item)
+    return normalized
+
+
+def _replace_canonical_trace_entries_from_documents(
+    entries: object,
+    *,
+    documents: list[tuple[str, dict[str, Any] | None]],
+) -> list[dict[str, Any] | str]:
+    """Replace trace entries with canonical references from stored upstream documents."""
+
+    replaced = list(entries) if isinstance(entries, list) else []
+    for artifact, document in documents:
+        replacement = _trace_entry_from_document(document, expected_artifact=artifact)
+        if replacement is None:
+            continue
+        replaced = _replace_canonical_direct_trace_entry(replaced, replacement=replacement)
+    return replaced
+
+
 def _canonical_quality_intent(*, phase_type: object, phase_intent: object, current: object) -> str | None:
     """Return the canonical quality-intent token for supported phase semantics."""
 
@@ -374,6 +530,8 @@ def normalize_phase_structure_document(
     document: dict[str, Any],
     *,
     season_plan_document: dict[str, Any] | None = None,
+    season_scenario_selection_document: dict[str, Any] | None = None,
+    season_scenarios_document: dict[str, Any] | None = None,
     phase_guardrails_document: dict[str, Any] | None = None,
     phase_guardrails_version_key: str | None = None,
     phase_execution_context: dict[str, Any] | None = None,
@@ -395,6 +553,10 @@ def normalize_phase_structure_document(
     if not isinstance(upstream_intent, dict):
         upstream_intent = {}
     upstream_constraints = _text_list(upstream_intent.get("constraints"))
+    required_availability_constraints: list[str] = []
+    required_risk_constraints: list[str] = []
+    required_phase_constraints: list[str] = []
+    required_event_windows: list[str] = []
     if isinstance(season_plan_document, dict):
         season_data = season_plan_document.get("data")
         if isinstance(season_data, dict):
@@ -404,11 +566,13 @@ def normalize_phase_structure_document(
                 recovery_protection = global_constraints.get("recovery_protection")
                 if isinstance(recovery_protection, dict):
                     recovery_notes = _text_list(recovery_protection.get("notes"))
+                required_availability_constraints = _text_list(global_constraints.get("availability_assumptions"))
+                required_risk_constraints = _text_list(global_constraints.get("risk_constraints")) + recovery_notes
+                required_event_windows = _text_list(global_constraints.get("planned_event_windows"))
                 required_constraints = (
-                    _text_list(global_constraints.get("availability_assumptions"))
-                    + _text_list(global_constraints.get("risk_constraints"))
-                    + recovery_notes
-                    + _text_list(global_constraints.get("planned_event_windows"))
+                    required_availability_constraints
+                    + required_risk_constraints
+                    + required_event_windows
                 )
                 upstream_intent["constraints"] = _merge_unique_strings(
                     upstream_constraints,
@@ -474,8 +638,24 @@ def normalize_phase_structure_document(
         primary_objective = str(phase_goals.get("primary") or "").strip()
         if primary_objective:
             upstream_intent["primary_objective"] = primary_objective
+    upstream_intent["constraints"] = _canonicalize_phase_structure_constraints(
+        upstream_constraints,
+        canonical_availability=required_availability_constraints,
+        canonical_risks=required_risk_constraints,
+        canonical_phase_constraints=required_phase_constraints,
+        canonical_event_windows=required_event_windows,
+    )
+    data["upstream_intent"] = upstream_intent
 
     trace_upstream = meta.get("trace_upstream")
+    trace_upstream = _replace_canonical_trace_entries_from_documents(
+        trace_upstream,
+        documents=[
+            ("SEASON_PLAN", season_plan_document),
+            ("SEASON_SCENARIO_SELECTION", season_scenario_selection_document),
+            ("SEASON_SCENARIOS", season_scenarios_document),
+        ],
+    )
     phase_guardrails_ref = _trace_entry_from_document(
         phase_guardrails_document,
         expected_artifact="PHASE_GUARDRAILS",
@@ -524,6 +704,8 @@ def normalize_phase_structure_document_from_execution_context(
     phase_guardrails_document: dict[str, Any] | None = None,
     phase_guardrails_version_key: str | None = None,
     season_plan_document: dict[str, Any] | None = None,
+    season_scenario_selection_document: dict[str, Any] | None = None,
+    season_scenarios_document: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Project exact PHASE_STRUCTURE authority from deterministic phase execution context."""
 
@@ -531,6 +713,8 @@ def normalize_phase_structure_document_from_execution_context(
     normalized = normalize_phase_structure_document(
         document,
         season_plan_document=season_plan_document,
+        season_scenario_selection_document=season_scenario_selection_document,
+        season_scenarios_document=season_scenarios_document,
         phase_guardrails_document=phase_guardrails_document,
         phase_guardrails_version_key=phase_guardrails_version_key,
         phase_execution_context=context,
@@ -604,6 +788,8 @@ def normalize_phase_guardrails_document_from_execution_context(
     *,
     phase_execution_context: dict[str, Any] | None,
     season_plan_document: dict[str, Any] | None = None,
+    season_scenario_selection_document: dict[str, Any] | None = None,
+    season_scenarios_document: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Project exact PHASE_GUARDRAILS authority from deterministic phase execution context."""
 
@@ -615,6 +801,8 @@ def normalize_phase_guardrails_document_from_execution_context(
     return normalize_phase_guardrails_document(
         document,
         season_plan_document=season_plan_document,
+        season_scenario_selection_document=season_scenario_selection_document,
+        season_scenarios_document=season_scenarios_document,
         phase_execution_context=context,
     )
 
@@ -1087,6 +1275,8 @@ def normalize_phase_guardrails_document(
     document: dict[str, Any],
     *,
     season_plan_document: dict[str, Any] | None = None,
+    season_scenario_selection_document: dict[str, Any] | None = None,
+    season_scenarios_document: dict[str, Any] | None = None,
     phase_execution_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Normalize PHASE_GUARDRAILS shape quirks before validation."""
@@ -1210,10 +1400,26 @@ def normalize_phase_guardrails_document(
         data["allowed_forbidden_semantics"] = allowed_forbidden
 
     document["data"] = data
-    return _project_phase_guardrails_season_constraints(
+    normalized = _project_phase_guardrails_season_constraints(
         document,
         season_plan_document=season_plan_document,
     )
+    normalized_meta = _as_map(normalized.get("meta"))
+    trace_upstream = normalized_meta.get("trace_upstream")
+    trace_upstream = _replace_canonical_trace_entries_from_documents(
+        trace_upstream,
+        documents=[
+            ("SEASON_PLAN", season_plan_document),
+            ("SEASON_SCENARIO_SELECTION", season_scenario_selection_document),
+            ("SEASON_SCENARIOS", season_scenarios_document),
+        ],
+    )
+    normalized_meta["trace_upstream"] = _normalize_trace_entries(
+        trace_upstream,
+        allowed=_PHASE_TRACE_UPSTREAM_ARTIFACTS,
+    )
+    normalized["meta"] = normalized_meta
+    return normalized
 
 
 def normalize_season_scenarios_document(

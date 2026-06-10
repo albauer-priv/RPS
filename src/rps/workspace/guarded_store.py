@@ -475,6 +475,8 @@ class GuardedValidatedStore:
         self,
         document: JsonMap,
         season_plan: JsonMap,
+        season_scenario_selection: JsonMap | None = None,
+        season_scenarios: JsonMap | None = None,
     ) -> None:
         """Ensure season plan constraints and load ranges are propagated into execution arch."""
         meta = self._as_map(document.get("meta"))
@@ -486,6 +488,8 @@ class GuardedValidatedStore:
         normalize_phase_structure_document(
             document,
             season_plan_document=season_plan,
+            season_scenario_selection_document=season_scenario_selection,
+            season_scenarios_document=season_scenarios,
             phase_guardrails_document=phase_guardrails,
             phase_guardrails_version_key=bg_version_key,
         )
@@ -1354,9 +1358,17 @@ class GuardedValidatedStore:
             ArtifactType.PHASE_FEED_FORWARD,
         }
         season_plan_doc: JsonMap | None = None
+        season_scenario_selection_doc: JsonMap | None = None
+        season_scenarios_doc: JsonMap | None = None
         if target in phase_targets:
             season_plan_doc = self._as_map(
                 self.store.load_latest(self.athlete_id, ArtifactType.SEASON_PLAN)
+            )
+            season_scenario_selection_doc = self._as_map(
+                self.store.load_latest(self.athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+            )
+            season_scenarios_doc = self._as_map(
+                self.store.load_latest(self.athlete_id, ArtifactType.SEASON_SCENARIOS)
             )
             self._ensure_phase_range_matches_plan(document, season_plan_doc)
         if target in {ArtifactType.PHASE_GUARDRAILS, ArtifactType.PHASE_STRUCTURE}:
@@ -1368,10 +1380,17 @@ class GuardedValidatedStore:
                 normalize_phase_guardrails_document(
                     document,
                     season_plan_document=season_plan_doc,
+                    season_scenario_selection_document=season_scenario_selection_doc,
+                    season_scenarios_document=season_scenarios_doc,
                 )
                 self._enforce_phase_guardrails_constraints(document, season_plan_doc)
             else:
-                self._enforce_phase_structure_constraints(document, season_plan_doc)
+                self._enforce_phase_structure_constraints(
+                    document,
+                    season_plan_doc,
+                    season_scenario_selection_doc,
+                    season_scenarios_doc,
+                )
             return
         if target == ArtifactType.PHASE_PREVIEW:
             self._enforce_phase_preview_constraints(document)

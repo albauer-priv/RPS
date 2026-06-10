@@ -2034,6 +2034,8 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
             dict(mapping),
             phase_execution_context=phase_execution_context if isinstance(phase_execution_context, dict) else None,
             season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
+            season_scenario_selection_document=extract_loaded_document(loaded_inputs.get("season_scenario_selection")),
+            season_scenarios_document=extract_loaded_document(loaded_inputs.get("season_scenarios")),
         )
     if artifact_type == ArtifactType.PHASE_STRUCTURE.value:
         phase_guardrails_document = extract_loaded_document(loaded_inputs.get("phase_guardrails"))
@@ -2053,6 +2055,8 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
             dict(mapping),
             phase_execution_context=phase_execution_context if isinstance(phase_execution_context, dict) else None,
             season_plan_document=extract_loaded_document(loaded_inputs.get("season_plan")),
+            season_scenario_selection_document=extract_loaded_document(loaded_inputs.get("season_scenario_selection")),
+            season_scenarios_document=extract_loaded_document(loaded_inputs.get("season_scenarios")),
             phase_guardrails_document=phase_guardrails_document,
             phase_guardrails_version_key=_loaded_input_version_key(loaded_inputs.get("phase_guardrails")),
         )

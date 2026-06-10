@@ -40,7 +40,32 @@ def test_normalize_phase_guardrails_recovery_rules_and_band_order() -> None:
 
 def test_normalize_phase_guardrails_projects_season_constraints() -> None:
     document = {
-        "meta": {"artifact_type": "PHASE_GUARDRAILS"},
+        "meta": {
+            "artifact_type": "PHASE_GUARDRAILS",
+            "trace_upstream": [
+                {
+                    "artifact": "SEASON_PLAN",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-21__20260520_080000",
+                    "run_id": "20260520_080000",
+                },
+                {
+                    "artifact": "SEASON_SCENARIO_SELECTION",
+                    "version": "1.0",
+                    "schema_version": "1.1",
+                    "version_key": "2026-21__20260520_075500",
+                    "run_id": "20260520_075500",
+                },
+                {
+                    "artifact": "SEASON_SCENARIOS",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-21__20260520_075000",
+                    "run_id": "20260520_075000",
+                },
+            ],
+        },
         "data": {
             "phase_summary": {
                 "non_negotiables": ["Exact phase range is 2026-21--2026-23."],
@@ -54,6 +79,13 @@ def test_normalize_phase_guardrails_projects_season_constraints() -> None:
         },
     }
     season_plan = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_080000",
+            "run_id": "ui_season_plan_2026W21_20260520T080000Z",
+        },
         "data": {
             "global_constraints": {
                 "availability_assumptions": [
@@ -76,10 +108,30 @@ def test_normalize_phase_guardrails_projects_season_constraints() -> None:
             }
         }
     }
+    season_selection = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIO_SELECTION",
+            "version": "1.0",
+            "schema_version": "1.1",
+            "version_key": "2026-21__20260520_075500",
+            "run_id": "ui_season_scenario_selection_2026_21_20260520T075500Z",
+        }
+    }
+    season_scenarios = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIOS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_075000",
+            "run_id": "ui_season_scenarios_2026_21_20260520T075000Z",
+        }
+    }
 
     normalized = normalize_phase_guardrails_document(
         document,
         season_plan_document=season_plan,
+        season_scenario_selection_document=season_selection,
+        season_scenarios_document=season_scenarios,
     )
 
     non_negotiables = normalized["data"]["phase_summary"]["non_negotiables"]
@@ -101,6 +153,29 @@ def test_normalize_phase_guardrails_projects_season_constraints() -> None:
             "type": "A",
             "constraint": "Planned season event window preserved from season_plan: 2026-05-16 (A)",
         }
+    ]
+    assert normalized["meta"]["trace_upstream"] == [
+        {
+            "artifact": "SEASON_PLAN",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_080000",
+            "run_id": "ui_season_plan_2026W21_20260520T080000Z",
+        },
+        {
+            "artifact": "SEASON_SCENARIO_SELECTION",
+            "version": "1.0",
+            "schema_version": "1.1",
+            "version_key": "2026-21__20260520_075500",
+            "run_id": "ui_season_scenario_selection_2026_21_20260520T075500Z",
+        },
+        {
+            "artifact": "SEASON_SCENARIOS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_075000",
+            "run_id": "ui_season_scenarios_2026_21_20260520T075000Z",
+        },
     ]
 
 
@@ -221,15 +296,54 @@ def test_persisted_phase_weekly_kj_bands_drop_role_and_materialize_deterministic
 
 def test_normalize_phase_structure_projects_constraints_and_guardrails_source() -> None:
     document = {
-        "meta": {"artifact_type": "PHASE_STRUCTURE", "trace_upstream": []},
+        "meta": {
+            "artifact_type": "PHASE_STRUCTURE",
+            "trace_upstream": [
+                {
+                    "artifact": "SEASON_PLAN",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-21__20260520_080000",
+                    "run_id": "20260520_080000",
+                },
+                {
+                    "artifact": "SEASON_SCENARIO_SELECTION",
+                    "version": "1.0",
+                    "schema_version": "1.1",
+                    "version_key": "2026-21__20260520_075500",
+                    "run_id": "20260520_075500",
+                },
+                {
+                    "artifact": "SEASON_SCENARIOS",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-21__20260520_075000",
+                    "run_id": "20260520_075000",
+                },
+            ],
+        },
         "data": {
             "upstream_intent": {
-                "constraints": ["Do not widen the phase beyond 2026-21--2026-23."],
+                "constraints": [
+                    "Do not widen the phase beyond 2026-21--2026-23.",
+                    "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
+                    "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
+                    "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated.",
+                    "Respect the locked rest days as hard recovery boundaries.",
+                    "2026-15 B Brevet 200 km Toelzer-Land-Runde",
+                ],
             },
             "load_ranges": {"source": "Deterministic Load Capacity Context"},
         },
     }
     season_plan = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_080000",
+            "run_id": "ui_season_plan_2026W21_20260520T080000Z",
+        },
         "data": {
             "global_constraints": {
                 "availability_assumptions": [
@@ -245,6 +359,24 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
             }
         }
     }
+    season_selection = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIO_SELECTION",
+            "version": "1.0",
+            "schema_version": "1.1",
+            "version_key": "2026-21__20260520_075500",
+            "run_id": "ui_season_scenario_selection_2026_21_20260520T075500Z",
+        }
+    }
+    season_scenarios = {
+        "meta": {
+            "artifact_type": "SEASON_SCENARIOS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_075000",
+            "run_id": "ui_season_scenarios_2026_21_20260520T075000Z",
+        }
+    }
     phase_guardrails = {
         "meta": {
             "artifact_type": "PHASE_GUARDRAILS",
@@ -258,21 +390,23 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
                     {"week": "2026-21", "band": {"min": 7329, "max": 8372, "notes": "x"}}
                 ]
             }
-        }
+        },
     }
 
     normalized = normalize_phase_structure_document(
         document,
         season_plan_document=season_plan,
+        season_scenario_selection_document=season_selection,
+        season_scenarios_document=season_scenarios,
         phase_guardrails_document=phase_guardrails,
         phase_guardrails_version_key="2026-21--2026-23__20260520_094539",
     )
 
     assert normalized["data"]["upstream_intent"]["constraints"] == [
-        "Do not widen the phase beyond 2026-21--2026-23.",
         "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
         "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated.",
         "Respect the locked rest days as hard recovery boundaries.",
+        "Do not widen the phase beyond 2026-21--2026-23.",
         "2026-15 B Brevet 200 km Toelzer-Land-Runde",
     ]
     assert normalized["data"]["load_ranges"]["weekly_kj_bands"] == [
@@ -282,8 +416,84 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
         normalized["data"]["load_ranges"]["source"]
         == "phase_guardrails_2026-21--2026-23__20260520_094539.json"
     )
-    assert normalized["meta"]["trace_upstream"][0]["artifact"] == "PHASE_GUARDRAILS"
-    assert normalized["meta"]["trace_upstream"][0]["version_key"] == "2026-21--2026-23__20260520_094539"
+    assert normalized["meta"]["trace_upstream"] == [
+        {
+            "artifact": "SEASON_PLAN",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_080000",
+            "run_id": "ui_season_plan_2026W21_20260520T080000Z",
+        },
+        {
+            "artifact": "SEASON_SCENARIO_SELECTION",
+            "version": "1.0",
+            "schema_version": "1.1",
+            "version_key": "2026-21__20260520_075500",
+            "run_id": "ui_season_scenario_selection_2026_21_20260520T075500Z",
+        },
+        {
+            "artifact": "SEASON_SCENARIOS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21__20260520_075000",
+            "run_id": "ui_season_scenarios_2026_21_20260520T075000Z",
+        },
+        {
+            "artifact": "PHASE_GUARDRAILS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21--2026-23__20260520_094539",
+            "run_id": "plan_hub_phase_bundle",
+        },
+    ]
+
+
+def test_normalize_phase_structure_canonicalizes_paraphrased_constraints_by_known_fact_group() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "trace_upstream": []},
+        "data": {
+            "upstream_intent": {
+                "constraints": [
+                    "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.",
+                    "Indoor trainer access is available and may be used for continuity when weather or travel disrupt outdoor riding.",
+                    "Business travel has previously caused missed sessions, so the scenario needs some resilience without becoming overly conservative.",
+                    "Business travel has previously caused missed sessions, so the season should retain resilience without becoming overly conservative.",
+                    "Monday and Friday are fixed no-ride days.",
+                    "Fixed no-ride days are preserved across the season.",
+                    "Do not escalate to VO2MAX; it is forbidden for this season.",
+                    "Do not escalate to VO2MAX; it is forbidden for this season.",
+                ]
+            }
+        },
+    }
+    season_plan = {
+        "data": {
+            "global_constraints": {
+                "availability_assumptions": [
+                    "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.",
+                    "Monday and Friday are fixed no-ride days.",
+                ],
+                "risk_constraints": [
+                    "Business travel has previously caused missed sessions, so the scenario needs some resilience without becoming overly conservative.",
+                ],
+                "planned_event_windows": [],
+                "recovery_protection": {"notes": []},
+            }
+        }
+    }
+
+    normalized = normalize_phase_structure_document(document, season_plan_document=season_plan)
+
+    assert normalized["data"]["upstream_intent"]["constraints"] == [
+        "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+        "Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.",
+        "Monday and Friday are fixed no-ride days.",
+        "Business travel has previously caused missed sessions, so the scenario needs some resilience without becoming overly conservative.",
+        "Do not escalate to VO2MAX; it is forbidden for this season.",
+    ]
 
 
 def test_normalize_phase_structure_preserves_exact_phase_legality() -> None:

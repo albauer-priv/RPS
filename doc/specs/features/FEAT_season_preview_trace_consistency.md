@@ -27,6 +27,7 @@ Owner: Planning Pipeline
 * `season_load_envelope.expected_average_weekly_kj_range` was still derived from broad phase corridors instead of authoritative role-week bands.
 * `PHASE_PREVIEW` could still be worded as if it were the binding week authority, despite remaining a derived artifact.
 * `trace_upstream` on Phase artifacts could retain duplicate or lower-quality entries when better in-process references were available.
+* Indirect Season lineage on Phase artifacts could still preserve shortened placeholder-like `run_id` values even when the real stored upstream Season metadata was already available in-process.
 
 **Constraints**
 
@@ -43,6 +44,7 @@ Owner: Planning Pipeline
 * [x] Derive season average weekly kJ envelope from authoritative role-week bands.
 * [x] Keep Preview explicitly informational while preserving deterministic Preview/Week alignment.
 * [x] Deduplicate and canonicalize immediate Phase `trace_upstream` lineage.
+* [x] Replace indirect Season lineage on Phase artifacts from stored upstream metadata so `run_id` quality matches the actual persisted Season documents.
 
 **Non-Goals**
 
