@@ -1,7 +1,7 @@
 ---
-Version: 1.4
+Version: 1.5
 Status: Implemented
-Last-Updated: 2026-06-09
+Last-Updated: 2026-06-10
 Owner: Planning Pipeline
 ---
 # FEAT: Phase Writer Guardrail Pre-Normalization
@@ -9,7 +9,7 @@ Owner: Planning Pipeline
 * **ID:** FEAT_phase_writer_guardrail_pre_normalization
 * **Status:** Implemented
 * **Owner/Area:** Planning Pipeline
-* **Last-Updated:** 2026-06-08
+* **Last-Updated:** 2026-06-10
 * **Related:** [FEAT_phase_authority_realignment_and_shared_week_skeleton](/Users/alexander/RPS/doc/specs/features/FEAT_phase_authority_realignment_and_shared_week_skeleton.md), [ADR-058-phase-authority-chain-and-shared-week-skeleton](/Users/alexander/RPS/doc/adr/ADR-058-phase-authority-chain-and-shared-week-skeleton.md)
 
 ---
@@ -86,6 +86,7 @@ Owner: Planning Pipeline
 **Components / Modules**
 
 * `guardrails.py`: use bound `phase_execution_context` as the primary exact-authority source in the narrow pre-guardrail `PHASE_GUARDRAILS` and `PHASE_STRUCTURE` projection helpers and emit compact legality-source diagnostics on mismatch.
+* `output_normalization.py`: `PHASE_STRUCTURE` now resolves `inherited_scenario_contract` through one shared precedence helper so pre-guardrail and store-time paths cannot diverge between execution-context authority and canonical upstream fallback.
 * `crewai_backend.py`: frontload compact exact-authority blocks into Phase writer and phase-finalizer task input; add task-scoped tool overrides so `phase_bundle_finalize` can run tool-free when deterministic contracts are already injected.
 * `output_normalization.py`: project exact `PHASE_GUARDRAILS` authority, canonicalize supported `quality_intent` values, and repair `trace_upstream` for `PHASE_STRUCTURE` and `PHASE_PREVIEW`.
 * `guarded_store.py`: accept operational `NONE` only for `REST` / fixed non-training days instead of requiring `NONE` inside exact structural phase legality.
@@ -106,6 +107,7 @@ Owner: Planning Pipeline
 * Outputs:
   * same persisted artifact types
   * fewer false writer-task guardrail failures
+  * compact mismatch diagnostics that survive runtime truncation and identify whether the remaining contract drift came from raw candidate content, normalized execution-context projection, or upstream fallback
 
 **Schema / Artefacts**
 

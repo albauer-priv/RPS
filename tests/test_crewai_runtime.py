@@ -3365,6 +3365,115 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_inherited_scenar
     assert "phase_execution_context.inherited_scenario_contract" in message
 
 
+def test_phase_structure_guardrail_mismatch_emits_contract_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
+    candidate = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "structure": {
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "A",
+                "constraint_summary": ["raw nested drift"],
+            }
+        },
+        "data": {
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "A",
+                "constraint_summary": ["candidate drift"],
+            },
+            "structural_phase_elements": {
+                "allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                "allowed_load_modalities": ["NONE"],
+            },
+            "execution_principles": {
+                "load_intensity_handling": {
+                    "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                }
+            },
+            "load_ranges": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            },
+            "week_skeleton_logic": {
+                "week_roles": {
+                    "week_roles": [
+                        {"week": "2026-24", "role": "LOAD_1"},
+                        {"week": "2026-25", "role": "RELOAD"},
+                    ]
+                }
+            },
+        },
+    }
+    wrapped = crewai_guardrails._with_guardrail_telemetry(
+        "phase_structure",
+        "phase_execution_context_match",
+        crewai_guardrails.phase_execution_context_match,
+    )
+    monkeypatch.setattr(
+        crewai_guardrails,
+        "normalize_artifact_candidate_for_task_guardrails",
+        lambda result: result,
+    )
+    emitted: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        crewai_guardrails,
+        "emit_runtime_event",
+        lambda **kwargs: emitted.append(kwargs),
+    )
+
+    with guardrail_runtime_context(
+        artifact_type="PHASE_STRUCTURE",
+        loaded_inputs={
+            "phase_guardrails": {
+                "ok": True,
+                "document": {
+                    "data": {
+                        "inherited_scenario_contract": {
+                            "selected_scenario_id": "B",
+                            "constraint_summary": ["guardrails fallback"],
+                        },
+                        "load_guardrails": {
+                            "weekly_kj_bands": [
+                                {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                                {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                            ]
+                        },
+                    }
+                },
+                "version_key": "2026-24--2026-25__20260608_090000",
+            }
+        },
+        phase_execution_context={
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": ["execution context authority"],
+            },
+            "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
+            "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+            "phase_allowed_load_modalities": ["NONE"],
+            "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
+            "phase_role_week_load_bands": [
+                {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}},
+                {"week": "2026-25", "role": "RELOAD", "band": {"min": 7300, "max": 8300}},
+            ],
+        },
+    ):
+        ok, message = wrapped(candidate)
+
+    assert ok is False
+    assert "phase_inherited_scenario_contract_mismatch" in message
+    assert emitted
+    reason = str(emitted[-1]["reason"])
+    assert "phase_contract_diag=" in reason
+    assert "execution_context_contract=yes" in reason
+    assert "bundle_contract=no" in reason
+    assert "raw_structure_contract=yes" in reason
+    assert "raw_candidate_contract=yes" in reason
+    assert "phase_guardrails_contract=yes" in reason
+    assert "source=candidate_or_late_rewrite" in reason
+    assert "mismatch_path=data.inherited_scenario_contract.constraint_summary[0]" in reason
+
+
 def test_phase_writer_authority_context_block_frontloads_exact_phase_fields() -> None:
     phase_structure = {
         "meta": {"version_key": "2026-24--2026-25__20260608_091500"},

@@ -431,6 +431,84 @@ def test_normalize_phase_structure_from_execution_context_requires_inherited_con
         raise AssertionError("Expected normalize_phase_structure_document_from_execution_context to fail.")
 
 
+def test_normalize_phase_structure_prefers_execution_context_contract_over_guardrails_fallback() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "inherited_scenario_contract": {"selected_scenario_id": "A", "constraint_summary": ["candidate drift"]},
+            "upstream_intent": {"primary_objective": "Wrong objective"},
+        },
+    }
+    phase_guardrails = {
+        "data": {
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": ["guardrails fallback"],
+            },
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            },
+        }
+    }
+
+    normalized = normalize_phase_structure_document(
+        document,
+        phase_execution_context={
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "C",
+                "constraint_summary": ["execution context authority"],
+            }
+        },
+        phase_guardrails_document=phase_guardrails,
+        phase_guardrails_version_key="2026-24--2026-25__20260608_090000",
+        season_plan_document=None,
+    )
+
+    assert normalized["data"]["inherited_scenario_contract"] == {
+        "selected_scenario_id": "C",
+        "constraint_summary": ["execution context authority"],
+    }
+
+
+def test_normalize_phase_structure_falls_back_to_guardrails_contract_when_execution_context_missing() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "iso_week_range": "2026-24--2026-25"},
+        "data": {
+            "inherited_scenario_contract": {"selected_scenario_id": "A", "constraint_summary": ["candidate drift"]},
+        },
+    }
+    phase_guardrails = {
+        "data": {
+            "inherited_scenario_contract": {
+                "selected_scenario_id": "B",
+                "constraint_summary": ["guardrails fallback"],
+            },
+            "load_guardrails": {
+                "weekly_kj_bands": [
+                    {"week": "2026-24", "band": {"min": 7200, "max": 8200}},
+                    {"week": "2026-25", "band": {"min": 7300, "max": 8300}},
+                ]
+            },
+        }
+    }
+
+    normalized = normalize_phase_structure_document(
+        document,
+        phase_execution_context=None,
+        phase_guardrails_document=phase_guardrails,
+        phase_guardrails_version_key="2026-24--2026-25__20260608_090000",
+        season_plan_document=None,
+    )
+
+    assert normalized["data"]["inherited_scenario_contract"] == {
+        "selected_scenario_id": "B",
+        "constraint_summary": ["guardrails fallback"],
+    }
+
+
 def test_normalize_phase_preview_repairs_traceability_rest_days_and_quality_cap() -> None:
     document = {
         "meta": {"artifact_type": "PHASE_PREVIEW", "authority": "Binding"},

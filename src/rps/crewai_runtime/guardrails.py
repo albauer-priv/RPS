@@ -2117,9 +2117,10 @@ def _first_contract_mismatch_path(candidate: object, authority: object, *, prefi
     return "" if candidate == authority else prefix
 
 
-def _phase_structure_contract_diagnostics(normalized_result: Any) -> str:
+def _phase_structure_contract_diagnostics(raw_result: Any, normalized_result: Any) -> str:
     """Return a compact diagnostic string for PHASE_STRUCTURE inherited-contract mismatches."""
 
+    raw_mapping = _coerce_mapping(raw_result)
     mapping = _coerce_mapping(normalized_result)
     if not isinstance(mapping, dict):
         return ""
@@ -2127,20 +2128,52 @@ def _phase_structure_contract_diagnostics(normalized_result: Any) -> str:
     loaded_inputs = context.get("loaded_inputs")
     loaded_inputs = loaded_inputs if isinstance(loaded_inputs, dict) else {}
     phase_execution_context = _as_map(context.get("phase_execution_context"))
+    phase_guardrails_document = extract_loaded_document(loaded_inputs.get("phase_guardrails"))
+    raw_structure_contract = _as_map(_as_map(_as_map(raw_mapping).get("structure")).get("inherited_scenario_contract"))
+    raw_candidate_contract = _as_map(_as_map(_as_map(raw_mapping).get("data")).get("inherited_scenario_contract"))
+    bundle_contract = _as_map(_as_map(mapping.get("inherited_scenario_contract")))
     observed = _as_map(_as_map(mapping.get("data")).get("inherited_scenario_contract"))
     expected = _as_map(phase_execution_context.get("inherited_scenario_contract"))
+    guardrails_contract = _as_map(_as_map(phase_guardrails_document).get("data")).get("inherited_scenario_contract")
     mismatch_path = _first_contract_mismatch_path(
         observed,
         expected,
         prefix="data.inherited_scenario_contract",
     )
+    source = "missing"
+    if observed and observed == expected:
+        source = "execution_context"
+    elif observed and guardrails_contract and observed == _as_map(guardrails_contract):
+        source = "phase_guardrails_fallback"
+    elif observed:
+        source = "candidate_or_late_rewrite"
     return (
         "phase_contract_diag="
         f"execution_context_contract={'yes' if expected else 'no'},"
-        f"bundle_contract={'yes' if _as_map(mapping.get('inherited_scenario_contract')) else 'no'},"
-        f"phase_guardrails={'yes' if extract_loaded_document(loaded_inputs.get('phase_guardrails')) else 'no'},"
+        f"bundle_contract={'yes' if bundle_contract else 'no'},"
+        f"raw_structure_contract={'yes' if raw_structure_contract else 'no'},"
+        f"raw_candidate_contract={'yes' if raw_candidate_contract else 'no'},"
+        f"pre_guardrail_normalized={'yes' if isinstance(mapping, dict) else 'no'},"
+        f"phase_guardrails={'yes' if phase_guardrails_document else 'no'},"
+        f"phase_guardrails_contract={'yes' if _as_map(guardrails_contract) else 'no'},"
+        f"source={source},"
         f"mismatch_path={mismatch_path or 'none'}"
     )
+
+
+def _compose_guardrail_failure_reason(base_reason: str, diagnostics_parts: list[str], *, limit: int = 500) -> str:
+    """Combine a guardrail failure reason with compact diagnostics without truncating them away."""
+
+    if not diagnostics_parts:
+        return base_reason[:limit]
+    diagnostics = " | ".join(part for part in diagnostics_parts if part)
+    if not diagnostics:
+        return base_reason[:limit]
+    suffix = f" | {diagnostics}"
+    if len(suffix) >= limit:
+        return diagnostics[:limit]
+    available = limit - len(suffix)
+    return f"{base_reason[:available]}{suffix}"
 
 
 def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
@@ -2177,11 +2210,11 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
                     if diagnostics:
                         diagnostics_parts.append(diagnostics)
                 if "phase_inherited_scenario_contract_mismatch" in str(payload):
-                    diagnostics = _phase_structure_contract_diagnostics(normalized_result)
+                    diagnostics = _phase_structure_contract_diagnostics(result, normalized_result)
                     if diagnostics:
                         diagnostics_parts.append(diagnostics)
                 if diagnostics_parts:
-                    reason = f"{reason} | {' | '.join(diagnostics_parts)}"[:500]
+                    reason = _compose_guardrail_failure_reason(reason, diagnostics_parts, limit=500)
             emit_runtime_event(
                 root=context.get("root"),
                 athlete_id=context.get("athlete_id"),

@@ -417,15 +417,12 @@ def normalize_phase_structure_document(
                 upstream_constraints = upstream_intent["constraints"]
     data["upstream_intent"] = upstream_intent
 
-    inherited_scenario_contract = _as_map(execution_context.get("inherited_scenario_contract"))
+    inherited_scenario_contract = _resolve_phase_structure_inherited_scenario_contract(
+        phase_execution_context=execution_context,
+        phase_guardrails_document=phase_guardrails_document,
+    )
     if inherited_scenario_contract:
         data["inherited_scenario_contract"] = inherited_scenario_contract
-    elif isinstance(phase_guardrails_document, dict):
-        guardrails_data = phase_guardrails_document.get("data")
-        if isinstance(guardrails_data, dict):
-            inherited_contract = guardrails_data.get("inherited_scenario_contract")
-            if isinstance(inherited_contract, dict):
-                data["inherited_scenario_contract"] = inherited_contract
     if isinstance(phase_guardrails_document, dict):
         guardrails_data = phase_guardrails_document.get("data")
         if isinstance(guardrails_data, dict):
@@ -498,6 +495,28 @@ def normalize_phase_structure_document(
     return document
 
 
+def _resolve_phase_structure_inherited_scenario_contract(
+    *,
+    phase_execution_context: dict[str, Any] | None,
+    phase_guardrails_document: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve the canonical inherited scenario contract for PHASE_STRUCTURE.
+
+    Precedence is deterministic execution context first, then canonical upstream
+    phase guardrails fallback when execution context is unavailable.
+    """
+
+    execution_context = _as_map(phase_execution_context)
+    inherited_scenario_contract = _as_map(execution_context.get("inherited_scenario_contract"))
+    if inherited_scenario_contract:
+        return inherited_scenario_contract
+    guardrails_data = _as_map(_as_map(phase_guardrails_document).get("data"))
+    inherited_from_guardrails = _as_map(guardrails_data.get("inherited_scenario_contract"))
+    if inherited_from_guardrails:
+        return inherited_from_guardrails
+    return {}
+
+
 def normalize_phase_structure_document_from_execution_context(
     document: dict[str, Any],
     *,
@@ -524,7 +543,10 @@ def normalize_phase_structure_document_from_execution_context(
     context = _as_map(phase_execution_context)
     if not context:
         return normalized
-    inherited_scenario_contract = _as_map(context.get("inherited_scenario_contract"))
+    inherited_scenario_contract = _resolve_phase_structure_inherited_scenario_contract(
+        phase_execution_context=context,
+        phase_guardrails_document=phase_guardrails_document,
+    )
     if not inherited_scenario_contract:
         raise ValueError(
             "PHASE_STRUCTURE pre-guardrail normalization requires phase_execution_context.inherited_scenario_contract."
