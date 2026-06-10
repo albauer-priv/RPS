@@ -17,12 +17,14 @@ from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
     _build_internal_task_description,
+    _classify_season_audit_item,
     _coerce_artifact_envelope,
     _compact_internal_user_input,
     _contract_context_blocks_for_task,
     _emit_crew_task_prepared_events,
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
+    _extract_structured_output,
     _normalize_final_season_plan_semantics,
     _normalize_publication_link,
     _phase_bundle_finalize_authority_freeze_block,
@@ -31,6 +33,7 @@ from rps.agents.crewai_backend import (
     _run_multicrew_cycle,
     _run_phase_bundle_document,
     _task_tools_for_blueprint,
+    coerce_season_plan_draft_bundle_slots,
     normalize_phase_draft_bundle,
     normalize_season_plan_draft_bundle,
     run_agent_multi_output_crewai,
@@ -509,10 +512,12 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
 
     preview_policy = resolve_task_policy(tasks["create_week_preview"], bundle.task_policies)
     artifact_policy = resolve_task_policy(tasks["week_plan"], bundle.task_policies)
+    season_finalize_policy = resolve_task_policy(tasks["season_plan_finalize"], bundle.task_policies)
 
     assert preview_policy.output_mode == "pydantic"
     assert "coach_preview_summary_complete" in preview_policy.guardrails
     assert artifact_policy.output_mode == "json"
+    assert season_finalize_policy.output_mode == "json"
     assert "artifact_schema_valid" in artifact_policy.guardrails
     assert "week_corridor_and_capacity_check" in artifact_policy.guardrails
     assert "week_active_corridor_match" in artifact_policy.guardrails
@@ -1797,6 +1802,86 @@ def test_season_plan_manager_disables_free_delegation_via_yaml_override() -> Non
     assert agent_blueprints["season_plan_manager"].config["allow_delegation"] is False
 
 
+def test_classify_season_audit_item_recognizes_constraint_and_governance_shapes() -> None:
+    assert _classify_season_audit_item(
+        {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "applied_sources": [],
+        }
+    ) == "constraint"
+    assert _classify_season_audit_item(
+        {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "cadence_authority_preserved": True,
+            "durability_first_respected": True,
+        }
+    ) == "governance"
+
+
+def test_classify_season_audit_item_fails_on_mixed_or_unknown_shapes() -> None:
+    with pytest.raises(RuntimeError, match="Mixed season audit-slot content"):
+        _classify_season_audit_item(
+            {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "applied_sources": [],
+                "cadence_authority_preserved": True,
+            }
+        )
+    with pytest.raises(RuntimeError, match="Unclassifiable season audit-slot item"):
+        _classify_season_audit_item({"foo": "bar"})
+
+
+def test_coerce_season_plan_draft_bundle_slots_moves_misplaced_items_before_strict_validation() -> None:
+    raw_bundle = {
+        "event_priority": {},
+        "macrocycle": {},
+        "phase_blueprints": [],
+        "constraints": [
+            {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "cadence_authority_preserved": True,
+                "durability_first_respected": True,
+            }
+        ],
+        "load_governance": [
+            {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "applied_sources": ["availability"],
+            }
+        ],
+    }
+
+    coerced = coerce_season_plan_draft_bundle_slots(raw_bundle)
+    validated = SeasonPlanDraftBundleModel.model_validate(coerced)
+
+    assert validated.constraints[0].applied_sources == ["availability"]
+    assert validated.load_governance[0].cadence_authority_preserved is True
+
+
+def test_extract_structured_output_supports_json_mode_for_internal_tasks() -> None:
+    task_output = SimpleNamespace(json_dict={"constraints": [], "load_governance": []}, raw=None)
+    task_obj = SimpleNamespace(output=task_output)
+
+    extracted = _extract_structured_output(
+        SimpleNamespace(json_dict={"constraints": [], "load_governance": []}),
+        task_obj,
+        task_name="season_plan_finalize",
+        output_mode="json",
+    )
+
+    assert extracted == {"constraints": [], "load_governance": []}
+
+
 def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplanning() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
@@ -1805,6 +1890,9 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
     season_finalize_description = blueprints["season_plan_finalize"].description
     season_finalize_expected_output = blueprints["season_plan_finalize"].expected_output
 
+    assert "`constraints[]` contains constraint-audit entries only" in season_finalize_description
+    assert "`load_governance[]` contains governance-audit entries only" in season_finalize_description
+    assert "`cadence_authority_preserved` plus `durability_first_respected` belong only inside `load_governance[]`" in season_finalize_description
     assert "multiple target macrocycles" in macrocycle_description
     assert "A-event peak cluster" in macrocycle_description
     assert "final A-event is the only reverse-planning anchor" in season_finalize_description
@@ -5892,7 +5980,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
 
         def kickoff(self):
             task = self.tasks[-1]
-            model_cls = task.output_pydantic
+            model_cls = task.output_pydantic or task.output_json
             if model_cls is None:
                 payload = {
                     "meta": {
@@ -5904,16 +5992,26 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 }
                 task.output = SimpleNamespace(pydantic=None, raw=json.dumps(payload))
                 return task.output
-            if model_cls is ArtifactEnvelopeModel:
-                model = model_cls(
-                    meta={
+            if (
+                task.output_json is not None
+                and task.output_pydantic is None
+                and model_cls is not SeasonPlanDraftBundleModel
+            ):
+                payload = {
+                    "meta": {
                         "artifact_type": "SEASON_PLAN",
                         "schema_id": "SeasonPlanInterface",
                         "schema_version": "1.0",
                     },
-                    data={},
+                    "data": {"assumptions_unknowns": []},
+                }
+                task.output = SimpleNamespace(
+                    pydantic=None,
+                    json_dict=payload,
+                    raw=json.dumps(payload),
                 )
-            elif model_cls is SeasonPlanDraftBundleModel:
+                return task.output
+            if model_cls is SeasonPlanDraftBundleModel:
                 model = model_cls(
                     event_priority=SeasonEventAnchorModel(),
                     macrocycle=SeasonMacrocycleDraftModel(),
@@ -5968,7 +6066,11 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 model = model_cls(status="approved", writer_ready_summary="ready")
             else:
                 model = model_cls()
-            task.output = SimpleNamespace(pydantic=model, raw=model.model_dump_json())
+            task.output = SimpleNamespace(
+                pydantic=model if task.output_pydantic is not None else None,
+                json_dict=model.model_dump() if task.output_json is not None and hasattr(model, "model_dump") else None,
+                raw=model.model_dump_json(),
+            )
             return task.output
 
     class FakeProcess:

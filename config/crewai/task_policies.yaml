@@ -35,7 +35,7 @@ tasks:
       - typed_output_present
       - pending_resolution_summary_present
   season_plan_finalize:
-    output_mode: pydantic
+    output_mode: json
     guardrails:
       - typed_output_present
       - season_bundle_integrity

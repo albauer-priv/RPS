@@ -44,6 +44,12 @@ Out of scope:
 
 ## Hard rules
 
+- `constraints[]` contains constraint-audit entries only.
+- `load_governance[]` contains governance-audit entries only.
+- `cadence_authority_preserved` belongs only in `load_governance[]`.
+- `durability_first_respected` belongs only in `load_governance[]`.
+- Do not place governance audit items inside `constraints[]`.
+- Do not collapse both audit families into one list.
 - The final season bundle may contain one or more target macrocycles; do not assume the final A-event is the only reverse-planning anchor.
 - If multiple A-events are present, classify each one as `primary A-event`, `secondary A-event`, `equal-priority A-event`, or `cluster-member`.
 - If A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster rather than separate macrocycles.

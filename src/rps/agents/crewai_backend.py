@@ -53,6 +53,7 @@ from rps.crewai_runtime.memory import (
     resolve_agent_memory_profile,
     resolve_crew_memory_profile,
 )
+from rps.crewai_runtime.models import SeasonPlanDraftBundleModel
 from rps.crewai_runtime.provider import (
     build_crewai_llm_kwargs,
     build_crewai_planning_llm_kwargs,
@@ -1985,6 +1986,84 @@ def _extract_json_output(result: object, task_obj: object) -> JsonMap | None:
     return None
 
 
+def _extract_structured_output(
+    result: object,
+    task_obj: object,
+    *,
+    task_name: str,
+    output_mode: str,
+) -> Any:
+    """Extract structured CrewAI output according to the resolved task output mode."""
+
+    if output_mode == "json":
+        json_output = _extract_json_output(result, task_obj)
+        if json_output is not None:
+            return json_output
+        raw = _extract_raw_output_text(result, task_obj)
+        if not raw:
+            raise RuntimeError(f"CrewAI task '{task_name}' produced no raw JSON output.")
+        return _parse_json_document(raw)
+    pydantic_output = _extract_typed_output(result, task_obj)
+    if pydantic_output is not None:
+        return pydantic_output
+    raw = _extract_raw_output_text(result, task_obj)
+    raise RuntimeError(
+        f"CrewAI task '{task_name}' did not produce a typed pydantic output."
+        + (f" Raw output: {raw}" if raw else "")
+    )
+
+
+def _classify_season_audit_item(item: JsonMap) -> str:
+    """Classify a raw season audit item as constraint-only or governance-only."""
+
+    keys = {str(key).strip() for key in item.keys() if str(key).strip()}
+    constraint_keys = {"blocking_issues", "warnings", "recommended_adjustments", "applied_sources"}
+    governance_keys = {
+        "blocking_issues",
+        "warnings",
+        "recommended_adjustments",
+        "cadence_authority_preserved",
+        "durability_first_respected",
+    }
+    has_constraint_only_key = "applied_sources" in keys
+    has_governance_only_key = "cadence_authority_preserved" in keys or "durability_first_respected" in keys
+    if has_constraint_only_key and has_governance_only_key:
+        raise RuntimeError("Mixed season audit-slot content: item combines constraint and governance families.")
+    if has_governance_only_key and keys <= governance_keys:
+        return "governance"
+    if keys <= constraint_keys:
+        return "constraint"
+    raise RuntimeError(f"Unclassifiable season audit-slot item: {sorted(keys)}")
+
+
+def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
+    """Move misplaced season audit items between `constraints` and `load_governance` before strict validation."""
+
+    constraints: list[JsonMap] = []
+    load_governance: list[JsonMap] = []
+    for raw_item in bundle_document.get("constraints", []):
+        if not isinstance(raw_item, dict):
+            raise RuntimeError("Unclassifiable season audit-slot item: constraints entry is not an object.")
+        destination = _classify_season_audit_item(raw_item)
+        if destination == "governance":
+            load_governance.append(raw_item)
+        else:
+            constraints.append(raw_item)
+    for raw_item in bundle_document.get("load_governance", []):
+        if not isinstance(raw_item, dict):
+            raise RuntimeError("Unclassifiable season audit-slot item: load_governance entry is not an object.")
+        destination = _classify_season_audit_item(raw_item)
+        if destination == "constraint":
+            constraints.append(raw_item)
+        else:
+            load_governance.append(raw_item)
+    return {
+        **bundle_document,
+        "constraints": constraints,
+        "load_governance": load_governance,
+    }
+
+
 def _output_model_for_task(task_blueprint: Any, *, schema_file: str | None = None) -> type[Any]:
     """Resolve the strongest structured-output model for a CrewAI task."""
 
@@ -2479,14 +2558,14 @@ def _execute_crewai_multiagent_crew(
         if not raw:
             raise RuntimeError(f"CrewAI crew final task '{final_task_name}' produced no raw artifact output.")
         return _parse_json_document(raw)
-    pydantic_output = _extract_typed_output(result, final_task_obj)
-    if pydantic_output is None:
-        raw = _extract_raw_output_text(result, final_task_obj)
-        raise RuntimeError(
-            f"CrewAI crew final task '{final_task_name}' did not produce a typed pydantic output."
-            + (f" Raw output: {raw}" if raw else "")
-        )
-    return pydantic_output
+    policy = build_task_guardrail_kwargs(task_blueprints[final_task_name], bundle.task_policies)
+    output_mode = str(policy.get("_resolved_output_mode", "pydantic"))
+    return _extract_structured_output(
+        result,
+        final_task_obj,
+        task_name=final_task_name,
+        output_mode=output_mode,
+    )
 
 
 def _build_internal_task_description(
@@ -2579,7 +2658,7 @@ def _run_season_plan_document(
     temperature_override: float | None = None,
 ) -> JsonMap:
     """Execute the hierarchical season planning crew and return the internal bundle."""
-    pydantic_output = _execute_crewai_multiagent_crew(
+    final_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
         crewai_llm_cls=crewai_llm_cls,
         crew_cls=crew_cls,
@@ -2602,10 +2681,24 @@ def _run_season_plan_document(
         temperature_override=temperature_override,
         execution_mode="sequential",
     )
-    document = pydantic_output.model_dump() if hasattr(pydantic_output, "model_dump") else pydantic_output
+    document = final_output.model_dump() if hasattr(final_output, "model_dump") else final_output
     if not isinstance(document, dict):
         raise RuntimeError("Season manager output did not decode to an artifact envelope object.")
-    return document
+    try:
+        coerced = coerce_season_plan_draft_bundle_slots(document)
+        return SeasonPlanDraftBundleModel.model_validate(coerced).model_dump()
+    except Exception as exc:
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="SEASON_BUNDLE_RAW_VALIDATION_FAILED",
+            crew="season_planning",
+            task="season_plan_finalize",
+            component="crew:season_plan_finalize",
+            reason=str(exc),
+        )
+        raise RuntimeError(f"season_plan_finalize raw bundle failure: {exc}") from exc
 
 
 def _run_phase_bundle_document(

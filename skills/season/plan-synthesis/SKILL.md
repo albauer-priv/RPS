@@ -30,6 +30,14 @@ Authority / injected sources:
 - if `BL_kJ` is not directly surfaced, use the deterministic baseline/progression information already embedded in the phase load context; do not derive it ad hoc from prose
 - this layer must not compute workout-level load math
 
+Audit-slot discipline:
+- `constraints[]` contains constraint-audit entries only.
+- `load_governance[]` contains governance-audit entries only.
+- `cadence_authority_preserved` belongs only in `load_governance[]`.
+- `durability_first_respected` belongs only in `load_governance[]`.
+- do not place governance audit items in `constraints[]`
+- do not collapse both audit families into one list
+
 Method:
 1. Pass 1 - structural draft: preserve event hierarchy and macrocycle logic while assembling a structurally coherent candidate bundle.
 2. A season may contain one or more target macrocycles backplanned from distinct `A`-event anchors when spacing allows.
