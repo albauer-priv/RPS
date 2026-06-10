@@ -14,6 +14,7 @@ from rps.agents.output_normalization import (
     extract_loaded_document,
     extract_planning_events_document,
     normalize_phase_guardrails_document,
+    normalize_phase_structure_upstream_constraints,
     normalize_season_scenarios_document,
     normalize_workout_inline_loop_headers,
     normalize_workout_percent_ranges,
@@ -1094,6 +1095,9 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
         return planning_bundle
     context = current_guardrail_runtime_context()
     phase_execution_context = _as_map(context.get("phase_execution_context"))
+    loaded_inputs = context.get("loaded_inputs")
+    loaded_inputs = loaded_inputs if isinstance(loaded_inputs, dict) else {}
+    season_plan_document = extract_loaded_document(loaded_inputs.get("season_plan"))
     inherited_scenario_contract = _as_map(phase_execution_context.get("inherited_scenario_contract"))
     normalized_bundle = dict(planning_bundle)
     normalized_bundle["phase_id"] = phase_execution_context.get("phase_id", planning_bundle.get("phase_id"))
@@ -1122,6 +1126,15 @@ def normalize_phase_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
                 "phase_intent": phase_intent,
                 "inherited_scenario_contract": inherited_scenario_contract,
             }
+    structure = _as_map(normalized_bundle.get("structure"))
+    if structure:
+        upstream_intent = _as_map(structure.get("upstream_intent"))
+        upstream_intent["constraints"] = normalize_phase_structure_upstream_constraints(
+            upstream_intent.get("constraints"),
+            season_plan_document=season_plan_document,
+        )
+        structure["upstream_intent"] = upstream_intent
+        normalized_bundle["structure"] = structure
     week_role_by_iso_week = _as_map(phase_execution_context.get("week_role_by_iso_week"))
     exact_band_by_week = role_week_band_by_week(phase_execution_context.get("phase_role_week_load_bands"))
     if not exact_band_by_week:

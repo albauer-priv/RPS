@@ -289,6 +289,62 @@ def _constraint_semantic_signature(value: object) -> tuple[str, tuple[str, ...]]
     return None
 
 
+_PHASE_STRUCTURE_PROCESS_RULE_MARKERS = (
+    "use the injected",
+    "use injected",
+    "do not re-fetch",
+    "do not refetch",
+    "do not rewrite exact",
+    "do not widen legality",
+    "scenario eligibility",
+    "operational none",
+    "preview/non-training-day",
+    "preview non-training-day",
+    "rest -> none/none",
+    "recovery -> recovery",
+    "exact role-week load bands",
+    "exact week bands",
+    "injected role-week banding",
+)
+
+
+def _is_phase_structure_process_rule(value: object) -> bool:
+    """Return True when a constraint-like sentence is actually runtime/process guidance."""
+
+    text = str(value or "").strip()
+    if not text:
+        return False
+    lowered = text.lower()
+    tokens = set(re.findall(r"[a-z0-9]+", lowered))
+    if any(marker in lowered for marker in _PHASE_STRUCTURE_PROCESS_RULE_MARKERS):
+        return True
+    if {"use", "injected"} <= tokens:
+        return True
+    if {"widen", "legality", "scenario", "eligibility"} <= tokens:
+        return True
+    return {"operational", "none", "preview"} <= tokens
+
+
+def _phase_structure_constraint_groups_from_season_plan(
+    season_plan_document: dict[str, Any] | None,
+) -> tuple[list[str], list[str], list[str]]:
+    """Return canonical season-owned constraint groups projected into PHASE_STRUCTURE."""
+
+    required_availability_constraints: list[str] = []
+    required_risk_constraints: list[str] = []
+    required_event_windows: list[str] = []
+    season_data = _as_map(_as_map(season_plan_document).get("data"))
+    global_constraints = _as_map(season_data.get("global_constraints"))
+    if not global_constraints:
+        return required_availability_constraints, required_risk_constraints, required_event_windows
+
+    recovery_notes = _text_list(_as_map(global_constraints.get("recovery_protection")).get("notes"))
+    required_availability_constraints = _text_list(global_constraints.get("availability_assumptions"))
+    required_risk_constraints = _text_list(global_constraints.get("risk_constraints")) + recovery_notes
+    required_event_windows = _text_list(global_constraints.get("planned_event_windows"))
+    return required_availability_constraints, required_risk_constraints, required_event_windows
+
+
 def _canonicalize_phase_structure_constraints(
     existing_constraints: list[str],
     *,
@@ -321,6 +377,8 @@ def _canonicalize_phase_structure_constraints(
     residual_exact: list[str] = []
     seen_exact: set[str] = set()
     for item in _text_list(existing_constraints):
+        if _is_phase_structure_process_rule(item):
+            continue
         signature = _constraint_semantic_signature(item)
         if signature is not None and signature in canonical_signatures:
             continue
@@ -350,6 +408,28 @@ def _canonicalize_phase_structure_constraints(
         seen_tokens.add(token)
         normalized.append(item)
     return normalized
+
+
+def normalize_phase_structure_upstream_constraints(
+    existing_constraints: object,
+    *,
+    season_plan_document: dict[str, Any] | None = None,
+    canonical_phase_constraints: list[str] | None = None,
+    canonical_residual: list[str] | None = None,
+) -> list[str]:
+    """Return the canonical `PHASE_STRUCTURE.upstream_intent.constraints` list."""
+
+    canonical_availability, canonical_risks, canonical_event_windows = (
+        _phase_structure_constraint_groups_from_season_plan(season_plan_document)
+    )
+    return _canonicalize_phase_structure_constraints(
+        _text_list(existing_constraints),
+        canonical_availability=canonical_availability,
+        canonical_risks=canonical_risks,
+        canonical_phase_constraints=canonical_phase_constraints or [],
+        canonical_event_windows=canonical_event_windows,
+        canonical_residual=canonical_residual,
+    )
 
 
 def _replace_canonical_trace_entries_from_documents(
@@ -553,32 +633,10 @@ def normalize_phase_structure_document(
     if not isinstance(upstream_intent, dict):
         upstream_intent = {}
     upstream_constraints = _text_list(upstream_intent.get("constraints"))
-    required_availability_constraints: list[str] = []
-    required_risk_constraints: list[str] = []
     required_phase_constraints: list[str] = []
-    required_event_windows: list[str] = []
-    if isinstance(season_plan_document, dict):
-        season_data = season_plan_document.get("data")
-        if isinstance(season_data, dict):
-            global_constraints = season_data.get("global_constraints")
-            if isinstance(global_constraints, dict):
-                recovery_notes: list[str] = []
-                recovery_protection = global_constraints.get("recovery_protection")
-                if isinstance(recovery_protection, dict):
-                    recovery_notes = _text_list(recovery_protection.get("notes"))
-                required_availability_constraints = _text_list(global_constraints.get("availability_assumptions"))
-                required_risk_constraints = _text_list(global_constraints.get("risk_constraints")) + recovery_notes
-                required_event_windows = _text_list(global_constraints.get("planned_event_windows"))
-                required_constraints = (
-                    required_availability_constraints
-                    + required_risk_constraints
-                    + required_event_windows
-                )
-                upstream_intent["constraints"] = _merge_unique_strings(
-                    upstream_constraints,
-                    required_constraints,
-                )
-                upstream_constraints = upstream_intent["constraints"]
+    required_availability_constraints, required_risk_constraints, required_event_windows = (
+        _phase_structure_constraint_groups_from_season_plan(season_plan_document)
+    )
     data["upstream_intent"] = upstream_intent
 
     inherited_scenario_contract = _resolve_phase_structure_inherited_scenario_contract(
@@ -638,12 +696,10 @@ def normalize_phase_structure_document(
         primary_objective = str(phase_goals.get("primary") or "").strip()
         if primary_objective:
             upstream_intent["primary_objective"] = primary_objective
-    upstream_intent["constraints"] = _canonicalize_phase_structure_constraints(
+    upstream_intent["constraints"] = normalize_phase_structure_upstream_constraints(
         upstream_constraints,
-        canonical_availability=required_availability_constraints,
-        canonical_risks=required_risk_constraints,
+        season_plan_document=season_plan_document,
         canonical_phase_constraints=required_phase_constraints,
-        canonical_event_windows=required_event_windows,
     )
     data["upstream_intent"] = upstream_intent
 

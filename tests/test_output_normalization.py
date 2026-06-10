@@ -464,6 +464,9 @@ def test_normalize_phase_structure_canonicalizes_paraphrased_constraints_by_know
                     "Fixed no-ride days are preserved across the season.",
                     "Do not escalate to VO2MAX; it is forbidden for this season.",
                     "Do not escalate to VO2MAX; it is forbidden for this season.",
+                    "Use the injected role-week banding exactly.",
+                    "Do not widen legality from scenario eligibility.",
+                    "Operational NONE stays in preview/non-training-day semantics only.",
                 ]
             }
         },

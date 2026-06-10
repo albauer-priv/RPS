@@ -36,7 +36,16 @@ Required structure rules:
 - `execution_principles.load_intensity_handling.forbidden_intensity_domains` must equal exact inherited forbidden domains only.
 - `load_ranges.weekly_kj_bands` must be copied exactly from phase guardrails.
 - `load_ranges.source` must use the stored phase-guardrails filename, not a guessed name.
-- `upstream_intent.constraints` must include season global constraints verbatim where required.
+- `upstream_intent.constraints` must include inherited planning constraints only and use season/global wording verbatim where required.
+- `upstream_intent.constraints` must not contain runtime/process rules, authority-copy reminders, validation discipline, or preview-only semantics.
+- Valid examples:
+  - `Fixed rest days are Monday and Friday.`
+  - `Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.`
+  - `2026-15 B Brevet 200 km Toelzer-Land-Runde`
+- Invalid examples:
+  - `Use the injected role-week banding exactly.`
+  - `Do not widen legality from scenario eligibility.`
+  - `Operational NONE stays in preview/non-training-day semantics only.`
 - `key_risks_warnings` must stay aligned with phase guardrails.
 
 Canonical exact-authority fragment:

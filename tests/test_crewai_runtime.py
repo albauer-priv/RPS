@@ -2993,6 +2993,65 @@ def test_normalize_phase_draft_bundle_overwrites_nested_inherited_scenario_contr
     assert normalized["preview"]["inherited_scenario_contract"] == expected_contract
 
 
+def test_normalize_phase_draft_bundle_canonicalizes_structure_constraints_before_writer_handoff() -> None:
+    draft_bundle = {
+        "phase_range": "2026-24--2026-25",
+        "phase_type": "BASE",
+        "phase_intent": "wrong",
+        "week_blueprints": [{"week": "2026-24", "week_role": "LOAD_2", "s5_band_min": 7000, "s5_band_max": 9000}],
+        "guardrails": {"phase_summary": {"primary_objective": "Rebuild load tolerance."}},
+        "structure": {
+            "upstream_intent": {
+                "constraints": [
+                    "Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Use the injected role-week banding exactly.",
+                    "Fixed no-ride days are preserved across the season.",
+                ]
+            }
+        },
+        "preview": {"phase_intent_summary": {"phase_intent": "shortened_re_entry"}},
+        "constraint_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "applied_sources": []},
+        "load_governance_audit": {"blocking_issues": [], "warnings": [], "recommended_adjustments": [], "cadence_authority_preserved": True, "durability_first_respected": True},
+        "decision_summary": {"cadence_application_notes": [], "override_rationale": []},
+    }
+    season_plan_document = {
+        "document": {
+            "data": {
+                "global_constraints": {
+                    "availability_assumptions": [
+                        "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+                        "Fixed rest days are Monday and Friday.",
+                    ],
+                    "risk_constraints": [],
+                    "planned_event_windows": [],
+                    "recovery_protection": {"notes": []},
+                }
+            }
+        }
+    }
+    with guardrail_runtime_context(
+        phase_execution_context={
+            "phase_id": "P01",
+            "phase_iso_week_range": "2026-24--2026-25",
+            "phase_type": "BASE",
+            "phase_role": "BASE",
+            "phase_intent": "shortened_re_entry",
+            "build_subtype": None,
+            "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            "week_role_by_iso_week": {"2026-24": "SHORTENED_RE_ENTRY"},
+            "phase_s5_bands": [{"week": "2026-24", "band": {"min": 7893, "max": 10148}}],
+        },
+        loaded_inputs={"season_plan": season_plan_document},
+    ):
+        normalized = normalize_phase_draft_bundle(draft_bundle)
+
+    assert normalized["structure"]["upstream_intent"]["constraints"] == [
+        "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+        "Fixed rest days are Monday and Friday.",
+    ]
+
+
 def test_normalize_phase_draft_bundle_raises_when_canonical_phase_intent_missing() -> None:
     draft_bundle = {
         "phase_range": "2026-24--2026-25",
@@ -3540,6 +3599,8 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
 
     assert "do not add `NONE`" in tasks_text
     assert "do not include `NONE` in `PHASE_STRUCTURE.allowed_intensity_domains`" in tasks_text
+    assert "`upstream_intent.constraints` is a closed field for real inherited planning facts only" in tasks_text
+    assert "Invalid examples: `Use the injected role-week banding exactly.`" in tasks_text
     assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in tasks_text
     assert "Exact week bands come from persisted Season phase authority and must be copied, not recomputed from S5." in tasks_text
     assert "canonical `quality_intent` is `Stabilization`" in tasks_text
@@ -3548,13 +3609,17 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "Treat inherited scenario contract as season posture ceiling only" in guardrails_skill_text
     assert "allowed_intensity_domains" in structure_skill_text
     assert "do not add `NONE`" in structure_skill_text
+    assert "must not contain runtime/process rules" in structure_skill_text
+    assert "Invalid examples:" in structure_skill_text
     assert "must not include `NONE`" in writer_skill_text
     assert "weekly_kj_bands` must be copied from injected deterministic phase authority" in writer_skill_text
     assert "phase legality fields remain separate from the scenario ceiling" in writer_skill_text
     assert "Preview may use `NONE` only on `REST` or fixed non-training days" in preview_skill_text
     assert "Phase Finalizer Authority Freeze" in finalizer_prompt_text
+    assert "do not serialize runtime/process/governance rules into `structure.upstream_intent.constraints`" in finalizer_prompt_text
     assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in finalizer_prompt_text
     assert "Compact authority-freeze example" in finalizer_skill_text
+    assert "keep runtime/process/governance rules out of `structure.upstream_intent.constraints`" in finalizer_skill_text
     assert "use tools only as fallback for genuinely missing authority fields" in finalizer_skill_text
 
 
