@@ -20,6 +20,7 @@ RunRecord = dict[str, object]
 RunEvent = dict[str, object]
 RunRuntimeSummary = dict[str, object]
 KNOWN_CHILD_RUN_SUFFIXES = ("week", "phase_bundle")
+DETAILS_TEXT_LIMIT = 240
 
 @dataclass(frozen=True)
 class RunStoreConfig:
@@ -373,9 +374,6 @@ def load_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -
 
 def _direct_child_run_ids(root: Path, athlete_id: str, run_id: str) -> list[str]:
     """Return direct child run ids for a parent run using current naming conventions."""
-    run_root = _run_store_dir(root, athlete_id)
-    if not run_root.exists():
-        return []
     children: list[str] = []
     seen: set[str] = set()
 
@@ -389,14 +387,6 @@ def _direct_child_run_ids(root: Path, athlete_id: str, run_id: str) -> list[str]
 
     for suffix in KNOWN_CHILD_RUN_SUFFIXES:
         _include(f"{run_id}_{suffix}")
-    prefix = f"{run_id}_"
-    for candidate_path in sorted(run_root.iterdir()):
-        if not candidate_path.is_dir():
-            continue
-        candidate = candidate_path.name
-        if not candidate.startswith(prefix) or candidate == run_id:
-            continue
-        _include(candidate)
     return children
 
 
@@ -431,27 +421,58 @@ def _canonical_step_label(step_id: str) -> str:
     return raw.replace("_", " ").title()
 
 
-def _stringify_detail_value(value: object) -> str:
-    """Convert structured detail payloads into compact display text."""
+def _truncate_detail_text(text: str) -> str:
+    """Return bounded detail text for UI display."""
+    collapsed = " ".join(text.split()).strip()
+    if not collapsed:
+        return "—"
+    if len(collapsed) <= DETAILS_TEXT_LIMIT:
+        return collapsed
+    return collapsed[: DETAILS_TEXT_LIMIT - 1].rstrip() + "…"
+
+
+def _json_detail_text(value: object) -> str:
+    """Return a stable JSON rendering for structured detail payloads."""
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def _stringify_detail_item(value: object) -> str:
+    """Convert one detail item into compact display text."""
     if value is None:
         return ""
     if isinstance(value, str):
         return value.strip()
     if isinstance(value, (int, float, bool)):
         return str(value)
-    if isinstance(value, (dict, list)):
+    if isinstance(value, dict):
         try:
-            return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+            return _json_detail_text(value)
         except TypeError:
             return str(value)
+    if isinstance(value, (list, tuple)):
+        parts = [_stringify_detail_item(item) for item in value]
+        return ", ".join(part for part in parts if part and part != "—")
     return str(value)
+
+
+def _stringify_detail_value(value: object) -> str:
+    """Convert structured detail payloads into bounded display text."""
+    rendered = _stringify_detail_item(value)
+    if not rendered:
+        return ""
+    return _truncate_detail_text(rendered)
 
 
 def _event_signature(event: RunEvent) -> str:
     """Build a stable signature for event deduplication."""
     fields = (
         _as_text(event.get("source_run_id")),
-        _as_text(event.get("ts")),
+        _as_text(event.get("timestamp") or event.get("ts")),
         _as_text(event.get("type")),
         _as_text(event.get("flow")),
         _as_text(event.get("crew")),
@@ -475,6 +496,10 @@ def _normalize_run_event(
     """Normalize one raw event into a UI-ready event record."""
     normalized = dict(event)
     normalized["source_run_id"] = source_run_id
+    timestamp = _as_text(normalized.get("timestamp")) or _as_text(normalized.get("ts"))
+    if timestamp:
+        normalized["timestamp"] = timestamp
+        normalized["ts"] = timestamp
 
     step_id = _as_text(normalized.get("step_id"))
     step_record = step_map.get(step_id) if step_id else None
@@ -521,6 +546,10 @@ def _normalize_run_event(
 def load_enriched_run_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -> list[RunEvent]:
     """Load merged, normalized run-family events for one selected run."""
     family_run_ids = [run_id, *_direct_child_run_ids(root, athlete_id, run_id)]
+    found_event_files: list[str] = []
+    missing_event_files: list[str] = []
+    found_run_metadata: list[str] = []
+    missing_run_metadata: list[str] = []
     logger.debug(
         "Loading enriched run events athlete=%s selected_run_id=%s family_run_ids=%s",
         athlete_id,
@@ -533,6 +562,7 @@ def load_enriched_run_events(root: Path, athlete_id: str, run_id: str, *, limit:
     for family_run_id in family_run_ids:
         path = events_jsonl_path(root, athlete_id, family_run_id)
         if not path.exists():
+            missing_event_files.append(family_run_id)
             logger.debug(
                 "Run event file missing athlete=%s run_id=%s path=%s",
                 athlete_id,
@@ -540,14 +570,19 @@ def load_enriched_run_events(root: Path, athlete_id: str, run_id: str, *, limit:
                 path,
             )
             continue
+        found_event_files.append(family_run_id)
         logger.debug(
             "Run event file found athlete=%s run_id=%s path=%s",
             athlete_id,
             family_run_id,
             path,
         )
-        raw_events = load_events(root, athlete_id, family_run_id, limit=limit)
+        raw_events = load_events(root, athlete_id, family_run_id, limit=max(limit, 1000))
         run_record, step_map = _step_map_for_run(root, athlete_id, family_run_id)
+        if run_record is None:
+            missing_run_metadata.append(family_run_id)
+        else:
+            found_run_metadata.append(family_run_id)
         for raw_event in raw_events:
             normalized = _normalize_run_event(
                 event=raw_event,
@@ -560,13 +595,18 @@ def load_enriched_run_events(root: Path, athlete_id: str, run_id: str, *, limit:
                 continue
             seen.add(signature)
             merged.append(normalized)
-    merged.sort(key=lambda event: _as_text(event.get("ts")))
+    merged.sort(key=lambda event: _as_text(event.get("timestamp") or event.get("ts")))
     if limit > 0:
-        merged = merged[-limit:]
+        merged = merged[:limit]
     logger.debug(
-        "Loaded enriched run events athlete=%s selected_run_id=%s merged_count=%s",
+        "Loaded enriched run events athlete=%s selected_run_id=%s family_run_ids=%s found_event_files=%s missing_event_files=%s found_run_metadata=%s missing_run_metadata=%s merged_count=%s",
         athlete_id,
         run_id,
+        family_run_ids,
+        found_event_files,
+        missing_event_files,
+        found_run_metadata,
+        missing_run_metadata,
         len(merged),
     )
     return merged

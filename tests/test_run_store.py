@@ -180,7 +180,12 @@ def test_load_enriched_run_events_merges_direct_child_telemetry(tmp_path: Path) 
     athlete_id = "athlete"
     parent_run_id = "plan_run"
     append_run(tmp_path, athlete_id, {"run_id": parent_run_id, "status": "RUNNING", "steps": []})
-    append_event(tmp_path, athlete_id, parent_run_id, {"type": "RUN_STARTED", "details": "Parent"})
+    append_event(
+        tmp_path,
+        athlete_id,
+        parent_run_id,
+        {"type": "RUN_STARTED", "ts": "2026-06-09T07:25:46+00:00", "details": "Parent"},
+    )
 
     child_run_id = f"{parent_run_id}_week"
     append_run(tmp_path, athlete_id, {"run_id": child_run_id, "status": "RUNNING", "steps": []})
@@ -190,6 +195,7 @@ def test_load_enriched_run_events_merges_direct_child_telemetry(tmp_path: Path) 
         child_run_id,
         {
             "type": "FLOW_STEP_STARTED",
+            "ts": "2026-06-09T07:25:47+00:00",
             "flow": "WeekOuterFlow",
             "step": "run_planning_cycle",
         },
@@ -199,6 +205,7 @@ def test_load_enriched_run_events_merges_direct_child_telemetry(tmp_path: Path) 
 
     assert [event["source_run_id"] for event in events] == [parent_run_id, child_run_id]
     assert events[0]["details"] == "Parent"
+    assert events[1]["timestamp"] == "2026-06-09T07:25:47+00:00"
     assert events[1]["flow"] == "WeekOuterFlow"
     assert events[1]["step"] == "run_planning_cycle"
 
@@ -231,3 +238,111 @@ def test_load_enriched_run_events_prefers_explicit_detail_fields(tmp_path: Path)
 
     assert len(events) == 1
     assert events[0]["details"] == "Explicit details"
+
+
+def test_load_enriched_run_events_ignores_unknown_prefixed_child_runs(tmp_path: Path) -> None:
+    athlete_id = "athlete"
+    parent_run_id = "plan_run"
+    append_run(tmp_path, athlete_id, {"run_id": parent_run_id, "status": "RUNNING", "steps": []})
+    append_event(tmp_path, athlete_id, parent_run_id, {"type": "RUN_STARTED", "details": "Parent"})
+
+    unknown_child = f"{parent_run_id}_adhoc_debug"
+    append_run(tmp_path, athlete_id, {"run_id": unknown_child, "status": "RUNNING", "steps": []})
+    append_event(
+        tmp_path,
+        athlete_id,
+        unknown_child,
+        {"type": "FLOW_STARTED", "flow": "UnexpectedFlow"},
+    )
+
+    events = load_enriched_run_events(tmp_path, athlete_id, parent_run_id)
+
+    assert [event["source_run_id"] for event in events] == [parent_run_id]
+
+
+def test_load_enriched_run_events_stringifies_list_details(tmp_path: Path) -> None:
+    athlete_id = "athlete"
+    run_id = "plan_run"
+    append_run(tmp_path, athlete_id, {"run_id": run_id, "status": "RUNNING", "steps": []})
+    append_event(
+        tmp_path,
+        athlete_id,
+        run_id,
+        {"type": "CREW_FAILED", "tasks": ["phase_guardrails", {"retry": 2}, "done"]},
+    )
+
+    events = load_enriched_run_events(tmp_path, athlete_id, run_id)
+
+    assert events[0]["details"] == 'phase_guardrails, {"retry":2}, done'
+
+
+def test_load_enriched_run_events_stringifies_dict_details(tmp_path: Path) -> None:
+    athlete_id = "athlete"
+    run_id = "plan_run"
+    append_run(tmp_path, athlete_id, {"run_id": run_id, "status": "RUNNING", "steps": []})
+    append_event(
+        tmp_path,
+        athlete_id,
+        run_id,
+        {"type": "STEP_FAILED", "outputs": {"b": 2, "a": 1}},
+    )
+
+    events = load_enriched_run_events(tmp_path, athlete_id, run_id)
+
+    assert events[0]["details"] == '{"a":1,"b":2}'
+
+
+def test_load_enriched_run_events_truncates_oversized_details(tmp_path: Path) -> None:
+    athlete_id = "athlete"
+    run_id = "plan_run"
+    append_run(tmp_path, athlete_id, {"run_id": run_id, "status": "RUNNING", "steps": []})
+    append_event(
+        tmp_path,
+        athlete_id,
+        run_id,
+        {"type": "STEP_FAILED", "details": "x" * 400},
+    )
+
+    events = load_enriched_run_events(tmp_path, athlete_id, run_id)
+
+    assert str(events[0]["details"]).endswith("…")
+    assert len(str(events[0]["details"])) == 240
+
+
+def test_load_enriched_run_events_orders_by_normalized_timestamp(tmp_path: Path) -> None:
+    athlete_id = "athlete"
+    run_id = "plan_run"
+    append_run(tmp_path, athlete_id, {"run_id": run_id, "status": "RUNNING", "steps": []})
+    append_event(
+        tmp_path,
+        athlete_id,
+        run_id,
+        {"type": "STEP_FINISHED", "ts": "2026-06-09T07:25:49+00:00"},
+    )
+    append_event(
+        tmp_path,
+        athlete_id,
+        run_id,
+        {"type": "STEP_STARTED", "timestamp": "2026-06-09T07:25:46+00:00"},
+    )
+
+    events = load_enriched_run_events(tmp_path, athlete_id, run_id)
+
+    assert [event["type"] for event in events] == ["STEP_STARTED", "STEP_FINISHED"]
+
+
+def test_load_enriched_run_events_without_run_metadata_degrades_cleanly(tmp_path: Path) -> None:
+    athlete_id = "athlete"
+    run_id = "plan_run"
+    append_event(
+        tmp_path,
+        athlete_id,
+        run_id,
+        {"type": "STEP_STARTED", "step_id": "WEEK_PLAN"},
+    )
+
+    events = load_enriched_run_events(tmp_path, athlete_id, run_id)
+
+    assert len(events) == 1
+    assert events[0]["step"] == "Week Plan"
+    assert events[0]["details"] == "—"

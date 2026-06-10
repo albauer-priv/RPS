@@ -515,7 +515,7 @@ def render_run_event_table(
         details = event.get("details") or event.get("reason") or event.get("outputs") or event.get("route") or event.get("tasks") or "—"
         rows.append(
             {
-                "Timestamp": event.get("ts") or "—",
+                "Timestamp": event.get("timestamp") or event.get("ts") or "—",
                 "Type": event_type or "—",
                 "Flow": event.get("flow") or "—",
                 "Crew": event.get("crew") or "—",
