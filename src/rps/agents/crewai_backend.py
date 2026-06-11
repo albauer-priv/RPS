@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from rps.agents.output_normalization import (
+    _replace_canonical_trace_entries_from_documents,
     extract_loaded_document,
     extract_planning_events_document,
     normalize_phase_guardrails_document,
@@ -1085,6 +1086,23 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         meta.get("trace_events"),
         trace_event_additions,
         allowed={artifact.value for artifact in _SEASON_PLAN_REQUIRED_TRACE_EVENT_ARTIFACTS},
+    )
+    trace_upstream_artifacts = {
+        str(_as_map(item).get("artifact") or "").strip().upper()
+        for item in _as_list(meta.get("trace_upstream"))
+        if str(_as_map(item).get("artifact") or "").strip()
+    } | {"SEASON_SCENARIO_SELECTION", "SEASON_SCENARIOS"}
+    trace_upstream = _replace_canonical_trace_entries_from_documents(
+        meta.get("trace_upstream"),
+        documents=[
+            ("SEASON_SCENARIO_SELECTION", _as_map(context.get("season_scenario_selection_payload"))),
+            ("SEASON_SCENARIOS", _as_map(context.get("season_scenarios_payload"))),
+        ],
+    )
+    meta["trace_upstream"] = _merge_trace_reference_lists(
+        trace_upstream,
+        [],
+        allowed=trace_upstream_artifacts,
     )
     data = _as_map(document.get("data"))
     if selected_scenario_contract:

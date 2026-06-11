@@ -23,6 +23,7 @@ from rps.orchestrator.resolved_context import (
 )
 from rps.orchestrator.week_plan_edits import list_week_plan_workouts
 from rps.planning.season_selection_binding import resolve_bound_season_selection
+from rps.workspace.artifact_metadata import normalize_trace_reference
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.paths import ARTIFACT_PATHS
@@ -45,17 +46,30 @@ def _as_meta(payload: object) -> JsonMap:
 
 
 def _trace_ref(artifact_type: ArtifactType, payload: object) -> JsonMap | None:
+    """Return a canonical trace reference from an upstream payload meta block."""
+
     meta = _as_meta(payload)
     version_key = meta.get("version_key")
     run_id = meta.get("run_id")
-    if not isinstance(version_key, str) or not isinstance(run_id, str):
+    if not isinstance(version_key, str) or not version_key.strip():
         return None
-    prefix = ARTIFACT_PATHS[artifact_type].filename_prefix
-    return {
-        "artifact": f"{prefix}_{version_key}.json",
-        "version": SNAPSHOT_VERSION,
-        "run_id": run_id,
-    }
+    if not isinstance(run_id, str) or not run_id.strip():
+        return None
+    expected_artifact = (
+        meta.get("artifact_type")
+        if isinstance(meta.get("artifact_type"), str) and str(meta.get("artifact_type") or "").strip()
+        else artifact_type.value
+    )
+    reference = normalize_trace_reference(
+        {
+            "artifact": expected_artifact,
+            "version": meta.get("version"),
+            "schema_version": meta.get("schema_version"),
+            "version_key": version_key,
+            "run_id": run_id,
+        }
+    )
+    return {key: str(value) for key, value in reference.items()} if reference is not None else None
 
 
 def _compact_source_version(artifact_type: ArtifactType, payload: object) -> str | None:
@@ -132,9 +146,11 @@ def _build_advisory_season_block(season_plan_payload: JsonMap | None) -> str:
     first = phases[0] if isinstance(phases[0], dict) else {}
     selected_contract = data.get("selected_scenario_contract")
     selected_map = selected_contract if isinstance(selected_contract, dict) else {}
+    season_intent = _as_map(data.get("season_intent_principles"))
+    season_objective = _as_str(season_intent.get("season_objective")) or _as_str(data.get("season_objective"))
     return (
         "**Season Advisory Summary**\n"
-        f"season_objective: {_as_str(data.get('season_objective')) or 'n/a'}\n"
+        f"season_objective: {season_objective or 'n/a'}\n"
         f"current_phase_seed: {_as_str(first.get('phase_type')) or _as_str(first.get('label')) or 'n/a'}\n"
         f"selected_scenario_posture_summary: {_as_str(selected_map.get('load_posture')) or 'n/a'}; "
         f"recovery_margin {_as_str(selected_map.get('recovery_margin')) or 'n/a'}; "

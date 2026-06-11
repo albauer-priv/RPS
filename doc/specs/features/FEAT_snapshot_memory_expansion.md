@@ -1,15 +1,15 @@
 ---
 Version: 1.0
-Status: Implemented
-Last-Updated: 2026-04-28
+Status: Updated
+Last-Updated: 2026-06-11
 Owner: Planning / Workspace / Coach
 ---
 # FEAT: Snapshot Memory Expansion
 
 * **ID:** `FEAT_snapshot_memory_expansion`
-* **Status:** Implemented
+* **Status:** Updated
 * **Owner/Area:** Planning / Workspace / Coach / Performance
-* **Last-Updated:** 2026-04-28
+* **Last-Updated:** 2026-06-11
 * **Related:** `FEAT_central_planner_context_snapshots`, `FEAT_feed_forward_resolved_context`, `ADR-028-snapshot-based-planner-memory`
 
 ## 1) Context / Problem
@@ -117,6 +117,7 @@ Behavioral changes:
 * [x] Successful DES/Season/Phase/Week/Feed-Forward runs refresh advisory memory.
 * [x] Docs and ADR reflect the expanded architecture.
 * [x] Application version is bumped.
+* [ ] Canonical snapshot/advisory `trace_*` metadata is revalidated against a real scoped `SEASON_PLAN` run and artifact inspection.
 
 ## 8) Migration / Rollout
 

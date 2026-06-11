@@ -1489,6 +1489,76 @@ def test_normalize_final_season_plan_semantics_deduplicates_trace_data_by_artifa
     assert next(entry for entry in trace_data if entry["artifact"] == "AVAILABILITY")["run_id"] == "resolved-avail-run"
 
 
+def test_normalize_final_season_plan_semantics_replaces_indirect_season_lineage_with_stored_run_ids() -> None:
+    document = {
+        "meta": {
+            "artifact_type": "SEASON_PLAN",
+            "trace_upstream": [
+                {
+                    "artifact": "SEASON_SCENARIO_SELECTION",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-24__20260611_093936",
+                    "run_id": "20260611_093936",
+                },
+                {
+                    "artifact": "SEASON_SCENARIOS",
+                    "version": "1.0",
+                    "schema_version": "1.0",
+                    "version_key": "2026-24__20260611_093850",
+                    "run_id": "20260611_093850",
+                },
+            ],
+            "trace_data": [],
+            "trace_events": [],
+        },
+        "data": {
+            "season_intent_principles": {"season_objective": "Strong 200 km A-event execution."},
+            "phases": [],
+            "assumptions_unknowns": {"revisit_items": []},
+        },
+    }
+
+    with guardrail_runtime_context(
+        season_scenario_selection_payload={
+            "meta": {
+                "artifact_type": "SEASON_SCENARIO_SELECTION",
+                "version": "1.0",
+                "schema_version": "1.1",
+                "version_key": "2026-24__20260611_093936",
+                "run_id": "ui_selection_20260611_093936",
+            }
+        },
+        season_scenarios_payload={
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-24__20260611_093850",
+                "run_id": "ui_scenarios_20260611_093850",
+            }
+        },
+    ):
+        normalized = _normalize_final_season_plan_semantics(document)
+
+    assert normalized["meta"]["trace_upstream"] == [
+        {
+            "artifact": "SEASON_SCENARIO_SELECTION",
+            "version": "1.0",
+            "schema_version": "1.1",
+            "version_key": "2026-24__20260611_093936",
+            "run_id": "ui_selection_20260611_093936",
+        },
+        {
+            "artifact": "SEASON_SCENARIOS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-24__20260611_093850",
+            "run_id": "ui_scenarios_20260611_093850",
+        },
+    ]
+
+
 def test_taper_selection_rules_block_sweet_spot_extensive() -> None:
     rules_text = Path("config/planning/week_workout_selection_rules.yaml").read_text(encoding="utf-8")
 

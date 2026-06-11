@@ -5,6 +5,8 @@ from rps.orchestrator.context_snapshots import (
     build_current_week_status_snapshot_document,
     build_planning_context_snapshot_document,
     ensure_current_week_status_snapshot,
+    save_advisory_memory,
+    save_athlete_state_snapshot,
 )
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
@@ -15,9 +17,15 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
     snapshot = build_advisory_memory_document(
         target_week=IsoWeek(year=2026, week=18),
         season_plan_payload={
-            "meta": {"artifact_type": "SEASON_PLAN", "version_key": "2026-17__20260424_123613", "run_id": "season"},
+            "meta": {
+                "artifact_type": "SEASON_PLAN",
+                "version": "1.0",
+                "schema_version": "1.2",
+                "version_key": "2026-17__20260424_123613",
+                "run_id": "season",
+            },
             "data": {
-                "season_objective": "Peak for the A-event.",
+                "season_intent_principles": {"season_objective": "Peak for the A-event."},
                 "phases": [{"phase_type": "peak_bridge", "label": "P01"}],
                 "selected_scenario_contract": {
                     "load_posture": "balanced_progressive",
@@ -27,7 +35,13 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
             },
         },
         week_plan_payload={
-            "meta": {"artifact_type": "WEEK_PLAN", "version_key": "2026-18__20260427_102637", "run_id": "week"},
+            "meta": {
+                "artifact_type": "WEEK_PLAN",
+                "version": "1.1",
+                "schema_version": "1.1",
+                "version_key": "2026-18__20260427_102637",
+                "run_id": "week",
+            },
             "data": {
                 "week_summary": {"week_objective": "Absorb and rebuild.", "planned_weekly_load_kj": 8028},
                 "agenda": [
@@ -44,11 +58,23 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
             },
         },
         des_analysis_payload={
-            "meta": {"artifact_type": "DES_ANALYSIS_REPORT", "version_key": "2026-18__20260427_090000", "run_id": "des"},
+            "meta": {
+                "artifact_type": "DES_ANALYSIS_REPORT",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-18__20260427_090000",
+                "run_id": "des",
+            },
             "data": {"recommendation": {"suggested_considerations": ["Protect freshness"], "rationale": ["High fatigue"]}},
         },
         season_phase_feed_forward_payload={
-            "meta": {"artifact_type": "SEASON_PHASE_FEED_FORWARD", "version_key": "2026-18__20260427_091000", "run_id": "sff"},
+            "meta": {
+                "artifact_type": "SEASON_PHASE_FEED_FORWARD",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-18__20260427_091000",
+                "run_id": "sff",
+            },
             "data": {
                 "decision_summary": {"conclusion": "Reduce corridor slightly."},
                 "phase_adjustment": {
@@ -60,7 +86,13 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
             },
         },
         phase_feed_forward_payload={
-            "meta": {"artifact_type": "PHASE_FEED_FORWARD", "version_key": "2026-18__20260427_092000", "run_id": "pff"},
+            "meta": {
+                "artifact_type": "PHASE_FEED_FORWARD",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-18__20260427_092000",
+                "run_id": "pff",
+            },
             "data": {
                 "reason_context": {"intent_of_adjustment": "Protect recovery early week."},
                 "inherited_scenario_contract": {
@@ -80,6 +112,44 @@ def test_build_advisory_memory_document_collects_recent_output_summaries():
     assert "selected_scenario_posture" in prompt_blocks
     assert "inherited_posture" in prompt_blocks
     assert "Tempo Session" in prompt_blocks["current_week_plan"]
+    assert "season_objective: Peak for the A-event." in prompt_blocks["season"]
+    assert snapshot["meta"]["trace_upstream"] == [
+        {
+            "artifact": "SEASON_PLAN",
+            "version": "1.0",
+            "schema_version": "1.2",
+            "version_key": "2026-17__20260424_123613",
+            "run_id": "season",
+        },
+        {
+            "artifact": "WEEK_PLAN",
+            "version": "1.1",
+            "schema_version": "1.1",
+            "version_key": "2026-18__20260427_102637",
+            "run_id": "week",
+        },
+        {
+            "artifact": "DES_ANALYSIS_REPORT",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-18__20260427_090000",
+            "run_id": "des",
+        },
+        {
+            "artifact": "SEASON_PHASE_FEED_FORWARD",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-18__20260427_091000",
+            "run_id": "sff",
+        },
+        {
+            "artifact": "PHASE_FEED_FORWARD",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-18__20260427_092000",
+            "run_id": "pff",
+        },
+    ]
 
 
 def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
@@ -161,6 +231,174 @@ def test_athlete_snapshot_includes_selected_scenario_contract(tmp_path):
     )
     assert "selected_scenario_contract" in snapshot["data"]["prompt_blocks"]
     assert "load_posture: balanced_progressive" in snapshot["data"]["prompt_blocks"]["selected_scenario_contract"]
+    assert snapshot["meta"]["trace_data"] == [
+        {
+            "artifact": "SEASON_SCENARIO_SELECTION",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-22__sel",
+            "run_id": "sel",
+        }
+    ]
+
+
+def test_athlete_snapshot_emits_full_canonical_trace_contract(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    store.ensure_workspace(athlete_id)
+    store.save_document(
+        athlete_id=athlete_id,
+        artifact_type=ArtifactType.SEASON_SCENARIOS,
+        version_key="2026-24__scenarios",
+        document={
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-24__scenarios",
+                "run_id": "scenarios",
+            },
+            "data": {
+                "planning_horizon_weeks": 16,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced build",
+                        "load_philosophy": "balanced_progressive",
+                        "best_suited_if": "stable recovery",
+                        "key_differences": "balanced pressure",
+                        "main_payoff": "repeatable progression",
+                        "main_cost": "less conservative than A",
+                        "risk_profile": "medium",
+                        "scenario_guidance": {
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": ["preserve continuity"],
+                            "event_alignment_notes": ["B event rehearsal"],
+                            "risk_flags": ["needs stable recovery"],
+                            "kpi_guardrail_notes": ["stay repeatable"],
+                            "decision_notes": ["athlete selected B"],
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 4,
+                            "phase_plan_summary": {"full_phases": 4, "shortened_phases": []},
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                        },
+                    }
+                ],
+            },
+        },
+        producer_agent="test",
+        run_id="scenarios",
+        update_latest=True,
+    )
+    snapshot = build_athlete_state_snapshot_document(
+        store,
+        athlete_id,
+        target_week=IsoWeek(year=2026, week=24),
+        athlete_profile_payload={
+            "meta": {
+                "artifact_type": "ATHLETE_PROFILE",
+                "version": "1.0",
+                "schema_version": "1.2",
+                "version_key": "profile_v1",
+                "run_id": "run-profile",
+            },
+            "data": {},
+        },
+        kpi_profile_payload={
+            "meta": {
+                "artifact_type": "KPI_PROFILE",
+                "version": "1.1",
+                "schema_version": "1.1",
+                "version_key": "kpi_v1",
+                "run_id": "run-kpi",
+            },
+            "data": {},
+        },
+        selection_payload={
+            "meta": {
+                "artifact_type": "SEASON_SCENARIO_SELECTION",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-24__sel",
+                "run_id": "run-sel",
+            },
+            "data": {
+                "selected_scenario_id": "B",
+                "season_scenarios_ref": "2026-24__scenarios",
+                "selection_source": "athlete",
+                "selection_rationale": "Controlled progression",
+                "notes": [],
+                "kpi_moving_time_rate_guidance_selection": None,
+            },
+        },
+        availability_payload={
+            "meta": {
+                "artifact_type": "AVAILABILITY",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "avail_v1",
+                "run_id": "run-avail",
+            },
+            "data": {"weekly_hours": {"typical": 12.0}},
+        },
+        planning_events_payload={
+            "meta": {
+                "artifact_type": "PLANNING_EVENTS",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "events_v1",
+                "run_id": "run-events",
+            },
+            "data": {},
+        },
+        logistics_payload={
+            "meta": {
+                "artifact_type": "LOGISTICS",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "log_v1",
+                "run_id": "run-log",
+            },
+            "data": {},
+        },
+        zone_model_payload={
+            "meta": {
+                "artifact_type": "ZONE_MODEL",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "zone_v1",
+                "run_id": "run-zone",
+            },
+            "data": {},
+        },
+        wellness_payload={
+            "meta": {
+                "artifact_type": "WELLNESS",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-23",
+                "run_id": "run-wellness",
+            },
+            "data": {"body_mass_kg": 72.4},
+        },
+    )
+    assert snapshot["meta"]["trace_data"] == [
+        {"artifact": "ATHLETE_PROFILE", "version": "1.0", "schema_version": "1.2", "version_key": "profile_v1", "run_id": "run-profile"},
+        {"artifact": "KPI_PROFILE", "version": "1.1", "schema_version": "1.1", "version_key": "kpi_v1", "run_id": "run-kpi"},
+        {"artifact": "SEASON_SCENARIO_SELECTION", "version": "1.0", "schema_version": "1.0", "version_key": "2026-24__sel", "run_id": "run-sel"},
+        {"artifact": "AVAILABILITY", "version": "1.0", "schema_version": "1.0", "version_key": "avail_v1", "run_id": "run-avail"},
+        {"artifact": "ZONE_MODEL", "version": "1.0", "schema_version": "1.0", "version_key": "zone_v1", "run_id": "run-zone"},
+        {"artifact": "WELLNESS", "version": "1.0", "schema_version": "1.0", "version_key": "2026-23", "run_id": "run-wellness"},
+    ]
+    assert snapshot["meta"]["trace_events"] == [
+        {"artifact": "PLANNING_EVENTS", "version": "1.0", "schema_version": "1.0", "version_key": "events_v1", "run_id": "run-events"},
+        {"artifact": "LOGISTICS", "version": "1.0", "schema_version": "1.0", "version_key": "log_v1", "run_id": "run-log"},
+    ]
 
 
 def test_athlete_snapshot_omits_selected_scenario_contract_when_selection_is_stale(tmp_path):
@@ -272,6 +510,29 @@ def test_planning_snapshot_includes_inherited_posture_blocks(tmp_path):
     assert "des_report" in blocks
     assert "evidence_alignment" in blocks
     assert snapshot["data"]["source_versions"]["des_analysis_report"] == "2026-21"
+    assert snapshot["meta"]["trace_upstream"] == [
+        {
+            "artifact": "SEASON_PLAN",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "sp",
+            "run_id": "sp",
+        },
+        {
+            "artifact": "PHASE_GUARDRAILS",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "pg",
+            "run_id": "pg",
+        },
+        {
+            "artifact": "DES_ANALYSIS_REPORT",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-21",
+            "run_id": "des",
+        },
+    ]
 
 
 def test_build_advisory_memory_prompt_block_marks_memory_as_non_binding():
@@ -344,6 +605,15 @@ def test_build_current_week_status_snapshot_document_summarizes_actuals_and_plan
     assert "completed_sessions_count: 1" in prompt_blocks["current_week_actuals"]
     assert "open_planned_days_count: 1" in prompt_blocks["plan_vs_actual"]
     assert "- 2026-05-14 | Endurance Ride" in prompt_blocks["plan_vs_actual"]
+    assert snapshot["meta"]["trace_upstream"] == [
+        {
+            "artifact": "WEEK_PLAN",
+            "version": "1.0",
+            "schema_version": "1.0",
+            "version_key": "2026-20__20260511_080000",
+            "run_id": "week",
+        }
+    ]
 
 
 def test_ensure_current_week_status_snapshot_fetches_live_current_week(monkeypatch, tmp_path):
@@ -395,3 +665,109 @@ def test_ensure_current_week_status_snapshot_fetches_live_current_week(monkeypat
     assert "current_week_actuals" in prompt_blocks
     assert "completed_sessions_count: 1" in prompt_blocks["current_week_actuals"]
     assert store.latest_exists(athlete_id, ArtifactType.CURRENT_WEEK_STATUS_SNAPSHOT)
+
+
+def test_snapshot_and_advisory_save_round_trip_preserves_canonical_trace_and_objective(tmp_path):
+    store = LocalArtifactStore(root=tmp_path)
+    athlete_id = "i150546"
+    target_week = IsoWeek(year=2026, week=24)
+    store.ensure_workspace(athlete_id)
+    store.save_document(
+        athlete_id=athlete_id,
+        artifact_type=ArtifactType.SEASON_SCENARIOS,
+        version_key="2026-24__scenarios",
+        document={
+            "meta": {
+                "artifact_type": "SEASON_SCENARIOS",
+                "version": "1.0",
+                "schema_version": "1.0",
+                "version_key": "2026-24__scenarios",
+                "run_id": "scenarios",
+            },
+            "data": {
+                "planning_horizon_weeks": 16,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced build",
+                        "load_philosophy": "balanced_progressive",
+                        "best_suited_if": "stable recovery",
+                        "key_differences": "balanced pressure",
+                        "main_payoff": "repeatable progression",
+                        "main_cost": "less conservative than A",
+                        "risk_profile": "medium",
+                        "scenario_guidance": {
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": ["preserve continuity"],
+                            "event_alignment_notes": ["B event rehearsal"],
+                            "risk_flags": [],
+                            "kpi_guardrail_notes": ["stay repeatable"],
+                            "decision_notes": ["selected for test"],
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 4,
+                            "phase_plan_summary": {"full_phases": 4, "shortened_phases": []},
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                        },
+                    }
+                ],
+            },
+        },
+        producer_agent="test",
+        run_id="scenarios",
+        update_latest=True,
+    )
+    snapshot = save_athlete_state_snapshot(
+        store,
+        athlete_id,
+        target_week=target_week,
+        run_id="snapshot-run",
+        athlete_profile_payload={"meta": {"artifact_type": "ATHLETE_PROFILE", "version": "1.0", "schema_version": "1.0", "version_key": "profile_v1", "run_id": "profile"}},
+        kpi_profile_payload={"meta": {"artifact_type": "KPI_PROFILE", "version": "1.0", "schema_version": "1.0", "version_key": "kpi_v1", "run_id": "kpi"}},
+        selection_payload={
+            "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "version": "1.0", "schema_version": "1.0", "version_key": "2026-24__sel", "run_id": "sel"},
+            "data": {
+                "selected_scenario_id": "B",
+                "season_scenarios_ref": "2026-24__scenarios",
+                "selection_source": "athlete",
+                "selection_rationale": "Controlled progression",
+                "notes": [],
+                "kpi_moving_time_rate_guidance_selection": None,
+            },
+        },
+        availability_payload={"meta": {"artifact_type": "AVAILABILITY", "version": "1.0", "schema_version": "1.0", "version_key": "avail_v1", "run_id": "avail"}},
+        planning_events_payload={"meta": {"artifact_type": "PLANNING_EVENTS", "version": "1.0", "schema_version": "1.0", "version_key": "events_v1", "run_id": "events"}},
+        logistics_payload={"meta": {"artifact_type": "LOGISTICS", "version": "1.0", "schema_version": "1.0", "version_key": "log_v1", "run_id": "log"}},
+        zone_model_payload={"meta": {"artifact_type": "ZONE_MODEL", "version": "1.0", "schema_version": "1.0", "version_key": "zone_v1", "run_id": "zone"}},
+        wellness_payload={"meta": {"artifact_type": "WELLNESS", "version": "1.0", "schema_version": "1.0", "version_key": "2026-23", "run_id": "wellness"}, "data": {"body_mass_kg": 72.4}},
+    )
+    advisory = save_advisory_memory(
+        store,
+        athlete_id,
+        target_week=target_week,
+        run_id="advisory-run",
+        season_plan_payload={
+            "meta": {"artifact_type": "SEASON_PLAN", "version": "1.0", "schema_version": "1.1", "version_key": "2026-24__plan", "run_id": "season-plan"},
+            "data": {
+                "season_intent_principles": {"season_objective": "Peak long-distance execution."},
+                "phases": [{"phase_type": "BASE", "label": "P01"}],
+                "selected_scenario_contract": {"load_posture": "balanced_progressive", "recovery_margin": "medium", "specificity_density": "controlled"},
+            },
+        },
+        week_plan_payload={"meta": {"artifact_type": "WEEK_PLAN", "version": "1.0", "schema_version": "1.0", "version_key": "2026-24__week", "run_id": "week"}, "data": {"week_summary": {"week_objective": "Absorb and rebuild."}}},
+        des_analysis_payload={"meta": {"artifact_type": "DES_ANALYSIS_REPORT", "version": "1.0", "schema_version": "1.0", "version_key": "2026-23__des", "run_id": "des"}, "data": {"recommendation": {"suggested_considerations": ["Protect freshness"], "rationale": ["High fatigue"]}}},
+    )
+    assert snapshot["meta"]["trace_data"][0]["artifact"] == "ATHLETE_PROFILE"
+    assert snapshot["meta"]["trace_events"][0]["artifact"] == "PLANNING_EVENTS"
+    assert advisory["meta"]["trace_upstream"][0] == {
+        "artifact": "SEASON_PLAN",
+        "version": "1.0",
+        "schema_version": "1.1",
+        "version_key": "2026-24__plan",
+        "run_id": "season-plan",
+    }
+    assert "season_objective: Peak long-distance execution." in advisory["data"]["prompt_blocks"]["season"]
