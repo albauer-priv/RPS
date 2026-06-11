@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Implemented
-Last-Updated: 2026-05-21
+Last-Updated: 2026-06-11
 Owner: Planning Runtime
 ---
 # FEAT: Season Semantic Contract Hardening
@@ -9,7 +9,7 @@ Owner: Planning Runtime
 * **ID:** FEAT_season_semantic_contract_hardening
 * **Status:** Implemented
 * **Owner/Area:** Planning Runtime
-* **Last-Updated:** 2026-05-21
+* **Last-Updated:** 2026-06-11
 * **Related:** [ADR-053-canonical-phase-taxonomy-and-build-subtypes](/doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md), [ADR-054-dual-bundled-structured-output-schemas](/doc/adr/ADR-054-dual-bundled-structured-output-schemas.md)
 
 ---
@@ -70,6 +70,7 @@ This allowed structurally wrong but superficially plausible outputs:
 * The bundle now carries an exact deterministic `season_load_envelope` and season-level semantic notes for writer framing.
 * Review and guardrails now reject semantic mismatches before the writer starts.
 * The writer is expected to serialize the approved bundle, not reinterpret it.
+* Final season normalization strips positive forbidden-domain prose from phase narratives and rewrites it into legal, intent-coherent wording before store validation.
 
 **UI impact**
 
@@ -98,6 +99,7 @@ This allowed structurally wrong but superficially plausible outputs:
 * `crewai_backend.py`: enrich the Season bundle deterministically before review/writer handoff.
 * `contracts.py`: validate Season bundle semantics and tighten Season Plan semantic validation.
 * `guardrails.py`: enforce bundle completeness and writer copy-exact behavior.
+* Final season normalization additionally sanitizes phase narrative fields when they drift into forbidden-domain-positive prose.
 
 **Data flow**
 

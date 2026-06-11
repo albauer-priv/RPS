@@ -2841,6 +2841,67 @@ def test_normalize_season_plan_draft_bundle_canonicalizes_invalid_deterministic_
     assert ok is True, message
 
 
+def test_normalize_season_plan_draft_bundle_strips_blueprint_forbidden_domain_narrative() -> None:
+    draft_bundle = {
+        "event_priority": {"primary_a_events": ["A1"]},
+        "macrocycle": {"deload_cadence": "2:1:1"},
+        "phase_blueprints": [
+            {
+                "phase_id": "P02",
+                "iso_week_range": "2026-24--2026-25",
+                "scenario_cadence": "2:1:1",
+                "narrative": "Controlled THRESHOLD support appears inside this base block.",
+                "overview": {
+                    "metabolic_focus": "THRESHOLD-led base support.",
+                    "expected_adaptations": ["THRESHOLD maintenance for base support."],
+                    "non_negotiables": ["THRESHOLD remains secondary in this block."],
+                },
+                "structural_emphasis": {"typical_focus": "threshold-led continuity."},
+            }
+        ],
+    }
+    with guardrail_runtime_context(
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P02",
+                    "iso_week_range": "2026-24--2026-25",
+                    "phase_type": "BASE",
+                    "phase_intent": "general_base",
+                    "build_subtype": None,
+                    "season_phase_role": "general_base",
+                    "scenario_cadence": "2:1:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2"],
+                    "availability_cap_kj": {"typical": 10000, "max": 11000},
+                    "baseline_load_kj": 8200,
+                    "recommended_phase_corridor": {"min": 7800, "max": 9800},
+                    "role_week_load_bands": [],
+                    "progression_trace": {"source": "deterministic"},
+                }
+            ],
+        }
+    ):
+        normalized = normalize_season_plan_draft_bundle(draft_bundle)
+
+    blueprint = normalized["phase_blueprints"][0]
+    assert blueprint["narrative"] == (
+        "Base work consolidates durable aerobic support through endurance-led work with controlled tempo and sweet spot support."
+    )
+    assert blueprint["overview"]["metabolic_focus"] == (
+        "Aerobic base support through endurance-led work with controlled tempo and sweet spot support."
+    )
+    assert blueprint["overview"]["expected_adaptations"] == [
+        "Improved aerobic support and sustainable routine through endurance-led work with controlled tempo and sweet spot support."
+    ]
+    assert "THRESHOLD remains forbidden in this phase identity." in blueprint["overview"]["non_negotiables"]
+    assert "VO2MAX remains forbidden in this phase identity." in blueprint["overview"]["non_negotiables"]
+    assert blueprint["structural_emphasis"]["typical_focus"] == (
+        "Sustainable base loading, continuity, and durable routine-building."
+    )
+    assert blueprint["forbidden_domains"] == ["THRESHOLD", "VO2MAX"]
+
+
 def test_normalize_phase_draft_bundle_overwrites_top_level_semantics_and_week_contracts() -> None:
     draft_bundle = {
         "phase_range": "2026-21--2026-23",
@@ -3952,6 +4013,197 @@ def test_normalize_final_season_plan_semantics_projects_events_guardrails_and_wa
     assert any(
         "Durability" in publication["title"]
         for publication in normalized["data"]["principles_scientific_foundation"]["scientific_foundation"]["publications"]
+    )
+
+
+def test_normalize_final_season_plan_semantics_rewrites_positive_forbidden_threshold_narrative() -> None:
+    document = {
+        "meta": {"artifact_type": "SEASON_PLAN"},
+        "data": {
+            "season_intent_principles": {"season_objective": "Strong 300 km execution."},
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "BUILD",
+                    "phase_intent": "durability_build",
+                    "build_subtype": "durability_build",
+                    "narrative": "Controlled THRESHOLD support appears throughout this build.",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 9000, "max": 10800}},
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                        "allowed_load_modalities": ["NONE", "K3"],
+                        "forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
+                    },
+                    "overview": {
+                        "metabolic_focus": "THRESHOLD-led durability focus.",
+                        "expected_adaptations": ["Controlled THRESHOLD support appears throughout this build."],
+                        "non_negotiables": ["THRESHOLD remains secondary inside this block."],
+                    },
+                    "structural_emphasis": {"typical_focus": "threshold-led long-ride stability."},
+                }
+            ],
+            "justification": {
+                "phase_justifications": [
+                    {
+                        "phase_id": "P01",
+                        "intensity_distribution": "controlled threshold support with steady pressure",
+                        "overload_pattern": "Build logic.",
+                        "kJ_first_statement": "P01 corridor.",
+                        "citations": [],
+                    }
+                ]
+            },
+            "principles_scientific_foundation": {
+                "principle_applications": [],
+                "scientific_foundation": {"publications": []},
+            },
+            "assumptions_unknowns": {"revisit_items": []},
+            "phase_transitions_guardrails": {"conservative_triggers": [], "absolute_no_go_rules": []},
+        },
+    }
+
+    with guardrail_runtime_context(
+        approved_planning_bundle={
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "BUILD",
+                    "phase_intent": "durability_build",
+                    "build_subtype": "durability_build",
+                    "allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT"],
+                    "allowed_load_modalities": ["NONE", "K3"],
+                    "forbidden_domains": ["THRESHOLD", "VO2MAX"],
+                }
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P01",
+                    "phase_type": "BUILD",
+                    "phase_intent": "durability_build",
+                    "build_subtype": "durability_build",
+                    "role_week_load_bands": [],
+                    "event_taper_trace": {},
+                }
+            ],
+        },
+    ):
+        normalized = _normalize_final_season_plan_semantics(document)
+
+    phase = normalized["data"]["phases"][0]
+    assert phase["narrative"].startswith("Durability-led build emphasizing fatigue resistance")
+    assert phase["overview"]["metabolic_focus"] == (
+        "Durability-first pressure through endurance-led work with controlled tempo and sweet spot support."
+    )
+    assert phase["overview"]["expected_adaptations"] == [
+        "Improved fatigue resistance and long-ride stability through endurance-led work with controlled tempo and sweet spot support."
+    ]
+    assert "THRESHOLD remains forbidden in this phase identity." in phase["overview"]["non_negotiables"]
+    assert phase["structural_emphasis"]["typical_focus"] == (
+        "Hard-late stability, preload, back-to-back resilience, and long-ride tolerance."
+    )
+    justification = normalized["data"]["justification"]["phase_justifications"][0]
+    assert justification["intensity_distribution"] == (
+        "Endurance-led work with controlled tempo and sweet spot support supporting durability-first build logic."
+    )
+    assert phase["allowed_forbidden_semantics"]["forbidden_intensity_domains"] == ["THRESHOLD", "VO2MAX"]
+
+
+def test_normalize_final_season_plan_semantics_rewrites_positive_forbidden_vo2max_narrative() -> None:
+    document = {
+        "meta": {"artifact_type": "SEASON_PLAN"},
+        "data": {
+            "season_intent_principles": {"season_objective": "Strong 200 km A-event execution."},
+            "phases": [
+                {
+                    "phase_id": "P02",
+                    "phase_type": "BUILD",
+                    "phase_intent": "specificity_build",
+                    "build_subtype": "specificity_build",
+                    "narrative": "Controlled VO2MAX support appears near the event.",
+                    "weekly_load_corridor": {"weekly_kj": {"min": 9800, "max": 11200}},
+                    "allowed_forbidden_semantics": {
+                        "allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                        "allowed_load_modalities": ["NONE", "K3"],
+                        "forbidden_intensity_domains": ["VO2MAX"],
+                    },
+                    "overview": {
+                        "metabolic_focus": "VO2MAX-led specificity work.",
+                        "expected_adaptations": ["VO2MAX maintenance near the event."],
+                        "non_negotiables": ["VO2MAX remains secondary here."],
+                    },
+                    "structural_emphasis": {"typical_focus": "vo2max-led terrain rehearsal."},
+                }
+            ],
+            "justification": {
+                "phase_justifications": [
+                    {
+                        "phase_id": "P02",
+                        "intensity_distribution": "controlled VO2MAX support under specificity pressure",
+                        "overload_pattern": "Specificity logic.",
+                        "kJ_first_statement": "P02 corridor.",
+                        "citations": [],
+                    }
+                ]
+            },
+            "principles_scientific_foundation": {
+                "principle_applications": [],
+                "scientific_foundation": {"publications": []},
+            },
+            "assumptions_unknowns": {"revisit_items": []},
+            "phase_transitions_guardrails": {"conservative_triggers": [], "absolute_no_go_rules": []},
+        },
+    }
+
+    with guardrail_runtime_context(
+        approved_planning_bundle={
+            "phase_blueprints": [
+                {
+                    "phase_id": "P02",
+                    "phase_type": "BUILD",
+                    "phase_intent": "specificity_build",
+                    "build_subtype": "specificity_build",
+                    "allowed_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+                    "allowed_load_modalities": ["NONE", "K3"],
+                    "forbidden_domains": ["VO2MAX"],
+                }
+            ]
+        },
+        season_phase_load_context={
+            "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD"],
+            "phases": [
+                {
+                    "phase_id": "P02",
+                    "phase_type": "BUILD",
+                    "phase_intent": "specificity_build",
+                    "build_subtype": "specificity_build",
+                    "role_week_load_bands": [],
+                    "event_taper_trace": {},
+                }
+            ],
+        },
+    ):
+        normalized = _normalize_final_season_plan_semantics(document)
+
+    phase = normalized["data"]["phases"][0]
+    assert phase["narrative"].startswith(
+        "Event-near specificity build emphasizing pacing, fueling, terrain handling"
+    )
+    assert phase["overview"]["metabolic_focus"] == (
+        "Event-near specificity through endurance-led work with controlled tempo, sweet spot, and threshold support."
+    )
+    assert phase["overview"]["expected_adaptations"] == [
+        "Improved pacing, fueling, and terrain-specific execution through endurance-led work with controlled tempo, sweet spot, and threshold support."
+    ]
+    assert "VO2MAX remains forbidden in this phase identity." in phase["overview"]["non_negotiables"]
+    assert phase["structural_emphasis"]["typical_focus"] == (
+        "Pacing, fueling, terrain handling, and logistics under event-near specificity."
+    )
+    justification = normalized["data"]["justification"]["phase_justifications"][0]
+    assert justification["intensity_distribution"] == (
+        "Endurance-led work with controlled tempo, sweet spot, and threshold support supporting event-near specificity."
     )
 
 

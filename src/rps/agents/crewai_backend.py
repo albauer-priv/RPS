@@ -90,6 +90,7 @@ from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT, normalize_trace_reference
 from rps.workspace.guarded_store import GuardedValidatedStore
+from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.phase_intents import (
     PHASE_TAXONOMY_VERSION,
     normalize_phase_semantics,
@@ -142,6 +143,25 @@ _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning 
 
 JsonMap = dict[str, Any]
 ToolMap = dict[str, Any]
+
+_SEASON_FORBIDDEN_DOMAIN_POSITIVE_CUES: tuple[str, ...] = (
+    "appears",
+    "support",
+    "remains secondary",
+    "kept secondary",
+    "maintenance",
+    "led",
+)
+_SEASON_FORBIDDEN_DOMAIN_NEGATIVE_CUES: tuple[str, ...] = (
+    "remains excluded",
+    "is excluded",
+    "remains forbidden",
+    "is forbidden",
+    "suppressed",
+    "remains suppressed",
+    "excluded",
+    "forbidden",
+)
 
 _SEASON_PLAN_REQUIRED_TRACE_DATA_ARTIFACTS: tuple[ArtifactType, ...] = (
     ArtifactType.ATHLETE_PROFILE,
@@ -575,6 +595,295 @@ def _fill_season_plan(document: JsonMap) -> JsonMap:
     return document
 
 
+def _season_has_positive_forbidden_domain_mention(text: object, domain: str) -> bool:
+    """Return True when text frames a forbidden domain positively."""
+
+    normalized = str(text or "").strip().lower()
+    token = str(domain or "").strip().lower()
+    if not normalized or not token or token not in normalized:
+        return False
+    if (
+        f"no {token}" in normalized
+        or f"without {token}" in normalized
+        or any(f"{token} {cue}" in normalized for cue in _SEASON_FORBIDDEN_DOMAIN_NEGATIVE_CUES)
+    ):
+        return False
+    return any(
+        f"{token} {cue}" in normalized or f"{token}-{cue}" in normalized
+        for cue in _SEASON_FORBIDDEN_DOMAIN_POSITIVE_CUES
+    )
+
+
+def _humanize_intensity_domain(domain: str) -> str:
+    return str(domain).strip().lower().replace("_", " ")
+
+
+def _join_humanized_domains(domains: list[str]) -> str:
+    items = [_humanize_intensity_domain(item) for item in domains if str(item).strip()]
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return f"{', '.join(items[:-1])}, and {items[-1]}"
+
+
+def _season_legal_domain_focus_phrase(allowed_domains: object) -> str:
+    """Return a compact positive framing that stays inside legal domains."""
+
+    domains = [
+        item
+        for item in normalize_intensity_domain_list(allowed_domains)
+        if item not in {"NONE", "RECOVERY"}
+    ]
+    if not domains:
+        return "recovery-protected aerobic continuity"
+    primary = _humanize_intensity_domain(domains[0])
+    secondary = domains[1:]
+    if not secondary:
+        return f"{primary}-led work"
+    return f"{primary}-led work with controlled {_join_humanized_domains(secondary)} support"
+
+
+def _season_phase_narrative_replacements(
+    *,
+    phase_type: object,
+    phase_intent: object,
+    allowed_domains: object,
+) -> JsonMap:
+    """Return deterministic legal-domain narrative replacements for one phase."""
+
+    intent = str(phase_intent or "").strip()
+    phase_type_text = str(phase_type or "").strip().title() or "Phase"
+    focus_phrase = _season_legal_domain_focus_phrase(allowed_domains)
+    replacements: JsonMap = {
+        "narrative": f"{phase_type_text} work stays inside {focus_phrase}.",
+        "metabolic_focus": f"{focus_phrase.capitalize()} aligned to the active phase intent.",
+        "typical_focus": "Legal-domain execution aligned to the active phase role and recovery context.",
+        "intensity_distribution": f"{focus_phrase.capitalize()} with no reliance on forbidden-domain progression.",
+        "expected_adaptations": [
+            f"Improved execution through {focus_phrase} aligned to the active phase intent."
+        ],
+    }
+    if intent in {"transition_recovery", "preparation_re_entry", "shortened_re_entry"}:
+        replacements.update(
+            {
+                "narrative": "Recovery-protected re-entry rebuilding continuity, freshness, and stable routine.",
+                "metabolic_focus": "Aerobic continuity and freshness restoration without build-led escalation.",
+                "typical_focus": "Routine rebuild, recovery protection, and low-risk continuity.",
+                "intensity_distribution": "Recovery-protected endurance continuity with only light legal support.",
+                "expected_adaptations": [
+                    "Improved freshness, continuity, and stable return to legal training density."
+                ],
+            }
+        )
+    elif intent in {"general_base", "aerobic_base", "strength_endurance_base", "sweet_spot_base"}:
+        replacements.update(
+            {
+                "narrative": f"Base work consolidates durable aerobic support through {focus_phrase}.",
+                "metabolic_focus": f"Aerobic base support through {focus_phrase}.",
+                "typical_focus": "Sustainable base loading, continuity, and durable routine-building.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} supporting broad base development.",
+                "expected_adaptations": [
+                    f"Improved aerobic support and sustainable routine through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "vo2_build":
+        replacements.update(
+            {
+                "narrative": f"Build work raises ceiling and repeatability through {focus_phrase}.",
+                "metabolic_focus": f"Aerobic ceiling support through {focus_phrase}.",
+                "typical_focus": "Ceiling-oriented quality with recovery-bounded execution.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} with recovery-bounded ceiling support.",
+                "expected_adaptations": [
+                    f"Improved ceiling support and repeatable quality through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "threshold_build":
+        replacements.update(
+            {
+                "narrative": f"Build work improves sustained power and repeatable structure through {focus_phrase}.",
+                "metabolic_focus": f"Sustained-power support through {focus_phrase}.",
+                "typical_focus": "Repeatable steady pressure and sustained-power tolerance.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} supporting sustained-power build logic.",
+                "expected_adaptations": [
+                    f"Improved sustained power and repeatable load tolerance through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "sst_build":
+        replacements.update(
+            {
+                "narrative": f"Build work develops extensive sub-threshold capacity through {focus_phrase}.",
+                "metabolic_focus": f"Extensive sub-threshold support through {focus_phrase}.",
+                "typical_focus": "Steady sub-threshold capacity and controlled pressure tolerance.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} with extensive sub-threshold emphasis.",
+                "expected_adaptations": [
+                    f"Improved sub-threshold capacity and steady pressure tolerance through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "durability_build":
+        replacements.update(
+            {
+                "narrative": (
+                    f"Durability-led build emphasizing fatigue resistance, hard-late stability, preload, "
+                    f"and long-ride kJ tolerance through {focus_phrase}."
+                ),
+                "metabolic_focus": f"Durability-first pressure through {focus_phrase}.",
+                "typical_focus": "Hard-late stability, preload, back-to-back resilience, and long-ride tolerance.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} supporting durability-first build logic.",
+                "expected_adaptations": [
+                    f"Improved fatigue resistance and long-ride stability through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "specificity_build":
+        replacements.update(
+            {
+                "narrative": (
+                    f"Event-near specificity build emphasizing pacing, fueling, terrain handling, "
+                    f"and logistics through {focus_phrase}."
+                ),
+                "metabolic_focus": f"Event-near specificity through {focus_phrase}.",
+                "typical_focus": "Pacing, fueling, terrain handling, and logistics under event-near specificity.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} supporting event-near specificity.",
+                "expected_adaptations": [
+                    f"Improved pacing, fueling, and terrain-specific execution through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "vlamax_lowering":
+        replacements.update(
+            {
+                "narrative": f"Efficiency-oriented build emphasizing controlled pressure through {focus_phrase}.",
+                "metabolic_focus": f"Efficiency support through {focus_phrase}.",
+                "typical_focus": "Controlled glycolytic demand and durable efficiency work.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} with efficiency-oriented pressure.",
+                "expected_adaptations": [
+                    f"Improved durable efficiency and controlled pressure tolerance through {focus_phrase}."
+                ],
+            }
+        )
+    elif intent == "peak_sharpening":
+        replacements.update(
+            {
+                "narrative": "Peak sharpening preserves readiness, specificity, and freshness without new build escalation.",
+                "metabolic_focus": "Readiness preservation and event-near sharpening inside legal domains.",
+                "typical_focus": "Sharpening, freshness protection, and event-near readiness.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} with sharpening-only intent.",
+                "expected_adaptations": [
+                    "Improved event-near readiness and sharpening without new build-style escalation."
+                ],
+            }
+        )
+    elif intent == "taper_freshening":
+        replacements.update(
+            {
+                "narrative": "Freshness-first taper preserves readiness while reducing pre-event training load.",
+                "metabolic_focus": "Freshness preservation and event-near readiness.",
+                "typical_focus": "Reduced load, freshness protection, and event-near readiness.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} with taper-contained sharpening only.",
+                "expected_adaptations": [
+                    "Improved freshness and event-near readiness without new build-style escalation."
+                ],
+            }
+        )
+    elif intent == "race_execution":
+        replacements.update(
+            {
+                "narrative": "Race-execution work centers on pacing, fueling, and logistics for the target event.",
+                "metabolic_focus": "Execution readiness and event-specific pacing control.",
+                "typical_focus": "Pacing, fueling, logistics, and execution stability.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} serving event-execution demands.",
+                "expected_adaptations": [
+                    "Improved event-execution stability, pacing, and fueling discipline."
+                ],
+            }
+        )
+    return replacements
+
+
+def _sanitize_season_phase_narrative_fields(
+    phase: JsonMap,
+    *,
+    phase_type: object,
+    phase_intent: object,
+    allowed_domains: object,
+    forbidden_domains: object,
+    justification: JsonMap | None = None,
+) -> None:
+    """Strip or replace positive forbidden-domain prose with legal intent-coherent text."""
+
+    forbidden = normalize_intensity_domain_list(forbidden_domains)
+    if not forbidden:
+        return
+    replacements = _season_phase_narrative_replacements(
+        phase_type=phase_type,
+        phase_intent=phase_intent,
+        allowed_domains=allowed_domains,
+    )
+
+    def _has_forbidden_positive(text: object) -> bool:
+        return any(_season_has_positive_forbidden_domain_mention(text, domain) for domain in forbidden)
+
+    narrative = str(phase.get("narrative") or "").strip()
+    if _has_forbidden_positive(narrative):
+        phase["narrative"] = replacements["narrative"]
+
+    overview = _as_map(phase.get("overview"))
+    metabolic_focus = str(overview.get("metabolic_focus") or "").strip()
+    if _has_forbidden_positive(metabolic_focus):
+        overview["metabolic_focus"] = replacements["metabolic_focus"]
+
+    expected_adaptations = [
+        str(item).strip()
+        for item in _as_list(overview.get("expected_adaptations"))
+        if str(item).strip()
+    ]
+    if expected_adaptations:
+        adaptations_changed = False
+        kept_adaptations = [item for item in expected_adaptations if not _has_forbidden_positive(item)]
+        if len(kept_adaptations) != len(expected_adaptations) and not kept_adaptations:
+            kept_adaptations = list(replacements["expected_adaptations"])
+            adaptations_changed = True
+        if len(kept_adaptations) != len(expected_adaptations):
+            adaptations_changed = True
+        if adaptations_changed:
+            overview["expected_adaptations"] = kept_adaptations
+
+    non_negotiables = [
+        str(item).strip()
+        for item in _as_list(overview.get("non_negotiables"))
+        if str(item).strip()
+    ]
+    if non_negotiables:
+        kept_non_negotiables = [item for item in non_negotiables if not _has_forbidden_positive(item)]
+        if len(kept_non_negotiables) != len(non_negotiables):
+            for domain in forbidden:
+                line = f"{domain} remains forbidden in this phase identity."
+                if line not in kept_non_negotiables:
+                    kept_non_negotiables.append(line)
+            overview["non_negotiables"] = kept_non_negotiables
+    if overview:
+        phase["overview"] = overview
+
+    structural_emphasis = _as_map(phase.get("structural_emphasis"))
+    typical_focus = str(structural_emphasis.get("typical_focus") or "").strip()
+    if _has_forbidden_positive(typical_focus):
+        structural_emphasis["typical_focus"] = replacements["typical_focus"]
+    if structural_emphasis:
+        phase["structural_emphasis"] = structural_emphasis
+
+    if justification is not None:
+        intensity_distribution = str(justification.get("intensity_distribution") or "").strip()
+        if _has_forbidden_positive(intensity_distribution):
+            justification["intensity_distribution"] = replacements["intensity_distribution"]
+
+
 def _derive_season_semantic_notes(*, planning_bundle: JsonMap) -> list[str]:
     """Return deterministic season-level notes that the writer must preserve."""
 
@@ -809,6 +1118,7 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         phase["phase_type"] = phase_type
         phase["phase_intent"] = phase_intent
         phase["build_subtype"] = build_subtype
+        justification = phase_justifications.get(phase_id)
 
         semantics = _as_map(phase.get("allowed_forbidden_semantics"))
         phase["allowed_forbidden_semantics"] = semantics
@@ -829,6 +1139,14 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         semantics["allowed_load_modalities"] = list(
             approved.get("allowed_load_modalities") or semantic_allowed_load_modalities(phase_intent)
         )
+        _sanitize_season_phase_narrative_fields(
+            phase,
+            phase_type=phase_type,
+            phase_intent=phase_intent,
+            allowed_domains=semantics.get("allowed_intensity_domains"),
+            forbidden_domains=semantics.get("forbidden_intensity_domains"),
+            justification=justification,
+        )
 
         structured_role_week_bands = normalize_role_week_load_bands(
             _as_list(deterministic.get("role_week_load_bands"))
@@ -839,7 +1157,6 @@ def _normalize_final_season_plan_semantics(document: JsonMap) -> JsonMap:
         weekly_kj = _as_map(_as_map(phase.get("weekly_load_corridor")).get("weekly_kj"))
         if weekly_kj:
             weekly_kj["notes"] = _append_sentence(weekly_kj.get("notes"), role_week_sentence)
-        justification = phase_justifications.get(phase_id)
         if justification is not None and role_week_sentence:
             justification["kJ_first_statement"] = _append_sentence(
                 justification.get("kJ_first_statement"),
@@ -1010,42 +1327,48 @@ def normalize_season_plan_draft_bundle(planning_bundle: JsonMap) -> JsonMap:
         ):
             if error not in warnings:
                 warnings.append(error)
-        normalized_blueprints.append(
-            {
-                **blueprint,
-                "phase_type": phase_type,
-                "phase_intent": phase_intent,
-                "build_subtype": build_subtype,
-                "phase_taxonomy_version": PHASE_TAXONOMY_VERSION,
-                "season_phase_role": deterministic.get("season_phase_role") or blueprint.get("season_phase_role"),
-                "scenario_cadence": deterministic.get("scenario_cadence") or blueprint.get("scenario_cadence"),
-                "cadence_week_roles": list(
-                    deterministic.get("cadence_week_roles") or blueprint.get("cadence_week_roles") or []
-                ),
-                "load_corridor_min": recommended_corridor.get("min", blueprint.get("load_corridor_min")),
-                "load_corridor_max": recommended_corridor.get("max", blueprint.get("load_corridor_max")),
-                "availability_cap_kj": availability_cap.get("typical", blueprint.get("availability_cap_kj")),
-                "baseline_load_kj": deterministic.get("baseline_load_kj", blueprint.get("baseline_load_kj")),
-                "role_week_load_bands": normalize_role_week_load_bands(
-                    _as_list(deterministic.get("role_week_load_bands"))
-                )
-                or normalize_role_week_load_bands(blueprint.get("role_week_load_bands")),
-                "progression_trace": _normalize_progression_trace(
-                    deterministic.get("progression_trace") or blueprint.get("progression_trace")
-                ),
-                "allowed_domains": season_phase_allowed_domains(
-                    phase_intent=phase_intent,
-                    season_allowed_domains=season_allowed_domains,
-                ),
-                "allowed_load_modalities": semantic_allowed_load_modalities(phase_intent),
-                "forbidden_domains": season_phase_forbidden_domains(
-                    phase_intent=phase_intent,
-                    season_allowed_domains=season_allowed_domains,
-                ),
-                "semantic_contract": phase_semantic_contract_payload(phase_intent=phase_intent),
-                "warnings": warnings,
-            }
+        normalized_blueprint = {
+            **blueprint,
+            "phase_type": phase_type,
+            "phase_intent": phase_intent,
+            "build_subtype": build_subtype,
+            "phase_taxonomy_version": PHASE_TAXONOMY_VERSION,
+            "season_phase_role": deterministic.get("season_phase_role") or blueprint.get("season_phase_role"),
+            "scenario_cadence": deterministic.get("scenario_cadence") or blueprint.get("scenario_cadence"),
+            "cadence_week_roles": list(
+                deterministic.get("cadence_week_roles") or blueprint.get("cadence_week_roles") or []
+            ),
+            "load_corridor_min": recommended_corridor.get("min", blueprint.get("load_corridor_min")),
+            "load_corridor_max": recommended_corridor.get("max", blueprint.get("load_corridor_max")),
+            "availability_cap_kj": availability_cap.get("typical", blueprint.get("availability_cap_kj")),
+            "baseline_load_kj": deterministic.get("baseline_load_kj", blueprint.get("baseline_load_kj")),
+            "role_week_load_bands": normalize_role_week_load_bands(
+                _as_list(deterministic.get("role_week_load_bands"))
+            )
+            or normalize_role_week_load_bands(blueprint.get("role_week_load_bands")),
+            "progression_trace": _normalize_progression_trace(
+                deterministic.get("progression_trace") or blueprint.get("progression_trace")
+            ),
+            "allowed_domains": season_phase_allowed_domains(
+                phase_intent=phase_intent,
+                season_allowed_domains=season_allowed_domains,
+            ),
+            "allowed_load_modalities": semantic_allowed_load_modalities(phase_intent),
+            "forbidden_domains": season_phase_forbidden_domains(
+                phase_intent=phase_intent,
+                season_allowed_domains=season_allowed_domains,
+            ),
+            "semantic_contract": phase_semantic_contract_payload(phase_intent=phase_intent),
+            "warnings": warnings,
+        }
+        _sanitize_season_phase_narrative_fields(
+            normalized_blueprint,
+            phase_type=phase_type,
+            phase_intent=phase_intent,
+            allowed_domains=normalized_blueprint.get("allowed_domains"),
+            forbidden_domains=normalized_blueprint.get("forbidden_domains"),
         )
+        normalized_blueprints.append(normalized_blueprint)
     normalized_bundle["phase_blueprints"] = normalized_blueprints
     candidate_document = {
         "data": {

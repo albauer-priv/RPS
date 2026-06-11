@@ -47,6 +47,27 @@ def test_season_skills_preserve_durability_without_intensity_free_collapse() -> 
     assert "ceiling_first_durability" in scenario
 
 
+def test_season_plan_synthesis_frontloads_forbidden_domain_narrative_rule() -> None:
+    prompt = _read("prompts/agents/season_plan_manager.md")
+    task_config = _read("config/crewai/tasks.yaml")
+    scenario_skill = _read("skills/season/plan-synthesis/SKILL.md")
+
+    for content in (prompt, task_config, scenario_skill):
+        assert "describ" in content and "positively" in content
+        assert "phase narrative" in content
+        assert "metabolic focus" in content or "metabolic_focus" in content
+        assert "typical focus" in content or "typical_focus" in content
+        assert "expected adaptations" in content or "expected_adaptations" in content
+        assert "intensity distribution" in content or "intensity_distribution" in content
+        assert "actually allowed domains" in content
+
+    assert "if `THRESHOLD` is not legal, do not describe threshold as focus, support, maintenance, or secondary emphasis" in prompt
+    assert "if `VO2MAX` is not legal, do not describe VO2MAX as focus, support, maintenance, or secondary emphasis" in prompt
+    assert "Forbidden-domain narrative coherence is also mandatory" in task_config
+    assert "If `THRESHOLD` is forbidden, do not frame threshold as focus, support, maintenance, or secondary emphasis." in scenario_skill
+    assert "If `VO2MAX` is forbidden, do not frame VO2MAX as focus, support, maintenance, or secondary emphasis." in scenario_skill
+
+
 def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     prompt = _read("prompts/agents/season_scenario.md")
     task_config = _read("config/crewai/tasks.yaml")

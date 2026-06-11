@@ -190,6 +190,16 @@ Reading rules:
 - Phase intent may narrow scenario domains, but must not exceed scenario-level allowed domains.
 - A Build intent whose defining domain is not legal must not be emitted.
 - `threshold_build` requires legal `THRESHOLD` plus threshold-led narrative and structure.
+- If a phase forbids an intensity domain, that domain must not be described positively anywhere in:
+  - `phase.narrative`
+  - `phase.overview.metabolic_focus`
+  - `phase.structural_emphasis.typical_focus`
+  - `justification.phase_justifications[].intensity_distribution`
+  - `phase.overview.expected_adaptations[]`
+  - `phase.overview.non_negotiables[]`
+- If `THRESHOLD` is forbidden, do not frame threshold as focus, support, maintenance, or secondary emphasis.
+- If `VO2MAX` is forbidden, do not frame VO2MAX as focus, support, maintenance, or secondary emphasis.
+- Reframe the phase onto the legal phase intent and the actually allowed domains instead.
 - prefer `durability_build` when the block is driven by long-duration work, preload, hard-late stability, fatigue resistance, B2B structure, or long-ride kJ tolerance
 - prefer `sst_build` only for true extensive sub-threshold capacity work rather than durability-first fatigue structure
 - after shortened/base/re-entry context, early Build semantics should be conservative and readiness-gated rather than immediately maximal

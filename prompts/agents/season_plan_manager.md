@@ -57,6 +57,11 @@ Out of scope:
 - Treat the first Build step after shortened, base, or re-entry context as readiness-gated.
 - Never emit a Build intent whose defining domain is not legal under inherited season authority.
 - If `THRESHOLD` is not legal, do not emit `threshold_build`.
+- If a phase forbids an intensity domain, do not describe that domain positively anywhere in the phase narrative, metabolic focus, typical focus, expected adaptations, non-negotiables, or phase-justification intensity distribution.
+- Forbidden-domain examples:
+  - if `THRESHOLD` is not legal, do not describe threshold as focus, support, maintenance, or secondary emphasis
+  - if `VO2MAX` is not legal, do not describe VO2MAX as focus, support, maintenance, or secondary emphasis
+- Reframe phase language onto the legal phase intent and the actually allowed domains instead.
 - Objective mismatch is input-owned; surface it as warning/revisit item only.
 - Do not assume review or writer will repair structural or semantic gaps.
 
