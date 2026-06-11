@@ -52,6 +52,7 @@ from rps.crewai_runtime.bindings import (
     configured_task_context_names,
     output_model_for_kind,
     output_model_for_task,
+    should_bind_crewai_output_model,
 )
 from rps.crewai_runtime.compat import crewai_runtime_status as compat_crewai_runtime_status
 from rps.crewai_runtime.flows import (
@@ -1952,6 +1953,32 @@ def test_extract_structured_output_supports_json_mode_for_internal_tasks() -> No
     )
 
     assert extracted == {"constraints": [], "load_governance": []}
+
+
+def test_extract_structured_output_parses_raw_json_for_internal_tasks() -> None:
+    payload = {"constraints": [], "load_governance": []}
+    task_obj = SimpleNamespace(output=SimpleNamespace(json_dict=None, raw=json.dumps(payload)))
+
+    extracted = _extract_structured_output(
+        SimpleNamespace(json_dict=None, raw=json.dumps(payload)),
+        task_obj,
+        task_name="season_plan_finalize",
+        output_mode="json",
+    )
+
+    assert extracted == payload
+
+
+def test_internal_json_season_finalizer_does_not_bind_strict_output_model() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    task_blueprints = build_task_blueprints(bundle)
+    task_blueprint = task_blueprints["season_plan_finalize"]
+    artifact_task_blueprint = task_blueprints["season_plan"]
+
+    assert resolve_task_policy(task_blueprint, bundle.task_policies).output_mode == "json"
+    assert should_bind_crewai_output_model(task_blueprint, output_mode="json") is False
+    assert resolve_task_policy(artifact_task_blueprint, bundle.task_policies).output_mode == "json"
+    assert should_bind_crewai_output_model(artifact_task_blueprint, output_mode="json") is True
 
 
 def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplanning() -> None:
@@ -6507,7 +6534,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
             self.output_json = kwargs.get("output_json")
             self.output = None
 
-    captured_crew: dict[str, object] = {"crews": []}
+    captured_crew: dict[str, object] = {"crews": [], "tasks_by_crew": []}
 
     class FakeCrew:
         def __init__(self, *, tasks, **kwargs):
@@ -6520,6 +6547,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 len(kwargs.get("agents", [])),
             )
             captured_crew["tasks"] = tasks
+            cast(list[list[object]], captured_crew["tasks_by_crew"]).append(list(tasks))
             if kwargs.get("manager_agent") is not None:
                 captured_crew["manager_agent"] = kwargs.get("manager_agent")
             captured_crew["process"] = kwargs.get("process")
@@ -6528,14 +6556,32 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
             task = self.tasks[-1]
             model_cls = task.output_pydantic or task.output_json
             if model_cls is None:
-                payload = {
-                    "meta": {
-                        "artifact_type": "SEASON_PLAN",
-                        "schema_id": "SeasonPlanInterface",
-                        "schema_version": "1.0",
-                    },
-                    "data": {},
-                }
+                payload = (
+                    {
+                        "event_priority": {},
+                        "macrocycle": {},
+                        "phase_blueprints": [],
+                        "constraints": [
+                            {
+                                "blocking_issues": [],
+                                "warnings": [],
+                                "recommended_adjustments": [],
+                                "cadence_authority_preserved": True,
+                                "durability_first_respected": True,
+                            }
+                        ],
+                        "load_governance": [],
+                    }
+                    if getattr(task, "kwargs", {}).get("name") == "season_plan_finalize"
+                    else {
+                        "meta": {
+                            "artifact_type": "SEASON_PLAN",
+                            "schema_id": "SeasonPlanInterface",
+                            "schema_version": "1.0",
+                        },
+                        "data": {},
+                    }
+                )
                 task.output = SimpleNamespace(pydantic=None, raw=json.dumps(payload))
                 return task.output
             if (
@@ -6718,6 +6764,14 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     assert crews[1].get("process") == "sequential"
     planning_crews = [crew for crew in crews if crew.get("planning") is True]
     assert planning_crews == []
+    final_season_task = next(
+        task
+        for task_group in cast(list[list[object]], captured_crew["tasks_by_crew"])
+        for task in task_group
+        if getattr(task, "kwargs", {}).get("name") == "season_plan_finalize"
+    )
+    assert getattr(final_season_task, "output_json", None) is None
+    assert getattr(final_season_task, "output_pydantic", None) is None
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
     assert "reasoning" not in macrocycle_agent
     assert "max_reasoning_attempts" not in macrocycle_agent

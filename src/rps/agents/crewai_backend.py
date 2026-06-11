@@ -27,6 +27,7 @@ from rps.crewai_runtime.bindings import (
     collect_native_agent_kwargs,
     collect_native_crew_kwargs,
     output_model_for_kind,
+    should_bind_crewai_output_model,
 )
 from rps.crewai_runtime.config import CrewAIConfigBundle, load_crewai_config_bundle
 from rps.crewai_runtime.generated_artifact_models import (
@@ -2494,9 +2495,9 @@ def _execute_crewai_task(
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
     output_model = _output_model_for_task(task_blueprint, schema_file=artifact_schema_file)
-    if output_mode == "json":
+    if output_mode == "json" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
         crew_task_kwargs["output_json"] = output_model
-    elif output_mode == "pydantic":
+    elif output_mode == "pydantic" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
         crew_task_kwargs["output_pydantic"] = output_model
     crew_task_kwargs.update(guardrail_kwargs)
     task_tools = _task_tools_for_blueprint(task_blueprint, tools)
@@ -2565,14 +2566,12 @@ def _execute_crewai_task(
         if not raw:
             raise RuntimeError(f"CrewAI task '{task_blueprint.name}' produced no raw artifact output.")
         return _parse_json_document(raw)
-    pydantic_output = _extract_typed_output(result, crew_task)
-    if pydantic_output is None:
-        raw = _extract_raw_output_text(result, crew_task)
-        raise RuntimeError(
-            f"CrewAI task '{task_blueprint.name}' did not produce a typed pydantic output."
-            + (f" Raw output: {raw}" if raw else "")
-        )
-    return pydantic_output
+    return _extract_structured_output(
+        result,
+        crew_task,
+        task_name=task_blueprint.name,
+        output_mode=output_mode,
+    )
 
 
 def execute_structured_internal_task_crewai(
@@ -2656,9 +2655,9 @@ def _build_crewai_task(
     guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
     output_model = _output_model_for_task(task_blueprint)
-    if output_mode == "json":
+    if output_mode == "json" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
         kwargs["output_json"] = output_model
-    elif output_mode == "pydantic":
+    elif output_mode == "pydantic" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
         kwargs["output_pydantic"] = output_model
     kwargs.update(guardrail_kwargs)
     if tools_override is not None and len(_tool_map_from_runtime_tools(tools_override)) == 0:

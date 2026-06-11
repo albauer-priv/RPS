@@ -186,6 +186,20 @@ class TaskBlueprint:
     config: JsonMap
 
 
+def should_bind_crewai_output_model(task_blueprint: TaskBlueprint, *, output_mode: str) -> bool:
+    """Return whether CrewAI should receive a strict output model for this task.
+
+    Internal non-artifact JSON-mode tasks must cross a raw JSON boundary so repo
+    code can own the first structural validation/coercion step. Artifact
+    envelopes remain model-bound in JSON mode because their envelope shape is
+    the intended task contract.
+    """
+
+    if output_mode != "json":
+        return output_mode == "pydantic"
+    return task_blueprint.output_kind == "artifact_envelope"
+
+
 @dataclass(frozen=True)
 class CrewAIBindings:
     """Bound CrewAI runtime objects and their blueprints."""
@@ -389,9 +403,9 @@ def build_crewai_bindings(
         guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
         output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
         output_model = output_model_for_task(task_blueprint)
-        if output_mode == "json":
+        if output_mode == "json" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
             task_kwargs["output_json"] = output_model
-        elif output_mode == "pydantic":
+        elif output_mode == "pydantic" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
             task_kwargs["output_pydantic"] = output_model
         task_kwargs.update(guardrail_kwargs)
         tools = tools_factory(task_blueprint) if tools_factory else []
