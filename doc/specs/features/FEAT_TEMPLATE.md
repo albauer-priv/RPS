@@ -167,6 +167,19 @@ flowchart TD
 
 ---
 
+## 6a) Implementation Readiness Review
+
+Before implementation starts, the feature owner/agent must explicitly review:
+
+* [ ] Scope completeness: all affected modules, contracts, prompts, skills, validators, renderers, tests, docs, and operational paths are named
+* [ ] Decision completeness: no critical product or architecture decisions are left implicit
+* [ ] Architecture conformity: the proposal matches current ADRs, authority boundaries, persistence rules, and validation ownership
+* [ ] Execution readiness: the plan is concrete enough to implement without inventing missing behavior during coding
+
+If any box cannot be checked honestly, implementation should not start until the plan is repaired.
+
+---
+
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [ ] <criterion 1 — testable>
@@ -219,6 +232,25 @@ Update these docs as part of implementation:
 
 * [ ] <doc link> — <what to change>
 * [ ] <doc link> — <what to change>
+
+---
+
+## 11a) Post-Implementation Audit
+
+Complete this section before closing the feature:
+
+* [ ] Spec implemented fully
+* [ ] Acceptance criteria verified
+* [ ] Verification commands/tests recorded
+* [ ] Residual gaps/deferred items recorded
+* [ ] Recommended next step recorded
+
+**Implementation report**
+
+* Implemented scope: <short summary>
+* Verification performed: <commands/tests/smokes>
+* Remaining gaps/risks: <explicit list or “none”>
+* Recommended next step: <one concrete follow-up>
 
 ---
 

@@ -215,6 +215,35 @@ During implementation:
 - Update referenced docs as specified.
 - Ensure validators/runbooks are updated when contracts/schemas change.
 
+### 5) Mandatory Plan Audit Before Implementation
+Before any implementation starts, the agent must review the active plan or feature doc for all of the following:
+
+1. **Gap check**
+   - Are any affected modules, contracts, prompts, skills, validators, renderers, tests, or docs missing from the plan?
+2. **Implementation readiness**
+   - Is the plan decision-complete, executable, and specific enough to implement without inventing missing product behavior mid-flight?
+3. **Architecture conformity**
+   - Does the plan fit current ADRs, authority boundaries, persistence rules, validation ownership, and UI/orchestrator separation?
+
+If the answer to any of the above is “no”, the agent must not silently improvise. It must first produce a cleaned implementation-ready replacement plan or an explicit delta list of missing decisions.
+
+### 6) Mandatory Post-Implementation Spec Audit
+After every implementation, the agent must perform an explicit spec-completion audit before calling the work complete.
+
+Minimum required audit questions:
+
+1. Was the spec implemented fully, not partially?
+2. Which acceptance criteria are demonstrably satisfied?
+3. What remains open, deferred, or only partially covered?
+4. Are there architecture or contract deviations from the approved spec?
+5. What is the recommended next step?
+
+The agent must summarize this as a short implementation report in the final response:
+- implemented scope
+- verification performed
+- residual gaps or risks
+- concrete recommended next action
+
 ## Continuation Protocol (handoff between chats)
 
 When starting a new chat or agent session, do this in order:
@@ -236,7 +265,7 @@ When starting a new chat or agent session, do this in order:
    - Ensure ADR is created/updated if the change touches architecture, persistence, or cross-cutting contracts.
 
 6) **Implementation loop**:
-   - Code changes → tests → docs → changelog → release-impact check → commit/push.
+   - Plan/spec audit → code changes → tests → docs → post-implementation spec audit → changelog → release-impact check → commit/push.
    - Before every `commit` or `push`, explicitly check whether the change requires a version-number bump under SemVer.
    - Treat at least these as version-bump triggers unless clearly proven otherwise:
      - public behavior changes visible to users or operators
@@ -248,6 +277,7 @@ When starting a new chat or agent session, do this in order:
 7) **Always record outcomes**:
    - Update `CHANGELOG.md`.
    - Update relevant docs + backlog status when a feature is completed or partially done.
+   - Include a concise implementation-completeness report and recommended follow-up in the handoff/final answer.
 
 ### Documentation (Mermaid)
 
