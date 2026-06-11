@@ -2013,6 +2013,32 @@ def _phase_guardrails_weekly_bands(document: dict[str, Any] | None) -> list[dict
     return [entry for entry in _as_list(bands) if isinstance(entry, dict)]
 
 
+def _season_finalize_candidate_mapping(mapping: dict[str, Any]) -> dict[str, Any]:
+    """Canonicalize known Season-finalizer shape drift before task guardrails evaluate it."""
+
+    normalized = dict(mapping)
+    constraints_raw = normalized.get("constraints", [])
+    if isinstance(constraints_raw, dict):
+        constraints: list[Any] = [constraints_raw]
+    else:
+        constraints = list(_as_list(constraints_raw))
+    singular_constraint = normalized.pop("constraint_audit", None)
+    if singular_constraint is not None:
+        constraints.append(singular_constraint)
+    normalized["constraints"] = constraints
+
+    governance_raw = normalized.get("load_governance", [])
+    if isinstance(governance_raw, dict):
+        load_governance: list[Any] = [governance_raw]
+    else:
+        load_governance = list(_as_list(governance_raw))
+    singular_governance = normalized.pop("load_governance_audit", None)
+    if singular_governance is not None:
+        load_governance.append(singular_governance)
+    normalized["load_governance"] = load_governance
+    return normalized
+
+
 def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     """Project exact persisted phase authority before writer-task guardrails evaluate candidates."""
 
@@ -2020,11 +2046,14 @@ def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     if not isinstance(mapping, dict):
         return result
     context = current_guardrail_runtime_context()
+    task_name = str(context.get("task_name") or "").strip()
     artifact_type = str(context.get("artifact_type") or "").strip().upper()
     loaded_inputs = context.get("loaded_inputs")
     if not isinstance(loaded_inputs, dict):
         loaded_inputs = {}
     phase_execution_context = context.get("phase_execution_context")
+    if task_name == "season_plan_finalize":
+        return _season_finalize_candidate_mapping(mapping)
     if artifact_type == ArtifactType.PHASE_GUARDRAILS.value:
         if not normalize_role_week_load_bands(_as_map(phase_execution_context).get("phase_role_week_load_bands")):
             raise ValueError(

@@ -1941,6 +1941,108 @@ def test_coerce_season_plan_draft_bundle_slots_moves_misplaced_items_before_stri
     assert validated.load_governance[0].cadence_authority_preserved is True
 
 
+def test_coerce_season_plan_draft_bundle_slots_accepts_singular_aliases_and_appends_them() -> None:
+    raw_bundle = {
+        "event_priority": {},
+        "macrocycle": {},
+        "phase_blueprints": [],
+        "constraints": [
+            {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "applied_sources": ["existing"],
+            }
+        ],
+        "constraint_audit": {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "applied_sources": ["alias"],
+        },
+        "load_governance": [
+            {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "cadence_authority_preserved": True,
+                "durability_first_respected": True,
+            }
+        ],
+        "load_governance_audit": {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "cadence_authority_preserved": False,
+            "durability_first_respected": True,
+        },
+    }
+
+    coerced = coerce_season_plan_draft_bundle_slots(raw_bundle)
+    validated = SeasonPlanDraftBundleModel.model_validate(coerced)
+
+    assert "constraint_audit" not in coerced
+    assert "load_governance_audit" not in coerced
+    assert [item.applied_sources for item in validated.constraints] == [["existing"], ["alias"]]
+    assert [item.cadence_authority_preserved for item in validated.load_governance] == [True, False]
+
+
+def test_season_plan_finalize_pre_guardrail_normalization_projects_singular_audit_aliases() -> None:
+    candidate = {
+        "event_priority": {},
+        "macrocycle": {},
+        "phase_blueprints": [],
+        "constraint_audit": {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "applied_sources": ["alias"],
+        },
+        "load_governance_audit": {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "cadence_authority_preserved": True,
+            "durability_first_respected": True,
+        },
+    }
+
+    with guardrail_runtime_context(task_name="season_plan_finalize"):
+        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+
+    assert "constraint_audit" not in normalized
+    assert "load_governance_audit" not in normalized
+    assert normalized["constraints"][0]["applied_sources"] == ["alias"]
+    assert normalized["load_governance"][0]["cadence_authority_preserved"] is True
+
+
+def test_season_plan_finalize_pre_guardrail_normalization_appends_singular_aliases() -> None:
+    candidate = {
+        "event_priority": {},
+        "macrocycle": {},
+        "phase_blueprints": [],
+        "constraints": [
+            {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "applied_sources": ["existing"],
+            }
+        ],
+        "constraint_audit": {
+            "blocking_issues": [],
+            "warnings": [],
+            "recommended_adjustments": [],
+            "applied_sources": ["alias"],
+        },
+    }
+
+    with guardrail_runtime_context(task_name="season_plan_finalize"):
+        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+
+    assert [item["applied_sources"] for item in normalized["constraints"]] == [["existing"], ["alias"]]
+
+
 def test_extract_structured_output_supports_json_mode_for_internal_tasks() -> None:
     task_output = SimpleNamespace(json_dict={"constraints": [], "load_governance": []}, raw=None)
     task_obj = SimpleNamespace(output=task_output)
@@ -1992,11 +2094,25 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
     assert "`constraints[]` contains constraint-audit entries only" in season_finalize_description
     assert "`load_governance[]` contains governance-audit entries only" in season_finalize_description
     assert "`cadence_authority_preserved` plus `durability_first_respected` belong only inside `load_governance[]`" in season_finalize_description
+    assert "emit top-level `event_priority`, `macrocycle`, and `phase_blueprints`" in season_finalize_description
+    assert "singular top-level `constraint_audit` and `load_governance_audit` keys are invalid" in season_finalize_description
     assert "multiple target macrocycles" in macrocycle_description
     assert "A-event peak cluster" in macrocycle_description
     assert "final A-event is the only reverse-planning anchor" in season_finalize_description
     assert "backplanned macrocycles overlap" in season_finalize_description
     assert "season justification must classify each A-event" in season_finalize_expected_output
+
+    prompt_text = Path("prompts/agents/season_plan_manager.md").read_text(encoding="utf-8")
+    skill_text = Path("skills/season/plan-synthesis/SKILL.md").read_text(encoding="utf-8")
+
+    for text in (prompt_text, skill_text):
+        assert "event_priority" in text
+        assert "macrocycle" in text
+        assert "phase_blueprints" in text
+        assert "constraints[]" in text
+        assert "load_governance[]" in text
+        assert "constraint_audit" in text
+        assert "load_governance_audit" in text
 
 
 def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> None:
@@ -2458,6 +2574,40 @@ def test_season_bundle_integrity_requires_phase_blueprints() -> None:
     assert "at least one phase blueprint" in message
     assert ok is True
     assert payload["phase_blueprints"][0]["scenario_cadence"] == "2:1"
+
+
+def test_season_bundle_integrity_requires_event_priority_and_macrocycle() -> None:
+    ok, message = season_bundle_integrity(
+        {
+            "macrocycle": {},
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                }
+            ],
+        }
+    )
+    assert ok is False
+    assert "event_priority" in message
+
+    ok, message = season_bundle_integrity(
+        {
+            "event_priority": {},
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                }
+            ],
+        }
+    )
+    assert ok is False
+    assert "macrocycle" in message
 
 
 def test_season_phase_load_feasibility_rejects_unavailable_corridor_and_flat_roles() -> None:

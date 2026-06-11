@@ -44,6 +44,9 @@ Out of scope:
 
 ## Hard rules
 
+- Top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory in every final season bundle.
+- Season final output uses `constraints[]` and `load_governance[]` only.
+- Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys.
 - `constraints[]` contains constraint-audit entries only.
 - `load_governance[]` contains governance-audit entries only.
 - `cadence_authority_preserved` belongs only in `load_governance[]`.

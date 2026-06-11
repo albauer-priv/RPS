@@ -1882,6 +1882,11 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
             )
         if task_name == "season_plan_finalize" and blocks:
             blocks.append(
+                "Season finalizer bundle shape: top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory. "
+                "Season final output uses `constraints[]` and `load_governance[]` only. "
+                "Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys."
+            )
+            blocks.append(
                 "Season finalization rule: consume these deterministic contracts directly. "
                 "Do not search the workspace for non-persisted phase-load recommendation artifacts."
             )
@@ -2399,7 +2404,19 @@ def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
 
     constraints: list[JsonMap] = []
     load_governance: list[JsonMap] = []
-    for raw_item in bundle_document.get("constraints", []):
+    raw_constraints = bundle_document.get("constraints", [])
+    if isinstance(raw_constraints, dict):
+        raw_constraints = [raw_constraints]
+    raw_load_governance = bundle_document.get("load_governance", [])
+    if isinstance(raw_load_governance, dict):
+        raw_load_governance = [raw_load_governance]
+    singular_constraint_audit = bundle_document.get("constraint_audit")
+    if singular_constraint_audit is not None:
+        raw_constraints = [*list(raw_constraints), singular_constraint_audit]
+    singular_load_governance = bundle_document.get("load_governance_audit")
+    if singular_load_governance is not None:
+        raw_load_governance = [*list(raw_load_governance), singular_load_governance]
+    for raw_item in raw_constraints:
         if not isinstance(raw_item, dict):
             raise RuntimeError("Unclassifiable season audit-slot item: constraints entry is not an object.")
         destination = _classify_season_audit_item(raw_item)
@@ -2407,7 +2424,7 @@ def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
             load_governance.append(raw_item)
         else:
             constraints.append(raw_item)
-    for raw_item in bundle_document.get("load_governance", []):
+    for raw_item in raw_load_governance:
         if not isinstance(raw_item, dict):
             raise RuntimeError("Unclassifiable season audit-slot item: load_governance entry is not an object.")
         destination = _classify_season_audit_item(raw_item)
@@ -2415,11 +2432,14 @@ def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
             constraints.append(raw_item)
         else:
             load_governance.append(raw_item)
-    return {
+    coerced = {
         **bundle_document,
         "constraints": constraints,
         "load_governance": load_governance,
     }
+    coerced.pop("constraint_audit", None)
+    coerced.pop("load_governance_audit", None)
+    return coerced
 
 
 def _output_model_for_task(task_blueprint: Any, *, schema_file: str | None = None) -> type[Any]:
@@ -2548,6 +2568,7 @@ def _execute_crewai_task(
             athlete_id=athlete_id,
             run_id=run_id,
             component=f"crew:{task_blueprint.name}",
+            task_name=task_blueprint.name,
         ):
             result = crew.kickoff()
     else:
@@ -2895,6 +2916,7 @@ def _execute_crewai_multiagent_crew(
             athlete_id=athlete_id,
             run_id=run_id,
             component=f"crew:{final_task_name}",
+            task_name=final_task_name,
         ):
             result = crew.kickoff()
     else:

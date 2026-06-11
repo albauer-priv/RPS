@@ -31,6 +31,9 @@ Authority / injected sources:
 - this layer must not compute workout-level load math
 
 Audit-slot discipline:
+- top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory in every final SeasonPlanDraftBundle
+- season final output uses `constraints[]` and `load_governance[]` only
+- singular top-level `constraint_audit` and `load_governance_audit` are invalid final manager output keys
 - `constraints[]` contains constraint-audit entries only.
 - `load_governance[]` contains governance-audit entries only.
 - `cadence_authority_preserved` belongs only in `load_governance[]`.
