@@ -129,6 +129,7 @@ from rps.crewai_runtime.models import (
     SeasonEventAnchorModel,
     SeasonLoadEnvelopeModel,
     SeasonMacrocycleDraftModel,
+    SeasonPhaseBlueprintDraftOutputModel,
     SeasonPhaseBlueprintModel,
     SeasonPhaseDraftBlueprintModel,
     SeasonPhaseSemanticContractModel,
@@ -591,6 +592,7 @@ def test_crewai_output_models_are_openai_strict_compatible() -> None:
         "coach_apply",
         "season_event_anchor",
         "season_macrocycle_draft",
+        "season_phase_blueprint_draft",
         "season_plan_audit",
         "season_plan_draft_bundle",
         "season_plan_bundle",
@@ -1853,6 +1855,16 @@ def test_season_plan_finalize_declares_deterministic_contract_tools() -> None:
     ]
 
 
+def test_season_phase_blueprint_draft_declares_deterministic_contract_tools() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    assert blueprints["season_phase_blueprint_draft"].config["tools"] == [
+        "workspace_get_phase_slot_contract",
+        "workspace_get_season_phase_load_context",
+    ]
+
+
 def test_contract_context_blocks_for_season_finalize_include_bound_contracts() -> None:
     with guardrail_runtime_context(
         phase_slot_context={"phase_slots": [{"phase_id": "P01"}]},
@@ -2016,6 +2028,44 @@ def test_season_plan_finalize_pre_guardrail_normalization_projects_singular_audi
     assert normalized["load_governance"][0]["cadence_authority_preserved"] is True
 
 
+def test_season_plan_finalize_pre_guardrail_normalization_decodes_raw_json_object_string() -> None:
+    candidate = json.dumps(
+        {
+            "event_priority": {},
+            "macrocycle": {},
+            "phase_blueprints": [],
+            "constraint_audit": {
+                "blocking_issues": [],
+                "warnings": [],
+                "recommended_adjustments": [],
+                "applied_sources": ["alias"],
+            },
+        }
+    )
+
+    with guardrail_runtime_context(task_name="season_plan_finalize"):
+        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+
+    assert isinstance(normalized, dict)
+    assert normalized["phase_blueprints"] == []
+    assert normalized["constraints"][0]["applied_sources"] == ["alias"]
+
+
+def test_season_plan_finalize_pre_guardrail_normalization_decodes_fenced_json_object_string() -> None:
+    candidate = """Here is the final bundle.
+
+```json
+{"event_priority": {}, "macrocycle": {}, "phase_blueprints": []}
+```
+"""
+
+    with guardrail_runtime_context(task_name="season_plan_finalize"):
+        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+
+    assert isinstance(normalized, dict)
+    assert normalized["phase_blueprints"] == []
+
+
 def test_season_plan_finalize_pre_guardrail_normalization_appends_singular_aliases() -> None:
     candidate = {
         "event_priority": {},
@@ -2071,6 +2121,21 @@ def test_extract_structured_output_parses_raw_json_for_internal_tasks() -> None:
     assert extracted == payload
 
 
+def test_extract_structured_output_parses_fenced_raw_json_for_internal_tasks() -> None:
+    payload = {"event_priority": {}, "macrocycle": {}, "phase_blueprints": []}
+    raw = "```json\n" + json.dumps(payload) + "\n```"
+    task_obj = SimpleNamespace(output=SimpleNamespace(json_dict=None, raw=raw))
+
+    extracted = _extract_structured_output(
+        SimpleNamespace(json_dict=None, raw=raw),
+        task_obj,
+        task_name="season_plan_finalize",
+        output_mode="json",
+    )
+
+    assert extracted == payload
+
+
 def test_internal_json_season_finalizer_does_not_bind_strict_output_model() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     task_blueprints = build_task_blueprints(bundle)
@@ -2088,6 +2153,7 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
     blueprints = build_task_blueprints(bundle)
 
     macrocycle_description = blueprints["season_macrocycle_draft"].description
+    blueprint_draft_description = blueprints["season_phase_blueprint_draft"].description
     season_finalize_description = blueprints["season_plan_finalize"].description
     season_finalize_expected_output = blueprints["season_plan_finalize"].expected_output
 
@@ -2096,6 +2162,10 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
     assert "`cadence_authority_preserved` plus `durability_first_respected` belong only inside `load_governance[]`" in season_finalize_description
     assert "emit top-level `event_priority`, `macrocycle`, and `phase_blueprints`" in season_finalize_description
     assert "singular top-level `constraint_audit` and `load_governance_audit` keys are invalid" in season_finalize_description
+    assert "Return exactly one structured object with top-level `phase_blueprints` only" in blueprint_draft_description
+    assert "`phase_blueprints` are owned here first" in blueprint_draft_description
+    assert "raw JSON object only" in season_finalize_description
+    assert "`season_phase_blueprint_draft` task" in season_finalize_description
     assert "multiple target macrocycles" in macrocycle_description
     assert "A-event peak cluster" in macrocycle_description
     assert "final A-event is the only reverse-planning anchor" in season_finalize_description
@@ -2103,6 +2173,7 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
     assert "season justification must classify each A-event" in season_finalize_expected_output
 
     prompt_text = Path("prompts/agents/season_plan_manager.md").read_text(encoding="utf-8")
+    blueprint_prompt_text = Path("prompts/agents/season_phase_blueprint_specialist.md").read_text(encoding="utf-8")
     skill_text = Path("skills/season/plan-synthesis/SKILL.md").read_text(encoding="utf-8")
 
     for text in (prompt_text, skill_text):
@@ -2113,6 +2184,10 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
         assert "load_governance[]" in text
         assert "constraint_audit" in text
         assert "load_governance_audit" in text
+
+    assert "phase_blueprints" in blueprint_prompt_text
+    assert "Do not emit a full Season bundle." in blueprint_prompt_text
+    assert "Return exactly one structured object with top-level `phase_blueprints`." in blueprint_prompt_text
 
 
 def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> None:
@@ -5719,6 +5794,7 @@ def test_early_planning_tasks_consume_evidence_alignment_context_before_synthesi
         "season_macrocycle_draft": "season_evidence_alignment",
         "season_load_corridor_draft": "season_evidence_alignment",
         "season_progression_review": "season_evidence_alignment",
+        "season_phase_blueprint_draft": "season_evidence_alignment",
         "phase_guardrail_band_draft": "phase_evidence_alignment",
         "phase_structure_draft": "phase_evidence_alignment",
         "phase_cadence_recovery_draft": "phase_evidence_alignment",
@@ -5752,7 +5828,12 @@ def test_season_planning_task_order_places_evidence_alignment_before_its_consume
     assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_macrocycle_draft")
     assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_load_corridor_draft")
     assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_progression_review")
+    assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_phase_blueprint_draft")
     assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_plan_finalize")
+
+    assert _SEASON_PLANNING_TASKS.index("season_phase_blueprint_draft") > _SEASON_PLANNING_TASKS.index("season_progression_review")
+    assert _SEASON_PLANNING_TASKS.index("season_phase_blueprint_draft") < _SEASON_PLANNING_TASKS.index("season_plan_finalize")
+    assert "season_phase_blueprint_draft" in blueprints["season_plan_finalize"].context_names
 
 
 def test_phase_s5_band_guardrail_rejects_explicit_s5_mismatch() -> None:
@@ -6292,6 +6373,7 @@ def test_output_model_registry_resolves_known_output_kinds() -> None:
     assert output_model_for_kind("coach_apply") is CoachOperationApplyResultModel
     assert output_model_for_kind("season_event_anchor") is SeasonEventAnchorModel
     assert output_model_for_kind("season_macrocycle_draft") is SeasonMacrocycleDraftModel
+    assert output_model_for_kind("season_phase_blueprint_draft") is SeasonPhaseBlueprintDraftOutputModel
     assert output_model_for_kind("season_plan_audit") is SeasonPlanAuditModel
     assert output_model_for_kind("season_plan_draft_bundle") is SeasonPlanDraftBundleModel
     assert output_model_for_kind("constraint_audit") is ConstraintAuditModel

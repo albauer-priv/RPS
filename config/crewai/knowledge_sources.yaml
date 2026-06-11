@@ -92,6 +92,7 @@ agents:
   season_kpi_guidance_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   season_load_corridor_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   season_progression_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  season_phase_blueprint_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   season_plan_manager: {bundles: [], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   season_plan_auditor: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   season_governance_auditor: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 5, score_threshold: 0.5}}

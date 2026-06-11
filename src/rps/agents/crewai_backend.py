@@ -36,7 +36,9 @@ from rps.crewai_runtime.generated_artifact_models import (
 )
 from rps.crewai_runtime.guardrails import (
     build_task_guardrail_kwargs,
+    canonicalize_season_bundle_shape_aliases,
     current_guardrail_runtime_context,
+    decode_json_object_from_text,
     guardrail_runtime_context,
     phase_bundle_matches_context,
     phase_bundle_review_readiness,
@@ -323,6 +325,7 @@ _SEASON_PLANNING_TASKS: tuple[str, ...] = (
     "season_kpi_guidance_review",
     "season_load_corridor_draft",
     "season_progression_review",
+    "season_phase_blueprint_draft",
     "season_plan_finalize",
 )
 
@@ -1884,7 +1887,8 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
             blocks.append(
                 "Season finalizer bundle shape: top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory. "
                 "Season final output uses `constraints[]` and `load_governance[]` only. "
-                "Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys."
+                "Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys. "
+                "`phase_blueprints` are produced earlier by `season_phase_blueprint_draft` and must be preserved here."
             )
             blocks.append(
                 "Season finalization rule: consume these deterministic contracts directly. "
@@ -2265,17 +2269,7 @@ def _extract_raw_output_text(result: object, task_obj: object) -> str | None:
 def _parse_json_document(raw_text: str) -> JsonMap:
     """Parse a JSON object from raw task output, tolerating fenced JSON blocks."""
 
-    text = raw_text.strip()
-    if text.startswith("```"):
-        lines = text.splitlines()
-        if lines and lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        text = "\n".join(lines).strip()
-        if text.lower().startswith("json"):
-            text = text[4:].strip()
-    parsed = json.loads(text)
+    parsed = decode_json_object_from_text(raw_text)
     if not isinstance(parsed, dict):
         raise RuntimeError("CrewAI task output did not decode to an artifact envelope object.")
     return parsed
@@ -2404,18 +2398,9 @@ def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
 
     constraints: list[JsonMap] = []
     load_governance: list[JsonMap] = []
-    raw_constraints = bundle_document.get("constraints", [])
-    if isinstance(raw_constraints, dict):
-        raw_constraints = [raw_constraints]
-    raw_load_governance = bundle_document.get("load_governance", [])
-    if isinstance(raw_load_governance, dict):
-        raw_load_governance = [raw_load_governance]
-    singular_constraint_audit = bundle_document.get("constraint_audit")
-    if singular_constraint_audit is not None:
-        raw_constraints = [*list(raw_constraints), singular_constraint_audit]
-    singular_load_governance = bundle_document.get("load_governance_audit")
-    if singular_load_governance is not None:
-        raw_load_governance = [*list(raw_load_governance), singular_load_governance]
+    normalized_bundle = canonicalize_season_bundle_shape_aliases(bundle_document)
+    raw_constraints = normalized_bundle.get("constraints", [])
+    raw_load_governance = normalized_bundle.get("load_governance", [])
     for raw_item in raw_constraints:
         if not isinstance(raw_item, dict):
             raise RuntimeError("Unclassifiable season audit-slot item: constraints entry is not an object.")
@@ -2433,7 +2418,7 @@ def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
         else:
             load_governance.append(raw_item)
     coerced = {
-        **bundle_document,
+        **normalized_bundle,
         "constraints": constraints,
         "load_governance": load_governance,
     }

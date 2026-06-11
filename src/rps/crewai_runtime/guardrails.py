@@ -2013,8 +2013,8 @@ def _phase_guardrails_weekly_bands(document: dict[str, Any] | None) -> list[dict
     return [entry for entry in _as_list(bands) if isinstance(entry, dict)]
 
 
-def _season_finalize_candidate_mapping(mapping: dict[str, Any]) -> dict[str, Any]:
-    """Canonicalize known Season-finalizer shape drift before task guardrails evaluate it."""
+def canonicalize_season_bundle_shape_aliases(mapping: dict[str, Any]) -> dict[str, Any]:
+    """Project known Season bundle alias drift into canonical plural audit slots."""
 
     normalized = dict(mapping)
     constraints_raw = normalized.get("constraints", [])
@@ -2039,21 +2039,73 @@ def _season_finalize_candidate_mapping(mapping: dict[str, Any]) -> dict[str, Any
     return normalized
 
 
+def decode_json_object_from_text(text: str) -> dict[str, Any] | None:
+    """Decode one JSON object from plain or fenced text without accepting arrays or scalars."""
+
+    stripped = text.strip()
+    if not stripped:
+        return None
+    try:
+        decoded = json.loads(stripped)
+    except json.JSONDecodeError:
+        decoded = None
+    if isinstance(decoded, dict):
+        return decoded
+
+    fenced_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", stripped, flags=re.DOTALL | re.IGNORECASE)
+    if fenced_match:
+        candidate = fenced_match.group(1).strip()
+        try:
+            decoded = json.loads(candidate)
+        except json.JSONDecodeError:
+            decoded = None
+        if isinstance(decoded, dict):
+            return decoded
+
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(stripped):
+        if char != "{":
+            continue
+        try:
+            decoded, _end = decoder.raw_decode(stripped[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(decoded, dict):
+            return decoded
+    return None
+
+
+def _season_finalize_candidate_mapping(result: Any) -> dict[str, Any] | None:
+    """Decode and canonicalize known Season-finalizer shape drift before task guardrails evaluate it."""
+
+    payload = _coerce_payload(result)
+    if hasattr(payload, "model_dump"):
+        payload = payload.model_dump()
+    if isinstance(payload, dict):
+        return canonicalize_season_bundle_shape_aliases(payload)
+    if isinstance(payload, str):
+        decoded = decode_json_object_from_text(payload)
+        if isinstance(decoded, dict):
+            return canonicalize_season_bundle_shape_aliases(decoded)
+    return None
+
+
 def normalize_artifact_candidate_for_task_guardrails(result: Any) -> Any:
     """Project exact persisted phase authority before writer-task guardrails evaluate candidates."""
 
+    context = current_guardrail_runtime_context()
+    task_name = str(context.get("task_name") or "").strip()
+    if task_name == "season_plan_finalize":
+        mapping = _season_finalize_candidate_mapping(result)
+        return mapping if isinstance(mapping, dict) else result
     mapping = _coerce_mapping(result)
     if not isinstance(mapping, dict):
         return result
-    context = current_guardrail_runtime_context()
-    task_name = str(context.get("task_name") or "").strip()
     artifact_type = str(context.get("artifact_type") or "").strip().upper()
     loaded_inputs = context.get("loaded_inputs")
     if not isinstance(loaded_inputs, dict):
         loaded_inputs = {}
     phase_execution_context = context.get("phase_execution_context")
-    if task_name == "season_plan_finalize":
-        return _season_finalize_candidate_mapping(mapping)
     if artifact_type == ArtifactType.PHASE_GUARDRAILS.value:
         if not normalize_role_week_load_bands(_as_map(phase_execution_context).get("phase_role_week_load_bands")):
             raise ValueError(

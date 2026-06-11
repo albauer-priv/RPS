@@ -167,6 +167,10 @@ agents:
     model: gpt-5.4-mini
     reasoning:
       enabled: false
+  season_phase_blueprint_specialist:
+    model: gpt-5.4-mini
+    reasoning:
+      enabled: false
   season_constraint_specialist:
     model: gpt-5.4-mini
     reasoning:

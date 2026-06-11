@@ -44,9 +44,11 @@ Out of scope:
 
 ## Hard rules
 
+- Return one raw JSON object only; do not wrap the final output in prose or markdown fences.
 - Top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory in every final season bundle.
 - Season final output uses `constraints[]` and `load_governance[]` only.
 - Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys.
+- `phase_blueprints` are owned by the earlier `season_phase_blueprint_draft` step; preserve and consolidate that structure here rather than inventing it from scratch.
 - `constraints[]` contains constraint-audit entries only.
 - `load_governance[]` contains governance-audit entries only.
 - `cadence_authority_preserved` belongs only in `load_governance[]`.

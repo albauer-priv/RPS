@@ -384,6 +384,12 @@ class SeasonPhaseDraftBlueprintModel(StrictOutputModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class SeasonPhaseBlueprintDraftOutputModel(StrictOutputModel):
+    """Early Season structural draft containing only canonical phase blueprints."""
+
+    phase_blueprints: list[SeasonPhaseDraftBlueprintModel] = Field(default_factory=list)
+
+
 class ReplanInstructionModel(StrictOutputModel):
     """Structured replan instruction emitted by review crews."""
 

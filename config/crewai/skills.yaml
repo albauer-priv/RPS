@@ -157,6 +157,8 @@ agents:
     skill: skills/season/load-governance
   season_progression_specialist:
     skill: skills/season/load-governance
+  season_phase_blueprint_specialist:
+    skill: skills/season/plan-synthesis
   season_plan_manager:
     skill: skills/season/plan-synthesis
   season_plan_auditor:

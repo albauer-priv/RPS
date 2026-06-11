@@ -230,6 +230,13 @@ agents:
     runtime_status: foundation_only
     output_mode: load_governance_audit
     prompt_agent: load_governance_specialist
+  season_phase_blueprint_specialist:
+    display_name: Season Phase Blueprint Specialist
+    role: Season structural phase blueprint specialist
+    goal: Draft the canonical structural season phase blueprints before final bundle consolidation.
+    runtime_status: foundation_only
+    output_mode: season_phase_blueprint_draft
+    prompt_agent: season_phase_blueprint_specialist
   season_constraint_specialist:
     display_name: Season Constraint Specialist
     role: Season constraint synthesis
